@@ -1,0 +1,160 @@
+import React, { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
+import SellerSidebar from '@/Components/SellerSidebar';
+import { Menu, User, Shield, MapPin, AlertTriangle, CheckCircle, AlertCircle, X } from 'lucide-react';
+import DeleteUserForm from '@/Pages/Profile/Partials/DeleteUserForm';
+import UpdatePasswordForm from '@/Pages/Profile/Partials/UpdatePasswordForm';
+import UpdateAddressForm from '@/Pages/Profile/Partials/UpdateAddressForm';
+import SellerUpdateProfileInformationForm from './Partials/SellerUpdateProfileInformationForm';
+import Dropdown from '@/Components/Dropdown';
+
+export default function Edit({ mustVerifyEmail, status, addresses }) {
+    const { auth, flash } = usePage().props;
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // --- FLASH MESSAGE HANDLING ---
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState('success'); // 'success' or 'error'
+
+    React.useEffect(() => {
+        if (flash.success) {
+            setToastType('success');
+            setToastMessage(flash.success);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+        }
+        if (flash.error) {
+            setToastType('error');
+            setToastMessage(flash.error);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 5000);
+        }
+    }, [flash]);
+
+    return (
+        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+            <Head title="Seller Profile" />
+            <SellerSidebar active="" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
+                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                            <Menu size={24} />
+                        </button>
+                        <div>
+                            <h1 className="text-xl font-bold text-gray-900">My Profile</h1>
+                            <p className="text-xs text-gray-500 font-medium mt-0.5">Manage your account settings</p>
+                        </div>
+                    </div>
+                    
+                    {/* Simplified Profile Dropdown for consistency */}
+                    <Dropdown>
+                        <Dropdown.Trigger>
+                            <button className="flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-clay-600 transition">
+                                <span className="hidden sm:inline">{auth.user.shop_name || auth.user.name}</span>
+                                <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 border border-clay-200 overflow-hidden">
+                                    {auth.user.avatar ? (
+                                        <img 
+                                            src={auth.user.avatar.startsWith('http') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
+                                            alt={auth.user.name} 
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        (auth.user.shop_name || auth.user.name).charAt(0)
+                                    )}
+                                </div>
+                            </button>
+                        </Dropdown.Trigger>
+                        <Dropdown.Content>
+                            <Dropdown.Link href={route('logout')} method="post" as="button" className="text-red-600">Log Out</Dropdown.Link>
+                        </Dropdown.Content>
+                    </Dropdown>
+                </header>
+
+                <main className="p-6 space-y-6 max-w-4xl">
+                    
+                    {/* PERSONAL INFO */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-clay-50 text-clay-600 rounded-lg">
+                                <User size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-gray-900">Personal Information</h3>
+                                <p className="text-xs text-gray-500">Update your account details and shop info.</p>
+                            </div>
+                        </div>
+                        <SellerUpdateProfileInformationForm
+                            mustVerifyEmail={mustVerifyEmail}
+                            status={status}
+                            className="max-w-xl"
+                        />
+                    </div>
+
+                    {/* PASSWORD */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                <Shield size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-gray-900">Security</h3>
+                                <p className="text-xs text-gray-500">Ensure your account is secure with a strong password.</p>
+                            </div>
+                        </div>
+                        <UpdatePasswordForm className="max-w-xl" />
+                    </div>
+
+                    {/* ADDRESS BOOK */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                    <MapPin size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-900">Address Book & Additional Contacts</h3>
+                                    <p className="text-xs text-gray-500">Manage additional store locations or contact numbers.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <UpdateAddressForm addresses={addresses} />
+                    </div>
+
+                    {/* DANGER ZONE */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                                <AlertTriangle size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-red-600">Danger Zone</h3>
+                                <p className="text-xs text-gray-500">Permanently delete your account and data.</p>
+                            </div>
+                        </div>
+                        <DeleteUserForm className="max-w-xl" />
+                    </div>
+
+                </main>
+            </div>
+
+            {/* --- TOAST NOTIFICATION --- */}
+            <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
+                    <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        {toastType === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}
+                    </div>
+                    <div>
+                        <h4 className={`text-sm font-bold ${toastType === 'success' ? 'text-green-900' : 'text-red-900'}`}>
+                            {toastType === 'success' ? 'Success' : 'Error'}
+                        </h4>
+                        <p className="text-xs text-gray-500">{toastMessage}</p>
+                    </div>
+                    <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600"><X size={14} /></button>
+                </div>
+            </div>
+        </div>
+    );
+}

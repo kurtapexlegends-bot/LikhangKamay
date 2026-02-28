@@ -1,0 +1,137 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Message;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache; // <--- Added
+use Inertia\Inertia;
+
+class ChatController extends Controller
+{
+    // 1. SELLER VIEW
+    public function index(Request $request)
+    {
+        return $this->getChatData($request, 'Seller/Chat');
+    }
+
+    // 2. BUYER VIEW
+    public function buyerIndex(Request $request)
+    {
+        return $this->getChatData($request, 'Buyer/Chat');
+    }
+
+    // 3. SEND MESSAGE (Shared)
+    public function store(Request $request)
+    {
+        $request->validate([
+            'receiver_id' => 'required|exists:users,id',
+            'message' => 'required|string',
+        ]);
+
+        $msg = Message::create([
+            'sender_id' => Auth::id(),
+            'receiver_id' => $request->receiver_id,
+            'message' => $request->message
+        ]);
+
+        // Notify Receiver
+        $receiver = User::find($request->receiver_id);
+        if ($receiver) {
+            $senderName = Auth::user()->shop_name ?: Auth::user()->name;
+            $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
+        }
+
+        return redirect()->back();
+    }
+
+    // 4. MARK AS SEEN (Explicit Action)
+    public function markAsSeen(Request $request) 
+    {
+        $request->validate([
+            'sender_id' => 'required|exists:users,id'
+        ]);
+
+        Message::where('sender_id', $request->sender_id)
+            ->where('receiver_id', Auth::id())
+            ->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // --- SHARED LOGIC (THE ENGINE) ---
+    private function getChatData(Request $request, $viewName)
+    {
+        $userId = Auth::id();
+        $activeChatId = $request->query('user_id');
+
+        // A. GET CONVERSATION LIST
+        $contactIds = Message::where('sender_id', $userId)
+            ->orWhere('receiver_id', $userId)
+            ->select(DB::raw('IF(sender_id = '.$userId.', receiver_id, sender_id) as contact_id'))
+            ->distinct()
+            ->pluck('contact_id');
+
+        $conversations = User::whereIn('id', $contactIds)->get()->map(function($user) use ($userId) {
+            $lastMsg = Message::where(function($q) use ($userId, $user) {
+                $q->where('sender_id', $userId)->where('receiver_id', $user->id);
+            })->orWhere(function($q) use ($userId, $user) {
+                $q->where('sender_id', $user->id)->where('receiver_id', $userId);
+            })->latest()->first();
+
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'avatar_url' => $user->avatar ? '/storage/' . $user->avatar : null,
+                'initial' => substr($user->shop_name ?: $user->name, 0, 1),
+                'lastMsg' => $lastMsg ? $lastMsg->message : 'Start chatting',
+                'time' => $lastMsg ? $lastMsg->created_at->shortAbsoluteDiffForHumans() : '',
+                'unread' => Message::where('sender_id', $user->id)
+                    ->where('receiver_id', $userId)
+                    ->where('is_read', false)
+                    ->count(),
+                'is_online' => Cache::has('user-is-online-' . $user->id), // <--- Added
+            ];
+        });
+
+        // B. GET ACTIVE MESSAGES
+        $messages = [];
+        $activeUser = null;
+
+        if ($activeChatId) {
+            $activeUser = User::find($activeChatId);
+            
+            // Add online status to active user
+            if ($activeUser) {
+                $activeUser->is_online = Cache::has('user-is-online-' . $activeUser->id);
+                $activeUser->last_seen = $activeUser->last_seen_at 
+                    ? $activeUser->last_seen_at->diffForHumans() 
+                    : 'Offline';
+            }
+
+            // Fetch history
+            $messages = Message::where(function($q) use ($userId, $activeChatId) {
+                $q->where('sender_id', $userId)->where('receiver_id', $activeChatId);
+            })->orWhere(function($q) use ($userId, $activeChatId) {
+                $q->where('sender_id', $activeChatId)->where('receiver_id', $userId);
+            })->orderBy('created_at', 'asc')->get()->map(function($m) use ($userId) {
+                return [
+                    'id' => $m->id,
+                    'text' => $m->message,
+                    'sender' => $m->sender_id === $userId ? 'me' : 'other',
+                    'time' => $m->created_at->format('g:i A'),
+                    'is_read' => $m->is_read
+                ];
+            });
+        }
+
+        return Inertia::render($viewName, [
+            'conversations' => $conversations,
+            'activeMessages' => $messages,
+            'currentChatUser' => $activeUser,
+        ]);
+    }
+}
