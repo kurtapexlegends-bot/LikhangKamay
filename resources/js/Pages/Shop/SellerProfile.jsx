@@ -51,7 +51,7 @@ export default function SellerProfile({ seller, products, stats }) {
                     <div className="px-6 md:px-10 pb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10 -mt-20">
                         
                         {/* Avatar */}
-                        <div className="w-36 h-36 rounded-full border-4 border-white bg-white shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 relative z-20">
+                        <div className="w-36 h-36 rounded-full border-4 border-white bg-white shadow-lg flex items-center justify-center overflow-hidden flex-none aspect-square relative z-20">
                             {seller.avatar ? (
                                 <img src={seller.avatar.startsWith('http') || seller.avatar.startsWith('/storage') ? seller.avatar : `/storage/${seller.avatar}`} alt={seller.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
                             ) : (

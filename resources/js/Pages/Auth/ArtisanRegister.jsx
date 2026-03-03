@@ -7,7 +7,7 @@ import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Store, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Store, Eye, EyeOff, Loader2, Mail, Lock, User, Briefcase } from 'lucide-react';
 
 export default function ArtisanRegister() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -52,12 +52,12 @@ export default function ArtisanRegister() {
         >
             <Head title="Become a Seller" />
 
-            <div className="mb-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-clay-50 text-clay-700 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-                    <Store size={14} /> Artisan Access
+            <div className="mb-8 text-center sm:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-stone-800 to-stone-900 text-amber-50 rounded-full text-xs font-bold uppercase tracking-widest mb-6 shadow-md shadow-stone-900/20">
+                    <Store size={14} className="text-amber-200" /> Artisan Access
                 </div>
-                <h1 className="font-serif text-2xl font-bold text-gray-900 tracking-tight">Start Your Journey</h1>
-                <p className="text-gray-500 mt-1 text-sm">Create your artisan account to start selling.</p>
+                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight mb-2">Start Your Journey</h1>
+                <p className="text-stone-500 text-sm sm:text-base">Create your artisan account to start selling.</p>
             </div>
 
             <form onSubmit={submit} className="space-y-4">
@@ -65,63 +65,81 @@ export default function ArtisanRegister() {
                 {/* Personal & Shop Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <InputLabel htmlFor="name" value="Owner Name" className="text-gray-700 font-bold mb-1.5" />
-                        <TextInput
-                            id="name"
-                            name="name"
-                            value={data.name}
-                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
-                            autoComplete="name"
-                            isFocused={true}
-                            onChange={(e) => setData('name', e.target.value)}
-                            required
-                            placeholder="Full Name"
-                        />
+                        <InputLabel htmlFor="name" value="Owner Name" className="text-stone-700 font-bold mb-1.5" />
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                                <User size={18} />
+                            </div>
+                            <TextInput
+                                id="name"
+                                name="name"
+                                value={data.name}
+                                className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                autoComplete="name"
+                                isFocused={true}
+                                onChange={(e) => setData('name', e.target.value)}
+                                required
+                                placeholder="Full Name"
+                            />
+                        </div>
                         <InputError message={errors.name} className="mt-2" />
                     </div>
                     <div>
-                        <InputLabel htmlFor="shop_name" value="Shop Name" className="text-gray-700 font-bold mb-1.5" />
-                        <TextInput
-                            id="shop_name"
-                            name="shop_name"
-                            value={data.shop_name}
-                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
-                            autoComplete="organization"
-                            onChange={(e) => setData('shop_name', e.target.value)}
-                            required
-                            placeholder="e.g. Silang Pottery"
-                        />
+                        <InputLabel htmlFor="shop_name" value="Shop Name" className="text-stone-700 font-bold mb-1.5" />
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                                <Briefcase size={18} />
+                            </div>
+                            <TextInput
+                                id="shop_name"
+                                name="shop_name"
+                                value={data.shop_name}
+                                className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                autoComplete="organization"
+                                onChange={(e) => setData('shop_name', e.target.value)}
+                                required
+                                placeholder="e.g. Silang Pottery"
+                            />
+                        </div>
                         <InputError message={errors.shop_name} className="mt-2" />
                     </div>
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="email" value="Business Email" className="text-gray-700 font-bold mb-1.5" />
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
-                        autoComplete="username"
-                        onChange={(e) => setData('email', e.target.value)}
-                        required
-                        placeholder="contact@yourshop.com"
-                    />
+                    <InputLabel htmlFor="email" value="Business Email" className="text-stone-700 font-bold mb-1.5" />
+                    <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                            <Mail size={18} />
+                        </div>
+                        <TextInput
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={data.email}
+                            className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                            autoComplete="username"
+                            onChange={(e) => setData('email', e.target.value)}
+                            required
+                            placeholder="contact@yourshop.com"
+                        />
+                    </div>
                     <InputError message={errors.email} className="mt-2" />
                 </div>
 
                 {/* Password Fields with Toggle */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <InputLabel htmlFor="password" value="Password" className="text-gray-700 font-bold mb-1.5" />
-                        <div className="relative">
+                        <InputLabel htmlFor="password" value="Password" className="text-stone-700 font-bold mb-1.5" />
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                                <Lock size={18} />
+                            </div>
                             <TextInput
                                 id="password"
                                 type={showPassword ? "text" : "password"}
                                 name="password"
                                 value={data.password}
-                                className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 pr-10 transition-all"
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 pr-10 transition-all hover:border-stone-300"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
                                 required
@@ -130,43 +148,48 @@ export default function ArtisanRegister() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-clay-600 transition"
+                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-clay-600 transition-colors mt-1"
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
                     </div>
                     <div>
-                        <InputLabel htmlFor="password_confirmation" value="Confirm" className="text-gray-700 font-bold mb-1.5" />
-                        <TextInput
-                            id="password_confirmation"
-                            type={showPassword ? "text" : "password"}
-                            name="password_confirmation"
-                            value={data.password_confirmation}
-                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
-                            autoComplete="new-password"
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
-                            required
-                            placeholder="••••••••"
-                        />
+                        <InputLabel htmlFor="password_confirmation" value="Confirm" className="text-stone-700 font-bold mb-1.5" />
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                                <Lock size={18} />
+                            </div>
+                            <TextInput
+                                id="password_confirmation"
+                                type={showPassword ? "text" : "password"}
+                                name="password_confirmation"
+                                value={data.password_confirmation}
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                autoComplete="new-password"
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                required
+                                placeholder="••••••••"
+                            />
+                        </div>
                     </div>
                 </div>
                 <InputError message={errors.password} className="mt-2" />
 
                 <div className="block mt-4">
-                    <div className="flex items-start">
+                    <div className="flex items-start bg-stone-50/50 p-4 rounded-xl border border-stone-100">
                         <Checkbox
                             name="terms"
                             checked={data.terms}
                             onChange={(e) => setData('terms', e.target.checked)}
-                            className="mt-1 text-clay-600 focus:ring-clay-500 rounded border-gray-300 hover:border-clay-400 transition cursor-pointer"
+                            className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
                         />
-                        <span className="ms-2 text-sm text-gray-600">
+                        <span className="ms-3 text-sm text-stone-600 leading-snug">
                             I accept the{' '}
                             <button 
                                 type="button"
                                 onClick={() => openLegalModal('seller')}
-                                className="font-bold text-clay-700 hover:underline"
+                                className="font-semibold text-clay-600 hover:text-clay-700 hover:underline transition-colors"
                             >
                                 Seller Agreement
                             </button>
@@ -174,7 +197,7 @@ export default function ArtisanRegister() {
                             <button 
                                 type="button"
                                 onClick={() => openLegalModal('sellerPrivacy')}
-                                className="font-bold text-clay-700 hover:underline"
+                                className="font-semibold text-clay-600 hover:text-clay-700 hover:underline transition-colors"
                             >
                                 Data Privacy Policy
                             </button>.
@@ -183,52 +206,71 @@ export default function ArtisanRegister() {
                     <InputError message={errors.terms} className="mt-2" />
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-4">
                     <PrimaryButton 
-                        className="w-full justify-center py-3.5 bg-gray-900 hover:bg-black rounded-xl text-base font-bold shadow-lg shadow-gray-500/20 transition-all hover:-translate-y-0.5" 
+                        className="relative w-full justify-center py-3.5 bg-gradient-to-r from-stone-800 to-stone-900 hover:from-stone-900 hover:to-black border-none rounded-xl text-base font-bold shadow-lg shadow-stone-900/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-stone-900/30 active:translate-y-0 active:shadow-md overflow-hidden group" 
                         disabled={processing}
                     >
-                        {processing ? (
-                            <Loader2 size={20} className="animate-spin" />
-                        ) : (
-                            'Launch Your Studio'
-                        )}
+                        {/* Shine effect */}
+                        <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-20deg]"></div>
+                        
+                        <span className="relative flex items-center gap-2 text-amber-50">
+                            {processing ? (
+                                <>
+                                    <Loader2 size={18} className="animate-spin" />
+                                    <span>Processing...</span>
+                                </>
+                            ) : (
+                                'Launch Your Studio'
+                            )}
+                        </span>
                     </PrimaryButton>
                 </div>
             </form>
 
-            {/* Social Login Section - Graceful Integration */}
-            <div className="mt-6">
-                <div className="relative">
+            {/* Social Login Section */}
+            <div className="mt-8">
+                <div className="relative mb-6">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200"></div>
+                        <div className="w-full h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                        <span className="px-4 bg-white text-gray-400 text-xs font-bold uppercase tracking-wider">Or continue with</span>
+                        <span className="px-4 bg-white text-stone-400 text-xs font-semibold uppercase tracking-widest">Or continue with</span>
                     </div>
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-4 text-center">
                     <a 
                         href="/auth/google/artisan" 
-                        className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition bg-white hover:shadow-sm"
+                        className="w-full flex items-center justify-center gap-3 py-3 border border-stone-200 rounded-xl hover:bg-stone-50 hover:border-stone-300 bg-white transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group mb-2"
                     >
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-                        <span className="text-sm font-bold text-gray-600">Continue with Google</span>
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
+                        <span className="text-sm font-semibold text-stone-600">Google</span>
                     </a>
-                    <p className="text-xs text-gray-400 text-center mt-2">
+                    <p className="text-xs text-stone-400">
                         Quick sign-up with your Google account
                     </p>
                 </div>
             </div>
 
-            <div className="mt-6 text-center border-t border-gray-100 pt-6">
-                <p className="text-sm text-gray-500">
-                    Looking to buy instead?{' '}
-                    <Link href={route('register')} className="font-bold text-clay-700 hover:underline">
-                        Create Buyer Account
+            <div className="mt-8 pt-6 border-t border-stone-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                    <Link 
+                        href={route('login')}
+                        className="group flex items-center justify-center gap-2 text-[13px] font-bold text-stone-600 bg-stone-50 border border-stone-200 px-5 py-2.5 rounded-xl hover:bg-stone-100 hover:border-stone-300 transition-all duration-300 shadow-sm hover:shadow"
+                    >
+                        <User size={16} className="text-stone-400 group-hover:text-stone-600 transition-colors group-hover:scale-110" />
+                        <span>Log in</span>
                     </Link>
-                </p>
+
+                    <Link 
+                        href={route('register')}
+                        className="group flex items-center justify-center gap-2 text-[13px] font-bold text-clay-700 bg-clay-50 border border-clay-200 px-5 py-2.5 rounded-xl hover:bg-clay-100 hover:border-clay-300 transition-all duration-300 shadow-sm hover:shadow"
+                    >
+                        <User size={16} className="text-clay-500 group-hover:text-clay-700 transition-colors group-hover:scale-110" />
+                        <span>Create Buyer Account</span>
+                    </Link>
+                </div>
             </div>
 
             {/* Legal Modal */}

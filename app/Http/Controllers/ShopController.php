@@ -235,12 +235,12 @@ class ShopController extends Controller
 
         if ($request->hasFile('banner_image')) {
             $bannerPath = $request->file('banner_image')->store('shop_banners', 'public');
-            $user->banner_image = '/storage/' . $bannerPath;
+            $user->banner_image = $bannerPath;
         }
 
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = '/storage/' . $avatarPath;
+            $user->avatar = $avatarPath;
         }
 
         $user->save();

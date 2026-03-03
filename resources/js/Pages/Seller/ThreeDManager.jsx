@@ -172,7 +172,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                             <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 uppercase overflow-hidden">
                                                 {auth.user.avatar ? (
                                                     <img 
-                                                        src={auth.user.avatar.startsWith('http') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
+                                                        src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
                                                         alt={auth.user.name} 
                                                         className="w-full h-full object-cover"
                                                     />

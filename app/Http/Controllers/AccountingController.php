@@ -179,6 +179,7 @@ class AccountingController extends Controller
 
         $payrollExpenses = \App\Models\Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
 
+        $user = Auth::user();
         $baseFunds = $user->base_funds ?? 0;
             
         $currentBalance = $baseFunds + $totalRevenue - ($stockExpenses + $payrollExpenses);

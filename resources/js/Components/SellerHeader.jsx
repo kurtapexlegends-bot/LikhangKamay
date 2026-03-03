@@ -61,10 +61,10 @@ export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge
                                             Seller Account
                                         </p>
                                     </div>
-                                    <div className="w-9 h-9 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 uppercase overflow-hidden">
+                                    <div className="w-9 h-9 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 uppercase overflow-hidden flex-none aspect-square">
                                         {auth.user.avatar ? (
                                             <img 
-                                                src={auth.user.avatar.startsWith('http') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
+                                                src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
                                                 alt={auth.user.name} 
                                                 className="w-full h-full object-cover"
                                             />

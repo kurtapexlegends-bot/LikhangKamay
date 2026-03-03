@@ -149,7 +149,7 @@ export default function AdminLayout({ title, children }) {
                                             <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border shadow-sm overflow-hidden ${auth.user.avatar ? 'bg-white border-clay-200' : 'bg-clay-100 text-clay-700 border-clay-200 uppercase'}`}>
                                                 {auth.user.avatar ? (
                                                     <img 
-                                                        src={auth.user.avatar.startsWith('http') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
+                                                        src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
                                                         alt={auth.user.name} 
                                                         className="w-full h-full object-cover"
                                                     />

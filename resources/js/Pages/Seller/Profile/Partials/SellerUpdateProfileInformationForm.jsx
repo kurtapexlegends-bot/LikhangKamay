@@ -49,7 +49,7 @@ export default function SellerUpdateProfileInformation({
                 {/* Avatar Input - Polished UI */}
                 <div className="flex flex-col items-center sm:flex-row gap-6 pb-4 border-b border-gray-100">
                     <div className="relative group">
-                        <div className="w-24 h-24 rounded-full ring-2 ring-gray-50 overflow-hidden shadow-sm flex items-center justify-center bg-clay-100">
+                        <div className="w-24 h-24 rounded-full ring-2 ring-gray-50 overflow-hidden shadow-sm flex items-center justify-center bg-clay-100 flex-none aspect-square">
                             {data.preview_url || user.avatar ? (
                                 <img 
                                     src={data.preview_url || (user.avatar.startsWith('http') ? user.avatar : `/storage/${user.avatar}`)} 

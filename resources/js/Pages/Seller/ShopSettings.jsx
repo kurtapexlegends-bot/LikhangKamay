@@ -139,7 +139,8 @@ export default function ShopSettings({ auth, user, stats }) {
 
                                 {/* Avatar (editable) */}
                                 <div 
-                                    className="w-24 h-24 rounded-full border-4 border-white bg-white shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 relative z-20 group cursor-pointer"
+                                    className="w-24 h-24 min-w-[6rem] min-h-[6rem] aspect-square rounded-full border-4 border-white bg-white shadow-lg flex items-center justify-center overflow-hidden flex-none self-start relative z-20 group cursor-pointer"
+                                    style={{ width: '6rem', height: '6rem' }}
                                     onClick={() => avatarInputRef.current?.click()}
                                 >
                                     {avatarPreview ? (
