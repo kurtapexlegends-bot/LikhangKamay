@@ -30,7 +30,9 @@ class ProductController extends Controller
 
         return Inertia::render('Seller/ProductManager', [
             'products' => $products,
-            'categories' => self::VALID_CATEGORIES // Pass detailed list to frontend
+            'categories' => self::VALID_CATEGORIES, // Pass detailed list to frontend
+            'active_products_count' => Auth::user()->products()->where('status', 'Active')->count(),
+            'product_limit' => Auth::user()->getProductLimit()
         ]);
     }
 

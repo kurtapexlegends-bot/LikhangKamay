@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
@@ -59,7 +59,7 @@ const SortableHeader = ({ label, sortKey, currentSort, onSort }) => {
     );
 };
 
-export default function ProductManager({ auth, products: dbProducts = [], categories = [] }) {
+export default function ProductManager({ auth, products: dbProducts = [], categories = [], active_products_count, product_limit }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [products, setProducts] = useState(dbProducts);
     useEffect(() => { setProducts(dbProducts); }, [dbProducts]);
@@ -84,6 +84,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     // --- MODAL STATES ---
     const [productModalOpen, setProductModalOpen] = useState(false);
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const [restockModalOpen, setRestockModalOpen] = useState(false);
     const [archiveModalOpen, setArchiveModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -178,6 +179,10 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const generateSKU = () => 'LK-' + Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 
     const openAddModal = () => {
+        if (active_products_count >= product_limit) {
+            setUpgradeModalOpen(true);
+            return;
+        }
         reset(); 
         clearErrors();
         setActiveFormTab('Essentials');
@@ -388,7 +393,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         </button>
                         <div>
                             <h1 className="text-xl font-bold text-gray-900">Products</h1>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage your inventory</p>
+                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
+                                Manage your inventory · <span className="font-bold text-orange-600">{active_products_count} / {product_limit} Active Products</span>
+                            </p>
                         </div>
                     </div>
 
@@ -597,6 +604,27 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     </div>
                 </main>
             </div>
+
+            {/* --- UPGRADE MODAL --- */}
+            <Modal show={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} maxWidth="sm">
+                <div className="p-6 text-center">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 mb-4">
+                        <Package size={24} className="text-orange-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Product Limit Reached</h3>
+                    <p className="text-sm text-gray-500 mb-6">
+                        You've reached your {product_limit} active product limit. Upgrade your subscription to list more items!
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <button onClick={() => setUpgradeModalOpen(false)} className="px-4 py-2 font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition">
+                            Cancel
+                        </button>
+                        <Link href={route('seller.subscription')} className="px-4 py-2 font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-xl transition shadow-lg shadow-clay-500/20">
+                            Upgrade Plan
+                        </Link>
+                    </div>
+                </div>
+            </Modal>
 
             {/* --- DEDUCTION MODAL (Phase 1) --- */}
             <Modal show={deductModalOpen} onClose={() => setDeductModalOpen(false)} maxWidth="sm">

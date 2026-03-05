@@ -22,6 +22,7 @@ use App\Http\Controllers\AccountingController; // <--- Added
 use App\Http\Controllers\UserAddressController;
 use App\Http\Controllers\ArtisanSetupController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
@@ -187,6 +188,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('artisan.pending');
 
     // SELLER ROUTES
+    Route::get('/seller/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/export', [OrderController::class, 'export'])->name('orders.export'); // <--- Added
     Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');

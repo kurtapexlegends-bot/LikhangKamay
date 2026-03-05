@@ -226,6 +226,9 @@ class DashboardController extends Controller
 
                 'pending_requests' => $pendingRequests,
                 'total_deductions' => $totalDeductions,
+                
+                'active_products_count' => $user->products()->where('status', 'Active')->count(),
+                'product_limit' => $user->getProductLimit(),
             ],
             'chartData' => ['monthly' => $monthlyData, 'yearly' => $yearlyData],
             'categoryData' => $categoryData,
