@@ -11,6 +11,7 @@ class ProductLimitTest extends TestCase
 
     public function test_standard_user_cannot_exceed_product_limit()
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create(['subscription_tier' => 'standard']);
         Product::factory()->count(3)->create(['user_id' => $user->id, 'status' => 'active']);
         

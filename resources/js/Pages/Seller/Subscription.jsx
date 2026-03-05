@@ -1,9 +1,10 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
+import Modal from '@/Components/Modal';
 import { Check, Star, Crown, Zap, AlertCircle } from 'lucide-react';
 
-export default function Subscription({ auth, subscription_tier, sponsorship_credits, active_products_count, product_limit }) {
+export default function Subscription({ auth, subscription_tier, sponsorship_credits, active_products_count, product_limit, active_products = [] }) {
     const plans = [
         {
             id: 'standard',
@@ -61,6 +62,66 @@ export default function Subscription({ auth, subscription_tier, sponsorship_cred
     ];
 
     const currentLimitReached = active_products_count >= product_limit;
+
+    // Downgrade / Upgrade Modal State
+    const [actionModal, setActionModal] = useState({ open: false, targetPlan: null, type: 'upgrade' });
+    const { data, setData, post, processing, errors, reset } = useForm({
+        new_tier: '',
+        keep_product_ids: []
+    });
+
+    const handleSelectPlan = (plan) => {
+        if (plan.id === subscription_tier) return;
+        
+        const isDowngrade = plan.limit < product_limit;
+        
+        setActionModal({ open: true, targetPlan: plan, type: isDowngrade ? 'downgrade' : 'upgrade' });
+        
+        // If downgrading and active items are more than the new limit, they have to select which to keep
+        let initialKeepIds = [];
+        if (isDowngrade && active_products_count > plan.limit) {
+            initialKeepIds = active_products.slice(0, plan.limit).map(p => p.id);
+        } else {
+            initialKeepIds = active_products.map(p => p.id); // implicitly keep all if within limit
+        }
+
+        setData({
+            new_tier: plan.id,
+            keep_product_ids: initialKeepIds
+        });
+    };
+
+    const toggleProductSelection = (id) => {
+        const keeps = [...data.keep_product_ids];
+        if (keeps.includes(id)) {
+            setData('keep_product_ids', keeps.filter(pid => pid !== id));
+        } else {
+            // Cannot select more than the target plan limit
+            if (keeps.length >= actionModal.targetPlan.limit) {
+                return;
+            }
+            setData('keep_product_ids', [...keeps, id]);
+        }
+    };
+
+    const handleActionSubmit = (e) => {
+        e.preventDefault();
+        
+        // Validation check
+        if (actionModal.type === 'downgrade' && active_products_count > actionModal.targetPlan.limit) {
+            if (data.keep_product_ids.length > actionModal.targetPlan.limit) {
+                alert(`You can only keep up to ${actionModal.targetPlan.limit} products.`);
+                return;
+            }
+        }
+
+        post(route('seller.subscription.update-tier'), {
+            onSuccess: () => {
+                setActionModal({ open: false, targetPlan: null, type: 'upgrade' });
+                reset();
+            }
+        });
+    };
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
@@ -172,13 +233,13 @@ export default function Subscription({ auth, subscription_tier, sponsorship_cred
                                             </button>
                                         ) : (
                                             <button 
+                                                onClick={() => handleSelectPlan(plan)}
                                                 className={`w-full py-3 px-4 rounded-xl font-bold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
                                                     plan.id === 'premium' ? 'bg-clay-600 hover:bg-clay-700 text-white shadow-clay-500/25' : 
                                                     plan.id === 'super_premium' ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/25' : 
                                                     'bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 shadow-none hover:bg-gray-50'
                                                 }`}
                                             >
-                                                {/* In a real app, this would post to a downgrade/upgrade route. For now, it's just visual or triggers the next downgrade/upgrade steps */}
                                                 Select {plan.name}
                                             </button>
                                         )}
@@ -190,6 +251,61 @@ export default function Subscription({ auth, subscription_tier, sponsorship_cred
                     </div>
                 </main>
             </div>
+            
+            {/* ACTION MODAL */}
+            <Modal show={actionModal.open} onClose={() => setActionModal({ open: false, targetPlan: null, type: 'upgrade' })} maxWidth="md">
+                <form onSubmit={handleActionSubmit} className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {actionModal.type === 'upgrade' ? 'Upgrade' : 'Downgrade'} to {actionModal.targetPlan?.name}
+                    </h3>
+                    
+                    {actionModal.type === 'downgrade' && active_products_count > actionModal.targetPlan?.limit ? (
+                        <div className="mt-4">
+                            <p className="text-sm text-red-600 font-medium mb-4 bg-red-50 p-3 rounded-xl border border-red-100">
+                                This plan allows {actionModal.targetPlan.limit} products. You have {active_products_count} active. 
+                                Please select which products to keep <span className="font-bold">Active</span>. The rest will be archived.
+                            </p>
+                            
+                            <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                {active_products.map(product => {
+                                    const isSelected = data.keep_product_ids.includes(product.id);
+                                    const isDisabled = !isSelected && data.keep_product_ids.length >= actionModal.targetPlan.limit;
+                                    
+                                    return (
+                                        <div 
+                                            key={product.id} 
+                                            onClick={() => !isDisabled && toggleProductSelection(product.id)}
+                                            className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${isSelected ? 'border-clay-500 bg-clay-50' : isDisabled ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed' : 'border-gray-200 hover:border-gray-300'}`}
+                                        >
+                                            <div className={`w-5 h-5 flex items-center justify-center rounded border ${isSelected ? 'bg-clay-600 border-clay-600 text-white' : 'border-gray-300'}`}>
+                                                {isSelected && <Check size={14} strokeWidth={3} />}
+                                            </div>
+                                            <span className="font-medium text-sm text-gray-700">{product.name}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-3 text-right">
+                                Selected: <span className="font-bold text-gray-900">{data.keep_product_ids.length}</span> / {actionModal.targetPlan.limit}
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500 my-4">
+                            You are about to switch to the <span className="font-bold text-gray-900">{actionModal.targetPlan?.name}</span> plan. 
+                            {actionModal.type === 'upgrade' && " You will immediately get access to higher product limits and new features!"}
+                        </p>
+                    )}
+
+                    <div className="flex gap-3 justify-end mt-6">
+                        <button type="button" onClick={() => setActionModal({ open: false, targetPlan: null, type: 'upgrade' })} className="px-4 py-2 font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={processing} className="px-5 py-2 font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-xl transition shadow-lg shadow-clay-500/20 disabled:opacity-50">
+                            Confirm {actionModal.type === 'upgrade' ? 'Upgrade' : 'Downgrade'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 }

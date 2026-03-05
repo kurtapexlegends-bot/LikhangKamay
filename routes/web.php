@@ -189,6 +189,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // SELLER ROUTES
     Route::get('/seller/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
+    Route::post('/seller/subscription/update-tier', [SubscriptionController::class, 'updateTier'])->name('seller.subscription.update-tier');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/export', [OrderController::class, 'export'])->name('orders.export'); // <--- Added
     Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');
