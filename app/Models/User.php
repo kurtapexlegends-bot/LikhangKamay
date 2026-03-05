@@ -160,6 +160,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(\App\Models\UserAddress::class);
     }
 
+    public function sponsorshipRequests()
+    {
+        return $this->hasMany(\App\Models\SponsorshipRequest::class, 'seller_id');
+    }
+
     /**
      * Boot the model.
      */

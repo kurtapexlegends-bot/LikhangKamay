@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            //
+            $table->boolean('is_sponsored')->default(false)->after('status');
+            $table->timestamp('sponsored_until')->nullable()->after('is_sponsored');
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            //
+            $table->dropColumn(['is_sponsored', 'sponsored_until']);
         });
     }
 };
