@@ -23,6 +23,7 @@ use App\Http\Controllers\UserAddressController;
 use App\Http\Controllers\ArtisanSetupController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\SponsorshipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
@@ -211,6 +212,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/3d-manager/upload', [ThreeDManagerController::class, 'upload'])->name('3d.upload');
     Route::delete('/3d-manager/{product}', [ThreeDManagerController::class, 'destroy'])->name('3d.destroy');
 
+    // SPONSORSHIPS (Seller)
+    Route::get('/seller/sponsorships', [SponsorshipController::class, 'index'])->name('seller.sponsorships');
+    Route::post('/seller/sponsorships', [SponsorshipController::class, 'store'])->name('seller.sponsorships.store');
+
     // SHOP SETTINGS
     Route::get('/shop-settings', [ShopController::class, 'settings'])->name('shop.settings');
     Route::post('/shop-settings', [ShopController::class, 'updateSettings'])->name('shop.settings.update');
@@ -313,6 +318,11 @@ Route::middleware(['auth', 'verified', 'super_admin'])->prefix('admin')->group(f
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
+
+    // SPONSORSHIP APPROVAL
+    Route::get('/sponsorships', [\App\Http\Controllers\Admin\SponsorshipApprovalController::class, 'index'])->name('admin.sponsorships');
+    Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\Admin\SponsorshipApprovalController::class, 'approve'])->name('admin.sponsorships.approve');
+    Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\Admin\SponsorshipApprovalController::class, 'reject'])->name('admin.sponsorships.reject');
 });
 
 
