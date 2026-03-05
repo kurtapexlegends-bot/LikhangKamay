@@ -139,6 +139,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->isArtisan() && $this->isApproved() && $this->setup_completed_at !== null;
     }
 
+    public function getProductLimit(): int
+    {
+        return match ($this->subscription_tier) {
+            'super_premium' => 50,
+            'premium' => 10,
+            default => 3,
+        };
+    }
+
     // ========== RELATIONSHIPS ==========
 
     public function products()

@@ -37,6 +37,14 @@ class ProductController extends Controller
     // POST: /products (Create New)
     public function store(Request $request)
     {
+        $user = $request->user();
+        if (strtolower($request->input('status', '')) === 'active') {
+            $activeCount = $user->products()->whereRaw('LOWER(status) = ?', ['active'])->count();
+            if ($activeCount >= $user->getProductLimit()) {
+                return back()->withErrors(['limit' => 'You have reached your active product limit']);
+            }
+        }
+
         $validated = $request->validate([
             'sku' => 'required|unique:products,sku',
             'name' => 'required|string|max:255',
