@@ -54,6 +54,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'default_undertime',
         'default_overtime',
         'base_funds',
+        // Subscriptions
+        'subscription_tier',
+        'sponsorship_credits',
     ];
 
     /**
