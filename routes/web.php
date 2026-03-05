@@ -33,6 +33,47 @@ use Inertia\Inertia;
 
 // --- PUBLIC ROUTES ---
 Route::get('/', function () {
+    // DSS: Top 3 selling stores, top 3 products each
+    $topStoreIds = Product::where('status', 'Active')
+        ->selectRaw('user_id, SUM(sold) as total_sold')
+        ->groupBy('user_id')
+        ->orderByDesc('total_sold')
+        ->take(3)
+        ->pluck('user_id')
+        ->toArray();
+
+    $topSellers = [];
+    foreach ($topStoreIds as $rank => $userId) {
+        $seller = \App\Models\User::find($userId);
+        if (!$seller) continue;
+        $products = Product::with('user')
+            ->where('user_id', $userId)
+            ->where('status', 'Active')
+            ->orderByDesc('sold')
+            ->take(3)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'sold' => $product->sold ?? 0,
+                    'rating' => $product->rating ?? 0,
+                    'img' => $product->img,
+                    'slug' => $product->slug,
+                    'seller_slug' => $product->user->shop_slug,
+                ];
+            });
+        $topSellers[] = [
+            'rank' => $rank + 1,
+            'store_name' => $seller->shop_name ?? $seller->name,
+            'store_slug' => $seller->shop_slug,
+            'store_avatar' => $seller->avatar,
+            'total_sold' => Product::where('user_id', $userId)->sum('sold'),
+            'products' => $products,
+        ];
+    }
+
     // Fetch featured products (active, with user/seller info)
     $featuredProducts = Product::with('user')
         ->where('status', 'Active')
@@ -61,6 +102,7 @@ Route::get('/', function () {
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'featuredProducts' => $featuredProducts,
+        'topSellers' => $topSellers,
         'categories' => $categories,
     ]);
 });
@@ -180,6 +222,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
+    Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->name('reviews.destroy-reply');
+    Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->name('reviews.toggle-pin');
 
     // ERP MODULES
     Route::get('/hr', [HRController::class, 'index'])->name('hr.index');

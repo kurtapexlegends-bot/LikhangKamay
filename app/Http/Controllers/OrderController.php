@@ -294,7 +294,7 @@ class OrderController extends Controller
             $order->load('user');
             $buyer = $order->user;
             if ($buyer && $buyer->email) {
-                Mail::to($buyer->email)->queue(new RefundProcessed($order));
+                Mail::to($buyer->email)->send(new RefundProcessed($order));
             }
             
             return back()->with('success', 'Return approved. Money refunded (simulation).');

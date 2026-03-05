@@ -114,7 +114,17 @@ All accounts use the password: `password`
 | Buyer | `kurtstanleytalastas@gmail.com` |
 | SuperAdmin | `likhangkamaybusiness@gmail.com` |
 
-## 8. AI Assistant Rules
+## 9. UX Animation & Interaction Patterns
+- **Smooth Scroll on Action:** When a user triggers an action that reveals a new UI element (e.g., opening a reply editor), use `scrollIntoView({ behavior: 'smooth', block: 'center' })` with a short `setTimeout` (50ms) to smoothly center the new element on screen.
+- **Floating Pill Buttons for Quick Actions:** For contextual quick-action menus (e.g., Quick Reply on reviews), render options as separate, floating, rounded-corner pill buttons (`rounded-xl` or `rounded-full`) **without a shared background container**. Each pill should have its own border, subtle shadow, and hover effect. Stack them vertically with `flex flex-col gap-2`.
+- **Dropdown Transitions (HeadlessUI):** All dropdowns should use HeadlessUI `Transition` for enter/leave animations (`opacity-0 scale-95` → `opacity-100 scale-100`). For upward-opening dropdowns, use a `top-left` or `top-right` alignment with `origin-bottom`.
+- **Modal Confirmations for Destructive Actions:** Never use browser `confirm()` dialogs. Use `Components/Modal.jsx` or `ConfirmationModal.jsx` with a branded icon (e.g., `AlertCircle` in a red circle), clear title, description, and dual-button layout (Cancel / Confirm).
+- **Character Limits on Text Inputs:** Show a live counter below text fields (e.g., `{length} / 500`). Counter text should turn red (`text-red-500`) when the limit is exceeded, and the submit button should be disabled (`disabled:opacity-50 disabled:cursor-not-allowed`).
+- **Toast Notifications:** Use a floating toast at `fixed bottom-6 right-6` with slide-up animation (`translate-y-0 opacity-100` / `translate-y-12 opacity-0`). Include an icon, title, message, and close button. Auto-dismiss after 3-5 seconds.
+- **Hover-Reveal Actions:** For inline edit/delete actions on cards or list items, keep them hidden by default and reveal on hover using `opacity-0 group-hover:opacity-100 transition-opacity` with the parent set to `group`.
+- **Compact Density:** Maintain a dense, professional interface. Use small text sizes (`text-xs`, `text-sm`), tight padding (`px-3 py-1.5`), and compact icons (`size={14}` to `size={16}`).
+
+## 10. AI Assistant Rules
 - **Always flag potential issues.** Before applying any code change, the AI assistant **MUST** proactively inform the developer of any potential breaking changes, side effects, data loss risks, or compatibility issues that could result from the proposed modification. Never apply a change silently if it could cause problems.
 
 ---

@@ -5,7 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF, Html, useProgress } from '@react-three/drei';
 import { 
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon, 
-    Rotate3d, Loader2, Heart, ChevronRight, Check,
+    Rotate3d, Loader2, Heart, ChevronRight, Check, Pin,
     Clock, ShoppingCart, MessageCircle, Store, Award, Package
 } from 'lucide-react';
 
@@ -221,20 +221,20 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         </div>
 
                         {/* ========== RIGHT: PRODUCT INFO ========== */}
-                        <div className="lg:col-span-7 p-6">
+                        <div className="lg:col-span-7 p-5">
                             
                             {/* Title */}
-                            <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">
+                            <h1 className="text-xl font-bold text-gray-900 leading-tight mb-1.5">
                                 {product.name}
                             </h1>
 
                             {/* Rating & Sold */}
-                            <div className="flex items-center gap-3 text-sm mb-4">
+                            <div className="flex items-center gap-2.5 text-xs mb-3">
                                 <div className="flex items-center gap-1">
                                     <span className="text-clay-600 font-bold underline">{product.rating || 0}</span>
                                     <div className="flex">
                                         {[1,2,3,4,5].map(s => (
-                                            <Star key={s} size={12} className={s <= Math.round(product.rating) ? 'fill-clay-600 text-clay-600' : 'text-gray-300'} />
+                                            <Star key={s} size={10} className={s <= Math.round(product.rating) ? 'fill-clay-600 text-clay-600' : 'text-gray-300'} />
                                         ))}
                                     </div>
                                 </div>
@@ -249,120 +249,120 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             </div>
 
                             {/* Price Box */}
-                            <div className="bg-clay-50/50 px-5 py-4 rounded-xl mb-6 border border-clay-100">
-                                <span className="text-3xl font-bold text-clay-700">
+                            <div className="bg-clay-50/50 px-4 py-3 rounded-xl mb-4 border border-clay-100">
+                                <span className="text-2xl font-bold text-clay-700">
                                     ₱{Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
 
                             {/* Specifications - Compact Grid */}
-                            <div className="space-y-3 mb-6 text-sm">
+                            <div className="space-y-2 mb-4 text-xs">
                                 {product.clay_type && (
                                     <div className="flex">
-                                        <span className="w-28 text-gray-400 font-bold flex-shrink-0 uppercase text-xs tracking-wide pt-0.5">Material</span>
+                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Material</span>
                                         <span className="text-gray-700 font-medium">{product.clay_type}</span>
                                     </div>
                                 )}
                                 {product.glaze_type && (
                                     <div className="flex">
-                                        <span className="w-28 text-gray-400 font-bold flex-shrink-0 uppercase text-xs tracking-wide pt-0.5">Finish</span>
+                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Finish</span>
                                         <span className="text-gray-700 font-medium">{product.glaze_type}</span>
                                     </div>
                                 )}
                                 {(product.height > 0 || product.width > 0) && (
                                     <div className="flex">
-                                        <span className="w-28 text-gray-400 font-bold flex-shrink-0 uppercase text-xs tracking-wide pt-0.5">Dimensions</span>
+                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Dimensions</span>
                                         <span className="text-gray-700 font-medium">{product.height || 0}"H × {product.width || 0}"W</span>
                                     </div>
                                 )}
                                 {product.firing_method && (
                                     <div className="flex">
-                                        <span className="w-28 text-gray-400 font-bold flex-shrink-0 uppercase text-xs tracking-wide pt-0.5">Firing</span>
+                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Firing</span>
                                         <span className="text-gray-700 font-medium">{product.firing_method}</span>
                                     </div>
                                 )}
                                 {product.food_safe && (
                                     <div className="flex">
-                                        <span className="w-28 text-gray-400 font-bold flex-shrink-0 uppercase text-xs tracking-wide pt-0.5">Food Safe</span>
-                                        <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full text-xs">
-                                            <Check size={12} /> Yes
+                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Food Safe</span>
+                                        <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-full text-[10px]">
+                                            <Check size={10} /> Yes
                                         </span>
                                     </div>
                                 )}
                             </div>
 
                             {/* Quantity */}
-                            <div className="flex items-center gap-4 mb-6">
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide w-28 flex-shrink-0">Quantity</span>
+                            <div className="flex items-center gap-3 mb-5">
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide w-24 flex-shrink-0">Quantity</span>
                                 <div className="flex items-center">
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="w-10 h-10 border border-gray-200 rounded-l-xl flex items-center justify-center hover:bg-gray-50 transition"
+                                        className="w-8 h-8 border border-gray-200 rounded-l-lg flex items-center justify-center hover:bg-gray-50 transition"
                                     >
-                                        <Minus size={16} />
+                                        <Minus size={14} />
                                     </button>
-                                    <span className="w-12 h-10 border-t border-b border-gray-200 flex items-center justify-center text-sm font-bold text-gray-900">
+                                    <span className="w-10 h-8 border-t border-b border-gray-200 flex items-center justify-center text-xs font-bold text-gray-900">
                                         {quantity}
                                     </span>
                                     <button
                                         onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
-                                        className="w-10 h-10 border border-gray-200 rounded-r-xl flex items-center justify-center hover:bg-gray-50 transition"
+                                        className="w-8 h-8 border border-gray-200 rounded-r-lg flex items-center justify-center hover:bg-gray-50 transition"
                                     >
-                                        <Plus size={16} />
+                                        <Plus size={14} />
                                     </button>
-                                    <span className="ml-4 text-xs font-medium text-gray-500">{product.stock || 0} pieces available</span>
+                                    <span className="ml-3 text-[11px] font-medium text-gray-500">{product.stock || 0} pieces available</span>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex gap-4 mb-8">
+                            <div className="flex gap-3 mb-6">
                                 <button
                                     onClick={addToCart}
                                     disabled={product.stock === 0 || isAddingToCart}
-                                    className={`flex-1 h-12 border-2 border-clay-600 rounded-xl font-bold flex items-center justify-center gap-2 transition transform active:scale-95 ${
+                                    className={`flex-1 h-10 border-2 border-clay-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition transform active:scale-95 ${
                                         addedToCart
                                             ? 'bg-emerald-500 border-emerald-500 text-white'
                                             : 'bg-white text-clay-600 hover:bg-clay-50'
                                     } disabled:opacity-50`}
                                 >
                                     {isAddingToCart ? (
-                                        <Loader2 size={20} className="animate-spin" />
+                                        <Loader2 size={16} className="animate-spin" />
                                     ) : addedToCart ? (
-                                        <><Check size={20} /> Added!</>
+                                        <><Check size={16} /> Added!</>
                                     ) : (
-                                        <><ShoppingCart size={20} /> Add To Cart</>
+                                        <><ShoppingCart size={16} /> Add To Cart</>
                                     )}
                                 </button>
                                 <button
                                     onClick={handleBuyNow}
                                     disabled={product.stock === 0}
-                                    className="flex-1 h-12 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 shadow-lg shadow-clay-200 transition transform active:scale-95 disabled:opacity-50"
+                                    className="flex-1 h-10 bg-clay-600 text-white rounded-lg text-sm font-bold hover:bg-clay-700 shadow-sm shadow-clay-200 transition transform active:scale-95 disabled:opacity-50"
                                 >
                                     Buy Now
                                 </button>
                             </div>
 
                             {/* Product Info */}
-                            <div className="border-t border-gray-100 pt-6 space-y-3 text-sm">
-                                <div className="flex items-start gap-4 p-3 bg-gray-50 rounded-xl">
-                                    <Package size={20} className="text-clay-600 mt-0.5 flex-shrink-0" />
+                            <div className="border-t border-gray-100 pt-5 space-y-2.5 text-xs">
+                                <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
+                                    <Package size={16} className="text-clay-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <span className="block text-gray-900 font-bold text-xs uppercase mb-0.5">Fragile Item Handling</span>
-                                        <span className="text-gray-600 text-xs">Extra care packaging for safe delivery</span>
+                                        <span className="block text-gray-900 font-bold text-[11px] uppercase mb-0.5">Fragile Item Handling</span>
+                                        <span className="text-gray-600 text-[11px]">Extra care packaging for safe delivery</span>
                                     </div>
                                 </div>
-                                <div className="flex items-start gap-4 p-3 bg-gray-50 rounded-xl">
-                                    <Clock size={20} className="text-clay-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
+                                    <Clock size={16} className="text-clay-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <span className="block text-gray-900 font-bold text-xs uppercase mb-0.5">Lead Time</span>
-                                        <span className="text-gray-600 text-xs">{product.lead_time || 3}-{(product.lead_time || 3) + 2} business days</span>
+                                        <span className="block text-gray-900 font-bold text-[11px] uppercase mb-0.5">Lead Time</span>
+                                        <span className="text-gray-600 text-[11px]">{product.lead_time || 3}-{(product.lead_time || 3) + 2} business days</span>
                                     </div>
                                 </div>
-                                <div className="flex items-start gap-4 p-3 bg-gray-50 rounded-xl">
-                                    <Award size={20} className="text-clay-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
+                                    <Award size={16} className="text-clay-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <span className="block text-gray-900 font-bold text-xs uppercase mb-0.5">Authenticity Guaranteed</span>
-                                        <span className="text-gray-600 text-xs">100% handmade by verified artisan</span>
+                                        <span className="block text-gray-900 font-bold text-[11px] uppercase mb-0.5">Authenticity Guaranteed</span>
+                                        <span className="text-gray-600 text-[11px]">100% handmade piece</span>
                                     </div>
                                 </div>
                             </div>
@@ -371,13 +371,13 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 </div>
 
                 {/* ========== SELLER CARD & DESCRIPTION IN ONE ROW ========== */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-4">
                     
                     {/* Seller Card (Left Col) */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between h-full">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between h-full">
                         <div>
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-16 h-16 rounded-full border border-gray-100 overflow-hidden flex-shrink-0">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-full border border-gray-100 overflow-hidden flex-shrink-0">
                                     {product.seller?.avatar ? (
                                         <img
                                             src={`/storage/${product.seller.avatar}`}
@@ -391,34 +391,34 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-gray-900 text-lg truncate">
+                                    <h3 className="font-bold text-gray-900 text-base truncate">
                                         {product.seller?.shop_name || product.seller?.name || 'Artisan'}
                                     </h3>
-                                    <div className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
-                                        <MapPin size={14} className="text-gray-400" />
+                                    <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                                        <MapPin size={12} className="text-gray-400" />
                                         <span className="truncate">{product.seller?.location || 'Philippines'}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex gap-2 w-full mt-4">
-                            <button className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                                <MessageCircle size={16} />
+                        <div className="flex gap-2 w-full mt-3">
+                            <button className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1.5">
+                                <MessageCircle size={14} />
                                 Chat
                             </button>
-                            <Link href={route('shop.seller', product.seller?.slug || '#')} className="flex-1 px-4 py-2 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition flex items-center justify-center gap-2">
-                                <Store size={16} />
+                            <Link href={route('shop.seller', product.seller?.slug || '#')} className="flex-1 px-3 py-2 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition flex items-center justify-center gap-1.5">
+                                <Store size={14} />
                                 View Shop
                             </Link>
                         </div>
                     </div>
 
                     {/* Description (Right Col - 2/3 width) */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                        <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                        <h2 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
                             Product Description
                         </h2>
-                        <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed">
+                        <div className="prose prose-xs text-xs max-w-none text-gray-600 leading-relaxed">
                             <p className="whitespace-pre-line">
                                 {product.description || "A beautifully handcrafted piece made with care and traditional techniques by a skilled Filipino artisan. Each piece is unique and may have slight variations that add to its character."}
                             </p>
@@ -427,8 +427,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 </div>
 
                 {/* ========== REVIEWS ========== */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mt-6 p-8">
-                    <h2 className="text-lg font-bold text-gray-900 mb-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mt-4 p-5">
+                    <h2 className="text-base font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100 flex items-center justify-between">
                         <span>Product Ratings ({product.reviews?.length || 0})</span>
                         <div className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg">
                             <span className="text-xl font-bold text-clay-600">{product.rating || 0}</span>
@@ -436,15 +436,28 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         </div>
                     </h2>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
                         {/* Reviews List */}
-                        <div className="lg:col-span-2 space-y-6">
+                        <div className="lg:col-span-2 space-y-4">
                             {product.reviews && product.reviews.length > 0 ? (
-                                product.reviews.slice(0, 5).map((review) => (
-                                    <div key={review.id} className="border-b border-gray-50 pb-4 last:border-0">
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-gray-100">
+                                [...product.reviews]
+                                    .sort((a, b) => {
+                                        if (a.is_pinned && !b.is_pinned) return -1;
+                                        if (!a.is_pinned && b.is_pinned) return 1;
+                                        return 0;
+                                    })
+                                    .slice(0, 5).map((review) => (
+                                    <div key={review.id} className={`border-b border-gray-50 pb-3 last:border-0 ${review.is_pinned ? 'bg-amber-50/30 -mx-2 px-2 rounded-lg border-l-2 border-l-amber-400' : ''}`}>
+                                        {/* Pinned Badge */}
+                                        {review.is_pinned && (
+                                            <div className="flex items-center gap-1.5 mb-2">
+                                                <Pin size={10} className="text-amber-500 fill-amber-500" />
+                                                <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider">Pinned by Seller</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-start gap-2.5">
+                                            <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-gray-100">
                                                 {review.user?.avatar ? (
                                                     <img
                                                         src={review.user.avatar.startsWith('http') ? review.user.avatar : `/storage/${review.user.avatar}`} 
@@ -452,30 +465,30 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                         className="w-full h-full object-cover"
                                                     />
                                                 ) : (
-                                                    <div className="w-full h-full bg-clay-100 flex items-center justify-center text-clay-600 font-bold text-xs uppercase">
+                                                    <div className="w-full h-full bg-clay-100 flex items-center justify-center text-clay-600 font-bold text-[10px] uppercase">
                                                         {(review.user?.name || 'A').charAt(0)}
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">{review.user?.name || 'Anonymous'}</p>
-                                                <div className="flex items-center gap-2 mt-0.5">
+                                                <p className="text-xs font-bold text-gray-900">{review.user?.name || 'Anonymous'}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
                                                     <div className="flex">
                                                         {[1,2,3,4,5].map(s => (
-                                                            <Star key={s} size={10} className={s <= review.rating ? 'fill-clay-600 text-clay-600' : 'text-gray-300'} />
+                                                            <Star key={s} size={10} className={s <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />
                                                         ))}
                                                     </div>
-                                                    <span className="text-xs text-gray-400">
+                                                    <span className="text-[10px] text-gray-400">
                                                         {new Date(review.created_at).toLocaleDateString('en-PH')}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm text-gray-600 mt-2">{review.comment}</p>
+                                                <p className="text-xs text-gray-700 mt-1.5">{review.comment}</p>
                                                 
                                                 {/* Photos Grid */}
                                                 {review.photos && review.photos.length > 0 && (
-                                                    <div className="flex gap-2 mt-3">
+                                                    <div className="flex gap-2 mt-2">
                                                         {review.photos.map((photo, i) => (
-                                                            <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition">
+                                                            <div key={i} className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition">
                                                                 <img 
                                                                     src={`/storage/${photo}`} 
                                                                     alt="Review Attachment" 
@@ -484,6 +497,19 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                                 />
                                                             </div>
                                                         ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Seller Reply */}
+                                                {review.seller_reply && (
+                                                    <div className="mt-2.5 p-2.5 bg-clay-50/50 border border-clay-100 rounded-lg">
+                                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                                            <div className="w-4 h-4 rounded-full bg-clay-200 flex items-center justify-center text-clay-700 text-[8px] font-bold">
+                                                                {(product.seller?.shop_name || product.seller?.name || 'S').charAt(0)}
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-clay-700">Seller Response</span>
+                                                        </div>
+                                                        <div className="text-[11px] text-gray-600 leading-relaxed prose prose-xs max-w-none" dangerouslySetInnerHTML={{ __html: review.seller_reply }} />
                                                     </div>
                                                 )}
                                             </div>
@@ -500,8 +526,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
                         {/* Write Review */}
                         <div className="lg:col-span-1">
-                            <div className="bg-gray-50 p-4 rounded-lg">
-                                <h3 className="text-sm font-medium text-gray-900 mb-3">Write a Review</h3>
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <h3 className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wide">Write a Review</h3>
                                 
                                 {auth?.user ? (
                                     <form onSubmit={submitReview} className="space-y-3">
@@ -560,7 +586,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         <button
                                             type="submit"
                                             disabled={processing}
-                                            className="w-full py-2 bg-clay-600 text-white text-sm font-medium rounded hover:bg-clay-700 transition disabled:opacity-50"
+                                            className="w-full py-2 bg-clay-600 text-white text-xs font-bold rounded hover:bg-clay-700 transition disabled:opacity-50"
                                         >
                                             {processing ? 'Submitting...' : 'Submit'}
                                         </button>
@@ -585,9 +611,9 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
             {/* ========== RELATED PRODUCTS ========== */}
             {product.relatedProducts && product.relatedProducts.length > 0 && (
-                <div className="max-w-6xl mx-auto px-4 py-8 mb-10">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <span className="w-1 h-6 bg-clay-600 rounded-full"></span>
+                <div className="max-w-6xl mx-auto px-4 py-6 mb-8">
+                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="w-1 h-5 bg-clay-600 rounded-full"></span>
                         You Might Also Like
                     </h2>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

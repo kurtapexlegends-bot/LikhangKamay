@@ -48,7 +48,7 @@ class NewReviewNotification extends Notification
             'review_id' => $this->review->id,
             'product_name' => $this->productName,
             'rating' => $this->review->rating,
-            'url' => route('products.index'),
+            'url' => route('reviews.index'),
         ];
     }
 }

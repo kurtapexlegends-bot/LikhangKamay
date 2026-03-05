@@ -14,11 +14,14 @@ class Review extends Model
         'product_id',
         'rating',
         'comment',
-        'photos'
+        'photos',
+        'seller_reply',
+        'is_pinned',
     ];
 
     protected $casts = [
         'photos' => 'array',
+        'is_pinned' => 'boolean',
     ];
 
     protected $with = ['user']; // Eager load user by default
@@ -33,3 +36,4 @@ class Review extends Model
         return $this->belongsTo(Product::class);
     }
 }
+

@@ -177,6 +177,25 @@ class ShopController extends Controller
                 ];
             });
 
+        // DSS: Store-Specific Best Sellers (top 5)
+        $bestSellers = Product::where('user_id', $seller->id)
+            ->where('status', 'Active')
+            ->where('sold', '>', 0)
+            ->orderByDesc('sold')
+            ->take(5)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'slug' => $product->slug,
+                    'name' => $product->name,
+                    'price' => number_format($product->price, 2),
+                    'rating' => $product->rating ?? 0,
+                    'sold' => $product->sold ?? 0,
+                    'image' => $product->img,
+                ];
+            });
+
         // Calculate Stats
         $totalSales = $products->sum('sold');
         $avgRating = \App\Models\Review::whereHas('product', function ($q) use ($seller) {
@@ -195,6 +214,7 @@ class ShopController extends Controller
                 'bio' => $seller->bio ?? "Passionate artisan creating unique handcrafted items.",
             ],
             'products' => $products,
+            'bestSellers' => $bestSellers,
             'stats' => [
                 'products' => $products->count(),
                 'sales' => $totalSales,

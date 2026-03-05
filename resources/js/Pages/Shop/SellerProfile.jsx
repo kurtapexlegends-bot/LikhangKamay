@@ -3,11 +3,11 @@ import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import Footer from '@/Components/Footer';
 import { 
-    MapPin, Calendar, Star, Package, 
+    MapPin, Calendar, Star, Package, Trophy, Crown, Flame,
     ShoppingCart, Check, Loader2, ArrowLeft, Filter 
 } from 'lucide-react';
 
-export default function SellerProfile({ seller, products, stats }) {
+export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     // Format price helper
     const formatPrice = (price) => Number(price).toLocaleString('en-PH');
 
@@ -104,6 +104,64 @@ export default function SellerProfile({ seller, products, stats }) {
                         </div>
                     </div>
                 </div>
+
+                {/* --- BEST SELLERS --- */}
+                {bestSellers.length > 0 && (
+                    <div className="mb-10">
+                        <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2 mb-5">
+                            <Trophy size={22} className="text-amber-500" />
+                            Store Best Sellers
+                        </h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                            {bestSellers.map((product, idx) => {
+                                const isTop = idx === 0;
+                                return (
+                                    <Link 
+                                        href={route('product.show', product.slug)}
+                                        key={product.id}
+                                        className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col ${
+                                            isTop ? 'border-amber-200 ring-2 ring-amber-100 shadow-md' : 'border-stone-200/60 shadow-sm hover:border-stone-300'
+                                        }`}
+                                    >
+                                        <div className={`aspect-square relative overflow-hidden flex items-center justify-center p-3 ${isTop ? 'bg-amber-50/30' : 'bg-stone-50'}`}>
+                                            <img 
+                                                src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'}
+                                                alt={product.name}
+                                                className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
+                                                onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                            />
+                                            {/* Rank Badge */}
+                                            <div className={`absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow ${
+                                                isTop ? 'bg-amber-400 text-white' : 'bg-stone-600 text-white'
+                                            }`}>
+                                                {isTop ? <Crown size={12} /> : `#${idx + 1}`}
+                                            </div>
+                                            {product.rating > 0 && (
+                                                <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
+                                                    {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-3 flex flex-col flex-1">
+                                            <h3 className={`text-xs font-semibold line-clamp-2 leading-snug mb-2 transition ${
+                                                isTop ? 'text-amber-800 group-hover:text-amber-600' : 'text-stone-800 group-hover:text-orange-600'
+                                            }`}>
+                                                {product.name}
+                                            </h3>
+                                            <div className="flex items-end justify-between mt-auto">
+                                                <span className="font-bold text-sm text-stone-900">₱{formatPrice(product.price)}</span>
+                                                <span className="text-[10px] text-stone-500 font-medium flex items-center gap-0.5">
+                                                    <Flame size={9} className="text-orange-400" />
+                                                    {product.sold} sold
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* --- PRODUCTS SECTION --- */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
