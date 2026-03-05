@@ -18,7 +18,7 @@ const CATEGORY_ICONS = {
     'default': Package,
 };
 
-export default function Welcome({ featuredProducts = [], topSellers = [], categories = [] }) {
+export default function Welcome({ featuredProducts = [], topSellers = [], categories = [], sponsoredProducts = [] }) {
     const { auth, cartCount } = usePage().props;
     const user = auth?.user;
 
@@ -240,6 +240,59 @@ export default function Welcome({ featuredProducts = [], topSellers = [], catego
                                     );
                                 })}
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* PROMOTED PRODUCTS */}
+                {sponsoredProducts && sponsoredProducts.length > 0 && (
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-base font-semibold text-amber-700 flex items-center gap-2">
+                                <Crown size={20} className="text-amber-500" />
+                                Premium Finds
+                            </h2>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                            {sponsoredProducts.map((product) => (
+                                <Link 
+                                    href={route('product.show', product.slug)} 
+                                    key={product.id} 
+                                    className="bg-white rounded-lg hover:shadow-lg hover:-translate-y-0.5 transition duration-200 border border-amber-200 overflow-hidden flex flex-col group relative"
+                                >
+                                    <div className="aspect-square relative flex items-center justify-center bg-amber-50/30 overflow-hidden border-b border-amber-100">
+                                        <img 
+                                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
+                                            alt={product.name} 
+                                            className="w-full h-full object-contain mix-blend-multiply transition duration-300 group-hover:scale-105"
+                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                        />
+                                        <div className="absolute top-1.5 left-1.5 flex gap-1 z-10">
+                                            <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider">Promoted</span>
+                                        </div>
+                                        {product.rating > 0 && (
+                                            <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
+                                                {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-3 flex flex-col flex-1">
+                                        <h3 className="text-xs font-medium text-gray-800 line-clamp-2 mb-2 group-hover:text-amber-700 transition leading-tight">
+                                            {product.name}
+                                        </h3>
+                                        <div className="mt-auto">
+                                            <p className="text-[10px] text-gray-500 mb-1 flex items-center gap-1 font-medium truncate">
+                                                <Store size={10} className="text-gray-400" /> {product.seller_name}
+                                            </p>
+                                            <div className="flex items-center justify-between mt-1">
+                                                <span className="text-amber-700 text-sm font-bold">
+                                                    ₱{Number(product.price).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
                         </div>
                     </div>
                 )}

@@ -100,12 +100,36 @@ Route::get('/', function () {
     // Use Standardized Categories
     $categories = ProductController::VALID_CATEGORIES;
 
+    // Sponsored Products: active sponsorship still valid
+    $sponsoredProducts = Product::with('user')
+        ->where('status', 'Active')
+        ->where('is_sponsored', true)
+        ->where('sponsored_until', '>', now())
+        ->inRandomOrder()
+        ->take(6)
+        ->get()
+        ->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'sold' => $product->sold ?? 0,
+                'rating' => $product->rating ?? 0,
+                'img' => $product->img,
+                'slug' => $product->slug,
+                'seller_name' => $product->user->shop_name ?? $product->user->name,
+                'seller_slug' => $product->user->shop_slug,
+                'is_sponsored' => true,
+            ];
+        });
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'featuredProducts' => $featuredProducts,
         'topSellers' => $topSellers,
         'categories' => $categories,
+        'sponsoredProducts' => $sponsoredProducts,
     ]);
 });
 

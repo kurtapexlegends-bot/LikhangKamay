@@ -68,9 +68,16 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                             <div className="text-center md:text-left">
                                 <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
                                     <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight">{seller.name}</h1>
-                                    <span className="text-[10px] uppercase font-bold tracking-widest bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full">
-                                        Verified Artisan
-                                    </span>
+                                    <div className="flex gap-2">
+                                        <span className="text-[10px] uppercase font-bold tracking-widest bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full">
+                                            Verified Artisan
+                                        </span>
+                                        {seller.subscription_tier && seller.subscription_tier !== 'standard' && (
+                                            <span className="text-[10px] uppercase font-bold tracking-widest bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                                <Crown size={10} /> Premium
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 
                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 text-[13px] text-stone-500 font-medium">
@@ -182,19 +189,28 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                             <Link 
                                 href={route('product.show', product.slug)} 
                                 key={product.id} 
-                                className="group bg-white rounded-2xl border border-stone-200/60 shadow-sm hover:border-stone-300 hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden"
+                                className={`group bg-white rounded-2xl border transition-all duration-300 flex flex-col overflow-hidden ${
+                                    product.is_sponsored ? 'border-amber-300 shadow-amber-100 hover:shadow-lg' : 'border-stone-200/60 shadow-sm hover:border-stone-300 hover:shadow-md'
+                                }`}
                             >
                                 {/* Image */}
-                                <div className="aspect-square relative bg-stone-50 border-b border-stone-100 overflow-hidden flex items-center justify-center p-4">
+                                <div className={`aspect-square relative border-b border-stone-100 overflow-hidden flex items-center justify-center p-4 ${
+                                    product.is_sponsored ? 'bg-amber-50/30' : 'bg-stone-50'
+                                }`}>
                                     <img 
                                         src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
                                         alt={product.name} 
                                         className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
                                         onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                     />
-                                    {product.is_new && (
+                                    {product.is_sponsored ? (
+                                        <div className="absolute top-2 left-2 flex gap-1">
+                                            <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">Promoted</span>
+                                            {product.is_new && <span className="bg-orange-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">New</span>}
+                                        </div>
+                                    ) : product.is_new ? (
                                         <span className="absolute top-2 left-2 bg-orange-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">New</span>
-                                    )}
+                                    ) : null}
                                     {product.rating > 0 && (
                                         <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
                                             {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-0.5" />

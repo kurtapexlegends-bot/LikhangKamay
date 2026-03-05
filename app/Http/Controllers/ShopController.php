@@ -72,6 +72,10 @@ class ShopController extends Controller
         }
 
         // 3. Sorting
+        // Always prioritize sponsored products first, unless explicitly sorting by rating, popular, etc.
+        // Even then, maybe sponsored should be prioritized, but let's do it generally:
+        $query->orderByRaw('CASE WHEN is_sponsored = 1 AND sponsored_until > NOW() THEN 1 ELSE 2 END');
+
         switch ($request->sort) {
             case 'price_low':
                 $query->orderBy('price', 'asc');
@@ -127,6 +131,8 @@ class ShopController extends Controller
                 'location' => $product->user->city ?? 'Philippines',
                 'clay_type' => $product->clay_type,
                 'is_new' => $product->created_at->diffInDays(now()) < 7,
+                'is_sponsored' => $product->is_sponsored && $product->sponsored_until > now(),
+                'seller_tier' => $product->user->subscription_tier ?? 'standard',
             ];
         });
 
@@ -174,6 +180,7 @@ class ShopController extends Controller
                     'sold' => $product->sold ?? 0,
                     'image' => $product->img,
                     'is_new' => $product->created_at->diffInDays(now()) < 7,
+                    'is_sponsored' => $product->is_sponsored && $product->sponsored_until > now(),
                 ];
             });
 
@@ -212,6 +219,7 @@ class ShopController extends Controller
                 'location' => $seller->city ?? 'Philippines',
                 'joined_at' => $seller->created_at->format('F Y'),
                 'bio' => $seller->bio ?? "Passionate artisan creating unique handcrafted items.",
+                'subscription_tier' => $seller->subscription_tier,
             ],
             'products' => $products,
             'bestSellers' => $bestSellers,

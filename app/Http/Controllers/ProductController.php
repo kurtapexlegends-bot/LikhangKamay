@@ -328,6 +328,7 @@ class ProductController extends Controller
         
         // Add explicit image attribute for frontend
         $product->image = $product->img; // Uses the accessor
+        $product->is_sponsored = $product->is_sponsored && $product->sponsored_until > now();
             
         // Add seller info format with dynamic location
         $sellerLocation = $product->user->city 
@@ -340,6 +341,7 @@ class ProductController extends Controller
             'slug' => $product->user->shop_slug, // Add Slug
             'avatar' => $product->user->avatar,
             'location' => $sellerLocation,
+            'subscription_tier' => $product->user->subscription_tier ?? 'standard',
         ];
 
         // Fetch Related Products (Same category, exclude current, random 4)
@@ -359,6 +361,7 @@ class ProductController extends Controller
                     'rating' => $p->rating,
                     'sold' => $p->sold,
                     'location' => $p->user->city ?? 'PH',
+                    'is_sponsored' => $p->is_sponsored && $p->sponsored_until > now(),
                 ];
             });
 

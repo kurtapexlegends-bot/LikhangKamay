@@ -6,7 +6,7 @@ import { OrbitControls, Stage, useGLTF, Html, useProgress } from '@react-three/d
 import { 
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon, 
     Rotate3d, Loader2, Heart, ChevronRight, Check, Pin,
-    Clock, ShoppingCart, MessageCircle, Store, Award, Package
+    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown
 } from 'lucide-react';
 
 // --- Loading Indicator for 3D ---
@@ -170,6 +170,15 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         >
                                             <Box size={14} />
                                         </button>
+                                    </div>
+                                )}
+
+                                {/* Promoted Badge */}
+                                {product.is_sponsored && (
+                                    <div className="absolute top-3 left-3 flex gap-1 z-10">
+                                        <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase tracking-wider flex items-center gap-1">
+                                            <Crown size={12} /> Promoted
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -391,8 +400,13 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-gray-900 text-base truncate">
+                                    <h3 className="font-bold text-gray-900 text-base truncate flex items-center gap-2">
                                         {product.seller?.shop_name || product.seller?.name || 'Artisan'}
+                                        {product.seller?.subscription_tier && product.seller.subscription_tier !== 'standard' && (
+                                            <span className="text-[9px] uppercase font-bold tracking-widest bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                <Crown size={10} /> Premium
+                                            </span>
+                                        )}
                                     </h3>
                                     <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                                         <MapPin size={12} className="text-gray-400" />
@@ -623,13 +637,17 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 key={related.id} 
                                 className="bg-white rounded-xl border border-gray-100 hover:border-clay-200 hover:shadow-lg transition-all duration-300 group overflow-hidden"
                             >
-                                <div className="aspect-square relative bg-gray-50 overflow-hidden">
+                                <div className="aspect-square relative flex items-center justify-center bg-gray-50 overflow-hidden border-b border-gray-100">
                                     <img 
                                         src={related.image ? (related.image.startsWith('http') || related.image.startsWith('/storage') ? related.image : `/storage/${related.image}`) : '/images/no-image.png'} 
                                         onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                        className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
                                     />
+                                    {related.is_sponsored && (
+                                        <span className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">Promoted</span>
+                                    )}
                                     {related.rating > 0 && (
-                                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
+                                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm text-gray-700">
                                             {Number(related.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
                                         </div>
                                     )}
