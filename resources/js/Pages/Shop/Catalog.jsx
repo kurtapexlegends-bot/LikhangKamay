@@ -4,7 +4,7 @@ import BuyerNavbar from '@/Components/BuyerNavbar';
 import { 
     ChevronDown, Star, ShoppingCart, 
     SlidersHorizontal, MapPin, Search, X, Check, Loader2,
-    Sparkles, ArrowUpDown, Filter
+    Sparkles, ArrowUpDown, Filter, Award
 } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import FilterSidebar from './Partials/FilterSidebar';
@@ -330,9 +330,7 @@ export default function Catalog(props) {
                                     <Link 
                                         href={route('product.show', product.slug)} 
                                         key={product.id} 
-                                        className={`group bg-white rounded-xl border hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden ${
-                                            product.is_sponsored ? 'border-amber-300 shadow-amber-100' : 'border-gray-100 hover:border-gray-200'
-                                        }`}
+                                        className="group bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden"
                                     >
                                         {/* Image */}
                                         <div className="aspect-square relative bg-gray-50 overflow-hidden">
@@ -342,19 +340,17 @@ export default function Catalog(props) {
                                                 className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                             />
-                                            {product.is_sponsored && (
-                                                <div className="absolute top-1.5 left-1.5 flex gap-1">
-                                                    <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase shadow-sm">Promoted</span>
-                                                    {product.is_new && <span className="bg-clay-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase shadow-sm">New</span>}
-                                                </div>
-                                            )}
-                                            {!product.is_sponsored && product.is_new && (
-                                                <span className="absolute top-1.5 left-1.5 bg-clay-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase shadow-sm">New</span>
-                                            )}
+                                            {product.is_sponsored ? (
+                                                <span className="absolute top-1.5 left-1.5 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 border border-amber-200">
+                                                    <Award size={9} /> Sponsored
+                                                </span>
+                                            ) : product.is_new ? (
+                                                <span className="absolute top-1.5 left-1.5 bg-clay-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">New</span>
+                                            ) : null}
                                             
                                             {/* Rating Badge */}
                                             {product.rating > 0 && (
-                                                <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
+                                                <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                                                     {Number(product.rating).toFixed(1)} 
                                                     <Star size={9} className="fill-amber-400 text-amber-400" />
                                                 </div>

@@ -15,8 +15,7 @@ class Product extends Model
         'height', 'width', 'weight',
         'price', 'cost_price', 'stock', 'lead_time', 'sold',
         'cover_photo_path', 'gallery_paths', 'model_3d_path', 'slug',
-        'track_as_supply',
-        'is_sponsored', 'sponsored_until'
+        'track_as_supply', 'is_sponsored', 'sponsored_until'
     ];
 
     protected $casts = [
@@ -24,9 +23,9 @@ class Product extends Model
         'track_as_supply' => 'boolean',
         'is_sponsored' => 'boolean',
         'sponsored_until' => 'datetime',
-        'colors' => 'array',
-        'gallery_paths' => 'array',
-        'has3D' => 'boolean',
+        'colors' => 'array',        // Automatically converts JSON to Array
+        'gallery_paths' => 'array', // Automatically converts JSON to Array
+        'has3D' => 'boolean',       // Computed accessor (logic below)
     ];
 
     // Helper to check if it has a 3D model (for Frontend)
@@ -73,11 +72,6 @@ class Product extends Model
     public function supply()
     {
         return $this->hasOne(Supply::class);
-    }
-
-    public function sponsorshipRequests()
-    {
-        return $this->hasMany(SponsorshipRequest::class);
     }
 
     /**

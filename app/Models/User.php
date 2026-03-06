@@ -54,9 +54,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'default_undertime',
         'default_overtime',
         'base_funds',
-        // Subscriptions
-        'subscription_tier',
-        'sponsorship_credits',
+        'premium_tier',
     ];
 
     /**
@@ -139,13 +137,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->isArtisan() && $this->isApproved() && $this->setup_completed_at !== null;
     }
 
-    public function getProductLimit(): int
+    // ========== PREMIUM TIER HELPERS ==========
+
+    public function getActiveProductLimit(): int
     {
-        return match ($this->subscription_tier) {
+        return match($this->premium_tier) {
             'super_premium' => 50,
             'premium' => 10,
             default => 3,
         };
+    }
+
+    public function canAddMoreProducts(): bool
+    {
+        $activeCount = $this->products()->where('status', 'Active')->count();
+        return $activeCount < $this->getActiveProductLimit();
     }
 
     // ========== RELATIONSHIPS ==========
@@ -159,10 +165,10 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(\App\Models\UserAddress::class);
     }
-
+    
     public function sponsorshipRequests()
     {
-        return $this->hasMany(\App\Models\SponsorshipRequest::class, 'seller_id');
+        return $this->hasMany(\App\Models\SponsorshipRequest::class);
     }
 
     /**

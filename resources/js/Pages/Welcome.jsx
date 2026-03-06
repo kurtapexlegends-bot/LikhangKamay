@@ -2,9 +2,9 @@ import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import { 
-    MapPin, Instagram, Facebook, Twitter, Star, ArrowRight, Trophy, Crown, Store,
-    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package
+    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, Crown
 } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
 // Category icons mapping (Lucide Components)
 const CATEGORY_ICONS = {
@@ -18,7 +18,7 @@ const CATEGORY_ICONS = {
     'default': Package,
 };
 
-export default function Welcome({ featuredProducts = [], topSellers = [], categories = [], sponsoredProducts = [] }) {
+export default function Welcome({ featuredProducts = [], sponsoredProducts = [], topSellers = [], categories = [] }) {
     const { auth, cartCount } = usePage().props;
     const user = auth?.user;
 
@@ -81,23 +81,18 @@ export default function Welcome({ featuredProducts = [], topSellers = [], catego
                                     }`}>
                                         {/* Store Header - CENTERED */}
                                         <div className={`p-3 flex flex-col items-center text-center gap-2 border-b ${isFirst ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100' : 'bg-gray-50 border-gray-100'}`}>
-                                            <div className="relative">
-                                                <div className={`w-12 h-12 rounded-full overflow-hidden border-2 flex-shrink-0 mx-auto ${isFirst ? 'border-amber-300 shadow-md' : 'border-gray-200'}`}>
-                                                    {store.store_avatar ? (
-                                                        <img 
-                                                            src={store.store_avatar.startsWith('http') ? store.store_avatar : `/storage/${store.store_avatar}`}
-                                                            alt={store.store_name}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className={`w-full h-full flex items-center justify-center font-bold text-xl ${isFirst ? 'bg-amber-100 text-amber-700' : 'bg-clay-100 text-clay-700'}`}>
-                                                            {(store.store_name || 'S').charAt(0)}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                            <div className="relative mx-auto w-12 h-12">
+                                                <UserAvatar 
+                                                    user={{ 
+                                                        avatar: store.store_avatar, 
+                                                        name: store.store_name, 
+                                                        premium_tier: store.premium_tier 
+                                                    }} 
+                                                    className={`w-12 h-12 text-xl ${isFirst ? 'border-2 border-amber-300 shadow-md ring-0' : 'ring-0 border border-gray-200'}`}
+                                                />
                                                 {isFirst && (
-                                                    <div className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-amber-400 border-2 border-white rounded-full flex items-center justify-center shadow">
-                                                        <Crown size={12} className="text-white" />
+                                                    <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-gradient-to-r from-amber-400 to-orange-400 border-2 border-white rounded-full flex items-center justify-center shadow z-20" title="#1 Top Seller">
+                                                        <Trophy size={11} className="text-white" strokeWidth={3} />
                                                     </div>
                                                 )}
                                             </div>
@@ -244,51 +239,50 @@ export default function Welcome({ featuredProducts = [], topSellers = [], catego
                     </div>
                 )}
 
-                {/* PROMOTED PRODUCTS */}
-                {sponsoredProducts && sponsoredProducts.length > 0 && (
+                {/* SPONSORED PRODUCTS CAROUSEL */}
+                {sponsoredProducts.length > 0 && (
                     <div>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-base font-semibold text-amber-700 flex items-center gap-2">
-                                <Crown size={20} className="text-amber-500" />
-                                Premium Finds
+                            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                                <span className="w-1 h-5 bg-amber-500 rounded-full"></span>
+                                Sponsored Items
                             </h2>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        
+                        <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-amber-200 scrollbar-track-transparent">
                             {sponsoredProducts.map((product) => (
                                 <Link 
                                     href={route('product.show', product.slug)} 
                                     key={product.id} 
-                                    className="bg-white rounded-lg hover:shadow-lg hover:-translate-y-0.5 transition duration-200 border border-amber-200 overflow-hidden flex flex-col group relative"
+                                    className="min-w-[160px] md:min-w-[200px] bg-white rounded-xl shadow-sm hover:shadow-md transition duration-200 border border-amber-100 overflow-hidden flex flex-col group snap-start"
                                 >
-                                    <div className="aspect-square relative flex items-center justify-center bg-amber-50/30 overflow-hidden border-b border-amber-100">
+                                    <div className="aspect-square relative bg-amber-50 overflow-hidden">
+                                        <div className="absolute top-2 left-2 z-10 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm border border-amber-200">
+                                            <Award size={10} /> Sponsored
+                                        </div>
                                         <img 
                                             src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
                                             alt={product.name} 
-                                            className="w-full h-full object-contain mix-blend-multiply transition duration-300 group-hover:scale-105"
+                                            className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                                             onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                         />
-                                        <div className="absolute top-1.5 left-1.5 flex gap-1 z-10">
-                                            <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider">Promoted</span>
-                                        </div>
-                                        {product.rating > 0 && (
-                                            <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
-                                                {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
-                                            </div>
-                                        )}
                                     </div>
-                                    <div className="p-3 flex flex-col flex-1">
-                                        <h3 className="text-xs font-medium text-gray-800 line-clamp-2 mb-2 group-hover:text-amber-700 transition leading-tight">
+                                    <div className="p-3 flex flex-col flex-1 bg-gradient-to-b from-amber-50/50 to-white">
+                                        <h3 className="text-xs font-bold text-gray-900 line-clamp-2 mb-1 group-hover:text-amber-600 transition leading-tight">
                                             {product.name}
                                         </h3>
-                                        <div className="mt-auto">
-                                            <p className="text-[10px] text-gray-500 mb-1 flex items-center gap-1 font-medium truncate">
-                                                <Store size={10} className="text-gray-400" /> {product.seller_name}
-                                            </p>
-                                            <div className="flex items-center justify-between mt-1">
-                                                <span className="text-amber-700 text-sm font-bold">
-                                                    ₱{Number(product.price).toLocaleString()}
-                                                </span>
-                                            </div>
+                                        <p className="text-[10px] text-gray-500 line-clamp-1 mb-2">
+                                            by {product.seller_slug}
+                                        </p>
+                                        <div className="mt-auto flex items-center justify-between">
+                                            <span className="text-amber-700 text-sm font-black">
+                                                ₱{Number(product.price).toLocaleString()}
+                                            </span>
+                                            {product.rating > 0 && (
+                                                <div className="flex items-center gap-0.5 text-[10px] font-bold text-gray-600">
+                                                    {product.rating.toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </Link>

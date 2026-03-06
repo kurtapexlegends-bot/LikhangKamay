@@ -13,13 +13,11 @@ return new class extends Migration
     {
         Schema::create('sponsorship_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('seller_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
-            $table->string('status')->default('pending'); // pending, approved, rejected
-            $table->unsignedInteger('requested_duration_days')->default(7);
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->timestamp('requested_at')->useCurrent();
             $table->timestamp('approved_at')->nullable();
-            $table->timestamp('rejected_at')->nullable();
-            $table->text('admin_notes')->nullable();
             $table->timestamps();
         });
     }

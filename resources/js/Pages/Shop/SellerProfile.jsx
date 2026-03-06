@@ -3,9 +3,10 @@ import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import Footer from '@/Components/Footer';
 import { 
-    MapPin, Calendar, Star, Package, Trophy, Crown, Flame,
+    MapPin, Calendar, Star, Package, Trophy, Crown, Flame, Sparkles,
     ShoppingCart, Check, Loader2, ArrowLeft, Filter 
 } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     // Format price helper
@@ -50,15 +51,8 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                     {/* Profile Details Section */}
                     <div className="px-6 md:px-10 pb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10 -mt-20">
                         
-                        {/* Avatar */}
-                        <div className="w-36 h-36 rounded-full border-4 border-white bg-white shadow-lg flex items-center justify-center overflow-hidden flex-none aspect-square relative z-20">
-                            {seller.avatar ? (
-                                <img src={seller.avatar.startsWith('http') || seller.avatar.startsWith('/storage') ? seller.avatar : `/storage/${seller.avatar}`} alt={seller.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
-                            ) : (
-                                <div className="w-full h-full bg-stone-100 text-stone-600 flex items-center justify-center text-5xl font-bold uppercase">
-                                    {seller.name.charAt(0)}
-                                </div>
-                            )}
+                        <div className="relative z-20 -mt-20">
+                            <UserAvatar user={seller} className="w-36 h-36 text-5xl shadow-lg border-4 border-white" />
                         </div>
 
                         {/* Info & Stats */}
@@ -67,17 +61,22 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                             {/* Profile Info */}
                             <div className="text-center md:text-left">
                                 <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
-                                    <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight">{seller.name}</h1>
-                                    <div className="flex gap-2">
-                                        <span className="text-[10px] uppercase font-bold tracking-widest bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full">
-                                            Verified Artisan
-                                        </span>
-                                        {seller.subscription_tier && seller.subscription_tier !== 'standard' && (
-                                            <span className="text-[10px] uppercase font-bold tracking-widest bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                                                <Crown size={10} /> Premium
-                                            </span>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
+                                        {seller.name}
+                                        {seller.premium_tier === 'premium' && (
+                                            <div title="Premium Artisan" className="flex items-center justify-center bg-amber-100 text-amber-500 rounded-full p-1.5 shadow-sm">
+                                                <Crown size={16} strokeWidth={3} />
+                                            </div>
                                         )}
-                                    </div>
+                                        {seller.premium_tier === 'super_premium' && (
+                                            <div title="Elite Artisan" className="flex items-center justify-center bg-violet-100 text-violet-500 rounded-full p-1.5 shadow-sm">
+                                                <Sparkles size={16} strokeWidth={3} />
+                                            </div>
+                                        )}
+                                    </h1>
+                                    <span className="text-[10px] uppercase font-bold tracking-widest bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full">
+                                        Verified Artisan
+                                    </span>
                                 </div>
                                 
                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 text-[13px] text-stone-500 font-medium">
@@ -189,28 +188,19 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                             <Link 
                                 href={route('product.show', product.slug)} 
                                 key={product.id} 
-                                className={`group bg-white rounded-2xl border transition-all duration-300 flex flex-col overflow-hidden ${
-                                    product.is_sponsored ? 'border-amber-300 shadow-amber-100 hover:shadow-lg' : 'border-stone-200/60 shadow-sm hover:border-stone-300 hover:shadow-md'
-                                }`}
+                                className="group bg-white rounded-2xl border border-stone-200/60 shadow-sm hover:border-stone-300 hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden"
                             >
                                 {/* Image */}
-                                <div className={`aspect-square relative border-b border-stone-100 overflow-hidden flex items-center justify-center p-4 ${
-                                    product.is_sponsored ? 'bg-amber-50/30' : 'bg-stone-50'
-                                }`}>
+                                <div className="aspect-square relative bg-stone-50 border-b border-stone-100 overflow-hidden flex items-center justify-center p-4">
                                     <img 
                                         src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
                                         alt={product.name} 
                                         className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
                                         onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                     />
-                                    {product.is_sponsored ? (
-                                        <div className="absolute top-2 left-2 flex gap-1">
-                                            <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">Promoted</span>
-                                            {product.is_new && <span className="bg-orange-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">New</span>}
-                                        </div>
-                                    ) : product.is_new ? (
+                                    {product.is_new && (
                                         <span className="absolute top-2 left-2 bg-orange-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">New</span>
-                                    ) : null}
+                                    )}
                                     {product.rating > 0 && (
                                         <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
                                             {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-0.5" />

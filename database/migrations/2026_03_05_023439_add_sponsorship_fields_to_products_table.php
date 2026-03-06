@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->boolean('is_sponsored')->default(false)->after('status');
-            $table->timestamp('sponsored_until')->nullable()->after('is_sponsored');
+            $table->boolean('is_sponsored')->default(false);
+            $table->timestamp('sponsored_until')->nullable();
         });
     }
 

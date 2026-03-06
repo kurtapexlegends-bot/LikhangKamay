@@ -2,59 +2,81 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class SubscriptionController extends Controller
 {
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-
-        // Count how many products the user has active
         $activeProductsCount = $user->products()->where('status', 'Active')->count();
-        $activeProducts = $user->products()->where('status', 'Active')->get(['id', 'name', 'status']);
+        $limit = $user->getActiveProductLimit();
 
         return Inertia::render('Seller/Subscription', [
-            'subscription_tier' => $user->subscription_tier,
-            'sponsorship_credits' => $user->sponsorship_credits,
-            'active_products_count' => $activeProductsCount,
-            'product_limit' => $user->getProductLimit(),
-            'active_products' => $activeProducts
+            'currentPlan' => $user->premium_tier,
+            'activeProductsCount' => $activeProductsCount,
+            'limit' => $limit,
+            // Only send active products in case they need to manage downgrades
+            'activeProducts' => $user->products()->where('status', 'Active')->select('id', 'name', 'sku', 'cover_photo_path', 'price')->get(),
         ]);
     }
 
-    public function updateTier(Request $request)
+    public function upgrade(Request $request)
     {
-        $request->validate([
-            'new_tier' => 'required|in:standard,premium,super_premium',
-            'keep_product_ids' => 'present|array',
-            'keep_product_ids.*' => 'exists:products,id'
+        $validated = $request->validate([
+            'plan' => 'required|in:premium,super_premium'
         ]);
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-
-        // Compute the new limit BEFORE changing the tier
-        $tierLimits = ['standard' => 3, 'premium' => 10, 'super_premium' => 50];
-        $newLimit = $tierLimits[$request->new_tier] ?? 3;
-
-        if (count($request->keep_product_ids) > $newLimit) {
-            return back()->with('error', 'You cannot keep more products than your new limit allows.');
+        if ($user->premium_tier === $validated['plan']) {
+             return back()->with('error', 'You are already on this plan.');
         }
 
-        // Now safe to update tier
-        $user->update(['subscription_tier' => $request->new_tier]);
+        $user->update(['premium_tier' => $validated['plan']]);
+        return back()->with('success', 'Successfully upgraded to ' . ucfirst(\Str::replace('_', ' ', $validated['plan'])) . '!');
+    }
 
-        // Archive products that were not selected to keep
-        if (!empty($request->keep_product_ids)) {
-            $user->products()->whereIn('id', $request->keep_product_ids)->update(['status' => 'Active']);
-            $user->products()
-                 ->whereNotIn('id', $request->keep_product_ids)
-                 ->where('status', 'Active')
-                 ->update(['status' => 'Archived']);
+    public function downgrade(Request $request)
+    {
+        $validated = $request->validate([
+            'plan' => 'required|in:free,premium',
+            'keep_active_ids' => 'nullable|array',
+            'keep_active_ids.*' => 'exists:products,id'
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $newTier = $validated['plan'];
+
+        // Determine new limit
+        $newLimit = match($newTier) {
+            'premium' => 10,
+            default => 3,
+        };
+
+        $keepIds = $validated['keep_active_ids'] ?? [];
+        
+        if (count($keepIds) > $newLimit) {
+             return back()->withErrors(['limit' => 'You selected too many products to keep active. The limit for this tier is ' . $newLimit]);
         }
 
-        return redirect()->route('seller.subscription')->with('success', 'Subscription updated successfully.');
+        // Verify that the requested IDs belong to the user
+        $validKeepIds = $user->products()->whereIn('id', $keepIds)->where('status', 'Active')->pluck('id')->toArray();
+
+        // Draft all active products NOT in the keep list
+        $user->products()
+            ->where('status', 'Active')
+            ->whereNotIn('id', $validKeepIds)
+            ->update(['status' => 'Draft']);
+
+        $user->update(['premium_tier' => $newTier]);
+
+        return redirect()->route('seller.subscription')->with('success', 'Plan downgraded successfully. Excess products set to Draft.');
     }
 }

@@ -3,7 +3,7 @@ import { Link, router } from '@inertiajs/react';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, Banknote, MessageCircle, Settings, X,
-    ClipboardList, Warehouse, FileQuestion, Sliders, Wallet, Star
+    ClipboardList, Warehouse, FileQuestion, Sliders, Wallet, Star, Award
 } from 'lucide-react';
 
 export default function SellerSidebar({ active, user, mobileOpen = false, onClose = () => {} }) {
@@ -166,6 +166,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     
                     <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-5">Shop Appearance</p>
                     <NavItem href={route('shop.settings')} icon={Sliders} active={active === 'settings'} onClick={onClose}>Shop Settings</NavItem>
+
+                    <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-5">Marketing</p>
+                    <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose}>Sponsorships</NavItem>
 
                     <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-5">Creative Tools</p>
                     <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose}>3D Manager</NavItem>

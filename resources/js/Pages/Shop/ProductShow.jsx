@@ -3,6 +3,7 @@ import { Head, Link, useForm, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF, Html, useProgress } from '@react-three/drei';
+import UserAvatar from '@/Components/UserAvatar';
 import { 
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon, 
     Rotate3d, Loader2, Heart, ChevronRight, Check, Pin,
@@ -170,15 +171,6 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         >
                                             <Box size={14} />
                                         </button>
-                                    </div>
-                                )}
-
-                                {/* Promoted Badge */}
-                                {product.is_sponsored && (
-                                    <div className="absolute top-3 left-3 flex gap-1 z-10">
-                                        <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase tracking-wider flex items-center gap-1">
-                                            <Crown size={12} /> Promoted
-                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -386,27 +378,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between h-full">
                         <div>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="w-12 h-12 rounded-full border border-gray-100 overflow-hidden flex-shrink-0">
-                                    {product.seller?.avatar ? (
-                                        <img
-                                            src={`/storage/${product.seller.avatar}`}
-                                            alt={product.seller?.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full bg-clay-50 flex items-center justify-center text-clay-600 font-bold text-xl uppercase">
-                                            {(product.seller?.shop_name || product.seller?.name || 'A').charAt(0)}
-                                        </div>
-                                    )}
-                                </div>
+                                <UserAvatar user={product.seller} className="w-12 h-12 text-xl" />
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-gray-900 text-base truncate flex items-center gap-2">
+                                    <h3 className="font-bold text-gray-900 text-base truncate flex items-center gap-1.5">
                                         {product.seller?.shop_name || product.seller?.name || 'Artisan'}
-                                        {product.seller?.subscription_tier && product.seller.subscription_tier !== 'standard' && (
-                                            <span className="text-[9px] uppercase font-bold tracking-widest bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                <Crown size={10} /> Premium
-                                            </span>
-                                        )}
                                     </h3>
                                     <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                                         <MapPin size={12} className="text-gray-400" />
@@ -471,19 +446,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                             </div>
                                         )}
                                         <div className="flex items-start gap-2.5">
-                                            <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-gray-100">
-                                                {review.user?.avatar ? (
-                                                    <img
-                                                        src={review.user.avatar.startsWith('http') ? review.user.avatar : `/storage/${review.user.avatar}`} 
-                                                        alt={review.user.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-clay-100 flex items-center justify-center text-clay-600 font-bold text-[10px] uppercase">
-                                                        {(review.user?.name || 'A').charAt(0)}
-                                                    </div>
-                                                )}
-                                            </div>
+    <UserAvatar 
+        user={review.user} 
+        className="w-7 h-7 border border-gray-100" 
+    />
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-bold text-gray-900">{review.user?.name || 'Anonymous'}</p>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -637,17 +603,13 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 key={related.id} 
                                 className="bg-white rounded-xl border border-gray-100 hover:border-clay-200 hover:shadow-lg transition-all duration-300 group overflow-hidden"
                             >
-                                <div className="aspect-square relative flex items-center justify-center bg-gray-50 overflow-hidden border-b border-gray-100">
+                                <div className="aspect-square relative bg-gray-50 overflow-hidden">
                                     <img 
                                         src={related.image ? (related.image.startsWith('http') || related.image.startsWith('/storage') ? related.image : `/storage/${related.image}`) : '/images/no-image.png'} 
                                         onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                        className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
                                     />
-                                    {related.is_sponsored && (
-                                        <span className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">Promoted</span>
-                                    )}
                                     {related.rating > 0 && (
-                                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm text-gray-700">
+                                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
                                             {Number(related.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
                                         </div>
                                     )}

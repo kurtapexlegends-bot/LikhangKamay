@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
+import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import Modal from '@/Components/Modal';
@@ -9,6 +10,7 @@ import {
     Search, ChevronDown, Menu, User, LogOut, Banknote, ShoppingBag, Truck, Package, ArrowRight, Building2,
     ClipboardList, Timer, BadgeCheck, PackageCheck, RotateCcw, Inbox
 } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
 const STATUS_TABS = [
     { id: 'all', label: 'All Requests', icon: ClipboardList },
@@ -175,6 +177,9 @@ export default function StockRequestIndex({ auth, requests }) {
                         </div>
                     </div>
 
+                    {/* Center - Plan Badge */}
+                    <PlanBadge user={auth.user} />
+
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-3">
                             <NotificationDropdown />
@@ -189,17 +194,7 @@ export default function StockRequestIndex({ auth, requests }) {
                                                 <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
                                                 <p className="text-[10px] text-gray-500">Seller Account</p>
                                             </div>
-                                            <div className="w-9 h-9 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 uppercase overflow-hidden">
-                                                {auth.user.avatar ? (
-                                                    <img 
-                                                        src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
-                                                        alt={auth.user.name} 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    (auth.user.shop_name || auth.user.name).charAt(0)
-                                                )}
-                                            </div>
+                                            <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
                                     </span>

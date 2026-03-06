@@ -22,9 +22,8 @@ use App\Http\Controllers\AccountingController; // <--- Added
 use App\Http\Controllers\UserAddressController;
 use App\Http\Controllers\ArtisanSetupController;
 use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\SponsorshipController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
 use App\Models\Product;
@@ -71,6 +70,7 @@ Route::get('/', function () {
             'store_name' => $seller->shop_name ?? $seller->name,
             'store_slug' => $seller->shop_slug,
             'store_avatar' => $seller->avatar,
+            'premium_tier' => $seller->premium_tier,
             'total_sold' => Product::where('user_id', $userId)->sum('sold'),
             'products' => $products,
         ];
@@ -100,13 +100,13 @@ Route::get('/', function () {
     // Use Standardized Categories
     $categories = ProductController::VALID_CATEGORIES;
 
-    // Sponsored Products: active sponsorship still valid
+    // Fetch sponsored products (active, sponsored_until > now)
     $sponsoredProducts = Product::with('user')
         ->where('status', 'Active')
         ->where('is_sponsored', true)
         ->where('sponsored_until', '>', now())
         ->inRandomOrder()
-        ->take(6)
+        ->take(8)
         ->get()
         ->map(function ($product) {
             return [
@@ -115,9 +115,10 @@ Route::get('/', function () {
                 'price' => $product->price,
                 'sold' => $product->sold ?? 0,
                 'rating' => $product->rating ?? 0,
+                'location' => $product->user->city ?? 'Philippines',
                 'img' => $product->img,
+                'category' => $product->category,
                 'slug' => $product->slug,
-                'seller_name' => $product->user->shop_name ?? $product->user->name,
                 'seller_slug' => $product->user->shop_slug,
                 'is_sponsored' => true,
             ];
@@ -127,9 +128,9 @@ Route::get('/', function () {
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'featuredProducts' => $featuredProducts,
+        'sponsoredProducts' => $sponsoredProducts,
         'topSellers' => $topSellers,
         'categories' => $categories,
-        'sponsoredProducts' => $sponsoredProducts,
     ]);
 });
 
@@ -213,8 +214,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('artisan.pending');
 
     // SELLER ROUTES
-    Route::get('/seller/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
-    Route::post('/seller/subscription/update-tier', [SubscriptionController::class, 'updateTier'])->name('seller.subscription.update-tier');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/export', [OrderController::class, 'export'])->name('orders.export'); // <--- Added
     Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');
@@ -236,13 +235,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/3d-manager/upload', [ThreeDManagerController::class, 'upload'])->name('3d.upload');
     Route::delete('/3d-manager/{product}', [ThreeDManagerController::class, 'destroy'])->name('3d.destroy');
 
-    // SPONSORSHIPS (Seller)
-    Route::get('/seller/sponsorships', [SponsorshipController::class, 'index'])->name('seller.sponsorships');
-    Route::post('/seller/sponsorships', [SponsorshipController::class, 'store'])->name('seller.sponsorships.store');
-
     // SHOP SETTINGS
     Route::get('/shop-settings', [ShopController::class, 'settings'])->name('shop.settings');
     Route::post('/shop-settings', [ShopController::class, 'updateSettings'])->name('shop.settings.update');
+
+    // SUBSCRIPTIONS
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
+    Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('seller.subscription.upgrade');
+    Route::post('/subscription/downgrade', [SubscriptionController::class, 'downgrade'])->name('seller.subscription.downgrade');
+
+    // SPONSORSHIPS
+    Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'index'])->name('seller.sponsorships');
+    Route::post('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'store'])->name('seller.sponsorships.store');
 
     // SETTINGS
     Route::post('/settings/modules', [SettingsController::class, 'updateModules'])->name('settings.modules');
@@ -342,11 +346,11 @@ Route::middleware(['auth', 'verified', 'super_admin'])->prefix('admin')->group(f
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
-
-    // SPONSORSHIP APPROVAL
-    Route::get('/sponsorships', [\App\Http\Controllers\Admin\SponsorshipApprovalController::class, 'index'])->name('admin.sponsorships');
-    Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\Admin\SponsorshipApprovalController::class, 'approve'])->name('admin.sponsorships.approve');
-    Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\Admin\SponsorshipApprovalController::class, 'reject'])->name('admin.sponsorships.reject');
+    
+    // Sponsorship Approvals
+    Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');
+    Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\SponsorshipController::class, 'approve'])->name('admin.sponsorships.approve');
+    Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\SponsorshipController::class, 'reject'])->name('admin.sponsorships.reject');
 });
 
 

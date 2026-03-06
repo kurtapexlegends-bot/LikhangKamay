@@ -2,72 +2,132 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\SponsorshipRequest;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class SponsorshipController extends Controller
 {
+    // Seller View
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
+        
+        // Count requests made in the last 30 days
+        $creditsUsed = $user->sponsorshipRequests()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        $creditsAvailable = max(0, 5 - $creditsUsed);
 
-        $requests = SponsorshipRequest::where('seller_id', $user->id)
-            ->with('product:id,name,cover_photo_path,slug')
-            ->orderBy('created_at', 'desc')
+        // Get active products to sponsor
+        $activeProducts = $user->products()
+            ->where('status', 'Active')
+            ->select('id', 'name', 'sku', 'cover_photo_path', 'is_sponsored', 'sponsored_until')
             ->get();
 
-        $eligibleProducts = $user->products()
-            ->where('status', 'Active')
-            ->where('is_sponsored', false)
-            ->get(['id', 'name']);
+        // Get recent requests
+        $requests = $user->sponsorshipRequests()
+            ->with('product:id,name,cover_photo_path')
+            ->latest()
+            ->take(10)
+            ->get();
 
         return Inertia::render('Seller/Sponsorships', [
+            'creditsAvailable' => $creditsAvailable,
+            'activeProducts' => $activeProducts,
             'requests' => $requests,
-            'eligible_products' => $eligibleProducts,
-            'sponsorship_credits' => $user->sponsorship_credits,
         ]);
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'requested_duration_days' => 'required|integer|min:1|max:30',
         ]);
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if ($user->sponsorship_credits <= 0) {
-            return back()->withErrors(['credits' => 'You do not have enough sponsorship credits.']);
+        if ($user->premium_tier !== 'super_premium') {
+             return back()->with('error', 'Only Super Premium sellers can request product sponsorship.');
         }
 
-        // Ensure the product belongs to the user
-        $product = $user->products()->where('id', $request->product_id)->first();
-        if (!$product) {
-            return back()->withErrors(['product_id' => 'Product not found or does not belong to you.']);
+        $creditsUsed = $user->sponsorshipRequests()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+            
+        if ($creditsUsed >= 5) {
+             return back()->with('error', 'You have used all 5 sponsorship credits for this 30-day cycle.');
         }
+        
+        // Ensure product belongs to user and is active
+        $product = $user->products()->where('id', $validated['product_id'])->where('status', 'Active')->firstOrFail();
 
-        // Check if the product already has a pending request
-        $existingRequest = SponsorshipRequest::where('product_id', $request->product_id)
-            ->where('status', 'pending')
-            ->first();
+        // Ensure product isn't already sponsored or has a pending request
+        $hasPending = $user->sponsorshipRequests()
+             ->where('product_id', $product->id)
+             ->where('status', 'pending')
+             ->exists();
 
-        if ($existingRequest) {
-            return back()->withErrors(['product_id' => 'This product already has a pending sponsorship request.']);
+        if ($hasPending || $product->is_sponsored) {
+             return back()->with('error', 'This product is already sponsored or has a pending request.');
         }
-
-        // Deduct 1 credit
-        $user->decrement('sponsorship_credits');
 
         SponsorshipRequest::create([
-            'seller_id' => $user->id,
-            'product_id' => $request->product_id,
+            'user_id' => $user->id,
+            'product_id' => $product->id,
             'status' => 'pending',
-            'requested_duration_days' => $request->requested_duration_days,
         ]);
 
-        return redirect()->route('seller.sponsorships')->with('success', 'Sponsorship request submitted!');
+        return back()->with('success', 'Sponsorship requested successfully! Used 1 credit.');
+    }
+
+    // Admin Views and Actions
+    public function adminIndex()
+    {
+        $requests = SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,cover_photo_path'])
+            ->latest()
+            ->paginate(20);
+
+        return Inertia::render('Admin/SponsorshipRequests', [
+            'requests' => $requests
+        ]);
+    }
+
+    public function approve(SponsorshipRequest $sponsorshipRequest)
+    {
+        if ($sponsorshipRequest->status !== 'pending') {
+            return back()->with('error', 'Request is not pending.');
+        }
+
+        $sponsorshipRequest->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+        ]);
+
+        // Sponsor for 7 days
+        $sponsorshipRequest->product->update([
+            'is_sponsored' => true,
+            'sponsored_until' => now()->addDays(7),
+        ]);
+
+        return back()->with('success', 'Sponsorship approved for 7 days.');
+    }
+
+    public function reject(SponsorshipRequest $sponsorshipRequest)
+    {
+         if ($sponsorshipRequest->status !== 'pending') {
+            return back()->with('error', 'Request is not pending.');
+        }
+
+        $sponsorshipRequest->update([
+            'status' => 'rejected',
+            'approved_at' => now(),
+        ]);
+
+        return back()->with('success', 'Sponsorship rejected.');
     }
 }

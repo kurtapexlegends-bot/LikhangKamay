@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
+import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import Modal from '@/Components/Modal';
@@ -13,6 +14,7 @@ import {
     PackageCheck, RotateCcw, Box, Eye, Wallet, DollarSign, Menu, Camera as CameraIcon,
     CheckCircle, Calendar, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
 const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-300">
@@ -306,6 +308,9 @@ export default function OrderManager({ auth, orders = [] }) {
                         </div>
                     </div>
 
+                    {/* Center - Plan Badge */}
+                    <PlanBadge user={auth.user} />
+
                     <div className="flex items-center gap-6">
                         {/* 1. Actions */}
                         <div className="flex items-center gap-3">
@@ -334,17 +339,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                 <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
                                                 <p className="text-[10px] text-gray-500">Seller Account</p>
                                             </div>
-                                            <div className="w-9 h-9 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 uppercase overflow-hidden">
-                                                {auth.user.avatar ? (
-                                                    <img 
-                                                        src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
-                                                        alt={auth.user.name} 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    (auth.user.shop_name || auth.user.name).charAt(0)
-                                                )}
-                                            </div>
+                                            <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
                                     </span>

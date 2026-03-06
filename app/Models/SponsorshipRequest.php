@@ -3,30 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class SponsorshipRequest extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'seller_id',
+        'user_id',
         'product_id',
         'status',
-        'requested_duration_days',
+        'requested_at',
         'approved_at',
-        'rejected_at',
-        'admin_notes',
     ];
 
     protected $casts = [
+        'requested_at' => 'datetime',
         'approved_at' => 'datetime',
-        'rejected_at' => 'datetime',
     ];
 
-    public function seller()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'seller_id');
+        return $this->belongsTo(User::class);
     }
 
     public function product()

@@ -7,6 +7,7 @@ import UpdatePasswordForm from '@/Pages/Profile/Partials/UpdatePasswordForm';
 import UpdateAddressForm from '@/Pages/Profile/Partials/UpdateAddressForm';
 import SellerUpdateProfileInformationForm from './Partials/SellerUpdateProfileInformationForm';
 import Dropdown from '@/Components/Dropdown';
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function Edit({ mustVerifyEmail, status, addresses }) {
     const { auth, flash } = usePage().props;
@@ -54,17 +55,7 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
                         <Dropdown.Trigger>
                             <button className="flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-clay-600 transition">
                                 <span className="hidden sm:inline">{auth.user.shop_name || auth.user.name}</span>
-                                <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 border border-clay-200 overflow-hidden">
-                                    {auth.user.avatar ? (
-                                        <img 
-                                            src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
-                                            alt={auth.user.name} 
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        (auth.user.shop_name || auth.user.name).charAt(0)
-                                    )}
-                                </div>
+                                <UserAvatar user={auth.user} className="w-8 h-8" />
                             </button>
                         </Dropdown.Trigger>
                         <Dropdown.Content>
