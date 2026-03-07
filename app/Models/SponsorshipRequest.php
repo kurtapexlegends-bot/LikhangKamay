@@ -2,29 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Review extends Model
+class SponsorshipRequest extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'product_id',
-        'rating',
-        'comment',
-        'photos',
-        'seller_reply',
-        'is_pinned',
+        'status',
+        'requested_at',
+        'approved_at',
     ];
 
     protected $casts = [
-        'photos' => 'array',
-        'is_pinned' => 'boolean',
+        'requested_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
-
-    protected $with = ['user']; // Eager load user by default
 
     public function user()
     {
@@ -36,4 +29,3 @@ class Review extends Model
         return $this->belongsTo(Product::class);
     }
 }
-

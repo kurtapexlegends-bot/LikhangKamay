@@ -4,7 +4,7 @@ import BuyerNavbar from '@/Components/BuyerNavbar';
 import { 
     ChevronDown, Star, ShoppingCart, 
     SlidersHorizontal, MapPin, Search, X, Check, Loader2,
-    Sparkles, ArrowUpDown, Filter
+    Sparkles, ArrowUpDown, Filter, Award
 } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import FilterSidebar from './Partials/FilterSidebar';
@@ -340,9 +340,13 @@ export default function Catalog(props) {
                                                 className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                             />
-                                            {product.is_new && (
+                                            {product.is_sponsored ? (
+                                                <span className="absolute top-1.5 left-1.5 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 border border-amber-200">
+                                                    <Award size={9} /> Sponsored
+                                                </span>
+                                            ) : product.is_new ? (
                                                 <span className="absolute top-1.5 left-1.5 bg-clay-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">New</span>
-                                            )}
+                                            ) : null}
                                             
                                             {/* Rating Badge */}
                                             {product.rating > 0 && (

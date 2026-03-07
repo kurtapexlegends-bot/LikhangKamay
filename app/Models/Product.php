@@ -15,12 +15,14 @@ class Product extends Model
         'height', 'width', 'weight',
         'price', 'cost_price', 'stock', 'lead_time', 'sold',
         'cover_photo_path', 'gallery_paths', 'model_3d_path', 'slug',
-        'track_as_supply'
+        'track_as_supply', 'is_sponsored', 'sponsored_until'
     ];
 
     protected $casts = [
         'food_safe' => 'boolean',
         'track_as_supply' => 'boolean',
+        'is_sponsored' => 'boolean',
+        'sponsored_until' => 'datetime',
         'colors' => 'array',        // Automatically converts JSON to Array
         'gallery_paths' => 'array', // Automatically converts JSON to Array
         'has3D' => 'boolean',       // Computed accessor (logic below)

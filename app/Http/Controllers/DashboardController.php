@@ -227,6 +227,11 @@ class DashboardController extends Controller
                 'pending_requests' => $pendingRequests,
                 'total_deductions' => $totalDeductions,
             ],
+            'subscription' => [
+                'plan' => $user->premium_tier,
+                'activeCount' => $user->products()->where('status', 'Active')->count(),
+                'limit' => $user->getActiveProductLimit(),
+            ],
             'chartData' => ['monthly' => $monthlyData, 'yearly' => $yearlyData],
             'categoryData' => $categoryData,
             'recentOrders' => $recentOrders,

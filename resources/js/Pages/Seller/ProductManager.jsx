@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
+import PlanBadge from '@/Components/PlanBadge';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
@@ -15,8 +16,9 @@ import {
     TrendingUp, X, Tag, Image as ImageIcon,
     AlertTriangle, ChevronUp, ChevronDown,
     User, LogOut, Menu, MoreVertical, RotateCcw,
-    CheckCircle, Plus, Edit3, RefreshCw, Archive
+    CheckCircle, Plus, Edit3, RefreshCw, Archive, Crown
 } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
 const KPICard = ({ title, value, icon: Icon, color, bg }) => (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between">
@@ -59,7 +61,7 @@ const SortableHeader = ({ label, sortKey, currentSort, onSort }) => {
     );
 };
 
-export default function ProductManager({ auth, products: dbProducts = [], categories = [] }) {
+export default function ProductManager({ auth, products: dbProducts = [], categories = [], subscription }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [products, setProducts] = useState(dbProducts);
     useEffect(() => { setProducts(dbProducts); }, [dbProducts]);
@@ -86,6 +88,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const [productModalOpen, setProductModalOpen] = useState(false);
     const [restockModalOpen, setRestockModalOpen] = useState(false);
     const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+    const [limitModalOpen, setLimitModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [restockAmount, setRestockAmount] = useState('');
     const [activeFormTab, setActiveFormTab] = useState('Essentials');
@@ -178,6 +181,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const generateSKU = () => 'LK-' + Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 
     const openAddModal = () => {
+        setSelectedProduct(null);
         reset(); 
         clearErrors();
         setActiveFormTab('Essentials');
@@ -202,6 +206,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     };
 
     const openEditModal = (product) => {
+        setSelectedProduct(product);
         clearErrors();
         setActiveFormTab('Essentials');
         setData({
@@ -290,6 +295,15 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const submitProduct = (e) => {
         e.preventDefault();
         
+        // Frontend Limit Check
+        const isAddingNewActive = !data.id && data.status === 'Active';
+        const isActivatingExisting = data.id && selectedProduct?.status !== 'Active' && data.status === 'Active';
+
+        if ((isAddingNewActive || isActivatingExisting) && subscription?.activeCount >= subscription?.limit) {
+            setLimitModalOpen(true);
+            return;
+        }
+
         const options = {
             onSuccess: () => {
                 setProductModalOpen(false);
@@ -298,7 +312,11 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             },
             onError: (err) => {
                 console.error("Validation Failed:", err);
-                addToast('Failed to save product. Please check the form for errors.', 'error');
+                if (err.limit) {
+                    setLimitModalOpen(true);
+                } else {
+                    addToast('Failed to save product. Please check the form for errors.', 'error');
+                }
                 // Auto-switch to tab with error
                 const essentialsKeys = ['name', 'category', 'price', 'stock'];
                 const detailsKeys = ['clay_type', 'glaze_type', 'colors'];
@@ -331,6 +349,11 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     
     const confirmArchive = () => { 
         if (selectedProduct.status === 'Archived') {
+            if (subscription?.activeCount >= subscription?.limit) {
+                setArchiveModalOpen(false);
+                setLimitModalOpen(true);
+                return;
+            }
             router.post(route('products.activate', selectedProduct.id), {}, { 
                 onSuccess: () => {
                     setArchiveModalOpen(false);
@@ -392,6 +415,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         </div>
                     </div>
 
+                    {/* Center - Plan Badge */}
+                    <PlanBadge user={auth.user} />
+
                     <div className="flex items-center gap-6">
                         {/* 1. Actions */}
                         <div className="flex items-center gap-3">
@@ -418,17 +444,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                 <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
                                                 <p className="text-[10px] text-gray-500">Seller Account</p>
                                             </div>
-                                            <div className="w-9 h-9 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 uppercase overflow-hidden">
-                                                {auth.user.avatar ? (
-                                                    <img 
-                                                    src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
-                                                        alt={auth.user.name} 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    (auth.user.shop_name || auth.user.name).charAt(0)
-                                                )}
-                                            </div>
+                                            <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
                                     </span>
@@ -1052,6 +1068,37 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 </div>
             </Modal>
 
+            {/* LIMIT INTERCEPT MODAL */}
+            <Modal show={limitModalOpen} onClose={() => setLimitModalOpen(false)} maxWidth="sm">
+                <div className="p-6 text-center">
+                    <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-amber-50 shadow-sm relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-amber-200 to-transparent opacity-50"></div>
+                        <Crown size={28} className="text-amber-500 relative z-10" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Upgrade to Add More</h2>
+                    <p className="text-sm text-gray-500 mb-6">
+                        You have reached your {subscription?.plan === 'free' ? 'Standard' : 'Premium'} plan limit of <span className="font-bold text-gray-900">{subscription?.limit} active products</span>. Upgrade your plan to activate more products and boost your sales!
+                    </p>
+                    <div className="flex flex-col gap-3">
+                        <Link 
+                            href={route('seller.subscription')}
+                            className="w-full inline-flex items-center justify-center px-6 py-2.5 bg-gradient-to-r from-stone-900 to-clay-900 text-white rounded-xl text-sm font-bold shadow-lg shadow-stone-900/20 hover:scale-[1.02] transition-transform"
+                        >
+                            View Subscription Plans
+                        </Link>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                setLimitModalOpen(false);
+                                setData('status', 'Draft');
+                            }} 
+                            className="w-full px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition"
+                        >
+                            Save as Draft for Now
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
         </div>
     );

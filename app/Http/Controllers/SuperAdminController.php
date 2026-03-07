@@ -105,7 +105,7 @@ class SuperAdminController extends Controller
         // Recent registrations
         $recentUsers = User::orderBy('created_at', 'desc')
             ->limit(10)
-            ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar']);
+            ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier']);
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
@@ -160,6 +160,7 @@ class SuperAdminController extends Controller
                     'email_verified_at' => $user->email_verified_at?->format('M d, Y'),
                     'created_at' => $user->created_at->format('M d, Y'),
                     'avatar' => $user->avatar,
+                    'premium_tier' => $user->premium_tier,
                 ];
             });
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Head, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
+import UserAvatar from '@/Components/UserAvatar';
 import { 
     LayoutDashboard, 
     Users, 
@@ -11,7 +12,8 @@ import {
     Bell,
     Settings,
     ChevronDown,
-    User
+    User,
+    Award
 } from 'lucide-react';
 
 export default function AdminLayout({ title, children }) {
@@ -28,6 +30,7 @@ export default function AdminLayout({ title, children }) {
             current: route().current('admin.pending'),
             badge: pendingArtisanCount > 0 ? pendingArtisanCount : null 
         },
+        { name: 'Sponsorships', href: route('admin.sponsorships'), icon: Award, current: route().current('admin.sponsorships') },
     ];
 
     return (
@@ -146,17 +149,7 @@ export default function AdminLayout({ title, children }) {
                                                 <p className="text-sm font-bold text-gray-900">{auth.user.name}</p>
                                                 <p className="text-[10px] text-gray-500">Super Admin</p>
                                             </div>
-                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border shadow-sm overflow-hidden ${auth.user.avatar ? 'bg-white border-clay-200' : 'bg-clay-100 text-clay-700 border-clay-200 uppercase'}`}>
-                                                {auth.user.avatar ? (
-                                                    <img 
-                                                        src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
-                                                        alt={auth.user.name} 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    auth.user.name?.charAt(0) || 'A'
-                                                )}
-                                            </div>
+                                            <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
                                     </span>

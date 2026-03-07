@@ -5,6 +5,7 @@ import {
     MessageCircle, ChevronDown, ShoppingBag, 
     Search, ShoppingCart, User, LogOut 
 } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function BuyerNavbar() {
     const { auth, cartCount } = usePage().props;
@@ -76,17 +77,10 @@ export default function BuyerNavbar() {
                                     <Dropdown>
                                         <Dropdown.Trigger>
                                             <button className="flex items-center gap-3 pl-1 pr-2 py-1 rounded-full hover:bg-gray-50 transition border border-transparent hover:border-gray-200 group">
-                                                {user.avatar ? (
-                                                    <img 
-                                                        src={user.avatar.startsWith('http') ? user.avatar : `/storage/${user.avatar}`} 
-                                                        alt={user.name} 
-                                                        className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm group-hover:border-clay-200 transition-colors"
-                                                    />
-                                                ) : (
-                                                    <div className="w-9 h-9 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border-2 border-white shadow-sm uppercase group-hover:border-clay-200 transition-colors">
-                                                        {(user.shop_name || user.name).charAt(0)}
-                                                    </div>
-                                                )}
+                                                <UserAvatar 
+                                                    user={user} 
+                                                    className="w-9 h-9 border-2 border-white shadow-sm group-hover:border-clay-200 transition-colors" 
+                                                />
                                                 <div className="text-left hidden sm:block">
                                                     <p className="text-sm font-bold text-gray-900 leading-none">{user.name}</p>
                                                 </div>

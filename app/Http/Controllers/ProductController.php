@@ -23,14 +23,22 @@ class ProductController extends Controller
 
     public function index()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         // Fetch only products belonging to the logged-in artisan
-        $products = Product::where('user_id', Auth::id())
+        $products = Product::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
         return Inertia::render('Seller/ProductManager', [
             'products' => $products,
-            'categories' => self::VALID_CATEGORIES // Pass detailed list to frontend
+            'categories' => self::VALID_CATEGORIES, // Pass detailed list to frontend
+            'subscription' => [
+                'plan' => $user->premium_tier,
+                'activeCount' => $user->products()->where('status', 'Active')->count(),
+                'limit' => $user->getActiveProductLimit(),
+            ],
         ]);
     }
 
@@ -59,6 +67,12 @@ class ProductController extends Controller
             'gallery.*' => 'nullable|image|max:10240',
             'model_3d' => 'required|file|max:51200', // 50MB (Mandatory)
         ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($validated['status'] === 'Active' && !$user->canAddMoreProducts()) {
+            return back()->withErrors(['limit' => 'You have reached your active products limit. Please upgrade your plan to add more active products.']);
+        }
 
         // 1. Handle File Uploads (Resized)
         $coverPath = null;
@@ -143,6 +157,12 @@ class ProductController extends Controller
             // Require 3D model if not already uploaded
             'model_3d' => $product->model_3d_path ? 'nullable|file|max:51200' : 'required|file|max:51200',
         ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($validated['status'] === 'Active' && $product->status !== 'Active' && !$user->canAddMoreProducts()) {
+             return back()->withErrors(['limit' => 'You have reached your active products limit. Please upgrade your plan to activate more products.']);
+        }
 
         // Handle Cover Photo Replacement
         if ($request->hasFile('cover_photo')) {
@@ -236,6 +256,13 @@ class ProductController extends Controller
     public function activate($id)
     {
         $product = Product::where('user_id', Auth::id())->findOrFail($id);
+        
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user->canAddMoreProducts()) {
+             return back()->with('error', 'You have reached your active products limit. Please upgrade your plan.');
+        }
+
         $product->update(['status' => 'Active']);
         return redirect()->back()->with('success', 'Product activated.');
     }
@@ -330,6 +357,7 @@ class ProductController extends Controller
             'slug' => $product->user->shop_slug, // Add Slug
             'avatar' => $product->user->avatar,
             'location' => $sellerLocation,
+            'premium_tier' => $product->user->premium_tier,
         ];
 
         // Fetch Related Products (Same category, exclude current, random 4)

@@ -2,6 +2,7 @@ import React, { useState, Suspense } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Canvas } from '@react-three/fiber';
 import SellerSidebar from '@/Components/SellerSidebar';
+import PlanBadge from '@/Components/PlanBadge';
 import { OrbitControls, Stage, PresentationControls, Float, useGLTF, Html, useProgress } from '@react-three/drei';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
@@ -143,6 +144,9 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                             <p className="text-[10px] text-gray-500 font-medium mt-0.5 hidden sm:block">Manage your digital twins & AR assets</p>
                         </div>
                     </div>
+
+                    {/* Center - Plan Badge */}
+                    <PlanBadge user={auth.user} />
 
                     <div className="flex items-center gap-4">
                         {/* Actions */}

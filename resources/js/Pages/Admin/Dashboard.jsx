@@ -13,6 +13,7 @@ import {
     Search,
 } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
+import UserAvatar from "@/Components/UserAvatar";
 
 // Stat Card Component
 const StatCard = ({ title, metric, icon: Icon, color, subtitle }) => {
@@ -175,25 +176,7 @@ export default function AdminDashboard({ stats, recentUsers }) {
                                 >
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-4">
-                                            <div
-                                                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-sm ring-4 ring-white overflow-hidden ${
-                                                    !user.avatar && (user.role === "artisan"
-                                                        ? "bg-clay-500"
-                                                        : user.role === "super_admin"
-                                                        ? "bg-gray-800"
-                                                        : "bg-sage-500")
-                                                }`}
-                                            >
-                                                {user.avatar ? (
-                                                    <img 
-                                                        src={user.avatar.startsWith('http') ? user.avatar : `/storage/${user.avatar}`} 
-                                                        alt={user.name} 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    user.name?.charAt(0).toUpperCase()
-                                                )}
-                                            </div>
+                                            <UserAvatar user={user} className="w-12 h-12 ring-4 ring-white shadow-sm" />
                                             <div>
                                                 <p className="font-bold text-gray-900">
                                                     {user.name}

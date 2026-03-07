@@ -3,11 +3,12 @@ import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import Footer from '@/Components/Footer';
 import { 
-    MapPin, Calendar, Star, Package, 
+    MapPin, Calendar, Star, Package, Trophy, Crown, Flame, Sparkles,
     ShoppingCart, Check, Loader2, ArrowLeft, Filter 
 } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
-export default function SellerProfile({ seller, products, stats }) {
+export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     // Format price helper
     const formatPrice = (price) => Number(price).toLocaleString('en-PH');
 
@@ -50,15 +51,8 @@ export default function SellerProfile({ seller, products, stats }) {
                     {/* Profile Details Section */}
                     <div className="px-6 md:px-10 pb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10 -mt-20">
                         
-                        {/* Avatar */}
-                        <div className="w-36 h-36 rounded-full border-4 border-white bg-white shadow-lg flex items-center justify-center overflow-hidden flex-none aspect-square relative z-20">
-                            {seller.avatar ? (
-                                <img src={seller.avatar.startsWith('http') || seller.avatar.startsWith('/storage') ? seller.avatar : `/storage/${seller.avatar}`} alt={seller.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
-                            ) : (
-                                <div className="w-full h-full bg-stone-100 text-stone-600 flex items-center justify-center text-5xl font-bold uppercase">
-                                    {seller.name.charAt(0)}
-                                </div>
-                            )}
+                        <div className="relative z-20 -mt-20">
+                            <UserAvatar user={seller} className="w-36 h-36 text-5xl shadow-lg border-4 border-white" />
                         </div>
 
                         {/* Info & Stats */}
@@ -67,7 +61,19 @@ export default function SellerProfile({ seller, products, stats }) {
                             {/* Profile Info */}
                             <div className="text-center md:text-left">
                                 <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
-                                    <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight">{seller.name}</h1>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
+                                        {seller.name}
+                                        {seller.premium_tier === 'premium' && (
+                                            <div title="Premium Artisan" className="flex items-center justify-center bg-amber-100 text-amber-500 rounded-full p-1.5 shadow-sm">
+                                                <Crown size={16} strokeWidth={3} />
+                                            </div>
+                                        )}
+                                        {seller.premium_tier === 'super_premium' && (
+                                            <div title="Elite Artisan" className="flex items-center justify-center bg-violet-100 text-violet-500 rounded-full p-1.5 shadow-sm">
+                                                <Sparkles size={16} strokeWidth={3} />
+                                            </div>
+                                        )}
+                                    </h1>
                                     <span className="text-[10px] uppercase font-bold tracking-widest bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full">
                                         Verified Artisan
                                     </span>
@@ -104,6 +110,64 @@ export default function SellerProfile({ seller, products, stats }) {
                         </div>
                     </div>
                 </div>
+
+                {/* --- BEST SELLERS --- */}
+                {bestSellers.length > 0 && (
+                    <div className="mb-10">
+                        <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2 mb-5">
+                            <Trophy size={22} className="text-amber-500" />
+                            Store Best Sellers
+                        </h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                            {bestSellers.map((product, idx) => {
+                                const isTop = idx === 0;
+                                return (
+                                    <Link 
+                                        href={route('product.show', product.slug)}
+                                        key={product.id}
+                                        className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col ${
+                                            isTop ? 'border-amber-200 ring-2 ring-amber-100 shadow-md' : 'border-stone-200/60 shadow-sm hover:border-stone-300'
+                                        }`}
+                                    >
+                                        <div className={`aspect-square relative overflow-hidden flex items-center justify-center p-3 ${isTop ? 'bg-amber-50/30' : 'bg-stone-50'}`}>
+                                            <img 
+                                                src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'}
+                                                alt={product.name}
+                                                className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
+                                                onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                            />
+                                            {/* Rank Badge */}
+                                            <div className={`absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow ${
+                                                isTop ? 'bg-amber-400 text-white' : 'bg-stone-600 text-white'
+                                            }`}>
+                                                {isTop ? <Crown size={12} /> : `#${idx + 1}`}
+                                            </div>
+                                            {product.rating > 0 && (
+                                                <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
+                                                    {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-3 flex flex-col flex-1">
+                                            <h3 className={`text-xs font-semibold line-clamp-2 leading-snug mb-2 transition ${
+                                                isTop ? 'text-amber-800 group-hover:text-amber-600' : 'text-stone-800 group-hover:text-orange-600'
+                                            }`}>
+                                                {product.name}
+                                            </h3>
+                                            <div className="flex items-end justify-between mt-auto">
+                                                <span className="font-bold text-sm text-stone-900">₱{formatPrice(product.price)}</span>
+                                                <span className="text-[10px] text-stone-500 font-medium flex items-center gap-0.5">
+                                                    <Flame size={9} className="text-orange-400" />
+                                                    {product.sold} sold
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* --- PRODUCTS SECTION --- */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">

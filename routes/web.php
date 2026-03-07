@@ -23,6 +23,7 @@ use App\Http\Controllers\UserAddressController;
 use App\Http\Controllers\ArtisanSetupController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
 use App\Models\Product;
@@ -33,6 +34,48 @@ use Inertia\Inertia;
 
 // --- PUBLIC ROUTES ---
 Route::get('/', function () {
+    // DSS: Top 3 selling stores, top 3 products each
+    $topStoreIds = Product::where('status', 'Active')
+        ->selectRaw('user_id, SUM(sold) as total_sold')
+        ->groupBy('user_id')
+        ->orderByDesc('total_sold')
+        ->take(3)
+        ->pluck('user_id')
+        ->toArray();
+
+    $topSellers = [];
+    foreach ($topStoreIds as $rank => $userId) {
+        $seller = \App\Models\User::find($userId);
+        if (!$seller) continue;
+        $products = Product::with('user')
+            ->where('user_id', $userId)
+            ->where('status', 'Active')
+            ->orderByDesc('sold')
+            ->take(3)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'sold' => $product->sold ?? 0,
+                    'rating' => $product->rating ?? 0,
+                    'img' => $product->img,
+                    'slug' => $product->slug,
+                    'seller_slug' => $product->user->shop_slug,
+                ];
+            });
+        $topSellers[] = [
+            'rank' => $rank + 1,
+            'store_name' => $seller->shop_name ?? $seller->name,
+            'store_slug' => $seller->shop_slug,
+            'store_avatar' => $seller->avatar,
+            'premium_tier' => $seller->premium_tier,
+            'total_sold' => Product::where('user_id', $userId)->sum('sold'),
+            'products' => $products,
+        ];
+    }
+
     // Fetch featured products (active, with user/seller info)
     $featuredProducts = Product::with('user')
         ->where('status', 'Active')
@@ -57,10 +100,36 @@ Route::get('/', function () {
     // Use Standardized Categories
     $categories = ProductController::VALID_CATEGORIES;
 
+    // Fetch sponsored products (active, sponsored_until > now)
+    $sponsoredProducts = Product::with('user')
+        ->where('status', 'Active')
+        ->where('is_sponsored', true)
+        ->where('sponsored_until', '>', now())
+        ->inRandomOrder()
+        ->take(8)
+        ->get()
+        ->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'sold' => $product->sold ?? 0,
+                'rating' => $product->rating ?? 0,
+                'location' => $product->user->city ?? 'Philippines',
+                'img' => $product->img,
+                'category' => $product->category,
+                'slug' => $product->slug,
+                'seller_slug' => $product->user->shop_slug,
+                'is_sponsored' => true,
+            ];
+        });
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'featuredProducts' => $featuredProducts,
+        'sponsoredProducts' => $sponsoredProducts,
+        'topSellers' => $topSellers,
         'categories' => $categories,
     ]);
 });
@@ -170,6 +239,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/shop-settings', [ShopController::class, 'settings'])->name('shop.settings');
     Route::post('/shop-settings', [ShopController::class, 'updateSettings'])->name('shop.settings.update');
 
+    // SUBSCRIPTIONS
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
+    Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('seller.subscription.upgrade');
+    Route::post('/subscription/downgrade', [SubscriptionController::class, 'downgrade'])->name('seller.subscription.downgrade');
+
+    // SPONSORSHIPS
+    Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'index'])->name('seller.sponsorships');
+    Route::post('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'store'])->name('seller.sponsorships.store');
+
     // SETTINGS
     Route::post('/settings/modules', [SettingsController::class, 'updateModules'])->name('settings.modules');
 
@@ -180,6 +258,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
+    Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->name('reviews.destroy-reply');
+    Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->name('reviews.toggle-pin');
 
     // ERP MODULES
     Route::get('/hr', [HRController::class, 'index'])->name('hr.index');
@@ -265,6 +346,11 @@ Route::middleware(['auth', 'verified', 'super_admin'])->prefix('admin')->group(f
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
+    
+    // Sponsorship Approvals
+    Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');
+    Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\SponsorshipController::class, 'approve'])->name('admin.sponsorships.approve');
+    Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\SponsorshipController::class, 'reject'])->name('admin.sponsorships.reject');
 });
 
 
