@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
-import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
@@ -75,9 +74,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                         </div>
                     </div>
 
-                    {/* Center - Plan Badge */}
-                    <PlanBadge user={auth.user} />
-
+                                        
                     <div className="flex items-center gap-6">
                         <NotificationDropdown />
                         <div className="h-8 w-px bg-gray-200"></div>

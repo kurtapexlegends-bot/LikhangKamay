@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
-import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import Modal from '@/Components/Modal';
@@ -308,9 +307,7 @@ export default function OrderManager({ auth, orders = [] }) {
                         </div>
                     </div>
 
-                    {/* Center - Plan Badge */}
-                    <PlanBadge user={auth.user} />
-
+                                        
                     <div className="flex items-center gap-6">
                         {/* 1. Actions */}
                         <div className="flex items-center gap-3">

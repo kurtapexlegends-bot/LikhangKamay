@@ -39,7 +39,8 @@ class SubscriptionController extends Controller
         }
 
         $user->update(['premium_tier' => $validated['plan']]);
-        return back()->with('success', 'Successfully upgraded to ' . ucfirst(\Str::replace('_', ' ', $validated['plan'])) . '!');
+        $planName = $validated['plan'] === 'super_premium' ? 'Elite' : ucfirst($validated['plan']);
+        return back()->with('success', "Successfully upgraded to {$planName}!");
     }
 
     public function downgrade(Request $request)

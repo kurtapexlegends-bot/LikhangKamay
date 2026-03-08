@@ -175,38 +175,6 @@ export default function Dashboard({ auth }) {
 
                 <main className="flex-1 p-6 overflow-y-auto space-y-6">
                     
-                    {/* SUBSCRIPTION BANNER */}
-                    {subscription && (
-                        <div className="bg-gradient-to-r from-stone-900 to-clay-900 rounded-2xl p-6 text-white flex flex-col md:flex-row items-center justify-between shadow-sm">
-                            <div className="flex-1">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    {subscription.plan === 'free' ? 'Standard' : subscription.plan === 'premium' ? 'Premium' : 'Super Premium'} Plan
-                                    {subscription.plan !== 'free' && <Crown className="w-5 h-5 text-amber-400" />}
-                                </h2>
-                                <p className="text-stone-300 text-sm mt-1">
-                                    You are using {subscription.activeCount} of your {subscription.limit} active product slots.
-                                </p>
-                                <div className="mt-3 w-full md:w-64 flex items-center gap-3">
-                                    <div className="w-full bg-stone-700/50 rounded-full h-1.5 overflow-hidden flex-1">
-                                        <div 
-                                            className={`h-full rounded-full ${subscription.activeCount >= subscription.limit ? 'bg-red-500' : 'bg-green-400'}`}
-                                            style={{ width: `${Math.min(100, (subscription.activeCount / subscription.limit) * 100)}%` }}
-                                        />
-                                    </div>
-                                    <span className="text-xs font-medium text-stone-400">{Math.max(0, subscription.limit - subscription.activeCount)} left</span>
-                                </div>
-                            </div>
-                            <div className="mt-6 md:mt-0 ml-0 md:ml-6 shrink-0 w-full md:w-auto">
-                                <Link 
-                                    href={route('seller.subscription')}
-                                    className="w-full md:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-white text-stone-900 hover:bg-stone-100 rounded-xl text-sm font-bold shadow-sm transition-colors"
-                                >
-                                    {subscription.plan === 'super_premium' ? 'Manage Plan' : 'Upgrade Plan'} <ArrowUpRight className="ml-2 w-4 h-4" />
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-
                     {/* 1. KEY METRICS CARDS WITH REAL GROWTH DATA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <MetricCard 

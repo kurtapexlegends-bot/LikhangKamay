@@ -3,7 +3,6 @@ import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
-import PlanBadge from '@/Components/PlanBadge';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
@@ -415,9 +414,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         </div>
                     </div>
 
-                    {/* Center - Plan Badge */}
-                    <PlanBadge user={auth.user} />
-
+                                        
                     <div className="flex items-center gap-6">
                         {/* 1. Actions */}
                         <div className="flex items-center gap-3">

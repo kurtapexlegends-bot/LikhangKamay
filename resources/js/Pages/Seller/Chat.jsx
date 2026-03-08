@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
-import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
@@ -125,9 +124,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                         </div>
                     </div>
 
-                    {/* Center - Plan Badge */}
-                    <PlanBadge user={auth.user} />
-
+                                        
                     <div className="flex items-center gap-6">
                         {/* 1. Actions */}
                         <div className="flex items-center gap-3">

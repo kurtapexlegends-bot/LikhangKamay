@@ -6,8 +6,8 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     
     // Check both premium_tier (from User model) and subscription_plan (if passed explicitly)
     const plan = user.premium_tier || user.subscription_plan || 'free';
-    const isPremium = plan === 'premium';
-    const isElite = plan === 'super_premium';
+    const isPremium = plan === 'premium' && user.role !== 'super_admin';
+    const isElite = plan === 'super_premium' && user.role !== 'super_admin';
     
     return (
         <div className="relative inline-flex">

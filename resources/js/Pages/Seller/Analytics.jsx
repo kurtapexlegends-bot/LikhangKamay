@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
-import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown'; 
 import { 
@@ -78,9 +77,7 @@ export default function Analytics({ auth, metrics, chartData, categoryData, topP
                         </div>
                     </div>
 
-                    {/* Center - Plan Badge */}
-                    <PlanBadge user={auth.user} />
-
+                                        
                     {/* RIGHT: Actions & Profile */}
                     <div className="flex items-center gap-6">
                         

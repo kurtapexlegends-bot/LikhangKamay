@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
-import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown'; 
 import Modal from '@/Components/Modal';
@@ -15,6 +14,12 @@ import UserAvatar from '@/Components/UserAvatar';
 // --- Simple Rich Text Toolbar ---
 const RichTextEditor = ({ value, onChange, placeholder }) => {
     const editorRef = useRef(null);
+
+    React.useEffect(() => {
+        if (editorRef.current && value !== editorRef.current.innerHTML) {
+            editorRef.current.innerHTML = value || '';
+        }
+    }, [value]);
 
     const exec = (cmd, val = null) => {
         document.execCommand(cmd, false, val);
@@ -38,7 +43,6 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
                 contentEditable
                 className="min-h-[80px] max-h-[200px] overflow-y-auto p-3 text-sm text-gray-700 focus:outline-none"
                 onInput={() => onChange(editorRef.current?.innerHTML || '')}
-                dangerouslySetInnerHTML={{ __html: value }}
                 data-placeholder={placeholder}
                 suppressContentEditableWarning
             />
@@ -167,9 +171,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                         </div>
                     </div>
 
-                    {/* Center - Plan Badge */}
-                    <PlanBadge user={auth.user} />
-
+                                        
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-3">
                             <NotificationDropdown />

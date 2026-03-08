@@ -23,7 +23,7 @@ export default function AdminUsers({ users, filters }) {
         <AdminLayout title="User Management">
 
             {/* Filters & Search - Floating Bar */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-8 sticky top-0 z-40">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-8 sticky top-20 z-30 mt-2">
                 <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
                     {/* Search */}
                     <form onSubmit={handleSearch} className="flex-1 w-full sm:w-auto relative">
@@ -60,43 +60,43 @@ export default function AdminUsers({ users, filters }) {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-stone-50">
                             <tr>
-                                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">User Identity</th>
-                                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Shop Details</th>
-                                <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Role</th>
-                                <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Verification</th>
-                                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Join Date</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">User Identity</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shop Details</th>
+                                <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Role</th>
+                                <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Verification</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Join Date</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {users.data.map(user => (
                                 <tr key={user.id} className="hover:bg-stone-50 transition group">
-                                    <td className="px-8 py-5">
-                                        <div className="flex items-center gap-4">
-                                            <UserAvatar user={user} className="w-12 h-12 ring-4 ring-white group-hover:ring-stone-100 shadow-sm transition-all" />
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <UserAvatar user={user} className="w-10 h-10 border border-clay-200 shadow-sm transition-all" />
                                             <div>
-                                                <p className="font-bold text-gray-900">{user.name}</p>
-                                                <p className="text-sm text-gray-500">{user.email}</p>
+                                                <p className="font-bold text-gray-900 text-sm">{user.name}</p>
+                                                <p className="text-xs text-gray-500">{user.email}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-5">
+                                    <td className="px-6 py-4">
                                         {user.shop_name ? (
                                             <div>
-                                                <p className="font-medium text-gray-900">{user.shop_name}</p>
-                                                <Link href={route('shop.seller', user.shop_slug || '#')} className="text-xs text-clay-600 hover:underline">
+                                                <p className="font-medium text-gray-900 text-sm">{user.shop_name}</p>
+                                                <Link href={route('shop.seller', user.shop_slug || '#')} className="text-[10px] text-clay-600 font-bold hover:underline">
                                                     View Shop →
                                                 </Link>
                                             </div>
                                         ) : (
-                                            <span className="text-gray-300 text-sm italic">No shop</span>
+                                            <span className="text-gray-300 text-xs italic">No shop</span>
                                         )}
                                     </td>
-                                    <td className="px-8 py-5 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold border shadow-sm uppercase tracking-wider ${
                                             user.role === 'artisan' ? 'bg-orange-100 text-orange-800 border-orange-200' :
                                             user.role === 'super_admin' ? 'bg-gray-900 text-white border-gray-900' :
@@ -111,26 +111,26 @@ export default function AdminUsers({ users, filters }) {
                                             {user.role === 'buyer' && 'Buyer'}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-5 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         {user.role === 'artisan' ? (
-                                            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold border shadow-sm ${
+                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border shadow-sm ${
                                                 user.artisan_status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
                                                 user.artisan_status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
                                                 'bg-amber-100 text-amber-800 border-amber-200'
                                             }`}>
-                                                {user.artisan_status === 'approved' && <CheckCircle size={14} />}
-                                                {user.artisan_status === 'rejected' && <XCircle size={14} />}
-                                                {user.artisan_status === 'pending' && <Clock size={14} />}
+                                                {user.artisan_status === 'approved' && <CheckCircle size={12} />}
+                                                {user.artisan_status === 'rejected' && <XCircle size={12} />}
+                                                {user.artisan_status === 'pending' && <Clock size={12} />}
                                                 
                                                 {user.artisan_status === 'approved' && 'Verified'}
                                                 {user.artisan_status === 'rejected' && 'Rejected'}
-                                                {user.artisan_status === 'pending' && 'Pending Content'}
+                                                {user.artisan_status === 'pending' && 'Pending'}
                                             </span>
                                         ) : (
-                                            <span className="text-gray-300 text-sm font-medium">—</span>
+                                            <span className="text-gray-300 text-xs font-medium">—</span>
                                         )}
                                     </td>
-                                    <td className="px-8 py-5 text-sm text-gray-500 font-medium">
+                                    <td className="px-6 py-4 text-xs text-gray-500 font-medium">
                                         {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </td>
                                 </tr>
@@ -141,18 +141,18 @@ export default function AdminUsers({ users, filters }) {
 
                 {/* Pagination */}
                 {users.last_page > 1 && (
-                    <div className="px-8 py-6 border-t border-gray-50 flex items-center justify-between">
-                        <p className="text-sm text-gray-500 font-medium">
+                    <div className="px-6 py-4 border-t border-gray-50 flex items-center justify-between">
+                        <p className="text-xs text-gray-500 font-medium">
                             Displaying {users.from}-{users.to} of {users.total} total users
                         </p>
                         <div className="flex items-center gap-2">
                             {users.prev_page_url && (
-                                <Link href={users.prev_page_url} className="px-4 py-2 rounded-xl bg-gray-50 text-gray-600 hover:bg-clay-100 hover:text-clay-700 transition text-sm font-bold">
+                                <Link href={users.prev_page_url} className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-clay-100 hover:text-clay-700 transition text-[10px] uppercase font-bold tracking-wider">
                                     Previous
                                 </Link>
                             )}
                             {users.next_page_url && (
-                                <Link href={users.next_page_url} className="px-4 py-2 rounded-xl bg-clay-600 text-white hover:bg-clay-700 transition text-sm font-bold shadow-md shadow-clay-200">
+                                <Link href={users.next_page_url} className="px-3 py-1.5 rounded-lg bg-clay-600 text-white hover:bg-clay-700 transition text-[10px] uppercase font-bold shadow-sm shadow-clay-200 tracking-wider">
                                     Next Page
                                 </Link>
                             )}

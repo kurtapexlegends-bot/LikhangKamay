@@ -482,14 +482,17 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
                                                 {/* Seller Reply */}
                                                 {review.seller_reply && (
-                                                    <div className="mt-2.5 p-2.5 bg-clay-50/50 border border-clay-100 rounded-lg">
-                                                        <div className="flex items-center gap-1.5 mb-1.5">
-                                                            <div className="w-4 h-4 rounded-full bg-clay-200 flex items-center justify-center text-clay-700 text-[8px] font-bold">
-                                                                {(product.seller?.shop_name || product.seller?.name || 'S').charAt(0)}
-                                                            </div>
-                                                            <span className="text-[10px] font-bold text-clay-700">Seller Response</span>
+                                                    <div className="mt-3 p-3.5 bg-orange-50/30 border border-orange-100/50 rounded-xl">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <UserAvatar user={product.seller} className="w-7 h-7 shadow-sm text-[10px]" />
+                                                            <span className="text-[13px] font-bold text-stone-900">
+                                                                {product.seller?.shop_name || product.seller?.name || 'Seller'}
+                                                            </span>
+                                                            <span className="text-[9px] font-bold tracking-wider uppercase text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 shadow-sm mt-0.5">
+                                                                SELLER REPLY
+                                                            </span>
                                                         </div>
-                                                        <div className="text-[11px] text-gray-600 leading-relaxed prose prose-xs max-w-none" dangerouslySetInnerHTML={{ __html: review.seller_reply }} />
+                                                        <div className="text-[13px] text-stone-700 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: review.seller_reply }} />
                                                     </div>
                                                 )}
                                             </div>

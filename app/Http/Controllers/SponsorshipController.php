@@ -52,7 +52,7 @@ class SponsorshipController extends Controller
         $user = Auth::user();
 
         if ($user->premium_tier !== 'super_premium') {
-             return back()->with('error', 'Only Super Premium sellers can request product sponsorship.');
+             return back()->with('error', 'Only Elite sellers can request product sponsorship.');
         }
 
         $creditsUsed = $user->sponsorshipRequests()

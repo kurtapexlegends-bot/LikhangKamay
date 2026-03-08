@@ -47,12 +47,12 @@ export default function AdminLayout({ title, children }) {
 
             {/* Sidebar Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-clay-100 transition-transform duration-300 ease-in-out
-                lg:translate-x-0 lg:static flex flex-col
+                fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-clay-100 transition-transform duration-300 ease-in-out
+                lg:translate-x-0 flex flex-col
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
                 {/* Brand Header */}
-                <div className="px-5 py-4 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between h-20">
+                <div className="px-5 py-3 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                         <img 
                             src="/images/logo.png" 
@@ -72,16 +72,16 @@ export default function AdminLayout({ title, children }) {
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                    <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-1">Admin Menu</p>
+                <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                    <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 mt-1">Admin Menu</p>
                     
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                         {navigation.map((item) => (
                             <Link
                                 key={item.name}
                                 href={item.href}
                                 className={`
-                                    flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200
+                                    flex items-center justify-between px-4 py-2.5 rounded-lg text-xs font-bold transition-all duration-200
                                     ${item.current 
                                         ? 'bg-clay-600 text-white shadow-md shadow-clay-200' 
                                         : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}
@@ -109,9 +109,9 @@ export default function AdminLayout({ title, children }) {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 {/* Header (Desktop & Mobile) */}
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 transition-all duration-300">
+                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40 transition-all duration-300">
                     <div className="flex items-center gap-4">
                         <button 
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -168,10 +168,8 @@ export default function AdminLayout({ title, children }) {
                 </header>
 
                 {/* Scrollable Content */}
-                <main className="flex-1 overflow-y-auto [scrollbar-gutter:stable] p-4 sm:p-6 lg:p-8 bg-[#FDFBF9]">
-                    <div className="max-w-7xl mx-auto pb-20 lg:pb-0">
-                        {children}
-                    </div>
+                <main className="flex-1 p-6 space-y-6">
+                    {children}
                 </main>
             </div>
         </div>

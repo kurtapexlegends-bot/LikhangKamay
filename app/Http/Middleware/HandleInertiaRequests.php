@@ -48,6 +48,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'sellerSubscription' => $request->user() && $request->user()->role === 'seller' ? [
+                'activeCount' => $request->user()->products()->where('status', 'Active')->count(),
+                'limit' => $request->user()->getActiveProductLimit(),
+            ] : null,
             // Global Variables for Frontend
             'cartCount' => $cartCount,
             'notifications' => $notifications,

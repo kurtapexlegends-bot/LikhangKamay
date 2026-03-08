@@ -1,16 +1,23 @@
 import React, { useState } from 'react'; 
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, Banknote, MessageCircle, Settings, X,
-    ClipboardList, Warehouse, FileQuestion, Sliders, Wallet, Star, Award
+    ClipboardList, Warehouse, FileQuestion, Sliders, Wallet, Star, Award, Crown, Sparkles, Zap
 } from 'lucide-react';
+import { PlanModal } from './PlanBadge';
 
 export default function SellerSidebar({ active, user, mobileOpen = false, onClose = () => {} }) {
     // --- MODULE TOGGLE STATES (Read from DB) ---
     // If modules_enabled is null (first time), all default to false
     const savedModules = user?.modules_enabled || {};
     
+    // Update: grab the new globally shared sellerSubscription
+    const { sellerSubscription } = usePage().props;
+
+    const isElite = user?.premium_tier === 'super_premium' || user?.subscription_plan === 'super_premium';
+    const isPremium = user?.premium_tier === 'premium' || user?.subscription_plan === 'premium';
+
     // We keep local state for instant UI updates, but sync with DB
     const [modules, setModules] = useState({
         hr: !!savedModules.hr,
@@ -20,6 +27,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
     // Show/hide the module settings panel
     const [showModulePanel, setShowModulePanel] = useState(false);
+    // Show/hide the plan modal
+    const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
 
     // Toggle a specific module
     const toggleModule = (moduleName) => {
@@ -61,7 +70,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
             <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-clay-100 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 
                 {/* --- BRAND HEADER --- */}
-                <div className="px-5 py-4 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
+                <div className="px-5 py-3 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                         <img 
                             src="/images/logo.png" 
@@ -152,9 +161,61 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     </>
                 )}
 
+                {/* --- PLAN BADGE & LIMITS --- */}
+                <div className="px-5 py-3 border-b flex-shrink-0 border-gray-50 bg-stone-50/30">
+                    <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
+                        {/* Badge */}
+                        <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
+                            {isElite ? (
+                                <Sparkles size={13} className="text-violet-500 fill-violet-200" />
+                            ) : isPremium ? (
+                                <Crown size={13} className="text-amber-500 fill-amber-200" />
+                            ) : (
+                                <Zap size={13} className="text-stone-400 fill-stone-200" />
+                            )}
+                            <span className="tracking-wide">{isElite ? 'Elite Plan' : isPremium ? 'Premium Plan' : 'Standard Plan'}</span>
+                        </div>
+                        
+                        {/* Limit Progress */}
+                        {sellerSubscription && (
+                            <div className="flex flex-col gap-1.5 mt-2.5">
+                                <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium group-hover:text-stone-700 transition-colors">
+                                    <span>Active Products</span>
+                                    <span>
+                                        <strong className="text-stone-900">{sellerSubscription.activeCount}</strong> / {sellerSubscription.limit}
+                                    </span>
+                                </div>
+                                <div className="w-full h-1.5 bg-stone-200/80 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full rounded-full transition-all duration-500 ${
+                                            sellerSubscription.activeCount >= sellerSubscription.limit 
+                                                ? 'bg-red-500' 
+                                                : isElite 
+                                                    ? 'bg-violet-500' 
+                                                    : isPremium 
+                                                        ? 'bg-amber-500' 
+                                                        : 'bg-stone-500'
+                                        }`}
+                                        style={{ width: `${Math.min(100, (sellerSubscription.activeCount / sellerSubscription.limit) * 100)}%` }}
+                                    />
+                                </div>
+                                {sellerSubscription.activeCount >= sellerSubscription.limit && !isElite && (
+                                    <span className="text-[9px] text-red-500 font-medium leading-tight mt-0.5">Product limit reached. Upgrade to add more.</span>
+                                )}
+                            </div>
+                        )}
+                    </button>
+                </div>
+
+                <PlanModal 
+                    isOpen={isPlanModalOpen} 
+                    onClose={() => setIsPlanModalOpen(false)} 
+                    currentTier={isElite ? 'super_premium' : isPremium ? 'premium' : 'free'} 
+                />
+
                 {/* --- NAVIGATION (Scrollable) --- */}
-                <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                    <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-1">Core Operations</p>
+                <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                    <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 mt-1">Core Operations</p>
                     <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose}>Overview</NavItem>
                     <NavItem href={route('products.index')} icon={Package} active={active === 'products'} onClick={onClose}>Products</NavItem>
                     <NavItem href={route('analytics.index')} icon={BarChart3} active={active === 'analytics'} onClick={onClose}>Analytics</NavItem>

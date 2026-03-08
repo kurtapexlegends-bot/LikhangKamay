@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import { 
-    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, Crown
+    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, Crown, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 

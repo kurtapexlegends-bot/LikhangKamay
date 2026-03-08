@@ -6,7 +6,6 @@ import { Head, useForm, router, usePage } from '@inertiajs/react';
 // I will check if there is a Toast component or if I need to implement a simple useEffect for flash messages.
 // For now, I'll stick to the Imports.
 import SellerSidebar from '@/Components/SellerSidebar';
-import PlanBadge from '@/Components/PlanBadge';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import Modal from '@/Components/Modal';
@@ -167,9 +166,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         </div>
                     </div>
 
-                    {/* Center - Plan Badge */}
-                    <PlanBadge user={auth.user} />
-
+                                        
                     <div className="flex items-center gap-6">
                         {/* Actions */}
                         <div className="flex items-center gap-3">

@@ -89,7 +89,7 @@ const PLANS = [
         lightText: 'text-violet-700',
         features: [
             'Up to 50 Active Products',
-            'Super Premium Badge',
+            'Elite Badge',
             '5 Monthly Sponsorship Credits',
             'Dedicated Account Manager',
             'Featured Placement in Search',
@@ -98,7 +98,7 @@ const PLANS = [
 ];
 
 // ─── Animated Modal ───
-function PlanModal({ isOpen, onClose, currentTier }) {
+export function PlanModal({ isOpen, onClose, currentTier }) {
     const [isVisible, setIsVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [hoveredPlan, setHoveredPlan] = useState(null);
@@ -329,7 +329,12 @@ function PlanModal({ isOpen, onClose, currentTier }) {
 // ─── Badge + Modal ───
 export default function PlanBadge({ user }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const tier = user?.premium_tier || 'free';
+    
+    // Check both fields to ensure backward compatibility and catch Elite clearly
+    const isElite = user?.premium_tier === 'super_premium' || user?.subscription_plan === 'super_premium';
+    const isPremium = user?.premium_tier === 'premium' || user?.subscription_plan === 'premium';
+    const tier = isElite ? 'super_premium' : isPremium ? 'premium' : 'free';
+    
     const config = PLAN_CONFIG[tier] || PLAN_CONFIG.free;
     const Icon = config.icon;
 

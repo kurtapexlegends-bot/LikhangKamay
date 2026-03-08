@@ -61,7 +61,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     const formatPlanName = (plan) => {
         if (plan === 'free') return 'Standard';
         if (plan === 'premium') return 'Premium';
-        if (plan === 'super_premium') return 'Super Premium';
+        if (plan === 'super_premium') return 'Elite';
         return plan;
     };
 
@@ -101,7 +101,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             limit: 50,
             features: [
                 'Up to 50 Active Products',
-                'Super Premium Badge',
+                'Elite Badge',
                 '5 Monthly Sponsorship Credits',
                 'Dedicated Account Manager',
                 'Featured Placement in Search',
@@ -118,7 +118,20 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-stone-800 leading-tight">Subscription Plan</h2>}
+            header={
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => window.history.length > 1 ? window.history.back() : router.visit(route('dashboard'))}
+                        className="p-2 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-full transition-colors flex items-center justify-center group"
+                        title="Go back"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left transition-transform group-hover:-translate-x-1">
+                            <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
+                        </svg>
+                    </button>
+                    <h2 className="font-semibold text-xl text-stone-800 leading-tight">Subscription Plan</h2>
+                </div>
+            }
         >
             <Head title="Subscription Plan" />
 

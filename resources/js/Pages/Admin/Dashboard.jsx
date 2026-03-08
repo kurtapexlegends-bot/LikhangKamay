@@ -26,36 +26,36 @@ const StatCard = ({ title, metric, icon: Icon, color, subtitle }) => {
     const isNegative = trend === 'down';
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 hover:shadow-md transition group h-full flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-full">
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <p className="text-sm font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">
                         {title}
                     </p>
-                    <h3 className="text-3xl font-extrabold text-gray-800 tracking-tight">
+                    <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
                         {value !== undefined ? value.toLocaleString() : '0'}
                     </h3>
                 </div>
                 <div
-                    className={`p-3 rounded-xl ${color} text-white shadow-lg shadow-gray-200 group-hover:scale-110 transition-transform duration-300`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${color} text-white group-hover:scale-110 transition-transform duration-300`}
                 >
-                    <Icon size={22} />
+                    <Icon size={20} />
                 </div>
             </div>
             
-            <div className="flex items-center justify-between">
-                <div className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${
-                    isPositive ? 'bg-green-50 text-green-600' : 
-                    isNegative ? 'bg-red-50 text-red-600' : 
-                    'bg-gray-50 text-gray-500'
+            <div className="flex items-center justify-between mt-auto">
+                <div className={`flex items-center gap-1 text-[10px] font-bold ${
+                    isPositive ? 'text-green-600' : 
+                    isNegative ? 'text-red-600' : 
+                    'text-gray-500'
                 }`}>
-                    {isPositive ? <TrendingUp size={14} /> : 
-                     isNegative ? <TrendingUp size={14} className="rotate-180" /> : 
-                     <span className="w-3 h-[2px] bg-gray-400 rounded-full"></span>}
+                    {isPositive ? <TrendingUp size={12} /> : 
+                     isNegative ? <TrendingUp size={12} className="rotate-180" /> : 
+                     <span className="w-2.5 h-[2px] bg-gray-400 rounded-full"></span>}
                     
                     <span>{growth > 0 ? '+' : ''}{growth}%</span>
                 </div>
-                <span className="text-xs font-medium text-gray-400">vs last 30 days</span>
+                <span className="text-[10px] font-medium text-gray-400">vs last 30 days</span>
             </div>
         </div>
     );
@@ -138,14 +138,14 @@ export default function AdminDashboard({ stats, recentUsers }) {
             )}
 
             {/* Recent Users */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
-                    <h3 className="font-bold text-lg text-gray-900">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+                    <h3 className="font-bold text-gray-900 text-lg">
                         Recent Registrations
                     </h3>
                     <Link
                         href={route("admin.users")}
-                        className="text-sm text-clay-600 font-medium hover:text-clay-800 transition flex items-center gap-1"
+                        className="text-xs text-clay-600 font-bold hover:text-clay-800 transition flex items-center gap-1"
                     >
                         View All Users <ChevronRight size={14} />
                     </Link>
@@ -154,16 +154,16 @@ export default function AdminDashboard({ stats, recentUsers }) {
                     <table className="w-full">
                         <thead className="bg-stone-50">
                             <tr>
-                                <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                     User
                                 </th>
-                                <th className="px-8 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                     Role
                                 </th>
-                                <th className="px-8 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                     Status
                                 </th>
-                                <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                     Registered
                                 </th>
                             </tr>
@@ -174,20 +174,20 @@ export default function AdminDashboard({ stats, recentUsers }) {
                                     key={user.id}
                                     className="hover:bg-stone-50 transition"
                                 >
-                                    <td className="px-8 py-5">
-                                        <div className="flex items-center gap-4">
-                                            <UserAvatar user={user} className="w-12 h-12 ring-4 ring-white shadow-sm" />
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <UserAvatar user={user} className="w-10 h-10 border border-clay-200" />
                                             <div>
-                                                <p className="font-bold text-gray-900">
+                                                <p className="font-bold text-gray-900 text-sm">
                                                     {user.name}
                                                 </p>
-                                                <p className="text-sm text-gray-500">
+                                                <p className="text-xs text-gray-500">
                                                     {user.email}
                                                 </p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-5 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         <span
                                             className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold border shadow-sm uppercase tracking-wider ${
                                                 user.role === "artisan"
@@ -210,10 +210,10 @@ export default function AdminDashboard({ stats, recentUsers }) {
                                                   : "Buyer"}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-5 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         {user.role === "artisan" ? (
                                             <span
-                                                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold border shadow-sm ${
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${
                                                     user.artisan_status ===
                                                     "approved"
                                                         ? "bg-green-100 text-green-800 border-green-200"
@@ -238,12 +238,12 @@ export default function AdminDashboard({ stats, recentUsers }) {
                                                     "Pending"}
                                             </span>
                                         ) : (
-                                            <span className="text-gray-300 text-sm font-medium">
+                                            <span className="text-gray-300 text-xs font-medium">
                                                 —
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-8 py-5 text-sm text-gray-500 font-medium">
+                                    <td className="px-6 py-4 text-xs text-gray-500 font-medium">
                                         {new Date(
                                             user.created_at,
                                         ).toLocaleDateString("en-US", {

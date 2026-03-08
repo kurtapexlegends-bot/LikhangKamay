@@ -1,7 +1,6 @@
 import React from 'react';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
-import PlanBadge from '@/Components/PlanBadge';
 import UserAvatar from '@/Components/UserAvatar';
 import { Menu, ChevronDown, User, LogOut, Building2 } from 'lucide-react';
 
@@ -41,9 +40,7 @@ export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge
                 </div>
             </div>
 
-            {/* Center - Plan Badge */}
-            <PlanBadge user={auth.user} />
-
+                        
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
                     <NotificationDropdown />
