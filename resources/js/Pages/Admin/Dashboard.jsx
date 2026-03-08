@@ -11,18 +11,7 @@ import {
     LogOut,
     ChevronRight,
     Search,
-    CreditCard,
-    BadgeCheck,
 } from "lucide-react";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
 
@@ -72,7 +61,7 @@ const StatCard = ({ title, metric, icon: Icon, color, subtitle }) => {
     );
 };
 
-export default function AdminDashboard({ stats, recentUsers, financeStats, mrrData, recentTransactions }) {
+export default function AdminDashboard({ stats, recentUsers }) {
     // Helper to safely get value for Quick Actions check
     const pendingCount = typeof stats.pendingArtisans === 'object' ? stats.pendingArtisans.value : stats.pendingArtisans;
 
@@ -84,7 +73,7 @@ export default function AdminDashboard({ stats, recentUsers, financeStats, mrrDa
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                 <StatCard
                     title="Total Artisans"
                     metric={stats.totalArtisans}
@@ -112,20 +101,6 @@ export default function AdminDashboard({ stats, recentUsers, financeStats, mrrDa
                     icon={CheckCircle}
                     color="bg-green-600"
                     subtitle="Approved & verified"
-                />
-                <StatCard
-                    title="Total Revenue"
-                    metric={`₱${Number(financeStats?.totalRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                    icon={CreditCard}
-                    color="bg-emerald-600"
-                    subtitle="All-time revenue"
-                />
-                <StatCard
-                    title="Active Subscribers"
-                    metric={(financeStats?.premiumSubscribers || 0) + (financeStats?.eliteSubscribers || 0)}
-                    icon={BadgeCheck}
-                    color="bg-indigo-600"
-                    subtitle="Premium & Elite"
                 />
             </div>
 
@@ -161,53 +136,6 @@ export default function AdminDashboard({ stats, recentUsers, financeStats, mrrDa
                     </Link>
                 </div>
             )}
-
-            {/* Financial Overview */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="font-bold text-gray-900 text-lg mb-6">Revenue Trend (Last 6 Months)</h3>
-                    <div className="h-72">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={mrrData || []} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `₱${val}`} width={80} />
-                                <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(value) => [`₱${Number(value).toLocaleString()}`, 'Revenue']} />
-                                <Bar dataKey="total" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
-                    <h3 className="font-bold text-gray-900 text-lg mb-6">Recent Transactions</h3>
-                    <div className="flex-1 overflow-y-auto pr-2">
-                        {recentTransactions && recentTransactions.length > 0 ? (
-                            <div className="space-y-4">
-                                {recentTransactions.map((tx) => (
-                                    <div key={tx.id} className="flex justify-between items-center pb-4 border-b border-gray-50 last:border-0 last:pb-0">
-                                        <div>
-                                            <p className="font-bold text-sm text-gray-900">{tx.artisan?.shop_name || tx.artisan?.name || 'Unknown User'}</p>
-                                            <p className="text-xs text-gray-500 capitalize">{tx.tier_purchased.replace('_', ' ')} Plan</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-emerald-600 text-sm">₱{Number(tx.amount_paid).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                                            <p className="text-[10px] text-gray-400 font-medium">
-                                                {new Date(tx.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400 py-10">
-                                <CreditCard size={32} className="mb-2 opacity-30" />
-                                <p className="text-sm font-medium">No transactions yet</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
 
             {/* Recent Users */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

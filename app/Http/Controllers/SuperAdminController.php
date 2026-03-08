@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\SubscriptionTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -108,27 +107,6 @@ class SuperAdminController extends Controller
             ->limit(10)
             ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier']);
 
-        // Get Active Subscribers
-        $premiumCount = User::where('premium_tier', 'premium')->count();
-        $eliteCount = User::where('premium_tier', 'super_premium')->count();
-
-        // Get Total Revenue
-        $totalRevenue = SubscriptionTransaction::sum('amount_paid');
-
-        // Get MRR Data (Last 6 Months)
-        $mrrData = SubscriptionTransaction::selectRaw('SUM(amount_paid) as total, DATE_FORMAT(created_at, "%b %Y") as month, MONTH(created_at) as month_num, YEAR(created_at) as year_num')
-            ->groupBy('year_num', 'month_num', 'month')
-            ->orderBy('year_num', 'asc')
-            ->orderBy('month_num', 'asc')
-            ->limit(6)
-            ->get();
-
-        // Get Recent Transactions for Breakdown Table
-        $recentTransactions = SubscriptionTransaction::with('artisan:id,name,shop_name')
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
-
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'totalArtisans' => $totalArtisans,
@@ -138,13 +116,6 @@ class SuperAdminController extends Controller
                 'rejectedArtisans' => $rejectedArtisans,
             ],
             'recentUsers' => $recentUsers,
-            'financeStats' => [
-                'premiumSubscribers' => $premiumCount,
-                'eliteSubscribers' => $eliteCount,
-                'totalRevenue' => $totalRevenue ?? 0,
-            ],
-            'mrrData' => $mrrData,
-            'recentTransactions' => $recentTransactions,
         ]);
     }
 
