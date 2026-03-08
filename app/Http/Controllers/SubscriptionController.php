@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\SubscriptionTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -39,6 +40,14 @@ class SubscriptionController extends Controller
         }
 
         $user->update(['premium_tier' => $validated['plan']]);
+
+        $amount = $validated['plan'] === 'super_premium' ? 1000.00 : 500.00; // Hardcoded prices for demonstration
+        SubscriptionTransaction::create([
+            'artisan_id' => $user->id,
+            'tier_purchased' => $validated['plan'],
+            'amount_paid' => $amount,
+        ]);
+
         $planName = $validated['plan'] === 'super_premium' ? 'Elite' : ucfirst($validated['plan']);
         return back()->with('success', "Successfully upgraded to {$planName}!");
     }
