@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Mail\NewArtisanApplication;
+use App\Models\ArtisanStatusLog;
 
 class ArtisanSetupController extends Controller
 {
@@ -76,6 +77,12 @@ class ArtisanSetupController extends Controller
                 }
                 return null;
             };
+
+            ArtisanStatusLog::create([
+                'user_id' => $user->id,
+                'previous_status' => $user->artisan_status,
+                'new_status' => 'pending',
+            ]);
 
             $user->update([
                 'business_permit' => $upload('business_permit'),

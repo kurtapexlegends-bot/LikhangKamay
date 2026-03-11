@@ -23,7 +23,7 @@ export default function AdminUsers({ users, filters }) {
         <AdminLayout title="User Management">
 
             {/* Filters & Search - Floating Bar */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-8 sticky top-20 z-30 mt-2">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-8 sticky top-20 z-30">
                 <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
                     {/* Search */}
                     <form onSubmit={handleSearch} className="flex-1 w-full sm:w-auto relative">

@@ -7,55 +7,55 @@ import {
     CheckCircle,
     XCircle,
     TrendingUp,
+    TrendingDown,
     AlertTriangle,
     LogOut,
     ChevronRight,
     Search,
+    Minus,
 } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
 
 // Stat Card Component
-const StatCard = ({ title, metric, icon: Icon, color, subtitle }) => {
-    // Metric might be a simple number (fallback) or an object { value, growth, trend }
+const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
+    // Metric might be a simple number (fallback) or an object { value, growth }
     const value = typeof metric === 'object' ? metric.value : metric;
-    const growth = typeof metric === 'object' ? metric.growth : 0;
-    const trend = typeof metric === 'object' ? metric.trend : 'neutral';
+    const growth = typeof metric === 'object' ? metric.growth : undefined;
+    const trend = typeof metric === 'object' ? metric.trend : undefined;
 
-    const isPositive = trend === 'up';
-    const isNegative = trend === 'down';
+    const derivedTrend = trend || (growth > 0 ? 'up' : growth < 0 ? 'down' : 'neutral');
 
     return (
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-full">
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">
-                        {title}
-                    </p>
-                    <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
-                        {value !== undefined ? value.toLocaleString() : '0'}
-                    </h3>
-                </div>
-                <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${color} text-white group-hover:scale-110 transition-transform duration-300`}
-                >
-                    <Icon size={20} />
-                </div>
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+            <div>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">
+                    {title}
+                </p>
+                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                    {value !== undefined ? value.toLocaleString() : '0'}
+                </h3>
+                
+                {growth !== undefined && (
+                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${
+                        derivedTrend === 'up' ? 'text-green-600' : 
+                        derivedTrend === 'down' ? 'text-red-600' : 'text-gray-400'
+                    }`}>
+                        {derivedTrend === 'up' && <TrendingUp size={12}/>}
+                        {derivedTrend === 'down' && <TrendingDown size={12}/>}
+                        {derivedTrend === 'neutral' && <Minus size={12}/>}
+                        <span>{derivedTrend === 'up' ? '+' : ''}{growth}% vs last 30 days</span>
+                    </div>
+                )}
+                {growth === undefined && subtitle && (
+                    <p className="text-[10px] font-medium text-gray-400 mt-1">{subtitle}</p>
+                )}
+                {growth === undefined && !subtitle && (
+                    <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>
+                )}
             </div>
-            
-            <div className="flex items-center justify-between mt-auto">
-                <div className={`flex items-center gap-1 text-[10px] font-bold ${
-                    isPositive ? 'text-green-600' : 
-                    isNegative ? 'text-red-600' : 
-                    'text-gray-500'
-                }`}>
-                    {isPositive ? <TrendingUp size={12} /> : 
-                     isNegative ? <TrendingUp size={12} className="rotate-180" /> : 
-                     <span className="w-2.5 h-[2px] bg-gray-400 rounded-full"></span>}
-                    
-                    <span>{growth > 0 ? '+' : ''}{growth}%</span>
-                </div>
-                <span className="text-[10px] font-medium text-gray-400">vs last 30 days</span>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} ${text}`}>
+                <Icon size={20} />
             </div>
         </div>
     );
@@ -67,46 +67,45 @@ export default function AdminDashboard({ stats, recentUsers }) {
 
     return (
         <AdminLayout title="Dashboard">
-            {/* Dashboard Controls */}
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                 {/* Empty for now */}
-            </div>
-
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
                     title="Total Artisans"
                     metric={stats.totalArtisans}
                     icon={Store}
-                    color="bg-clay-500"
+                    bg="bg-blue-100"
+                    text="text-blue-600"
                     subtitle="Registered sellers"
                 />
                 <StatCard
                     title="Total Buyers"
                     metric={stats.totalBuyers}
                     icon={Users}
-                    color="bg-sage-600"
+                    bg="bg-purple-100"
+                    text="text-purple-600"
                     subtitle="Shopping customers"
                 />
                 <StatCard
                     title="Pending Needs"
                     metric={stats.pendingArtisans}
                     icon={Clock}
-                    color="bg-amber-500"
+                    bg="bg-amber-100"
+                    text="text-amber-600"
                     subtitle="Need review"
                 />
                 <StatCard
                     title="Active Artisans"
                     metric={stats.approvedArtisans}
                     icon={CheckCircle}
-                    color="bg-green-600"
+                    bg="bg-green-100"
+                    text="text-green-600"
                     subtitle="Approved & verified"
                 />
             </div>
 
             {/* Quick Actions */}
             {pendingCount > 0 && (
-                <div className="bg-gradient-to-r from-clay-50 to-white border border-clay-100 rounded-2xl p-8 mb-10 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                <div className="bg-gradient-to-r from-clay-50 to-white border border-clay-100 rounded-2xl p-8 mb-8 flex items-center justify-between shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-clay-100 rounded-full opacity-50 blur-xl group-hover:scale-150 transition-transform duration-700"></div>
 
                     <div className="flex items-center gap-6 relative z-10">

@@ -29,13 +29,30 @@ class ChatController extends Controller
     {
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
-            'message' => 'required|string',
+            'message' => 'nullable|string', // Allow empty message if there's an attachment
+            'attachment' => 'nullable|file|max:10240', // 10MB max
         ]);
+
+        if (!$request->filled('message') && !$request->hasFile('attachment')) {
+            return back()->withErrors(['message' => 'Message or attachment is required']);
+        }
+
+        $attachmentPath = null;
+        $attachmentType = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $attachmentPath = $file->store('chat_attachments', 'public');
+            $mimeType = $file->getMimeType();
+            $attachmentType = str_starts_with($mimeType, 'image/') ? 'image' : 'document';
+        }
 
         $msg = Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
-            'message' => $request->message
+            'message' => $request->message ?? '',
+            'attachment_path' => $attachmentPath,
+            'attachment_type' => $attachmentType,
         ]);
 
         // Notify Receiver
@@ -48,7 +65,6 @@ class ChatController extends Controller
         return redirect()->back();
     }
 
-    // 4. MARK AS SEEN (Explicit Action)
     public function markAsSeen(Request $request) 
     {
         $request->validate([
@@ -58,6 +74,22 @@ class ChatController extends Controller
         Message::where('sender_id', $request->sender_id)
             ->where('receiver_id', Auth::id())
             ->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // 5. SIGNAL TYPING
+    public function signalTyping(Request $request)
+    {
+        $request->validate([
+            'receiver_id' => 'required|exists:users,id'
+        ]);
+
+        $userId = Auth::id();
+        $receiverId = $request->receiver_id;
+
+        // Store typing status in cache for 4 seconds
+        Cache::put("typing-{$userId}-to-{$receiverId}", true, 4);
 
         return response()->json(['success' => true]);
     }
@@ -85,8 +117,12 @@ class ChatController extends Controller
             return [
                 'id' => $user->id,
                 'name' => $user->name,
+                'avatar' => $user->avatar,
                 'avatar_url' => $user->avatar ? '/storage/' . $user->avatar : null,
                 'initial' => substr($user->shop_name ?: $user->name, 0, 1),
+                'premium_tier' => $user->premium_tier,
+                'role' => $user->role,
+                'shop_name' => $user->shop_name,
                 'lastMsg' => $lastMsg ? $lastMsg->message : 'Start chatting',
                 'time' => $lastMsg ? $lastMsg->created_at->shortAbsoluteDiffForHumans() : '',
                 'unread' => Message::where('sender_id', $user->id)
@@ -110,6 +146,9 @@ class ChatController extends Controller
                 $activeUser->last_seen = $activeUser->last_seen_at 
                     ? $activeUser->last_seen_at->diffForHumans() 
                     : 'Offline';
+                    
+                // Check if this specific user is typing TO the current user
+                $activeUser->is_typing = Cache::has("typing-{$activeChatId}-to-{$userId}");
             }
 
             // Fetch history
@@ -121,6 +160,8 @@ class ChatController extends Controller
                 return [
                     'id' => $m->id,
                     'text' => $m->message,
+                    'attachment_path' => $m->attachment_path,
+                    'attachment_type' => $m->attachment_type,
                     'sender' => $m->sender_id === $userId ? 'me' : 'other',
                     'time' => $m->created_at->format('g:i A'),
                     'is_read' => $m->is_read

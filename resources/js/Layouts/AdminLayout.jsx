@@ -13,24 +13,43 @@ import {
     Settings,
     ChevronDown,
     User,
-    Award
+    Award,
+    TrendingUp,
+    BarChart2
 } from 'lucide-react';
 
 export default function AdminLayout({ title, children }) {
     const { pendingArtisanCount, auth } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const navigation = [
-        { name: 'Dashboard', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
-        { name: 'User Management', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
-        { 
-            name: 'Pending Artisans', 
-            href: route('admin.pending'), 
-            icon: Store, 
-            current: route().current('admin.pending'),
-            badge: pendingArtisanCount > 0 ? pendingArtisanCount : null 
+    const navigationGroups = [
+        {
+            title: 'Platform Overview',
+            items: [
+                { name: 'Dashboard', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
+                { name: 'Monetization', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
+                { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
+            ]
         },
-        { name: 'Sponsorships', href: route('admin.sponsorships'), icon: Award, current: route().current('admin.sponsorships') },
+        {
+            title: 'User Management',
+            items: [
+                { name: 'Users', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
+                { 
+                    name: 'Pending Artisans', 
+                    href: route('admin.pending'), 
+                    icon: Store, 
+                    current: route().current('admin.pending'),
+                    badge: pendingArtisanCount > 0 ? pendingArtisanCount : null 
+                },
+            ]
+        },
+        {
+            title: 'Marketing & Growth',
+            items: [
+                { name: 'Sponsorships', href: route('admin.sponsorships'), icon: Award, current: route().current('admin.sponsorships') },
+            ]
+        }
     ];
 
     return (
@@ -73,38 +92,43 @@ export default function AdminLayout({ title, children }) {
 
                 {/* Navigation Links */}
                 <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                    <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 mt-1">Admin Menu</p>
-                    
-                    <div className="space-y-0.5">
-                        {navigation.map((item) => (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                className={`
-                                    flex items-center justify-between px-4 py-2.5 rounded-lg text-xs font-bold transition-all duration-200
-                                    ${item.current 
-                                        ? 'bg-clay-600 text-white shadow-md shadow-clay-200' 
-                                        : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}
-                                `}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <item.icon 
-                                        size={18} 
-                                        strokeWidth={2.5}
-                                        className={item.current ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'} 
-                                    />
-                                    {item.name}
-                                </div>
-                                {item.badge && (
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                                        item.current ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
-                                    }`}>
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </Link>
-                        ))}
-                    </div>
+                    {navigationGroups.map((group, index) => (
+                        <div key={group.title} className={index > 0 ? 'mt-6' : 'mt-2'}>
+                            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                                {group.title}
+                            </p>
+                            <div className="space-y-0.5">
+                                {group.items.map((item) => (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`
+                                            flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200
+                                            ${item.current 
+                                                ? 'bg-clay-600 text-white shadow-md shadow-clay-200' 
+                                                : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
+                                        `}
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <item.icon 
+                                                size={16} 
+                                                strokeWidth={2.5}
+                                                className={item.current ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'} 
+                                            />
+                                            {item.name}
+                                        </div>
+                                        {item.badge && (
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                                                item.current ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
+                                            }`}>
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
             </aside>
 
@@ -122,6 +146,8 @@ export default function AdminLayout({ title, children }) {
                         <div>
                             <h1 className="text-xl font-bold text-gray-900">{title}</h1>
                             {title === 'Dashboard' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Overview of platform performance</p>}
+                            {title === 'Monetization' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track revenue and subscription metrics</p>}
+                            {title === 'Platform Insights' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Deep dive into revenue forecasts, category performance, and platform health</p>}
                             {title === 'User Management' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage artisans and buyers</p>}
                             {title === 'Pending Artisans' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review artisan applications</p>}
                         </div>
@@ -168,7 +194,7 @@ export default function AdminLayout({ title, children }) {
                 </header>
 
                 {/* Scrollable Content */}
-                <main className="flex-1 p-6 space-y-6">
+                <main className="flex-1 px-6 pt-4 pb-8 space-y-6">
                     {children}
                 </main>
             </div>

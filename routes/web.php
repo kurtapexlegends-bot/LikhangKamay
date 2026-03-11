@@ -3,6 +3,7 @@
 use App\Http\Controllers\HRController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\PaymentController; // Added
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController; // <--- Make sure this is imported
 
 
@@ -33,106 +34,7 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 // --- PUBLIC ROUTES ---
-Route::get('/', function () {
-    // DSS: Top 3 selling stores, top 3 products each
-    $topStoreIds = Product::where('status', 'Active')
-        ->selectRaw('user_id, SUM(sold) as total_sold')
-        ->groupBy('user_id')
-        ->orderByDesc('total_sold')
-        ->take(3)
-        ->pluck('user_id')
-        ->toArray();
-
-    $topSellers = [];
-    foreach ($topStoreIds as $rank => $userId) {
-        $seller = \App\Models\User::find($userId);
-        if (!$seller) continue;
-        $products = Product::with('user')
-            ->where('user_id', $userId)
-            ->where('status', 'Active')
-            ->orderByDesc('sold')
-            ->take(3)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'sold' => $product->sold ?? 0,
-                    'rating' => $product->rating ?? 0,
-                    'img' => $product->img,
-                    'slug' => $product->slug,
-                    'seller_slug' => $product->user->shop_slug,
-                ];
-            });
-        $topSellers[] = [
-            'rank' => $rank + 1,
-            'store_name' => $seller->shop_name ?? $seller->name,
-            'store_slug' => $seller->shop_slug,
-            'store_avatar' => $seller->avatar,
-            'premium_tier' => $seller->premium_tier,
-            'total_sold' => Product::where('user_id', $userId)->sum('sold'),
-            'products' => $products,
-        ];
-    }
-
-    // Fetch featured products (active, with user/seller info)
-    $featuredProducts = Product::with('user')
-        ->where('status', 'Active')
-        ->orderBy('sold', 'desc')
-        ->take(12)
-        ->get()
-        ->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'sold' => $product->sold ?? 0,
-                'rating' => $product->rating ?? 0,
-                'location' => $product->user->city ?? 'Philippines',
-                'img' => $product->img,
-                'category' => $product->category,
-                'slug' => $product->slug,
-                'seller_slug' => $product->user->shop_slug,
-            ];
-        });
-
-    // Use Standardized Categories
-    $categories = ProductController::VALID_CATEGORIES;
-
-    // Fetch sponsored products (active, sponsored_until > now)
-    $sponsoredProducts = Product::with('user')
-        ->where('status', 'Active')
-        ->where('is_sponsored', true)
-        ->where('sponsored_until', '>', now())
-        ->inRandomOrder()
-        ->take(8)
-        ->get()
-        ->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'sold' => $product->sold ?? 0,
-                'rating' => $product->rating ?? 0,
-                'location' => $product->user->city ?? 'Philippines',
-                'img' => $product->img,
-                'category' => $product->category,
-                'slug' => $product->slug,
-                'seller_slug' => $product->user->shop_slug,
-                'is_sponsored' => true,
-            ];
-        });
-
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'featuredProducts' => $featuredProducts,
-        'sponsoredProducts' => $sponsoredProducts,
-        'topSellers' => $topSellers,
-        'categories' => $categories,
-    ]);
-});
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/shop/{user:shop_slug}', [ShopController::class, 'seller'])->name('shop.seller');
@@ -214,47 +116,50 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('artisan.pending');
 
     // SELLER ROUTES
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('/orders/export', [OrderController::class, 'export'])->name('orders.export'); // <--- Added
-    Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');
-    Route::post('/orders/{id}/approve-return', [OrderController::class, 'approveReturn'])->name('orders.approve-return');
-    Route::post('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus'])->name('orders.payment-status');
-    
-    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    Route::get('/analytics/export', [AnalyticsController::class, 'export'])->name('analytics.export'); // <--- Added
-    
-    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-    Route::post('/products/{id}/update', [ProductController::class, 'update'])->name('products.update'); 
-    Route::post('/products/{id}/archive', [ProductController::class, 'archive'])->name('products.archive');
-    Route::post('/products/{id}/activate', [ProductController::class, 'activate'])->name('products.activate'); // New
-    Route::post('/products/{id}/restock', [ProductController::class, 'restock'])->name('products.restock');
-    Route::post('/products/{id}/deduct', [ProductController::class, 'manualDeduct'])->name('products.deduct'); // Phase 1: Manual Deduction
-    
-    Route::get('/3d-manager', [ThreeDManagerController::class, 'index'])->name('3d.index');
-    Route::post('/3d-manager/upload', [ThreeDManagerController::class, 'upload'])->name('3d.upload');
-    Route::delete('/3d-manager/{product}', [ThreeDManagerController::class, 'destroy'])->name('3d.destroy');
+    Route::middleware(['artisan'])->group(function () {
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/export', [OrderController::class, 'export'])->name('orders.export'); // <--- Added
+        Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');
+        Route::post('/orders/{id}/approve-return', [OrderController::class, 'approveReturn'])->name('orders.approve-return');
+        Route::post('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus'])->name('orders.payment-status');
+        
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+        Route::get('/analytics/export', [AnalyticsController::class, 'export'])->name('analytics.export'); // <--- Added
+        
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::post('/products/{id}/update', [ProductController::class, 'update'])->name('products.update'); 
+        Route::post('/products/{id}/archive', [ProductController::class, 'archive'])->name('products.archive');
+        Route::post('/products/{id}/activate', [ProductController::class, 'activate'])->name('products.activate'); // New
+        Route::post('/products/{id}/restock', [ProductController::class, 'restock'])->name('products.restock');
+        Route::post('/products/{id}/deduct', [ProductController::class, 'manualDeduct'])->name('products.deduct'); // Phase 1: Manual Deduction
+        
+        Route::get('/3d-manager', [ThreeDManagerController::class, 'index'])->name('3d.index');
+        Route::post('/3d-manager/upload', [ThreeDManagerController::class, 'upload'])->name('3d.upload');
+        Route::delete('/3d-manager/{product}', [ThreeDManagerController::class, 'destroy'])->name('3d.destroy');
 
-    // SHOP SETTINGS
-    Route::get('/shop-settings', [ShopController::class, 'settings'])->name('shop.settings');
-    Route::post('/shop-settings', [ShopController::class, 'updateSettings'])->name('shop.settings.update');
+        // SHOP SETTINGS
+        Route::get('/shop-settings', [ShopController::class, 'settings'])->name('shop.settings');
+        Route::post('/shop-settings', [ShopController::class, 'updateSettings'])->name('shop.settings.update');
 
-    // SUBSCRIPTIONS
-    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
-    Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('seller.subscription.upgrade');
-    Route::post('/subscription/downgrade', [SubscriptionController::class, 'downgrade'])->name('seller.subscription.downgrade');
+        // SUBSCRIPTIONS
+        Route::get('/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
+        Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('seller.subscription.upgrade');
+        Route::post('/subscription/downgrade', [SubscriptionController::class, 'downgrade'])->name('seller.subscription.downgrade');
 
-    // SPONSORSHIPS
-    Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'index'])->name('seller.sponsorships');
-    Route::post('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'store'])->name('seller.sponsorships.store');
+        // SPONSORSHIPS
+        Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'index'])->name('seller.sponsorships');
+        Route::post('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'store'])->name('seller.sponsorships.store');
 
-    // SETTINGS
-    Route::post('/settings/modules', [SettingsController::class, 'updateModules'])->name('settings.modules');
+        // SETTINGS
+        Route::post('/settings/modules', [SettingsController::class, 'updateModules'])->name('settings.modules');
+    });
 
     // CHAT SYSTEM & REVIEWS (CRM)
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index'); 
     Route::post('/chat/send', [ChatController::class, 'store'])->name('chat.store');
     Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->name('chat.seen');
+    Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->name('chat.typing');
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
@@ -263,44 +168,46 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->name('reviews.toggle-pin');
 
     // ERP MODULES
-    Route::get('/hr', [HRController::class, 'index'])->name('hr.index');
-    Route::post('/hr/employees', [HRController::class, 'store'])->name('hr.store');
-    Route::delete('/hr/employees/{id}', [HRController::class, 'destroy'])->name('hr.destroy');
-    Route::post('/hr/generate', [HRController::class, 'generatePayroll'])->name('hr.generate');
-    Route::post('/hr/settings', [HRController::class, 'updateSettings'])->name('hr.settings');
-    Route::delete('/hr/payroll/{id}', [HRController::class, 'destroyPayroll'])->name('hr.payroll.destroy');
+    Route::middleware(['artisan'])->group(function () {
+        Route::get('/hr', [HRController::class, 'index'])->name('hr.index');
+        Route::post('/hr/employees', [HRController::class, 'store'])->name('hr.store');
+        Route::delete('/hr/employees/{id}', [HRController::class, 'destroy'])->name('hr.destroy');
+        Route::post('/hr/generate', [HRController::class, 'generatePayroll'])->name('hr.generate');
+        Route::post('/hr/settings', [HRController::class, 'updateSettings'])->name('hr.settings');
+        Route::delete('/hr/payroll/{id}', [HRController::class, 'destroyPayroll'])->name('hr.payroll.destroy');
 
 
 
-    // PROCUREMENT / INVENTORY
-    Route::get('/procurement', [ProcurementController::class, 'index'])->name('procurement.index');
-    Route::post('/procurement/supplies', [ProcurementController::class, 'store'])->name('supplies.store');
-    Route::post('/procurement/supplies/{supply}/update', [ProcurementController::class, 'update'])->name('supplies.update');
-    Route::post('/procurement/supplies/{supply}/restock', [ProcurementController::class, 'restock'])->name('supplies.restock');
-    Route::post('/procurement/supplies/{supply}/request', [ProcurementController::class, 'requestRestock'])->name('supplies.request'); // <--- Added
-    Route::delete('/procurement/supplies/{supply}', [ProcurementController::class, 'destroy'])->name('supplies.destroy');
+        // PROCUREMENT / INVENTORY
+        Route::get('/procurement', [ProcurementController::class, 'index'])->name('procurement.index');
+        Route::post('/procurement/supplies', [ProcurementController::class, 'store'])->name('supplies.store');
+        Route::post('/procurement/supplies/{supply}/update', [ProcurementController::class, 'update'])->name('supplies.update');
+        Route::post('/procurement/supplies/{supply}/restock', [ProcurementController::class, 'restock'])->name('supplies.restock');
+        Route::post('/procurement/supplies/{supply}/request', [ProcurementController::class, 'requestRestock'])->name('supplies.request'); // <--- Added
+        Route::delete('/procurement/supplies/{supply}', [ProcurementController::class, 'destroy'])->name('supplies.destroy');
 
-    // PROCUREMENT (Stock Requests)
-    Route::get('/procurement/stock-requests', [StockRequestController::class, 'index'])->name('stock-requests.index'); 
-    Route::post('/procurement/stock-requests', [StockRequestController::class, 'store'])->name('stock-requests.store');
-    Route::post('/procurement/stock-requests/{stockRequest}/ordered', [StockRequestController::class, 'markAsOrdered'])->name('stock-requests.ordered');
-    Route::post('/procurement/stock-requests/{stockRequest}/receive', [StockRequestController::class, 'receive'])->name('stock-requests.receive');
-    Route::post('/procurement/stock-requests/{stockRequest}/transfer', [StockRequestController::class, 'transfer'])->name('stock-requests.transfer');
+        // PROCUREMENT (Stock Requests)
+        Route::get('/procurement/stock-requests', [StockRequestController::class, 'index'])->name('stock-requests.index'); 
+        Route::post('/procurement/stock-requests', [StockRequestController::class, 'store'])->name('stock-requests.store');
+        Route::post('/procurement/stock-requests/{stockRequest}/ordered', [StockRequestController::class, 'markAsOrdered'])->name('stock-requests.ordered');
+        Route::post('/procurement/stock-requests/{stockRequest}/receive', [StockRequestController::class, 'receive'])->name('stock-requests.receive');
+        Route::post('/procurement/stock-requests/{stockRequest}/transfer', [StockRequestController::class, 'transfer'])->name('stock-requests.transfer');
 
-    // ACCOUNTING (Fund Release)
-    Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
-    Route::post('/accounting/release/{stockRequest}', [AccountingController::class, 'approveRelease'])->name('accounting.approve');
-    Route::post('/accounting/reject/{stockRequest}', [AccountingController::class, 'rejectRelease'])->name('accounting.reject');
-    Route::post('/accounting/update-funds', [AccountingController::class, 'updateBaseFunds'])->name('accounting.update-funds'); // <--- Added
-    
-    // New Payroll Approval Routes
-    Route::post('/accounting/payroll/{payroll}/approve', [AccountingController::class, 'approvePayroll'])->name('accounting.approvePayroll');
-    Route::post('/accounting/payroll/{payroll}/reject', [AccountingController::class, 'rejectPayroll'])->name('accounting.rejectPayroll');
-    
+        // ACCOUNTING (Fund Release)
+        Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
+        Route::post('/accounting/release/{stockRequest}', [AccountingController::class, 'approveRelease'])->name('accounting.approve');
+        Route::post('/accounting/reject/{stockRequest}', [AccountingController::class, 'rejectRelease'])->name('accounting.reject');
+        Route::post('/accounting/update-funds', [AccountingController::class, 'updateBaseFunds'])->name('accounting.update-funds'); // <--- Added
+        
+        // New Payroll Approval Routes
+        Route::post('/accounting/payroll/{payroll}/approve', [AccountingController::class, 'approvePayroll'])->name('accounting.approvePayroll');
+        Route::post('/accounting/payroll/{payroll}/reject', [AccountingController::class, 'rejectPayroll'])->name('accounting.rejectPayroll');
+        
 
-    
-    // Procurement Completion
-    Route::post('/procurement/requests/{stockRequest}/receive', [ProcurementController::class, 'receiveOrder'])->name('procurement.receive');
+        
+        // Procurement Completion
+        Route::post('/procurement/requests/{stockRequest}/receive', [ProcurementController::class, 'receiveOrder'])->name('procurement.receive');
+    });
     
     // BUYER: SHOPPING & ORDERS
     Route::get('/checkout', [OrderController::class, 'create'])->name('checkout.create');
@@ -344,6 +251,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'verified', 'super_admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
+    Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
     

@@ -50,13 +50,6 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
-
-        // Redirect based on Role
-        if ($role === 'artisan') {
-            return redirect(route('artisan.setup'));
-        }
-
-        return redirect(route('dashboard', absolute: false));
+        return redirect()->route('login')->with('status', 'Account created! Please log in.');
     }
 }

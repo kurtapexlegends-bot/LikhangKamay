@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\UserTierLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -37,6 +38,11 @@ class SubscriptionController extends Controller
         if ($user->premium_tier === $validated['plan']) {
              return back()->with('error', 'You are already on this plan.');
         }
+        UserTierLog::create([
+            'user_id' => $user->id,
+            'previous_tier' => $user->premium_tier,
+            'new_tier' => $validated['plan'],
+        ]);
 
         $user->update(['premium_tier' => $validated['plan']]);
         $planName = $validated['plan'] === 'super_premium' ? 'Elite' : ucfirst($validated['plan']);
@@ -75,6 +81,11 @@ class SubscriptionController extends Controller
             ->where('status', 'Active')
             ->whereNotIn('id', $validKeepIds)
             ->update(['status' => 'Draft']);
+        UserTierLog::create([
+            'user_id' => $user->id,
+            'previous_tier' => $user->premium_tier,
+            'new_tier' => $newTier,
+        ]);
 
         $user->update(['premium_tier' => $newTier]);
 

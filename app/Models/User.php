@@ -20,7 +20,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        // 'role', // REMOVED: Managed by system
+        'role',
         'shop_name',
         'bio',
         'banner_image',

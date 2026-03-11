@@ -52,10 +52,10 @@ export default function SponsorshipRequests({ requests }) {
         <AdminLayout title="Sponsorship Requests">
             <Head title="Sponsorship Requests - Admin" />
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 
                 {/* Header & Search */}
-                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="px-8 py-5 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
                             <Award size={20} />

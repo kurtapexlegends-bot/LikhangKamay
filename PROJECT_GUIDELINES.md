@@ -125,6 +125,7 @@ All accounts use the password: `password`
 - **Compact Density:** Maintain a dense, professional interface. Use small text sizes (`text-xs`, `text-sm`), tight padding (`px-3 py-1.5`), and compact icons (`size={14}` to `size={16}`).
 
 ## 10. AI Assistant Rules
+- **No Guessing**: Don't you dare guess values, prices, or business logic. Always scan the system or ask for clarification before assuming arbitrary numbers.
 - **Always flag potential issues.** Before applying any code change, the AI assistant **MUST** proactively inform the developer of any potential breaking changes, side effects, data loss risks, or compatibility issues that could result from the proposed modification. Never apply a change silently if it could cause problems.
 
 ---
