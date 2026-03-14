@@ -82,38 +82,34 @@ class AnalyticsController extends Controller
         };
 
         // Monthly: Last 6 months with zero-fill (same as Dashboard)
+        $monthExpr = $this->monthNumberExpression('orders.created_at');
         $monthlyRaw = $chartBaseQuery()
             ->where('orders.created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->select(
-                DB::raw('DATE_FORMAT(orders.created_at, "%b") as name'),
-                DB::raw('MONTH(orders.created_at) as month_num'),
-                DB::raw('SUM(order_items.price * order_items.quantity) as value')
-            )
-            ->groupBy(DB::raw('DATE_FORMAT(orders.created_at, "%b")'), DB::raw('MONTH(orders.created_at)'))
-            ->orderBy(DB::raw('MONTH(orders.created_at)'))
+            ->selectRaw("{$monthExpr} as month_num, SUM(order_items.price * order_items.quantity) as value")
+            ->groupByRaw($monthExpr)
+            ->orderByRaw($monthExpr)
             ->get()
-            ->keyBy('name');
+            ->keyBy(fn ($row) => (int) $row->month_num);
 
         $monthlyData = [];
         for ($i = 5; $i >= 0; $i--) {
+            $monthNum = (int) Carbon::now()->subMonths($i)->format('n');
             $monthName = Carbon::now()->subMonths($i)->format('M');
             $monthlyData[] = [
                 'name' => $monthName,
-                'value' => $monthlyRaw->has($monthName) ? (float) $monthlyRaw[$monthName]->value : 0
+                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0
             ];
         }
 
         // Yearly: All years grouped (same as Dashboard)
+        $yearExpr = $this->yearNumberExpression('orders.created_at');
         $yearlyData = $chartBaseQuery()
-            ->select(
-                DB::raw('YEAR(orders.created_at) as name'),
-                DB::raw('SUM(order_items.price * order_items.quantity) as value')
-            )
-            ->groupBy(DB::raw('YEAR(orders.created_at)'))
-            ->orderBy(DB::raw('YEAR(orders.created_at)'))
+            ->selectRaw("{$yearExpr} as year_num, SUM(order_items.price * order_items.quantity) as value")
+            ->groupByRaw($yearExpr)
+            ->orderByRaw($yearExpr)
             ->get()
             ->map(function ($item) {
-                return ['name' => (string) $item->name, 'value' => (float) $item->value];
+                return ['name' => (string) ((int) $item->year_num), 'value' => (float) $item->value];
             });
 
 
@@ -217,6 +213,33 @@ class AnalyticsController extends Controller
         return round((($current - $previous) / $previous) * 100, 1);
     }
 
+    private function monthNumberExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%m', {$column}) AS INTEGER)",
+            'pgsql' => "EXTRACT(MONTH FROM {$column})",
+            default => "MONTH({$column})",
+        };
+    }
+
+    private function yearNumberExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%Y', {$column}) AS INTEGER)",
+            'pgsql' => "EXTRACT(YEAR FROM {$column})",
+            default => "YEAR({$column})",
+        };
+    }
+
+    private function yearMonthExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "strftime('%Y-%m', {$column})",
+            'pgsql' => "to_char({$column}, 'YYYY-MM')",
+            default => "DATE_FORMAT({$column}, '%Y-%m')",
+        };
+    }
+
     /**
      * SELLER: Export analytics report to CSV
      */
@@ -241,13 +264,8 @@ class AnalyticsController extends Controller
                   ->where('created_at', '>=', Carbon::now()->subMonths(12));
             })
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->select(
-                DB::raw('DATE_FORMAT(orders.created_at, "%Y-%m") as month'),
-                DB::raw('SUM(order_items.price * order_items.quantity) as revenue'),
-                DB::raw('SUM(order_items.cost * order_items.quantity) as cost'),
-                DB::raw('COUNT(DISTINCT orders.id) as order_count')
-            )
-            ->groupBy('month')
+            ->selectRaw("{$this->yearMonthExpression('orders.created_at')} as month, SUM(order_items.price * order_items.quantity) as revenue, SUM(order_items.cost * order_items.quantity) as cost, COUNT(DISTINCT orders.id) as order_count")
+            ->groupByRaw($this->yearMonthExpression('orders.created_at'))
             ->orderBy('month', 'desc')
             ->get();
 

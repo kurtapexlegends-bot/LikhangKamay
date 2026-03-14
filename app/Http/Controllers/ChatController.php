@@ -103,7 +103,7 @@ class ChatController extends Controller
         // A. GET CONVERSATION LIST
         $contactIds = Message::where('sender_id', $userId)
             ->orWhere('receiver_id', $userId)
-            ->select(DB::raw('IF(sender_id = '.$userId.', receiver_id, sender_id) as contact_id'))
+            ->selectRaw('CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id', [$userId])
             ->distinct()
             ->pluck('contact_id');
 

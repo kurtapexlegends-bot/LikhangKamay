@@ -271,7 +271,10 @@ class ProductController extends Controller
     public function restock(Request $request, $id)
     {
         $product = Product::where('user_id', Auth::id())->findOrFail($id);
-        $amount = $request->input('amount', 0);
+        $validated = $request->validate([
+            'amount' => 'required|integer|min:1',
+        ]);
+        $amount = $validated['amount'];
         
         $product->increment('stock', $amount);
         $product->update(['status' => 'Active']); // Auto activate on restock

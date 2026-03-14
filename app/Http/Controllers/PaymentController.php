@@ -80,7 +80,9 @@ class PaymentController extends Controller
     {
         $orderId = $request->query('order_id');
 
-        $order = Order::where('order_number', $orderId)->firstOrFail();
+        $order = Order::where('order_number', $orderId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
         // SECURITY: Verify with PayMongo
         if (!$order->paymongo_session_id) {
@@ -90,27 +92,54 @@ class PaymentController extends Controller
         try {
             $session = $this->payMongoService->retrieveCheckoutSession($order->paymongo_session_id);
             $attributes = $session['attributes'] ?? [];
+            $referenceNumber = $attributes['reference_number'] ?? null;
+
+            if ($referenceNumber && $referenceNumber !== $order->order_number) {
+                \Illuminate\Support\Facades\Log::warning('PayMongo reference mismatch', [
+                    'order' => $order->order_number,
+                    'reference_number' => $referenceNumber,
+                    'session_id' => $order->paymongo_session_id,
+                ]);
+                return redirect()->route('my-orders.index')->with('error', 'Payment verification failed. Please contact support.');
+            }
 
             // Check multiple indicators of successful payment:
             // 1. payment_status === 'paid'
-            // 2. payments array is non-empty (PayMongo attaches payment records)
-            // 3. payment_intent exists (payment was processed)
+            // 2. included payment records contain at least one paid payment
+            // 3. payments array (if present) contains at least one paid payment
             $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
-            $hasPayments = !empty($attributes['payments'] ?? []);
-            $hasPaymentIntent = !empty($attributes['payment_intent'] ?? null);
+            $hasPaidPayment = false;
+
+            foreach (($session['included'] ?? []) as $included) {
+                $includedType = $included['type'] ?? null;
+                $includedStatus = $included['attributes']['status'] ?? null;
+                if ($includedType === 'payment' && $includedStatus === 'paid') {
+                    $hasPaidPayment = true;
+                    break;
+                }
+            }
+
+            if (!$hasPaidPayment && !empty($attributes['payments']) && is_array($attributes['payments'])) {
+                foreach ($attributes['payments'] as $payment) {
+                    $paymentStatus = $payment['status'] ?? ($payment['attributes']['status'] ?? null);
+                    if ($paymentStatus === 'paid') {
+                        $hasPaidPayment = true;
+                        break;
+                    }
+                }
+            }
+
             $sessionStatus = $attributes['status'] ?? 'pending';
 
             \Illuminate\Support\Facades\Log::info('PayMongo Session Check', [
                 'order' => $orderId,
                 'payment_status' => $attributes['payment_status'] ?? 'unknown',
                 'session_status' => $sessionStatus,
-                'has_payments' => $hasPayments,
-                'has_intent' => $hasPaymentIntent,
+                'has_paid_payment' => $hasPaidPayment,
             ]);
 
-            // PayMongo only redirects to success_url after payment is completed.
-            // If we're here, the payment went through. Verify via any indicator.
-            if ($isPaid || $hasPayments || $hasPaymentIntent || $sessionStatus === 'active') {
+            // Only mark as paid when the gateway explicitly says paid.
+            if ($isPaid || $hasPaidPayment) {
                 if ($order->payment_status !== 'paid') {
                     $order->update([
                         'payment_status' => 'paid',

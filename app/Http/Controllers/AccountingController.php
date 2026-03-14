@@ -15,9 +15,9 @@ class AccountingController extends Controller
 
         // 1. Calculate Total Revenue (Completed Orders)
         // We only count revenue that is actually "paid" or "completed" to be safe, 
-        // but for now let's use all 'completed' orders as the realized revenue source.
+        // but for now let's use all 'Completed' orders as the realized revenue source.
         $totalRevenue = \App\Models\Order::where('artisan_id', $userId)
-            ->where('status', 'completed')
+            ->where('status', 'Completed')
             ->sum('total_amount');
 
         // 2. Calculate Total Expenses (Released Stock Requests + Paid Payrolls)
@@ -101,7 +101,7 @@ class AccountingController extends Controller
 
         // --- BUDGET CHECK ---
         $userId = Auth::id();
-        $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'completed')->sum('total_amount');
+        $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'Completed')->sum('total_amount');
         
         $stockExpenses = StockRequest::where('user_id', $userId)
             ->whereIn('status', [
@@ -165,7 +165,7 @@ class AccountingController extends Controller
 
         // BUDGET CHECK
         $userId = Auth::id();
-        $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'completed')->sum('total_amount');
+        $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'Completed')->sum('total_amount');
         
         $stockExpenses = StockRequest::where('user_id', $userId)
             ->whereIn('status', [

@@ -110,28 +110,35 @@ class DashboardController extends Controller
 
         // 3. CHARTS & LISTS
         // Monthly Data (Last 6 Months, including current)
+        $monthExpr = $this->monthNumberExpression('created_at');
         $monthlyRaw = Order::where('artisan_id', $userId)
             ->where('status', 'Completed')
             ->where('created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->select(DB::raw('DATE_FORMAT(created_at, "%b") as name'), DB::raw('MONTH(created_at) as month_num'), DB::raw('SUM(total_amount) as value'))
-            ->groupBy('name', 'month_num')->orderBy('month_num')->get()
-            ->keyBy('name');
+            ->selectRaw("{$monthExpr} as month_num, SUM(total_amount) as value")
+            ->groupByRaw($monthExpr)
+            ->orderByRaw($monthExpr)
+            ->get()
+            ->keyBy(fn ($row) => (int) $row->month_num);
 
         $monthlyData = [];
         for ($i = 5; $i >= 0; $i--) {
+            $monthNum = (int) Carbon::now()->subMonths($i)->format('n');
             $monthName = Carbon::now()->subMonths($i)->format('M');
             $monthlyData[] = [
                 'name' => $monthName,
-                'value' => $monthlyRaw->has($monthName) ? (float)$monthlyRaw[$monthName]->value : 0
+                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0
             ];
         }
 
+        $yearExpr = $this->yearNumberExpression('created_at');
         $yearlyData = Order::where('artisan_id', $userId)
             ->where('status', 'Completed')
-            ->select(DB::raw('YEAR(created_at) as name'), DB::raw('SUM(total_amount) as value'))
-            ->groupBy('name')->orderBy('name')->get()
-            ->map(function($item) {
-                return ['name' => (string)$item->name, 'value' => (float)$item->value];
+            ->selectRaw("{$yearExpr} as year_num, SUM(total_amount) as value")
+            ->groupByRaw($yearExpr)
+            ->orderByRaw($yearExpr)
+            ->get()
+            ->map(function ($item) {
+                return ['name' => (string) ((int) $item->year_num), 'value' => (float) $item->value];
             });
 
         $categoryData = OrderItem::whereHas('order', function ($q) use ($userId) {
@@ -237,5 +244,23 @@ class DashboardController extends Controller
             'recentOrders' => $recentOrders,
             'filters' => $request->only(['search', 'status', 'date'])
         ]);
+    }
+
+    private function monthNumberExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%m', {$column}) AS INTEGER)",
+            'pgsql' => "EXTRACT(MONTH FROM {$column})",
+            default => "MONTH({$column})",
+        };
+    }
+
+    private function yearNumberExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%Y', {$column}) AS INTEGER)",
+            'pgsql' => "EXTRACT(YEAR FROM {$column})",
+            default => "YEAR({$column})",
+        };
     }
 }

@@ -19,12 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\UpdateLastSeen::class, // <--- Added
         ]);
 
-        // 2. FIX 419 ERROR: EXCLUDE LOGOUT FROM CSRF CHECK
-        $middleware->validateCsrfTokens(except: [
-            'logout', 
-        ]);
-
-        // 3. MIDDLEWARE ALIASES
+        // 2. MIDDLEWARE ALIASES
         $middleware->alias([
             'super_admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             'artisan' => \App\Http\Middleware\EnsureArtisan::class,
