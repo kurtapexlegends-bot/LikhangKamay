@@ -661,7 +661,10 @@ class OrderController extends Controller
      */
     public function downloadReceipt($id)
     {
-        $order = Order::with('items')
+        $order = Order::with(['items' => function ($query) {
+            // BUG-L1 Fix: Only select safe fields from items
+            $query->select('id', 'order_id', 'product_id', 'product_name', 'variant', 'quantity', 'price', 'product_img');
+        }])
             ->where('id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();

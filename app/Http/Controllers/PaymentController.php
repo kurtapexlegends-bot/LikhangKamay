@@ -36,6 +36,7 @@ class PaymentController extends Controller
 
         // Prepare Line Items for PayMongo
         $lineItems = [];
+        $calculatedTotal = 0;
         foreach ($order->items as $item) {
             $lineItems[] = [
                 'currency' => 'PHP',
@@ -45,6 +46,12 @@ class PaymentController extends Controller
                 'quantity' => $item->quantity,
                 'images' => [$item->product_img ? asset('storage/' . $item->product_img) : asset('images/placeholder.svg')],
             ];
+            $calculatedTotal += $item->price * $item->quantity;
+        }
+
+        // BUG-L2 Fix: Re-validate order total against line items. 
+        if ((float) $order->total_amount !== (float) $calculatedTotal) {
+            $order->update(['total_amount' => $calculatedTotal]);
         }
 
         // Setup Checkout Session Data

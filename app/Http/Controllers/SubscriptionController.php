@@ -33,7 +33,17 @@ class SubscriptionController extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if ($user->premium_tier === $validated['plan']) {
+
+        // BUG-L5 Fix: Guard against downgrading via upgrade endpoint
+        $planLevels = ['artisan' => 1, 'premium' => 2, 'super_premium' => 3];
+        $currentLevel = $planLevels[$user->premium_tier] ?? 1;
+        $targetLevel = $planLevels[$validated['plan']] ?? 1;
+
+        if ($targetLevel < $currentLevel) {
+            return redirect()->route('subscription.downgrade.index')->with('warning', 'Please use the downgrade mechanism to switch to a lower plan.');
+        }
+
+        if ($targetLevel === $currentLevel) {
              return back()->with('error', 'You are already on this plan.');
         }
         UserTierLog::create([

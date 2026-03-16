@@ -352,7 +352,10 @@ class User extends Authenticatable implements MustVerifyEmail
         });
 
         static::updating(function ($user) {
-            if ($user->isDirty('shop_name') && !empty($user->shop_name) && empty($user->shop_slug)) {
+            // BUG-M6 Fix: Regenerate slug if empty and user is artisan
+            if (empty($user->shop_slug) && !empty($user->shop_name) && $user->role === 'artisan') {
+                $user->shop_slug = \Illuminate\Support\Str::slug($user->shop_name . '-' . \Illuminate\Support\Str::random(6));
+            } elseif ($user->isDirty('shop_name') && !empty($user->shop_name) && empty($user->shop_slug)) {
                 $user->shop_slug = \Illuminate\Support\Str::slug($user->shop_name . '-' . \Illuminate\Support\Str::random(6));
             }
         });
