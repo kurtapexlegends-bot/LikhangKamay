@@ -6,6 +6,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -45,10 +46,14 @@ class ProductController extends Controller
     // POST: /products (Create New)
     public function store(Request $request)
     {
+        $request->merge([
+            'category' => trim((string) $request->input('category')),
+        ]);
+
         $validated = $request->validate([
             'sku' => 'required|unique:products,sku',
             'name' => 'required|string|max:255',
-            'category' => 'required|string|in:' . implode(',', self::VALID_CATEGORIES),
+            'category' => ['required', 'string', Rule::in(self::VALID_CATEGORIES)],
             'price' => 'required|numeric',
             'cost_price' => 'nullable|numeric',
             'stock' => 'required|integer',
@@ -144,13 +149,17 @@ class ProductController extends Controller
     {
         $product = Product::where('user_id', Auth::id())->findOrFail($id);
 
+        $request->merge([
+            'category' => trim((string) $request->input('category')),
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string',
             'price' => 'required|numeric',
             'cost_price' => 'nullable|numeric',
             'stock' => 'required|integer',
             'status' => 'required|string',
-            'category' => 'required|string|in:' . implode(',', self::VALID_CATEGORIES),
+            'category' => ['required', 'string', Rule::in(self::VALID_CATEGORIES)],
             'cover_photo' => 'nullable|image|max:10240',
             'gallery.*' => 'nullable|image|max:10240',
             'retained_gallery' => 'nullable|array',
@@ -412,7 +421,8 @@ class ProductController extends Controller
         // Sync Linked Supply (Always)
         $supply = \App\Models\Supply::where('product_id', $product->id)->first();
         if ($supply) {
-            $supply->decrement('quantity', $validated['quantity']);
+            $newQuantity = max(0, $supply->quantity - $validated['quantity']);
+            $supply->update(['quantity' => $newQuantity]);
         }
 
         return back()->with('success', "Stock updated. Deducted {$validated['quantity']} units for {$validated['reason']}.");

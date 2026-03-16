@@ -12,6 +12,7 @@ import FilterSidebar from './Partials/FilterSidebar';
 export default function Catalog(props) {
     // Explicitly handle potentially null props BEFORE any hooks
     const products = Array.isArray(props.products) ? props.products : [];
+    const sponsoredProducts = Array.isArray(props.sponsoredProducts) ? props.sponsoredProducts : [];
     const categories = Array.isArray(props.categories) ? props.categories : [
         'All', 
         'Tableware', 
@@ -323,6 +324,52 @@ export default function Catalog(props) {
                             </div>
                         )}
 
+                        {/* --- SPONSORED RESULTS (If searching) --- */}
+                        {safeFilters.search && sponsoredProducts.length > 0 && (
+                            <div className="mb-8">
+                                <h3 className="text-xs font-bold text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <Sparkles size={14} className="text-amber-500" />
+                                    Sponsored Results
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                    {sponsoredProducts.map((product) => (
+                                        <Link 
+                                            href={route('product.show', product.slug)} 
+                                            key={`sponsored-${product.id}`} 
+                                            className="group bg-white rounded-xl border border-amber-200 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden relative"
+                                        >
+                                            <div className="aspect-square relative bg-amber-50/50 overflow-hidden">
+                                                <img 
+                                                    src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
+                                                    alt={product.name} 
+                                                    className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                                                    onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                />
+                                                <div className="absolute top-1.5 left-1.5 bg-amber-100/90 text-amber-700 text-[8px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 border border-amber-200 shadow-sm uppercase tracking-tighter">
+                                                    <Award size={9} /> Sponsored
+                                                </div>
+                                            </div>
+                                            <div className="p-2.5 flex flex-col flex-1 bg-gradient-to-b from-amber-50/20 to-transparent">
+                                                <h3 className="text-[11px] font-bold text-gray-900 line-clamp-2 leading-tight mb-1 group-hover:text-amber-700">
+                                                    {product.name}
+                                                </h3>
+                                                <span className="text-[10px] text-gray-400 mb-1.5 line-clamp-1">{product.seller}</span>
+                                                <div className="mt-auto flex items-center justify-between">
+                                                    <span className="text-amber-700 text-xs font-black">&#8369;{product.price}</span>
+                                                    {product.rating > 0 && (
+                                                        <div className="flex items-center gap-0.5 text-[10px] font-bold text-gray-500">
+                                                            {product.rating.toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                                <div className="mt-6 border-b border-gray-100"></div>
+                            </div>
+                        )}
+
                         {/* --- PRODUCT GRID --- */}
                         {products.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -330,7 +377,11 @@ export default function Catalog(props) {
                                     <Link 
                                         href={route('product.show', product.slug)} 
                                         key={product.id} 
-                                        className="group bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden"
+                                        className={`group bg-white rounded-xl border transition-all duration-200 flex flex-col overflow-hidden ${
+                                            product.is_sponsored 
+                                                ? 'border-amber-200 shadow-sm shadow-amber-50 hover:border-amber-400 hover:shadow-md' 
+                                                : 'border-gray-100 hover:border-gray-200 hover:shadow-md'
+                                        }`}
                                     >
                                         {/* Image */}
                                         <div className="aspect-square relative bg-gray-50 overflow-hidden">
@@ -347,77 +398,30 @@ export default function Catalog(props) {
                                             ) : product.is_new ? (
                                                 <span className="absolute top-1.5 left-1.5 bg-clay-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">New</span>
                                             ) : null}
-                                            
-                                            {/* Rating Badge */}
-                                            {product.rating > 0 && (
-                                                <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                                    {Number(product.rating).toFixed(1)} 
-                                                    <Star size={9} className="fill-amber-400 text-amber-400" />
-                                                </div>
-                                            )}
-                                            
-                                        {/* Hover: Add to Cart (Desktop Only) */}
-                                        <div className="hidden lg:block absolute inset-x-0 bottom-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200 bg-gradient-to-t from-black/50 to-transparent pt-8">
-                                            <button 
-                                                className={`w-full text-[10px] font-bold uppercase rounded py-2 flex items-center justify-center gap-1.5 transition ${
-                                                    addedId === product.id 
-                                                        ? 'bg-emerald-500 text-white' 
-                                                        : 'bg-white text-gray-700 hover:bg-clay-600 hover:text-white'
-                                                }`}
-                                                onClick={(e) => addToCart(e, product.id)}
-                                                disabled={addingId === product.id}
-                                            >
-                                                {addingId === product.id ? (
-                                                    <Loader2 size={12} className="animate-spin" />
-                                                ) : addedId === product.id ? (
-                                                    <><Check size={12} /> Added</>
-                                                ) : (
-                                                    <><ShoppingCart size={12} /> Add to Cart</>
-                                                )}
-                                            </button>
                                         </div>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="p-2.5 flex flex-col gap-1 flex-1">
-                                        <h3 className="text-xs font-medium text-gray-800 line-clamp-2 group-hover:text-clay-600 transition leading-tight">
-                                            {product.name}
-                                        </h3>
-
-                                        <div className="mt-auto pt-1 flex items-end justify-between gap-2">
-                                            <div>
-                                                <div className="font-bold text-sm text-clay-600">
-                                                    ₱{formatPrice(product.price)}
+                                        {/* Content */}
+                                        <div className={`p-3 flex flex-col flex-1 ${product.is_sponsored ? 'bg-amber-50/10' : ''}`}>
+                                            <h3 className={`text-xs font-bold line-clamp-2 leading-tight mb-1 transition ${product.is_sponsored ? 'text-amber-900 group-hover:text-amber-600' : 'text-gray-800 group-hover:text-clay-600'}`}>
+                                                {product.name}
+                                            </h3>
+                                            <div className="mt-auto">
+                                                <div className="flex items-center gap-1 mb-1.5">
+                                                    <span className="text-[10px] text-gray-400 truncate">{product.seller}</span>
+                                                    <span className="text-gray-300">·</span>
+                                                    <span className="text-[10px] text-gray-400 truncate">{product.location}</span>
                                                 </div>
-                                                
-                                                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
-                                                    <span className="flex items-center gap-0.5">
-                                                        <MapPin size={9} /> {product.location || 'PH'}
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`text-sm font-black ${product.is_sponsored ? 'text-amber-700' : 'text-clay-600'}`}>
+                                                        &#8369;{product.price}
                                                     </span>
-                                                    {product.sold > 0 && <span>{product.sold} sold</span>}
+                                                    {product.rating > 0 && (
+                                                        <div className="flex items-center gap-0.5 text-[10px] font-bold text-gray-600">
+                                                            {product.rating.toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-
-                                            {/* Mobile Only: Add Button */}
-                                            <button 
-                                                className={`lg:hidden w-8 h-8 flex items-center justify-center rounded-full shadow-sm transition-all active:scale-95 ${
-                                                    addedId === product.id 
-                                                        ? 'bg-emerald-500 text-white' 
-                                                        : 'bg-clay-100 text-clay-700 hover:bg-clay-600 hover:text-white'
-                                                }`}
-                                                onClick={(e) => addToCart(e, product.id)}
-                                                disabled={addingId === product.id}
-                                            >
-                                                {addingId === product.id ? (
-                                                    <Loader2 size={14} className="animate-spin" />
-                                                ) : addedId === product.id ? (
-                                                    <Check size={14} />
-                                                ) : (
-                                                    <ShoppingCart size={14} />
-                                                )}
-                                            </button>
                                         </div>
-                                    </div>
                                     </Link>
                                 ))}
                             </div>

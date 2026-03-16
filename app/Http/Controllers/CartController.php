@@ -14,6 +14,24 @@ class CartController extends Controller
     public function index()
     {
         $cart = Session::get('cart', []);
+
+        if (!empty($cart)) {
+            $productIds = array_keys($cart);
+            $liveProducts = Product::whereIn('id', $productIds)->pluck('price', 'id');
+            
+            $updatedCart = false;
+            foreach ($cart as $id => &$item) {
+                if (isset($liveProducts[$id]) && $item['price'] != $liveProducts[$id]) {
+                    $item['price'] = $liveProducts[$id];
+                    $updatedCart = true;
+                }
+            }
+            
+            if ($updatedCart) {
+                Session::put('cart', $cart);
+            }
+        }
+
         return Inertia::render('Shop/Cart', [
             'cart' => $cart
         ]);

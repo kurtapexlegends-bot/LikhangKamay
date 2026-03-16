@@ -15,7 +15,7 @@ import {
     TrendingUp, X, Tag, Image as ImageIcon,
     AlertTriangle, ChevronUp, ChevronDown,
     User, LogOut, Menu, MoreVertical, RotateCcw,
-    CheckCircle, Plus, Edit3, RefreshCw, Archive, Crown
+    Check, CheckCircle, Plus, Edit3, RefreshCw, Archive, Crown
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 
@@ -60,10 +60,27 @@ const SortableHeader = ({ label, sortKey, currentSort, onSort }) => {
     );
 };
 
-export default function ProductManager({ auth, products: dbProducts = [], categories = [], subscription }) {
+const STANDARD_PRODUCT_CATEGORIES = [
+    'Tableware',
+    'Drinkware',
+    'Vases & Jars',
+    'Planters & Pots',
+    'Home Decor',
+    'Kitchenware',
+    'Artisan Sets',
+];
+
+export default function ProductManager({ auth, products: dbProducts = [], categories: serverCategories = [], subscription }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [products, setProducts] = useState(dbProducts);
     useEffect(() => { setProducts(dbProducts); }, [dbProducts]);
+
+    const categories = useMemo(() => (
+        Array.isArray(serverCategories) && serverCategories.length > 0
+            ? serverCategories
+            : STANDARD_PRODUCT_CATEGORIES
+    ), [serverCategories]);
+    const defaultCategory = categories[0] || STANDARD_PRODUCT_CATEGORIES[0];
 
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
@@ -98,7 +115,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         sku: '',
         name: '',
         description: '',
-        category: 'Vases',
+        category: defaultCategory,
         clay_type: 'Stoneware',
         glaze_type: 'Matte',
         firing_method: 'Electric Kiln',
@@ -190,7 +207,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             id: null,
             sku: generateSKU(),
             cost_price: '',
-            category: 'Vases',
+            category: defaultCategory,
             clay_type: 'Stoneware',
             glaze_type: 'Matte',
             firing_method: 'Electric Kiln',
@@ -210,6 +227,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         setActiveFormTab('Essentials');
         setData({
             ...product,
+            category: categories.includes(product.category) ? product.category : defaultCategory,
             cost_price: product.cost_price || '',
             colorInput: '',
             description: product.description || '',

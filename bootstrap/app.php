@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'super_admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             'artisan' => \App\Http\Middleware\EnsureArtisan::class,
+            'seller.module' => \App\Http\Middleware\EnsureSellerModuleAccess::class,
         ]);
         
     })

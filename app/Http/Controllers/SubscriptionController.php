@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
 use App\Models\UserTierLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class SubscriptionController extends Controller
@@ -54,12 +52,16 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'plan' => 'required|in:free,premium',
             'keep_active_ids' => 'nullable|array',
-            'keep_active_ids.*' => 'exists:products,id'
+            'keep_active_ids.*' => [
+                'nullable',
+                \Illuminate\Validation\Rule::exists('products', 'id')->where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ]
         ]);
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $newTier = $validated['plan'];
+        $previousUrl = url()->previous();
 
         // Determine new limit
         $newLimit = match($newTier) {
@@ -67,7 +69,24 @@ class SubscriptionController extends Controller
             default => 3,
         };
 
+        $activeIds = $user->products()
+            ->where('status', 'Active')
+            ->pluck('id')
+            ->toArray();
+
         $keepIds = $validated['keep_active_ids'] ?? [];
+
+        // If no keep list is provided and seller is already within target limit,
+        // keep all active products by default (for quick downgrade from plan modal).
+        if (empty($keepIds)) {
+            if (count($activeIds) <= $newLimit) {
+                $keepIds = $activeIds;
+            } else {
+                return redirect()
+                    ->route('seller.subscription')
+                    ->with('error', 'Please choose which products to keep active before downgrading.');
+            }
+        }
         
         if (count($keepIds) > $newLimit) {
              return back()->withErrors(['limit' => 'You selected too many products to keep active. The limit for this tier is ' . $newLimit]);
@@ -89,6 +108,40 @@ class SubscriptionController extends Controller
 
         $user->update(['premium_tier' => $newTier]);
 
-        return redirect()->route('seller.subscription')->with('success', 'Plan downgraded successfully. Excess products set to Draft.');
+        $redirectTo = $this->getSafePostDowngradeRedirect($user, $previousUrl);
+
+        return redirect()
+            ->to($redirectTo)
+            ->with('success', 'Plan downgraded successfully. Excess products set to Draft.');
+    }
+
+    private function getSafePostDowngradeRedirect(\App\Models\User $user, string $previousUrl): string
+    {
+        $path = parse_url($previousUrl, PHP_URL_PATH) ?? '';
+
+        $pathModuleMap = [
+            '/orders' => 'orders',
+            '/analytics' => 'analytics',
+            '/products' => 'products',
+            '/3d-manager' => '3d',
+            '/shop-settings' => 'shop_settings',
+            '/sponsorships' => 'sponsorships',
+            '/chat' => 'messages',
+            '/reviews' => 'reviews',
+            '/hr' => 'hr',
+            '/accounting' => 'accounting',
+            '/procurement/stock-requests' => 'stock_requests',
+            '/procurement' => 'procurement',
+        ];
+
+        foreach ($pathModuleMap as $pathPrefix => $module) {
+            if (str_starts_with($path, $pathPrefix) && !$user->canAccessSellerModule($module)) {
+                return route('dashboard');
+            }
+        }
+
+        // Keep the current page when still allowed (fixes forced /subscription redirects).
+        // Use path-only redirect to avoid external redirect targets.
+        return $path ?: route('dashboard');
     }
 }

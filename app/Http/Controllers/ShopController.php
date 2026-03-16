@@ -27,15 +27,23 @@ class ShopController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    // If product is sponsored and has valid dates, it should match the "sponsored" keyword
+                    ->orWhere(function($sq) use ($search) {
+                        if (strtolower($search) === 'sponsored') {
+                            $sq->where('is_sponsored', true)
+                               ->where('sponsored_until', '>=', now());
+                        }
+                    });
             });
 
-            // Weighted Ordering: Name match > Category match > Description match
+            // Weighted Ordering: Sponsored > Name match > Category match > Description match
             $query->orderByRaw("
                 CASE 
-                    WHEN name LIKE ? THEN 1
-                    WHEN category LIKE ? THEN 2
-                    ELSE 3 
+                    WHEN is_sponsored = 1 AND sponsored_until >= NOW() THEN 1
+                    WHEN name LIKE ? THEN 2
+                    WHEN category LIKE ? THEN 3
+                    ELSE 4 
                 END
             ", ["%{$search}%", "%{$search}%"]);
         }
@@ -131,11 +139,17 @@ class ShopController extends Controller
             ];
         });
 
+        // 5b. Separate Sponsored Products for highlighting (if search is active)
+        $sponsoredResults = $products->filter(function($p) {
+            return $p['is_sponsored'];
+        })->values();
+
         // 6. Categories list
         $categories = ['All', ...ProductController::VALID_CATEGORIES];
 
         return Inertia::render('Shop/Catalog', [
             'products' => $products,
+            'sponsoredProducts' => $sponsoredResults,
             'categories' => $categories,
             'availableLocations' => $availableLocations,
             'availableMaterials' => $availableMaterials,

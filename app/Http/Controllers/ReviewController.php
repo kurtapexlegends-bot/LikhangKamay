@@ -66,11 +66,25 @@ class ReviewController extends Controller
             'photos.*' => 'nullable|image|max:5120', // Max 5MB per photo
         ]);
 
-        $photoPaths = [];
+        $existingReview = Review::where('user_id', Auth::id())
+            ->where('product_id', $request->product_id)
+            ->first();
+
         if ($request->hasFile('photos')) {
+            $photoPaths = [];
             foreach ($request->file('photos') as $photo) {
                 $photoPaths[] = $photo->store('reviews', 'public');
             }
+            
+            // Delete old photos from disk to prevent orphaned files
+            if ($existingReview && $existingReview->photos) {
+                foreach ($existingReview->photos as $oldPhoto) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPhoto);
+                }
+            }
+        } else {
+            // Retain existing photos if no new ones laid out
+            $photoPaths = $existingReview ? $existingReview->photos : [];
         }
 
         $review = Review::updateOrCreate(

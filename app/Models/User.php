@@ -154,6 +154,173 @@ class User extends Authenticatable implements MustVerifyEmail
         return $activeCount < $this->getActiveProductLimit();
     }
 
+    public function isPremiumTier(): bool
+    {
+        return in_array($this->premium_tier, ['premium', 'super_premium'], true);
+    }
+
+    public function isEliteTier(): bool
+    {
+        return $this->premium_tier === 'super_premium';
+    }
+
+    public function getSellerTierLabel(): string
+    {
+        return match($this->premium_tier) {
+            'super_premium' => 'Elite',
+            'premium' => 'Premium',
+            default => 'Standard',
+        };
+    }
+
+    /**
+     * Standard modules available to every seller tier.
+     *
+     * @return array<int, string>
+     */
+    public function getStandardSellerModules(): array
+    {
+        return [
+            'overview',
+            'products',
+            'analytics',
+            '3d',
+            'orders',
+            'messages',
+            'reviews',
+            'shop_settings',
+        ];
+    }
+
+    /**
+     * Toggleable modules that can be managed from module settings.
+     *
+     * @return array<int, string>
+     */
+    public function getToggleableSellerModules(): array
+    {
+        return ['hr', 'accounting', 'procurement'];
+    }
+
+    /**
+     * All known seller modules in the current system.
+     *
+     * @return array<int, string>
+     */
+    public function getAllSellerModules(): array
+    {
+        return [
+            ...$this->getStandardSellerModules(),
+            'sponsorships',
+            'hr',
+            'accounting',
+            'procurement',
+            'stock_requests',
+        ];
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function getNormalizedModuleToggles(): array
+    {
+        $saved = is_array($this->modules_enabled) ? $this->modules_enabled : [];
+
+        return [
+            'hr' => (bool) ($saved['hr'] ?? false),
+            'accounting' => (bool) ($saved['accounting'] ?? false),
+            // Procurement remains always enabled due inventory dependencies.
+            'procurement' => true,
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getEnabledToggleableSellerModules(): array
+    {
+        if (!$this->isPremiumTier()) {
+            return [];
+        }
+
+        if ($this->isEliteTier()) {
+            return $this->getToggleableSellerModules();
+        }
+
+        return collect($this->getNormalizedModuleToggles())
+            ->filter()
+            ->keys()
+            ->values()
+            ->all();
+    }
+
+    public function canAccessSellerModule(string $module): bool
+    {
+        if (!$this->isArtisan()) {
+            return false;
+        }
+
+        if (in_array($module, $this->getStandardSellerModules(), true)) {
+            return true;
+        }
+
+        if (!$this->isPremiumTier()) {
+            return false;
+        }
+
+        if ($module === 'sponsorships') {
+            return $this->isEliteTier();
+        }
+
+        if ($this->isEliteTier()) {
+            return in_array($module, $this->getAllSellerModules(), true);
+        }
+
+        $enabled = $this->getEnabledToggleableSellerModules();
+
+        if ($module === 'stock_requests') {
+            return in_array('procurement', $enabled, true);
+        }
+
+        return in_array($module, $enabled, true);
+    }
+
+    /**
+     * Entitlements used by seller sidebar and server-side module access checks.
+     *
+     * @return array<string, mixed>
+     */
+    public function getSellerSidebarEntitlements(): array
+    {
+        $standardModules = $this->getStandardSellerModules();
+        $toggleableModules = $this->isPremiumTier() ? $this->getToggleableSellerModules() : [];
+        $enabledToggleableModules = $this->getEnabledToggleableSellerModules();
+
+        if ($this->isEliteTier()) {
+            $visibleModules = $this->getAllSellerModules();
+        } elseif ($this->isPremiumTier()) {
+            $visibleModules = [
+                ...$standardModules,
+                ...$enabledToggleableModules,
+            ];
+
+            if (in_array('procurement', $enabledToggleableModules, true)) {
+                $visibleModules[] = 'stock_requests';
+            }
+        } else {
+            $visibleModules = $standardModules;
+        }
+
+        return [
+            'tierLabel' => $this->getSellerTierLabel(),
+            'visibleModules' => array_values(array_unique($visibleModules)),
+            'toggleableModules' => $toggleableModules,
+            'enabledToggleableModules' => $enabledToggleableModules,
+            'showGear' => $this->isPremiumTier(),
+            'allModulesUnlocked' => $this->isEliteTier(),
+        ];
+    }
+
     // ========== RELATIONSHIPS ==========
 
     public function products()
@@ -185,7 +352,7 @@ class User extends Authenticatable implements MustVerifyEmail
         });
 
         static::updating(function ($user) {
-            if ($user->isDirty('shop_name') && !empty($user->shop_name)) {
+            if ($user->isDirty('shop_name') && !empty($user->shop_name) && empty($user->shop_slug)) {
                 $user->shop_slug = \Illuminate\Support\Str::slug($user->shop_name . '-' . \Illuminate\Support\Str::random(6));
             }
         });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { Crown, Sparkles, Zap, Check, X, ArrowRight, Star, Shield, Rocket, ChevronRight } from 'lucide-react';
 
 const PLAN_CONFIG = {
@@ -99,6 +99,7 @@ const PLANS = [
 
 // ─── Animated Modal ───
 export function PlanModal({ isOpen, onClose, currentTier }) {
+    const { sellerSubscription } = usePage().props;
     const [isVisible, setIsVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [hoveredPlan, setHoveredPlan] = useState(null);
@@ -136,6 +137,26 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
         handleClose();
     };
 
+    const handleDowngrade = (planId, targetLimit) => {
+        const activeCount = sellerSubscription?.activeCount ?? 0;
+
+        // If they exceed the target limit, send them to subscription page to choose kept products.
+        if (activeCount > targetLimit) {
+            router.visit(route('seller.subscription'));
+            handleClose();
+            return;
+        }
+
+        router.post(
+            route('seller.subscription.downgrade'),
+            { plan: planId },
+            {
+                preserveScroll: true,
+                onSuccess: () => handleClose(),
+            }
+        );
+    };
+
     const handleManage = () => {
         router.visit(route('seller.subscription'));
         handleClose();
@@ -158,7 +179,7 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                 style={{ perspective: '1200px' }}
             >
                 <div
-                    className={`relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 ease-out my-4 ${
+                    className={`relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 ease-out my-4 ${
                         isAnimating
                             ? 'opacity-100 translate-y-0 scale-100'
                             : 'opacity-0 translate-y-8 scale-95'
@@ -172,7 +193,7 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                     <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 via-orange-500 to-violet-500" />
 
                     {/* ── Header ── */}
-                    <div className="relative px-6 sm:px-10 pt-8 pb-6 border-b border-stone-100">
+                    <div className="relative px-5 sm:px-8 pt-6 pb-5 border-b border-stone-100">
                         {/* Decorative blobs */}
                         <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-100/40 to-orange-100/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
                         <div className="absolute top-4 left-4 w-24 h-24 bg-gradient-to-br from-violet-100/30 to-indigo-100/20 rounded-full blur-2xl pointer-events-none" />
@@ -180,14 +201,14 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                         <div className="relative flex items-start justify-between">
                             <div>
                                 <div className="flex items-center gap-3 mb-1.5">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200/50">
-                                        <Crown size={20} className="text-white" />
+                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200/50">
+                                        <Crown size={18} className="text-white" />
                                     </div>
-                                    <h2 className="text-2xl font-extrabold text-stone-900 tracking-tight">
+                                    <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
                                         Choose Your Plan
                                     </h2>
                                 </div>
-                                <p className="text-sm text-stone-500 font-medium ml-[52px]">
+                                <p className="text-xs sm:text-sm text-stone-500 font-medium ml-[48px]">
                                     Unlock more features and grow your artisanal business
                                 </p>
                             </div>
@@ -201,8 +222,8 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                     </div>
 
                     {/* ── Plan Cards ── */}
-                    <div className="p-6 sm:p-10 bg-stone-50/30">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="p-5 sm:p-7 bg-stone-50/30">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                             {PLANS.map((plan, index) => {
                                 const isCurrent = plan.id === currentTier;
                                 const isUpgrade = index > currentIndex;
@@ -212,7 +233,7 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                                 return (
                                     <div
                                         key={plan.id}
-                                        className={`relative rounded-2xl border-2 p-6 transition-all duration-300 ease-out group cursor-pointer flex flex-col h-full bg-white ${
+                                        className={`relative rounded-2xl border-2 p-5 transition-all duration-300 ease-out group cursor-pointer flex flex-col h-full bg-white ${
                                             isCurrent
                                                 ? `${plan.lightBorder} ${plan.lightBg} ring-1 ring-offset-1 ring-offset-white ${plan.lightBorder} shadow-md`
                                                 : hoveredPlan === plan.id
@@ -232,39 +253,39 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                                     >
                                         {/* Current/Recommended badge */}
                                         {isCurrent && (
-                                            <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r ${plan.gradient} text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg whitespace-nowrap`}>
+                                            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r ${plan.gradient} text-white text-[9px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg whitespace-nowrap`}>
                                                 Current Plan
                                             </div>
                                         )}
                                         {plan.recommended && !isCurrent && (
-                                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1 whitespace-nowrap">
                                                 <Star size={10} fill="currentColor" /> Most Popular
                                             </div>
                                         )}
 
                                         {/* Icon & Plan Name */}
-                                        <div className="flex items-center gap-3 mb-4 mt-2">
-                                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110 rotate-3' : ''}`}>
-                                                <PlanIcon size={18} className="text-white" />
+                                        <div className="flex items-center gap-3 mb-3 mt-1">
+                                            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110 rotate-3' : ''}`}>
+                                                <PlanIcon size={16} className="text-white" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-extrabold text-stone-900">{plan.name}</h3>
+                                                <h3 className="text-[15px] font-extrabold text-stone-900">{plan.name}</h3>
                                                 <p className="text-[11px] text-stone-500 font-medium leading-tight">{plan.description}</p>
                                             </div>
                                         </div>
 
                                         {/* Price */}
-                                        <div className="mb-6">
+                                        <div className="mb-5">
                                             <div className="flex items-baseline gap-1">
-                                                <span className="text-3xl font-black text-stone-900 tracking-tight">{plan.price}</span>
+                                                <span className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">{plan.price}</span>
                                                 {plan.period && (
-                                                    <span className="text-sm text-stone-400 font-semibold">{plan.period}</span>
+                                                    <span className="text-xs sm:text-sm text-stone-400 font-semibold">{plan.period}</span>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Features */}
-                                        <ul className="space-y-3 mb-8 flex-1">
+                                        <ul className="space-y-2.5 mb-6 flex-1">
                                             {plan.features.map((feature, i) => (
                                                 <li key={i} className="flex items-start gap-2.5 text-xs text-stone-600 font-medium">
                                                     <Check size={14} className={`mt-0.5 shrink-0 ${isCurrent ? plan.lightText : 'text-green-500'}`} strokeWidth={3} />
@@ -278,22 +299,22 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                                             {isCurrent ? (
                                                 <button
                                                     disabled
-                                                    className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-stone-100 text-stone-400 cursor-not-allowed flex items-center justify-center gap-1.5"
+                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-stone-100 text-stone-400 cursor-not-allowed flex items-center justify-center gap-1.5"
                                                 >
                                                     <Shield size={14} /> Active Plan
                                                 </button>
                                             ) : isUpgrade ? (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleUpgrade(plan.id); }}
-                                                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r ${plan.gradient} hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 active:scale-[0.98]`}
+                                                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r ${plan.gradient} hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 active:scale-[0.98]`}
                                                 >
                                                     <Rocket size={14} /> Upgrade
                                                     <ArrowRight size={13} className="ml-0.5" />
                                                 </button>
                                             ) : isDowngrade ? (
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); handleManage(); }}
-                                                    className="w-full py-3 px-4 rounded-xl text-xs font-bold text-stone-600 bg-white border-2 border-stone-200 hover:border-stone-300 hover:text-stone-900 transition-all duration-200 flex items-center justify-center gap-1.5"
+                                                    onClick={(e) => { e.stopPropagation(); handleDowngrade(plan.id, plan.limit); }}
+                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-stone-600 bg-white border-2 border-stone-200 hover:border-stone-300 hover:text-stone-900 transition-all duration-200 flex items-center justify-center gap-1.5"
                                                 >
                                                     Downgrade
                                                 </button>
@@ -306,7 +327,7 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                     </div>
 
                     {/* ── Footer ── */}
-                    <div className="px-6 sm:px-10 py-4 border-t border-stone-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="px-5 sm:px-8 py-3.5 border-t border-stone-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
                         <p className="text-[11px] text-stone-500 font-medium text-center sm:text-left">
                             Plans can be changed anytime. Downgrades may deactivate some products.
                         </p>

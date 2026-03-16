@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, useForm, usePage, router } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { CheckCircle2, ChevronRight, AlertCircle, Crown, Search, X } from 'lucide-react';
 import Modal from '@/Components/Modal';
@@ -10,17 +10,25 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     const [selectedProductsToKeep, setSelectedProductsToKeep] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { post, processing, errors, reset } = useForm({
         plan: '',
         keep_active_ids: []
     });
 
     const isCurrentPlan = (plan) => currentPlan === plan;
 
-    const handleUpgrade = (planValue) => {
-        router.post(route('seller.subscription.upgrade'), { plan: planValue }, {
+    const submitSubscriptionChange = (url, payload, options = {}) => {
+        post(url, {
+            data: payload,
             preserveScroll: true,
+            preserveState: 'errors',
+            replace: true,
+            ...options,
         });
+    };
+
+    const handleUpgrade = (planValue) => {
+        submitSubscriptionChange(route('seller.subscription.upgrade'), { plan: planValue });
     };
 
     const initiateDowngrade = (planValue, newLimit) => {
@@ -28,9 +36,13 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             setTargetPlan({ value: planValue, limit: newLimit });
             setDowngradeModalOpen(true);
             setSelectedProductsToKeep([]);
+            reset();
         } else {
             // Direct downgrade since they are under the limit
-            router.post(route('seller.subscription.downgrade'), { plan: planValue, keep_active_ids: activeProducts.map(p => p.id) });
+            submitSubscriptionChange(route('seller.subscription.downgrade'), {
+                plan: planValue,
+                keep_active_ids: activeProducts.map(p => p.id),
+            });
         }
     };
 
@@ -47,15 +59,26 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     };
 
     const confirmDowngrade = () => {
-        post(route('seller.subscription.downgrade'), {
-            data: {
+        submitSubscriptionChange(
+            route('seller.subscription.downgrade'),
+            {
                 plan: targetPlan.value,
-                keep_active_ids: selectedProductsToKeep
+                keep_active_ids: selectedProductsToKeep,
             },
-            onSuccess: () => {
-                setDowngradeModalOpen(false);
+            {
+                onSuccess: () => {
+                    setDowngradeModalOpen(false);
+                    setSelectedProductsToKeep([]);
+                    setTargetPlan(null);
+                    setSearchQuery('');
+                    reset();
+                },
+                onError: () => {
+                    // Keep the modal open so the seller can correct their selection.
+                    setDowngradeModalOpen(true);
+                }
             }
-        });
+        );
     };
 
     const formatPlanName = (plan) => {
@@ -114,6 +137,14 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
         p.sku.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const closeDowngradeModal = () => {
+        setDowngradeModalOpen(false);
+        setSelectedProductsToKeep([]);
+        setTargetPlan(null);
+        setSearchQuery('');
+        reset();
+    };
 
     return (
         <AuthenticatedLayout
@@ -238,11 +269,14 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             </div>
 
             {/* Downgrade Product Selection Modal */}
-            <Modal show={downgradeModalOpen} onClose={() => setDowngradeModalOpen(false)} maxWidth="2xl">
+            <Modal show={downgradeModalOpen} onClose={closeDowngradeModal} maxWidth="2xl">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                         <h2 className="text-lg font-bold text-stone-900">Select Products to Keep Active</h2>
-                        <button onClick={() => setDowngradeModalOpen(false)} className="text-stone-400 hover:text-stone-600">
+                        <button
+                            onClick={closeDowngradeModal}
+                            className="text-stone-400 hover:text-stone-600"
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -320,7 +354,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
 
                     <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-stone-200">
                         <button
-                            onClick={() => setDowngradeModalOpen(false)}
+                            onClick={closeDowngradeModal}
                             className="px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-300 rounded-lg hover:bg-stone-50"
                         >
                             Cancel

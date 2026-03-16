@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     TrendingUp, TrendingDown, Minus,
     Activity, AlertTriangle, UserX,
@@ -8,15 +8,17 @@ import {
 } from 'lucide-react';
 import {
     ResponsiveContainer,
-    LineChart, Line,
-    BarChart, Bar,
-    XAxis, YAxis, Tooltip, CartesianGrid
+    AreaChart, Area,
+    XAxis, YAxis, Tooltip, CartesianGrid,
+    PieChart, Pie, Cell
 } from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 
+const PIE_COLORS = ['#ea580c', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444'];
+
 // ---- Custom Recharts Tooltip Styling ----
-const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
+const CustomTooltip = ({ active, payload, label, prefix = 'P' }) => {
     if (active && payload?.length) {
         return (
             <div className="bg-white border border-gray-100 rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] px-4 py-3">
@@ -25,7 +27,7 @@ const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
                     <div key={i} className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></div>
                         <p className="text-sm font-bold text-gray-800">
-                            {p.name}: <span className="font-semibold text-gray-600">{prefix}₱{p.value.toLocaleString()}</span>
+                            {p.name}: <span className="font-semibold text-gray-600">{prefix}{Number(p.value).toLocaleString()}</span>
                         </p>
                     </div>
                 ))}
@@ -35,19 +37,19 @@ const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
     return null;
 };
 
-const BarTooltip = ({ active, payload, label }) => {
+const CategoryTooltip = ({ active, payload }) => {
     if (active && payload?.length) {
+        const item = payload[0]?.payload;
+
         return (
             <div className="bg-white border border-gray-100 rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] px-4 py-3">
-                <p className="font-bold text-gray-900 text-[11px] uppercase tracking-wider mb-2">{label}</p>
-                {payload.map((p, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></div>
-                        <p className="text-sm font-bold text-gray-800">
-                            {p.name}: <span className="font-semibold text-gray-600">{p.name === 'GMV' ? '₱' : ''}{Number(p.value).toLocaleString()}</span>
-                        </p>
-                    </div>
-                ))}
+                <p className="font-bold text-gray-900 text-[11px] uppercase tracking-wider mb-2">{item?.category || 'Category'}</p>
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].color }}></div>
+                    <p className="text-sm font-bold text-gray-800">
+                        GMV: <span className="font-semibold text-gray-600">P{Number(item?.gmv || 0).toLocaleString()}</span>
+                    </p>
+                </div>
             </div>
         );
     }
@@ -94,7 +96,7 @@ const StatCard = ({ title, metric, icon: Icon, bg, text, growth, trend, subtitle
 };
 
 export default function Insights({ revenue, churn, categories, health }) {
-    const maxGmv = categories.length > 0 ? Math.max(...categories.map(c => c.gmv)) : 1;
+    const totalCategoryGmv = categories.reduce((sum, category) => sum + Number(category.gmv || 0), 0);
 
     return (
         <AdminLayout title="Platform Insights">
@@ -137,13 +139,19 @@ export default function Insights({ revenue, churn, categories, health }) {
                             </div>
                             <div className="p-6 flex-grow flex items-center">
                                 <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={revenue.history} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                                    <AreaChart data={revenue.history} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                                        <defs>
+                                            <linearGradient id="adminMrrFill" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#c07251" stopOpacity={0.16} />
+                                                <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                                         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 500 }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 500 }} tickFormatter={v => `₱${v}`} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 500 }} tickFormatter={v => `P${v}`} />
                                         <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#f3f4f6', strokeWidth: 2 }} />
-                                        <Line type="monotone" dataKey="mrr" name="MRR" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#fff', stroke: '#8b5cf6' }} activeDot={{ r: 6, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2 }} animationDuration={1000} />
-                                    </LineChart>
+                                        <Area type="monotone" dataKey="mrr" name="MRR" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminMrrFill)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#c07251' }} animationDuration={1000} />
+                                    </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
@@ -161,20 +169,45 @@ export default function Insights({ revenue, churn, categories, health }) {
                             </div>
                             <div className="p-6 flex-grow flex items-center">
                                 {categories.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart
-                                            data={categories}
-                                            layout="vertical"
-                                            margin={{ top: 0, right: 0, bottom: 0, left: 40 }}
-                                        >
-                                            <XAxis type="number" hide />
-                                            <YAxis type="category" dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#4b5563', fontWeight: 600 }} width={120} />
-                                            <Tooltip content={<BarTooltip />} cursor={{ fill: '#f9fafb' }} />
-                                            <Bar dataKey="gmv" name="GMV" fill="#ea580c" radius={[0, 4, 4, 0]} barSize={16}>
-                                                {/* Subdued text label rendering the value directly inside or outside the bar could go here, tooltips handle it well enough for now */}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
+                                    <div className="w-full">
+                                        <div className="h-[220px] w-full flex items-center justify-center relative">
+                                            <PieChart width={220} height={220}>
+                                                <Pie
+                                                    data={categories}
+                                                    nameKey="category"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={58}
+                                                    outerRadius={86}
+                                                    paddingAngle={4}
+                                                    dataKey="gmv"
+                                                    stroke="none"
+                                                >
+                                                    {categories.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip content={<CategoryTooltip />} />
+                                            </PieChart>
+                                        </div>
+
+                                        <div className="mt-3 space-y-2 pt-4 border-t border-gray-50">
+                                            {categories.map((item, index) => (
+                                                <div key={item.category || index} className="flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                                                        <span className="font-medium text-gray-700 truncate">{item.category}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 shrink-0">
+                                                        <span className="font-bold text-gray-900">P{Number(item.gmv).toLocaleString()}</span>
+                                                        <span className="text-gray-400 w-10 text-right">
+                                                            {totalCategoryGmv > 0 ? Math.round((Number(item.gmv) / totalCategoryGmv) * 100) : 0}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className="w-full text-center">
                                         <p className="text-sm font-semibold text-gray-500">No category data available yet.</p>

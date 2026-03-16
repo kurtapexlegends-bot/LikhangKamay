@@ -19,6 +19,22 @@ class SocialAuthController extends Controller
      */
     protected array $providers = ['google', 'facebook'];
 
+    protected function buildProviderRedirect(string $provider, string $role, bool $remember = false)
+    {
+        session([
+            'social_auth_role' => $role,
+            'social_auth_remember' => $remember,
+        ]);
+
+        $driver = Socialite::driver($provider);
+
+        if (!$remember && $provider === 'google') {
+            $driver = $driver->with(['prompt' => 'select_account']);
+        }
+
+        return $driver->redirect();
+    }
+
     /**
      * Redirect to OAuth provider (for buyers)
      */
@@ -28,10 +44,11 @@ class SocialAuthController extends Controller
             return redirect()->route('login')->with('error', 'Unsupported provider.');
         }
 
-        // Store that this is a buyer registration
-        session(['social_auth_role' => 'buyer']);
-
-        return Socialite::driver($provider)->redirect();
+        return $this->buildProviderRedirect(
+            $provider,
+            'buyer',
+            request()->boolean('remember')
+        );
     }
 
     /**
@@ -43,10 +60,11 @@ class SocialAuthController extends Controller
             return redirect()->route('login')->with('error', 'Unsupported provider.');
         }
 
-        // Store that this is an artisan registration
-        session(['social_auth_role' => 'artisan']);
-
-        return Socialite::driver($provider)->redirect();
+        return $this->buildProviderRedirect(
+            $provider,
+            'artisan',
+            request()->boolean('remember')
+        );
     }
 
     /**
@@ -71,6 +89,7 @@ class SocialAuthController extends Controller
 
         // Get the intended role from session
         $intendedRole = session('social_auth_role', 'buyer');
+        $rememberSocialLogin = session('social_auth_remember', false);
 
         // Check if user already exists with this email
         $existingUser = User::where('email', $socialUser->getEmail())->first();
@@ -85,7 +104,12 @@ class SocialAuthController extends Controller
                 ]);
             }
 
-            Auth::login($existingUser, true);
+            Auth::login($existingUser, $rememberSocialLogin);
+            session()->forget([
+                'social_auth',
+                'social_auth_role',
+                'social_auth_remember',
+            ]);
             
             // Redirect based on their actual role
             if ($existingUser->isAdmin()) {
@@ -111,6 +135,7 @@ class SocialAuthController extends Controller
                 'name' => $socialUser->getName(),
                 'avatar' => $socialUser->getAvatar(),
                 'role' => $intendedRole,
+                'remember' => $rememberSocialLogin,
             ]
         ]);
 
@@ -184,12 +209,19 @@ class SocialAuthController extends Controller
         $user = User::create($userData);
 
         // Clear session
-        session()->forget('social_auth');
-        session()->forget('social_auth_role');
+        session()->forget([
+            'social_auth',
+            'social_auth_role',
+            'social_auth_remember',
+        ]);
 
         // Fire registered event and login
-        event(new Registered($user));
-        Auth::login($user, true);
+        if (!$user->hasVerifiedEmail()) {
+            event(new Registered($user));
+        } else {
+            event(new \Illuminate\Auth\Events\Verified($user));
+        }
+        Auth::login($user, (bool) ($socialData['remember'] ?? false));
 
         // Redirect based on role
         if ($isArtisan) {

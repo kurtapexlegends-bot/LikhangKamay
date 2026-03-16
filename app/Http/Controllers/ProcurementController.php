@@ -50,7 +50,7 @@ class ProcurementController extends Controller
             ->sum('total_amount');
 
         // 2. Expenses (Payroll History)
-        $expenses = Payroll::where('user_id', $userId)->sum('total_amount');
+        $expenses = Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
 
         // 3. Pending Payroll
         $payrollExists = Payroll::where('user_id', $userId)

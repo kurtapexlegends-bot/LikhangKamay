@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import { 
-    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, Crown, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter
+    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, Crown, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter, Sparkles
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 
@@ -239,47 +239,54 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     </div>
                 )}
 
-                {/* SPONSORED PRODUCTS CAROUSEL */}
+                {/* SPONSORED PRODUCTS SECTION */}
                 {sponsoredProducts.length > 0 && (
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                                <span className="w-1 h-5 bg-amber-500 rounded-full"></span>
-                                Sponsored Items
-                            </h2>
+                    <div className="bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30 rounded-2xl p-6 border border-amber-100 shadow-sm relative overflow-hidden">
+                        {/* Decorative background element */}
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-100/20 rounded-full blur-3xl"></div>
+                        
+                        <div className="flex items-end justify-between mb-5 relative z-10">
+                            <div>
+                                <h2 className="text-lg font-serif font-bold text-gray-900 flex items-center gap-2">
+                                    <Sparkles size={20} className="text-amber-500 fill-amber-100" />
+                                    Handpicked for You
+                                </h2>
+                                <p className="text-xs text-amber-700/70 font-medium mt-0.5">Premium artisan creations you might love</p>
+                            </div>
+                            <span className="text-[10px] font-black text-amber-600/40 tracking-[0.2em] uppercase">Sponsored</span>
                         </div>
                         
-                        <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-amber-200 scrollbar-track-transparent">
+                        <div className="flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory scrollbar-none relative z-10">
                             {sponsoredProducts.map((product) => (
                                 <Link 
                                     href={route('product.show', product.slug)} 
                                     key={product.id} 
-                                    className="min-w-[160px] md:min-w-[200px] bg-white rounded-xl shadow-sm hover:shadow-md transition duration-200 border border-amber-100 overflow-hidden flex flex-col group snap-start"
+                                    className="w-[130px] min-w-[130px] md:w-[150px] md:min-w-[150px] bg-white rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-amber-100/50 overflow-hidden flex flex-col group snap-start"
                                 >
-                                    <div className="aspect-square relative bg-amber-50 overflow-hidden">
-                                        <div className="absolute top-2 left-2 z-10 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm border border-amber-200">
-                                            <Award size={10} /> Sponsored
-                                        </div>
+                                    <div className="aspect-square relative bg-gray-50 overflow-hidden">
                                         <img 
                                             src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
                                             alt={product.name} 
-                                            className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                                            className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                                             onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                         />
+                                        <div className="absolute top-2 right-2">
+                                            <div className="bg-white/95 backdrop-blur-sm p-1.5 rounded-full shadow-md border border-amber-50">
+                                                <Award size={10} className="text-amber-500" />
+                                            </div>
+                                        </div>
+                                        <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                     </div>
-                                    <div className="p-3 flex flex-col flex-1 bg-gradient-to-b from-amber-50/50 to-white">
-                                        <h3 className="text-xs font-bold text-gray-900 line-clamp-2 mb-1 group-hover:text-amber-600 transition leading-tight">
+                                    <div className="p-3 flex flex-col flex-1">
+                                        <h3 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-amber-600 transition tracking-tight mb-1">
                                             {product.name}
                                         </h3>
-                                        <p className="text-[10px] text-gray-500 line-clamp-1 mb-2">
-                                            by {product.seller_slug}
-                                        </p>
                                         <div className="mt-auto flex items-center justify-between">
                                             <span className="text-amber-700 text-sm font-black">
-                                                ₱{Number(product.price).toLocaleString()}
+                                                &#8369;{Math.floor(Number(product.price)).toLocaleString()}
                                             </span>
                                             {product.rating > 0 && (
-                                                <div className="flex items-center gap-0.5 text-[10px] font-bold text-gray-600">
+                                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-50 rounded text-[10px] font-bold text-amber-700 border border-amber-100">
                                                     {product.rating.toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
                                                 </div>
                                             )}
@@ -337,7 +344,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                             </p>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-clay-600 text-sm font-bold">
-                                                    ₱{Number(product.price).toLocaleString()}
+                                                    &#8369;{Number(product.price).toLocaleString()}
                                                 </span>
                                                 {product.sold > 0 && (
                                                     <span className="text-[10px] text-gray-400">

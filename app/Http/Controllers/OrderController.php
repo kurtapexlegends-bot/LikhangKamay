@@ -299,7 +299,15 @@ class OrderController extends Controller
             
             return back()->with('success', 'Return approved. Money refunded (simulation).');
         } else {
-            // Product Replacement: Deduct stock again (sending new item)
+            // Product Replacement: Validate stock first
+            foreach ($order->items as $item) {
+                $product = Product::find($item->product_id);
+                if ($product && $product->stock < $item->quantity) {
+                    return back()->with('error', "Insufficient stock to replace {$product->name}. Requires {$item->quantity} but only {$product->stock} left.");
+                }
+            }
+
+            // Deduct stock (sending new item)
             DB::transaction(function () use ($order) {
                 foreach ($order->items as $item) {
                     $product = Product::find($item->product_id);
@@ -371,17 +379,22 @@ class OrderController extends Controller
         // Wrap in transaction to ensure stock is deducted only if order succeeds
         DB::transaction(function () use ($request, $groupedItems, $shippingAddress, $paymentMethod) {
             foreach ($groupedItems as $artisanId => $items) {
-                $orderTotal = $items->sum(fn($item) => $item['price'] * $item['qty']);
+                // Recalculate server order total using DB prices securely
+                $serverOrderTotal = 0;
+                foreach ($items as $item) {
+                     $p = \App\Models\Product::find($item['id']);
+                     if ($p) $serverOrderTotal += $p->price * $item['qty'];
+                }
                 
-                // Set initial payment status based on method
-                $paymentStatus = $paymentMethod === 'COD' ? 'pending' : 'pending';
+                // Set initial payment status
+                $paymentStatus = 'pending';
                 
                 $order = Order::create([
                     'order_number' => 'ORD-' . strtoupper(uniqid()),
                     'user_id' => Auth::id(),
                     'artisan_id' => $artisanId,
                     'customer_name' => Auth::user()->name,
-                    'total_amount' => $orderTotal,
+                    'total_amount' => $serverOrderTotal,
                     'status' => 'Pending',
                     'shipping_address' => $shippingAddress,
                     'shipping_notes' => $request->shipping_notes,
@@ -419,7 +432,7 @@ class OrderController extends Controller
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'variant' => $item['variant'] ?? null,
-                        'price' => $item['price'],
+                        'price' => $product->price, // Secure DB price
                         'cost' => $product->cost_price ?? 0,
                         'quantity' => $item['qty'],
                         'product_img' => $product->cover_photo_path // Use the actual DB path
@@ -593,6 +606,10 @@ class OrderController extends Controller
             ->where('user_id', Auth::id())
             ->where('status', 'Refund/Return')
             ->firstOrFail();
+
+        if ($order->return_status === 'Approved') {
+            return redirect()->back()->with('error', 'Cannot cancel an approved return.');
+        }
 
         // Cancelling return means accepting the item -> Complete the transaction
         $order->update([

@@ -74,6 +74,12 @@ class AuthenticatedSessionController extends Controller
     {
         Auth::guard('web')->logout();
 
+        $request->session()->forget([
+            'social_auth',
+            'social_auth_role',
+            'social_auth_remember',
+        ]);
+
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();

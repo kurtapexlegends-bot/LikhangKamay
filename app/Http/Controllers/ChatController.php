@@ -98,7 +98,7 @@ class ChatController extends Controller
     private function getChatData(Request $request, $viewName)
     {
         $userId = Auth::id();
-        $activeChatId = $request->query('user_id');
+        $activeChatId = (int) $request->query('user_id');
 
         // A. GET CONVERSATION LIST
         $contactIds = Message::where('sender_id', $userId)
@@ -107,12 +107,26 @@ class ChatController extends Controller
             ->distinct()
             ->pluck('contact_id');
 
-        $conversations = User::whereIn('id', $contactIds)->get()->map(function($user) use ($userId) {
-            $lastMsg = Message::where(function($q) use ($userId, $user) {
-                $q->where('sender_id', $userId)->where('receiver_id', $user->id);
-            })->orWhere(function($q) use ($userId, $user) {
-                $q->where('sender_id', $user->id)->where('receiver_id', $userId);
-            })->latest()->first();
+        // Pre-fetch latest messages for all contacts
+        $latestMessagesQuery = Message::where(function($q) use ($userId, $contactIds) {
+            $q->where('sender_id', $userId)->whereIn('receiver_id', $contactIds);
+        })->orWhere(function($q) use ($userId, $contactIds) {
+            $q->whereIn('sender_id', $contactIds)->where('receiver_id', $userId);
+        })->latest()->get();
+
+        // Also pre-fetch unread counts
+        $unreadCounts = Message::whereIn('sender_id', $contactIds)
+            ->where('receiver_id', $userId)
+            ->where('is_read', false)
+            ->selectRaw('sender_id, count(*) as count')
+            ->groupBy('sender_id')
+            ->pluck('count', 'sender_id');
+
+        $conversations = User::whereIn('id', $contactIds)->get()->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts) {
+            $lastMsg = $latestMessagesQuery->first(function($msg) use ($userId, $user) {
+                return ($msg->sender_id == $userId && $msg->receiver_id == $user->id) ||
+                       ($msg->sender_id == $user->id && $msg->receiver_id == $userId);
+            });
 
             return [
                 'id' => $user->id,
@@ -125,11 +139,8 @@ class ChatController extends Controller
                 'shop_name' => $user->shop_name,
                 'lastMsg' => $lastMsg ? $lastMsg->message : 'Start chatting',
                 'time' => $lastMsg ? $lastMsg->created_at->shortAbsoluteDiffForHumans() : '',
-                'unread' => Message::where('sender_id', $user->id)
-                    ->where('receiver_id', $userId)
-                    ->where('is_read', false)
-                    ->count(),
-                'is_online' => Cache::has('user-is-online-' . $user->id), // <--- Added
+                'unread' => $unreadCounts[$user->id] ?? 0,
+                'is_online' => Cache::has('user-is-online-' . $user->id),
             ];
         });
 

@@ -811,37 +811,39 @@ export default function OrderManager({ auth, orders = [] }) {
                             </div>
                         )}
                         
-                        {/* Proof of Delivery / Handover */}
-                        <div>
-                             <label className="block text-sm font-bold text-gray-700 mb-2">
-                                Proof of Handover/Delivery <span className="text-red-500">*</span>
-                            </label>
-                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50 transition relative overflow-hidden group">
-                                <input 
-                                    type="file" 
-                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            setShippingModal({
-                                                ...shippingModal,
-                                                proofOfDelivery: file,
-                                                previewUrl: URL.createObjectURL(file)
-                                            });
-                                        }
-                                    }}
-                                />
-                                {shippingModal.previewUrl ? (
-                                    <img src={shippingModal.previewUrl} alt="Proof" className="h-32 w-full object-contain mx-auto rounded-lg" />
-                                ) : (
-                                    <div className="text-gray-400">
-                                        <CameraIcon className="mx-auto mb-2" size={24} />
-                                        <p className="text-xs">Click to upload photo of item/package</p>
-                                    </div>
-                                )}
+                        {/* Proof of Delivery / Handover - ONLY for Shipping */}
+                        {!shippingModal.isPickup && (
+                            <div>
+                                 <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Proof of Delivery <span className="text-red-500">*</span>
+                                </label>
+                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50 transition relative overflow-hidden group">
+                                    <input 
+                                        type="file" 
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                setShippingModal({
+                                                    ...shippingModal,
+                                                    proofOfDelivery: file,
+                                                    previewUrl: URL.createObjectURL(file)
+                                                });
+                                            }
+                                        }}
+                                    />
+                                    {shippingModal.previewUrl ? (
+                                        <img src={shippingModal.previewUrl} alt="Proof" className="h-32 w-full object-contain mx-auto rounded-lg" />
+                                    ) : (
+                                        <div className="text-gray-400">
+                                            <CameraIcon className="mx-auto mb-2" size={24} />
+                                            <p className="text-xs">Click to upload photo of item/package</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -866,7 +868,7 @@ export default function OrderManager({ auth, orders = [] }) {
                         </button>
                         <button 
                             onClick={submitShipping}
-                            disabled={!shippingModal.proofOfDelivery} // Required
+                            disabled={!shippingModal.isPickup && !shippingModal.proofOfDelivery}
                             className={`px-6 py-2.5 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 ${shippingModal.isPickup ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'}`}
                         >
                             <CheckCircle2 size={16} /> Confirm {shippingModal.isPickup ? 'Ready' : 'Shipment'}

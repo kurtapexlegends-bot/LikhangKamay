@@ -42,14 +42,15 @@ class StockRequestController extends Controller
 
         $supply = Supply::findOrFail($validated['supply_id']);
         
-        // Phase 1: The Stopper (Max Stock Validation)
+        // Phase 1: Authentication block
+        if ($supply->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Phase 2: The Stopper (Max Stock Validation)
         $capacity = $supply->getAvailableCapacity();
         if ($validated['quantity'] > $capacity) {
             return back()->with('error', "Limit Exceeded: Max stock is {$supply->max_stock}. You can only request {$capacity} more items.");
-        }
-
-        if ($supply->user_id !== Auth::id()) {
-            abort(403);
         }
 
         $totalCost = $validated['quantity'] * ($supply->unit_cost ?? 0);

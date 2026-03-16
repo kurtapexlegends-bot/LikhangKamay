@@ -28,6 +28,8 @@ export default function Login({ status, canResetPassword }) {
         post(route('login'));
     };
 
+    const socialLoginHref = `/auth/google${data.remember ? '?remember=1' : ''}`;
+
     return (
         <GuestLayout quote="Every piece tells a story. Log in to continue yours.">
             <Head title="Log in" />
@@ -150,7 +152,7 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <a 
-                    href="/auth/google" 
+                    href={socialLoginHref}
                     className="group w-full flex items-center justify-center gap-3 py-3 border border-gray-200 rounded-xl bg-white hover:bg-gray-50/80 hover:border-gray-300 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 active:scale-[0.98]"
                 >
                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" alt="Google" />

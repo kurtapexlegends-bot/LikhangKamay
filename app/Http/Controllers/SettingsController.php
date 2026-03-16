@@ -21,9 +21,14 @@ class SettingsController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        if (!$user->isPremiumTier()) {
+            abort(403, 'Your current plan does not include module customization.');
+        }
+
         $modules = [
-            'hr' => $request->boolean('hr'),
-            'accounting' => $request->boolean('accounting'),
+            // Elite gets full access by default; Premium can customize these.
+            'hr' => $user->isEliteTier() ? true : $request->boolean('hr'),
+            'accounting' => $user->isEliteTier() ? true : $request->boolean('accounting'),
             'procurement' => true, // LOCKED: Cannot be disabled as Inventory relies on it
         ];
 

@@ -43,15 +43,23 @@ class HandleInertiaRequests extends Middleware
             $unreadNotificationCount = $request->user()->unreadNotifications()->count();
         }
 
+        $user = $request->user();
+        $sellerSidebar = null;
+
+        if ($user && $user->role === 'artisan') {
+            $sellerSidebar = $user->getSellerSidebarEntitlements();
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
-            'sellerSubscription' => $request->user() && $request->user()->role === 'artisan' ? [
-                'activeCount' => $request->user()->products()->where('status', 'Active')->count(),
-                'limit' => $request->user()->getActiveProductLimit(),
+            'sellerSubscription' => $user && $user->role === 'artisan' ? [
+                'activeCount' => $user->products()->where('status', 'Active')->count(),
+                'limit' => $user->getActiveProductLimit(),
             ] : null,
+            'sellerSidebar' => $sellerSidebar,
             // Global Variables for Frontend
             'cartCount' => $cartCount,
             'notifications' => $notifications,
