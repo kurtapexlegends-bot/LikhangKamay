@@ -381,7 +381,7 @@ class OrderController extends Controller
                 // Recalculate server order total using DB prices securely
                 $serverOrderTotal = 0;
                 foreach ($items as $item) {
-                     $p = \App\Models\Product::find($item['id']);
+                     $p = Product::find($item['id']);
                      if ($p) $serverOrderTotal += $p->price * $item['qty'];
                 }
                 

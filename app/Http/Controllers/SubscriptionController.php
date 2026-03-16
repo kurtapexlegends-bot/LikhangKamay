@@ -64,7 +64,7 @@ class SubscriptionController extends Controller
             'keep_active_ids' => 'nullable|array',
             'keep_active_ids.*' => [
                 'nullable',
-                \Illuminate\Validation\Rule::exists('products', 'id')->where('user_id', \Illuminate\Support\Facades\Auth::id())
+                \Illuminate\Validation\Rule::exists('products', 'id')->where('user_id', Auth::id())
             ]
         ]);
 
