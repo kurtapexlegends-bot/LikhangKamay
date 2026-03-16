@@ -299,29 +299,27 @@ class OrderController extends Controller
             
             return back()->with('success', 'Return approved. Money refunded (simulation).');
         } else {
-            // Product Replacement: Validate stock first
-            foreach ($order->items as $item) {
-                $product = Product::find($item->product_id);
-                if ($product && $product->stock < $item->quantity) {
-                    return back()->with('error', "Insufficient stock to replace {$product->name}. Requires {$item->quantity} but only {$product->stock} left.");
-                }
-            }
-
-            // Deduct stock (sending new item)
-            DB::transaction(function () use ($order) {
-                foreach ($order->items as $item) {
-                    $product = Product::find($item->product_id);
-                    if ($product) {
+            // Product Replacement: Validate and deduct stock securely inside a transaction
+            try {
+                DB::transaction(function () use ($order) {
+                    foreach ($order->items as $item) {
+                        $product = Product::lockForUpdate()->find($item->product_id);
+                        
+                        if (!$product || $product->stock < $item->quantity) {
+                            throw new \Exception("Insufficient stock to replace " . ($product ? $product->name : 'Unknown Product') . ". Requires {$item->quantity} but only " . ($product ? $product->stock : 0) . " left.");
+                        }
+                        
                         $product->decrement('stock', $item->quantity);
                         if ($product->track_as_supply && $product->supply) {
                             $product->supply->update(['quantity' => $product->stock]);
                         }
                     }
-                }
-                $order->update(['status' => 'Replaced']);
-            });
-
-            return back()->with('success', 'Return approved. Replacement stock deducted.');
+                    $order->update(['status' => 'Replaced']);
+                });
+                return back()->with('success', 'Return approved. Replacement stock deducted.');
+            } catch (\Exception $e) {
+                return back()->with('error', $e->getMessage());
+            }
         }
     }
 
@@ -350,6 +348,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'items' => 'required|array',
+            'items.*.qty' => 'required|integer|min:1',
             'shipping_method' => 'required|string|in:Delivery,Pick Up',
             'shipping_address' => 'required_if:shipping_method,Delivery|nullable|string',
             'payment_method' => 'required|string',

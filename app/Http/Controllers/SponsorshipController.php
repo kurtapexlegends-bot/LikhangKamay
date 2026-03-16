@@ -138,7 +138,7 @@ class SponsorshipController extends Controller
 
         $sponsorshipRequest->update([
             'status' => 'rejected',
-            'approved_at' => now(),
+            // do not set approved_at on a rejection
         ]);
 
         return back()->with('success', 'Sponsorship rejected.');

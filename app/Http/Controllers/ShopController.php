@@ -270,11 +270,17 @@ class ShopController extends Controller
         $user->bio = $validated['bio'] ?? null;
 
         if ($request->hasFile('banner_image')) {
+            if ($user->banner_image) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->banner_image);
+            }
             $bannerPath = $request->file('banner_image')->store('shop_banners', 'public');
             $user->banner_image = $bannerPath;
         }
 
         if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $avatarPath;
         }

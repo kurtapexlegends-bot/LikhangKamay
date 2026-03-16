@@ -288,6 +288,11 @@ class ProductController extends Controller
         $product->increment('stock', $amount);
         $product->update(['status' => 'Active']); // Auto activate on restock
         
+        // Sync to supply
+        if ($product->track_as_supply && $product->supply) {
+            $product->supply->update(['quantity' => $product->stock]);
+        }
+        
         return redirect()->back()->with('success', 'Product stock updated.');
     }
 
