@@ -140,12 +140,22 @@ class PaymentController extends Controller
 
             // Only mark as paid when the gateway explicitly says paid.
             if ($isPaid || $hasPaidPayment) {
+                // Determine if we need to update the status OR clear the session
+                $updateData = [];
                 if ($order->payment_status !== 'paid') {
-                    $order->update([
-                        'payment_status' => 'paid',
-                        'payment_method' => 'E-Wallet/Card'
-                    ]);
+                    $updateData['payment_status'] = 'paid';
+                    $updateData['payment_method'] = 'E-Wallet/Card';
                 }
+                
+                // SECURITY: Consume the session ID to prevent replay
+                if ($order->paymongo_session_id) {
+                    $updateData['paymongo_session_id'] = null;
+                }
+                
+                if (!empty($updateData)) {
+                    $order->update($updateData);
+                }
+                
                 return redirect()->route('my-orders.index')->with('success', 'Payment successful! Order #' . $orderId . ' is now paid.');
             } else {
                 // Truly unpaid — maybe user navigated to success URL manually

@@ -198,6 +198,13 @@ class OrderController extends Controller
 
         $updateData = ['status' => $request->status];
 
+        // Ensure Proof of Delivery is present BEFORE any database writes or side effects if the new status requires it.
+        if (in_array($request->status, ['Shipped', 'Ready for Pickup', 'Delivered'])) {
+            if (!$request->hasFile('proof_of_delivery') && !$order->proof_of_delivery) {
+                 return back()->with('error', 'Proof of Delivery (Image) is required to mark as ' . $request->status);
+            }
+        }
+
         // Handle Proof of Delivery Upload
         if ($request->hasFile('proof_of_delivery')) {
             $path = $request->file('proof_of_delivery')->store('proofs', 'public');
@@ -243,13 +250,6 @@ class OrderController extends Controller
                     }
                 }
             });
-        }
-
-        // Enforce Proof of Delivery
-        if (in_array($request->status, ['Shipped', 'Ready for Pickup', 'Delivered'])) {
-            if (!$request->hasFile('proof_of_delivery') && !$order->proof_of_delivery) {
-                 return back()->with('error', 'Proof of Delivery (Image) is required to mark as ' . $request->status);
-            }
         }
 
         $order->update($updateData);
@@ -538,12 +538,18 @@ class OrderController extends Controller
             ->whereIn('status', ['Shipped', 'Ready for Pickup', 'Delivered'])
             ->firstOrFail();
 
-        $order->update([
+        $updateData = [
             'status' => 'Completed', // Auto-complete if paid
-            'payment_status' => 'paid',
             'received_at' => now(),
             'warranty_expires_at' => now()->addDay() // 1-day return window
-        ]);
+        ];
+
+        // Only auto-mark as paid if it's COD. E-wallet orders must be verified by PayMongo.
+        if ($order->payment_method === 'COD') {
+            $updateData['payment_status'] = 'paid';
+        }
+
+        $order->update($updateData);
 
         // Send delivery confirmation email to buyer
         $order->load('items');
