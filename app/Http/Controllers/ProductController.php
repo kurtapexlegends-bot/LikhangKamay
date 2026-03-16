@@ -97,49 +97,49 @@ class ProductController extends Controller
             }
         }
 
-        // 2. Create Product
-        Product::create([
-            'user_id' => Auth::id(),
-            'sku' => $validated['sku'],
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? '',
-            'category' => $validated['category'],
-            'price' => $validated['price'],
-            'cost_price' => $validated['cost_price'] ?? 0,
-            'stock' => $validated['stock'],
-            'lead_time' => $validated['lead_time'] ?? 3,
-            'status' => $validated['status'],
-            
-            'clay_type' => $validated['clay_type'] ?? null,
-            'glaze_type' => $validated['glaze_type'] ?? null,
-            'firing_method' => $validated['firing_method'] ?? null,
-            'food_safe' => $request->boolean('food_safe'),
-            'colors' => $validated['colors'] ?? [],
-            'height' => $validated['height'] ?? 0,
-            'width' => $validated['width'] ?? 0,
-            'weight' => $validated['weight'] ?? 0,
+        // 2 & 3. Create Product and Auto-Sync to Procurement in a transaction
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths) {
+            $product = Product::create([
+                'user_id' => Auth::id(),
+                'sku' => $validated['sku'],
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? '',
+                'category' => $validated['category'],
+                'price' => $validated['price'],
+                'cost_price' => $validated['cost_price'] ?? 0,
+                'stock' => $validated['stock'],
+                'lead_time' => $validated['lead_time'] ?? 3,
+                'status' => $validated['status'],
+                
+                'clay_type' => $validated['clay_type'] ?? null,
+                'glaze_type' => $validated['glaze_type'] ?? null,
+                'firing_method' => $validated['firing_method'] ?? null,
+                'food_safe' => $request->boolean('food_safe'),
+                'colors' => $validated['colors'] ?? [],
+                'height' => $validated['height'] ?? 0,
+                'width' => $validated['width'] ?? 0,
+                'weight' => $validated['weight'] ?? 0,
 
-            'model_3d_path' => $modelPath,
-            'cover_photo_path' => $coverPath,
-            'gallery_paths' => $galleryPaths,
-            'track_as_supply' => true, // Always true
-        ]);
+                'model_3d_path' => $modelPath,
+                'cover_photo_path' => $coverPath,
+                'gallery_paths' => $galleryPaths,
+                'track_as_supply' => true, // Always true
+            ]);
 
-        // 3. Auto-Sync to Procurement (Always)
-        $product = Product::where('user_id', Auth::id())->where('sku', $validated['sku'])->first();
-        \App\Models\Supply::create([
-            'user_id' => Auth::id(),
-            'product_id' => $product?->id,
-            'name' => $validated['name'], // Use Product Name directly
-            'category' => 'Finished Goods',
-            'quantity' => $validated['stock'],
-            'unit' => 'pcs',
-            'min_stock' => 5,
-            'max_stock' => 500, // Phase 1: Default
-            'unit_cost' => $validated['cost_price'] ?? 0,
-            'supplier' => 'Self/External',
-            'notes' => 'Auto-generated from Product: ' . $validated['sku']
-        ]);
+            \App\Models\Supply::create([
+                'user_id' => Auth::id(),
+                'product_id' => $product->id,
+                'name' => $validated['name'], // Use Product Name directly
+                'category' => 'Finished Goods',
+                'quantity' => $validated['stock'],
+                'unit' => 'pcs',
+                'min_stock' => 5,
+                'max_stock' => 500, // Phase 1: Default
+                'unit_cost' => $validated['cost_price'] ?? 0,
+                'supplier' => 'Self/External',
+                'notes' => 'Auto-generated from Product: ' . $validated['sku']
+            ]);
+        });
 
         return redirect()->back()->with('success', 'Product created successfully!');
     }

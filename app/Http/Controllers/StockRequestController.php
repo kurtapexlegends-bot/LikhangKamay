@@ -132,6 +132,8 @@ class StockRequestController extends Controller
 
             // Sync to linked Product (Track as Supply)
             if ($supply->product_id && $supply->product) {
+                // Bug M4 Fix: Use fresh supply quantity
+                $supply->refresh();
                 $supply->product->update(['stock' => $supply->quantity]);
             }
         }

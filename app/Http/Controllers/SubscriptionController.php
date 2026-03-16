@@ -63,11 +63,9 @@ class SubscriptionController extends Controller
         $newTier = $validated['plan'];
         $previousUrl = url()->previous();
 
-        // Determine new limit
-        $newLimit = match($newTier) {
-            'premium' => 10,
-            default => 3,
-        };
+        // Determine new limit from User model
+        $user->premium_tier = $newTier;
+        $newLimit = $user->getActiveProductLimit();
 
         $activeIds = $user->products()
             ->where('status', 'Active')

@@ -157,9 +157,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // CHAT SYSTEM & REVIEWS (CRM)
     Route::get('/chat', [ChatController::class, 'index'])->middleware(['artisan', 'seller.module:messages'])->name('chat.index'); 
-    Route::post('/chat/send', [ChatController::class, 'store'])->name('chat.store');
-    Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->name('chat.seen');
-    Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->name('chat.typing');
+    Route::post('/chat/send', [ChatController::class, 'store'])->middleware(['artisan', 'seller.module:messages'])->name('chat.store');
+    Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->middleware(['artisan', 'seller.module:messages'])->name('chat.seen');
+    Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->middleware(['artisan', 'seller.module:messages'])->name('chat.typing');
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
     Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['artisan', 'seller.module:reviews'])->name('reviews.index');

@@ -12,8 +12,11 @@ class ShopController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Base Query - Include reviews for rating calculation
-        $query = Product::where('status', 'Active')->with(['user', 'reviews']);
+        // 1. Base Query - Include aggregates for rating and count
+        $query = Product::where('status', 'Active')
+            ->with(['user'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews');
 
         // 2. Filters
 
@@ -92,8 +95,7 @@ class ShopController extends Controller
                 break;
             case 'rating':
                 // Sort by average rating (products with reviews first)
-                $query->withAvg('reviews', 'rating')
-                    ->orderByDesc('reviews_avg_rating');
+                $query->orderByDesc('reviews_avg_rating');
                 break;
             case 'newest':
             default:
@@ -126,7 +128,7 @@ class ShopController extends Controller
                 'price' => number_format($product->price, 2),
                 'raw_price' => $product->price,
                 'category' => $product->category,
-                'rating' => $product->rating ?? 0,
+                'rating' => $product->reviews_avg_rating ?? 0,
                 'reviews_count' => $product->reviews_count ?? 0,
                 'sold' => $product->sold ?? 0,
                 'image' => $product->img,

@@ -57,14 +57,24 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
             'photos.*' => 'nullable|image|max:5120', // Max 5MB per photo
         ]);
+
+        // [H3 Fix] Verification: check if the user actually purchased the product
+        $hasPurchased = \App\Models\Order::where('user_id', Auth::id())
+            ->where('status', 'Completed')
+            ->whereHas('items', function ($query) use ($request) {
+                $query->where('product_id', $request->product_id);
+            })
+            ->exists();
+
+        if (!$hasPurchased) {
+            abort(403, 'You can only review products you have purchased and received.');
+        }
 
         $existingReview = Review::where('user_id', Auth::id())
             ->where('product_id', $request->product_id)
