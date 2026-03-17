@@ -182,37 +182,43 @@ class ShopController extends Controller
             abort(404);
         }
 
-        $products = Product::where('user_id', $seller->id)
+        $productsQuery = Product::query()
+            ->where('user_id', $seller->id)
             ->where('status', 'Active')
-            ->latest()
-            ->get()
-            ->map(function ($product) {
+            ->latest();
+            
+        $activeProducts = $productsQuery->get();
+
+        $products = $activeProducts->map(function ($product) {
                 return [
                     'id' => $product->id,
                     'slug' => $product->slug,
                     'name' => $product->name,
-                    'price' => number_format($product->price, 2),
+                    'price' => number_format((float) $product->price, 2),
                     'category' => $product->category,
                     'rating' => $product->rating ?? 0,
                     'sold' => $product->sold ?? 0,
                     'image' => $product->img,
-                    'is_new' => $product->created_at->diffInDays(now()) < 7,
+                    'is_new' => $product->created_at ? $product->created_at->diffInDays(now()) < 7 : false,
                 ];
             });
 
         // DSS: Store-Specific Best Sellers (top 5)
-        $bestSellers = Product::where('user_id', $seller->id)
+        $bestSellersQuery = Product::query()
+            ->where('user_id', $seller->id)
             ->where('status', 'Active')
             ->where('sold', '>', 0)
             ->orderByDesc('sold')
-            ->take(5)
-            ->get()
-            ->map(function ($product) {
+            ->take(5);
+            
+        $topProducts = $bestSellersQuery->get();
+
+        $bestSellers = $topProducts->map(function ($product) {
                 return [
                     'id' => $product->id,
                     'slug' => $product->slug,
                     'name' => $product->name,
-                    'price' => number_format($product->price, 2),
+                    'price' => number_format((float) $product->price, 2),
                     'rating' => $product->rating ?? 0,
                     'sold' => $product->sold ?? 0,
                     'image' => $product->img,

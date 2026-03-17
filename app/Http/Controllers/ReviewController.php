@@ -73,12 +73,13 @@ class ReviewController extends Controller
         ]);
 
         // [H3 Fix] Verification: check if the user actually purchased the product
-        $hasPurchased = \App\Models\Order::where('user_id', Auth::id())
-            ->where('status', 'Completed')
-            ->whereHas('items', function ($query) use ($request) {
-                $query->where('product_id', $request->product_id);
-            })
-            ->exists();
+        $orderQuery = \App\Models\Order::query()
+            ->where('user_id', Auth::id())
+            ->where('status', 'Completed');
+
+        $hasPurchased = $orderQuery->whereHas('items', function ($query) use ($request) {
+            $query->where('product_id', $request->product_id);
+        })->exists();
 
         if (!$hasPurchased) {
             abort(403, 'You can only review products you have purchased and received.');
