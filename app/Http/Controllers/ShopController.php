@@ -168,6 +168,12 @@ class ShopController extends Controller
         ]);
     }
 
+    /**
+     * Display a seller's shop profile.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Inertia\Response
+     */
     public function seller(User $user)
     {
         $seller = $user;

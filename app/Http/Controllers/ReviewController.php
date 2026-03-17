@@ -57,6 +57,12 @@ class ReviewController extends Controller
         ]);
     }
 
+    /**
+     * Store a newly created review.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
