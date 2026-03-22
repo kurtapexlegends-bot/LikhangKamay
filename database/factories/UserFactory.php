@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -39,6 +40,56 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'super_admin',
+        ]);
+    }
+
+    public function artisanApproved(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'artisan',
+            'shop_name' => fake()->company().' Pottery',
+            'setup_completed_at' => now(),
+            'artisan_status' => 'approved',
+            'approved_at' => now(),
+        ]);
+    }
+
+    public function artisanPending(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'artisan',
+            'shop_name' => fake()->company().' Pottery',
+            'setup_completed_at' => now(),
+            'artisan_status' => 'pending',
+        ]);
+    }
+
+    public function artisanWithoutSetup(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'artisan',
+            'shop_name' => fake()->company().' Pottery',
+            'setup_completed_at' => null,
+            'artisan_status' => 'pending',
+        ]);
+    }
+
+    public function staff(?User $sellerOwner = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'staff',
+            'seller_owner_id' => $sellerOwner?->id,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => ['overview' => true],
+            'must_change_password' => false,
+            'created_by_user_id' => $sellerOwner?->id,
         ]);
     }
 }

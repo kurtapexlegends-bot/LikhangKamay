@@ -40,7 +40,7 @@ class SubscriptionController extends Controller
         $targetLevel = $planLevels[$validated['plan']] ?? 1;
 
         if ($targetLevel < $currentLevel) {
-            return redirect()->route('subscription.downgrade.index')->with('warning', 'Please use the downgrade mechanism to switch to a lower plan.');
+            return redirect()->route('seller.subscription')->with('warning', 'Please use the downgrade flow to switch to a lower plan.');
         }
 
         if ($targetLevel === $currentLevel) {
@@ -72,10 +72,12 @@ class SubscriptionController extends Controller
         $user = Auth::user();
         $newTier = $validated['plan'];
         $previousUrl = url()->previous();
+        $previousTier = $user->premium_tier;
 
         // Determine new limit from User model
         $user->premium_tier = $newTier;
         $newLimit = $user->getActiveProductLimit();
+        $user->premium_tier = $previousTier;
 
         $activeIds = $user->products()
             ->where('status', 'Active')
@@ -110,7 +112,7 @@ class SubscriptionController extends Controller
             ->update(['status' => 'Draft']);
         UserTierLog::create([
             'user_id' => $user->id,
-            'previous_tier' => $user->premium_tier,
+            'previous_tier' => $previousTier,
             'new_tier' => $newTier,
         ]);
 

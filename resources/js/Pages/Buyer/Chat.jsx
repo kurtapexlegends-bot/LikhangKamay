@@ -9,10 +9,11 @@ import {
     FileIcon, X, MapPin, Phone, Check
 } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
+import OrderContextCard from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
 import MediaViewer from '@/Components/Chat/MediaViewer';
 
-export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser }) {
+export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -47,7 +48,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     useEffect(() => {
         if (!currentChatUser) return;
         const interval = setInterval(() => {
-            router.reload({ only: ['activeMessages', 'conversations'] });
+            router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
         }, 3000);
         return () => clearInterval(interval);
     }, [currentChatUser]);
@@ -287,6 +288,8 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                         </button>
                                     </div>
                                 </div>
+
+                                <OrderContextCard order={currentOrderContext} viewer="buyer" />
 
                                 {/* MESSAGES AREA */}
                                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FDFBF9] scroll-smooth">

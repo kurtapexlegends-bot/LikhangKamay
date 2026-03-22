@@ -2,11 +2,12 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import Footer from '@/Components/Footer';
-import { 
+import {
     MapPin, Calendar, Star, Package, Trophy, Crown, Flame, Sparkles,
     ShoppingCart, Check, Loader2, ArrowLeft, Filter 
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import { hasRating, formatRating } from '@/utils/rating';
 
 export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     // Format price helper
@@ -142,9 +143,9 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                             }`}>
                                                 {isTop ? <Crown size={12} /> : `#${idx + 1}`}
                                             </div>
-                                            {product.rating > 0 && (
+                                            {hasRating(product.rating) && (
                                                 <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
-                                                    {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                    {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400" />
                                                 </div>
                                             )}
                                         </div>
@@ -201,9 +202,9 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     {product.is_new && (
                                         <span className="absolute top-2 left-2 bg-orange-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">New</span>
                                     )}
-                                    {product.rating > 0 && (
+                                    {hasRating(product.rating) && (
                                         <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
-                                            {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-0.5" />
+                                            {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-0.5" />
                                         </div>
                                     )}
                                 </div>
@@ -241,4 +242,3 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
         </div>
     );
 }
-

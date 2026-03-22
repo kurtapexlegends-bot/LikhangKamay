@@ -39,6 +39,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/shop/{user:shop_slug}', [ShopController::class, 'seller'])->name('shop.seller');
 Route::get('/product/{product}', [ProductController::class, 'show'])->name('product.show');
+Route::post('/sponsorship-events/track', [\App\Http\Controllers\SponsorshipController::class, 'track'])
+    ->middleware('throttle:120,1')
+    ->name('sponsorships.track');
 
 // --- AUTHENTICATION ---
 Route::get('/artisan/register', function () {
@@ -87,7 +90,7 @@ Route::post('/auth/complete-profile', [SocialAuthController::class, 'completePro
     ->name('auth.complete-profile.store');
 
 // --- PROTECTED ROUTES ---
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // DASHBOARD & PROFILE
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -116,7 +119,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('artisan.pending');
 
     // SELLER ROUTES
-    Route::middleware(['artisan'])->group(function () {
+    Route::middleware(['seller.workspace'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
         Route::get('/orders/export', [OrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
         Route::post('/orders/{id}/update', [OrderController::class, 'update'])->middleware('seller.module:orders')->name('orders.update');
@@ -143,34 +146,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/shop-settings', [ShopController::class, 'updateSettings'])->middleware('seller.module:shop_settings')->name('shop.settings.update');
 
         // SUBSCRIPTIONS
-        Route::get('/subscription', [SubscriptionController::class, 'index'])->name('seller.subscription');
-        Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('seller.subscription.upgrade');
-        Route::post('/subscription/downgrade', [SubscriptionController::class, 'downgrade'])->name('seller.subscription.downgrade');
+        Route::get('/subscription', [SubscriptionController::class, 'index'])->middleware('artisan')->name('seller.subscription');
+        Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->middleware('artisan')->name('seller.subscription.upgrade');
+        Route::post('/subscription/downgrade', [SubscriptionController::class, 'downgrade'])->middleware('artisan')->name('seller.subscription.downgrade');
 
         // SPONSORSHIPS
-        Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'index'])->middleware('seller.module:sponsorships')->name('seller.sponsorships');
-        Route::post('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'store'])->middleware('seller.module:sponsorships')->name('seller.sponsorships.store');
+        Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'index'])->middleware(['artisan', 'seller.module:sponsorships'])->name('seller.sponsorships');
+        Route::post('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'store'])->middleware(['artisan', 'seller.module:sponsorships'])->name('seller.sponsorships.store');
 
         // SETTINGS
-        Route::post('/settings/modules', [SettingsController::class, 'updateModules'])->name('settings.modules');
+        Route::post('/settings/modules', [SettingsController::class, 'updateModules'])->middleware('artisan')->name('settings.modules');
     });
 
     // CHAT SYSTEM & REVIEWS (CRM)
-    Route::get('/chat', [ChatController::class, 'index'])->middleware(['artisan', 'seller.module:messages'])->name('chat.index'); 
-    Route::post('/chat/send', [ChatController::class, 'store'])->middleware(['artisan', 'seller.module:messages'])->name('chat.store');
-    Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->middleware(['artisan', 'seller.module:messages'])->name('chat.seen');
-    Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->middleware(['artisan', 'seller.module:messages'])->name('chat.typing');
+    Route::get('/chat', [ChatController::class, 'index'])->middleware(['seller.workspace', 'seller.module:messages'])->name('chat.index'); 
+    Route::post('/chat/send', [ChatController::class, 'store'])->name('chat.store');
+    Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->name('chat.seen');
+    Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->name('chat.typing');
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
-    Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['artisan', 'seller.module:reviews'])->name('reviews.index');
-    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->middleware(['artisan', 'seller.module:reviews'])->name('reviews.reply');
-    Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->middleware(['artisan', 'seller.module:reviews'])->name('reviews.destroy-reply');
-    Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->middleware(['artisan', 'seller.module:reviews'])->name('reviews.toggle-pin');
+    Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.index');
+    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.reply');
+    Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.destroy-reply');
+    Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.toggle-pin');
 
     // ERP MODULES
-    Route::middleware(['artisan'])->group(function () {
+    Route::middleware(['seller.workspace'])->group(function () {
         Route::get('/hr', [HRController::class, 'index'])->middleware('seller.module:hr')->name('hr.index');
         Route::post('/hr/employees', [HRController::class, 'store'])->middleware('seller.module:hr')->name('hr.store');
+        Route::patch('/hr/employees/{id}', [HRController::class, 'update'])->middleware('seller.module:hr')->name('hr.update');
         Route::delete('/hr/employees/{id}', [HRController::class, 'destroy'])->middleware('seller.module:hr')->name('hr.destroy');
         Route::post('/hr/generate', [HRController::class, 'generatePayroll'])->middleware('seller.module:hr')->name('hr.generate');
         Route::post('/hr/settings', [HRController::class, 'updateSettings'])->middleware('seller.module:hr')->name('hr.settings');
@@ -246,7 +250,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // --- SUPER ADMIN ROUTES ---
-Route::middleware(['auth', 'verified', 'super_admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');

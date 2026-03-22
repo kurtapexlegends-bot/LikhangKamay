@@ -6,6 +6,8 @@ import { OrbitControls, Stage, PresentationControls, Float, useGLTF, Html, usePr
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import Modal from '@/Components/Modal';
+import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     UploadCloud, MoreVertical, Scan, Smartphone, Cuboid,
@@ -166,21 +168,12 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-2 p-1 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-xs font-bold text-gray-900 leading-none">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[9px] text-gray-500 mt-0.5">Seller Account</p>
-                                            </div>
-                                            <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 uppercase overflow-hidden">
-                                                {auth.user.avatar ? (
-                                                    <img 
-                                                        src={auth.user.avatar.startsWith('http') || auth.user.avatar.startsWith('/storage') ? auth.user.avatar : `/storage/${auth.user.avatar}`} 
-                                                        alt={auth.user.name} 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    (auth.user.shop_name || auth.user.name).charAt(0)
-                                                )}
-                                            </div>
+                                            <WorkspaceAccountSummary
+                                                user={auth.user}
+                                                nameClassName="text-xs font-bold text-gray-900 leading-none"
+                                                labelClassName="text-[9px] text-gray-500 mt-0.5"
+                                            />
+                                            <UserAvatar user={auth.user} className="w-8 h-8 border border-clay-200" />
                                             <ChevronDown size={14} className="text-gray-400" />
                                         </button>
                                     </span>

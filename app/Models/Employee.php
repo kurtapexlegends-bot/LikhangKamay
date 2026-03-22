@@ -25,4 +25,9 @@ class Employee extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function loginAccount()
+    {
+        return $this->hasOne(User::class, 'employee_id');
+    }
 }

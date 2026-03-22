@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\StockRequest;
 use App\Models\Supply;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class StockRequestController extends Controller
 {
+    use InteractsWithSellerContext;
+
     /**
      * Display the Stock Request Dashboard
      */
     public function index()
     {
-        $userId = Auth::id();
+        $userId = $this->sellerOwnerId();
 
         // Fetch requests with associated supply details
         $requests = StockRequest::with('supply')
@@ -43,9 +45,7 @@ class StockRequestController extends Controller
         $supply = Supply::findOrFail($validated['supply_id']);
         
         // Phase 1: Authentication block
-        if ($supply->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($supply->user_id);
 
         // Phase 2: The Stopper (Max Stock Validation)
         $capacity = $supply->getAvailableCapacity();
@@ -56,7 +56,7 @@ class StockRequestController extends Controller
         $totalCost = $validated['quantity'] * ($supply->unit_cost ?? 0);
 
         StockRequest::create([
-            'user_id' => Auth::id(),
+            'user_id' => $this->sellerOwnerId(),
             'supply_id' => $supply->id,
             'quantity' => $validated['quantity'],
             'total_cost' => $totalCost,
@@ -71,7 +71,7 @@ class StockRequestController extends Controller
      */
     public function markAsOrdered(Request $request, StockRequest $stockRequest)
     {
-        if ($stockRequest->user_id !== Auth::id()) abort(403);
+        $this->authorizeSellerOwnership($stockRequest->user_id);
         
         if ($stockRequest->status !== StockRequest::STATUS_ACCOUNTING_APPROVED) {
             return back()->with('error', 'Funds must be released first.');
@@ -86,7 +86,7 @@ class StockRequestController extends Controller
      */
     public function receive(Request $request, StockRequest $stockRequest)
     {
-        if ($stockRequest->user_id !== Auth::id()) abort(403);
+        $this->authorizeSellerOwnership($stockRequest->user_id);
 
         $validated = $request->validate(['quantity' => 'required|integer|min:1']);
         
@@ -115,7 +115,7 @@ class StockRequestController extends Controller
      */
     public function transfer(Request $request, StockRequest $stockRequest)
     {
-        if ($stockRequest->user_id !== Auth::id()) abort(403);
+        $this->authorizeSellerOwnership($stockRequest->user_id);
 
         $validated = $request->validate(['quantity' => 'required|integer|min:1']);
         

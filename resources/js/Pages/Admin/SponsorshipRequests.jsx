@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import Modal from '@/Components/Modal';
 
 const MetricCard = ({ title, value, subtitle, icon: Icon, tone = 'amber' }) => {
     const tones = {
@@ -38,6 +39,7 @@ export default function SponsorshipRequests({ requests }) {
     const [recentlyUpdatedId, setRecentlyUpdatedId] = useState(null);
     const [modalData, setModalData] = useState({ isOpen: false, type: null, request: null });
     const [requestRows, setRequestRows] = useState(requests.data || []);
+    const [rejectionReason, setRejectionReason] = useState('');
 
     useEffect(() => {
         setRequestRows(requests.data || []);
@@ -53,6 +55,7 @@ export default function SponsorshipRequests({ requests }) {
     }, [recentlyUpdatedId]);
 
     const handleAction = (request, type) => {
+        setRejectionReason('');
         setModalData({ isOpen: true, type, request });
     };
 
@@ -60,9 +63,14 @@ export default function SponsorshipRequests({ requests }) {
         const { type, request } = modalData;
         const routeName = type === 'approve' ? 'admin.sponsorships.approve' : 'admin.sponsorships.reject';
 
+        if (type === 'reject' && !rejectionReason.trim()) {
+            addToast('A rejection reason is required.', 'error');
+            return;
+        }
+
         setProcessing(true);
         setPendingActionId(request.id);
-        router.post(route(routeName, request.id), {}, {
+        router.post(route(routeName, request.id), type === 'reject' ? { rejection_reason: rejectionReason.trim() } : {}, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -73,17 +81,21 @@ export default function SponsorshipRequests({ requests }) {
                         ? {
                             ...row,
                             status: type === 'approve' ? 'approved' : 'rejected',
-                            approved_at: processedAt,
+                            approved_at: type === 'approve' ? processedAt : null,
+                            rejection_reason: type === 'reject' ? rejectionReason.trim() : null,
                             updated_at: processedAt,
                         }
                         : row
                 )));
                 setRecentlyUpdatedId(request.id);
+                setRejectionReason('');
                 setModalData({ isOpen: false, type: null, request: null });
                 addToast(`Sponsorship ${type}d successfully.`, 'success');
             },
             onError: (err) => {
-                setModalData({ isOpen: false, type: null, request: null });
+                if (type === 'approve') {
+                    setModalData({ isOpen: false, type: null, request: null });
+                }
                 addToast(err.error || `Failed to ${type} sponsorship.`, 'error');
             },
             onFinish: () => {
@@ -212,7 +224,9 @@ export default function SponsorshipRequests({ requests }) {
                                                     </div>
                                                     <div className="max-w-[220px]">
                                                         <p className="text-sm font-bold text-gray-900 truncate">{req.product?.name || 'Unknown Product'}</p>
-                                                        <a href={route('product.show', req.product?.id)} target="_blank" rel="noreferrer" className="text-[10px] font-medium text-clay-600 hover:underline">View Product</a>
+                                                        {req.product?.slug && (
+                                                            <a href={route('product.show', req.product.slug)} target="_blank" rel="noreferrer" className="text-[10px] font-medium text-clay-600 hover:underline">View Product</a>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -226,6 +240,11 @@ export default function SponsorshipRequests({ requests }) {
                                             </td>
                                             <td className="py-4 px-6 align-middle">
                                                 {getStatusBadge(req.status)}
+                                                {req.status === 'rejected' && req.rejection_reason && (
+                                                    <p className="mt-2 max-w-[260px] text-[11px] leading-relaxed text-red-600">
+                                                        Reason: {req.rejection_reason}
+                                                    </p>
+                                                )}
                                                 {recentlyUpdatedId === req.id && (
                                                     <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
                                                         Updated just now
@@ -302,12 +321,12 @@ export default function SponsorshipRequests({ requests }) {
             </div>
 
             <ConfirmationModal
-                isOpen={modalData.isOpen}
+                isOpen={modalData.isOpen && modalData.type === 'approve'}
                 onClose={() => setModalData({ isOpen: false, type: null, request: null })}
                 onConfirm={confirmAction}
                 title={modalData.type === 'approve' ? 'Approve Sponsorship?' : 'Reject Sponsorship?'}
                 message={modalData.type === 'approve'
-                    ? `Are you sure you want to approve "${modalData.request?.product?.name}" for a 7-day sponsorship? It will be immediately boosted in the catalog.`
+                    ? `Are you sure you want to approve "${modalData.request?.product?.name}" for a 7-day sponsorship? It will be placed across the homepage and catalog sponsored surfaces.`
                     : `Are you sure you want to reject this sponsorship request for "${modalData.request?.product?.name}"?`
                 }
                 icon={modalData.type === 'approve' ? CheckCircle2 : XCircle}
@@ -319,6 +338,59 @@ export default function SponsorshipRequests({ requests }) {
                 }
                 processing={processing}
             />
+
+            <Modal
+                show={modalData.isOpen && modalData.type === 'reject'}
+                onClose={() => {
+                    setRejectionReason('');
+                    setModalData({ isOpen: false, type: null, request: null });
+                }}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <div className="flex items-start gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center">
+                            <XCircle size={22} />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900">Reject Sponsorship?</h2>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Add a reason for rejecting "{modalData.request?.product?.name}". This note will be shown to the seller.
+                            </p>
+                        </div>
+                    </div>
+
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 mb-2">
+                        Rejection Reason
+                    </label>
+                    <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        rows={5}
+                        className="w-full rounded-xl border border-gray-200 focus:border-red-300 focus:ring-red-200 text-sm"
+                        placeholder="Explain why the request was rejected so the seller knows what to improve."
+                    />
+
+                    <div className="mt-5 flex justify-end gap-3">
+                        <button
+                            onClick={() => {
+                                setRejectionReason('');
+                                setModalData({ isOpen: false, type: null, request: null });
+                            }}
+                            className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmAction}
+                            disabled={processing}
+                            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50"
+                        >
+                            {processing ? 'Rejecting...' : 'Reject Request'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </AdminLayout>
     );
 }

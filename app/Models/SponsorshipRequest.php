@@ -12,6 +12,7 @@ class SponsorshipRequest extends Model
         'status',
         'requested_at',
         'approved_at',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -27,5 +28,10 @@ class SponsorshipRequest extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(SponsorshipEvent::class);
     }
 }

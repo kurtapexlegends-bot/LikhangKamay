@@ -21,7 +21,7 @@ class SettingsController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if (!$user->isPremiumTier()) {
+        if (!$user->canManageSellerModuleSettings()) {
             abort(403, 'Your current plan does not include module customization.');
         }
 

@@ -15,6 +15,7 @@ import {
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 const COLORS = ['#c07251', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
 
@@ -148,10 +149,7 @@ export default function Dashboard({ auth }) {
                                             type="button"
                                             className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                         >
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[10px] text-gray-500">Seller Account</p>
-                                            </div>
+                                            <WorkspaceAccountSummary user={auth.user} />
 
                                             <UserAvatar user={auth.user} className="w-9 h-9 border border-clay-200" />
 

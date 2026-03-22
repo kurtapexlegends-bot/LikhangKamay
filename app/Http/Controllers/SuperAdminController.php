@@ -129,9 +129,30 @@ class SuperAdminController extends Controller
         $rejectedArtisans = User::where('role', 'artisan')->where('artisan_status', 'rejected')->count();
 
         // Recent registrations
-        $recentUsers = User::orderBy('created_at', 'desc')
+        $recentUsers = User::with('sellerOwner:id,name,shop_name')
+            ->orderBy('created_at', 'desc')
             ->limit(10)
-            ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier']);
+            ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier', 'seller_owner_id', 'email_verified_at', 'must_change_password', 'staff_module_permissions'])
+            ->map(function (User $user) {
+                [$accountState, $accountStateTone] = $this->resolveAdminAccountState($user);
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role ?? 'buyer',
+                    'role_label' => $this->resolveAdminRoleLabel($user),
+                    'artisan_status' => $user->artisan_status,
+                    'created_at' => $user->created_at->toIso8601String(),
+                    'shop_name' => $user->shop_name,
+                    'avatar' => $user->avatar,
+                    'premium_tier' => $user->premium_tier,
+                    'account_state' => $accountState,
+                    'account_state_tone' => $accountStateTone,
+                    'seller_shop_name' => $user->sellerOwner?->shop_name,
+                ];
+            })
+            ->values();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
@@ -161,25 +182,27 @@ class SuperAdminController extends Controller
             $q->where('premium_tier', 'free')->orWhereNull('premium_tier');
         })->count();
 
-        // Estimated MRR calculation
-        $estimatedMRR = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
+        // Projected plan MRR based on the current active artisan plan mix.
+        $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
 
         // Previous month's active subscriptions (estimated using exact historical log tables)
         $previousPremiumUsersCount = $this->getHistoricalTierCount('premium', 30);
         $previousEliteUsersCount = $this->getHistoricalTierCount('super_premium', 30);
-        $previousEstimatedMRR = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
+        $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
 
         $mrrGrowth = 0;
-        if ($previousEstimatedMRR > 0) {
-            $mrrGrowth = (($estimatedMRR - $previousEstimatedMRR) / $previousEstimatedMRR) * 100;
-        } elseif ($estimatedMRR > 0) {
+        if ($previousProjectedMrr > 0) {
+            $mrrGrowth = (($projectedMrr - $previousProjectedMrr) / $previousProjectedMrr) * 100;
+        } elseif ($projectedMrr > 0) {
             $mrrGrowth = 100;
         }
 
         $mrrMetric = [
-            'value' => $estimatedMRR,
+            'value' => $projectedMrr,
             'growth' => round($mrrGrowth, 1),
-            'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral')
+            'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral'),
+            'is_projected' => true,
+            'basis' => 'Based on current active artisan plan tiers.',
         ];
 
         // Sponsorships Metrics
@@ -204,23 +227,40 @@ class SuperAdminController extends Controller
             'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
         ];
 
-        // Recent Upgrades (Approximation based on those currently with premium/elite tiers)
-        $recentSubscribers = User::where('role', 'artisan')
-            ->whereIn('premium_tier', ['premium', 'super_premium'])
-            ->orderBy('updated_at', 'desc') // Using updated_at as a proxy for upgrade date since we don't have a transaction log
+        // Recent plan changes backed by the subscription tier audit log.
+        $recentSubscribers = UserTierLog::query()
+            ->with('user:id,name,shop_name,avatar,premium_tier')
+            ->whereNotNull('new_tier')
+            ->latest()
             ->limit(5)
-            ->get(['id', 'name', 'shop_name', 'avatar', 'premium_tier', 'updated_at'])
-            ->map(function($user) {
+            ->get()
+            ->map(function($log) {
+                $user = $log->user;
+
+                if (!$user) {
+                    return null;
+                }
+
+                $tierLabel = match ($log->new_tier) {
+                    'super_premium' => 'Elite',
+                    'premium' => 'Premium',
+                    default => ucfirst((string) $log->new_tier),
+                };
+
                 return [
-                    'id' => $user->id,
+                    'id' => $log->id,
+                    'user_id' => $user->id,
                     'name' => $user->name,
                     'shop_name' => $user->shop_name,
                     'avatar' => $user->avatar,
-                    'premium_tier' => $user->premium_tier,
-                    'tier' => $user->premium_tier === 'super_premium' ? 'Elite' : 'Premium',
-                    'date' => $user->updated_at->format('M d, Y h:i A')
+                    'premium_tier' => $log->new_tier,
+                    'previous_tier' => $log->previous_tier,
+                    'tier' => $tierLabel,
+                    'date' => $log->created_at->format('M d, Y h:i A')
                 ];
-            });
+            })
+            ->filter()
+            ->values();
 
         // Recent Sponsorships
         $recentSponsorships = SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
@@ -259,44 +299,73 @@ class SuperAdminController extends Controller
      */
     public function users(Request $request)
     {
-        $query = User::query();
+        $search = trim((string) $request->get('search', ''));
+        $roleFilter = $this->normalizeAdminUserRoleFilter((string) $request->get('role', 'all'));
+
+        $query = User::query()
+            ->where(function ($primaryQuery) {
+                $primaryQuery->whereIn('role', ['artisan', 'buyer', 'super_admin'])
+                    ->orWhereNull('role');
+            })
+            ->withCount('staffMembers')
+            ->with([
+                'staffMembers' => function ($staffQuery) {
+                    $staffQuery
+                        ->select([
+                            'id',
+                            'name',
+                            'email',
+                            'avatar',
+                            'role',
+                            'seller_owner_id',
+                            'staff_role_preset_key',
+                            'staff_module_permissions',
+                            'must_change_password',
+                            'employee_id',
+                            'email_verified_at',
+                            'created_at',
+                        ])
+                        ->with('employee:id,name')
+                        ->orderBy('name');
+                },
+            ]);
 
         // Filter by role
-        $roleFilter = $request->get('role', 'all');
         if ($roleFilter === 'artisan') {
             $query->where('role', 'artisan');
         } elseif ($roleFilter === 'buyer') {
             $query->where(function($q) {
                 $q->where('role', 'buyer')->orWhereNull('role');
             });
-        } elseif ($roleFilter === 'admin') {
+        } elseif ($roleFilter === 'super_admin') {
             $query->where('role', 'super_admin');
         }
 
         // Search
-        if ($search = $request->get('search')) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('shop_name', 'like', "%{$search}%");
+        if ($search !== '') {
+            $likeSearch = "%{$search}%";
+
+            $query->where(function($q) use ($likeSearch) {
+                $q->where('name', 'like', $likeSearch)
+                  ->orWhere('email', 'like', $likeSearch)
+                  ->orWhere('shop_name', 'like', $likeSearch)
+                  ->orWhereHas('staffMembers', function ($staffQuery) use ($likeSearch) {
+                      $staffQuery->where(function ($nestedQuery) use ($likeSearch) {
+                          $nestedQuery->where('name', 'like', $likeSearch)
+                              ->orWhere('email', 'like', $likeSearch)
+                              ->orWhereHas('employee', function ($employeeQuery) use ($likeSearch) {
+                                  $employeeQuery->where('name', 'like', $likeSearch);
+                              });
+                      });
+                  });
             });
         }
 
         $users = $query->orderBy('created_at', 'desc')
             ->paginate(20)
-            ->through(function($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role ?? 'buyer',
-                    'shop_name' => $user->shop_name,
-                    'artisan_status' => $user->artisan_status,
-                    'email_verified_at' => $user->email_verified_at?->format('M d, Y'),
-                    'created_at' => $user->created_at->format('M d, Y'),
-                    'avatar' => $user->avatar,
-                    'premium_tier' => $user->premium_tier,
-                ];
+            ->withQueryString()
+            ->through(function (User $user) use ($search) {
+                return $this->mapAdminPrimaryAccount($user, $search);
             });
 
         return Inertia::render('Admin/Users', [
@@ -305,7 +374,225 @@ class SuperAdminController extends Controller
                 'role' => $roleFilter,
                 'search' => $search ?? '',
             ],
+            'unlinkedStaffGroup' => $this->buildUnlinkedStaffGroup($search, $roleFilter),
         ]);
+    }
+
+    private function normalizeAdminUserRoleFilter(string $roleFilter): string
+    {
+        if ($roleFilter === 'staff') {
+            return 'artisan';
+        }
+
+        return in_array($roleFilter, ['all', 'artisan', 'buyer', 'super_admin'], true)
+            ? $roleFilter
+            : 'all';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapAdminPrimaryAccount(User $user, string $search): array
+    {
+        [$accountState, $accountStateTone] = $this->resolveAdminAccountState($user);
+
+        $payload = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role ?? 'buyer',
+            'shop_name' => $user->shop_name,
+            'shop_slug' => $user->shop_slug,
+            'artisan_status' => $user->artisan_status,
+            'email_verified' => $user->hasVerifiedEmail(),
+            'email_verified_at' => $user->email_verified_at?->format('M d, Y'),
+            'account_state' => $accountState,
+            'account_state_tone' => $accountStateTone,
+            'created_at' => $user->created_at->format('M d, Y'),
+            'avatar' => $user->avatar,
+            'premium_tier' => $user->premium_tier,
+            'staff_members' => [],
+            'staff_count' => 0,
+            'matched_staff_count' => 0,
+        ];
+
+        if (!$user->isArtisan()) {
+            return $payload;
+        }
+
+        $allStaffMembers = $user->staffMembers ?? collect();
+        $matchingStaffMembers = $search === ''
+            ? collect()
+            : $allStaffMembers
+                ->filter(fn (User $staffMember) => $this->matchesAdminStaffSearch($staffMember, $search))
+                ->values();
+        $primaryMatchesSearch = $search !== '' && $this->matchesAdminPrimaryAccountSearch($user, $search);
+        $staffMembersToDisplay = $search !== '' && !$primaryMatchesSearch && $matchingStaffMembers->isNotEmpty()
+            ? $matchingStaffMembers
+            : $allStaffMembers;
+
+        $payload['staff_members'] = $staffMembersToDisplay
+            ->map(fn (User $staffMember) => $this->mapAdminStaffMember($staffMember))
+            ->values()
+            ->all();
+        $payload['staff_count'] = (int) ($user->staff_members_count ?? $allStaffMembers->count());
+        $payload['matched_staff_count'] = $matchingStaffMembers->count();
+
+        return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapAdminStaffMember(User $staffMember): array
+    {
+        [$accountState, $accountStateTone] = $this->resolveAdminAccountState($staffMember);
+
+        return [
+            'id' => $staffMember->id,
+            'name' => $staffMember->name,
+            'email' => $staffMember->email,
+            'avatar' => $staffMember->avatar,
+            'email_verified' => $staffMember->hasVerifiedEmail(),
+            'workspace_access_enabled' => $staffMember->isWorkspaceAccessEnabled(),
+            'account_state' => $accountState,
+            'account_state_tone' => $accountStateTone,
+            'employee_name' => $staffMember->employee?->name,
+            'employee_linked' => $staffMember->employee !== null,
+            'staff_role_preset_key' => $staffMember->staff_role_preset_key ?: 'custom',
+            'requires_password_change' => $staffMember->requiresStaffPasswordChange(),
+            'created_at' => $staffMember->created_at->format('M d, Y'),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function buildUnlinkedStaffGroup(string $search, string $roleFilter): ?array
+    {
+        if (!in_array($roleFilter, ['all', 'artisan'], true)) {
+            return null;
+        }
+
+        $baseQuery = User::query()
+            ->where('role', 'staff')
+            ->where(function ($query) {
+                $query->whereNull('seller_owner_id')
+                    ->orWhereDoesntHave('sellerOwner');
+            });
+
+        $staffCount = (clone $baseQuery)->count();
+
+        if ($staffCount === 0) {
+            return null;
+        }
+
+        $visibleStaffQuery = (clone $baseQuery)
+            ->with('employee:id,name')
+            ->orderBy('name');
+
+        if ($search !== '') {
+            $likeSearch = "%{$search}%";
+
+            $visibleStaffQuery->where(function ($query) use ($likeSearch) {
+                $query->where('name', 'like', $likeSearch)
+                    ->orWhere('email', 'like', $likeSearch)
+                    ->orWhereHas('employee', function ($employeeQuery) use ($likeSearch) {
+                        $employeeQuery->where('name', 'like', $likeSearch);
+                    });
+            });
+        }
+
+        $visibleStaffMembers = $visibleStaffQuery->get();
+
+        if ($visibleStaffMembers->isEmpty()) {
+            return null;
+        }
+
+        return [
+            'id' => 'unlinked-staff',
+            'label' => 'Unlinked Staff',
+            'description' => 'Staff accounts that are missing a valid shop owner link.',
+            'staff_count' => $staffCount,
+            'matched_staff_count' => $search !== '' ? $visibleStaffMembers->count() : 0,
+            'staff_members' => $visibleStaffMembers
+                ->map(fn (User $staffMember) => $this->mapAdminStaffMember($staffMember))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function matchesAdminPrimaryAccountSearch(User $user, string $search): bool
+    {
+        return $this->matchesSearchValue($user->name, $search)
+            || $this->matchesSearchValue($user->email, $search)
+            || $this->matchesSearchValue($user->shop_name, $search);
+    }
+
+    private function matchesAdminStaffSearch(User $staffMember, string $search): bool
+    {
+        return $this->matchesSearchValue($staffMember->name, $search)
+            || $this->matchesSearchValue($staffMember->email, $search)
+            || $this->matchesSearchValue($staffMember->employee?->name, $search);
+    }
+
+    private function matchesSearchValue(?string $value, string $search): bool
+    {
+        if ($value === null || $search === '') {
+            return false;
+        }
+
+        return str_contains(mb_strtolower($value), mb_strtolower($search));
+    }
+
+    private function resolveAdminRoleLabel(User $user): string
+    {
+        if ($user->isArtisan()) {
+            return 'Artisan';
+        }
+
+        if ($user->isStaff()) {
+            return 'Staff';
+        }
+
+        if ($user->isAdmin()) {
+            return 'Admin';
+        }
+
+        return 'Buyer';
+    }
+
+    private function resolveAdminAccountState(User $user): array
+    {
+        if ($user->isStaff()) {
+            if (!$user->isWorkspaceAccessEnabled()) {
+                return ['Access Suspended', 'neutral'];
+            }
+
+            if (!$user->hasVerifiedEmail()) {
+                return ['Verification Pending', 'warning'];
+            }
+
+            if ($user->requiresStaffPasswordChange()) {
+                return ['Password Reset Required', 'warning'];
+            }
+
+            return ['Access Active', 'success'];
+        }
+
+        if ($user->isArtisan()) {
+            return match ($user->artisan_status) {
+                'approved' => ['Approved', 'success'],
+                'rejected' => ['Rejected', 'danger'],
+                default => ['Pending', 'warning'],
+            };
+        }
+
+        if ($user->isAdmin()) {
+            return ['Platform Access', 'neutral'];
+        }
+
+        return [$user->hasVerifiedEmail() ? 'Verified' : 'Unverified', $user->hasVerifiedEmail() ? 'success' : 'warning'];
     }
 
     /**

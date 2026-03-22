@@ -2,103 +2,100 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Order;
 use App\Models\OrderItem;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    use InteractsWithSellerContext;
+
     public function index(Request $request)
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // 1. ROLE-BASED REDIRECTS
-
-        // Super Admin → Admin Dashboard
         if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
 
-        // Buyers → Shop (no seller dashboard for buyers)
-        if (!$user->isArtisan()) {
+        if ($user->isStaff()) {
+            if (!$user->canAccessSellerWorkspace()) {
+                return redirect()->route('staff.home');
+            }
+
+            if (!$user->canAccessSellerModule('overview')) {
+                $routeName = $user->getFirstAccessibleSellerRouteName();
+
+                return $routeName
+                    ? redirect()->route($routeName)
+                    : redirect()->route('staff.home');
+            }
+        } elseif (!$user->isArtisan()) {
             return redirect('/shop');
         }
 
-        // Artisan without setup → Setup wizard
-        if (is_null($user->setup_completed_at)) {
+        if ($user->isArtisan() && is_null($user->setup_completed_at)) {
             return redirect()->route('artisan.setup');
         }
 
-        // Artisan pending approval → Pending page
-        if ($user->isPendingApproval()) {
+        if ($user->isArtisan() && $user->isPendingApproval()) {
             return redirect()->route('artisan.pending');
         }
 
-        // Artisan rejected → Allow resubmit via setup
-        if ($user->isRejected()) {
+        if ($user->isArtisan() && $user->isRejected()) {
             return redirect()->route('artisan.setup');
         }
 
-        $userId = $user->id;
+        $seller = $user->getEffectiveSeller() ?? $user;
+        $userId = $seller->id;
 
-        // --- HELPER: Calculate Metric & Growth ---
-        // This function gets the value for NOW and LAST MONTH, then calculates % difference.
         $getMetricWithGrowth = function ($column, $aggregate = 'count') use ($userId) {
             $now = Carbon::now();
             $startThisMonth = $now->copy()->startOfMonth();
             $startLastMonth = $now->copy()->subMonth()->startOfMonth();
             $endLastMonth = $now->copy()->subMonth()->endOfMonth();
 
-            // Base Query
             $q = Order::where('artisan_id', $userId)
                 ->where('status', 'Completed');
 
-            // Current Value
             $currentVal = (clone $q)->where('created_at', '>=', $startThisMonth);
-            $current = $aggregate === 'sum' ? $currentVal->sum($column) :
-                ($aggregate === 'distinct' ? $currentVal->distinct($column)->count($column) : $currentVal->count());
+            $current = $aggregate === 'sum'
+                ? $currentVal->sum($column)
+                : ($aggregate === 'distinct' ? $currentVal->distinct($column)->count($column) : $currentVal->count());
 
-            // Previous Value
             $prevVal = (clone $q)->whereBetween('created_at', [$startLastMonth, $endLastMonth]);
-            $previous = $aggregate === 'sum' ? $prevVal->sum($column) :
-                ($aggregate === 'distinct' ? $prevVal->distinct($column)->count($column) : $prevVal->count());
+            $previous = $aggregate === 'sum'
+                ? $prevVal->sum($column)
+                : ($aggregate === 'distinct' ? $prevVal->distinct($column)->count($column) : $prevVal->count());
 
-            // Calculate Growth %
             $growth = 0;
             if ($previous > 0) {
                 $growth = (($current - $previous) / $previous) * 100;
             } elseif ($current > 0) {
-                $growth = 100; // If last month was 0 and this month has data, that's 100% growth
+                $growth = 100;
             }
 
             return ['value' => $current, 'growth' => round($growth, 1)];
         };
 
-        // 2. CALCULATE REAL METRICS
-        // A. Total Revenue (Sum of total_amount)
         $revenueData = $getMetricWithGrowth('total_amount', 'sum');
-
-        // B. Total Orders (Count of rows)
         $ordersData = $getMetricWithGrowth('id', 'count');
-
-        // C. Total Customers (Count distinct user_id)
         $customersData = $getMetricWithGrowth('user_id', 'distinct');
-
-        // D. Avg Order Value (Revenue / Orders)
         $avgValue = $ordersData['value'] > 0 ? $revenueData['value'] / $ordersData['value'] : 0;
 
-        // Calculate Avg Growth (Tricky math: % change of the average itself)
-        // Previous Avg
-        $prevRev = Order::where('artisan_id', $userId)->where('status', 'Completed')
-            ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])->sum('total_amount');
-        $prevOrd = Order::where('artisan_id', $userId)->where('status', 'Completed')
-            ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])->count();
+        $prevRev = Order::where('artisan_id', $userId)
+            ->where('status', 'Completed')
+            ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
+            ->sum('total_amount');
+        $prevOrd = Order::where('artisan_id', $userId)
+            ->where('status', 'Completed')
+            ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
+            ->count();
         $prevAvg = $prevOrd > 0 ? $prevRev / $prevOrd : 0;
 
         $avgGrowth = 0;
@@ -108,8 +105,6 @@ class DashboardController extends Controller
             $avgGrowth = 100;
         }
 
-        // 3. CHARTS & LISTS
-        // Monthly Data (Last 6 Months, including current)
         $monthExpr = $this->monthNumberExpression('created_at');
         $monthlyRaw = Order::where('artisan_id', $userId)
             ->where('status', 'Completed')
@@ -126,7 +121,7 @@ class DashboardController extends Controller
             $monthName = Carbon::now()->subMonths($i)->format('M');
             $monthlyData[] = [
                 'name' => $monthName,
-                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0
+                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0,
             ];
         }
 
@@ -142,23 +137,22 @@ class DashboardController extends Controller
             });
 
         $categoryData = OrderItem::whereHas('order', function ($q) use ($userId) {
-            $q->where('artisan_id', $userId)->where('status', 'Completed');
-        })
+                $q->where('artisan_id', $userId)->where('status', 'Completed');
+            })
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->select(DB::raw('COALESCE(products.category, "Uncategorized") as name'), DB::raw('SUM(order_items.quantity) as value'))
-            ->groupBy('products.category')->get()
+            ->groupBy('products.category')
+            ->get()
             ->map(function ($item) {
-                return ['name' => $item->name, 'value' => (int)$item->value];
+                return ['name' => $item->name, 'value' => (int) $item->value];
             })
             ->filter(fn ($item) => $item['value'] > 0)
             ->values();
 
-        // RECENT ORDERS with Filtering & Pagination
         $query = Order::where('artisan_id', $userId)
             ->with(['items', 'user'])
             ->orderBy('created_at', 'desc');
 
-        // Apply Search Filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -167,18 +161,16 @@ class DashboardController extends Controller
             });
         }
 
-        // Apply Status Filter
         if ($request->filled('status') && $request->status !== 'All') {
             $query->where('status', $request->status);
         }
 
-        // Apply Date Filter
         if ($request->filled('date')) {
             try {
                 $date = Carbon::parse($request->date);
                 $query->whereDate('created_at', $date);
             } catch (\Exception $e) {
-                // Ignore invalid date
+                // Ignore invalid date.
             }
         }
 
@@ -193,7 +185,7 @@ class DashboardController extends Controller
                     'date' => $order->created_at->format('M d, Y'),
                     'amount' => $order->total_amount,
                     'status' => $order->status,
-                    'img' => $order->items->first()->product_img ?? null
+                    'img' => $order->items->first()->product_img ?? null,
                 ];
             }),
             'links' => $recentOrdersPaginator->linkCollection(),
@@ -202,7 +194,6 @@ class DashboardController extends Controller
             'total' => $recentOrdersPaginator->total(),
         ];
 
-        // Get pending requests count and total deductions (Updated to use StockRequest)
         $pendingRequests = \App\Models\StockRequest::where('user_id', $userId)
             ->where('status', 'pending')
             ->count();
@@ -213,7 +204,7 @@ class DashboardController extends Controller
                 'ordered',
                 'partially_received',
                 'received',
-                'completed'
+                'completed',
             ])
             ->sum('total_cost');
 
@@ -221,28 +212,24 @@ class DashboardController extends Controller
             'metrics' => [
                 'revenue' => $revenueData['value'],
                 'revenue_growth' => $revenueData['growth'],
-
                 'orders' => $ordersData['value'],
                 'orders_growth' => $ordersData['growth'],
-
                 'customers' => $customersData['value'],
                 'customers_growth' => $customersData['growth'],
-
                 'avg_value' => $avgValue,
                 'avg_growth' => $avgGrowth,
-
                 'pending_requests' => $pendingRequests,
                 'total_deductions' => $totalDeductions,
             ],
             'subscription' => [
-                'plan' => $user->premium_tier,
-                'activeCount' => $user->products()->where('status', 'Active')->count(),
-                'limit' => $user->getActiveProductLimit(),
+                'plan' => $seller->premium_tier,
+                'activeCount' => $seller->products()->where('status', 'Active')->count(),
+                'limit' => $seller->getActiveProductLimit(),
             ],
             'chartData' => ['monthly' => $monthlyData, 'yearly' => $yearlyData],
             'categoryData' => $categoryData,
             'recentOrders' => $recentOrders,
-            'filters' => $request->only(['search', 'status', 'date'])
+            'filters' => $request->only(['search', 'status', 'date']),
         ]);
     }
 

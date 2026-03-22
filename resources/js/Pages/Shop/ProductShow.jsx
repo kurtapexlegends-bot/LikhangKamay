@@ -4,11 +4,12 @@ import ShopLayout from '@/Layouts/ShopLayout';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF, Html, useProgress } from '@react-three/drei';
 import UserAvatar from '@/Components/UserAvatar';
-import { 
-    Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon, 
+import {
+    Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
     Rotate3d, Loader2, Heart, ChevronRight, Check, Pin,
     Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown
 } from 'lucide-react';
+import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 
 // --- Loading Indicator for 3D ---
 function Loader() {
@@ -43,6 +44,7 @@ import { useToast } from '@/Components/ToastContext';
 
 export default function ProductShow({ product, relatedProducts = [], auth }) {
     const { addToast } = useToast();
+    const productRating = normalizeRating(product?.rating);
     
     const [viewMode, setViewMode] = useState('image');
     const [quantity, setQuantity] = useState(1);
@@ -111,7 +113,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     <ChevronRight size={12} />
                     <Link href={route('shop.index')} className="hover:text-clay-600">Shop</Link>
                     <ChevronRight size={12} />
-                    <Link href={`${route('shop.index')}?category=${product.category}`} className="hover:text-clay-600">
+                    <Link href={route('shop.index', { category: product.category })} className="hover:text-clay-600">
                         {product.category}
                     </Link>
                     <ChevronRight size={12} />
@@ -232,10 +234,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             {/* Rating & Sold */}
                             <div className="flex items-center gap-2.5 text-xs mb-3">
                                 <div className="flex items-center gap-1">
-                                    <span className="text-clay-600 font-bold underline">{product.rating || 0}</span>
+                                    <span className="text-clay-600 font-bold underline">{productRating}</span>
                                     <div className="flex">
                                         {[1,2,3,4,5].map(s => (
-                                            <Star key={s} size={10} className={s <= Math.round(product.rating) ? 'fill-clay-600 text-clay-600' : 'text-gray-300'} />
+                                            <Star key={s} size={10} className={s <= Math.round(productRating) ? 'fill-clay-600 text-clay-600' : 'text-gray-300'} />
                                         ))}
                                     </div>
                                 </div>
@@ -420,7 +422,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     <h2 className="text-base font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100 flex items-center justify-between">
                         <span>Product Ratings ({product.reviews?.length || 0})</span>
                         <div className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg">
-                            <span className="text-xl font-bold text-clay-600">{product.rating || 0}</span>
+                            <span className="text-xl font-bold text-clay-600">{productRating}</span>
                             <span className="text-xs text-gray-400 font-bold">/ 5</span>
                         </div>
                     </h2>
@@ -611,9 +613,9 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         src={related.image ? (related.image.startsWith('http') || related.image.startsWith('/storage') ? related.image : `/storage/${related.image}`) : '/images/no-image.png'} 
                                         onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                     />
-                                    {related.rating > 0 && (
+                                    {hasRating(related.rating) && (
                                         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
-                                            {Number(related.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                            {formatRating(related.rating)} <Star size={10} className="fill-amber-400 text-amber-400" />
                                         </div>
                                     )}
                                 </div>

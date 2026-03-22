@@ -16,7 +16,7 @@ class EnsureArtisan
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check() || !Auth::user()->isArtisan()) {
+        if (!Auth::check() || !Auth::user()->canAccessSellerOwnerRoutes()) {
             abort(403, 'Unauthorized action. Artisan access only.');
         }
 

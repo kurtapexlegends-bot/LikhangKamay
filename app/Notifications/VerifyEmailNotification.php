@@ -2,15 +2,14 @@
 
 namespace App\Notifications;
 
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\URL;
 
 class VerifyEmailNotification extends Notification
 {
-
     /**
      * Get the notification's delivery channels.
      */
@@ -27,7 +26,7 @@ class VerifyEmailNotification extends Notification
         $verificationUrl = $this->verificationUrl($notifiable);
 
         return (new MailMessage)
-            ->subject('🏺 Verify Your Email - LikhangKamay')
+            ->subject('Verify Your Email - LikhangKamay')
             ->view('emails.verify-email', ['url' => $verificationUrl]);
     }
 

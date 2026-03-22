@@ -2,31 +2,37 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Message;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache; // <--- Added
 use Inertia\Inertia;
 
 class ChatController extends Controller
 {
+    use InteractsWithSellerContext;
+
     // 1. SELLER VIEW
     public function index(Request $request)
     {
-        return $this->getChatData($request, 'Seller/Chat');
+        return $this->getChatData($request, 'Seller/Chat', true);
     }
 
     // 2. BUYER VIEW
     public function buyerIndex(Request $request)
     {
-        return $this->getChatData($request, 'Buyer/Chat');
+        return $this->getChatData($request, 'Buyer/Chat', false);
     }
 
     // 3. SEND MESSAGE (Shared)
     public function store(Request $request)
     {
+        $actor = $request->user();
+        $this->authorizeChatActor($actor);
+
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'message' => 'nullable|string', // Allow empty message if there's an attachment
@@ -36,6 +42,9 @@ class ChatController extends Controller
         if (!$request->filled('message') && !$request->hasFile('attachment')) {
             return back()->withErrors(['message' => 'Message or attachment is required']);
         }
+
+        $receiver = User::findOrFail($request->integer('receiver_id'));
+        $this->authorizeSharedConversationCounterpart($actor, $receiver);
 
         $attachmentPath = null;
         $attachmentType = null;
@@ -56,20 +65,23 @@ class ChatController extends Controller
         ]);
 
         // Notify Receiver
-        $receiver = User::find($request->receiver_id);
-        if ($receiver) {
-            $senderName = Auth::user()->shop_name ?: Auth::user()->name;
-            $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
-        }
+        $senderName = Auth::user()->shop_name ?: Auth::user()->name;
+        $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
 
         return redirect()->back();
     }
 
     public function markAsSeen(Request $request) 
     {
+        $actor = $request->user();
+        $this->authorizeChatActor($actor);
+
         $request->validate([
             'sender_id' => 'required|exists:users,id'
         ]);
+
+        $sender = User::findOrFail($request->integer('sender_id'));
+        $this->authorizeSharedConversationCounterpart($actor, $sender);
 
         Message::where('sender_id', $request->sender_id)
             ->where('receiver_id', Auth::id())
@@ -81,12 +93,17 @@ class ChatController extends Controller
     // 5. SIGNAL TYPING
     public function signalTyping(Request $request)
     {
+        $actor = $request->user();
+        $this->authorizeChatActor($actor);
+
         $request->validate([
             'receiver_id' => 'required|exists:users,id'
         ]);
 
         $userId = Auth::id();
         $receiverId = $request->receiver_id;
+        $receiver = User::findOrFail((int) $receiverId);
+        $this->authorizeSharedConversationCounterpart($actor, $receiver);
 
         // Store typing status in cache for 4 seconds
         Cache::put("typing-{$userId}-to-{$receiverId}", true, 4);
@@ -95,8 +112,11 @@ class ChatController extends Controller
     }
 
     // --- SHARED LOGIC (THE ENGINE) ---
-    private function getChatData(Request $request, $viewName)
+    private function getChatData(Request $request, string $viewName, bool $sellerPerspective)
     {
+        $actor = $request->user();
+        $this->authorizeChatActor($actor, $sellerPerspective);
+
         $userId = Auth::id();
         $activeChatId = (int) $request->query('user_id');
 
@@ -106,6 +126,13 @@ class ChatController extends Controller
             ->selectRaw('CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id', [$userId])
             ->distinct()
             ->pluck('contact_id');
+
+        $contacts = User::whereIn('id', $contactIds)
+            ->get()
+            ->filter(fn (User $user) => $this->canAccessConversationForPerspective($actor, $user, $sellerPerspective))
+            ->values();
+
+        $contactIds = $contacts->pluck('id');
 
         // Pre-fetch latest messages for all contacts
         $latestMessagesQuery = Message::where(function($q) use ($userId, $contactIds) {
@@ -122,7 +149,7 @@ class ChatController extends Controller
             ->groupBy('sender_id')
             ->pluck('count', 'sender_id');
 
-        $conversations = User::whereIn('id', $contactIds)->get()->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts) {
+        $conversations = $contacts->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts) {
             $lastMsg = $latestMessagesQuery->first(function($msg) use ($userId, $user) {
                 return ($msg->sender_id == $userId && $msg->receiver_id == $user->id) ||
                        ($msg->sender_id == $user->id && $msg->receiver_id == $userId);
@@ -147,10 +174,15 @@ class ChatController extends Controller
         // B. GET ACTIVE MESSAGES
         $messages = [];
         $activeUser = null;
+        $currentOrderContext = null;
 
         if ($activeChatId) {
             $activeUser = User::find($activeChatId);
-            
+
+            if ($activeUser) {
+                $this->authorizeConversationCounterpart($actor, $activeUser, $sellerPerspective);
+            }
+
             // Add online status to active user
             if ($activeUser) {
                 $activeUser->is_online = Cache::has('user-is-online-' . $activeUser->id);
@@ -178,12 +210,210 @@ class ChatController extends Controller
                     'is_read' => $m->is_read
                 ];
             });
+
+            $currentOrderContext = $this->resolveCurrentOrderContext(
+                $request->user(),
+                $activeUser,
+                $sellerPerspective
+            );
         }
 
         return Inertia::render($viewName, [
             'conversations' => $conversations,
             'activeMessages' => $messages,
             'currentChatUser' => $activeUser,
+            'currentOrderContext' => $currentOrderContext,
         ]);
+    }
+
+    private function resolveCurrentOrderContext(?User $actor, ?User $counterpart, bool $sellerPerspective): ?array
+    {
+        if (!$actor || !$counterpart || !$this->isSupportedConversationUser($counterpart)) {
+            return null;
+        }
+
+        $orderQuery = Order::query()
+            ->with('items')
+            ->whereNotIn('status', $this->terminalOrderStatuses());
+
+        if ($sellerPerspective) {
+            $orderQuery
+                ->where('artisan_id', $this->sellerOwnerId())
+                ->where('user_id', $counterpart->id);
+        } else {
+            $orderQuery
+                ->where('user_id', $actor->id)
+                ->where('artisan_id', $counterpart->id);
+        }
+
+        $pendingOrder = (clone $orderQuery)
+            ->where('status', 'Pending')
+            ->latest('created_at')
+            ->first();
+
+        $activeOrdersCount = (clone $orderQuery)->count();
+
+        $order = $pendingOrder ?: (clone $orderQuery)
+            ->latest('created_at')
+            ->first();
+
+        if (!$order) {
+            return null;
+        }
+
+        $canRespond = $sellerPerspective
+            && $order->status === 'Pending'
+            && $actor->canAccessSellerModule('orders');
+
+        $lineItemsCount = $order->items->count();
+        $unitsCount = (int) $order->items->sum('quantity');
+
+        return [
+            'orderNumber' => $order->order_number,
+            'dbId' => $order->id,
+            'status' => $order->status,
+            'paymentStatus' => $order->payment_status ?? 'pending',
+            'customerName' => $order->customer_name,
+            'placedAt' => $order->created_at?->format('M d, Y h:i A'),
+            'shippingAddress' => $order->shipping_address,
+            'shippingMethod' => $order->shipping_method,
+            'shippingNotes' => $order->shipping_notes,
+            'paymentMethod' => $order->payment_method,
+            'trackingNumber' => $order->tracking_number,
+            'totalAmount' => (float) $order->total_amount,
+            'formattedTotal' => number_format((float) $order->total_amount, 2),
+            'canRespond' => $canRespond,
+            'isReadOnly' => !$canRespond,
+            'detailsRoute' => $sellerPerspective ? route('orders.index') : route('my-orders.index'),
+            'activeOrdersCount' => $activeOrdersCount,
+            'otherActiveOrdersCount' => max(0, $activeOrdersCount - 1),
+            'lineItemsCount' => $lineItemsCount,
+            'itemsCount' => $lineItemsCount,
+            'unitsCount' => $unitsCount,
+            'selectionSummary' => $activeOrdersCount > 1
+                ? ($pendingOrder
+                    ? 'Showing the pending order first. View Orders to review the other active orders in this conversation.'
+                    : 'Showing the latest active order. View Orders to review the rest of this conversation\'s open orders.')
+                : null,
+            'items' => $order->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->product_name,
+                    'variant' => $item->variant ?: 'Standard',
+                    'quantity' => $item->quantity,
+                    'price' => (float) $item->price,
+                    'img' => $this->resolveProductImagePath($item->product_img),
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function terminalOrderStatuses(): array
+    {
+        return ['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'];
+    }
+
+    private function authorizeChatActor(?User $actor, bool $sellerPerspective = false): void
+    {
+        abort_unless($actor, 403, 'Authentication required.');
+        abort_if($actor->isAdmin() || $actor->isStaff(), 403, 'Unauthorized chat access.');
+
+        if ($sellerPerspective) {
+            abort_unless(
+                $actor->isArtisan() && $actor->canAccessSellerModule('messages'),
+                403,
+                'Unauthorized seller chat access.'
+            );
+        }
+    }
+
+    private function authorizeConversationCounterpart(User $actor, User $counterpart, bool $sellerPerspective): void
+    {
+        abort_unless(
+            $this->canAccessConversationForPerspective($actor, $counterpart, $sellerPerspective),
+            403,
+            'Unauthorized chat recipient.'
+        );
+    }
+
+    private function authorizeSharedConversationCounterpart(User $actor, User $counterpart): void
+    {
+        $isAuthorized = $this->canAccessConversationForPerspective($actor, $counterpart, false)
+            || $this->canAccessConversationForPerspective($actor, $counterpart, true);
+
+        abort_unless($isAuthorized, 403, 'Unauthorized chat recipient.');
+    }
+
+    private function isSupportedConversationUser(User $user): bool
+    {
+        return !$user->isAdmin() && !$user->isStaff();
+    }
+
+    private function canAccessConversationForPerspective(User $actor, User $counterpart, bool $sellerPerspective): bool
+    {
+        if (
+            $actor->id === $counterpart->id
+            || !$this->isSupportedConversationUser($counterpart)
+        ) {
+            return false;
+        }
+
+        if ($sellerPerspective) {
+            if (!$actor->isArtisan() || !$actor->canAccessSellerModule('messages')) {
+                return false;
+            }
+
+            return $this->hasOrderRelationship($this->sellerOwnerId(), $counterpart->id)
+                || $this->hasExistingConversation($actor->id, $counterpart->id);
+        }
+
+        if (!$counterpart->isArtisan()) {
+            return false;
+        }
+
+        return $this->hasOrderRelationship($counterpart->id, $actor->id)
+            || $this->hasExistingConversation($actor->id, $counterpart->id);
+    }
+
+    private function hasExistingConversation(int $firstUserId, int $secondUserId): bool
+    {
+        return Message::query()
+            ->where(function ($query) use ($firstUserId, $secondUserId) {
+                $query->where('sender_id', $firstUserId)
+                    ->where('receiver_id', $secondUserId);
+            })
+            ->orWhere(function ($query) use ($firstUserId, $secondUserId) {
+                $query->where('sender_id', $secondUserId)
+                    ->where('receiver_id', $firstUserId);
+            })
+            ->exists();
+    }
+
+    private function hasOrderRelationship(int $sellerId, int $buyerId): bool
+    {
+        return Order::query()
+            ->where('artisan_id', $sellerId)
+            ->where('user_id', $buyerId)
+            ->exists();
+    }
+
+    private function resolveProductImagePath(?string $path): string
+    {
+        if (!$path) {
+            return '/images/placeholder.svg';
+        }
+
+        if (
+            str_starts_with($path, 'http')
+            || str_starts_with($path, '/storage/')
+            || str_starts_with($path, '/images/')
+        ) {
+            return $path;
+        }
+
+        return '/storage/' . ltrim($path, '/');
     }
 }

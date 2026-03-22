@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Supply;
 use App\Models\StockRequest;
 use App\Models\Order;
 use App\Models\Payroll;
 use App\Models\Employee;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
 class ProcurementController extends Controller
 {
+    use InteractsWithSellerContext;
+
     /**
      * Display inventory/supplies list
      */
     public function index()
     {
-        $supplies = Supply::forUser(Auth::id())
+        $actor = $this->sellerActor();
+        $sellerId = $this->sellerOwnerId();
+
+        $supplies = Supply::forUser($sellerId)
             ->with('product') // Phase 1: Eager load product for images
             ->orderBy('category')
             ->orderBy('name')
@@ -35,14 +40,15 @@ class ProcurementController extends Controller
 
         // Get Active Requests (Pending, Accounting Approved)
         $requests = StockRequest::with('supply')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $sellerId)
             ->whereNotIn('status', [StockRequest::STATUS_COMPLETED, StockRequest::STATUS_REJECTED])
             ->latest()
             ->get();
 
         // --- FINANCIAL DATA AGGREGATION ---
-        $userId = Auth::id();
+        $userId = $sellerId;
         $currentMonth = Carbon::now()->format('F Y');
+        $canViewPayrollData = $actor->canViewSellerPayrollData();
 
         // 1. Revenue
         $revenue = Order::where('artisan_id', $userId)
@@ -50,32 +56,40 @@ class ProcurementController extends Controller
             ->sum('total_amount');
 
         // 2. Expenses (Payroll History)
-        $expenses = Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
+        $payrollExpenses = $canViewPayrollData
+            ? Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount')
+            : 0;
 
         // 3. Pending Payroll
-        $payrollExists = Payroll::where('user_id', $userId)
-            ->where('month', $currentMonth)
-            ->exists();
+        $payrollExists = $canViewPayrollData
+            ? Payroll::where('user_id', $userId)
+                ->where('month', $currentMonth)
+                ->exists()
+            : false;
 
-        $monthlyPayroll = Employee::where('user_id', $userId)
-            ->where('status', 'Active')
-            ->sum('salary');
+        $monthlyPayroll = $canViewPayrollData
+            ? Employee::where('user_id', $userId)
+                ->where('status', 'Active')
+                ->sum('salary')
+            : 0;
 
         // 4. Transactions
-        $recentPayrolls = Payroll::where('user_id', $userId)
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(function ($p) {
-                return [
-                    'id' => $p->id,
-                    'description' => 'Staff Payroll - ' . $p->month,
-                    'category' => 'Payroll',
-                    'date' => $p->created_at->format('M d, Y'),
-                    'amount' => $p->total_amount,
-                    'type' => 'expense'
-                ];
-            });
+        $recentPayrolls = $canViewPayrollData
+            ? Payroll::where('user_id', $userId)
+                ->latest()
+                ->take(10)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'description' => 'Staff Payroll - ' . $p->month,
+                        'category' => 'Payroll',
+                        'date' => $p->created_at->format('M d, Y'),
+                        'amount' => $p->total_amount,
+                        'type' => 'expense'
+                    ];
+                })
+            : collect();
 
         // 5. Stock Requests (Pending Accounting Approval)
         // Ensure we fetch requests that are SPECIFICALLY pending accounting approval or generally pending if that's the initial state
@@ -86,7 +100,7 @@ class ProcurementController extends Controller
             ->get();
 
         // Add approved stock requests to total expenses
-        $expenses += StockRequest::where('user_id', $userId)
+        $stockExpenses = StockRequest::where('user_id', $userId)
             ->whereIn('status', [
 
                 StockRequest::STATUS_ACCOUNTING_APPROVED,
@@ -96,15 +110,17 @@ class ProcurementController extends Controller
             ])
             ->sum('total_cost');
 
+        $expenses = $stockExpenses + $payrollExpenses;
+
         $finances = [
             'balance' => $revenue - $expenses,
             'revenue' => $revenue,
             'expenses' => $expenses,
             'net_income' => $revenue - $expenses,
-            'payroll_due' => !$payrollExists ? $monthlyPayroll : 0,
+            'payroll_due' => $canViewPayrollData && !$payrollExists ? $monthlyPayroll : null,
             'is_paid' => $payrollExists,
             'month' => $currentMonth,
-            'transactions' => $recentPayrolls,
+            'transactions' => $recentPayrolls->values()->all(),
             'requests' => $pendingRequests
         ];
 
@@ -138,7 +154,7 @@ class ProcurementController extends Controller
         ]);
 
         Supply::create([
-            'user_id' => Auth::id(),
+            'user_id' => $this->sellerOwnerId(),
             'max_stock' => $validated['max_stock'] ?? 500, // Phase 1: Default 500
             ...$validated,
         ]);
@@ -152,9 +168,7 @@ class ProcurementController extends Controller
     public function update(Request $request, Supply $supply)
     {
         // Ensure belongs to current user
-        if ($supply->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($supply->user_id);
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -178,9 +192,7 @@ class ProcurementController extends Controller
      */
     public function restock(Request $request, Supply $supply)
     {
-        if ($supply->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($supply->user_id);
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -201,9 +213,7 @@ class ProcurementController extends Controller
      */
     public function destroy(Supply $supply)
     {
-        if ($supply->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($supply->user_id);
 
         $supply->delete();
 
@@ -215,9 +225,7 @@ class ProcurementController extends Controller
      */
     public function requestRestock(Request $request, Supply $supply)
     {
-        if ($supply->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($supply->user_id);
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -232,7 +240,7 @@ class ProcurementController extends Controller
         $totalCost = $validated['quantity'] * ($supply->unit_cost ?? 0);
 
         StockRequest::create([
-            'user_id' => Auth::id(),
+            'user_id' => $this->sellerOwnerId(),
             'supply_id' => $supply->id,
             'quantity' => $validated['quantity'],
             'total_cost' => $totalCost,
@@ -247,9 +255,7 @@ class ProcurementController extends Controller
      */
     public function receiveOrder(Request $request, StockRequest $stockRequest)
     {
-        if ($stockRequest->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($stockRequest->user_id);
 
         if ($stockRequest->status !== StockRequest::STATUS_ACCOUNTING_APPROVED) {
             return back()->with('error', 'Funds must be released by Accounting before receiving order.');

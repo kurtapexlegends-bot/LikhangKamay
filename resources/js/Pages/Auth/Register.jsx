@@ -72,7 +72,7 @@ export default function Register() {
                             isFocused={true}
                             onChange={(e) => setData('name', e.target.value)}
                             required
-                            placeholder="Juan Dela Cruz"
+                            placeholder="John Doe"
                         />
                     </div>
                     <InputError message={errors.name} className="mt-2" />
@@ -216,7 +216,7 @@ export default function Register() {
                     href="/auth/google" 
                     className="w-full flex items-center justify-center gap-3 py-3 border border-stone-200 rounded-xl hover:bg-stone-50 hover:border-stone-300 bg-white transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group"
                 >
-                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
+                    <img src="/images/google-icon.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
                     <span className="text-sm font-semibold text-stone-600">Google</span>
                 </a>
             </div>

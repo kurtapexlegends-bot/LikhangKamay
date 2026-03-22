@@ -8,8 +8,12 @@ import {
 import UserAvatar from '@/Components/UserAvatar';
 
 export default function BuyerNavbar() {
-    const { auth, cartCount } = usePage().props;
+    const { auth, cartCount, sellerSidebar } = usePage().props;
     const user = auth?.user;
+    const showBuyerChat = !!user && !auth?.isStaff && user.role !== 'super_admin';
+    const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
+        ? route(sellerSidebar.defaultRouteName)
+        : null;
 
     const params = new URLSearchParams(window.location.search);
     const [term, setTerm] = useState(params.get('search') || '');
@@ -54,9 +58,11 @@ export default function BuyerNavbar() {
                     <div className="flex items-center gap-4 flex-shrink-0">
                         {user ? (
                             <>
-                                <Link href={route('buyer.chat')} className="p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group">
-                                    <MessageCircle size={22} className="group-hover:scale-110 transition-transform" />
-                                </Link>
+                                {showBuyerChat && (
+                                    <Link href={route('buyer.chat')} className="p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group">
+                                        <MessageCircle size={22} className="group-hover:scale-110 transition-transform" />
+                                    </Link>
+                                )}
 
                                 {/* FIX: Changed <button> to <Link> pointing to cart.index */}
                                 <Link 
@@ -96,8 +102,8 @@ export default function BuyerNavbar() {
                                             <Dropdown.Link href={route('my-orders.index')}><ShoppingBag size={16} className="inline mr-2"/> My Purchases</Dropdown.Link>
                                             
                                             {/* SELLER LINK */}
-                                            {user.role === 'artisan' && (
-                                                <Dropdown.Link href={route('dashboard')} className="text-clay-600 font-bold bg-clay-50/50">
+                                            {sellerWorkspaceHref && (
+                                                <Dropdown.Link href={sellerWorkspaceHref} className="text-clay-600 font-bold bg-clay-50/50">
                                                     <span className="flex items-center">
                                                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                                                         Seller Dashboard
@@ -122,3 +128,4 @@ export default function BuyerNavbar() {
         </nav>
     );
 }
+

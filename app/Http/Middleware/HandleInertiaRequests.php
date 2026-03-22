@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\SellerEntitlementService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Illuminate\Support\Facades\Session; // <--- Import Session
@@ -44,21 +45,18 @@ class HandleInertiaRequests extends Middleware
         }
 
         $user = $request->user();
-        $sellerSidebar = null;
-
-        if ($user && $user->role === 'artisan') {
-            $sellerSidebar = $user->getSellerSidebarEntitlements();
-        }
+        $sellerSidebar = $user?->getSellerSidebarEntitlements();
+        $sellerSubscription = app(SellerEntitlementService::class)->getSubscriptionPayload($user);
 
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $user,
+                'isStaff' => $user?->isStaff() ?? false,
+                'effectiveSellerId' => $user?->getEffectiveSellerId(),
+                'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,
             ],
-            'sellerSubscription' => $user && $user->role === 'artisan' ? [
-                'activeCount' => $user->products()->where('status', 'Active')->count(),
-                'limit' => $user->getActiveProductLimit(),
-            ] : null,
+            'sellerSubscription' => $sellerSubscription,
             'sellerSidebar' => $sellerSidebar,
             // Global Variables for Frontend
             'cartCount' => $cartCount,

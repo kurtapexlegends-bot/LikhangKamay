@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\StockRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class AccountingController extends Controller
 {
+    use InteractsWithSellerContext;
+
     public function index()
     {
-        $userId = Auth::id();
+        $seller = $this->sellerOwner();
+        $userId = $seller->id;
 
         // 1. Calculate Total Revenue (Completed Orders)
         // We only count revenue that is actually "paid" or "completed" to be safe, 
@@ -38,7 +41,7 @@ class AccountingController extends Controller
         $payrollExpenses = \App\Models\Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
 
         $totalExpenses = $stockExpenses + $payrollExpenses;
-        $baseFunds = Auth::user()->base_funds ?? 0;
+        $baseFunds = $seller->base_funds ?? 0;
         $currentBalance = $baseFunds + $totalRevenue - $totalExpenses;
 
         // Get requests that are pending approval
@@ -91,16 +94,15 @@ class AccountingController extends Controller
 
     public function approveRelease(StockRequest $stockRequest)
     {
-        if ($stockRequest->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($stockRequest->user_id);
 
         if ($stockRequest->status !== StockRequest::STATUS_PENDING) {
             return back()->with('error', 'Request is not pending.');
         }
 
         // --- BUDGET CHECK ---
-        $userId = Auth::id();
+        $seller = $this->sellerOwner();
+        $userId = $seller->id;
         $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'Completed')->sum('total_amount');
         
         $stockExpenses = StockRequest::where('user_id', $userId)
@@ -115,8 +117,7 @@ class AccountingController extends Controller
             
         $payrollExpenses = \App\Models\Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
             
-        $user = Auth::user();
-        $baseFunds = $user->base_funds ?? 0;
+        $baseFunds = $seller->base_funds ?? 0;
         $currentBalance = $baseFunds + $totalRevenue - ($stockExpenses + $payrollExpenses);
 
         if ($currentBalance < $stockRequest->total_cost) {
@@ -131,9 +132,7 @@ class AccountingController extends Controller
 
     public function rejectRelease(Request $request, StockRequest $stockRequest)
     {
-        if ($stockRequest->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($stockRequest->user_id);
 
         // Validate reason
         $request->validate([
@@ -159,12 +158,11 @@ class AccountingController extends Controller
 
     public function approvePayroll(\App\Models\Payroll $payroll)
     {
-        if ($payroll->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($payroll->user_id);
 
         // BUDGET CHECK
-        $userId = Auth::id();
+        $seller = $this->sellerOwner();
+        $userId = $seller->id;
         $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'Completed')->sum('total_amount');
         
         $stockExpenses = StockRequest::where('user_id', $userId)
@@ -179,8 +177,7 @@ class AccountingController extends Controller
 
         $payrollExpenses = \App\Models\Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
 
-        $user = Auth::user();
-        $baseFunds = $user->base_funds ?? 0;
+        $baseFunds = $seller->base_funds ?? 0;
             
         $currentBalance = $baseFunds + $totalRevenue - ($stockExpenses + $payrollExpenses);
 
@@ -195,9 +192,7 @@ class AccountingController extends Controller
 
     public function rejectPayroll(Request $request, \App\Models\Payroll $payroll)
     {
-         if ($payroll->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($payroll->user_id);
 
         $request->validate([
             'reason' => 'required|string|max:255'
@@ -226,8 +221,7 @@ class AccountingController extends Controller
             'base_funds' => 'required|numeric|min:0'
         ]);
 
-        $user = Auth::user();
-        \App\Models\User::where('id', $user->id)->update([
+        \App\Models\User::where('id', $this->sellerOwnerId())->update([
             'base_funds' => $request->base_funds
         ]);
 

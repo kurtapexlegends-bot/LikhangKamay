@@ -1,8 +1,13 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import Footer from '@/Components/Footer';
 
 export default function MainLayout({ children, auth }) {
+    const { sellerSidebar } = usePage().props;
+    const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
+        ? route(sellerSidebar.defaultRouteName)
+        : null;
+
     return (
         <div className="min-h-screen bg-[#FDFBF7] font-sans text-gray-600 selection:bg-clay-200 selection:text-clay-900">
             {/* PLATFORM HEADER */}
@@ -49,9 +54,8 @@ export default function MainLayout({ children, auth }) {
                             </Link>
 
                             {auth?.user ? (
-                                // LOGIC UPDATE: Check Role to decide destination
-                                auth.user.role === 'artisan' ? (
-                                    <Link href="/dashboard" className="text-sm font-bold text-gray-900 hover:text-clay-600">
+                                sellerWorkspaceHref ? (
+                                    <Link href={sellerWorkspaceHref} className="text-sm font-bold text-gray-900 hover:text-clay-600">
                                         Seller Centre
                                     </Link>
                                 ) : (

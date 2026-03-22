@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check, CheckCircle, AlertCircle, X } from 'lucide-react';
@@ -7,6 +7,12 @@ export default function Cart({ cart }) {
     const [updatingId, setUpdatingId] = useState(null);
     const [removingId, setRemovingId] = useState(null);
     const [selectedItems, setSelectedItems] = useState(new Set());
+    const currency = useMemo(() => new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }), []);
 
     // --- FLASH MESSAGE HANDLING ---
     const { flash } = usePage().props;
@@ -31,11 +37,12 @@ export default function Cart({ cart }) {
 
     // Convert the cart object (from PHP Session) into an array
     const cartItems = Object.values(cart || {});
+    const getCartKey = (item) => item.cart_key || String(item.id);
 
     // Initialize selected items on first render
-    useMemo(() => {
+    useEffect(() => {
         if (selectedItems.size === 0 && cartItems.length > 0) {
-            setSelectedItems(new Set(cartItems.map(item => item.id)));
+            setSelectedItems(new Set(cartItems.map((item) => getCartKey(item))));
         }
     }, [cartItems.length]);
 
@@ -48,7 +55,7 @@ export default function Cart({ cart }) {
     }, {});
 
     // Calculate totals based on selected items only
-    const selectedCartItems = cartItems.filter(item => selectedItems.has(item.id));
+    const selectedCartItems = cartItems.filter((item) => selectedItems.has(getCartKey(item)));
     const totalAmount = selectedCartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const totalItems = selectedCartItems.reduce((sum, item) => sum + item.qty, 0);
 
@@ -58,10 +65,12 @@ export default function Cart({ cart }) {
     // Toggle single item selection
     const toggleItem = (id) => {
         const newSelected = new Set(selectedItems);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
+        const key = String(id);
+
+        if (newSelected.has(key)) {
+            newSelected.delete(key);
         } else {
-            newSelected.add(id);
+            newSelected.add(key);
         }
         setSelectedItems(newSelected);
     };
@@ -71,13 +80,13 @@ export default function Cart({ cart }) {
         if (allSelected) {
             setSelectedItems(new Set());
         } else {
-            setSelectedItems(new Set(cartItems.map(item => item.id)));
+            setSelectedItems(new Set(cartItems.map((item) => getCartKey(item))));
         }
     };
 
     // Toggle all items from a specific seller
     const toggleSeller = (sellerItems) => {
-        const sellerIds = sellerItems.map(item => item.id);
+        const sellerIds = sellerItems.map((item) => getCartKey(item));
         const allSellerSelected = sellerIds.every(id => selectedItems.has(id));
         
         const newSelected = new Set(selectedItems);
@@ -171,7 +180,7 @@ export default function Cart({ cart }) {
 
                                 {/* Items grouped by seller */}
                                 {Object.entries(groupedBySeller).map(([seller, items]) => {
-                                    const sellerIds = items.map(item => item.id);
+                                    const sellerIds = items.map((item) => getCartKey(item));
                                     const allSellerSelected = sellerIds.every(id => selectedItems.has(id));
                                     const someSellerSelected = sellerIds.some(id => selectedItems.has(id));
 
@@ -198,22 +207,22 @@ export default function Cart({ cart }) {
                                             {/* Seller's Items */}
                                             {items.map((item) => (
                                                 <div 
-                                                    key={item.id} 
+                                                    key={getCartKey(item)} 
                                                     className={`grid grid-cols-1 sm:grid-cols-12 gap-4 px-4 py-4 border-b border-gray-50 items-center transition ${
-                                                        removingId === item.id ? 'opacity-50' : ''
-                                                    } ${!selectedItems.has(item.id) ? 'bg-gray-50/30' : ''}`}
+                                                        removingId === getCartKey(item) ? 'opacity-50' : ''
+                                                    } ${!selectedItems.has(getCartKey(item)) ? 'bg-gray-50/30' : ''}`}
                                                 >
                                                     {/* Product Info with Checkbox */}
                                                     <div className="sm:col-span-6 flex gap-3 items-start">
                                                         <button
-                                                            onClick={() => toggleItem(item.id)}
+                                                            onClick={() => toggleItem(getCartKey(item))}
                                                             className={`w-4 h-4 rounded border flex items-center justify-center transition flex-shrink-0 mt-1 ${
-                                                                selectedItems.has(item.id) 
+                                                                selectedItems.has(getCartKey(item)) 
                                                                     ? 'bg-clay-600 border-clay-600 text-white' 
                                                                     : 'border-gray-300 hover:border-clay-400'
                                                             }`}
                                                         >
-                                                            {selectedItems.has(item.id) && <Check size={12} />}
+                                                            {selectedItems.has(getCartKey(item)) && <Check size={12} />}
                                                         </button>
                                                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                                                             <img 
@@ -225,18 +234,19 @@ export default function Cart({ cart }) {
                                                         </div>
                                                         <div className="min-w-0 flex-1">
                                                             <Link 
-                                                                href={route('product.show', item.id)} 
+                                                                href={route('product.show', item.slug || item.id)} 
                                                                 className="text-sm font-medium text-gray-900 hover:text-clay-600 transition line-clamp-2"
                                                             >
                                                                 {item.name}
                                                             </Link>
-                                                            <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'N/A'}</p>
+                                                            <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
+                                                            <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
                                                             <button 
-                                                                onClick={() => removeItem(item.id)}
-                                                                disabled={removingId === item.id}
+                                                                onClick={() => removeItem(getCartKey(item))}
+                                                                disabled={removingId === getCartKey(item)}
                                                                 className="text-xs text-red-400 hover:text-red-600 mt-1 flex items-center gap-1 sm:hidden"
                                                             >
-                                                                {removingId === item.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                                                {removingId === getCartKey(item) ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                                                                 Remove
                                                             </button>
                                                         </div>
@@ -244,25 +254,25 @@ export default function Cart({ cart }) {
 
                                                     {/* Unit Price */}
                                                     <div className="sm:col-span-2 text-center">
-                                                        <span className="text-sm text-gray-500">₱{Number(item.price).toLocaleString()}</span>
+                                                        <span className="text-sm text-gray-500">{currency.format(Number(item.price) || 0)}</span>
                                                     </div>
 
                                                     {/* Quantity */}
                                                     <div className="sm:col-span-2 flex justify-center">
                                                         <div className="flex items-center border border-gray-200 rounded">
                                                             <button
-                                                                onClick={() => updateQty(item.id, item.qty, -1)}
-                                                                disabled={item.qty <= 1 || updatingId === item.id}
+                                                                onClick={() => updateQty(getCartKey(item), item.qty, -1)}
+                                                                disabled={item.qty <= 1 || updatingId === getCartKey(item)}
                                                                 className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 disabled:opacity-30"
                                                             >
                                                                 <Minus size={12} />
                                                             </button>
                                                             <span className="w-8 text-center text-sm font-medium text-gray-900">
-                                                                {updatingId === item.id ? <Loader2 size={12} className="animate-spin mx-auto" /> : item.qty}
+                                                                {updatingId === getCartKey(item) ? <Loader2 size={12} className="animate-spin mx-auto" /> : item.qty}
                                                             </span>
                                                             <button
-                                                                onClick={() => updateQty(item.id, item.qty, 1)}
-                                                                disabled={updatingId === item.id}
+                                                                onClick={() => updateQty(getCartKey(item), item.qty, 1)}
+                                                                disabled={updatingId === getCartKey(item)}
                                                                 className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                                                             >
                                                                 <Plus size={12} />
@@ -273,14 +283,14 @@ export default function Cart({ cart }) {
                                                     {/* Total & Delete */}
                                                     <div className="sm:col-span-2 flex items-center justify-end gap-3">
                                                         <span className="text-sm font-semibold text-clay-600">
-                                                            ₱{(item.price * item.qty).toLocaleString()}
+                                                            {currency.format((Number(item.price) || 0) * (Number(item.qty) || 0))}
                                                         </span>
                                                         <button 
-                                                            onClick={() => removeItem(item.id)}
-                                                            disabled={removingId === item.id}
+                                                            onClick={() => removeItem(getCartKey(item))}
+                                                            disabled={removingId === getCartKey(item)}
                                                             className="hidden sm:flex w-7 h-7 items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition"
                                                         >
-                                                            {removingId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                            {removingId === getCartKey(item) ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -296,7 +306,7 @@ export default function Cart({ cart }) {
                                     href={route('shop.index')} 
                                     className="text-sm text-gray-500 hover:text-clay-600 transition flex items-center gap-1"
                                 >
-                                    ← Continue Shopping
+                                    &larr; Continue Shopping
                                 </Link>
                             </div>
                         </div>
@@ -315,7 +325,7 @@ export default function Cart({ cart }) {
                                     </div>
                                     <div className="flex justify-between text-gray-500">
                                         <span>Subtotal ({totalItems} items)</span>
-                                        <span className="text-gray-900">₱{totalAmount.toLocaleString()}</span>
+                                        <span className="text-gray-900">{currency.format(totalAmount)}</span>
                                     </div>
                                     <div className="flex justify-between text-gray-500">
                                         <span>Shipping</span>
@@ -327,7 +337,7 @@ export default function Cart({ cart }) {
                                     <div className="flex justify-between items-end mb-4">
                                         <span className="text-sm font-medium text-gray-700">Total</span>
                                         <span className="text-xl font-bold text-clay-600">
-                                            ₱{totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                            {currency.format(totalAmount)}
                                         </span>
                                     </div>
 
@@ -355,7 +365,7 @@ export default function Cart({ cart }) {
                                     </div>
                                     <div className="flex items-center gap-2 text-xs text-gray-500">
                                         <ShieldCheck size={14} className="text-clay-500" />
-                                        <span>Secure checkout • Encrypted payments</span>
+                                        <span>Secure checkout - Encrypted payments</span>
                                     </div>
                                 </div>
                             </div>
@@ -403,3 +413,4 @@ export default function Cart({ cart }) {
         </ShopLayout>
     );
 }
+

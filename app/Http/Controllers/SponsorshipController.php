@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\SponsorshipRequest;
+use App\Notifications\SponsorshipStatusNotification;
+use App\Services\SponsorshipAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,10 +36,13 @@ class SponsorshipController extends Controller
             ->where('status', 'Active')
             ->select('id', 'name', 'sku', 'cover_photo_path', 'is_sponsored', 'sponsored_until')
             ->get();
+        $activeProducts->each(function (Product $product) {
+            $product->is_sponsored = (bool) ($product->is_sponsored && $product->sponsored_until && $product->sponsored_until->isFuture());
+        });
 
         // Get recent requests
         $requests = $user->sponsorshipRequests()
-            ->with('product:id,name,cover_photo_path')
+            ->with('product:id,name,slug,cover_photo_path')
             ->latest()
             ->take(10)
             ->get();
@@ -70,6 +75,12 @@ class SponsorshipController extends Controller
         
         // Ensure product belongs to user and is active
         $product = $user->products()->where('id', $validated['product_id'])->where('status', 'Active')->firstOrFail();
+        $isCurrentlySponsored = $product->is_sponsored && $product->sponsored_until && $product->sponsored_until->isFuture();
+
+        if ($product->is_sponsored && !$isCurrentlySponsored) {
+            $product->update(['is_sponsored' => false]);
+            $product->refresh();
+        }
 
         // Ensure product isn't already sponsored or has a pending request
         $hasPending = $user->sponsorshipRequests()
@@ -77,7 +88,7 @@ class SponsorshipController extends Controller
              ->where('status', 'pending')
              ->exists();
 
-        if ($hasPending || $product->is_sponsored) {
+        if ($hasPending || $isCurrentlySponsored) {
              return back()->with('error', 'This product is already sponsored or has a pending request.');
         }
 
@@ -93,7 +104,7 @@ class SponsorshipController extends Controller
     // Admin Views and Actions
     public function adminIndex()
     {
-        $requests = SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,cover_photo_path'])
+        $requests = SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
             ->latest()
             ->paginate(20);
 
@@ -118,6 +129,7 @@ class SponsorshipController extends Controller
             $sponsorshipRequest->update([
                 'status' => 'approved',
                 'approved_at' => $approvedAt,
+                'rejection_reason' => null,
             ]);
 
             // Sponsor for 7 days
@@ -127,20 +139,52 @@ class SponsorshipController extends Controller
             ]);
         });
 
+        $sponsorshipRequest->loadMissing('product');
+        $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
+
         return back()->with('success', 'Sponsorship approved for 7 days.');
     }
 
-    public function reject(SponsorshipRequest $sponsorshipRequest)
+    public function reject(Request $request, SponsorshipRequest $sponsorshipRequest)
     {
         if ($sponsorshipRequest->status !== 'pending') {
             return back()->with('error', 'Request is not pending.');
         }
 
-        $sponsorshipRequest->update([
-            'status' => 'rejected',
-            // do not set approved_at on a rejection
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
         ]);
 
+        $sponsorshipRequest->update([
+            'status' => 'rejected',
+            'approved_at' => null,
+            'rejection_reason' => $validated['rejection_reason'],
+        ]);
+
+        $sponsorshipRequest->loadMissing('product');
+        $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
+
         return back()->with('success', 'Sponsorship rejected.');
+    }
+
+    public function track(Request $request, SponsorshipAnalyticsService $analyticsService)
+    {
+        $validated = $request->validate([
+            'product_id' => ['required', 'exists:products,id'],
+            'event_type' => ['required', 'in:impression,click'],
+            'placement' => ['required', 'string', 'max:50'],
+        ]);
+
+        $product = Product::findOrFail($validated['product_id']);
+
+        $analyticsService->recordEvent(
+            $product,
+            $validated['event_type'],
+            $validated['placement'],
+            $request->user()?->id,
+            $request->session()->getId()
+        );
+
+        return response()->noContent();
     }
 }

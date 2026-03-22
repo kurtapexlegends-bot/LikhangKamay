@@ -10,6 +10,7 @@ import {
     CheckCircle, AlertCircle, Edit2, Trash2, Zap, Reply
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 // --- Simple Rich Text Toolbar ---
 const RichTextEditor = ({ value, onChange, placeholder }) => {
@@ -182,10 +183,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[10px] text-gray-500">Seller Account</p>
-                                            </div>
+                                            <WorkspaceAccountSummary user={auth.user} />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -502,3 +500,4 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         </div>
     );
 }
+

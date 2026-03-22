@@ -46,10 +46,10 @@ const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }
                         <span>{derivedTrend === 'up' ? '+' : ''}{growth}% vs last 30 days</span>
                     </div>
                 )}
-                {growth === undefined && subtitle && (
+                {subtitle && (
                     <p className="text-[10px] font-medium text-gray-400 mt-1">{subtitle}</p>
                 )}
-                {growth === undefined && !subtitle && (
+                {!subtitle && growth === undefined && (
                     <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>
                 )}
             </div>
@@ -67,12 +67,13 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
-                    title="Estimated MRR"
+                    title="Projected Plan MRR"
                     metric={metrics.mrr}
-                    prefix="₱"
+                    prefix="PHP "
                     icon={CircleDollarSign}
                     bg="bg-emerald-100"
                     text="text-emerald-600"
+                    subtitle={metrics.mrr?.basis}
                 />
                 <StatCard
                     title="Paid Subscribers"
@@ -130,11 +131,11 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Recent Upgrades */}
+                {/* Recent Plan Changes */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                     <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
                         <h3 className="font-bold text-gray-900 text-lg">
-                            Recent Upgrades
+                            Recent Plan Changes
                         </h3>
                         <Link
                             href={route("admin.users")}
@@ -171,6 +172,11 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                                     <p className="text-xs text-gray-500">
                                                         {user.shop_name || "No Shop Name"}
                                                     </p>
+                                                    {user.previous_tier && (
+                                                        <p className="text-[10px] text-gray-400">
+                                                            {user.previous_tier} to {user.tier}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
@@ -190,7 +196,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                 )) : (
                                     <tr>
                                         <td colSpan="3" className="px-6 py-8 text-center text-sm text-gray-500">
-                                            No recent upgrades found.
+                                            No recent plan changes found.
                                         </td>
                                     </tr>
                                 )}

@@ -4,13 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_profile_page_is_displayed(): void
+    public function test_buyer_profile_page_is_displayed_using_buyer_profile_shell(): void
     {
         $user = User::factory()->create();
 
@@ -19,6 +20,59 @@ class ProfileTest extends TestCase
             ->get('/profile');
 
         $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->component('Profile/Edit'));
+    }
+
+    public function test_artisan_owner_profile_page_uses_seller_profile_shell_in_owner_mode(): void
+    {
+        $user = User::factory()->artisanApproved()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/profile');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Profile/Edit')
+            ->where('profileMode', 'owner')
+        );
+    }
+
+    public function test_staff_profile_page_uses_seller_profile_shell_in_personal_mode(): void
+    {
+        $owner = User::factory()->artisanApproved()->create();
+        $staff = User::factory()->staff($owner)->create([
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+        ]);
+
+        $response = $this
+            ->actingAs($staff)
+            ->get('/profile');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Profile/Edit')
+            ->where('profileMode', 'personal')
+        );
+    }
+
+    public function test_super_admin_profile_page_uses_admin_workspace_profile_shell(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->get('/profile');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Profile/Edit')
+            ->where('profileMode', 'personal')
+            ->where('workspaceShell', 'admin')
+        );
     }
 
     public function test_profile_information_can_be_updated(): void

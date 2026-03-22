@@ -7,6 +7,7 @@ import {
     Camera, Save, Star, Package, MapPin, Calendar,
     Filter, CheckCircle, Pencil, AlertCircle
 } from 'lucide-react';
+import { hasRating, formatRating } from '@/utils/rating';
 
 export default function ShopSettings({ auth, user, stats }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -263,9 +264,9 @@ export default function ShopSettings({ auth, user, stats }) {
                                                 className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                             />
-                                            {product.rating > 0 && (
+                                            {hasRating(product.rating) && (
                                                 <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
-                                                    {Number(product.rating).toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-0.5" />
+                                                    {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-0.5" />
                                                 </div>
                                             )}
                                         </div>

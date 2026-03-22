@@ -49,8 +49,8 @@ const PLANS = [
         lightText: 'text-stone-700',
         features: [
             'Up to 3 Active Products',
-            'Basic Analytics',
-            'Standard Support',
+            'Core Seller Workspace',
+            'Basic Analytics Dashboard',
         ],
     },
     {
@@ -58,7 +58,7 @@ const PLANS = [
         name: 'Premium',
         price: '₱199',
         period: '/ mo',
-        description: 'Grow your artisan business with more visibility.',
+        description: 'Grow your artisan business with stronger operational tools.',
         icon: Crown,
         limit: 10,
         color: 'amber',
@@ -70,8 +70,8 @@ const PLANS = [
         features: [
             'Up to 10 Active Products',
             'Premium Badge (Crown Icon)',
-            'Priority Support',
-            'Advanced Analytics',
+            'Analytics Report Export',
+            'Module Customization',
         ],
     },
     {
@@ -79,7 +79,7 @@ const PLANS = [
         name: 'Elite',
         price: '₱399',
         period: '/ mo',
-        description: 'Maximized reach and enterprise features.',
+        description: 'Unlock the full seller suite and sponsored placements.',
         icon: Sparkles,
         limit: 50,
         color: 'violet',
@@ -90,15 +90,15 @@ const PLANS = [
         features: [
             'Up to 50 Active Products',
             'Elite Badge',
-            '5 Monthly Sponsorship Credits',
-            'Dedicated Account Manager',
-            'Featured Placement in Search',
+            '5 Sponsorship Credits Every 30 Days',
+            'All Seller Modules Unlocked',
+            'Sponsored Homepage and Catalog Placement',
         ],
     },
 ];
 
 // ─── Animated Modal ───
-export function PlanModal({ isOpen, onClose, currentTier }) {
+export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }) {
     const { sellerSubscription } = usePage().props;
     const [isVisible, setIsVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
@@ -133,11 +133,13 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
     };
 
     const handleUpgrade = (planId) => {
+        if (!canManagePlan) return;
         router.post(route('seller.subscription.upgrade'), { plan: planId }, { preserveScroll: true });
         handleClose();
     };
 
     const handleDowngrade = (planId, targetLimit) => {
+        if (!canManagePlan) return;
         const activeCount = sellerSubscription?.activeCount ?? 0;
 
         // If they exceed the target limit, send them to subscription page to choose kept products.
@@ -158,6 +160,7 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
     };
 
     const handleManage = () => {
+        if (!canManagePlan) return;
         router.visit(route('seller.subscription'));
         handleClose();
     };
@@ -303,6 +306,13 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                                                 >
                                                     <Shield size={14} /> Active Plan
                                                 </button>
+                                            ) : !canManagePlan ? (
+                                                <button
+                                                    disabled
+                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-stone-100 text-stone-400 cursor-not-allowed flex items-center justify-center gap-1.5"
+                                                >
+                                                    View Only
+                                                </button>
                                             ) : isUpgrade ? (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleUpgrade(plan.id); }}
@@ -329,15 +339,23 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
                     {/* ── Footer ── */}
                     <div className="px-5 sm:px-8 py-3.5 border-t border-stone-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
                         <p className="text-[11px] text-stone-500 font-medium text-center sm:text-left">
-                            Plans can be changed anytime. Downgrades may deactivate some products.
+                            {canManagePlan
+                                ? 'Plans can be changed anytime. Downgrades may deactivate some products.'
+                                : 'Your access to subscription details is read-only.'}
                         </p>
-                        <button
-                            onClick={handleManage}
-                            className="text-[12px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 transition-colors group whitespace-nowrap"
-                        >
-                            Manage Subscription
-                            <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                        </button>
+                        {canManagePlan ? (
+                            <button
+                                onClick={handleManage}
+                                className="text-[12px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 transition-colors group whitespace-nowrap"
+                            >
+                                Manage Subscription
+                                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                        ) : (
+                            <span className="text-[12px] font-bold text-stone-400 whitespace-nowrap">
+                                Owner-managed plan
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -349,12 +367,14 @@ export function PlanModal({ isOpen, onClose, currentTier }) {
 
 // ─── Badge + Modal ───
 export default function PlanBadge({ user }) {
+    const { sellerSubscription } = usePage().props;
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
-    // Check both fields to ensure backward compatibility and catch Elite clearly
-    const isElite = user?.premium_tier === 'super_premium' || user?.subscription_plan === 'super_premium';
-    const isPremium = user?.premium_tier === 'premium' || user?.subscription_plan === 'premium';
-    const tier = isElite ? 'super_premium' : isPremium ? 'premium' : 'free';
+    const tier = sellerSubscription?.tierKey
+        || (user?.premium_tier === 'super_premium' || user?.subscription_plan === 'super_premium'
+            ? 'super_premium'
+            : user?.premium_tier === 'premium' || user?.subscription_plan === 'premium'
+                ? 'premium'
+                : 'free');
     
     const config = PLAN_CONFIG[tier] || PLAN_CONFIG.free;
     const Icon = config.icon;
@@ -374,7 +394,10 @@ export default function PlanBadge({ user }) {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 currentTier={tier}
+                canManagePlan={sellerSubscription?.canManageSubscription ?? true}
             />
         </>
     );
 }
+
+

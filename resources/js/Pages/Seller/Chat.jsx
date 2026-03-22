@@ -9,10 +9,12 @@ import {
     Image as ImageIcon, ChevronDown, User, LogOut,
     MessageCircle, CheckCheck, Check, Clock, Smile, ShoppingBag, ArrowLeft, Menu, MapPin, Phone, X, FileIcon
 } from 'lucide-react';
+import OrderContextCard, { SellerOrderActionBar } from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import MediaViewer from '@/Components/Chat/MediaViewer';
 
-export default function Chat({ auth, conversations, activeMessages, currentChatUser }) {
+export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
@@ -48,7 +50,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     useEffect(() => {
         if (!currentChatUser) return;
         const interval = setInterval(() => {
-            router.reload({ only: ['activeMessages', 'conversations'] });
+            router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
         }, 3000);
         return () => clearInterval(interval);
     }, [currentChatUser]);
@@ -111,9 +113,23 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                 setAttachment(null);
                 setAttachmentPreview(null);
                 setShowEmojiPicker(false);
+                if (inputRef.current) inputRef.current.style.height = 'auto';
             },
             preserveScroll: true
         });
+    };
+
+    const handleOrderDecision = (nextStatus) => {
+        if (!currentOrderContext?.canRespond) return;
+
+        router.post(
+            route('orders.update', currentOrderContext.orderNumber),
+            { status: nextStatus },
+            {
+                preserveScroll: true,
+                preserveState: true,
+            }
+        );
     };
 
     const handleFileChange = (e) => {
@@ -173,7 +189,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                 
                 {/* --- HEADER --- */}
                 {/* --- HEADER --- */}
-                <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-20 sticky top-0">
+                <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-50 sticky top-0">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
@@ -213,10 +229,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[10px] text-gray-500">Seller Account</p>
-                                            </div>
+                                            <WorkspaceAccountSummary user={auth.user} />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -309,7 +322,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                         {currentChatUser ? (
                             <>
                                 {/* Chat Header */}
-                                <div className="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0 shadow-sm">
+                                <div className="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white/90 backdrop-blur-md shrink-0 sticky top-0 z-20">
                                     <div className="flex items-center gap-4">
                                         <button 
                                             onClick={() => setShowMobileList(true)}
@@ -354,8 +367,14 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                     </div>
                                 </div>
 
+                                <OrderContextCard
+                                    order={currentOrderContext}
+                                    viewer="seller"
+                                />
+
                                 {/* Messages Feed */}
-                                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-gradient-to-b from-[#FDFBF9] to-white">
+                                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-[#FDFBF9] custom-scrollbar">
+
                                     {Object.keys(groupedMessages).length > 0 ? (
                                         Object.entries(groupedMessages).map(([date, messages]) => (
                                             <div key={date}>
@@ -462,8 +481,14 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                 </div>
 
                                 {/* Input Area */}
-                                <div className="p-3 bg-white border-t border-gray-100 shrink-0 relative">
-                                    <div className="max-w-3xl mx-auto">
+                                <div className="p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 shrink-0 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
+                                    <div className="max-w-4xl mx-auto flex flex-col">
+                                    <SellerOrderActionBar
+                                        order={currentOrderContext}
+                                        onApprove={() => handleOrderDecision('Accepted')}
+                                        onReject={() => handleOrderDecision('Rejected')}
+                                    />
+
                                     {/* Emoji Picker Popover */}
                                     {showEmojiPicker && (
                                         <div ref={emojiPickerRef} className="absolute bottom-full right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
@@ -478,7 +503,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
                                     {/* Attachment Preview */}
                                     {attachmentPreview && (
-                                        <div className="mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-start justify-between group animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="mb-3 mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-start justify-between group animate-in fade-in slide-in-from-bottom-2">
                                             <div className="flex items-center gap-3 overflow-hidden">
                                                 {attachmentPreview.type === 'image' ? (
                                                     <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-gray-200 shadow-sm bg-white">
@@ -506,37 +531,39 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                         </div>
                                     )}
 
-                                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-2 focus-within:ring-clay-100 rounded-full flex items-center pr-1 transition-all overflow-hidden">
-                                            <div className="flex items-center pl-1 group/attachments">
+                                    <form onSubmit={handleSendMessage} className="flex items-end gap-2 sm:gap-3 w-full">
+                                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all overflow-hidden shadow-sm">
+                                            <div className="flex items-center gap-0.5 px-1">
                                                 <button 
                                                     type="button" 
                                                     onClick={() => imageInputRef.current?.click()}
-                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-100 rounded-full transition-all duration-200"
+                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-white rounded-xl transition-all duration-200"
                                                     title="Attach Image"
                                                 >
-                                                    <ImageIcon size={18} />
+                                                    <ImageIcon size={20} />
                                                 </button>
                                                 <button 
                                                     type="button" 
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-100 rounded-full transition-all duration-200"
+                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-white rounded-xl transition-all duration-200"
                                                     title="Attach Document"
                                                 >
-                                                    <Paperclip size={18} />
+                                                    <Paperclip size={20} />
                                                 </button>
                                             </div>
 
-                                            <input 
+                                            <textarea 
                                                 ref={inputRef}
-                                                type="text" 
+                                                rows={1}
                                                 value={data.message}
                                                 onChange={(e) => {
                                                     setData('message', e.target.value);
+                                                    e.target.style.height = 'auto';
+                                                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                                                     signalTyping();
                                                 }}
-                                                placeholder="Write a message..." 
-                                                className="flex-1 w-full pl-4 pr-2 py-2 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400"
+                                                placeholder="Type your message here..." 
+                                                className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[120px] custom-scrollbar leading-relaxed"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter' && !e.shiftKey) {
                                                         e.preventDefault();
@@ -550,18 +577,18 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                             <button 
                                                 type="button" 
                                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                className={`p-1.5 mr-1 rounded-full transition-colors shrink-0 ${showEmojiPicker ? 'text-clay-600 bg-clay-100' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                                                className={`p-2 mx-1 rounded-xl transition-all shrink-0 ${showEmojiPicker ? 'text-clay-600 bg-white shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-white hover:shadow-sm'}`}
                                                 title="Insert Emoji"
                                             >
-                                                <Smile size={18} />
+                                                <Smile size={20} />
                                             </button>
                                         </div>
                                         <button 
                                             type="submit" 
                                             disabled={processing || (!data.message.trim() && !data.attachment)}
-                                            className="w-10 h-10 bg-clay-600 text-white rounded-full flex items-center justify-center hover:bg-clay-700 hover:shadow-md transition-all disabled:opacity-50 disabled:hover:shadow-none shrink-0"
+                                            className="h-12 w-12 bg-clay-600 text-white rounded-2xl flex items-center justify-center hover:bg-clay-700 hover:shadow-lg transition-all disabled:opacity-50 disabled:hover:shadow-none shrink-0"
                                         >
-                                            <Send size={18} className="ml-0.5" />
+                                            <Send size={20} className="ml-1" />
                                         </button>
                                     </form>
 
@@ -686,3 +713,4 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         </div>
     );
 }
+

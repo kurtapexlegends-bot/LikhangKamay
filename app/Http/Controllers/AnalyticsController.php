@@ -2,39 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Review;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Services\SponsorshipAnalyticsService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AnalyticsController extends Controller
 {
-    public function index(Request $request)
+    use InteractsWithSellerContext;
+
+    public function index(Request $request, SponsorshipAnalyticsService $sponsorshipAnalyticsService)
     {
-        $userId = Auth::id();
-        $filter = $request->input('filter', 'monthly'); // 'monthly' or 'yearly'
+        $seller = $this->sellerOwner();
+        $sellerId = $seller->id;
+        $filter = $request->input('filter', 'monthly');
         $categoryFilter = $request->input('category', 'All Categories');
 
-        // --- 1. CALCULATE REAL GROWTH (Month vs Last Month) ---
         $now = Carbon::now();
         $startOfThisMonth = $now->copy()->startOfMonth();
         $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
         $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
 
-        // Helper to get metrics for a specific date range
-        $getMetrics = function ($start, $end) use ($userId) {
-            $data = OrderItem::whereHas('order', function ($q) use ($userId, $start, $end) {
-                $q->where('artisan_id', $userId)
-                  ->where('status', 'Completed')
-                  ->whereBetween('created_at', [$start, $end]);
+        $getMetrics = function ($start, $end) use ($sellerId) {
+            $data = OrderItem::whereHas('order', function ($query) use ($sellerId, $start, $end) {
+                $query->where('artisan_id', $sellerId)
+                    ->where('status', 'Completed')
+                    ->whereBetween('created_at', [$start, $end]);
             })
-            ->selectRaw('SUM(price * quantity) as revenue, SUM(cost * quantity) as cost, COUNT(DISTINCT order_id) as orders_count')
-            ->first();
+                ->selectRaw('SUM(price * quantity) as revenue, SUM(cost * quantity) as cost, COUNT(DISTINCT order_id) as orders_count')
+                ->first();
 
             $revenue = $data->revenue ?? 0;
             $cost = $data->cost ?? 0;
@@ -47,7 +49,7 @@ class AnalyticsController extends Controller
                 'profit' => $profit,
                 'orders' => $ordersCount,
                 'avg' => $ordersCount > 0 ? $revenue / $ordersCount : 0,
-                'margin' => $revenue > 0 ? ($profit / $revenue) * 100 : 0
+                'margin' => $revenue > 0 ? ($profit / $revenue) * 100 : 0,
             ];
         };
 
@@ -61,27 +63,24 @@ class AnalyticsController extends Controller
             'profit' => $this->calculatePercentage($current['profit'], $previous['profit']),
         ];
 
-        // Pending Orders (Snapshot, no growth needed)
-        $pendingOrders = Order::where('artisan_id', $userId)->where('status', 'Pending')->count();
+        $pendingOrders = Order::where('artisan_id', $sellerId)
+            ->where('status', 'Pending')
+            ->count();
 
-
-        // --- 2. REVENUE TRENDS (Dashboard-style: Monthly = last 6 months, Yearly = by year) ---
-        // Build base query with category filter
-        $chartBaseQuery = function() use ($userId, $categoryFilter) {
-            $q = OrderItem::query()
+        $chartBaseQuery = function () use ($sellerId, $categoryFilter) {
+            $query = OrderItem::query()
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->join('products', 'order_items.product_id', '=', 'products.id')
-                ->where('orders.artisan_id', $userId)
+                ->where('orders.artisan_id', $sellerId)
                 ->where('orders.status', 'Completed');
 
             if ($categoryFilter !== 'All Categories') {
-                $q->where('products.category', $categoryFilter);
+                $query->where('products.category', $categoryFilter);
             }
 
-            return $q;
+            return $query;
         };
 
-        // Monthly: Last 6 months with zero-fill (same as Dashboard)
         $monthExpr = $this->monthNumberExpression('orders.created_at');
         $monthlyRaw = $chartBaseQuery()
             ->where('orders.created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
@@ -97,11 +96,10 @@ class AnalyticsController extends Controller
             $monthName = Carbon::now()->subMonths($i)->format('M');
             $monthlyData[] = [
                 'name' => $monthName,
-                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0
+                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0,
             ];
         }
 
-        // Yearly: All years grouped (same as Dashboard)
         $yearExpr = $this->yearNumberExpression('orders.created_at');
         $yearlyData = $chartBaseQuery()
             ->selectRaw("{$yearExpr} as year_num, SUM(order_items.price * order_items.quantity) as value")
@@ -109,15 +107,16 @@ class AnalyticsController extends Controller
             ->orderByRaw($yearExpr)
             ->get()
             ->map(function ($item) {
-                return ['name' => (string) ((int) $item->year_num), 'value' => (float) $item->value];
+                return [
+                    'name' => (string) ((int) $item->year_num),
+                    'value' => (float) $item->value,
+                ];
             });
 
-
-        // --- 3. SALES BY CATEGORY ---
-        $categoryData = OrderItem::whereHas('order', function($q) use ($userId) {
-                $q->where('artisan_id', $userId)
-                  ->where('status', 'Completed');
-            })
+        $categoryData = OrderItem::whereHas('order', function ($query) use ($sellerId) {
+            $query->where('artisan_id', $sellerId)
+                ->where('status', 'Completed');
+        })
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->select('products.category', DB::raw('SUM(order_items.quantity) as value'))
             ->groupBy('products.category')
@@ -129,15 +128,13 @@ class AnalyticsController extends Controller
                 ];
             });
 
-
-        // --- 4. TOP PRODUCTS ---
-        $topProducts = OrderItem::whereHas('order', function($q) use ($userId) {
-                $q->where('artisan_id', $userId)
-                  ->where('status', 'Completed');
-            })
+        $topProducts = OrderItem::whereHas('order', function ($query) use ($sellerId) {
+            $query->where('artisan_id', $sellerId)
+                ->where('status', 'Completed');
+        })
             ->select(
-                'product_name', 
-                DB::raw('SUM(quantity) as total_sold'), 
+                'product_name',
+                DB::raw('SUM(quantity) as total_sold'),
                 DB::raw('SUM(price * quantity) as revenue'),
                 DB::raw('SUM(cost * quantity) as total_cost'),
                 DB::raw('MAX(product_img) as img')
@@ -149,26 +146,28 @@ class AnalyticsController extends Controller
             ->map(function ($item) {
                 $profit = $item->revenue - $item->total_cost;
                 $margin = $item->revenue > 0 ? ($profit / $item->revenue) * 100 : 0;
+
                 return [
                     'name' => $item->product_name,
                     'sales' => $item->total_sold,
                     'revenue' => $item->revenue,
                     'profit' => $profit,
                     'margin' => round($margin, 1),
-                    'img' => $item->img ? (str_starts_with($item->img, 'http') ? $item->img : asset('storage/'.$item->img)) : null
+                    'img' => $item->img
+                        ? (str_starts_with($item->img, 'http') ? $item->img : asset('storage/' . $item->img))
+                        : null,
                 ];
             });
 
-        // Get List of Categories for the Filter Dropdown
-        $categories = Product::where('user_id', $userId)->distinct()->pluck('category');
+        $categories = Product::where('user_id', $sellerId)
+            ->distinct()
+            ->pluck('category');
 
-        // --- 5. REVIEWS AVERAGE & BREAKDOWN ---
-        $reviews = Review::whereHas('product', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
+        $reviews = Review::whereHas('product', function ($query) use ($sellerId) {
+            $query->where('user_id', $sellerId);
         })->get();
 
         $averageRating = $reviews->count() > 0 ? $reviews->avg('rating') : 0;
-        
         $reviewStats = [
             'total' => $reviews->count(),
             'average' => $averageRating ? round($averageRating, 1) : 0,
@@ -178,8 +177,13 @@ class AnalyticsController extends Controller
                 '3' => $reviews->where('rating', 3)->count(),
                 '2' => $reviews->where('rating', 2)->count(),
                 '1' => $reviews->where('rating', 1)->count(),
-            ]
+            ],
         ];
+
+        $canViewSponsorshipAnalytics = $seller->isEliteTier();
+        $sponsorshipAnalytics = $canViewSponsorshipAnalytics
+            ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
+            : null;
 
         return Inertia::render('Seller/Analytics', [
             'metrics' => [
@@ -189,27 +193,37 @@ class AnalyticsController extends Controller
                 'total_orders' => $current['orders'],
                 'avg_order_value' => $current['avg'],
                 'pending_orders' => $pendingOrders,
-                'growth' => $growth, // Real calculated percentages
+                'growth' => $growth,
                 'average_rating' => $reviewStats['average'],
-                'review_stats' => $reviewStats
+                'review_stats' => $reviewStats,
             ],
             'chartData' => ['monthly' => $monthlyData, 'yearly' => $yearlyData],
             'categoryData' => $categoryData,
             'topProducts' => $topProducts,
-            'categories' => $categories, // List for dropdown
+            'categories' => $categories,
+            'sponsorshipMetrics' => $sponsorshipAnalytics['summary'] ?? null,
+            'sponsorshipChartData' => $sponsorshipAnalytics['chartData'] ?? null,
+            'sponsorshipAnalyticsAvailability' => $sponsorshipAnalytics['availability'] ?? [
+                'is_available' => false,
+                'state' => 'not_allowed',
+                'message' => null,
+                'has_activity' => false,
+                'has_events_table' => false,
+                'has_order_snapshots' => false,
+            ],
             'filters' => [
                 'time' => $filter,
-                'category' => $categoryFilter
-            ]
+                'category' => $categoryFilter,
+            ],
         ]);
     }
 
-    // Helper to calculate percentage difference
     private function calculatePercentage($current, $previous)
     {
         if ($previous == 0) {
             return $current > 0 ? 100 : 0;
         }
+
         return round((($current - $previous) / $previous) * 100, 1);
     }
 
@@ -240,42 +254,45 @@ class AnalyticsController extends Controller
         };
     }
 
-    /**
-     * SELLER: Export analytics report to CSV
-     */
-    public function export(Request $request)
+    public function export(Request $request, SponsorshipAnalyticsService $sponsorshipAnalyticsService)
     {
-        $userId = Auth::id();
-        $filename = "analytics_report_" . date('Y-m-d_H-i-s') . ".csv";
+        $seller = $this->sellerOwner();
+        $sellerId = $seller->id;
+
+        abort_unless(
+            $seller->isPremiumTier(),
+            403,
+            'Analytics export is available on Premium and Elite plans.'
+        );
+
+        $filename = 'analytics_report_' . date('Y-m-d_H-i-s') . '.csv';
 
         $headers = [
-            "Content-Type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=\"$filename\"",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
-        // 1. Get Monthly Revenue Data (Last 12 Months)
-        // Note: Joining order_items is needed for cost calculation
-        $revenueData = OrderItem::whereHas('order', function($q) use ($userId) {
-                $q->where('artisan_id', $userId)
-                  ->where('status', 'Completed')
-                  ->where('created_at', '>=', Carbon::now()->subMonths(12));
-            })
+        $revenueData = OrderItem::whereHas('order', function ($query) use ($sellerId) {
+            $query->where('artisan_id', $sellerId)
+                ->where('status', 'Completed')
+                ->where('created_at', '>=', Carbon::now()->subMonths(12));
+        })
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->selectRaw("{$this->yearMonthExpression('orders.created_at')} as month, SUM(order_items.price * order_items.quantity) as revenue, SUM(order_items.cost * order_items.quantity) as cost, COUNT(DISTINCT orders.id) as order_count")
             ->groupByRaw($this->yearMonthExpression('orders.created_at'))
             ->orderBy('month', 'desc')
             ->get();
 
-        // 2. Get Top Selling Products
-        $topProducts = OrderItem::whereHas('order', function($q) use ($userId) {
-                $q->where('artisan_id', $userId)->where('status', 'Completed');
-            })
+        $topProducts = OrderItem::whereHas('order', function ($query) use ($sellerId) {
+            $query->where('artisan_id', $sellerId)
+                ->where('status', 'Completed');
+        })
             ->select(
-                'product_name', 
-                DB::raw('SUM(quantity) as total_sold'), 
+                'product_name',
+                DB::raw('SUM(quantity) as total_sold'),
                 DB::raw('SUM(price * quantity) as total_revenue'),
                 DB::raw('SUM(cost * quantity) as total_cost')
             )
@@ -284,10 +301,24 @@ class AnalyticsController extends Controller
             ->limit(10)
             ->get();
 
-        $callback = function () use ($revenueData, $topProducts) {
+        $includeSponsorshipAnalytics = $seller->isEliteTier();
+        $sponsorshipAnalytics = $includeSponsorshipAnalytics
+            ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
+            : null;
+        $sponsorshipSummary = $sponsorshipAnalytics['summary'] ?? null;
+        $sponsorshipMonthly = $sponsorshipAnalytics['chartData']['monthly'] ?? [];
+        $sponsorshipAvailability = $sponsorshipAnalytics['availability'] ?? null;
+
+        $callback = function () use (
+            $revenueData,
+            $topProducts,
+            $includeSponsorshipAnalytics,
+            $sponsorshipSummary,
+            $sponsorshipMonthly,
+            $sponsorshipAvailability
+        ) {
             $file = fopen('php://output', 'w');
 
-            // SECTION 1: MONTHLY PERFORMANCE
             fputcsv($file, ['MONTHLY PERFORMANCE (LAST 12 MONTHS)']);
             fputcsv($file, ['Month', 'Revenue', 'Cost', 'Gross Profit', 'Margin (%)', 'Orders']);
             foreach ($revenueData as $data) {
@@ -296,16 +327,50 @@ class AnalyticsController extends Controller
                 fputcsv($file, [$data->month, $data->revenue, $data->cost, $profit, round($margin, 1), $data->order_count]);
             }
 
-            fputcsv($file, []); // Empty line
-            fputcsv($file, []); // Empty line
+            fputcsv($file, []);
+            fputcsv($file, []);
 
-            // SECTION 2: TOP PRODUCTS
             fputcsv($file, ['TOP SELLING PRODUCTS']);
             fputcsv($file, ['Product Name', 'Units Sold', 'Total Revenue', 'Total Cost', 'Gross Profit', 'Margin (%)']);
             foreach ($topProducts as $product) {
                 $profit = $product->total_revenue - $product->total_cost;
                 $margin = $product->total_revenue > 0 ? ($profit / $product->total_revenue) * 100 : 0;
                 fputcsv($file, [$product->product_name, $product->total_sold, $product->total_revenue, $product->total_cost, $profit, round($margin, 1)]);
+            }
+
+            if ($includeSponsorshipAnalytics) {
+                fputcsv($file, []);
+                fputcsv($file, []);
+
+                if ($sponsorshipAvailability && !$sponsorshipAvailability['is_available']) {
+                    fputcsv($file, ['SPONSORED PERFORMANCE']);
+                    fputcsv($file, ['Status', 'Message']);
+                    fputcsv($file, ['Unavailable', $sponsorshipAvailability['message']]);
+                } elseif ($sponsorshipSummary) {
+                    fputcsv($file, ['SPONSORED PERFORMANCE SUMMARY']);
+                    fputcsv($file, ['Impressions', 'Clicks', 'CTR (%)', 'Sponsored Orders', 'Sponsored Revenue']);
+                    fputcsv($file, [
+                        $sponsorshipSummary['impressions'],
+                        $sponsorshipSummary['clicks'],
+                        $sponsorshipSummary['ctr'],
+                        $sponsorshipSummary['sponsored_orders'],
+                        $sponsorshipSummary['sponsored_revenue'],
+                    ]);
+
+                    fputcsv($file, []);
+                    fputcsv($file, ['MONTHLY SPONSORED PERFORMANCE']);
+                    fputcsv($file, ['Period', 'Impressions', 'Clicks', 'CTR (%)', 'Sponsored Orders', 'Sponsored Revenue']);
+                    foreach ($sponsorshipMonthly as $row) {
+                        fputcsv($file, [
+                            $row['name'],
+                            $row['impressions'],
+                            $row['clicks'],
+                            $row['ctr'],
+                            $row['sponsored_orders'],
+                            $row['sponsored_revenue'],
+                        ]);
+                    }
+                }
             }
 
             fclose($file);

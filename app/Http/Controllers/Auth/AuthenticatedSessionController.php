@@ -33,37 +33,45 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // Role-based redirects after login
-        
-        // Super Admin → Admin Dashboard
-        if ($user->role === 'super_admin') {
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
-        
-        // Artisan → Check their status
-        if ($user->role === 'artisan') {
-            // Not completed setup yet
+
+        if ($user->isStaff()) {
+            if (!$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+
+            if ($user->requiresStaffPasswordChange()) {
+                return redirect()->route('staff.password.edit');
+            }
+
+            $routeName = $user->getFirstAccessibleSellerRouteName();
+
+            return $routeName
+                ? redirect()->route($routeName)
+                : redirect()->route('staff.home');
+        }
+
+        if ($user->isArtisan()) {
             if (is_null($user->setup_completed_at)) {
                 return redirect()->route('artisan.setup');
             }
-            
-            // Pending approval
+
             if ($user->artisan_status === 'pending') {
                 return redirect()->route('artisan.pending');
             }
-            
-            // Rejected → can resubmit
+
             if ($user->artisan_status === 'rejected') {
                 return redirect()->route('artisan.setup');
             }
-            
-            // Approved → Seller dashboard
+
             return redirect()->route('dashboard');
         }
 
-        // Buyers → Shop/Homepage
         return redirect('/shop');
     }
 

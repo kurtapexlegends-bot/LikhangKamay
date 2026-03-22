@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 export default function Sponsorships({ auth, creditsAvailable, activeProducts, requests }) {
     const { addToast } = useToast();
@@ -83,10 +84,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[10px] text-gray-500">Seller Account</p>
-                                            </div>
+                                            <WorkspaceAccountSummary user={auth.user} />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -141,9 +139,9 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-start gap-3">
                                     <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={20} />
                                     <div>
-                                        <h3 className="text-sm font-bold text-amber-800">Super Premium Feature</h3>
+                                        <h3 className="text-sm font-bold text-amber-800">Elite Feature</h3>
                                         <p className="text-xs text-amber-700 mt-1 mb-3">
-                                            Upgrade to the Super Premium plan to unlock product sponsorships and gain priority placement in the catalog.
+                                            Upgrade to the Elite plan to unlock product sponsorships and gain premium placement on the homepage and catalog.
                                         </p>
                                         <button 
                                             onClick={() => router.visit(route('seller.subscription'))}
@@ -222,12 +220,13 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                         <tr className="bg-gray-50/80 border-b border-gray-100">
                                             <th className="py-3 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product</th>
                                             <th className="py-3 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Requested On</th>
+                                            <th className="py-3 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Notes</th>
                                             <th className="py-3 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
                                         {filteredRequests.map((req) => (
-                                            <tr key={req.id} className="hover:bg-gray-50/50 transition duration-150">
+                                            <tr id={`request-${req.id}`} key={req.id} className="hover:bg-gray-50/50 transition duration-150 scroll-mt-24">
                                                 <td className="py-4 px-5 align-middle">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
@@ -249,6 +248,18 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                 </td>
                                                 <td className="py-4 px-5 align-middle text-sm text-gray-500 font-medium">
                                                     {new Date(req.created_at).toLocaleDateString()}
+                                                </td>
+                                                <td className="py-4 px-5 align-middle">
+                                                    {req.status === 'rejected' && req.rejection_reason ? (
+                                                        <div className="max-w-xs">
+                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-red-500 mb-1">Rejection reason</p>
+                                                            <p className="text-xs text-gray-600 leading-relaxed">{req.rejection_reason}</p>
+                                                        </div>
+                                                    ) : req.status === 'approved' ? (
+                                                        <p className="text-xs text-emerald-600 font-medium">Approved for a 7-day sponsored run.</p>
+                                                    ) : (
+                                                        <p className="text-xs text-gray-400 font-medium">Awaiting admin review.</p>
+                                                    )}
                                                 </td>
                                                 <td className="py-4 px-5 align-middle text-right flex justify-end">
                                                     <div className="flex items-center gap-1.5" title={req.status}>
@@ -278,3 +289,4 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
         </div>
     );
 }
+

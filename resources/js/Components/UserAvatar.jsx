@@ -8,6 +8,13 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     const plan = user.premium_tier || user.subscription_plan || 'free';
     const isPremium = plan === 'premium' && user.role !== 'super_admin';
     const isElite = plan === 'super_premium' && user.role !== 'super_admin';
+    const avatarBaseSrc = user.avatar
+        ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`)
+        : null;
+    const avatarVersion = user.updated_at || user.avatar_updated_at || null;
+    const avatarSrc = avatarBaseSrc && avatarVersion
+        ? `${avatarBaseSrc}${avatarBaseSrc.includes('?') ? '&' : '?'}v=${encodeURIComponent(avatarVersion)}`
+        : avatarBaseSrc;
     
     return (
         <div className="relative inline-flex">
@@ -22,9 +29,9 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
                 </div>
             )}
             <div className={`${className} rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-bold uppercase overflow-hidden ring-2 ring-offset-2 ${isElite ? 'ring-violet-500' : isPremium ? 'ring-amber-500' : 'ring-stone-200'} shrink-0`}>
-                {user.avatar ? (
+                {avatarSrc ? (
                     <img 
-                        src={user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`} 
+                        src={avatarSrc}
                         alt={user.shop_name || user.name} 
                         className="w-full h-full object-cover"
                     />

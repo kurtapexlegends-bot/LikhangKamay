@@ -8,18 +8,7 @@ import {
 
 export default function Checkout({ auth }) {
     // Get Items passed from "Buy Now" or Cart
-    const incomingItems = usePage().props.items || [
-        {
-            id: 1,
-            artisan_id: 1,
-            shop_name: 'Demo Shop',
-            name: "Test Product (Demo)",
-            variant: "Standard",
-            price: 1500,
-            qty: 1,
-            img: "/images/no-image.png"
-        }
-    ];
+    const incomingItems = usePage().props.items || [];
 
     // Group items by seller
     const groupedBySeller = useMemo(() => {
@@ -415,7 +404,7 @@ export default function Checkout({ auth }) {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-bold text-gray-800 line-clamp-1">{item.name}</p>
-                                                    <p className="text-xs text-gray-500">{item.variant} • x{item.qty}</p>
+                                                    <p className="text-xs text-gray-500">{item.variant} - x{item.qty}</p>
                                                     <p className="text-sm font-medium text-clay-600">₱{(item.price * item.qty).toLocaleString()}</p>
                                                 </div>
                                             </div>

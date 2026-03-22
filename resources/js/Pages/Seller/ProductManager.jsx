@@ -18,6 +18,7 @@ import {
     Check, CheckCircle, Plus, Edit3, RefreshCw, Archive, Crown
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 const KPICard = ({ title, value, icon: Icon, color, bg }) => (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between">
@@ -455,10 +456,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[10px] text-gray-500">Seller Account</p>
-                                            </div>
+                                            <WorkspaceAccountSummary user={auth.user} />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -1118,3 +1116,4 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         </div>
     );
 }
+

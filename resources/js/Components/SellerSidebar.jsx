@@ -9,12 +9,60 @@ import { PlanModal } from './PlanBadge';
 
 const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
+const resolveActiveGroup = (active) => {
+    if (['overview', 'products', 'analytics', '3d'].includes(active)) return 'core';
+    if (['orders', 'chat', 'reviews'].includes(active)) return 'crm';
+    if (['settings'].includes(active)) return 'appearance';
+    if (['sponsorships'].includes(active)) return 'marketing';
+    if (['hr', 'accounting', 'procurement', 'stock-requests'].includes(active)) return 'advanced';
+
+    return null;
+};
+
+const getInitialExpandedGroups = (active) => {
+    const defaultGroups = {
+        core: true,
+        crm: true,
+        appearance: true,
+        marketing: true,
+        advanced: true,
+    };
+
+    if (typeof window === 'undefined') {
+        return defaultGroups;
+    }
+
+    try {
+        const raw = window.localStorage.getItem(GROUPS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        const activeGroup = resolveActiveGroup(active);
+
+        if (parsed && typeof parsed === 'object') {
+            return {
+                ...defaultGroups,
+                ...parsed,
+                ...(activeGroup ? { [activeGroup]: true } : {}),
+            };
+        }
+    } catch {
+        // Ignore invalid localStorage data.
+    }
+
+    return defaultGroups;
+};
 
 export default function SellerSidebar({ active, user, mobileOpen = false, onClose = () => {} }) {
     const { sellerSubscription, sellerSidebar } = usePage().props;
 
-    const isElite = user?.premium_tier === 'super_premium';
-    const isPremium = user?.premium_tier === 'premium';
+    const currentTierKey = sellerSubscription?.tierKey
+        || sellerSidebar?.tierKey
+        || (user?.premium_tier === 'super_premium'
+            ? 'super_premium'
+            : user?.premium_tier === 'premium'
+                ? 'premium'
+                : 'free');
+    const isElite = currentTierKey === 'super_premium';
+    const isPremium = currentTierKey === 'premium';
 
     const entitlement = useMemo(() => {
         if (sellerSidebar) return sellerSidebar;
@@ -28,38 +76,32 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     : ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
             toggleableModules: isElite || isPremium ? ['hr', 'accounting', 'procurement'] : [],
             enabledToggleableModules: isElite ? ['hr', 'accounting', 'procurement'] : ['procurement'],
-            showGear: isElite || isPremium,
+            showGear: user?.role === 'artisan' && (isElite || isPremium),
             allModulesUnlocked: isElite,
+            canManageSubscription: user?.role === 'artisan',
+            showPlanPanel: user?.role === 'artisan',
         };
-    }, [isElite, isPremium, sellerSidebar]);
+    }, [isElite, isPremium, sellerSidebar, user?.role]);
 
     const visibleModulesSet = useMemo(() => new Set(entitlement.visibleModules || []), [entitlement.visibleModules]);
     const showGear = !!entitlement.showGear;
+    const canManagePlan = sellerSubscription?.canManageSubscription ?? entitlement.canManageSubscription ?? user?.role === 'artisan';
+    const showPlanPanel = sellerSubscription?.showPlanPanel ?? entitlement.showPlanPanel ?? user?.role === 'artisan';
 
     const enabledToggles = useMemo(() => {
-        const enabled = new Set(entitlement.enabledToggleableModules || []);
         return {
-            hr: isElite || enabled.has('hr'),
-            accounting: isElite || enabled.has('accounting'),
-            procurement: true,
+            hr: isElite || visibleModulesSet.has('hr'),
+            accounting: isElite || visibleModulesSet.has('accounting'),
+            procurement: isElite || visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests'),
         };
-    }, [entitlement.enabledToggleableModules, isElite]);
+    }, [isElite, visibleModulesSet]);
 
     const [modules, setModules] = useState(enabledToggles);
     const [showModulePanel, setShowModulePanel] = useState(false);
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
     const [showGearHint, setShowGearHint] = useState(false);
-    const [gearVisible, setGearVisible] = useState(false);
 
-    const defaultGroups = {
-        core: true,
-        crm: true,
-        appearance: true,
-        marketing: true,
-        advanced: true,
-    };
-
-    const [expandedGroups, setExpandedGroups] = useState(defaultGroups);
+    const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups(active));
 
     useEffect(() => {
         setModules(enabledToggles);
@@ -67,30 +109,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-
-        try {
-            const raw = window.localStorage.getItem(GROUPS_STORAGE_KEY);
-            if (!raw) return;
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === 'object') {
-                setExpandedGroups(prev => ({ ...prev, ...parsed }));
-            }
-        } catch {
-            // Ignore invalid localStorage data.
-        }
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
         window.localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(expandedGroups));
     }, [expandedGroups]);
-
-    useEffect(() => {
-        if (!showGear) return;
-        setGearVisible(false);
-        const timer = setTimeout(() => setGearVisible(true), 60);
-        return () => clearTimeout(timer);
-    }, [showGear, user?.id]);
 
     useEffect(() => {
         if (!showGear || !user?.id || typeof window === 'undefined') return;
@@ -130,8 +150,11 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         });
     };
 
+    const hasCore = ['overview', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName));
+    const hasCrm = ['orders', 'messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
+    const hasAppearance = visibleModulesSet.has('shop_settings');
     const hasMarketing = visibleModulesSet.has('sponsorships');
-    const hasAdvanced = showGear && (isElite || modules.hr || modules.accounting || modules.procurement);
+    const hasAdvanced = ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName));
     const activeModuleCount = [modules.hr, modules.accounting, modules.procurement].filter(Boolean).length;
 
     return (
@@ -159,7 +182,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     </button>
 
                     {showGear && (
-                        <div className={`hidden lg:block ml-auto relative transition-all duration-300 ${gearVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
+                        <div className="hidden lg:block ml-auto relative">
                             <button 
                                 onClick={() => {
                                     setShowModulePanel(!showModulePanel);
@@ -251,98 +274,115 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     </>
                 )}
 
-                <div className="px-5 py-3 border-b flex-shrink-0 border-gray-50 bg-stone-50/30">
-                    <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
-                        <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
-                            {isElite ? (
-                                <Sparkles size={13} className="text-violet-500 fill-violet-200" />
-                            ) : isPremium ? (
-                                <Crown size={13} className="text-amber-500 fill-amber-200" />
-                            ) : (
-                                <Zap size={13} className="text-stone-400 fill-stone-200" />
-                            )}
-                            <span className="tracking-wide">{entitlement.tierLabel} Plan</span>
-                        </div>
-                        
-                        {sellerSubscription && (
-                            <div className="flex flex-col gap-1.5 mt-2.5">
-                                <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium group-hover:text-stone-700 transition-colors">
-                                    <span>Active Products</span>
-                                    <span>
-                                        <strong className="text-stone-900">{sellerSubscription.activeCount}</strong> / {sellerSubscription.limit}
-                                    </span>
+                {showPlanPanel && (
+                    <>
+                        <div className="px-5 py-3 border-b flex-shrink-0 border-gray-50 bg-stone-50/30">
+                            <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
+                                <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
+                                    {isElite ? (
+                                        <Sparkles size={13} className="text-violet-500 fill-violet-200" />
+                                    ) : isPremium ? (
+                                        <Crown size={13} className="text-amber-500 fill-amber-200" />
+                                    ) : (
+                                        <Zap size={13} className="text-stone-400 fill-stone-200" />
+                                    )}
+                                    <span className="tracking-wide">{entitlement.tierLabel} Plan</span>
                                 </div>
-                                <div className="w-full h-1.5 bg-stone-200/80 rounded-full overflow-hidden">
-                                    <div 
-                                        className={`h-full rounded-full transition-all duration-500 ${
-                                            sellerSubscription.activeCount >= sellerSubscription.limit 
-                                                ? 'bg-red-500' 
-                                                : isElite 
-                                                    ? 'bg-violet-500' 
-                                                    : isPremium 
-                                                        ? 'bg-amber-500' 
-                                                        : 'bg-stone-500'
-                                        }`}
-                                        style={{ width: `${Math.min(100, (sellerSubscription.activeCount / sellerSubscription.limit) * 100)}%` }}
-                                    />
-                                </div>
-                                {sellerSubscription.activeCount >= sellerSubscription.limit && !isElite && (
-                                    <span className="text-[9px] text-red-500 font-medium leading-tight mt-0.5">Product limit reached. Upgrade to add more.</span>
+                                
+                                {sellerSubscription && (
+                                    <div className="flex flex-col gap-1.5 mt-2.5">
+                                        <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium group-hover:text-stone-700 transition-colors">
+                                            <span>Active Products</span>
+                                            <span>
+                                                <strong className="text-stone-900">{sellerSubscription.activeCount}</strong> / {sellerSubscription.limit}
+                                            </span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-stone-200/80 rounded-full overflow-hidden">
+                                            <div 
+                                                className={`h-full rounded-full transition-all duration-500 ${
+                                                    sellerSubscription.activeCount >= sellerSubscription.limit 
+                                                        ? 'bg-red-500' 
+                                                        : isElite 
+                                                            ? 'bg-violet-500' 
+                                                            : isPremium 
+                                                                ? 'bg-amber-500' 
+                                                                : 'bg-stone-500'
+                                                }`}
+                                                style={{ width: `${Math.min(100, (sellerSubscription.activeCount / sellerSubscription.limit) * 100)}%` }}
+                                            />
+                                        </div>
+                                        {sellerSubscription.activeCount >= sellerSubscription.limit && !isElite && (
+                                            <span className="text-[9px] text-red-500 font-medium leading-tight mt-0.5">
+                                                {canManagePlan
+                                                    ? 'Product limit reached. Upgrade to add more.'
+                                                    : 'Product limit reached. Only the shop owner can upgrade.'}
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
-                            </div>
-                        )}
-                    </button>
-                </div>
+                            </button>
+                        </div>
 
-                <PlanModal 
-                    isOpen={isPlanModalOpen} 
-                    onClose={() => setIsPlanModalOpen(false)} 
-                    currentTier={isElite ? 'super_premium' : isPremium ? 'premium' : 'free'} 
-                />
+                        <PlanModal 
+                            isOpen={isPlanModalOpen} 
+                            onClose={() => setIsPlanModalOpen(false)} 
+                            currentTier={sellerSubscription?.tierKey || entitlement.tierKey || currentTierKey}
+                            canManagePlan={canManagePlan}
+                        />
+                    </>
+                )}
 
                 <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                    <CategoryGroup
-                        title="Core Operations"
-                        open={expandedGroups.core}
-                        onToggle={() => toggleGroup('core')}
-                    >
-                        <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose}>Overview</NavItem>
-                        {visibleModulesSet.has('products') && (
-                            <NavItem href={route('products.index')} icon={Package} active={active === 'products'} onClick={onClose}>Products</NavItem>
-                        )}
-                        {visibleModulesSet.has('analytics') && (
-                            <NavItem href={route('analytics.index')} icon={BarChart3} active={active === 'analytics'} onClick={onClose}>Analytics</NavItem>
-                        )}
-                        {visibleModulesSet.has('3d') && (
-                            <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose}>3D Manager</NavItem>
-                        )}
-                    </CategoryGroup>
+                    {hasCore && (
+                        <CategoryGroup
+                            title="Core Operations"
+                            open={expandedGroups.core}
+                            onToggle={() => toggleGroup('core')}
+                        >
+                            {visibleModulesSet.has('overview') && (
+                                <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose}>Overview</NavItem>
+                            )}
+                            {visibleModulesSet.has('products') && (
+                                <NavItem href={route('products.index')} icon={Package} active={active === 'products'} onClick={onClose}>Products</NavItem>
+                            )}
+                            {visibleModulesSet.has('analytics') && (
+                                <NavItem href={route('analytics.index')} icon={BarChart3} active={active === 'analytics'} onClick={onClose}>Analytics</NavItem>
+                            )}
+                            {visibleModulesSet.has('3d') && (
+                                <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose}>3D Manager</NavItem>
+                            )}
+                        </CategoryGroup>
+                    )}
 
-                    <CategoryGroup
-                        title="CRM"
-                        open={expandedGroups.crm}
-                        onToggle={() => toggleGroup('crm')}
-                    >
-                        {visibleModulesSet.has('orders') && (
-                            <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders'} onClick={onClose}>Orders</NavItem>
-                        )}
-                        {visibleModulesSet.has('messages') && (
-                            <NavItem href={route('chat.index')} icon={MessageCircle} active={active === 'chat'} onClick={onClose}>Messages</NavItem>
-                        )}
-                        {visibleModulesSet.has('reviews') && (
-                            <NavItem href={route('reviews.index')} icon={Star} active={active === 'reviews'} onClick={onClose}>Reviews</NavItem>
-                        )}
-                    </CategoryGroup>
+                    {hasCrm && (
+                        <CategoryGroup
+                            title="CRM"
+                            open={expandedGroups.crm}
+                            onToggle={() => toggleGroup('crm')}
+                        >
+                            {visibleModulesSet.has('orders') && (
+                                <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders'} onClick={onClose}>Orders</NavItem>
+                            )}
+                            {visibleModulesSet.has('messages') && (
+                                <NavItem href={route('chat.index')} icon={MessageCircle} active={active === 'chat'} onClick={onClose}>Messages</NavItem>
+                            )}
+                            {visibleModulesSet.has('reviews') && (
+                                <NavItem href={route('reviews.index')} icon={Star} active={active === 'reviews'} onClick={onClose}>Reviews</NavItem>
+                            )}
+                        </CategoryGroup>
+                    )}
 
-                    <CategoryGroup
-                        title="Shop Appearance"
-                        open={expandedGroups.appearance}
-                        onToggle={() => toggleGroup('appearance')}
-                    >
-                        {visibleModulesSet.has('shop_settings') && (
-                            <NavItem href={route('shop.settings')} icon={Sliders} active={active === 'settings'} onClick={onClose}>Shop Settings</NavItem>
-                        )}
-                    </CategoryGroup>
+                    {hasAppearance && (
+                        <CategoryGroup
+                            title="Shop Appearance"
+                            open={expandedGroups.appearance}
+                            onToggle={() => toggleGroup('appearance')}
+                        >
+                            {visibleModulesSet.has('shop_settings') && (
+                                <NavItem href={route('shop.settings')} icon={Sliders} active={active === 'settings'} onClick={onClose}>Shop Settings</NavItem>
+                            )}
+                        </CategoryGroup>
+                    )}
 
                     {hasMarketing && (
                         <CategoryGroup
@@ -360,20 +400,24 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             open={expandedGroups.advanced}
                             onToggle={() => toggleGroup('advanced')}
                         >
-                            {(isElite || modules.hr) && (
+                            {visibleModulesSet.has('hr') && (
                                 <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose}>HR</NavItem>
                             )}
-                            {(isElite || modules.accounting) && (
+                            {visibleModulesSet.has('accounting') && (
                                 <NavItem href={route('accounting.index')} icon={Wallet} active={active === 'accounting'} onClick={onClose}>Accounting</NavItem>
                             )}
-                            {(isElite || modules.procurement) && (
+                            {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                 <div className="space-y-0.5">
                                     <p className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                                         <ClipboardList size={11} /> Procurement
                                     </p>
                                     <div className="pl-2 space-y-0.5">
-                                        <NavItem href={route('procurement.index')} icon={Warehouse} active={active === 'procurement'} compact onClick={onClose}>Inventory</NavItem>
-                                        <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose}>Stock Requests</NavItem>
+                                        {visibleModulesSet.has('procurement') && (
+                                            <NavItem href={route('procurement.index')} icon={Warehouse} active={active === 'procurement'} compact onClick={onClose}>Inventory</NavItem>
+                                        )}
+                                        {visibleModulesSet.has('stock_requests') && (
+                                            <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose}>Stock Requests</NavItem>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -398,11 +442,11 @@ const CategoryGroup = ({ title, open, onToggle, children }) => (
                 className={`transition-transform duration-300 ${open ? 'rotate-90' : ''}`}
             />
         </button>
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+        {open && (
             <div className="space-y-0.5 pt-0.5">
                 {children}
             </div>
-        </div>
+        )}
     </div>
 );
 

@@ -14,6 +14,7 @@ import {
     CheckCircle, Calendar, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-300">
@@ -100,7 +101,8 @@ export default function OrderManager({ auth, orders = [] }) {
     const itemsPerPage = 10;
 
     // --- FLASH MESSAGE HANDLING ---
-    const { flash } = usePage().props;
+    const { flash, sellerSidebar } = usePage().props;
+    const canAccessMessages = sellerSidebar?.visibleModules?.includes('messages');
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success'); // 'success' or 'error'
@@ -274,6 +276,7 @@ export default function OrderManager({ auth, orders = [] }) {
     };
 
     const openChat = (userId) => {
+        if (!canAccessMessages) return;
         router.visit(route('chat.index', { user_id: userId }));
     };
 
@@ -332,10 +335,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[10px] text-gray-500">Seller Account</p>
-                                            </div>
+                                            <WorkspaceAccountSummary user={auth.user} />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -546,12 +546,14 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     
                                                     {order.status === 'Pending' && (
                                                         <>
-                                                            <button 
-                                                                onClick={() => openChat(order.user_id)} 
-                                                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition shadow-sm"
-                                                            >
-                                                                <MessageCircle size={16} /> Discuss Shipping
-                                                            </button>
+                                                            {canAccessMessages && (
+                                                                <button 
+                                                                    onClick={() => openChat(order.user_id)} 
+                                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition shadow-sm"
+                                                                >
+                                                                    <MessageCircle size={16} /> Discuss Shipping
+                                                                </button>
+                                                            )}
                                                             <div className="flex gap-2">
                                                                 <button 
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Rejected')} 
@@ -649,12 +651,14 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                     </a>
                                                                 )}
                                                             </div>
-                                                            <button 
-                                                                onClick={() => openChat(order.user_id)} 
-                                                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition shadow-md"
-                                                            >
-                                                                <MessageCircle size={16} /> Negotiate
-                                                            </button>
+                                                            {canAccessMessages && (
+                                                                <button 
+                                                                    onClick={() => openChat(order.user_id)} 
+                                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition shadow-md"
+                                                                >
+                                                                    <MessageCircle size={16} /> Negotiate
+                                                                </button>
+                                                            )}
                                                             <div className="flex flex-col gap-2 mt-2">
                                                                 <div className="flex gap-2">
                                                                     <button 
@@ -895,3 +899,4 @@ export default function OrderManager({ auth, orders = [] }) {
         </div>
     );
 }
+

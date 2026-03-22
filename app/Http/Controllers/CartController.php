@@ -10,19 +10,91 @@ use Inertia\Inertia;
 
 class CartController extends Controller
 {
+    private function makeCartKey(int $productId, string $variant): string
+    {
+        $normalizedVariant = strtolower(trim($variant)) ?: 'standard';
+
+        return $productId . ':' . md5($normalizedVariant);
+    }
+
+    /**
+     * @param  array<string|int, mixed>  $cart
+     * @return array<string, array<string, mixed>>
+     */
+    private function normalizeCart(array $cart): array
+    {
+        $normalized = [];
+
+        foreach ($cart as $key => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $productId = (int) ($item['id'] ?? $key);
+            if ($productId <= 0) {
+                continue;
+            }
+
+            $variant = trim((string) ($item['variant'] ?? 'Standard')) ?: 'Standard';
+            $cartKey = (string) ($item['cart_key'] ?? $this->makeCartKey($productId, $variant));
+            $quantity = max(1, (int) ($item['qty'] ?? 1));
+
+            $normalizedItem = [
+                ...$item,
+                'id' => $productId,
+                'variant' => $variant,
+                'cart_key' => $cartKey,
+                'qty' => $quantity,
+            ];
+
+            if (isset($normalized[$cartKey])) {
+                $normalized[$cartKey]['qty'] += $quantity;
+                continue;
+            }
+
+            $normalized[$cartKey] = $normalizedItem;
+        }
+
+        return $normalized;
+    }
+
     // 1. Display Cart Page (This is what was missing!)
     public function index()
     {
-        $cart = Session::get('cart', []);
+        $cart = $this->normalizeCart(Session::get('cart', []));
 
         if (!empty($cart)) {
-            $productIds = array_keys($cart);
-            $liveProducts = Product::whereIn('id', $productIds)->pluck('price', 'id');
+            $productIds = collect($cart)
+                ->pluck('id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $liveProducts = Product::whereIn('id', $productIds)
+                ->get(['id', 'price', 'sku', 'slug'])
+                ->keyBy('id');
             
             $updatedCart = false;
-            foreach ($cart as $id => &$item) {
-                if (isset($liveProducts[$id]) && $item['price'] != $liveProducts[$id]) {
-                    $item['price'] = $liveProducts[$id];
+            foreach ($cart as &$item) {
+                $liveProduct = $liveProducts->get($item['id']);
+
+                if (!$liveProduct) {
+                    continue;
+                }
+
+                if ($item['price'] != $liveProduct->price) {
+                    $item['price'] = $liveProduct->price;
+                    $updatedCart = true;
+                }
+
+                if (($item['sku'] ?? null) !== $liveProduct->sku) {
+                    $item['sku'] = $liveProduct->sku;
+                    $updatedCart = true;
+                }
+
+                if (($item['slug'] ?? null) !== $liveProduct->slug) {
+                    $item['slug'] = $liveProduct->slug;
                     $updatedCart = true;
                 }
             }
@@ -40,29 +112,40 @@ class CartController extends Controller
     // 2. Add Item
     public function store(Request $request)
     {
-        $product = Product::with('user')->find($request->product_id);
+        $validated = $request->validate([
+            'product_id' => 'required|integer|exists:products,id',
+            'quantity' => 'nullable|integer|min:1',
+            'variant' => 'nullable|string|max:120',
+        ]);
 
-        if (!$product) {
-            return redirect()->back()->with('error', 'Product not found.');
-        }
+        $product = Product::with('user')->findOrFail($validated['product_id']);
+        $requestedQty = (int) ($validated['quantity'] ?? 1);
+        $variant = trim((string) ($validated['variant'] ?? 'Standard')) ?: 'Standard';
+        $cartKey = $this->makeCartKey($product->id, $variant);
 
-        $cart = Session::get('cart', []);
+        $cart = $this->normalizeCart(Session::get('cart', []));
 
-        if (isset($cart[$product->id])) {
-            if ($cart[$product->id]['qty'] + 1 > $product->stock) {
+        if (isset($cart[$cartKey])) {
+            $cart[$cartKey]['sku'] = $product->sku;
+            $cart[$cartKey]['slug'] = $product->slug;
+            if ($cart[$cartKey]['qty'] + $requestedQty > $product->stock) {
                 return redirect()->back()->with('error', 'Not enough stock available.');
             }
-            $cart[$product->id]['qty']++;
+            $cart[$cartKey]['qty'] += $requestedQty;
         } else {
-            if ($product->stock < 1) {
+            if ($product->stock < $requestedQty) {
                 return redirect()->back()->with('error', 'Product is out of stock.');
             }
-        $cart[$product->id] = [
+            $cart[$cartKey] = [
                 'id' => $product->id,
+                'cart_key' => $cartKey,
                 'artisan_id' => $product->user_id, // Seller ID for grouping
                 'name' => $product->name,
+                'variant' => $variant,
+                'sku' => $product->sku,
+                'slug' => $product->slug,
                 'price' => $product->price,
-                'qty' => 1,
+                'qty' => $requestedQty,
                 'img' => $product->img,
                 'seller' => $product->user->name ?? 'Artisan',
                 'shop_name' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
@@ -78,14 +161,19 @@ class CartController extends Controller
     // 3. Update Quantity
     public function update(Request $request)
     {
-        $cart = Session::get('cart', []);
+        $validated = $request->validate([
+            'id' => 'required|string',
+            'qty' => 'required|integer|min:1',
+        ]);
+
+        $cart = $this->normalizeCart(Session::get('cart', []));
         
-        if (isset($cart[$request->id])) {
-            $product = Product::find($request->id);
-            if ($product && $request->qty > $product->stock) {
+        if (isset($cart[$validated['id']])) {
+            $product = Product::find($cart[$validated['id']]['id']);
+            if ($product && $validated['qty'] > $product->stock) {
                 return redirect()->back()->with('error', 'Only ' . $product->stock . ' items available.');
             }
-            $cart[$request->id]['qty'] = max(1, $request->qty); 
+            $cart[$validated['id']]['qty'] = $validated['qty'];
             Session::put('cart', $cart);
         }
 
@@ -95,10 +183,14 @@ class CartController extends Controller
     // 4. Remove Item
     public function destroy(Request $request)
     {
-        $cart = Session::get('cart', []);
+        $validated = $request->validate([
+            'id' => 'required|string',
+        ]);
+
+        $cart = $this->normalizeCart(Session::get('cart', []));
         
-        if (isset($cart[$request->id])) {
-            unset($cart[$request->id]);
+        if (isset($cart[$validated['id']])) {
+            unset($cart[$validated['id']]);
             Session::put('cart', $cart);
         }
 
@@ -108,7 +200,7 @@ class CartController extends Controller
     public function buyAgain($orderId)
     {
         $order = \App\Models\Order::with('items')->where('user_id', Auth::id())->findOrFail($orderId);
-        $cart = Session::get('cart', []);
+        $cart = $this->normalizeCart(Session::get('cart', []));
         $addedCount = 0;
         $outOfStockCount = 0;
 
@@ -120,24 +212,31 @@ class CartController extends Controller
                 continue;
             }
 
+            $variant = trim((string) ($item->variant ?? 'Standard')) ?: 'Standard';
+            $cartKey = $this->makeCartKey($product->id, $variant);
+
             // Add to cart logic (simplified from store method)
-            if (isset($cart[$product->id])) {
+            if (isset($cart[$cartKey])) {
                 // If already in cart, just ensure we don't exceed stock?
                 // Or just add 1? Or add original qty?
                 // Let's add 1 for now to be safe, or min(original_qty, stock).
                 // Usually "Buy Again" adds 1 of each unless specified.
                 // Let's add 1.
-                if ($cart[$product->id]['qty'] + 1 <= $product->stock) {
-                    $cart[$product->id]['qty']++;
+                if ($cart[$cartKey]['qty'] + 1 <= $product->stock) {
+                    $cart[$cartKey]['qty']++;
                     $addedCount++;
                 } else {
                     $outOfStockCount++;
                 }
             } else {
-                $cart[$product->id] = [
+                $cart[$cartKey] = [
                     'id' => $product->id,
+                    'cart_key' => $cartKey,
                     'artisan_id' => $product->user_id,
                     'name' => $product->name,
+                    'variant' => $variant,
+                    'sku' => $product->sku,
+                    'slug' => $product->slug,
                     'price' => $product->price,
                     'qty' => 1, // Start with 1
                     'img' => $product->img, 

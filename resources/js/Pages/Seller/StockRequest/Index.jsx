@@ -10,6 +10,7 @@ import {
     ClipboardList, Timer, BadgeCheck, PackageCheck, RotateCcw, Inbox
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 const STATUS_TABS = [
     { id: 'all', label: 'All Requests', icon: ClipboardList },
@@ -22,6 +23,15 @@ const STATUS_TABS = [
     { id: 'completed', label: 'Completed', icon: CheckCircle },
     { id: 'rejected', label: 'Rejected', icon: XCircle },
 ];
+
+const pesoFormatter = new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+});
+
+const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
 export default function StockRequestIndex({ auth, requests }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -111,11 +121,11 @@ export default function StockRequestIndex({ auth, requests }) {
     const getStatusBadge = (status) => {
         const styles = {
             'pending': 'bg-amber-50 text-amber-700 border-amber-200 ring-1 ring-amber-100',
-            'finance_approved': 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-100',
-            'accounting_approved': 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-100',
-            'ordered': 'bg-indigo-50 text-indigo-700 border-indigo-200 ring-1 ring-indigo-100',
+            'finance_approved': 'bg-stone-100 text-stone-700 border-stone-200 ring-1 ring-stone-100',
+            'accounting_approved': 'bg-[#F8EEE6] text-clay-700 border-[#E7D8C9] ring-1 ring-[#F4E7DB]',
+            'ordered': 'bg-[#FBF1E8] text-clay-700 border-[#E7D8C9] ring-1 ring-[#F4E7DB]',
             'partially_received': 'bg-orange-50 text-orange-700 border-orange-200 ring-1 ring-orange-100',
-            'received': 'bg-teal-50 text-teal-700 border-teal-200 ring-1 ring-teal-100',
+            'received': 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-100',
             'completed': 'bg-green-50 text-green-700 border-green-200 ring-1 ring-green-100',
             'rejected': 'bg-red-50 text-red-700 border-red-200 ring-1 ring-red-100',
         };
@@ -136,8 +146,8 @@ export default function StockRequestIndex({ auth, requests }) {
                 <span className={`w-1.5 h-1.5 rounded-full ${
                     status === 'completed' ? 'bg-green-500' :
                     status === 'rejected' ? 'bg-red-500' :
-                    status === 'ordered' ? 'bg-indigo-500' :
-                    status === 'received' ? 'bg-teal-500' :
+                    status === 'ordered' || status === 'accounting_approved' ? 'bg-clay-500' :
+                    status === 'received' ? 'bg-emerald-500' :
                     'bg-amber-500'
                 }`} />
                 {labels[status] || status}
@@ -147,10 +157,10 @@ export default function StockRequestIndex({ auth, requests }) {
 
     // KPI Data
     const kpiCards = [
-        { label: 'Total Requests', value: requests.length, icon: ClipboardList, color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-100' },
+        { label: 'Total Requests', value: requests.length, icon: ClipboardList, color: 'text-stone-700', bg: 'bg-stone-50', border: 'border-stone-200' },
         { label: 'Pending', value: getCount('pending'), icon: Timer, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-        { label: 'In Process', value: getCount('ordered') + getCount('partially_received'), icon: Truck, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
-        { label: 'Completed', value: getCount('completed'), icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
+        { label: 'In Process', value: getCount('ordered') + getCount('partially_received'), icon: Truck, color: 'text-clay-700', bg: 'bg-[#FBF1E8]', border: 'border-[#E7D8C9]' },
+        { label: 'Completed', value: getCount('completed'), icon: CheckCircle, color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     ];
 
     return (
@@ -169,10 +179,10 @@ export default function StockRequestIndex({ auth, requests }) {
                             <div className="flex items-center gap-2">
                                 <h1 className="text-xl font-bold text-gray-900">Stock Requests</h1>
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
-                                    <Building2 size={10} className="text-amber-400" /> Enterprise
+                                    <Building2 size={10} className="text-clay-400" /> Enterprise
                                 </span>
                             </div>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track procurement status</p>
+                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track purchasing, receiving, and buffer transfers</p>
                         </div>
                     </div>
 
@@ -187,10 +197,7 @@ export default function StockRequestIndex({ auth, requests }) {
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="text-right hidden sm:block">
-                                                <p className="text-sm font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</p>
-                                                <p className="text-[10px] text-gray-500">Seller Account</p>
-                                            </div>
+                                            <WorkspaceAccountSummary user={auth.user} />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -227,7 +234,7 @@ export default function StockRequestIndex({ auth, requests }) {
                     </div>
 
                     {/* STATUS TABS */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm">
                         <div className="flex flex-wrap gap-1 p-1.5 border-b border-gray-100">
                             {STATUS_TABS.map(tab => {
                                 const count = getCount(tab.id);
@@ -239,8 +246,8 @@ export default function StockRequestIndex({ auth, requests }) {
                                         onClick={() => setActiveTab(tab.id)} 
                                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all duration-200 ${
                                             isActive 
-                                                ? 'bg-gray-900 text-white shadow-sm' 
-                                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                                                ? 'bg-clay-600 text-white shadow-sm shadow-clay-100' 
+                                                : 'text-gray-500 hover:bg-[#FCF7F2] hover:text-clay-700'
                                         }`}
                                     >
                                         <TabIcon size={12} />
@@ -274,7 +281,7 @@ export default function StockRequestIndex({ auth, requests }) {
                                 <tbody className="divide-y divide-gray-50">
                                     {filteredRequests.length > 0 ? (
                                         filteredRequests.map((req) => (
-                                            <tr key={req.id} className="group hover:bg-clay-50/30 transition-colors duration-150">
+                                            <tr key={req.id} className="group hover:bg-[#FCF7F2] transition-colors duration-150">
                                                 <td className="px-4 py-3">
                                                     <span className="inline-flex items-center gap-1 font-mono text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
                                                         #{req.id}
@@ -304,16 +311,16 @@ export default function StockRequestIndex({ auth, requests }) {
                                                             <span className="text-gray-400 w-20">Transferred</span>
                                                             <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[80px]">
                                                                 <div 
-                                                                    className="h-full bg-blue-500 rounded-full transition-all duration-500" 
+                                                                    className="h-full bg-clay-500 rounded-full transition-all duration-500" 
                                                                     style={{ width: `${req.quantity > 0 ? ((req.transferred_quantity || 0) / req.quantity * 100) : 0}%` }}
                                                                 />
                                                             </div>
-                                                            <span className="font-bold text-blue-600 min-w-[20px]">{req.transferred_quantity || 0}</span>
+                                                            <span className="font-bold text-clay-700 min-w-[20px]">{req.transferred_quantity || 0}</span>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <span className="text-sm font-bold text-gray-900">₱{parseFloat(req.total_cost).toLocaleString()}</span>
+                                                    <span className="text-sm font-bold text-clay-700">{formatPeso(req.total_cost)}</span>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {getStatusBadge(req.status)}
@@ -332,18 +339,18 @@ export default function StockRequestIndex({ auth, requests }) {
                                                                     setSelectedRequest(req);
                                                                     setShowOrderModal(true);
                                                                 }} 
-                                                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 transition-all active:scale-95 shadow-sm shadow-indigo-100"
+                                                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-clay-600 text-white text-[10px] font-bold rounded-lg hover:bg-clay-700 transition-all active:scale-95 shadow-sm shadow-clay-100"
                                                             >
                                                                 <Truck size={13} /> Mark Ordered
                                                             </button>
                                                         )}
                                                         {(req.status === 'ordered' || req.status === 'partially_received' || req.status === 'received') && (
-                                                            <button onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-teal-600 text-white text-[10px] font-bold rounded-lg hover:bg-teal-700 transition-all active:scale-95 shadow-sm shadow-teal-100">
+                                                            <button onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-600 text-white text-[10px] font-bold rounded-lg hover:bg-amber-700 transition-all active:scale-95 shadow-sm shadow-amber-100">
                                                                 <Package size={13} /> Receive
                                                             </button>
                                                         )}
                                                         {(req.status === 'received' && (req.received_quantity - req.transferred_quantity > 0)) && (
-                                                            <button onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-sm shadow-blue-100">
+                                                            <button onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-stone-700 text-white text-[10px] font-bold rounded-lg hover:bg-stone-800 transition-all active:scale-95 shadow-sm shadow-stone-200">
                                                                 <ArrowRight size={13} /> Transfer
                                                             </button>
                                                         )}
@@ -387,7 +394,7 @@ export default function StockRequestIndex({ auth, requests }) {
                 {/* RECEIVE MODAL */}
                 <Modal show={receiveModal.open} onClose={() => setReceiveModal({ open: false, id: null, max: null })}>
                     <form onSubmit={submitReceive} className="p-5">
-                        <div className="w-10 h-10 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center mb-3 border border-teal-100">
+                        <div className="w-10 h-10 bg-[#F8EEE6] text-clay-700 rounded-lg flex items-center justify-center mb-3 border border-[#E7D8C9]">
                             <Package size={20} />
                         </div>
                         <h2 className="text-base font-bold text-gray-900 mb-1">Receive Items into Buffer</h2>
@@ -395,11 +402,11 @@ export default function StockRequestIndex({ auth, requests }) {
                         <div className="mb-4">
                             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Quantity Received</label>
                             <input type="number" min="1" max={receiveModal.max} value={qtyInput} onChange={(e) => setQtyInput(e.target.value)} className="w-full border-gray-200 rounded-lg shadow-sm focus:border-clay-500 focus:ring-clay-500 font-bold text-base py-2" required />
-                            <p className="text-xs text-gray-400 mt-2">Remaining needed: <span className="font-bold text-amber-600">{receiveModal.max}</span></p>
+                            <p className="text-xs text-gray-400 mt-2">Remaining needed: <span className="font-bold text-clay-700">{receiveModal.max}</span></p>
                         </div>
                         <div className="flex justify-end gap-3">
                             <button type="button" onClick={() => setReceiveModal({ open: false, id: null, max: null })} className="px-3 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                            <button type="submit" className="px-4 py-2 bg-teal-600 text-white text-xs font-bold rounded-lg hover:bg-teal-700 transition shadow-sm shadow-teal-100 active:scale-95">Receive Items</button>
+                            <button type="submit" className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95">Receive Items</button>
                         </div>
                     </form>
                 </Modal>
@@ -407,19 +414,19 @@ export default function StockRequestIndex({ auth, requests }) {
                 {/* TRANSFER MODAL */}
                 <Modal show={transferModal.open} onClose={() => setTransferModal({ open: false, id: null, max: null })}>
                     <form onSubmit={submitTransfer} className="p-5">
-                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-3 border border-blue-100">
+                        <div className="w-10 h-10 bg-[#FBF1E8] text-clay-700 rounded-lg flex items-center justify-center mb-3 border border-[#E7D8C9]">
                             <ArrowRight size={20} />
                         </div>
                         <h2 className="text-base font-bold text-gray-900 mb-1">Transfer to Active Inventory</h2>
-                        <p className="text-xs text-gray-400 mb-4">Move items from buffer to your active inventory</p>
+                        <p className="text-xs text-gray-400 mb-4">Move items from buffer stock to your active inventory</p>
                         <div className="mb-4">
                             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Quantity to Transfer</label>
                             <input type="number" min="1" max={transferModal.max} value={qtyInput} onChange={(e) => setQtyInput(e.target.value)} className="w-full border-gray-200 rounded-lg shadow-sm focus:border-clay-500 focus:ring-clay-500 font-bold text-base py-2" required />
-                            <p className="text-xs text-gray-400 mt-2">Available in Buffer: <span className="font-bold text-blue-600">{transferModal.max}</span></p>
+                            <p className="text-xs text-gray-400 mt-2">Available in Buffer: <span className="font-bold text-clay-700">{transferModal.max}</span></p>
                         </div>
                         <div className="flex justify-end gap-3">
                             <button type="button" onClick={() => setTransferModal({ open: false, id: null, max: null })} className="px-3 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition shadow-sm shadow-blue-100 active:scale-95">Transfer</button>
+                            <button type="submit" className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95">Transfer</button>
                         </div>
                     </form>
                 </Modal>
@@ -427,7 +434,7 @@ export default function StockRequestIndex({ auth, requests }) {
                 {/* ORDER MODAL */}
                 <Modal show={showOrderModal} onClose={() => setShowOrderModal(false)} maxWidth="sm">
                     <div className="p-6 text-center">
-                        <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3 border border-indigo-100 shadow-sm">
+                        <div className="w-12 h-12 bg-[#FBF1E8] text-clay-700 rounded-xl flex items-center justify-center mx-auto mb-3 border border-[#E7D8C9] shadow-sm">
                             <Truck size={24} />
                         </div>
                         <h2 className="text-lg font-bold text-gray-900 mb-2">Confirm Order Placed?</h2>
@@ -445,7 +452,7 @@ export default function StockRequestIndex({ auth, requests }) {
                             </button>
                             <button 
                                 onClick={handleMarkAsOrdered}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-sm shadow-indigo-100 active:scale-95"
+                                className="px-4 py-2 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95"
                             >
                                 Confirm Order
                             </button>
@@ -464,3 +471,5 @@ export default function StockRequestIndex({ auth, requests }) {
         </div>
     );
 }
+
+

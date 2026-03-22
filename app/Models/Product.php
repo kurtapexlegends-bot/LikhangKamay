@@ -74,6 +74,11 @@ class Product extends Model
         return $this->hasOne(Supply::class);
     }
 
+    public function sponsorshipRequests()
+    {
+        return $this->hasMany(SponsorshipRequest::class);
+    }
+
     /**
      * Boot the model.
      */

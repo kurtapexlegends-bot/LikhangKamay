@@ -128,7 +128,7 @@ class ShopController extends Controller
                 'price' => number_format($product->price, 2),
                 'raw_price' => $product->price,
                 'category' => $product->category,
-                'rating' => $product->reviews_avg_rating ?? 0,
+                'rating' => (float) ($product->reviews_avg_rating ?? 0),
                 'reviews_count' => $product->reviews_count ?? 0,
                 'sold' => $product->sold ?? 0,
                 'image' => $product->img,
@@ -255,7 +255,10 @@ class ShopController extends Controller
 
     public function settings(Request $request)
     {
-        $user = $request->user()->load(['products' => fn($q) => $q->where('status', 'Active')]);
+        $user = $request->user()->getEffectiveSeller();
+        abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
+
+        $user->load(['products' => fn($q) => $q->where('status', 'Active')]);
 
         $totalSales = $user->products->sum('sold');
         $avgRating  = \App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
@@ -273,7 +276,8 @@ class ShopController extends Controller
 
     public function updateSettings(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->getEffectiveSeller();
+        abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
 
         $validated = $request->validate([
             'bio' => 'nullable|string|max:500',

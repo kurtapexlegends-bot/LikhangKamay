@@ -115,7 +115,7 @@ export default function CompleteProfile({ email, suggestedName, provider, isArti
                             autoComplete="name"
                             isFocused={true}
                             onChange={(e) => setData('name', e.target.value)}
-                            placeholder="Juan Dela Cruz"
+                            placeholder="John Doe"
                         />
                         <InputError message={errors.name} className="mt-2" />
                     </div>

@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
-import { 
-    ChevronDown, Star, ShoppingCart, 
+import {
+    ChevronDown, Star, ShoppingCart,
     SlidersHorizontal, MapPin, Search, X, Check, Loader2,
     Sparkles, ArrowUpDown, Filter, Award
 } from 'lucide-react';
 import Modal from '@/Components/Modal';
+import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
+import { trackSponsorshipEvent, useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import FilterSidebar from './Partials/FilterSidebar';
 
 export default function Catalog(props) {
     // Explicitly handle potentially null props BEFORE any hooks
-    const products = Array.isArray(props.products) ? props.products : [];
-    const sponsoredProducts = Array.isArray(props.sponsoredProducts) ? props.sponsoredProducts : [];
+    const products = Array.isArray(props.products)
+        ? props.products.map((product) => ({
+            ...product,
+            rating: normalizeRating(product?.rating),
+        }))
+        : [];
+    const sponsoredProducts = Array.isArray(props.sponsoredProducts)
+        ? props.sponsoredProducts.map((product) => ({
+            ...product,
+            rating: normalizeRating(product?.rating),
+        }))
+        : [];
     const categories = Array.isArray(props.categories) ? props.categories : [
         'All', 
         'Tableware', 
@@ -26,6 +38,12 @@ export default function Catalog(props) {
     const availableLocations = Array.isArray(props.availableLocations) ? props.availableLocations : [];
     const availableMaterials = Array.isArray(props.availableMaterials) ? props.availableMaterials : [];
     const safeFilters = (props.filters && typeof props.filters === 'object' && !Array.isArray(props.filters)) ? props.filters : {};
+    const sponsoredResultsPlacement = 'catalog_sponsored_results';
+    const sponsoredGridPlacement = 'catalog_sponsored_grid';
+    const sponsoredGridProducts = products.filter((product) => product.is_sponsored);
+
+    useSponsoredImpressionTracking(sponsoredProducts, sponsoredResultsPlacement);
+    useSponsoredImpressionTracking(sponsoredGridProducts, sponsoredGridPlacement);
     
     // --- STATE ---
     const [minPrice, setMinPrice] = useState(safeFilters.price_min || '');
@@ -324,52 +342,6 @@ export default function Catalog(props) {
                             </div>
                         )}
 
-                        {/* --- SPONSORED RESULTS (If searching) --- */}
-                        {safeFilters.search && sponsoredProducts.length > 0 && (
-                            <div className="mb-8">
-                                <h3 className="text-xs font-bold text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <Sparkles size={14} className="text-amber-500" />
-                                    Sponsored Results
-                                </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                    {sponsoredProducts.map((product) => (
-                                        <Link 
-                                            href={route('product.show', product.slug)} 
-                                            key={`sponsored-${product.id}`} 
-                                            className="group bg-white rounded-xl border border-amber-200 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden relative"
-                                        >
-                                            <div className="aspect-square relative bg-amber-50/50 overflow-hidden">
-                                                <img 
-                                                    src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
-                                                    alt={product.name} 
-                                                    className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
-                                                    onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                                />
-                                                <div className="absolute top-1.5 left-1.5 bg-amber-100/90 text-amber-700 text-[8px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 border border-amber-200 shadow-sm uppercase tracking-tighter">
-                                                    <Award size={9} /> Sponsored
-                                                </div>
-                                            </div>
-                                            <div className="p-2.5 flex flex-col flex-1 bg-gradient-to-b from-amber-50/20 to-transparent">
-                                                <h3 className="text-[11px] font-bold text-gray-900 line-clamp-2 leading-tight mb-1 group-hover:text-amber-700">
-                                                    {product.name}
-                                                </h3>
-                                                <span className="text-[10px] text-gray-400 mb-1.5 line-clamp-1">{product.seller}</span>
-                                                <div className="mt-auto flex items-center justify-between">
-                                                    <span className="text-amber-700 text-xs font-black">&#8369;{product.price}</span>
-                                                    {product.rating > 0 && (
-                                                        <div className="flex items-center gap-0.5 text-[10px] font-bold text-gray-500">
-                                                            {product.rating.toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                                <div className="mt-6 border-b border-gray-100"></div>
-                            </div>
-                        )}
-
                         {/* --- PRODUCT GRID --- */}
                         {products.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -377,6 +349,20 @@ export default function Catalog(props) {
                                     <Link 
                                         href={route('product.show', product.slug)} 
                                         key={product.id} 
+                                        data-sponsored-placement={product.is_sponsored ? sponsoredGridPlacement : undefined}
+                                        data-sponsored-product-id={product.is_sponsored ? product.id : undefined}
+                                        onClick={() => {
+                                            if (!product.is_sponsored) {
+                                                return;
+                                            }
+
+                                            trackSponsorshipEvent({
+                                                productId: product.id,
+                                                eventType: 'click',
+                                                placement: sponsoredGridPlacement,
+                                                oncePerSession: true,
+                                            });
+                                        }}
                                         className={`group bg-white rounded-xl border transition-all duration-200 flex flex-col overflow-hidden ${
                                             product.is_sponsored 
                                                 ? 'border-amber-200 shadow-sm shadow-amber-50 hover:border-amber-400 hover:shadow-md' 
@@ -414,9 +400,9 @@ export default function Catalog(props) {
                                                     <span className={`text-sm font-black ${product.is_sponsored ? 'text-amber-700' : 'text-clay-600'}`}>
                                                         &#8369;{product.price}
                                                     </span>
-                                                    {product.rating > 0 && (
+                                                    {hasRating(product.rating) && (
                                                         <div className="flex items-center gap-0.5 text-[10px] font-bold text-gray-600">
-                                                            {product.rating.toFixed(1)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                            {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400" />
                                                         </div>
                                                     )}
                                                 </div>

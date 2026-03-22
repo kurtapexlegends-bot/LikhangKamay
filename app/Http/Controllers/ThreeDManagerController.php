@@ -2,23 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ThreeDManagerController extends Controller
 {
-    /**
-     * Display the 3D Asset Manager
-     */
+    use InteractsWithSellerContext;
+
     public function index()
     {
-        $userId = Auth::id();
+        $sellerId = $this->sellerOwnerId();
 
-        // Get all products with 3D models
-        $models = Product::where('user_id', $userId)
+        $models = Product::where('user_id', $sellerId)
             ->whereNotNull('model_3d_path')
             ->where('model_3d_path', '!=', '')
             ->select('id', 'name', 'model_3d_path', 'cover_photo_path', 'status', 'updated_at')
@@ -29,8 +27,8 @@ class ThreeDManagerController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'url' => asset('storage/' . $product->model_3d_path),
-                    'thumbnail' => $product->cover_photo_path 
-                        ? asset('storage/' . $product->cover_photo_path) 
+                    'thumbnail' => $product->cover_photo_path
+                        ? asset('storage/' . $product->cover_photo_path)
                         : null,
                     'status' => $product->status,
                     'date' => $product->updated_at->format('M d, Y'),
@@ -38,22 +36,20 @@ class ThreeDManagerController extends Controller
                 ];
             });
 
-        // Storage stats
-        $totalSize = Product::where('user_id', $userId)
+        $totalSize = Product::where('user_id', $sellerId)
             ->whereNotNull('model_3d_path')
             ->get()
-            ->sum(function ($p) {
-                return $this->getFileSizeBytes($p->model_3d_path);
+            ->sum(function ($product) {
+                return $this->getFileSizeBytes($product->model_3d_path);
             });
 
-        $maxStorage = 500 * 1024 * 1024; // 500MB limit
+        $maxStorage = 500 * 1024 * 1024;
         $usagePercent = min(100, ($totalSize / $maxStorage) * 100);
 
-        // Products without 3D models (for upload modal)
-        $availableProducts = Product::where('user_id', $userId)
-            ->where(function ($q) {
-                $q->whereNull('model_3d_path')
-                  ->orWhere('model_3d_path', '');
+        $availableProducts = Product::where('user_id', $sellerId)
+            ->where(function ($query) {
+                $query->whereNull('model_3d_path')
+                    ->orWhere('model_3d_path', '');
             })
             ->select('id', 'name')
             ->orderBy('name')
@@ -70,41 +66,30 @@ class ThreeDManagerController extends Controller
         ]);
     }
 
-    /**
-     * Upload a 3D model and attach to a product
-     */
     public function upload(Request $request)
     {
         $request->validate([
-            'model' => 'required|file|mimes:glb,gltf|max:51200', // 50MB max
+            'model' => 'required|file|mimes:glb,gltf|max:51200',
             'product_id' => 'required|exists:products,id',
         ]);
 
         $product = Product::where('id', $request->product_id)
-            ->where('user_id', Auth::id())
+            ->where('user_id', $this->sellerOwnerId())
             ->firstOrFail();
 
-        // Delete old model if exists
         if ($product->model_3d_path) {
             Storage::disk('public')->delete($product->model_3d_path);
         }
 
-        // Store new model
         $path = $request->file('model')->store('models-3d', 'public');
-
         $product->update(['model_3d_path' => $path]);
 
         return back()->with('success', '3D model uploaded successfully!');
     }
 
-    /**
-     * Delete a 3D model from a product
-     */
     public function destroy(Product $product)
     {
-        if ($product->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorizeSellerOwnership($product->user_id);
 
         if ($product->model_3d_path) {
             Storage::disk('public')->delete($product->model_3d_path);
@@ -114,19 +99,21 @@ class ThreeDManagerController extends Controller
         return back()->with('success', '3D model removed.');
     }
 
-    /**
-     * Get file size in human-readable format
-     */
     private function getFileSize($path)
     {
         $bytes = $this->getFileSizeBytes($path);
+
         return $this->formatBytes($bytes);
     }
 
     private function getFileSizeBytes($path)
     {
-        if (!$path) return 0;
+        if (!$path) {
+            return 0;
+        }
+
         $fullPath = storage_path('app/public/' . $path);
+
         return file_exists($fullPath) ? filesize($fullPath) : 0;
     }
 
@@ -134,9 +121,12 @@ class ThreeDManagerController extends Controller
     {
         if ($bytes >= 1048576) {
             return round($bytes / 1048576, 1) . 'MB';
-        } elseif ($bytes >= 1024) {
+        }
+
+        if ($bytes >= 1024) {
             return round($bytes / 1024, 1) . 'KB';
         }
+
         return $bytes . 'B';
     }
 }

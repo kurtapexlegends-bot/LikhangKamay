@@ -97,8 +97,8 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             limit: 3,
             features: [
                 'Up to 3 Active Products',
-                'Basic Analytics',
-                'Standard Support',
+                'Core Seller Workspace',
+                'Basic Analytics Dashboard',
             ],
             buttonText: 'Current Plan',
         },
@@ -106,13 +106,13 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             id: 'premium',
             name: 'Premium',
             price: '₱199 / mo',
-            description: 'Grow your artisan business with more visibility.',
+            description: 'Grow your artisan business with stronger operational tools.',
             limit: 10,
             features: [
                 'Up to 10 Active Products',
                 'Premium Badge (Crown Icon)',
-                'Priority Support',
-                'Advanced Analytics',
+                'Analytics Report Export',
+                'Module Customization',
             ],
             recommended: true,
         },
@@ -120,14 +120,14 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             id: 'super_premium',
             name: 'Elite',
             price: '₱399 / mo',
-            description: 'Maximized reach and enterprise features.',
+            description: 'Unlock the full seller suite and sponsored placements.',
             limit: 50,
             features: [
                 'Up to 50 Active Products',
                 'Elite Badge',
-                '5 Monthly Sponsorship Credits',
-                'Dedicated Account Manager',
-                'Featured Placement in Search',
+                '5 Sponsorship Credits Every 30 Days',
+                'All Seller Modules Unlocked',
+                'Sponsored Homepage and Catalog Placement',
             ],
             isSuper: true,
         }
@@ -376,3 +376,5 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         </AuthenticatedLayout>
     );
 }
+
+

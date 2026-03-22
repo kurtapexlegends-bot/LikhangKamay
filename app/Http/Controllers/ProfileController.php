@@ -20,12 +20,14 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Separate view for Artisans using the Dashboard Layout
-        if ($user->role === 'artisan') {
+        // Workspace profile shell for seller owners, seller staff, and super admins.
+        if (in_array($user->role, ['artisan', 'staff', 'super_admin'], true)) {
             return Inertia::render('Seller/Profile/Edit', [
                 'mustVerifyEmail' => $user instanceof MustVerifyEmail,
                 'status' => session('status'),
                 'addresses' => $user->addresses()->orderBy('is_default', 'desc')->get(),
+                'profileMode' => $user->role === 'artisan' ? 'owner' : 'personal',
+                'workspaceShell' => $user->role === 'super_admin' ? 'admin' : 'seller',
             ]);
         }
 

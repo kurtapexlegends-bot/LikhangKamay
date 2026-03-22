@@ -1,60 +1,65 @@
 import React from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 import {
     Users,
     Store,
+    Briefcase,
     Clock,
     CheckCircle,
     XCircle,
     TrendingUp,
     TrendingDown,
     AlertTriangle,
-    LogOut,
     ChevronRight,
-    Search,
     Minus,
 } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
 
+const statusToneClasses = {
+    danger: "bg-red-100 text-red-800 border-red-200",
+    neutral: "bg-stone-100 text-stone-700 border-stone-200",
+    success: "bg-green-100 text-green-800 border-green-200",
+    warning: "bg-amber-100 text-amber-800 border-amber-200",
+};
+
 // Stat Card Component
 const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
-    // Metric might be a simple number (fallback) or an object { value, growth }
-    const value = typeof metric === 'object' ? metric.value : metric;
-    const growth = typeof metric === 'object' ? metric.growth : undefined;
-    const trend = typeof metric === 'object' ? metric.trend : undefined;
+    const value = typeof metric === "object" ? metric.value : metric;
+    const growth = typeof metric === "object" ? metric.growth : undefined;
+    const trend = typeof metric === "object" ? metric.trend : undefined;
 
-    const derivedTrend = trend || (growth > 0 ? 'up' : growth < 0 ? 'down' : 'neutral');
+    const derivedTrend = trend || (growth > 0 ? "up" : growth < 0 ? "down" : "neutral");
 
     return (
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
             <div>
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                     {title}
                 </p>
-                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
-                    {value !== undefined ? value.toLocaleString() : '0'}
+                <h3 className="text-2xl font-bold tracking-tight text-gray-900">
+                    {value !== undefined ? value.toLocaleString() : "0"}
                 </h3>
-                
+
                 {growth !== undefined && (
-                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${
-                        derivedTrend === 'up' ? 'text-green-600' : 
-                        derivedTrend === 'down' ? 'text-red-600' : 'text-gray-400'
+                    <div className={`mt-1 flex items-center gap-1 text-[10px] font-bold ${
+                        derivedTrend === "up" ? "text-green-600" :
+                        derivedTrend === "down" ? "text-red-600" : "text-gray-400"
                     }`}>
-                        {derivedTrend === 'up' && <TrendingUp size={12}/>}
-                        {derivedTrend === 'down' && <TrendingDown size={12}/>}
-                        {derivedTrend === 'neutral' && <Minus size={12}/>}
-                        <span>{derivedTrend === 'up' ? '+' : ''}{growth}% vs last 30 days</span>
+                        {derivedTrend === "up" && <TrendingUp size={12} />}
+                        {derivedTrend === "down" && <TrendingDown size={12} />}
+                        {derivedTrend === "neutral" && <Minus size={12} />}
+                        <span>{derivedTrend === "up" ? "+" : ""}{growth}% vs last 30 days</span>
                     </div>
                 )}
                 {growth === undefined && subtitle && (
-                    <p className="text-[10px] font-medium text-gray-400 mt-1">{subtitle}</p>
+                    <p className="mt-1 text-[10px] font-medium text-gray-400">{subtitle}</p>
                 )}
                 {growth === undefined && !subtitle && (
-                    <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>
+                    <p className="mt-1 text-[10px] font-medium text-gray-400">Real-time status</p>
                 )}
             </div>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} ${text}`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${text}`}>
                 <Icon size={20} />
             </div>
         </div>
@@ -62,13 +67,11 @@ const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
 };
 
 export default function AdminDashboard({ stats, recentUsers }) {
-    // Helper to safely get value for Quick Actions check
-    const pendingCount = typeof stats.pendingArtisans === 'object' ? stats.pendingArtisans.value : stats.pendingArtisans;
+    const pendingCount = typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans;
 
     return (
         <AdminLayout title="Dashboard">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Total Artisans"
                     metric={stats.totalArtisans}
@@ -103,23 +106,19 @@ export default function AdminDashboard({ stats, recentUsers }) {
                 />
             </div>
 
-            {/* Quick Actions */}
             {pendingCount > 0 && (
-                <div className="bg-gradient-to-r from-clay-50 to-white border border-clay-100 rounded-2xl p-8 mb-8 flex items-center justify-between shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-clay-100 rounded-full opacity-50 blur-xl group-hover:scale-150 transition-transform duration-700"></div>
+                <div className="group relative mb-8 flex items-center justify-between overflow-hidden rounded-2xl border border-clay-100 bg-gradient-to-r from-clay-50 to-white p-8 shadow-sm">
+                    <div className="absolute right-0 top-0 -mr-4 -mt-4 h-24 w-24 rounded-full bg-clay-100 opacity-50 blur-xl transition-transform duration-700 group-hover:scale-150"></div>
 
-                    <div className="flex items-center gap-6 relative z-10">
-                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-clay-100">
-                            <AlertTriangle
-                                size={32}
-                                className="text-clay-600"
-                            />
+                    <div className="relative z-10 flex items-center gap-6">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-clay-100 bg-white shadow-sm">
+                            <AlertTriangle size={32} className="text-clay-600" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900 text-xl">
+                            <h3 className="text-xl font-bold text-gray-900">
                                 Action Required
                             </h3>
-                            <p className="text-gray-600 mt-1">
+                            <p className="mt-1 text-gray-600">
                                 <span className="font-bold text-clay-700">{pendingCount}</span> new artisan
                                 application
                                 {pendingCount > 1 ? "s" : ""}{" "}
@@ -129,22 +128,21 @@ export default function AdminDashboard({ stats, recentUsers }) {
                     </div>
                     <Link
                         href={route("admin.pending")}
-                        className="relative z-10 flex items-center gap-2 px-6 py-3 bg-clay-600 text-white font-medium rounded-xl hover:bg-clay-700 transition shadow-lg shadow-clay-200"
+                        className="relative z-10 flex items-center gap-2 rounded-xl bg-clay-600 px-6 py-3 font-medium text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700"
                     >
                         Review Applications <ChevronRight size={18} />
                     </Link>
                 </div>
             )}
 
-            {/* Recent Users */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-                    <h3 className="font-bold text-gray-900 text-lg">
+            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-gray-50 px-6 py-5">
+                    <h3 className="text-lg font-bold text-gray-900">
                         Recent Registrations
                     </h3>
                     <Link
                         href={route("admin.users")}
-                        className="text-xs text-clay-600 font-bold hover:text-clay-800 transition flex items-center gap-1"
+                        className="flex items-center gap-1 text-xs font-bold text-clay-600 transition hover:text-clay-800"
                     >
                         View All Users <ChevronRight size={14} />
                     </Link>
@@ -153,71 +151,68 @@ export default function AdminDashboard({ stats, recentUsers }) {
                     <table className="w-full">
                         <thead className="bg-stone-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     User
                                 </th>
-                                <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     Role
                                 </th>
-                                <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     Status
                                 </th>
-                                <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     Registered
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {recentUsers.map((user) => (
-                                <tr
-                                    key={user.id}
-                                    className="hover:bg-stone-50 transition"
-                                >
+                                <tr key={user.id} className="transition hover:bg-stone-50">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <UserAvatar user={user} className="w-10 h-10 border border-clay-200" />
+                                            <UserAvatar user={user} className="h-10 w-10 border border-clay-200" />
                                             <div>
-                                                <p className="font-bold text-gray-900 text-sm">
+                                                <p className="text-sm font-bold text-gray-900">
                                                     {user.name}
                                                 </p>
                                                 <p className="text-xs text-gray-500">
                                                     {user.email}
                                                 </p>
+                                                {user.role === "staff" && user.seller_shop_name && (
+                                                    <p className="text-[11px] font-medium text-clay-600">
+                                                        Staff for {user.seller_shop_name}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <span
-                                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold border shadow-sm uppercase tracking-wider ${
+                                            className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider shadow-sm ${
                                                 user.role === "artisan"
                                                     ? "bg-orange-100 text-orange-800 border-orange-200"
-                                                    : user.role ===
-                                                        "super_admin"
-                                                      ? "bg-gray-900 text-white border-gray-900"
-                                                      : "bg-blue-50 text-blue-700 border-blue-100"
+                                                    : user.role === "staff"
+                                                      ? "bg-[#F5EEE6] text-[#7A5037] border-[#E7D8C9]"
+                                                      : user.role === "super_admin"
+                                                        ? "bg-gray-900 text-white border-gray-900"
+                                                        : "bg-blue-50 text-blue-700 border-blue-100"
                                             }`}
                                         >
                                             {user.role === "artisan" && <Store size={14} />}
-                                            {user.role === "super_admin" && <Users size={14} />} 
+                                            {user.role === "staff" && <Briefcase size={14} />}
+                                            {user.role === "super_admin" && <Users size={14} />}
                                             {user.role === "buyer" && <Users size={14} />}
 
-                                            {user.role === "artisan"
-                                                ? "Artisan"
-                                                : user.role ===
-                                                    "super_admin"
-                                                  ? "Admin"
-                                                  : "Buyer"}
+                                            {user.role_label}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         {user.role === "artisan" ? (
                                             <span
-                                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${
-                                                    user.artisan_status ===
-                                                    "approved"
+                                                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold ${
+                                                    user.artisan_status === "approved"
                                                         ? "bg-green-100 text-green-800 border-green-200"
-                                                        : user.artisan_status ===
-                                                            "rejected"
+                                                        : user.artisan_status === "rejected"
                                                           ? "bg-red-100 text-red-800 border-red-200"
                                                           : "bg-amber-100 text-amber-800 border-amber-200"
                                                 }`}
@@ -225,27 +220,27 @@ export default function AdminDashboard({ stats, recentUsers }) {
                                                 {user.artisan_status === "approved" && <CheckCircle size={14} />}
                                                 {user.artisan_status === "rejected" && <XCircle size={14} />}
                                                 {user.artisan_status === "pending" && <Clock size={14} />}
-                                                
-                                                {user.artisan_status ===
-                                                    "approved" &&
-                                                    "Verified"}
-                                                {user.artisan_status ===
-                                                    "rejected" &&
-                                                    "Rejected"}
-                                                {user.artisan_status ===
-                                                    "pending" &&
-                                                    "Pending"}
+
+                                                {user.artisan_status === "approved" && "Verified"}
+                                                {user.artisan_status === "rejected" && "Rejected"}
+                                                {user.artisan_status === "pending" && "Pending"}
+                                            </span>
+                                        ) : user.role === "staff" ? (
+                                            <span
+                                                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold ${
+                                                    statusToneClasses[user.account_state_tone] || statusToneClasses.neutral
+                                                }`}
+                                            >
+                                                {user.account_state}
                                             </span>
                                         ) : (
-                                            <span className="text-gray-300 text-xs font-medium">
+                                            <span className="text-xs font-medium text-gray-300">
                                                 —
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-xs text-gray-500 font-medium">
-                                        {new Date(
-                                            user.created_at,
-                                        ).toLocaleDateString("en-US", {
+                                    <td className="px-6 py-4 text-xs font-medium text-gray-500">
+                                        {new Date(user.created_at).toLocaleDateString("en-US", {
                                             month: "short",
                                             day: "numeric",
                                             year: "numeric",

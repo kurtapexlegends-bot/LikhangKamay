@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SellerEntitlementService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,6 +11,8 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
+
+    public const STAFF_WORKSPACE_ACCESS_FLAG = '__workspace_access_enabled';
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +24,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
+        'seller_owner_id',
+        'staff_role_preset_key',
+        'staff_module_permissions',
+        'must_change_password',
+        'created_by_user_id',
+        'employee_id',
         'shop_name',
         'bio',
         'banner_image',
@@ -80,6 +89,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'setup_completed_at' => 'datetime',
             'approved_at' => 'datetime',
             'modules_enabled' => 'array',
+            'staff_module_permissions' => 'array',
+            'must_change_password' => 'boolean',
             'last_seen_at' => 'datetime',
         ];
     }
@@ -112,9 +123,90 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === 'artisan';
     }
 
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
+
+    public function isSellerOwner(): bool
+    {
+        return $this->isArtisan();
+    }
+
     public function isBuyer(): bool
     {
         return $this->role === 'buyer' || $this->role === null;
+    }
+
+    public function requiresStaffPasswordChange(): bool
+    {
+        return $this->isStaff() && $this->must_change_password;
+    }
+
+    public function isWorkspaceAccessEnabled(): bool
+    {
+        if (!$this->isStaff()) {
+            return true;
+        }
+
+        $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
+
+        if (!array_key_exists(self::STAFF_WORKSPACE_ACCESS_FLAG, $permissions)) {
+            return true;
+        }
+
+        return (bool) $permissions[self::STAFF_WORKSPACE_ACCESS_FLAG];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function withWorkspaceAccessFlag(?array $permissions, bool $enabled): array
+    {
+        $normalized = static::stripWorkspaceAccessFlag($permissions);
+        $normalized[self::STAFF_WORKSPACE_ACCESS_FLAG] = $enabled;
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function stripWorkspaceAccessFlag(?array $permissions): array
+    {
+        $normalized = is_array($permissions) ? $permissions : [];
+        unset($normalized[self::STAFF_WORKSPACE_ACCESS_FLAG]);
+
+        return $normalized;
+    }
+
+    public function hasCompletedStaffSecurityGate(): bool
+    {
+        if (!$this->isStaff()) {
+            return true;
+        }
+
+        return $this->hasVerifiedEmail() && !$this->requiresStaffPasswordChange();
+    }
+
+    public function getEffectiveSeller(): ?self
+    {
+        if ($this->isSellerOwner()) {
+            return $this;
+        }
+
+        if ($this->isStaff()) {
+            return $this->sellerOwner;
+        }
+
+        return null;
+    }
+
+    public function getEffectiveSellerId(): ?int
+    {
+        return $this->getEffectiveSeller()?->id;
     }
 
     public function isPendingApproval(): bool
@@ -134,7 +226,19 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function canAccessDashboard(): bool
     {
+        if ($this->isStaff()) {
+            return $this->canAccessSellerModule('overview');
+        }
+
         return $this->isArtisan() && $this->isApproved() && $this->setup_completed_at !== null;
+    }
+
+    public function canAccessSellerOwnerRoutes(): bool
+    {
+        return $this->isArtisan()
+            && $this->setup_completed_at !== null
+            && !$this->isPendingApproval()
+            && !$this->isRejected();
     }
 
     // ========== PREMIUM TIER HELPERS ==========
@@ -256,69 +360,55 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function canAccessSellerModule(string $module): bool
     {
-        if (!$this->isArtisan()) {
-            return false;
-        }
+        return app(SellerEntitlementService::class)->canAccessModule($this, $module);
+    }
 
-        if (in_array($module, $this->getStandardSellerModules(), true)) {
-            return true;
-        }
+    public function canAccessSellerWorkspace(): bool
+    {
+        return app(SellerEntitlementService::class)->canAccessWorkspace($this);
+    }
 
-        if (!$this->isPremiumTier()) {
-            return false;
-        }
+    public function canManageSellerModuleSettings(): bool
+    {
+        return app(SellerEntitlementService::class)->canManageModuleSettings($this);
+    }
 
-        if ($module === 'sponsorships') {
-            return $this->isEliteTier();
-        }
+    public function canManageSellerSubscription(): bool
+    {
+        return app(SellerEntitlementService::class)->canManageSubscription($this);
+    }
 
-        if ($this->isEliteTier()) {
-            return in_array($module, $this->getAllSellerModules(), true);
-        }
+    public function canViewSellerPayrollData(): bool
+    {
+        return app(SellerEntitlementService::class)->canViewPayrollData($this);
+    }
 
-        $enabled = $this->getEnabledToggleableSellerModules();
+    public function canManageStaffAccounts(): bool
+    {
+        return $this->isSellerOwner();
+    }
 
-        if ($module === 'stock_requests') {
-            return in_array('procurement', $enabled, true);
-        }
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getSellerEntitlements(): ?array
+    {
+        return app(SellerEntitlementService::class)->getEntitlementsFor($this);
+    }
 
-        return in_array($module, $enabled, true);
+    public function getFirstAccessibleSellerRouteName(): ?string
+    {
+        return app(SellerEntitlementService::class)->getFirstAccessibleRouteName($this);
     }
 
     /**
      * Entitlements used by seller sidebar and server-side module access checks.
      *
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      */
-    public function getSellerSidebarEntitlements(): array
+    public function getSellerSidebarEntitlements(): ?array
     {
-        $standardModules = $this->getStandardSellerModules();
-        $toggleableModules = $this->isPremiumTier() ? $this->getToggleableSellerModules() : [];
-        $enabledToggleableModules = $this->getEnabledToggleableSellerModules();
-
-        if ($this->isEliteTier()) {
-            $visibleModules = $this->getAllSellerModules();
-        } elseif ($this->isPremiumTier()) {
-            $visibleModules = [
-                ...$standardModules,
-                ...$enabledToggleableModules,
-            ];
-
-            if (in_array('procurement', $enabledToggleableModules, true)) {
-                $visibleModules[] = 'stock_requests';
-            }
-        } else {
-            $visibleModules = $standardModules;
-        }
-
-        return [
-            'tierLabel' => $this->getSellerTierLabel(),
-            'visibleModules' => array_values(array_unique($visibleModules)),
-            'toggleableModules' => $toggleableModules,
-            'enabledToggleableModules' => $enabledToggleableModules,
-            'showGear' => $this->isPremiumTier(),
-            'allModulesUnlocked' => $this->isEliteTier(),
-        ];
+        return $this->getSellerEntitlements();
     }
 
     // ========== RELATIONSHIPS ==========
@@ -336,6 +426,27 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sponsorshipRequests()
     {
         return $this->hasMany(\App\Models\SponsorshipRequest::class);
+    }
+
+    public function sellerOwner()
+    {
+        return $this->belongsTo(self::class, 'seller_owner_id');
+    }
+
+    public function staffMembers()
+    {
+        return $this->hasMany(self::class, 'seller_owner_id')
+            ->where('role', 'staff');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(self::class, 'created_by_user_id');
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(\App\Models\Employee::class);
     }
 
     /**

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\User;
+use App\Services\SponsorshipAnalyticsService;
 use App\Mail\OrderPlaced;
 use App\Mail\OrderAccepted;
 use App\Mail\OrderShipped;
@@ -17,17 +19,22 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 
 class OrderController extends Controller
 {
+    use InteractsWithSellerContext;
+
     /**
      * SELLER: View all orders for the logged-in artisan
      */
     public function index()
     {
-        $orders = Order::where('artisan_id', Auth::id())
+        $sellerId = $this->sellerOwnerId();
+
+        $orders = Order::where('artisan_id', $sellerId)
             ->with(['items', 'user']) // Load items and buyer info
             ->orderBy('created_at', 'desc')
             ->get()
@@ -35,7 +42,7 @@ class OrderController extends Controller
                 return [
                     'id' => $order->order_number,
                     'db_id' => $order->id,
-                    'date' => $order->created_at->format('M d, Y • h:i A'),
+                    'date' => $order->created_at->format('M d, Y - h:i A'),
                     'customer' => $order->customer_name,
                     'user_id' => $order->user_id, // For chat linking
                     'status' => $order->status,
@@ -71,7 +78,7 @@ class OrderController extends Controller
      */
     public function export()
     {
-        $orders = Order::where('artisan_id', Auth::id())
+        $orders = Order::where('artisan_id', $this->sellerOwnerId())
             ->with(['items', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -119,14 +126,16 @@ class OrderController extends Controller
         // CASE 1: Buy Now (Single Product)
         if ($request->has('product_id')) {
             $product = Product::with('user')->find($request->product_id);
+            $variant = trim((string) $request->input('variant', 'Standard')) ?: 'Standard';
 
             if ($product) {
                 $items[] = [
                     'id' => $product->id,
+                    'cart_key' => null,
                     'artisan_id' => $product->artisan_id ?? $product->user_id,
                     'shop_name' => $product->user->shop_name ?? 'Shop',
                     'name' => $product->name,
-                    'variant' => 'Standard', // Default variant
+                    'variant' => $variant,
                     'price' => $product->price,
                     'qty' => $request->input('quantity', 1), // Accept quantity from request
                     'img' => $product->img // Already a full URL from the model accessor
@@ -136,19 +145,37 @@ class OrderController extends Controller
         // CASE 2: Checkout from Cart
         else {
             $cart = Session::get('cart', []);
-            $selectedIds = $request->input('items'); // Array of IDs if passed from Cart
+            $selectedIds = collect($request->input('items', []))
+                ->map(fn ($item) => (string) $item)
+                ->values()
+                ->all();
 
             if (!empty($selectedIds) && is_array($selectedIds)) {
                 // Filter cart to only selected items
-                $items = array_filter($cart, function ($item) use ($selectedIds) {
-                    return in_array($item['id'], $selectedIds);
-                });
+                $items = array_filter(
+                    $cart,
+                    function ($item, $cartKey) use ($selectedIds) {
+                        return in_array((string) $cartKey, $selectedIds, true)
+                            || in_array((string) ($item['id'] ?? ''), $selectedIds, true);
+                    },
+                    ARRAY_FILTER_USE_BOTH
+                );
             } else {
                 // Default: All items
                 $items = $cart;
             }
 
-            $items = array_values($items);
+            $items = array_values(array_map(function ($item, $cartKey) {
+                if (!isset($item['cart_key'])) {
+                    $item['cart_key'] = (string) $cartKey;
+                }
+
+                if (!isset($item['variant']) || trim((string) $item['variant']) === '') {
+                    $item['variant'] = 'Standard';
+                }
+
+                return $item;
+            }, $items, array_keys($items)));
 
             // Ensure images have full path if they came from cart (checks if they already have full path)
             foreach ($items as &$item) {
@@ -179,7 +206,7 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $order = Order::where('order_number', $id)
-            ->where('artisan_id', Auth::id())
+            ->where('artisan_id', $this->sellerOwnerId())
             ->firstOrFail();
 
         $request->validate([
@@ -188,6 +215,10 @@ class OrderController extends Controller
             'shipping_notes' => 'nullable|string|max:500',
             'proof_of_delivery' => 'nullable|image|max:5120' // 5MB Max
         ]);
+
+        if (!$this->isAllowedSellerStatusTransition($order, $request->status)) {
+            return back()->with('error', 'This order status change is not allowed from its current state.');
+        }
 
         // GUARD: Prevent shipping unpaid non-COD orders
         if (in_array($request->status, ['Shipped', 'Ready for Pickup'])) {
@@ -269,13 +300,36 @@ class OrderController extends Controller
         return redirect()->back();
     }
 
+    private function isAllowedSellerStatusTransition(Order $order, string $nextStatus): bool
+    {
+        return in_array($nextStatus, $this->allowedSellerNextStatuses($order), true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function allowedSellerNextStatuses(Order $order): array
+    {
+        return match ($order->status) {
+            'Pending' => ['Accepted', 'Rejected'],
+            'Accepted' => $order->shipping_method === 'Pick Up'
+                ? ['Ready for Pickup']
+                : ['Shipped'],
+            'Shipped' => ['Delivered'],
+            'Ready for Pickup' => ['Delivered'],
+            'Delivered' => ['Completed'],
+            'Refund/Return' => ['Completed'],
+            default => [],
+        };
+    }
+
     /**
      * SELLER: Approve return request
      */
     public function approveReturn(Request $request, $id)
     {
         $order = Order::where('order_number', $id)
-            ->where('artisan_id', Auth::id())
+            ->where('artisan_id', $this->sellerOwnerId())
             ->where('status', 'Refund/Return')
             ->firstOrFail();
 
@@ -329,7 +383,7 @@ class OrderController extends Controller
     public function updatePaymentStatus(Request $request, $id)
     {
         $order = Order::where('order_number', $id)
-            ->where('artisan_id', Auth::id())
+            ->where('artisan_id', $this->sellerOwnerId())
             ->firstOrFail();
 
         $request->validate([
@@ -344,7 +398,7 @@ class OrderController extends Controller
     /**
      * BUYER: Place a new order
      */
-    public function store(Request $request)
+    public function store(Request $request, SponsorshipAnalyticsService $sponsorshipAnalytics)
     {
         $request->validate([
             'items' => 'required|array',
@@ -372,11 +426,36 @@ class OrderController extends Controller
             $user->update(['saved_address' => $request->shipping_address]);
         }
 
-        // Group items by artisan for multi-seller support
-        $groupedItems = collect($request->items)->groupBy('artisan_id');
+        // Resolve each item from the database before grouping so seller ownership
+        // cannot be reassigned by a tampered checkout payload.
+        $supportsWasSponsored = Schema::hasColumn('order_items', 'was_sponsored');
+        $supportsSponsorshipRequestId = Schema::hasColumn('order_items', 'sponsorship_request_id');
+        $supportsSponsoredAtCheckout = Schema::hasColumn('order_items', 'sponsored_at_checkout');
+
+        $groupedItems = collect($request->items)
+            ->map(function (array $item) {
+                $product = Product::findOrFail($item['id']);
+
+                return [
+                    'id' => $product->id,
+                    'artisan_id' => $product->artisan_id ?? $product->user_id,
+                    'qty' => (int) $item['qty'],
+                    'variant' => $item['variant'] ?? null,
+                ];
+            })
+            ->groupBy('artisan_id');
 
         // Wrap in transaction to ensure stock is deducted only if order succeeds
-        DB::transaction(function () use ($request, $groupedItems, $shippingAddress, $paymentMethod) {
+        DB::transaction(function () use (
+            $request,
+            $groupedItems,
+            $shippingAddress,
+            $paymentMethod,
+            $sponsorshipAnalytics,
+            $supportsWasSponsored,
+            $supportsSponsorshipRequestId,
+            $supportsSponsoredAtCheckout
+        ) {
             foreach ($groupedItems as $artisanId => $items) {
                 // Recalculate server order total using DB prices securely
                 $serverOrderTotal = 0;
@@ -427,15 +506,33 @@ class OrderController extends Controller
                     }
 
                     // Ensure we save the actual DB snapshot of the product at checkout time
-                    $order->items()->create([
+                    $orderItemData = [
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'variant' => $item['variant'] ?? null,
                         'price' => $product->price, // Secure DB price
                         'cost' => $product->cost_price ?? 0,
                         'quantity' => $item['qty'],
-                        'product_img' => $product->cover_photo_path // Use the actual DB path
-                    ]);
+                        'product_img' => $product->cover_photo_path, // Use the actual DB path
+                    ];
+
+                    if ($supportsWasSponsored || $supportsSponsorshipRequestId || $supportsSponsoredAtCheckout) {
+                        $activeSponsorshipRequest = $sponsorshipAnalytics->resolveActiveRequestForProduct($product);
+
+                        if ($supportsWasSponsored) {
+                            $orderItemData['was_sponsored'] = (bool) $activeSponsorshipRequest;
+                        }
+
+                        if ($supportsSponsorshipRequestId) {
+                            $orderItemData['sponsorship_request_id'] = $activeSponsorshipRequest?->id;
+                        }
+
+                        if ($supportsSponsoredAtCheckout) {
+                            $orderItemData['sponsored_at_checkout'] = $activeSponsorshipRequest ? now() : null;
+                        }
+                    }
+
+                    $order->items()->create($orderItemData);
                 }
 
                 // Send email notification to seller
@@ -451,6 +548,13 @@ class OrderController extends Controller
         // Remove ONLY purchasing items from cart (keep others)
         $cart = Session::get('cart', []);
         foreach ($request->items as $item) {
+            $cartKey = $item['cart_key'] ?? null;
+
+            if ($cartKey && isset($cart[$cartKey])) {
+                unset($cart[$cartKey]);
+                continue;
+            }
+
             if (isset($cart[$item['id']])) {
                 unset($cart[$item['id']]);
             }

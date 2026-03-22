@@ -30,6 +30,84 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect('/shop');
     }
 
+    public function test_super_admins_are_redirected_to_the_admin_dashboard_after_login(): void
+    {
+        $user = User::factory()->superAdmin()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_artisan_owners_without_completed_setup_are_redirected_to_setup_after_login(): void
+    {
+        $user = User::factory()->artisanWithoutSetup()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('artisan.setup', absolute: false));
+    }
+
+    public function test_pending_artisan_owners_are_redirected_to_pending_after_login(): void
+    {
+        $user = User::factory()->artisanPending()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('artisan.pending', absolute: false));
+    }
+
+    public function test_approved_artisan_owners_are_redirected_to_dashboard_after_login(): void
+    {
+        $user = User::factory()->artisanApproved()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_pending_artisan_owners_cannot_access_seller_workspace_or_owner_only_seller_routes(): void
+    {
+        $user = User::factory()->artisanPending()->create();
+
+        $this->actingAs($user)
+            ->get(route('orders.index'))
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->get(route('seller.subscription'))
+            ->assertForbidden();
+    }
+
+    public function test_artisan_owners_without_completed_setup_cannot_access_seller_workspace_or_owner_only_seller_routes(): void
+    {
+        $user = User::factory()->artisanWithoutSetup()->create();
+
+        $this->actingAs($user)
+            ->get(route('products.index'))
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->get(route('seller.subscription'))
+            ->assertForbidden();
+    }
+
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create();
