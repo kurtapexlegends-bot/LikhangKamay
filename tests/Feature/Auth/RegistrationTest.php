@@ -29,4 +29,25 @@ class RegistrationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect(route('login', absolute: false));
     }
+
+    public function test_new_artisans_can_register_before_completing_shop_setup(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Clay Seller',
+            'shop_name' => 'Clay Seller Studio',
+            'email' => 'artisan@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'terms' => true,
+        ]);
+
+        $this->assertGuest();
+        $response->assertRedirect(route('login', absolute: false));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'artisan@example.com',
+            'role' => 'artisan',
+            'shop_name' => 'Clay Seller Studio',
+        ]);
+    }
 }

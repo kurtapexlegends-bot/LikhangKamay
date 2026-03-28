@@ -256,6 +256,9 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
+    Route::post('/pending-artisans/{id}/documents/viewed', [SuperAdminController::class, 'markArtisanDocumentViewed'])->name('admin.artisan.documents.viewed');
+    Route::post('/pending-artisans/{id}/approve', [SuperAdminController::class, 'approveArtisan'])->name('admin.artisan.approve');
+    Route::post('/pending-artisans/{id}/reject', [SuperAdminController::class, 'rejectArtisan'])->name('admin.artisan.reject');
     
     // Sponsorship Approvals
     Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');

@@ -1,12 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronDown, ChevronUp, FileText, Shield, Store, Lock, Box, Check, AlertTriangle } from 'lucide-react';
 
 export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }) {
     const [expandedSections, setExpandedSections] = useState({});
+    const [hasReachedBottom, setHasReachedBottom] = useState(false);
+    const contentRef = useRef(null);
 
     useEffect(() => {
         if (isOpen) {
             setExpandedSections({});
+            setHasReachedBottom(false);
+
+            const frame = window.requestAnimationFrame(() => {
+                const container = contentRef.current;
+
+                if (!container) {
+                    return;
+                }
+
+                const isScrollable = container.scrollHeight > container.clientHeight + 4;
+                setHasReachedBottom(!isScrollable);
+            });
+
+            return () => window.cancelAnimationFrame(frame);
         }
     }, [isOpen, type]);
 
@@ -20,10 +36,23 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
     };
 
     const handleAccept = () => {
+        if (!hasReachedBottom) {
+            return;
+        }
+
         if (onAccept) {
             onAccept();
         }
         onClose();
+    };
+
+    const handleContentScroll = (event) => {
+        const container = event.currentTarget;
+        const reachedBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 8;
+
+        if (reachedBottom) {
+            setHasReachedBottom(true);
+        }
     };
 
     // Content configurations - All using clay color scheme for consistency
@@ -145,6 +174,8 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
 
                 {/* Content */}
                 <div 
+                    ref={contentRef}
+                    onScroll={handleContentScroll}
                     className="flex-1 overflow-y-auto p-5 space-y-3"
                     style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}
                 >
@@ -211,9 +242,15 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
 
                 {/* Footer */}
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex-shrink-0">
+                    {!hasReachedBottom && (
+                        <p className="mb-3 text-xs font-medium text-stone-500">
+                            Scroll to the bottom of this document before continuing.
+                        </p>
+                    )}
                     <button
                         onClick={handleAccept}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-sm"
+                        disabled={!hasReachedBottom}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-sm disabled:cursor-not-allowed disabled:bg-clay-300"
                     >
                         <Check size={18} />
                         I Understand

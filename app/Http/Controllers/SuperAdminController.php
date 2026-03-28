@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use App\Models\SponsorshipRequest;
 use App\Mail\ArtisanApproved;
@@ -20,6 +21,13 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuperAdminController extends Controller
 {
+    private const ARTISAN_DOCUMENT_FIELDS = [
+        'business_permit',
+        'dti_registration',
+        'valid_id',
+        'tin_id',
+    ];
+
     /**
      * Admin Dashboard - Platform overview
      */
@@ -618,6 +626,7 @@ class SuperAdminController extends Controller
                     'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
                     'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
                     'tin_id' => $user->tin_id ? asset('storage/' . $user->tin_id) : null,
+                    'viewed_document_keys' => $this->getViewedArtisanDocumentKeys($user),
                     'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
                 ];
             });
@@ -632,9 +641,17 @@ class SuperAdminController extends Controller
      */
     public function approveArtisan($id)
     {
-        $artisan = User::where('role', 'artisan')
-            ->where('artisan_status', 'pending')
-            ->findOrFail($id);
+        $artisan = $this->findPendingArtisanOrFail($id);
+
+        $requiredDocumentKeys = $this->getSubmittedArtisanDocumentKeys($artisan);
+        $viewedDocumentKeys = $this->getViewedArtisanDocumentKeys($artisan);
+        $missingDocumentKeys = array_values(array_diff($requiredDocumentKeys, $viewedDocumentKeys));
+
+        if (!empty($missingDocumentKeys)) {
+            throw ValidationException::withMessages([
+                'documents' => 'Open every submitted document before approving this shop.',
+            ]);
+        }
 
         ArtisanStatusLog::create([
             'user_id' => $artisan->id,
@@ -648,6 +665,8 @@ class SuperAdminController extends Controller
             'approved_by' => Auth::id(),
             'artisan_rejection_reason' => null,
         ]);
+
+        $this->clearViewedArtisanDocumentKeys($artisan);
 
         // Send approval email
         try {
@@ -671,9 +690,7 @@ class SuperAdminController extends Controller
             'reason' => 'required|string|min:10|max:1000',
         ]);
 
-        $artisan = User::where('role', 'artisan')
-            ->where('artisan_status', 'pending')
-            ->findOrFail($id);
+        $artisan = $this->findPendingArtisanOrFail($id);
 
         ArtisanStatusLog::create([
             'user_id' => $artisan->id,
@@ -686,6 +703,8 @@ class SuperAdminController extends Controller
             'artisan_rejection_reason' => $request->reason,
         ]);
 
+        $this->clearViewedArtisanDocumentKeys($artisan);
+
         // Send rejection email
         try {
             if ($artisan->email) {
@@ -696,6 +715,36 @@ class SuperAdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Artisan application rejected.');
+    }
+
+    public function markArtisanDocumentViewed(Request $request, $id)
+    {
+        $artisan = $this->findPendingArtisanOrFail($id);
+        $requiredDocumentKeys = $this->getSubmittedArtisanDocumentKeys($artisan);
+
+        $validated = $request->validate([
+            'document' => 'required|string',
+        ]);
+
+        if (!in_array($validated['document'], $requiredDocumentKeys, true)) {
+            throw ValidationException::withMessages([
+                'document' => 'The selected document is not available for this artisan application.',
+            ]);
+        }
+
+        $viewedDocumentKeys = collect($this->getViewedArtisanDocumentKeys($artisan))
+            ->push($validated['document'])
+            ->unique()
+            ->values()
+            ->all();
+
+        session([
+            $this->artisanDocumentReviewSessionKey($artisan->id) => $viewedDocumentKeys,
+        ]);
+
+        return response()->json([
+            'viewed_document_keys' => $viewedDocumentKeys,
+        ]);
     }
 
     /**
@@ -723,6 +772,40 @@ class SuperAdminController extends Controller
                 'approved_at' => $artisan->approved_at?->format('M d, Y h:i A'),
             ],
         ]);
+    }
+
+    private function findPendingArtisanOrFail(int|string $id): User
+    {
+        return User::where('role', 'artisan')
+            ->where('artisan_status', 'pending')
+            ->whereNotNull('setup_completed_at')
+            ->findOrFail($id);
+    }
+
+    private function getSubmittedArtisanDocumentKeys(User $artisan): array
+    {
+        return collect(self::ARTISAN_DOCUMENT_FIELDS)
+            ->filter(fn (string $field) => !empty($artisan->{$field}))
+            ->values()
+            ->all();
+    }
+
+    private function getViewedArtisanDocumentKeys(User $artisan): array
+    {
+        return collect(session($this->artisanDocumentReviewSessionKey($artisan->id), []))
+            ->filter(fn ($field) => in_array($field, $this->getSubmittedArtisanDocumentKeys($artisan), true))
+            ->values()
+            ->all();
+    }
+
+    private function clearViewedArtisanDocumentKeys(User $artisan): void
+    {
+        session()->forget($this->artisanDocumentReviewSessionKey($artisan->id));
+    }
+
+    private function artisanDocumentReviewSessionKey(int $artisanId): string
+    {
+        return sprintf('admin.pending_artisan_document_views.%s.%s', Auth::id(), $artisanId);
     }
 
     /**

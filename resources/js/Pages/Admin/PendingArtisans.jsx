@@ -1,40 +1,124 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import { 
     Clock, Eye, CheckCircle, XCircle, 
-    FileText, Phone, MapPin, Store, AlertTriangle, X, LogOut, Download
+    FileText, Phone, MapPin, AlertTriangle, X, Download
 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+
+const ARTISAN_DOCUMENTS = [
+    { key: 'business_permit', label: 'Business Permit', icon: FileText },
+    { key: 'dti_registration', label: 'DTI Registration', icon: FileText },
+    { key: 'valid_id', label: 'Valid ID', icon: FileText },
+    { key: 'tin_id', label: 'TIN ID', icon: FileText },
+];
+
+const buildViewedDocumentMap = (artisanRows) =>
+    artisanRows.reduce((carry, artisan) => {
+        carry[artisan.id] = artisan.viewed_document_keys ?? [];
+        return carry;
+    }, {});
 
 export default function PendingArtisans({ artisans }) {
     const [viewingArtisan, setViewingArtisan] = useState(null);
     const [viewingDoc, setViewingDoc] = useState(null);
     const [rejectingArtisan, setRejectingArtisan] = useState(null);
-    const [approvingArtisan, setApprovingArtisan] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
     const [processing, setProcessing] = useState(false);
+    const [approvalError, setApprovalError] = useState('');
+    const [viewedDocumentsByArtisan, setViewedDocumentsByArtisan] = useState(() => buildViewedDocumentMap(artisans));
+
+    useEffect(() => {
+        setViewedDocumentsByArtisan(buildViewedDocumentMap(artisans));
+    }, [artisans]);
+
+    const getArtisanDocuments = (artisan) =>
+        ARTISAN_DOCUMENTS.map((document) => ({
+            ...document,
+            url: artisan?.[document.key] ?? null,
+            viewed: (viewedDocumentsByArtisan[artisan?.id] ?? []).includes(document.key),
+        }));
+
+    const openReviewModal = (artisan) => {
+        setViewingArtisan(artisan);
+        setViewingDoc(null);
+        setApprovalError('');
+    };
+
+    const openDocumentPreview = (doc) => {
+        if (!viewingArtisan || !doc.url) {
+            return;
+        }
+
+        setViewingDoc(doc);
+        setApprovalError('');
+
+        window.axios
+            .post(route('admin.artisan.documents.viewed', viewingArtisan.id), {
+                document: doc.key,
+            })
+            .then(({ data }) => {
+                const viewedDocumentKeys = data?.viewed_document_keys ?? [];
+
+                setViewedDocumentsByArtisan((previous) => ({
+                    ...previous,
+                    [viewingArtisan.id]: viewedDocumentKeys,
+                }));
+            })
+            .catch((error) => {
+                console.error('Failed to mark artisan document as viewed:', error);
+            });
+    };
+
+    const currentDocuments = useMemo(
+        () => (viewingArtisan ? getArtisanDocuments(viewingArtisan) : []),
+        [viewingArtisan, viewedDocumentsByArtisan],
+    );
+
+    const submittedDocuments = currentDocuments.filter((document) => document.url);
+    const viewedSubmittedCount = submittedDocuments.filter((document) => document.viewed).length;
+    const canApproveCurrentArtisan = submittedDocuments.every((document) => document.viewed);
 
     const confirmApprove = () => {
+        if (!viewingArtisan) {
+            return;
+        }
+
         setProcessing(true);
-        router.post(route('admin.artisan.approve', approvingArtisan.id), {}, {
-            onFinish: () => {
-                setProcessing(false);
-                setApprovingArtisan(null);
+        setApprovalError('');
+
+        router.post(route('admin.artisan.approve', viewingArtisan.id), {}, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setViewingDoc(null);
+                setViewingArtisan(null);
+                setRejectingArtisan(null);
+                setApprovalError('');
             },
             onError: (errors) => {
-                console.error('Approval failed:', errors);
-                alert('Approval failed. Check console for details.');
-            }
+                setApprovalError(errors.documents ?? 'Approval failed. Open every submitted document before approving this shop.');
+            },
+            onFinish: () => {
+                setProcessing(false);
+            },
         });
     };
 
     const rejectArtisan = () => {
-        if (rejectReason.length < 10) {
+        if (!rejectingArtisan || rejectReason.length < 10) {
             return;
         }
+
         setProcessing(true);
         router.post(route('admin.artisan.reject', rejectingArtisan.id), { reason: rejectReason }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setViewingDoc(null);
+                setViewingArtisan(null);
+            },
             onFinish: () => {
                 setProcessing(false);
                 setRejectingArtisan(null);
@@ -43,7 +127,7 @@ export default function PendingArtisans({ artisans }) {
             onError: (errors) => {
                 console.error('Rejection failed:', errors);
                 alert('Rejection failed. Check console for details.');
-            }
+            },
         });
     };
 
@@ -105,24 +189,10 @@ export default function PendingArtisans({ artisans }) {
 
                                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto mt-3 md:mt-0 pt-3 md:pt-0 border-t md:border-none border-stone-100">
                                     <button
-                                        onClick={() => setViewingArtisan(artisan)}
+                                        onClick={() => openReviewModal(artisan)}
                                         className="flex-1 md:flex-none px-4 py-2 bg-stone-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-stone-200 transition flex items-center justify-center gap-1.5"
                                     >
                                         <Eye size={16} /> Review
-                                    </button>
-                                    <button
-                                        onClick={() => setRejectingArtisan(artisan)}
-                                        disabled={processing}
-                                        className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-100 rounded-lg font-bold text-sm hover:bg-red-50 transition flex items-center justify-center gap-1.5"
-                                    >
-                                        <XCircle size={16} /> Reject
-                                    </button>
-                                    <button
-                                        onClick={() => setApprovingArtisan(artisan)}
-                                        disabled={processing}
-                                        className="flex-1 md:flex-none px-5 py-2 bg-green-600 text-white rounded-lg font-bold text-sm hover:bg-green-700 transition flex items-center justify-center gap-1.5 shadow-md shadow-green-200"
-                                    >
-                                        <CheckCircle size={16} /> Approve
                                     </button>
                                 </div>
                             </div>
@@ -130,39 +200,6 @@ export default function PendingArtisans({ artisans }) {
                     ))}
                 </div>
             )}
-
-            {/* Approve Confirmation Modal */}
-            <Modal show={!!approvingArtisan} onClose={() => setApprovingArtisan(null)} maxWidth="md">
-                {approvingArtisan && (
-                    <div className="p-6 sm:p-8 text-center">
-                        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <CheckCircle size={40} className="text-green-500" />
-                        </div>
-                        
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Approve Application?</h3>
-                        <p className="text-gray-500 mb-8">
-                            Are you sure you want to approve <span className="font-bold text-gray-900">{approvingArtisan.shop_name}</span>? 
-                            This will grant them full seller access.
-                        </p>
-
-                        <div className="flex flex-col-reverse sm:flex-row gap-3 justify-center">
-                            <button
-                                onClick={() => setApprovingArtisan(null)}
-                                className="px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmApprove}
-                                disabled={processing}
-                                className="px-8 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow-lg shadow-green-200 flex items-center gap-2"
-                            >
-                                {processing ? 'Approving...' : 'Yes, Approve'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
 
             {/* View Documents Modal */}
             <Modal show={!!viewingArtisan} onClose={() => !viewingDoc && setViewingArtisan(null)} maxWidth="2xl">
@@ -189,15 +226,10 @@ export default function PendingArtisans({ artisans }) {
                                 }
                             `}</style>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {[
-                                    { label: 'Business Permit', url: viewingArtisan.business_permit, icon: FileText },
-                                    { label: 'DTI Registration', url: viewingArtisan.dti_registration, icon: FileText },
-                                    { label: 'Valid ID', url: viewingArtisan.valid_id, icon: FileText },
-                                    { label: 'TIN ID', url: viewingArtisan.tin_id, icon: FileText },
-                                ].map(doc => (
+                                {currentDocuments.map(doc => (
                                     <div 
-                                        key={doc.label} 
-                                        onClick={() => doc.url && setViewingDoc(doc)}
+                                        key={doc.key}
+                                        onClick={() => openDocumentPreview(doc)}
                                         className={`bg-white border border-stone-200 rounded-2xl p-5 transition-all group relative overflow-hidden ${doc.url ? 'hover:border-clay-300 hover:shadow-lg cursor-pointer' : 'opacity-70'}`}
                                     >
                                         
@@ -208,19 +240,28 @@ export default function PendingArtisans({ artisans }) {
                                                 </div>
                                                 <div>
                                                     <span className="font-bold text-gray-800 block">{doc.label}</span>
-                                                    <span className="text-xs text-gray-400 font-medium">{doc.url ? 'Click to Preview' : 'Missing File'}</span>
+                                                    <span className="text-xs text-gray-400 font-medium">
+                                                        {doc.url ? (doc.viewed ? 'Viewed' : 'Click to Preview') : 'Missing File'}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            {doc.url && (
-                                                <a 
-                                                    href={doc.url} 
-                                                    download 
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="text-gray-400 hover:text-clay-600 transition p-2 hover:bg-stone-50 rounded-full"
-                                                >
-                                                    <Download size={18} />
-                                                </a>
-                                            )}
+                                            <div className="flex items-center gap-2">
+                                                {doc.viewed && (
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                                                        <CheckCircle size={10} /> Viewed
+                                                    </span>
+                                                )}
+                                                {doc.url && (
+                                                    <a 
+                                                        href={doc.url} 
+                                                        download 
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="text-gray-400 hover:text-clay-600 transition p-2 hover:bg-stone-50 rounded-full"
+                                                    >
+                                                        <Download size={18} />
+                                                    </a>
+                                                )}
+                                            </div>
                                         </div>
                                         
                                         {doc.url ? (
@@ -253,21 +294,36 @@ export default function PendingArtisans({ artisans }) {
                         </div>
 
                         <div className="bg-white px-4 sm:px-8 py-4 sm:py-5 border-t border-stone-100 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                             <div className="text-sm text-gray-500 font-medium">
-                                Reviewing <span className="text-gray-900 font-bold">{viewingArtisan.shop_name}</span>
+                             <div className="space-y-1">
+                                <div className="text-sm text-gray-500 font-medium">
+                                    Reviewing <span className="text-gray-900 font-bold">{viewingArtisan.shop_name}</span>
+                                </div>
+                                <div className="text-xs font-medium text-gray-500">
+                                    Viewed {viewedSubmittedCount} of {submittedDocuments.length} submitted documents
+                                </div>
+                                {approvalError && (
+                                    <p className="text-xs font-semibold text-red-600">{approvalError}</p>
+                                )}
+                                {!approvalError && !canApproveCurrentArtisan && (
+                                    <p className="text-xs font-semibold text-amber-700">Open every submitted document preview to enable approval.</p>
+                                )}
                              </div>
                              <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
                                 <button
-                                    onClick={() => { setViewingArtisan(null); setRejectingArtisan(viewingArtisan); }}
+                                    onClick={() => {
+                                        setApprovalError('');
+                                        setRejectingArtisan(viewingArtisan);
+                                    }}
                                     className="px-6 py-2.5 bg-white text-red-600 border border-gray-200 rounded-xl font-bold hover:bg-red-50 hover:border-red-200 transition text-sm flex items-center gap-2"
                                 >
                                     <XCircle size={16} /> Reject
                                 </button>
                                 <button
-                                    onClick={() => { setViewingArtisan(null); setApprovingArtisan(viewingArtisan); }}
-                                    className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow-lg shadow-green-200 text-sm flex items-center gap-2"
+                                    onClick={confirmApprove}
+                                    disabled={processing || !canApproveCurrentArtisan}
+                                    className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow-lg shadow-green-200 text-sm flex items-center gap-2 disabled:cursor-not-allowed disabled:bg-green-300 disabled:shadow-none"
                                 >
-                                    <CheckCircle size={16} /> Approve
+                                    <CheckCircle size={16} /> {processing ? 'Approving...' : 'Approve'}
                                 </button>
                              </div>
                         </div>

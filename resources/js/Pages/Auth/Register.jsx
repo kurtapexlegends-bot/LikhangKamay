@@ -20,6 +20,10 @@ export default function Register() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [legalModal, setLegalModal] = useState({ isOpen: false, type: 'terms' });
+    const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState({
+        terms: false,
+        privacy: false,
+    });
 
     useEffect(() => {
         return () => {
@@ -41,8 +45,13 @@ export default function Register() {
     };
 
     const handleLegalAccept = () => {
-        setData('terms', true);
+        setAcceptedLegalDocuments((previous) => ({
+            ...previous,
+            [legalModal.type]: true,
+        }));
     };
+
+    const canEnableTermsCheckbox = acceptedLegalDocuments.terms && acceptedLegalDocuments.privacy;
 
     return (
         <GuestLayout quote="Join the community of art lovers and clay enthusiasts.">
@@ -154,6 +163,7 @@ export default function Register() {
                         <Checkbox
                             name="terms"
                             checked={data.terms}
+                            disabled={!canEnableTermsCheckbox}
                             onChange={(e) => setData('terms', e.target.checked)}
                             className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
                         />
@@ -174,6 +184,11 @@ export default function Register() {
                             >
                                 Privacy Policy
                             </button>.
+                            {!canEnableTermsCheckbox && (
+                                <span className="mt-1 block text-xs font-medium text-stone-500">
+                                    Open both documents and scroll to the bottom of each one to enable this checkbox.
+                                </span>
+                            )}
                         </span>
                     </div>
                     <InputError message={errors.terms} className="mt-2" />
