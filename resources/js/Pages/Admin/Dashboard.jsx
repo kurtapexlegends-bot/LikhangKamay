@@ -71,7 +71,7 @@ export default function AdminDashboard({ stats, recentUsers }) {
 
     return (
         <AdminLayout title="Dashboard">
-            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Total Artisans"
                     metric={stats.totalArtisans}
@@ -107,11 +107,11 @@ export default function AdminDashboard({ stats, recentUsers }) {
             </div>
 
             {pendingCount > 0 && (
-                <div className="group relative mb-8 flex items-center justify-between overflow-hidden rounded-2xl border border-clay-100 bg-gradient-to-r from-clay-50 to-white p-8 shadow-sm">
+                <div className="group relative mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between overflow-hidden rounded-2xl border border-clay-100 bg-gradient-to-r from-clay-50 to-white p-5 sm:p-8 shadow-sm">
                     <div className="absolute right-0 top-0 -mr-4 -mt-4 h-24 w-24 rounded-full bg-clay-100 opacity-50 blur-xl transition-transform duration-700 group-hover:scale-150"></div>
 
-                    <div className="relative z-10 flex items-center gap-6">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-clay-100 bg-white shadow-sm">
+                    <div className="relative z-10 flex items-center gap-4 sm:gap-6">
+                        <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-clay-100 bg-white shadow-sm">
                             <AlertTriangle size={32} className="text-clay-600" />
                         </div>
                         <div>
@@ -128,7 +128,7 @@ export default function AdminDashboard({ stats, recentUsers }) {
                     </div>
                     <Link
                         href={route("admin.pending")}
-                        className="relative z-10 flex items-center gap-2 rounded-xl bg-clay-600 px-6 py-3 font-medium text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700"
+                        className="relative z-10 flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-clay-600 px-6 py-3 font-medium text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700"
                     >
                         Review Applications <ChevronRight size={18} />
                     </Link>
@@ -136,7 +136,7 @@ export default function AdminDashboard({ stats, recentUsers }) {
             )}
 
             <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b border-gray-50 px-6 py-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-50 px-4 sm:px-6 py-4 sm:py-5">
                     <h3 className="text-lg font-bold text-gray-900">
                         Recent Registrations
                     </h3>
@@ -148,7 +148,7 @@ export default function AdminDashboard({ stats, recentUsers }) {
                     </Link>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[760px]">
                         <thead className="bg-stone-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">

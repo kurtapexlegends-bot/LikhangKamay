@@ -93,11 +93,11 @@ export default function Checkout({ auth }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
             <Head title="Checkout" />
 
             <div className="max-w-6xl mx-auto">
-                <div className="flex items-center justify-between mb-8 group">
+                <div className="flex flex-col gap-3 mb-6 sm:mb-8 sm:flex-row sm:items-center sm:justify-between group">
                     <button 
                         onClick={() => window.history.back()} 
                         className="flex items-center gap-2 text-gray-400 hover:text-clay-600 transition-all duration-300"
@@ -114,14 +114,14 @@ export default function Checkout({ auth }) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 mb-8">
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
                     <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                         <img src="/images/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
-                        <h1 className="text-2xl font-serif font-bold text-gray-900">Secure Checkout</h1>
+                        <h1 className="text-xl sm:text-2xl font-serif font-bold text-gray-900">Secure Checkout</h1>
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                     
                     {/* LEFT COLUMN: FORMS */}
                     <div className="lg:col-span-2 space-y-6">
@@ -162,7 +162,7 @@ export default function Checkout({ auth }) {
 
 
                         {/* 1. Shipping Method */}
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
                             <div className="flex items-center gap-3 mb-4 text-clay-700">
                                 <Truck size={20} />
                                 <h2 className="text-lg font-bold">Shipping Method</h2>
@@ -208,7 +208,7 @@ export default function Checkout({ auth }) {
 
                         {/* 2. Shipping Address (Only for Delivery) */}
                         {data.shipping_method === 'Delivery' ? (
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-4">
+                            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-4">
                                 <div className="flex items-center gap-3 mb-4 text-clay-700">
                                     <MapPin size={20} />
                                     <h2 className="text-lg font-bold">Shipping Address</h2>
@@ -281,7 +281,7 @@ export default function Checkout({ auth }) {
                             </div>
                         ) : (
                             /* Store Pick Up Info */
-                            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 animate-in fade-in slide-in-from-top-4">
+                            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 sm:p-6 animate-in fade-in slide-in-from-top-4">
                                 <div className="flex items-start gap-4">
                                     <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
                                         <Store size={24} />
@@ -291,7 +291,7 @@ export default function Checkout({ auth }) {
                                         <p className="text-blue-800 text-sm mt-1">
                                             You don't need to provide a shipping address. You will coordinate with the seller(s) via chat to pick up your order at their location.
                                         </p>
-                                        <div className="mt-3 flex gap-2">
+                                        <div className="mt-3 flex flex-wrap gap-2">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                 No Shipping Fee
                                             </span>
@@ -307,7 +307,7 @@ export default function Checkout({ auth }) {
 
 
                         {/* 2. Shipping Notes (Optional) */}
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
                             <div className="flex items-center gap-3 mb-4 text-clay-700">
                                 <Truck size={20} />
                                 <h2 className="text-lg font-bold">Shipping Preferences</h2>
@@ -327,7 +327,7 @@ export default function Checkout({ auth }) {
                         </div>
 
                         {/* 3. Payment Method */}
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
                             <div className="flex items-center gap-3 mb-4 text-clay-700">
                                 <CreditCard size={20} />
                                 <h2 className="text-lg font-bold">Payment Method</h2>
@@ -378,7 +378,7 @@ export default function Checkout({ auth }) {
 
                     {/* RIGHT COLUMN: ORDER SUMMARY */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-lg sticky top-24">
+                        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-lg lg:sticky lg:top-24">
                             <h3 className="text-lg font-bold text-gray-900 mb-6">Order Summary</h3>
 
                             {/* Items grouped by seller */}
@@ -472,8 +472,8 @@ export default function Checkout({ auth }) {
             </div>
             
             {/* --- TOAST NOTIFICATION --- */}
-            <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
+            <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
                     <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                         {toastType === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}
                     </div>

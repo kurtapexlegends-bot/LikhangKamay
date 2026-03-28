@@ -16,16 +16,16 @@ import { Menu, ChevronDown, User, LogOut, Building2 } from 'lucide-react';
  */
 export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge }) {
     return (
-        <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-            <div className="flex items-center gap-3">
+        <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40">
+            <div className="flex min-w-0 items-center gap-3">
                 <button
                     onClick={onMenuClick}
                     className="lg:hidden text-gray-500 hover:text-clay-600"
                 >
                     <Menu size={24} />
                 </button>
-                <div>
-                    <div className="flex items-center gap-2">
+                <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                         <h1 className="text-xl font-bold text-gray-900">{title}</h1>
                         {badge && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
@@ -42,11 +42,11 @@ export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge
             </div>
 
                         
-            <div className="flex items-center gap-6">
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-6">
                 <div className="flex items-center gap-3">
                     <NotificationDropdown />
                 </div>
-                <div className="h-8 w-px bg-gray-200"></div>
+                <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                 {/* Profile Dropdown */}
                 <div className="relative">
@@ -55,9 +55,9 @@ export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge
                             <span className="inline-flex rounded-md">
                                 <button
                                     type="button"
-                                    className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                    className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                 >
-                                    <WorkspaceAccountSummary user={auth.user} />
+                                    <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                     <UserAvatar user={auth.user} />
                                     <ChevronDown size={16} className="text-gray-400" />
                                 </button>

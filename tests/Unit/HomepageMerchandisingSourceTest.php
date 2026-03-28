@@ -32,7 +32,9 @@ class HomepageMerchandisingSourceTest extends TestCase
         $source = file_get_contents(base_path('resources/js/Pages/Welcome.jsx'));
 
         $this->assertNotFalse($source);
-        $this->assertStringContainsString('md:col-span-2 md:row-span-2', $source);
         $this->assertStringContainsString('Sponsored Collection', $source);
+        $this->assertStringContainsString('order-1 relative overflow-hidden rounded-2xl', $source);
+        $this->assertStringContainsString('bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30', $source);
+        $this->assertStringContainsString("data-sponsored-placement={sponsoredPlacement}", $source);
     }
 }

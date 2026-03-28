@@ -161,29 +161,31 @@ export default function Reviews({ auth, reviews, stats, flash }) {
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 
                 {/* --- HEADER --- */}
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
+                    <div className="flex min-w-0 items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
-                        <div>
-                            <h1 className="text-xl font-bold text-gray-900">Customer Ratings</h1>
+                        <div className="min-w-0">
+                            <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Customer Ratings</h1>
                             <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Shop quality feedback & reviews</p>
                         </div>
                     </div>
 
                                         
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-6">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <NotificationDropdown />
                         </div>
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <div className="hidden lg:block">
+                                                <WorkspaceAccountSummary user={auth.user} />
+                                            </div>
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -202,11 +204,11 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     </div>
                 </header>
 
-                <main className="flex-1 p-6 overflow-y-auto space-y-6">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                     
                     {/* Stats Overview */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
+                        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Shop Rating</h3>
                             <h1 className="text-5xl font-black text-gray-900 mb-3">{stats.average ? stats.average.toFixed(1) : '0.0'}</h1>
                             <div className="flex items-center gap-0.5 mb-1.5">
@@ -221,7 +223,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             <p className="text-xs text-gray-500 font-medium">Based on {stats.total || 0} reviews</p>
                         </div>
 
-                        <div className="md:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
+                        <div className="md:col-span-2 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
                             <h3 className="text-base font-bold text-gray-900 mb-4">Rating Distribution</h3>
                             <div className="space-y-3">
                                 {[5, 4, 3, 2, 1].map((star) => {

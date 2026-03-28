@@ -477,8 +477,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 
                 {/* --- HEADER (Standardized) --- */}
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40">
+                    <div className="flex items-center gap-3 min-w-0">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
@@ -494,9 +494,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
 
                                         
-                    <div className="flex items-center gap-6">
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-6">
                         {/* Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                             <button 
                                 onClick={() => setIsSettingsOpen(true)}
                                 className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-200 transition transform active:scale-95"
@@ -520,15 +520,15 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
 
                         {/* Divider */}
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                         {/* Profile Dropdown (Fixed Layout) */}
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -548,7 +548,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
                 </header>
 
-                <main className="p-6 space-y-6">
+                <main className="p-4 sm:p-6 space-y-6">
 
 
                     {/* KPI CARDS */}
@@ -594,7 +594,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                         {/* Table Body */}
                         <div className="overflow-x-auto flex-1">
-                            <table className="w-full text-left">
+                            <table className="w-full min-w-[860px] text-left">
                                 <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>
                                         <th className="px-5 py-3">Employee Name</th>
@@ -613,7 +613,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                             return (
                                             <tr key={emp.id} className="hover:bg-gray-50/50 transition duration-150">
                                                 <td className="px-5 py-3">
-                                                    <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-3 min-w-0">
                                                         {emp.has_login_account ? (
                                                             <UserAvatar
                                                                 user={{
@@ -724,7 +724,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             <h3 className="font-bold text-gray-900 text-base">Payroll Requests History</h3>
                         </div>
                         <div className="overflow-x-auto flex-1">
-                            <table className="w-full text-left">
+                            <table className="w-full min-w-[860px] text-left">
                                 <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>
                                         <th className="px-5 py-3">Date</th>
@@ -821,7 +821,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
             {/* ADD EMPLOYEE MODAL */}
             <Modal show={isModalOpen} onClose={closeAddModal} maxWidth="2xl">
-                <form onSubmit={submit} className="p-6 max-h-[85vh] overflow-y-auto">
+                <form onSubmit={submit} className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">Add New Staff</h2>
@@ -1054,7 +1054,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         )}
                     </div>
 
-                    <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
                         <button type="button" onClick={closeAddModal} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
                         <button type="submit" disabled={processing} className="px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition">
                             {data.create_login_account ? 'Save Employee & Login' : 'Save Employee'}
@@ -1064,7 +1064,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             </Modal>
 
             <Modal show={isEditModalOpen} onClose={closeEditModal} maxWidth="lg">
-                <form onSubmit={submitEdit} className="p-6 max-h-[85vh] overflow-y-auto">
+                <form onSubmit={submitEdit} className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
                     <div className="mb-6 flex items-center justify-between">
                         <div>
                             <div className="flex flex-wrap items-center gap-2">
@@ -1463,7 +1463,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
                     </div>
 
-                    <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
                         <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
                         <button type="submit" disabled={payrollProcessing || payrollData.items.filter(i => i.isSelected).length === 0} className="disabled:opacity-50 px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
                             Request Pay
@@ -1503,7 +1503,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
                     </div>
 
-                    <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
                         <button type="button" onClick={() => setIsSettingsOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
                         <button type="submit" disabled={settingsProcessing} className="px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
                             Save Settings

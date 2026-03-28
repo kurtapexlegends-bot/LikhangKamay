@@ -64,7 +64,7 @@ export default function Login({ status, canResetPassword }) {
                             autoComplete="username"
                             isFocused={true}
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="you@example.com"
+                            placeholder="@example.com"
                         />
                         <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-500 transition-colors duration-300" />
                     </div>

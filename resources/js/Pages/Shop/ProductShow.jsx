@@ -108,7 +108,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             <div className="max-w-6xl mx-auto px-4 py-4">
                 
                 {/* Breadcrumb - Compact */}
-                <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
+                <nav className="flex flex-wrap items-center gap-1.5 text-xs text-gray-400 mb-4">
                     <Link href="/" className="hover:text-clay-600">Home</Link>
                     <ChevronRight size={12} />
                     <Link href={route('shop.index')} className="hover:text-clay-600">Shop</Link>
@@ -224,7 +224,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         </div>
 
                         {/* ========== RIGHT: PRODUCT INFO ========== */}
-                        <div className="lg:col-span-7 p-5">
+                        <div className="lg:col-span-7 p-4 sm:p-5">
                             
                             {/* Title */}
                             <h1 className="text-xl font-bold text-gray-900 leading-tight mb-1.5">
@@ -232,10 +232,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             </h1>
 
                             {/* Rating & Sold */}
-                            <div className="flex items-center gap-2.5 text-xs mb-3">
+                            <div className="flex flex-wrap items-center gap-2.5 text-xs mb-3">
                                 <div className="flex items-center gap-1">
                                     <span className="text-clay-600 font-bold underline">{productRating}</span>
-                                    <div className="flex">
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
                                         {[1,2,3,4,5].map(s => (
                                             <Star key={s} size={10} className={s <= Math.round(productRating) ? 'fill-clay-600 text-clay-600' : 'text-gray-300'} />
                                         ))}
@@ -253,7 +253,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
                             {/* Price Box */}
                             <div className="bg-clay-50/50 px-4 py-3 rounded-xl mb-4 border border-clay-100">
-                                <span className="text-2xl font-bold text-clay-700">
+                                <span className="text-xl sm:text-2xl font-bold text-clay-700">
                                     ₱{Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
@@ -262,31 +262,31 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <div className="space-y-2 mb-4 text-xs">
                                 {product.clay_type && (
                                     <div className="flex">
-                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Material</span>
+                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Material</span>
                                         <span className="text-gray-700 font-medium">{product.clay_type}</span>
                                     </div>
                                 )}
                                 {product.glaze_type && (
-                                    <div className="flex">
-                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Finish</span>
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
+                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Finish</span>
                                         <span className="text-gray-700 font-medium">{product.glaze_type}</span>
                                     </div>
                                 )}
                                 {(product.height > 0 || product.width > 0) && (
-                                    <div className="flex">
-                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Dimensions</span>
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
+                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Dimensions</span>
                                         <span className="text-gray-700 font-medium">{product.height || 0}"H × {product.width || 0}"W</span>
                                     </div>
                                 )}
                                 {product.firing_method && (
-                                    <div className="flex">
-                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Firing</span>
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
+                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Firing</span>
                                         <span className="text-gray-700 font-medium">{product.firing_method}</span>
                                     </div>
                                 )}
                                 {product.food_safe && (
-                                    <div className="flex">
-                                        <span className="w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Food Safe</span>
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
+                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Food Safe</span>
                                         <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-full text-[10px]">
                                             <Check size={10} /> Yes
                                         </span>
@@ -295,9 +295,9 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             </div>
 
                             {/* Quantity */}
-                            <div className="flex items-center gap-3 mb-5">
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide w-24 flex-shrink-0">Quantity</span>
-                                <div className="flex items-center">
+                            <div className="flex flex-col items-start gap-2 mb-5 sm:flex-row sm:items-center sm:gap-3">
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide w-full sm:w-24 flex-shrink-0">Quantity</span>
+                                <div className="flex flex-wrap items-center gap-y-2">
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                                         className="w-8 h-8 border border-gray-200 rounded-l-lg flex items-center justify-center hover:bg-gray-50 transition"
@@ -318,7 +318,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex gap-3 mb-6">
+                            <div className="flex flex-col sm:flex-row gap-3 mb-6">
                                 <button
                                     onClick={addToCart}
                                     disabled={product.stock === 0 || isAddingToCart}
@@ -392,7 +392,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex gap-2 w-full mt-3">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full mt-3">
                             <button className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1.5">
                                 <MessageCircle size={14} />
                                 Chat
@@ -419,7 +419,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
                 {/* ========== REVIEWS ========== */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mt-4 p-5">
-                    <h2 className="text-base font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100 flex items-center justify-between">
+                    <h2 className="text-base font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span>Product Ratings ({product.reviews?.length || 0})</span>
                         <div className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg">
                             <span className="text-xl font-bold text-clay-600">{productRating}</span>

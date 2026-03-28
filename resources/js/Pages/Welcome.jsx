@@ -1,8 +1,8 @@
 import React from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import {
-    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, Crown, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter, Sparkles
+    Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { hasRating, formatRating } from '@/utils/rating';
@@ -21,8 +21,6 @@ const CATEGORY_ICONS = {
 };
 
 export default function Welcome({ featuredProducts = [], sponsoredProducts = [], topSellers = [], categories = [] }) {
-    const { auth, cartCount } = usePage().props;
-    const user = auth?.user;
     const sponsoredPlacement = 'home_sponsored';
 
     useSponsoredImpressionTracking(sponsoredProducts, sponsoredPlacement);

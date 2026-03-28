@@ -106,31 +106,31 @@ export default function Analytics({
             <SellerSidebar active="analytics" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
+                    <div className="flex min-w-0 items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
-                        <div>
+                        <div className="min-w-0">
                             <h1 className="text-xl font-bold text-gray-900">Analytics</h1>
                             <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Financial performance & insights</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3">
+                    <div className="flex w-auto shrink-0 items-center gap-2 sm:gap-6">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             {sellerSubscription?.canExportAnalytics ? (
                                 <a
                                     href={route('analytics.export')}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 text-gray-600 transition shadow-sm"
+                                    className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 text-gray-600 transition shadow-sm"
                                 >
                                     <DollarSign size={16} />
                                     <span>Download Report</span>
                                 </a>
                             ) : (
-                                <div className="flex items-center gap-2 px-4 py-2 bg-stone-100 border border-stone-200 rounded-xl text-[11px] font-bold text-stone-500 shadow-sm">
+                                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-stone-100 border border-stone-200 rounded-xl text-[11px] font-bold text-stone-500 shadow-sm">
                                     <DollarSign size={15} />
                                     <span>Premium Export</span>
                                 </div>
@@ -139,14 +139,14 @@ export default function Analytics({
                             <NotificationDropdown />
                         </div>
 
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -166,8 +166,8 @@ export default function Analytics({
                     </div>
                 </header>
 
-                <main className="flex-1 p-6 overflow-y-auto space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                         <MetricCard title="Total Revenue" value={formatPeso(metrics.total_revenue)} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-blue-100" text="text-blue-600" />
                         <MetricCard title="Gross Profit" value={formatPeso(metrics.gross_profit)} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-green-100" text="text-green-600" />
                         <MetricCard title="Total Orders" value={Number(metrics.total_orders).toLocaleString()} growth={metrics.growth.orders} icon={ShoppingBag} bg="bg-purple-100" text="text-purple-600" />
@@ -175,20 +175,20 @@ export default function Analytics({
                         <MetricCard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-yellow-100" text="text-yellow-500" />
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <select value={catFilter} onChange={(e) => updateCategoryFilter(e.target.value)} className="bg-white border border-gray-200 text-gray-700 text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg focus:ring-clay-500 focus:border-clay-500 cursor-pointer">
                             <option value="All Categories">All Categories</option>
                             {categories.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
                         </select>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <div className="flex justify-between items-center mb-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">Revenue Analytics</h3>
                                     <p className="text-sm text-gray-500">Income over time</p>
                                 </div>
-                                <div className="flex bg-gray-100 p-1 rounded-lg">
+                                <div className="flex w-full sm:w-auto overflow-x-auto bg-gray-100 p-1 rounded-lg">
                                     {['Monthly', 'Yearly'].map((filter) => (
                                         <button
                                             key={filter}
@@ -229,8 +229,8 @@ export default function Analytics({
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-                            <div className="flex justify-between items-center mb-4">
+                        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center mb-4">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">Sales by Category</h3>
                                     <p className="text-sm text-gray-500">Total items sold</p>

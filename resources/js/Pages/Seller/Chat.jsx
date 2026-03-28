@@ -189,7 +189,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                 
                 {/* --- HEADER --- */}
                 {/* --- HEADER --- */}
-                <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-50 sticky top-0">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 shrink-0 z-50 sticky top-0">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
@@ -214,22 +214,22 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                     </div>
 
                                         
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3 sm:gap-6">
                         {/* 1. Actions */}
                         <div className="flex items-center gap-3">
                             <NotificationDropdown />
                         </div>
 
                         {/* Divider */}
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                         {/* 2. Profile Dropdown */}
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -322,8 +322,8 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                         {currentChatUser ? (
                             <>
                                 {/* Chat Header */}
-                                <div className="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white/90 backdrop-blur-md shrink-0 sticky top-0 z-20">
-                                    <div className="flex items-center gap-4">
+                                <div className="border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 bg-white/90 backdrop-blur-md shrink-0 sticky top-0 z-20">
+                                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                                         <button 
                                             onClick={() => setShowMobileList(true)}
                                             className="sm:hidden p-2 -ml-2 text-gray-400 hover:text-gray-600"
@@ -336,8 +336,8 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
                                             )}
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-sm text-gray-900">{currentChatUser.name}</h3>
+                                        <div className="min-w-0">
+                                            <h3 className="font-bold text-sm text-gray-900 truncate">{currentChatUser.name}</h3>
                                             <p className={`text-[10px] font-medium flex items-center gap-1.5 ${
                                                 currentChatUser.is_online ? 'text-green-600' : 'text-gray-400'
                                             }`}>
@@ -348,10 +348,10 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex shrink-0 items-center gap-1">
                                         <Link 
                                             href={route('orders.index')}
-                                            className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition border border-gray-100 bg-white"
+                                            className="flex items-center gap-2 px-2.5 py-2 sm:px-3 text-gray-500 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition border border-gray-100 bg-white"
                                             title="View Orders"
                                         >
                                             <ShoppingBag size={18} />
@@ -481,7 +481,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                 </div>
 
                                 {/* Input Area */}
-                                <div className="p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 shrink-0 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
+                                <div className="p-3 sm:p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 shrink-0 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
                                     <div className="max-w-4xl mx-auto flex flex-col">
                                     <SellerOrderActionBar
                                         order={currentOrderContext}
@@ -491,7 +491,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
                                     {/* Emoji Picker Popover */}
                                     {showEmojiPicker && (
-                                        <div ref={emojiPickerRef} className="absolute bottom-full right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
+                                        <div ref={emojiPickerRef} className="absolute bottom-full right-3 sm:right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
                                             <EmojiPicker 
                                                 onEmojiClick={onEmojiClick}
                                                 autoFocusSearch={false}
@@ -633,7 +633,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                     {showInfoPanel && currentChatUser && (
                         <div className="w-full sm:w-80 border-l border-gray-100 bg-gray-50 flex flex-col absolute right-0 top-0 bottom-0 z-20 shadow-2xl sm:relative sm:shadow-none animate-in slide-in-from-right-10">
                             {/* --- HEADER --- */}
-                            <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-20 sticky top-0">
+                            <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 py-3 shrink-0 z-20 sticky top-0">
                                 <h3 className="font-bold text-gray-900">Customer Info</h3>
                                 <button 
                                     onClick={() => setShowInfoPanel(false)}
@@ -644,7 +644,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                             </header>
                             
                             {/* Panel Content */}
-                            <div className="flex-1 overflow-y-auto p-6">
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                                 {/* User Profile Summary */}
                                 <div className="flex flex-col items-center text-center mb-8">
                                     <div className="relative mb-4 flex justify-center">

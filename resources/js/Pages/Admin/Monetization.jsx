@@ -65,7 +65,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
     return (
         <AdminLayout title="Monetization">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 <StatCard
                     title="Projected Plan MRR"
                     metric={metrics.mrr}
@@ -102,11 +102,11 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
 
             {/* Quick Actions (Pending Sponsorships) */}
             {metrics.pendingSponsorships > 0 && (
-                <div className="bg-gradient-to-r from-amber-50 to-white border border-amber-100 rounded-2xl p-6 mb-8 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                <div className="bg-gradient-to-r from-amber-50 to-white border border-amber-100 rounded-2xl p-5 sm:p-6 mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-amber-100 rounded-full opacity-50 blur-xl group-hover:scale-150 transition-transform duration-700"></div>
 
-                    <div className="flex items-center gap-6 relative z-10">
-                        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-amber-100">
+                    <div className="flex items-center gap-4 sm:gap-6 relative z-10">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-amber-100">
                             <Clock
                                 size={28}
                                 className="text-amber-500"
@@ -123,17 +123,17 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                     </div>
                     <Link
                         href={route("admin.sponsorships")}
-                        className="relative z-10 flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition shadow-lg shadow-amber-200"
+                        className="relative z-10 flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition shadow-lg shadow-amber-200"
                     >
                         Review Requests <ChevronRight size={16} />
                     </Link>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                 {/* Recent Plan Changes */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                    <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+                    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <h3 className="font-bold text-gray-900 text-lg">
                             Recent Plan Changes
                         </h3>
@@ -145,7 +145,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full">
+                        <table className="w-full min-w-[720px]">
                             <thead className="bg-stone-50">
                                 <tr>
                                     <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -207,7 +207,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
 
                 {/* Recent Sponsorships */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                    <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+                    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <h3 className="font-bold text-gray-900 text-lg">
                             Recent Sponsorships
                         </h3>
@@ -219,7 +219,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full">
+                        <table className="w-full min-w-[720px]">
                             <thead className="bg-stone-50">
                                 <tr>
                                     <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">

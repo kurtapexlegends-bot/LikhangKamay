@@ -422,41 +422,43 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 
                 {/* --- HEADER (UPDATED TO CLASSIC STYLE) --- */}
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
+                    <div className="flex min-w-0 items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
-                        <div>
-                            <h1 className="text-xl font-bold text-gray-900">Products</h1>
+                        <div className="min-w-0">
+                            <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Products</h1>
                             <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage your inventory</p>
                         </div>
                     </div>
 
                                         
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 sm:gap-6">
                         {/* 1. Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <button 
                                 onClick={openAddModal} 
-                                className="flex items-center gap-2 bg-clay-600 hover:bg-clay-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-clay-500/20 transition-all hover:scale-105 active:scale-95"
+                                className="flex items-center gap-2 bg-clay-600 hover:bg-clay-700 text-white px-3 sm:px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-clay-500/20 transition-all hover:scale-105 active:scale-95"
                             >
-                                <Plus size={16} /><span>Add Product</span>
+                                <Plus size={16} /><span className="hidden sm:inline">Add Product</span>
                             </button>
 
                             <NotificationDropdown />
                         </div>
 
                         {/* Divider */}
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                         {/* 2. Profile Dropdown */}
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <div className="hidden lg:block">
+                                                <WorkspaceAccountSummary user={auth.user} />
+                                            </div>
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -475,9 +477,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     </div>
                 </header>
 
-                <main className="flex-1 p-6 overflow-y-auto space-y-6">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                     {/* METRICS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                         <KPICard title="Total Products" value={products.length} icon={Package} color="text-blue-600" bg="bg-blue-50" />
                         <KPICard title="Total Sold Units" value={products.reduce((acc, curr) => acc + (parseInt(curr.sold) || 0), 0)} icon={TrendingUp} color="text-green-600" bg="bg-green-50" />
                         <KPICard title="Low Stock Alerts" value={products.filter(p => p.stock < 10).length} icon={AlertCircle} color="text-red-600" bg="bg-red-50" />
@@ -486,7 +488,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     {/* TABLE AREA */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col min-h-[500px]">
                         <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4">
-                            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg w-fit">
+                            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg w-full overflow-x-auto sm:w-fit">
                                 {['All', 'Active', 'Draft', 'Archived', 'Low Stock'].map((tab) => (
                                     <button
                                         key={tab}
@@ -506,7 +508,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
                         {/* --- DESKTOP TABLE --- */}
                         <div className="overflow-x-auto hidden md:block">
-                            <table className="w-full text-left">
+                            <table className="w-full min-w-[900px] text-left">
                                 <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>
                                         <SortableHeader label="Product" sortKey="name" currentSort={sortConfig} onSort={requestSort} />
@@ -629,7 +631,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
             {/* --- DEDUCTION MODAL (Phase 1) --- */}
             <Modal show={deductModalOpen} onClose={() => setDeductModalOpen(false)} maxWidth="sm">
-                <form onSubmit={handleDeduct} className="p-6">
+                <form onSubmit={handleDeduct} className="p-5 sm:p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-gray-900">Update Stock (Deduct)</h2>
                         <button type="button" onClick={() => setDeductModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -681,7 +683,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
             {/* --- ADD/EDIT MODAL --- */}
             <Modal show={productModalOpen} onClose={() => setProductModalOpen(false)} maxWidth="2xl">
-                <form onSubmit={submitProduct} className="p-6 max-h-[85vh] overflow-y-auto">
+                <form onSubmit={submitProduct} className="p-5 sm:p-6 max-h-[82dvh] sm:max-h-[85vh] overflow-y-auto">
                     
                     {/* --- TABBED FORM HEADER --- */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-100 pb-4">
@@ -1050,14 +1052,14 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             
             {/* RESTOCK & ARCHIVE MODALS */}
             <Modal show={restockModalOpen} onClose={() => setRestockModalOpen(false)} maxWidth="sm">
-                <div className="p-6">
+                <div className="p-5 sm:p-6">
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Restock {selectedProduct?.name}</h2>
                     <div className="mb-6"><InputLabel value="Quantity to Add" /><TextInput type="number" className="w-full mt-1" value={restockAmount} onChange={(e) => setRestockAmount(e.target.value)} autoFocus /></div>
                     <div className="flex justify-end gap-3"><button onClick={() => setRestockModalOpen(false)} className="text-gray-500 font-bold text-sm">Cancel</button><PrimaryButton onClick={confirmRestock}>Confirm</PrimaryButton></div>
                 </div>
             </Modal>
             <Modal show={archiveModalOpen} onClose={() => setArchiveModalOpen(false)} maxWidth="sm">
-                <div className="p-6 text-center">
+                <div className="p-5 sm:p-6 text-center">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${selectedProduct?.status === 'Archived' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
                         {selectedProduct?.status === 'Archived' ? <RotateCcw size={24} /> : <Archive size={24} />}
                     </div>
@@ -1083,7 +1085,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
             {/* LIMIT INTERCEPT MODAL */}
             <Modal show={limitModalOpen} onClose={() => setLimitModalOpen(false)} maxWidth="sm">
-                <div className="p-6 text-center">
+                <div className="p-5 sm:p-6 text-center">
                     <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-amber-50 shadow-sm relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-tr from-amber-200 to-transparent opacity-50"></div>
                         <Crown size={28} className="text-amber-500 relative z-10" />

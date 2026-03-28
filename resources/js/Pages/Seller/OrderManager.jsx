@@ -299,8 +299,8 @@ export default function OrderManager({ auth, orders = [] }) {
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 
                 {/* --- HEADER --- */}
-                <header className="h-20 bg-white/90 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40 shadow-sm">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/90 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40 shadow-sm">
+                    <div className="flex items-center gap-3 min-w-0">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
@@ -311,9 +311,9 @@ export default function OrderManager({ auth, orders = [] }) {
                     </div>
 
                                         
-                    <div className="flex items-center gap-6">
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-6">
                         {/* 1. Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                             <a 
                                 href={route('orders.export')} 
                                 target="_blank"
@@ -327,15 +327,15 @@ export default function OrderManager({ auth, orders = [] }) {
                         </div>
 
                         {/* Divider */}
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                         {/* 2. Profile Dropdown */}
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -354,7 +354,7 @@ export default function OrderManager({ auth, orders = [] }) {
                     </div>
                 </header>
 
-                <main className="flex-1 p-6 overflow-y-auto space-y-6">
+                <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
                     
                     {/* 1. KPI CARDS */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -405,7 +405,7 @@ export default function OrderManager({ auth, orders = [] }) {
                         </div>
 
                         {/* Filters & Search */}
-                        <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex flex-col md:flex-row gap-3 items-center">
+                        <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex flex-col gap-3 items-stretch md:flex-row md:items-center">
                             <div className="relative w-full md:w-80">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                 <input 
@@ -416,9 +416,9 @@ export default function OrderManager({ auth, orders = [] }) {
                                     className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-clay-200 focus:border-clay-500 transition-all shadow-sm" 
                                 />
                             </div>
-                            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-clay-200 focus-within:border-clay-500 transition-all shadow-sm w-full md:w-auto">
+                            <div className="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-clay-200 focus-within:border-clay-500 transition-all shadow-sm w-full md:w-auto">
                                 <Calendar className="text-gray-400" size={14} />
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     <input 
                                         type="date" 
                                         value={dateRange.start}
@@ -449,16 +449,16 @@ export default function OrderManager({ auth, orders = [] }) {
                         <div className="divide-y divide-gray-100">
                             {paginatedOrders.length > 0 ? (
                                 paginatedOrders.map((order) => (
-                                    <div key={order.id} className="p-5 hover:bg-gray-50/50 transition-all group">
+                                    <div key={order.id} className="p-4 sm:p-5 hover:bg-gray-50/50 transition-all group">
                                         
                                         {/* Order Header */}
                                         <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 min-w-0">
                                                 <div>
                                                     <span className="text-[10px] text-gray-400 uppercase tracking-wide">Order</span>
                                                     <h3 className="font-bold text-gray-900 text-sm">{order.id}</h3>
                                                 </div>
-                                                <div className="h-8 w-px bg-gray-200" />
+                                                <div className="hidden sm:block h-8 w-px bg-gray-200" />
                                                 <div className="flex items-center gap-1.5 text-gray-500">
                                                     <Clock size={12} />
                                                     <span className="text-xs font-medium">{order.date}</span>
@@ -468,7 +468,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     <span className="text-xs font-bold">{order.customer}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 <PaymentStatusBadge status={order.payment_status} method={order.payment_method} />
                                                 <StatusBadge status={order.status} />
                                             </div>
@@ -516,7 +516,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                             {/* Items */}
                                             <div className="flex-1 space-y-3">
                                                 {order.items.map((item, idx) => (
-                                                    <div key={idx} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                    <div key={idx} className="flex flex-col gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 sm:flex-row sm:items-center sm:gap-4">
                                                         <div className="w-14 h-14 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden shrink-0">
                                                             <img 
                                                                 src={item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`} 
@@ -535,8 +535,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                             </div>
 
                                             {/* Action Panel */}
-                                            <div className="lg:w-72 lg:pl-6 lg:border-l border-gray-100">
-                                                <div className="text-right mb-4">
+                                            <div className="border-t border-gray-100 pt-4 lg:w-72 lg:pt-0 lg:pl-6 lg:border-l lg:border-t-0">
+                                                <div className="text-left lg:text-right mb-4">
                                                     <p className="text-xs text-gray-400 font-medium">Total Amount</p>
                                                     <p className="text-2xl font-bold text-clay-700">₱{order.total}</p>
                                                 </div>
@@ -882,8 +882,8 @@ export default function OrderManager({ auth, orders = [] }) {
             </Modal>
 
             {/* --- TOAST NOTIFICATION --- */}
-            <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
+            <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
                     <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                         {toastType === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}
                     </div>

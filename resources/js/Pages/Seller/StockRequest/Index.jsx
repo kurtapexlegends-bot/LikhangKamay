@@ -170,14 +170,14 @@ export default function StockRequestIndex({ auth, requests }) {
             <SellerSidebar active="stock-requests" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
+                    <div className="flex min-w-0 items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-xl font-bold text-gray-900">Stock Requests</h1>
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Stock Requests</h1>
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
                                     <Building2 size={10} className="text-clay-400" /> Enterprise
                                 </span>
@@ -187,17 +187,19 @@ export default function StockRequestIndex({ auth, requests }) {
                     </div>
 
                                         
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 sm:gap-6">
                         <div className="flex items-center gap-3">
                             <NotificationDropdown />
                         </div>
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <div className="hidden lg:block">
+                                                <WorkspaceAccountSummary user={auth.user} />
+                                            </div>
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -217,9 +219,9 @@ export default function StockRequestIndex({ auth, requests }) {
                     </div>
                 </header>
 
-                <main className="p-6 space-y-4">
+                <main className="p-4 sm:p-6 space-y-4">
                     {/* KPI SUMMARY CARDS */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         {kpiCards.map((card, i) => (
                             <div key={i} className={`${card.bg} border ${card.border} rounded-2xl p-3 transition-all duration-200 hover:shadow-sm`}>
                                 <div className="flex items-center justify-between mb-1.5">
@@ -235,7 +237,8 @@ export default function StockRequestIndex({ auth, requests }) {
 
                     {/* STATUS TABS */}
                     <div className="bg-white rounded-2xl border border-stone-200 shadow-sm">
-                        <div className="flex flex-wrap gap-1 p-1.5 border-b border-gray-100">
+                        <div className="overflow-x-auto border-b border-gray-100">
+                            <div className="flex min-w-max gap-1 p-1.5">
                             {STATUS_TABS.map(tab => {
                                 const count = getCount(tab.id);
                                 const isActive = activeTab === tab.id;
@@ -262,11 +265,12 @@ export default function StockRequestIndex({ auth, requests }) {
                                     </button>
                                 );
                             })}
+                            </div>
                         </div>
 
                         {/* TABLE */}
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
+                            <table className="w-full min-w-[980px] text-left">
                                 <thead>
                                     <tr className="border-b border-gray-100">
                                         <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Request ID</th>
@@ -393,7 +397,7 @@ export default function StockRequestIndex({ auth, requests }) {
 
                 {/* RECEIVE MODAL */}
                 <Modal show={receiveModal.open} onClose={() => setReceiveModal({ open: false, id: null, max: null })}>
-                    <form onSubmit={submitReceive} className="p-5">
+                    <form onSubmit={submitReceive} className="p-5 sm:p-6">
                         <div className="w-10 h-10 bg-[#F8EEE6] text-clay-700 rounded-lg flex items-center justify-center mb-3 border border-[#E7D8C9]">
                             <Package size={20} />
                         </div>
@@ -413,7 +417,7 @@ export default function StockRequestIndex({ auth, requests }) {
 
                 {/* TRANSFER MODAL */}
                 <Modal show={transferModal.open} onClose={() => setTransferModal({ open: false, id: null, max: null })}>
-                    <form onSubmit={submitTransfer} className="p-5">
+                    <form onSubmit={submitTransfer} className="p-5 sm:p-6">
                         <div className="w-10 h-10 bg-[#FBF1E8] text-clay-700 rounded-lg flex items-center justify-center mb-3 border border-[#E7D8C9]">
                             <ArrowRight size={20} />
                         </div>
@@ -433,7 +437,7 @@ export default function StockRequestIndex({ auth, requests }) {
 
                 {/* ORDER MODAL */}
                 <Modal show={showOrderModal} onClose={() => setShowOrderModal(false)} maxWidth="sm">
-                    <div className="p-6 text-center">
+                    <div className="p-5 sm:p-6 text-center">
                         <div className="w-12 h-12 bg-[#FBF1E8] text-clay-700 rounded-xl flex items-center justify-center mx-auto mb-3 border border-[#E7D8C9] shadow-sm">
                             <Truck size={24} />
                         </div>
@@ -462,7 +466,7 @@ export default function StockRequestIndex({ auth, requests }) {
             </div>
             {/* TOAST NOTIFICATION */}
             {showToast && (
-                <div className={`fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${toastType === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+                <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 px-5 py-3.5 rounded-2xl shadow-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${toastType === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
                     {toastType === 'error' ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
                     <p className="font-bold text-sm">{toastMessage}</p>
                     <button onClick={() => setShowToast(false)} className="ml-2 hover:opacity-80"><XCircle size={16} /></button>

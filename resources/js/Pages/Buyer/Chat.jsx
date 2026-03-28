@@ -168,13 +168,13 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
             <BuyerNavbar />
 
             {/* CHAT CONTAINER */}
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden flex h-[calc(100vh-140px)]">
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+                <div className="bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden flex flex-col sm:flex-row h-[calc(100dvh-112px)] sm:h-[calc(100vh-140px)]">
                     
                     {/* LEFT: CONTACT LIST */}
-                    <div className={`w-full sm:w-80 border-r border-gray-100 flex flex-col bg-gradient-to-b from-white to-gray-50 ${showMobileList ? 'block' : 'hidden sm:flex'}`}>
+                    <div className={`w-full sm:w-80 sm:max-w-[20rem] border-r border-gray-100 flex flex-col bg-gradient-to-b from-white to-gray-50 ${showMobileList ? 'block' : 'hidden sm:flex'}`}>
                         {/* Header */}
-                        <div className="p-5 border-b border-gray-100">
+                        <div className="p-4 sm:p-5 border-b border-gray-100">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="font-bold text-gray-900 text-lg">Messages</h2>
                                 <span className="bg-clay-100 text-clay-700 text-xs font-bold px-2.5 py-1 rounded-full">
@@ -250,8 +250,8 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                         {currentChatUser ? (
                             <>
                                 {/* ACTIVE CHAT HEADER */}
-                                <div className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
-                                    <div className="flex items-center gap-3">
+                                <div className="bg-white border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 shrink-0 shadow-sm z-10">
+                                    <div className="flex min-w-0 items-center gap-3">
                                         <button 
                                             onClick={() => setShowMobileList(true)}
                                             className="sm:hidden p-2 -ml-2 text-gray-400 hover:text-gray-600"
@@ -262,8 +262,8 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                             <UserAvatar user={currentChatUser} className="w-10 h-10 shadow-sm border border-stone-100" />
                                             <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${currentChatUser.is_online ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                                         </div>
-                                        <div>
-                                            <h2 className="font-bold text-gray-900 text-sm">{currentChatUser.shop_name || currentChatUser.name}</h2>
+                                        <div className="min-w-0">
+                                            <h2 className="font-bold text-gray-900 text-sm truncate">{currentChatUser.shop_name || currentChatUser.name}</h2>
                                             <p className="text-[10px] text-gray-500 font-medium">
                                                 {currentChatUser.is_online ? (
                                                     <span className="text-green-600 font-bold">Online</span>
@@ -272,17 +272,17 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                         </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                                         <Link 
                                             href={route('my-orders.index')}
-                                            className="p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition"
+                                            className="p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition sm:p-2.5"
                                             title="View Orders"
                                         >
                                             <ShoppingBag size={18} />
                                         </Link>
                                         <button 
                                             onClick={() => setShowInfoPanel(!showInfoPanel)}
-                                            className={`p-2.5 rounded-xl transition ${showInfoPanel ? 'bg-clay-100 text-clay-700' : 'text-gray-400 hover:text-clay-600 hover:bg-clay-50'}`}
+                                            className={`p-2 rounded-xl transition sm:p-2.5 ${showInfoPanel ? 'bg-clay-100 text-clay-700' : 'text-gray-400 hover:text-clay-600 hover:bg-clay-50'}`}
                                         >
                                             <Info size={18} />
                                         </button>
@@ -405,7 +405,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                     <div className="max-w-3xl mx-auto">
                                     {/* Emoji Picker Popover */}
                                     {showEmojiPicker && (
-                                        <div ref={emojiPickerRef} className="absolute bottom-full right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
+                                        <div ref={emojiPickerRef} className="absolute bottom-full right-3 sm:right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
                                             <EmojiPicker 
                                                 onEmojiClick={onEmojiClick}
                                                 autoFocusSearch={false}

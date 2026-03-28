@@ -8,7 +8,7 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
 
     return (
         // 1. FULL SCREEN WRAPPER (Fixed)
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 font-sans">
             
             {/* 2. BACKDROP (Dimmed & Blurred like Lazada) */}
             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm">
@@ -20,7 +20,7 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
             </div>
 
             {/* 3. THE MODAL CARD (Split Layout) */}
-            <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto max-h-[90vh] animate-fade-in-up">
+            <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto max-h-[92dvh] md:max-h-[90vh] animate-fade-in-up">
                 
                 {/* --- LEFT SIDE: IMAGE / BRANDING (Hidden on Mobile) --- */}
                 <div className="hidden md:flex md:w-5/12 relative bg-clay-800 text-white flex-col justify-between p-8 overflow-hidden">
@@ -56,14 +56,14 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
 
                 {/* --- RIGHT SIDE: FORM (Hidden Scrollbar) --- */}
                 <div 
-                    className="w-full md:w-7/12 bg-white p-6 lg:p-10 pt-8 relative flex flex-col overflow-y-auto"
+                    className="w-full md:w-7/12 bg-white p-5 sm:p-6 lg:p-10 pt-8 relative flex flex-col overflow-y-auto"
                     style={{ 
                         scrollbarWidth: 'none',
                         msOverflowStyle: 'none'
                     }}
                 >
                     {/* MOBILE HEADER (Visible only on small screens) */}
-                    <div className="md:hidden flex items-center justify-center gap-2 mb-6 text-clay-800">
+                    <div className="md:hidden flex items-center justify-center gap-2 mb-5 text-clay-800">
                         <img src="/images/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
                         <span className="font-serif font-bold text-xl tracking-wide">LikhangKamay</span>
                     </div>
@@ -75,7 +75,7 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
                     {/* CLOSE BUTTON (X) - Top Right */}
                     <Link 
                         href="/" 
-                        className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+                        className="absolute top-3 right-3 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
                         title="Close"
                     >
                         <X size={20} />

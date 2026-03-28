@@ -136,16 +136,16 @@ export default function AdminLayout({ title, children }) {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 {/* Header (Desktop & Mobile) */}
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40 transition-all duration-300">
-                    <div className="flex items-center gap-4">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-all duration-300">
+                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                         <button 
                             onClick={() => setIsMobileMenuOpen(true)}
                             className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg transition lg:hidden"
                         >
                             <Menu size={24} />
                         </button>
-                        <div>
-                            <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+                        <div className="min-w-0">
+                            <h1 className="truncate text-xl font-bold text-gray-900">{title}</h1>
                             {title === 'Dashboard' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Overview of platform performance</p>}
                             {title === 'Monetization' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track revenue and subscription metrics</p>}
                             {title === 'Platform Insights' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Deep dive into revenue forecasts, category performance, and platform health</p>}
@@ -154,7 +154,7 @@ export default function AdminLayout({ title, children }) {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="flex shrink-0 items-center gap-2 sm:gap-6">
                         {/* Notifications */}
                          {pendingArtisanCount > 0 && (
                             <Link href={route('admin.pending')} className="relative p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition group" title="Pending Applications">
@@ -172,7 +172,7 @@ export default function AdminLayout({ title, children }) {
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
                                         <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -192,7 +192,7 @@ export default function AdminLayout({ title, children }) {
                 </header>
 
                 {/* Scrollable Content */}
-                <main className="flex-1 px-6 pt-4 pb-8 space-y-6">
+                <main className="flex-1 px-4 pt-4 pb-8 sm:px-6 space-y-6">
                     {children}
                 </main>
             </div>

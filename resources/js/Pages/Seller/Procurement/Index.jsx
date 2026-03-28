@@ -138,7 +138,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
             {/* TOAST NOTIFICATION */}
             {showToast && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${toastType === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+                <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${toastType === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
                     {toastType === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
                     <p className="font-bold text-sm">{toastMessage}</p>
                     <button onClick={() => setShowToast(false)} className="ml-2 hover:opacity-80"><X size={16} /></button>
@@ -149,14 +149,14 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 
                 {/* --- HEADER (Standardized) --- */}
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
+                    <div className="flex min-w-0 items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-xl font-bold text-gray-900">Inventory</h1>
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Inventory</h1>
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
                                     <Building2 size={10} className="text-blue-400" /> Enterprise
                                 </span>
@@ -168,28 +168,30 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     </div>
 
                                         
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 sm:gap-6">
                         {/* Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <button 
                                 onClick={() => setShowAddModal(true)} 
                                 className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
                             >
-                                <Plus size={16} /> Add Supply
+                                <Plus size={16} /> <span className="hidden sm:inline">Add Supply</span>
                             </button>
                             <NotificationDropdown />
                         </div>
 
                         {/* Divider */}
-                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                         {/* Profile Dropdown */}
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} />
+                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                            <div className="hidden lg:block">
+                                                <WorkspaceAccountSummary user={auth.user} />
+                                            </div>
                                             <UserAvatar user={auth.user} />
                                             <ChevronDown size={16} className="text-gray-400" />
                                         </button>
@@ -209,7 +211,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     </div>
                 </header>
 
-                <main className="p-6 space-y-6">
+                <main className="p-4 sm:p-6 space-y-6">
                     
 
 
@@ -221,7 +223,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
 
                     {/* KPI CARDS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
                             <div>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Items</p>
@@ -283,7 +285,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
                         {/* Table Body */}
                         <div className="overflow-x-auto flex-1">
-                            <table className="w-full text-left">
+                            <table className="w-full min-w-[900px] text-left">
                                 <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>
                                         <th className="px-4 py-3">Item Name</th>

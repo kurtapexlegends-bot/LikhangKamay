@@ -112,8 +112,8 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
     );
 
     const toastNotification = (
-        <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
+        <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+            <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
                 <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                     {toastType === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}
                 </div>
@@ -148,21 +148,21 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
             <SellerSidebar active="" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
+                    <div className="flex min-w-0 items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
-                        <div>
+                        <div className="min-w-0">
                             <h1 className="text-xl font-bold text-gray-900">My Profile</h1>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5">Manage your account settings</p>
+                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage your account settings</p>
                         </div>
                     </div>
                     
                     <Dropdown>
                         <Dropdown.Trigger>
                             <button className="flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-clay-600 transition">
-                                <span className="hidden sm:inline">{auth.user.shop_name || auth.user.name}</span>
+                                <span className="hidden md:inline">{auth.user.shop_name || auth.user.name}</span>
                                 <UserAvatar user={auth.user} className="w-8 h-8" />
                             </button>
                         </Dropdown.Trigger>
@@ -172,7 +172,7 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
                     </Dropdown>
                 </header>
 
-                <main className="p-6 space-y-6 max-w-4xl">
+                <main className="p-4 sm:p-6 space-y-6 max-w-4xl">
                     {profileContent}
                 </main>
             </div>

@@ -222,8 +222,8 @@ const OrderTimeline = ({ status, isPickup }) => {
     const currentStepIndex = steps.findIndex(s => s.key === status);
 
     return (
-        <div className="py-8 px-6 bg-white border-t border-b border-gray-100">
-            <div className="flex items-center justify-between max-w-3xl mx-auto">
+        <div className="overflow-x-auto py-6 px-4 sm:px-6 bg-white border-t border-b border-gray-100">
+            <div className="flex min-w-[560px] items-center justify-between max-w-3xl mx-auto">
                 {steps.map((step, idx) => {
                     const stepStatus = getStepStatus(step.key);
                     const Icon = step.icon;
@@ -453,17 +453,17 @@ export default function MyOrders({ auth, orders }) {
             {/* --- NAVBAR --- */}
             <BuyerNavbar />
 
-            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 
                 {/* --- FLASH MESSAGES --- */}
                 {usePage().props.flash?.success && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-2">
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-start gap-2">
                         <CheckCircle size={18} />
                         <span className="text-sm font-bold">{usePage().props.flash.success}</span>
                     </div>
                 )}
                 {usePage().props.flash?.error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-2">
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-start gap-2">
                         <AlertCircle size={18} />
                         <span className="text-sm font-bold">{usePage().props.flash.error}</span>
                     </div>
@@ -484,7 +484,7 @@ export default function MyOrders({ auth, orders }) {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex-1 min-w-[100px] py-4 text-sm font-bold text-center border-b-2 transition-all flex items-center justify-center gap-2 ${
+                                    className={`flex-1 min-w-[92px] sm:min-w-[100px] py-4 px-3 text-xs sm:text-sm font-bold text-center border-b-2 transition-all flex items-center justify-center gap-2 ${
                                         activeTab === tab.id 
                                         ? 'border-clay-600 text-clay-700 bg-clay-50/50' 
                                         : 'border-transparent text-gray-500 hover:text-clay-600 hover:bg-gray-50'
@@ -523,19 +523,19 @@ export default function MyOrders({ auth, orders }) {
                             <div key={order.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300">
                                 
                                 {/* Order Header */}
-                                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white flex flex-wrap justify-between items-center gap-4 border-b border-gray-100">
-                                    <div className="flex items-center gap-4">
+                                <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-gray-100">
+                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                                         <div>
                                             <span className="text-xs text-gray-400 font-medium">Order</span>
                                             <h3 className="font-bold text-gray-900 text-sm">#{order.order_number || order.id}</h3>
                                         </div>
-                                        <div className="h-8 w-px bg-gray-200" />
+                                        <div className="hidden sm:block h-8 w-px bg-gray-200" />
                                         <div className="flex items-center gap-1.5 text-gray-500">
                                             <Clock size={14} />
                                             <span className="text-xs font-medium">{order.date}</span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <PaymentStatusBadge status={order.payment_status} method={order.payment_method} />
                                         <StatusBadge status={order.status} />
                                     </div>
@@ -545,7 +545,7 @@ export default function MyOrders({ auth, orders }) {
                                 <OrderTimeline status={order.status} isPickup={order.shipping_method === 'Pick Up'} />
 
                                 {/* Order Items */}
-                                <div className="p-6 space-y-4">
+                                <div className="p-4 sm:p-6 space-y-4">
                                     {order.shipping_method === 'Pick Up' ? (
                                         <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl">
                                             <div className="p-2 bg-white rounded-lg shadow-sm text-orange-600">
@@ -585,8 +585,8 @@ export default function MyOrders({ auth, orders }) {
                                         </div>
                                     )}
                                     {order.items.map((item, idx) => (
-                                        <div key={idx} className="flex gap-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-gray-200 transition">
-                                            <div className="w-20 h-20 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden shrink-0 shadow-sm">
+                                        <div key={idx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-gray-200 transition">
+                                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden shrink-0 shadow-sm">
                                                 <img 
                                                     src={item.img} 
                                                     alt={item.name} 
@@ -599,7 +599,7 @@ export default function MyOrders({ auth, orders }) {
                                                 <p className="text-xs text-gray-500 mt-1">Variation: {item.variant}</p>
                                                 <p className="text-xs text-gray-400">Qty: {item.qty}</p>
                                             </div>
-                                            <div className="text-right shrink-0">
+                                            <div className="text-left sm:text-right shrink-0">
                                                 <p className="font-bold text-clay-700">₱{Number(item.price).toLocaleString()}</p>
                                             </div>
                                         </div>
@@ -608,7 +608,7 @@ export default function MyOrders({ auth, orders }) {
 
                                 {/* Warranty Info (if applicable) */}
                                 {(order.status === 'Completed' && order.can_return) && (
-                                    <div className="px-6 pb-4">
+                                    <div className="px-4 sm:px-6 pb-4">
                                         <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 animate-pulse w-full sm:w-auto">
                                             <AlertTriangle size={14} className="text-amber-600" />
                                             <span className="text-xs font-medium text-amber-700">
@@ -620,13 +620,13 @@ export default function MyOrders({ auth, orders }) {
 
 
                                 {/* Order Footer */}
-                                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                     <div>
                                         <p className="text-xs text-gray-400 font-medium">Order Total</p>
-                                        <p className="text-2xl font-bold text-clay-700">₱{order.total}</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-clay-700">₱{order.total}</p>
                                     </div>
 
-                                    <div className="flex flex-wrap gap-2 justify-end">
+                                    <div className="flex w-full flex-wrap gap-2 justify-start sm:justify-end">
                                         
                                         {/* Download Receipt */}
                                         <a 

@@ -60,7 +60,7 @@ export default function ForgotPassword({ status }) {
                             className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
                             isFocused={true}
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="you@example.com"
+                            placeholder="@example.com"
                         />
                     </div>
                     <InputError message={errors.email} className="mt-2" />

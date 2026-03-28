@@ -26,50 +26,50 @@ export default function BuyerNavbar() {
     return (
         <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm/50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-20 gap-8">
+                <div className="flex flex-wrap items-center gap-3 py-3 md:h-20 md:flex-nowrap md:justify-between md:items-center md:gap-8">
                     
                     {/* LOGO */}
-                    <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
-                        <img src="/images/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
-                        <div className="flex flex-col">
-                            <span className="font-serif text-xl font-bold text-gray-900 leading-none tracking-tight">LikhangKamay</span>
-                            <span className="text-[10px] text-clay-600 font-bold tracking-widest uppercase mt-0.5">Artisan Marketplace</span>
+                    <Link href="/" className="order-1 flex min-w-0 items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
+                        <img src="/images/logo.png" alt="Logo" className="w-9 h-9 sm:w-10 sm:h-10 object-contain" />
+                        <div className="flex min-w-0 flex-col">
+                            <span className="truncate font-serif text-lg sm:text-xl font-bold text-gray-900 leading-none tracking-tight">LikhangKamay</span>
+                            <span className="hidden sm:block text-[10px] text-clay-600 font-bold tracking-widest uppercase mt-0.5">Artisan Marketplace</span>
                         </div>
                     </Link>
 
                     {/* SEARCH */}
-                    <div className="flex-1 max-w-3xl hidden md:block">
+                    <div className="order-3 basis-full md:order-2 md:flex-1 md:max-w-3xl">
                         <form onSubmit={handleSearch} className="relative group">
                             <input 
                                 type="text" 
                                 placeholder="Search pottery, vases, artisans..." 
-                                className="w-full pl-12 pr-32 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:bg-white focus:border-clay-300 focus:ring-4 focus:ring-clay-100/50 transition-all shadow-sm placeholder-gray-400 text-gray-800"
+                                className="w-full pl-10 pr-24 py-2.5 md:pl-12 md:pr-32 md:py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:bg-white focus:border-clay-300 focus:ring-4 focus:ring-clay-100/50 transition-all shadow-sm placeholder-gray-400 text-gray-800"
                                 value={term}
                                 onChange={(e) => setTerm(e.target.value)}
                             />
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-600 transition-colors" size={20} />
-                            <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-clay-600 text-white px-6 py-2 rounded-full text-xs font-bold hover:bg-clay-700 hover:shadow-md transition-all active:scale-95">
+                            <Search className="absolute left-3.5 md:left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-600 transition-colors" size={18} />
+                            <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-clay-600 text-white px-4 md:px-6 py-2 rounded-full text-xs font-bold hover:bg-clay-700 hover:shadow-md transition-all active:scale-95">
                                 Search
                             </button>
                         </form>
                     </div>
 
                     {/* ACTIONS */}
-                    <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="order-2 ml-auto flex items-center gap-1.5 sm:gap-3 md:order-3 md:ml-0 md:gap-4 flex-shrink-0">
                         {user ? (
                             <>
                                 {showBuyerChat && (
-                                    <Link href={route('buyer.chat')} className="p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group">
-                                        <MessageCircle size={22} className="group-hover:scale-110 transition-transform" />
+                                    <Link href={route('buyer.chat')} className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group">
+                                        <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
                                     </Link>
                                 )}
 
                                 {/* FIX: Changed <button> to <Link> pointing to cart.index */}
                                 <Link 
                                     href={route('cart.index')} 
-                                    className="p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group"
+                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group"
                                 >
-                                    <ShoppingCart size={22} className="group-hover:scale-110 transition-transform" />
+                                    <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
                                     {cartCount > 0 && (
                                         <span className="absolute top-0 right-0 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
                                             {cartCount}
@@ -77,12 +77,12 @@ export default function BuyerNavbar() {
                                     )}
                                 </Link>
 
-                                <div className="h-8 w-px bg-gray-200 mx-1"></div>
+                                <div className="hidden sm:block h-8 w-px bg-gray-200 mx-1"></div>
 
                                 <div className="relative">
                                     <Dropdown>
                                         <Dropdown.Trigger>
-                                            <button className="flex items-center gap-3 pl-1 pr-2 py-1 rounded-full hover:bg-gray-50 transition border border-transparent hover:border-gray-200 group">
+                                            <button className="flex items-center gap-2 sm:gap-3 pl-1 pr-1.5 sm:pr-2 py-1 rounded-full hover:bg-gray-50 transition border border-transparent hover:border-gray-200 group">
                                                 <UserAvatar 
                                                     user={user} 
                                                     className="w-9 h-9 border-2 border-white shadow-sm group-hover:border-clay-200 transition-colors" 
@@ -117,9 +117,9 @@ export default function BuyerNavbar() {
                                 </div>
                             </>
                         ) : (
-                            <div className="flex gap-2">
-                                <Link href={route('login')} className="px-4 py-2 text-sm font-bold text-gray-600 hover:text-clay-600">Log In</Link>
-                                <Link href={route('register')} className="px-4 py-2 bg-clay-600 text-white rounded-full text-sm font-bold hover:bg-clay-700">Sign Up</Link>
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                <Link href={route('login')} className="px-3 sm:px-4 py-2 text-sm font-bold text-gray-600 hover:text-clay-600">Log In</Link>
+                                <Link href={route('register')} className="px-3 sm:px-4 py-2 bg-clay-600 text-white rounded-full text-sm font-bold hover:bg-clay-700">Sign Up</Link>
                             </div>
                         )}
                     </div>

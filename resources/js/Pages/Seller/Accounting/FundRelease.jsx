@@ -128,7 +128,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                 />
 
-                <main className="p-6 space-y-6">
+                <main className="p-4 sm:p-6 space-y-6">
                     {/* FINANCIAL DASHBOARD */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* REVENUE */}
@@ -190,7 +190,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                     </div>
 
                     {/* TABS */}
-                    <div className="flex items-center gap-4 border-b border-gray-200">
+                    <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                         <button 
                             onClick={() => setActiveTab('pending')}
                             className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'pending' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
@@ -557,7 +557,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
             </Modal>
             {/* TOAST NOTIFICATION */}
             {showToast && (
-                <div className={`fixed bottom-4 right-4 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 animate-slide-up ${
+                <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 px-6 py-4 rounded-xl shadow-2xl flex items-start gap-3 z-50 animate-slide-up ${
                     toastType === 'success' ? 'bg-gray-900/95 text-white' : 'bg-red-500 text-white'
                 }`}>
                     {toastType === 'success' ? <CheckCircle size={20} className="text-emerald-400" /> : <AlertCircle size={20} />}

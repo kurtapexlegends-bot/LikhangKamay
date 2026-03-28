@@ -363,7 +363,7 @@ export default function Catalog(props) {
                                                 oncePerSession: true,
                                             });
                                         }}
-                                        className={`group bg-white rounded-xl border transition-all duration-200 flex flex-col overflow-hidden ${
+                                        className={`group bg-white rounded-xl border transition-[border-color,box-shadow] duration-300 flex flex-col overflow-hidden ${
                                             product.is_sponsored 
                                                 ? 'border-amber-200 shadow-sm shadow-amber-50 hover:border-amber-400 hover:shadow-md' 
                                                 : 'border-gray-100 hover:border-gray-200 hover:shadow-md'
@@ -374,7 +374,7 @@ export default function Catalog(props) {
                                             <img 
                                                 src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
                                                 alt={product.name} 
-                                                className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                                                className="w-full h-full object-cover transform-gpu will-change-transform transition-transform duration-500 group-hover:scale-105"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                             />
                                             {product.is_sponsored ? (

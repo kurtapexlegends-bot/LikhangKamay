@@ -104,7 +104,7 @@ export default function Insights({ revenue, churn, categories, health }) {
 
                 {/* ====================== SECTION 1 & 2: REVENUE FORECASTING & CATEGORY HEATMAP ====================== */}
                 <section className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                         <StatCard
                             title="Current Est. MRR"
                             metric={`₱${revenue.currentMRR}`}
@@ -131,13 +131,13 @@ export default function Insights({ revenue, churn, categories, health }) {
                         />
                     </div>
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         {/* 6-Month MRR History */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between h-[84px]">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-50 flex items-center justify-between min-h-[84px]">
                                 <h3 className="font-bold text-gray-900 text-lg">6-Month MRR History</h3>
                             </div>
-                            <div className="p-6 flex-grow flex items-center">
+                            <div className="p-4 sm:p-6 flex-grow flex items-center">
                                 <ResponsiveContainer width="100%" height={300}>
                                     <AreaChart data={revenue.history} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                                         <defs>
@@ -158,7 +158,7 @@ export default function Insights({ revenue, churn, categories, health }) {
 
                         {/* Category Performance */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between h-[84px]">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-50 flex items-center justify-between min-h-[84px]">
                                 <div>
                                     <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                                         <ShoppingBag className="text-orange-500" size={20} />
@@ -167,7 +167,7 @@ export default function Insights({ revenue, churn, categories, health }) {
                                     <p className="text-xs text-gray-400 mt-1">Top product categories driving Gross Merchandise Value (GMV)</p>
                                 </div>
                             </div>
-                            <div className="p-6 flex-grow flex items-center">
+                            <div className="p-4 sm:p-6 flex-grow flex items-center">
                                 {categories.length > 0 ? (
                                     <div className="w-full">
                                         <div className="h-[220px] w-full flex items-center justify-center relative">
@@ -222,7 +222,7 @@ export default function Insights({ revenue, churn, categories, health }) {
                 <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Platform Health Stats */}
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <StatCard
                                 title="Order Completion Rate"
                                 metric={`${health.completionRate}%`}
@@ -258,12 +258,12 @@ export default function Insights({ revenue, churn, categories, health }) {
                         </div>
 
                         {/* Artisan Churn Overview */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6 flex items-center justify-between">
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4 sm:p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h3 className="font-bold text-gray-900 text-lg mb-1">Artisan Engagement</h3>
                                 <p className="text-sm text-gray-500">Tracking activity based on last login (30 / 60 / 60+ days)</p>
                             </div>
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center justify-between gap-4 sm:gap-6 w-full sm:w-auto">
                                 <div className="text-center">
                                     <p className="text-2xl font-bold text-green-600 leading-none mb-1">{churn.active}</p>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active</p>
@@ -282,7 +282,7 @@ export default function Insights({ revenue, churn, categories, health }) {
 
                     {/* At Risk List Table */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="px-6 py-5 border-b border-gray-50">
+                        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-50">
                             <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                                 <AlertTriangle className="text-amber-500" size={20} />
                                 At-Risk Artisans
@@ -291,7 +291,7 @@ export default function Insights({ revenue, churn, categories, health }) {
                         </div>
                         <div className="overflow-x-auto">
                             {churn.atRiskList?.length > 0 ? (
-                                <table className="w-full">
+                                <table className="w-full min-w-[720px]">
                                     <thead className="bg-stone-50">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Artisan</th>

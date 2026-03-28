@@ -129,7 +129,7 @@ export default function SponsorshipRequests({ requests }) {
             <Head title="Sponsorship Requests - Admin" />
 
             <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                     <MetricCard
                         title="Total Requests"
                         value={totalRequests}
@@ -163,7 +163,7 @@ export default function SponsorshipRequests({ requests }) {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
                     {/* Header & Search */}
-                    <div className="px-6 py-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div className="flex items-start gap-3">
                             <div className="w-11 h-11 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 shrink-0">
                                 <Award size={20} />
@@ -187,7 +187,7 @@ export default function SponsorshipRequests({ requests }) {
 
                     {/* Table */}
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[940px] text-left border-collapse">
                             <thead>
                                 <tr className="bg-gray-50/80 border-b border-gray-100">
                                     <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product</th>

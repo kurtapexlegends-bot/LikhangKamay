@@ -4,7 +4,7 @@ import { Users, Store, Search, Shield, Briefcase, ChevronDown } from 'lucide-rea
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 
-const roleTabs = ['all', 'artisan', 'buyer', 'super_admin'];
+const roleTabs = ['all', 'artisan', 'staff', 'buyer', 'super_admin'];
 
 const roleBadgeClasses = {
     artisan: 'bg-orange-100 text-orange-800 border-orange-200',
@@ -171,7 +171,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
 
     return (
         <AdminLayout title="User Management">
-            <div className="sticky top-20 z-30 mb-8 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
+            <div className="sm:sticky sm:top-20 z-30 mb-6 sm:mb-8 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
                 <div className="flex flex-col items-center justify-between gap-2 sm:flex-row">
                     <form onSubmit={handleSearch} className="relative w-full flex-1 sm:w-auto">
                         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -184,7 +184,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                         />
                     </form>
 
-                    <div className="flex w-full items-center gap-1 overflow-x-auto rounded-xl bg-stone-100/50 p-1 sm:w-auto">
+                    <div className="flex w-full items-center gap-1 overflow-x-auto rounded-xl bg-stone-100/50 p-1 sm:w-auto" style={{ scrollbarWidth: 'none' }}>
                         {roleTabs.map((role) => (
                             <button
                                 key={role}
@@ -198,6 +198,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                             >
                                 {role === 'all' && 'All Users'}
                                 {role === 'artisan' && <><Store size={14} /> Artisans</>}
+                                {role === 'staff' && <><Briefcase size={14} /> Staff</>}
                                 {role === 'buyer' && <><Users size={14} /> Buyers</>}
                                 {role === 'super_admin' && <><Shield size={14} /> Admins</>}
                             </button>
@@ -230,7 +231,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[960px]">
                         <thead className="bg-stone-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">Primary Identity</th>

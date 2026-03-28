@@ -134,7 +134,7 @@ export default function Cart({ cart }) {
         <ShopLayout>
             <Head title="Shopping Cart" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 
                 {/* Breadcrumb */}
                 <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
@@ -187,7 +187,7 @@ export default function Cart({ cart }) {
                                     return (
                                         <div key={seller}>
                                             {/* Seller Header */}
-                                            <div className="px-4 py-2 bg-gray-50/50 border-t border-b border-gray-100 flex items-center gap-3">
+                                                <div className="px-4 py-2 bg-gray-50/50 border-t border-b border-gray-100 flex flex-wrap items-center gap-3">
                                                 <button
                                                     onClick={() => toggleSeller(items)}
                                                     className={`w-4 h-4 rounded border flex items-center justify-center transition ${
@@ -208,7 +208,7 @@ export default function Cart({ cart }) {
                                             {items.map((item) => (
                                                 <div 
                                                     key={getCartKey(item)} 
-                                                    className={`grid grid-cols-1 sm:grid-cols-12 gap-4 px-4 py-4 border-b border-gray-50 items-center transition ${
+                                                    className={`grid grid-cols-1 gap-3 px-4 py-4 border-b border-gray-50 items-center transition sm:grid-cols-12 sm:gap-4 ${
                                                         removingId === getCartKey(item) ? 'opacity-50' : ''
                                                     } ${!selectedItems.has(getCartKey(item)) ? 'bg-gray-50/30' : ''}`}
                                                 >
@@ -253,12 +253,15 @@ export default function Cart({ cart }) {
                                                     </div>
 
                                                     {/* Unit Price */}
-                                                    <div className="sm:col-span-2 text-center">
+                                                    <div className="sm:col-span-2 flex items-center justify-between sm:block sm:text-center">
+                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Unit Price</span>
                                                         <span className="text-sm text-gray-500">{currency.format(Number(item.price) || 0)}</span>
                                                     </div>
 
                                                     {/* Quantity */}
-                                                    <div className="sm:col-span-2 flex justify-center">
+                                                    <div className="sm:col-span-2 flex items-center justify-between sm:block">
+                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Quantity</span>
+                                                        <div className="flex justify-end sm:justify-center">
                                                         <div className="flex items-center border border-gray-200 rounded">
                                                             <button
                                                                 onClick={() => updateQty(getCartKey(item), item.qty, -1)}
@@ -278,20 +281,24 @@ export default function Cart({ cart }) {
                                                                 <Plus size={12} />
                                                             </button>
                                                         </div>
+                                                        </div>
                                                     </div>
 
                                                     {/* Total & Delete */}
-                                                    <div className="sm:col-span-2 flex items-center justify-end gap-3">
-                                                        <span className="text-sm font-semibold text-clay-600">
-                                                            {currency.format((Number(item.price) || 0) * (Number(item.qty) || 0))}
-                                                        </span>
-                                                        <button 
-                                                            onClick={() => removeItem(getCartKey(item))}
-                                                            disabled={removingId === getCartKey(item)}
-                                                            className="hidden sm:flex w-7 h-7 items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition"
-                                                        >
-                                                            {removingId === getCartKey(item) ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                                                        </button>
+                                                    <div className="sm:col-span-2 flex items-center justify-between sm:justify-end gap-3">
+                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Total</span>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-sm font-semibold text-clay-600">
+                                                                {currency.format((Number(item.price) || 0) * (Number(item.qty) || 0))}
+                                                            </span>
+                                                            <button 
+                                                                onClick={() => removeItem(getCartKey(item))}
+                                                                disabled={removingId === getCartKey(item)}
+                                                                className="hidden sm:flex w-7 h-7 items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition"
+                                                            >
+                                                                {removingId === getCartKey(item) ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -313,7 +320,7 @@ export default function Cart({ cart }) {
 
                         {/* ========== RIGHT: ORDER SUMMARY ========== */}
                         <div className="lg:col-span-4">
-                            <div className="bg-white rounded-lg border border-gray-100 shadow-sm sticky top-20">
+                            <div className="bg-white rounded-lg border border-gray-100 shadow-sm lg:sticky lg:top-20">
                                 <div className="px-4 py-3 border-b border-gray-100">
                                     <h2 className="text-base font-semibold text-gray-900">Order Summary</h2>
                                 </div>
@@ -396,8 +403,8 @@ export default function Cart({ cart }) {
             </div>
 
             {/* --- TOAST NOTIFICATION --- */}
-            <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
+            <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
                     <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                         {toastType === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}
                     </div>

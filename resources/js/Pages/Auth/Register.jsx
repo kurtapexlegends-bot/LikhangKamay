@@ -93,7 +93,7 @@ export default function Register() {
                             autoComplete="username"
                             onChange={(e) => setData('email', e.target.value)}
                             required
-                            placeholder="juan@example.com"
+                            placeholder="@example.com"
                         />
                     </div>
                     <InputError message={errors.email} className="mt-2" />

@@ -51,7 +51,7 @@ export default function PendingArtisans({ artisans }) {
         <AdminLayout title="Pending Artisans">
 
             {artisans.length === 0 ? (
-                <div className="bg-white rounded-3xl shadow-sm border border-stone-100 p-16 text-center">
+                <div className="bg-white rounded-3xl shadow-sm border border-stone-100 p-8 sm:p-16 text-center">
                     <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <CheckCircle size={48} className="text-green-500" />
                     </div>
@@ -65,7 +65,7 @@ export default function PendingArtisans({ artisans }) {
                 <div className="grid grid-cols-1 gap-6">
                     {artisans.map(artisan => (
                         <div key={artisan.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group">
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div className="flex items-center gap-4 w-full md:w-auto">
                                     <div className="w-14 h-14 bg-clay-500 text-white rounded-xl flex items-center justify-center text-xl font-bold shadow-md shadow-clay-200 shrink-0 overflow-hidden">
                                         {artisan.avatar ? (
@@ -103,7 +103,7 @@ export default function PendingArtisans({ artisans }) {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 w-full md:w-auto mt-3 md:mt-0 pt-3 md:pt-0 border-t md:border-none border-stone-100">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto mt-3 md:mt-0 pt-3 md:pt-0 border-t md:border-none border-stone-100">
                                     <button
                                         onClick={() => setViewingArtisan(artisan)}
                                         className="flex-1 md:flex-none px-4 py-2 bg-stone-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-stone-200 transition flex items-center justify-center gap-1.5"
@@ -134,7 +134,7 @@ export default function PendingArtisans({ artisans }) {
             {/* Approve Confirmation Modal */}
             <Modal show={!!approvingArtisan} onClose={() => setApprovingArtisan(null)} maxWidth="md">
                 {approvingArtisan && (
-                    <div className="p-8 text-center">
+                    <div className="p-6 sm:p-8 text-center">
                         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle size={40} className="text-green-500" />
                         </div>
@@ -145,7 +145,7 @@ export default function PendingArtisans({ artisans }) {
                             This will grant them full seller access.
                         </p>
 
-                        <div className="flex gap-3 justify-center">
+                        <div className="flex flex-col-reverse sm:flex-row gap-3 justify-center">
                             <button
                                 onClick={() => setApprovingArtisan(null)}
                                 className="px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition"
@@ -178,7 +178,7 @@ export default function PendingArtisans({ artisans }) {
                             </button>
                         </div>
                         
-                        <div className="p-6 bg-stone-50 max-h-[60vh] overflow-y-auto no-scrollbar">
+                        <div className="p-4 sm:p-6 bg-stone-50 max-h-[60vh] overflow-y-auto no-scrollbar">
                             <style>{`
                                 .no-scrollbar::-webkit-scrollbar {
                                     display: none;
@@ -188,7 +188,7 @@ export default function PendingArtisans({ artisans }) {
                                     scrollbar-width: none;
                                 }
                             `}</style>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {[
                                     { label: 'Business Permit', url: viewingArtisan.business_permit, icon: FileText },
                                     { label: 'DTI Registration', url: viewingArtisan.dti_registration, icon: FileText },
@@ -252,11 +252,11 @@ export default function PendingArtisans({ artisans }) {
                             </div>
                         </div>
 
-                        <div className="bg-white px-8 py-5 border-t border-stone-100 flex justify-between items-center gap-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                        <div className="bg-white px-4 sm:px-8 py-4 sm:py-5 border-t border-stone-100 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                              <div className="text-sm text-gray-500 font-medium">
                                 Reviewing <span className="text-gray-900 font-bold">{viewingArtisan.shop_name}</span>
                              </div>
-                             <div className="flex gap-3">
+                             <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
                                 <button
                                     onClick={() => { setViewingArtisan(null); setRejectingArtisan(viewingArtisan); }}
                                     className="px-6 py-2.5 bg-white text-red-600 border border-gray-200 rounded-xl font-bold hover:bg-red-50 hover:border-red-200 transition text-sm flex items-center gap-2"
@@ -279,7 +279,7 @@ export default function PendingArtisans({ artisans }) {
             <Modal show={!!viewingDoc} onClose={() => setViewingDoc(null)} maxWidth="7xl">
                 {viewingDoc && (
                     <div className="h-[85vh] flex flex-col bg-stone-900">
-                        <div className="bg-black/50 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
+                        <div className="bg-black/50 backdrop-blur-md px-4 sm:px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
                             <div>
                                 <h3 className="text-lg font-bold text-white">{viewingDoc.label}</h3>
                                 <p className="text-xs text-stone-400 mt-0.5">Document Preview</p>
@@ -323,7 +323,7 @@ export default function PendingArtisans({ artisans }) {
             {/* Reject Modal */}
             <Modal show={!!rejectingArtisan} onClose={() => setRejectingArtisan(null)} maxWidth="lg">
                 {rejectingArtisan && (
-                    <div className="p-8">
+                    <div className="p-6 sm:p-8">
                         <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
                             <AlertTriangle size={32} className="text-red-500" />
                         </div>
@@ -345,7 +345,7 @@ export default function PendingArtisans({ artisans }) {
                             </span>
                         </div>
 
-                        <div className="flex justify-end gap-3">
+                        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
                             <button
                                 onClick={() => setRejectingArtisan(null)}
                                 className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition"
