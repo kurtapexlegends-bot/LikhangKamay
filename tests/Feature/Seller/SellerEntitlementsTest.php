@@ -65,7 +65,9 @@ class SellerEntitlementsTest extends TestCase
             ->where('sellerSidebar.visibleModules', function ($modules) {
                 $modules = $modules instanceof Collection ? $modules->all() : $modules;
 
-                return $modules === ['hr'];
+                return in_array('hr', $modules, true)
+                    && in_array('team_messages', $modules, true)
+                    && !in_array('accounting', $modules, true);
             })
         );
 
@@ -74,7 +76,7 @@ class SellerEntitlementsTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_staff_dashboard_redirects_to_first_accessible_module_when_overview_is_not_granted(): void
+    public function test_staff_dashboard_route_redirects_to_staff_hub_instead_of_owner_dashboard(): void
     {
         $owner = $this->createPremiumOwner([
             'hr' => true,
@@ -84,7 +86,7 @@ class SellerEntitlementsTest extends TestCase
 
         $this->actingAs($staff)
             ->get(route('dashboard'))
-            ->assertRedirect(route('hr.index', absolute: false));
+            ->assertRedirect(route('staff.dashboard', absolute: false));
     }
 
     public function test_procurement_only_staff_cannot_view_payroll_data_or_hr_module(): void

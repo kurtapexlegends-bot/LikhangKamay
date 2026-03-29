@@ -7,6 +7,7 @@ export default function MainLayout({ children, auth }) {
     const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
         ? route(sellerSidebar.defaultRouteName)
         : null;
+    const workspaceLinkLabel = sellerSidebar?.actorType === 'staff' ? 'Staff Hub' : 'Seller Centre';
 
     return (
         <div className="min-h-screen bg-[#FDFBF7] font-sans text-gray-600 selection:bg-clay-200 selection:text-clay-900">
@@ -56,7 +57,7 @@ export default function MainLayout({ children, auth }) {
                             {auth?.user ? (
                                 sellerWorkspaceHref ? (
                                     <Link href={sellerWorkspaceHref} className="text-sm font-bold text-gray-900 hover:text-clay-600">
-                                        Seller Centre
+                                        {workspaceLinkLabel}
                                     </Link>
                                 ) : (
                                     <Link href={route('profile.edit')} className="text-sm font-bold text-gray-900 hover:text-clay-600">

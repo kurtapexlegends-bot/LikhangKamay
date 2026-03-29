@@ -10,8 +10,9 @@ import { PlanModal } from './PlanBadge';
 const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
 const resolveActiveGroup = (active) => {
+    if (['staff-dashboard'].includes(active)) return 'workspace';
     if (['overview', 'products', 'analytics', '3d'].includes(active)) return 'core';
-    if (['orders', 'chat', 'reviews'].includes(active)) return 'crm';
+    if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['settings'].includes(active)) return 'appearance';
     if (['sponsorships'].includes(active)) return 'marketing';
     if (['hr', 'accounting', 'procurement', 'stock-requests'].includes(active)) return 'advanced';
@@ -21,6 +22,7 @@ const resolveActiveGroup = (active) => {
 
 const getInitialExpandedGroups = (active) => {
     const defaultGroups = {
+        workspace: true,
         core: true,
         crm: true,
         appearance: true,
@@ -87,6 +89,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const showGear = !!entitlement.showGear;
     const canManagePlan = sellerSubscription?.canManageSubscription ?? entitlement.canManageSubscription ?? user?.role === 'artisan';
     const showPlanPanel = sellerSubscription?.showPlanPanel ?? entitlement.showPlanPanel ?? user?.role === 'artisan';
+    const isStaffActor = (entitlement.actorType || (user?.role === 'staff' ? 'staff' : 'owner')) === 'staff';
 
     const enabledToggles = useMemo(() => {
         return {
@@ -150,8 +153,10 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         });
     };
 
-    const hasCore = ['overview', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName));
-    const hasCrm = ['orders', 'messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
+    const hasCore = isStaffActor
+        ? ['products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
+        : ['overview', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName));
+    const hasCrm = ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
     const hasAppearance = visibleModulesSet.has('shop_settings');
     const hasMarketing = visibleModulesSet.has('sponsorships');
     const hasAdvanced = ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName));
@@ -333,13 +338,23 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 )}
 
                 <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                    {isStaffActor && (
+                        <CategoryGroup
+                            title="Workspace"
+                            open={expandedGroups.workspace}
+                            onToggle={() => toggleGroup('workspace')}
+                        >
+                            <NavItem href={route('staff.dashboard')} icon={LayoutDashboard} active={active === 'staff-dashboard'} onClick={onClose}>Staff Hub</NavItem>
+                        </CategoryGroup>
+                    )}
+
                     {hasCore && (
                         <CategoryGroup
                             title="Core Operations"
                             open={expandedGroups.core}
                             onToggle={() => toggleGroup('core')}
                         >
-                            {visibleModulesSet.has('overview') && (
+                            {!isStaffActor && visibleModulesSet.has('overview') && (
                                 <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose}>Overview</NavItem>
                             )}
                             {visibleModulesSet.has('products') && (
@@ -365,6 +380,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             )}
                             {visibleModulesSet.has('messages') && (
                                 <NavItem href={route('chat.index')} icon={MessageCircle} active={active === 'chat'} onClick={onClose}>Messages</NavItem>
+                            )}
+                            {visibleModulesSet.has('team_messages') && (
+                                <NavItem href={route('team-messages.index')} icon={Users} active={active === 'team-messages'} onClick={onClose}>Team Inbox</NavItem>
                             )}
                             {visibleModulesSet.has('reviews') && (
                                 <NavItem href={route('reviews.index')} icon={Star} active={active === 'reviews'} onClick={onClose}>Reviews</NavItem>

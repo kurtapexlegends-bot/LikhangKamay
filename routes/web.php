@@ -25,6 +25,8 @@ use App\Http\Controllers\ArtisanSetupController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\TeamMessageController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
 use App\Models\Product;
@@ -94,6 +96,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // DASHBOARD & PROFILE
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['patch', 'post'], '/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -163,6 +166,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/chat/send', [ChatController::class, 'store'])->name('chat.store');
     Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->name('chat.seen');
     Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->name('chat.typing');
+    Route::get('/team-messages', [TeamMessageController::class, 'index'])->middleware(['seller.workspace', 'seller.module:team_messages'])->name('team-messages.index');
+    Route::post('/team-messages/send', [TeamMessageController::class, 'store'])->middleware(['seller.workspace', 'seller.module:team_messages'])->name('team-messages.store');
+    Route::post('/team-messages/seen', [TeamMessageController::class, 'markAsSeen'])->middleware(['seller.workspace', 'seller.module:team_messages'])->name('team-messages.seen');
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
     Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.index');

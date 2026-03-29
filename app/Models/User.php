@@ -291,6 +291,7 @@ class User extends Authenticatable implements MustVerifyEmail
             '3d',
             'orders',
             'messages',
+            'team_messages',
             'reviews',
             'shop_settings',
         ];

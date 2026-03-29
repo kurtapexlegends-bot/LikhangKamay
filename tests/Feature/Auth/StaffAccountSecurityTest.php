@@ -47,7 +47,7 @@ class StaffAccountSecurityTest extends TestCase
         $response->assertRedirect(route('staff.password.edit', absolute: false));
     }
 
-    public function test_verified_staff_with_overview_access_is_redirected_to_dashboard_after_login(): void
+    public function test_verified_staff_is_redirected_to_staff_dashboard_after_login(): void
     {
         $owner = User::factory()->artisanApproved()->create();
         $staff = User::factory()->staff($owner)->create([
@@ -60,7 +60,7 @@ class StaffAccountSecurityTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($staff);
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('staff.dashboard', absolute: false));
     }
 
     public function test_unverified_staff_cannot_access_staff_home_or_dashboard(): void
@@ -121,12 +121,12 @@ class StaffAccountSecurityTest extends TestCase
                 'password_confirmation' => 'new-password',
             ]);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('staff.dashboard', absolute: false));
         $this->assertTrue(Hash::check('new-password', $staff->fresh()->password));
         $this->assertFalse($staff->fresh()->must_change_password);
     }
 
-    public function test_completed_staff_without_granted_modules_can_access_holding_page_and_is_redirected_there_from_dashboard(): void
+    public function test_completed_staff_without_business_modules_lands_on_the_staff_dashboard_because_team_inbox_is_available(): void
     {
         $owner = User::factory()->artisanApproved()->create([
             'shop_name' => 'Clay House',
@@ -137,18 +137,14 @@ class StaffAccountSecurityTest extends TestCase
             'staff_module_permissions' => [],
         ]);
 
-        $this->actingAs($staff)
-            ->get('/dashboard')
-            ->assertRedirect(route('staff.home', absolute: false));
+        $response = $this->actingAs($staff)->get('/dashboard');
 
-        $response = $this->actingAs($staff)->get(route('staff.home'));
-
-        $response->assertOk();
+        $response->assertRedirect(route('staff.dashboard', absolute: false));
+        $response = $this->actingAs($staff)->get(route('staff.dashboard'));
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Staff/Holding')
-            ->where('staffAccount.email', $staff->email)
-            ->where('sellerOwner.id', $owner->id)
-            ->where('sellerOwner.name', 'Clay House')
+            ->component('Staff/Dashboard')
+            ->where('hub.variant', 'crm')
+            ->where('hub.sellerName', 'Clay House')
         );
     }
 

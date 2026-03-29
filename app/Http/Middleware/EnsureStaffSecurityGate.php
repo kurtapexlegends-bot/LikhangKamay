@@ -47,8 +47,11 @@ class EnsureStaffSecurityGate
      * @var array<int, string>
      */
     protected array $completedRoutePrefixes = [
+        'staff.dashboard',
+        'team-messages.',
         'profile.',
         'notifications.',
+        'chat.',
         'orders.',
         'analytics.',
         'products.',
@@ -102,7 +105,11 @@ class EnsureStaffSecurityGate
             return false;
         }
 
-        if ($routeName === 'dashboard' || in_array($routeName, $this->holdingRoutes, true)) {
+        if (
+            $routeName === 'dashboard'
+            || $routeName === 'staff.dashboard'
+            || in_array($routeName, $this->holdingRoutes, true)
+        ) {
             return true;
         }
 

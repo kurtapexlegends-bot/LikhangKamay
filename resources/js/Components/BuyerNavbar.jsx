@@ -15,6 +15,7 @@ export default function BuyerNavbar() {
     const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
         ? route(sellerSidebar.defaultRouteName)
         : null;
+    const workspaceLabel = sellerSidebar?.actorType === 'staff' ? 'Staff Hub' : 'Seller Dashboard';
 
     const params = new URLSearchParams(window.location.search);
     const [term, setTerm] = useState(params.get('search') || '');
@@ -109,7 +110,7 @@ export default function BuyerNavbar() {
                                                 <Dropdown.Link href={sellerWorkspaceHref} className="text-clay-600 font-bold bg-clay-50/50">
                                                     <span className="flex items-center">
                                                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                                        Seller Dashboard
+                                                        {workspaceLabel}
                                                     </span>
                                                 </Dropdown.Link>
                                             )}

@@ -7,7 +7,7 @@ use App\Models\User;
 class SellerEntitlementService
 {
     /**
-     * Modules that are safe to expose to staff in Phase 2.
+     * Modules that are safe to expose to staff.
      *
      * @return array<int, string>
      */
@@ -76,9 +76,17 @@ class SellerEntitlementService
             ));
         }
 
+        if ($user->isSellerOwner() || $user->isStaff()) {
+            $visibleModules[] = 'team_messages';
+        }
+
+        $visibleModules = array_values(array_unique($visibleModules));
+
         $canManageModuleSettings = $user->isSellerOwner() && $ownerEntitlements['showGear'];
         $canManageSubscription = $user->isSellerOwner();
-        $defaultRouteName = $this->getFirstAccessibleRouteNameFromModules($visibleModules);
+        $defaultRouteName = $user->isStaff()
+            ? 'staff.dashboard'
+            : $this->getFirstAccessibleRouteNameFromModules($visibleModules);
 
         return [
             'sellerOwnerId' => $seller->id,
@@ -295,6 +303,7 @@ class SellerEntitlementService
             '3d',
             'sponsorships',
             'messages',
+            'team_messages',
         ];
     }
 
@@ -317,6 +326,7 @@ class SellerEntitlementService
             '3d' => '3d.index',
             'sponsorships' => 'seller.sponsorships',
             'messages' => 'chat.index',
+            'team_messages' => 'team-messages.index',
         ];
     }
 

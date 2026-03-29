@@ -28,13 +28,7 @@ class DashboardController extends Controller
                 return redirect()->route('staff.home');
             }
 
-            if (!$user->canAccessSellerModule('overview')) {
-                $routeName = $user->getFirstAccessibleSellerRouteName();
-
-                return $routeName
-                    ? redirect()->route($routeName)
-                    : redirect()->route('staff.home');
-            }
+            return redirect()->route('staff.dashboard');
         } elseif (!$user->isArtisan()) {
             return redirect('/shop');
         }
