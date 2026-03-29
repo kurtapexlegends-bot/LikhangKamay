@@ -241,6 +241,7 @@ class ProcurementController extends Controller
 
         StockRequest::create([
             'user_id' => $this->sellerOwnerId(),
+            'requested_by_user_id' => $this->sellerActor()->id,
             'supply_id' => $supply->id,
             'quantity' => $validated['quantity'],
             'total_cost' => $totalCost,

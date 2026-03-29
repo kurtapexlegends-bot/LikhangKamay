@@ -3,7 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Models\Order;
+use App\Models\Payroll;
+use App\Models\PayrollItem;
 use App\Models\StockRequest;
+use App\Models\User;
+use App\Notifications\AccountingRejectedNotification;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,69 +20,44 @@ class AccountingController extends Controller
     public function index(WalletService $walletService)
     {
         $seller = $this->sellerOwner();
-        $userId = $seller->id;
+        $financials = $this->buildFinancialSnapshot($seller);
 
-        // 1. Calculate Total Revenue (Completed Orders)
-        // We only count revenue that is actually "paid" or "completed" to be safe, 
-        // but for now let's use all 'Completed' orders as the realized revenue source.
-        $totalRevenue = \App\Models\Order::where('artisan_id', $userId)
-            ->where('status', 'Completed')
-            ->sum('total_amount');
-
-        // 2. Calculate Total Expenses (Released Stock Requests + Paid Payrolls)
-        
-        // A. Stock Requests (Released Funds)
-        // Status: accounting_approved, ordered, partially_received, received, completed
-        $stockExpenses = StockRequest::where('user_id', $userId)
-            ->whereIn('status', [
-                StockRequest::STATUS_ACCOUNTING_APPROVED, 
-                StockRequest::STATUS_ORDERED, 
-                StockRequest::STATUS_PARTIALLY_RECEIVED, 
-                StockRequest::STATUS_RECEIVED, 
-                StockRequest::STATUS_COMPLETED
-            ])
-            ->sum('total_cost');
-
-        // B. Payroll (Paid)
-        $payrollExpenses = \App\Models\Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
-
-        $totalExpenses = $stockExpenses + $payrollExpenses;
-        $baseFunds = $seller->base_funds ?? 0;
-        $currentBalance = $baseFunds + $totalRevenue - $totalExpenses;
-
-        // Get requests that are pending approval
-        // These are waiting for Accounting to release funds.
-        $pendingRelease = StockRequest::with('supply')
-            ->where('user_id', $userId)
+        $pendingRelease = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
             ->where('status', StockRequest::STATUS_PENDING)
             ->latest()
-            ->get();
+            ->get()
+            ->map(fn (StockRequest $request) => $this->serializeStockRequest($request, $financials['balance']));
 
-        $pendingPayrolls = \App\Models\Payroll::where('user_id', $userId)
+        $pendingPayrolls = Payroll::with(['items.employee', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
             ->where('status', 'Pending')
             ->latest()
-            ->get();
+            ->get()
+            ->map(fn (Payroll $payroll) => $this->serializePayroll($payroll, $seller, $financials['balance']));
 
-        // Also show recently released funds for history
-        $releasedHistory = StockRequest::with('supply')
-            ->where('user_id', $userId)
+        $releasedHistory = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
             ->whereIn('status', [
-                StockRequest::STATUS_ACCOUNTING_APPROVED, 
-                StockRequest::STATUS_ORDERED, 
-                StockRequest::STATUS_PARTIALLY_RECEIVED, 
-                StockRequest::STATUS_RECEIVED, 
+                StockRequest::STATUS_ACCOUNTING_APPROVED,
+                StockRequest::STATUS_ORDERED,
+                StockRequest::STATUS_PARTIALLY_RECEIVED,
+                StockRequest::STATUS_RECEIVED,
                 StockRequest::STATUS_COMPLETED,
-                StockRequest::STATUS_REJECTED // Include rejected for history
+                StockRequest::STATUS_REJECTED,
             ])
             ->latest()
             ->take(10)
-            ->get();
+            ->get()
+            ->map(fn (StockRequest $request) => $this->serializeStockRequest($request, $financials['balance']));
 
-        $payrollHistory = \App\Models\Payroll::where('user_id', $userId)
+        $payrollHistory = Payroll::with(['items.employee', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
             ->whereIn('status', ['Paid', 'Rejected'])
             ->latest()
             ->take(10)
-            ->get();
+            ->get()
+            ->map(fn (Payroll $payroll) => $this->serializePayroll($payroll, $seller, $financials['balance']));
 
         return Inertia::render('Seller/Accounting/FundRelease', [
             'pendingRequests' => $pendingRelease,
@@ -86,11 +66,11 @@ class AccountingController extends Controller
             'payrollHistory' => $payrollHistory,
             'wallet' => $walletService->buildSnapshotForUser($seller, 8),
             'finances' => [
-                'baseFunds' => $baseFunds,
-                'revenue' => $totalRevenue,
-                'expenses' => $totalExpenses,
-                'balance' => $currentBalance
-            ]
+                'baseFunds' => $financials['base_funds'],
+                'revenue' => $financials['revenue'],
+                'expenses' => $financials['expenses'],
+                'balance' => $financials['balance'],
+            ],
         ]);
     }
 
@@ -102,31 +82,11 @@ class AccountingController extends Controller
             return back()->with('error', 'Request is not pending.');
         }
 
-        // --- BUDGET CHECK ---
-        $seller = $this->sellerOwner();
-        $userId = $seller->id;
-        $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'Completed')->sum('total_amount');
-        
-        $stockExpenses = StockRequest::where('user_id', $userId)
-            ->whereIn('status', [
-                StockRequest::STATUS_ACCOUNTING_APPROVED, 
-                StockRequest::STATUS_ORDERED, 
-                StockRequest::STATUS_PARTIALLY_RECEIVED, 
-                StockRequest::STATUS_RECEIVED, 
-                StockRequest::STATUS_COMPLETED
-            ])
-            ->sum('total_cost');
-            
-        $payrollExpenses = \App\Models\Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
-            
-        $baseFunds = $seller->base_funds ?? 0;
-        $currentBalance = $baseFunds + $totalRevenue - ($stockExpenses + $payrollExpenses);
+        $currentBalance = $this->buildFinancialSnapshot($this->sellerOwner())['balance'];
 
-        if ($currentBalance < $stockRequest->total_cost) {
-            return back()->with('error', 'Insufficient funds. Cannot release ₱' . number_format($stockRequest->total_cost, 2));
+        if ($currentBalance < (float) $stockRequest->total_cost) {
+            return back()->with('error', 'Insufficient funds. Cannot release PHP '.number_format((float) $stockRequest->total_cost, 2));
         }
-
-        // Logic: Release funds. 
         $stockRequest->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
 
         return back()->with('success', 'Funds released. Procurement can now proceed.');
@@ -136,55 +96,49 @@ class AccountingController extends Controller
     {
         $this->authorizeSellerOwnership($stockRequest->user_id);
 
-        // Validate reason
-        $request->validate([
-            'reason' => 'required|string|max:255'
+        if ($stockRequest->status !== StockRequest::STATUS_PENDING) {
+            return back()->with('error', 'Only pending stock requests can be rejected.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:1000',
         ]);
 
         $stockRequest->update([
             'status' => StockRequest::STATUS_REJECTED,
-            'rejection_reason' => $request->reason,
+            'rejection_reason' => $validated['reason'],
         ]);
 
-        $user = \App\Models\User::find($stockRequest->user_id);
-        if ($user) {
-            $user->notify(new \App\Notifications\AccountingRejectedNotification(
+        $stockRequest->loadMissing(['supply', 'requester', 'user']);
+
+        if ($recipient = $this->resolveRequester($stockRequest)) {
+            $supplyName = $stockRequest->supply?->name ?? 'the requested supply';
+
+            $recipient->notify(new AccountingRejectedNotification(
                 'Stock Request Rejected',
-                "Accounting rejected your stock request for {$stockRequest->supply->name}. Reason: {$request->reason}",
-                route('stock-requests.index') // Route where procurement manages requests
+                "Accounting rejected stock request #{$stockRequest->id} for {$supplyName}. Reason: {$validated['reason']}",
+                route('stock-requests.index'),
+                'stock_request',
+                $stockRequest->id,
+                $validated['reason']
             ));
         }
 
         return back()->with('success', 'Fund release rejected.');
     }
 
-    public function approvePayroll(\App\Models\Payroll $payroll)
+    public function approvePayroll(Payroll $payroll)
     {
         $this->authorizeSellerOwnership($payroll->user_id);
 
-        // BUDGET CHECK
-        $seller = $this->sellerOwner();
-        $userId = $seller->id;
-        $totalRevenue = \App\Models\Order::where('artisan_id', $userId)->where('status', 'Completed')->sum('total_amount');
-        
-        $stockExpenses = StockRequest::where('user_id', $userId)
-            ->whereIn('status', [
-                StockRequest::STATUS_ACCOUNTING_APPROVED, 
-                StockRequest::STATUS_ORDERED, 
-                StockRequest::STATUS_PARTIALLY_RECEIVED, 
-                StockRequest::STATUS_RECEIVED, 
-                StockRequest::STATUS_COMPLETED
-            ])
-            ->sum('total_cost');
+        if ($payroll->status !== 'Pending') {
+            return back()->with('error', 'Payroll is not pending.');
+        }
 
-        $payrollExpenses = \App\Models\Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount');
+        $currentBalance = $this->buildFinancialSnapshot($this->sellerOwner())['balance'];
 
-        $baseFunds = $seller->base_funds ?? 0;
-            
-        $currentBalance = $baseFunds + $totalRevenue - ($stockExpenses + $payrollExpenses);
-
-        if ($currentBalance < $payroll->total_amount) {
-            return back()->with('error', 'Insufficient funds. Cannot release payroll of ₱' . number_format($payroll->total_amount, 2));
+        if ($currentBalance < (float) $payroll->total_amount) {
+            return back()->with('error', 'Insufficient funds. Cannot release payroll of PHP '.number_format((float) $payroll->total_amount, 2));
         }
 
         $payroll->update(['status' => 'Paid']);
@@ -192,25 +146,33 @@ class AccountingController extends Controller
         return back()->with('success', 'Payroll approved and funds released.');
     }
 
-    public function rejectPayroll(Request $request, \App\Models\Payroll $payroll)
+    public function rejectPayroll(Request $request, Payroll $payroll)
     {
         $this->authorizeSellerOwnership($payroll->user_id);
 
-        $request->validate([
-            'reason' => 'required|string|max:255'
+        if ($payroll->status !== 'Pending') {
+            return back()->with('error', 'Only pending payroll requests can be rejected.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:1000',
         ]);
 
         $payroll->update([
             'status' => 'Rejected',
-            'rejection_reason' => $request->reason
+            'rejection_reason' => $validated['reason'],
         ]);
 
-        $user = \App\Models\User::find($payroll->user_id);
-        if ($user) {
-            $user->notify(new \App\Notifications\AccountingRejectedNotification(
+        $payroll->loadMissing(['requester', 'user']);
+
+        if ($recipient = $this->resolveRequester($payroll)) {
+            $recipient->notify(new AccountingRejectedNotification(
                 'Payroll Request Rejected',
-                "Accounting rejected the Payroll for {$payroll->month}. Reason: {$request->reason}",
-                route('hr.index') // Route where HR manages payroll requests
+                "Accounting rejected the payroll request for {$payroll->month}. Reason: {$validated['reason']}",
+                route('hr.index'),
+                'payroll',
+                $payroll->id,
+                $validated['reason']
             ));
         }
 
@@ -228,5 +190,138 @@ class AccountingController extends Controller
         ]);
 
         return back()->with('success', 'Starting balance updated successfully.');
+    }
+
+    private function buildFinancialSnapshot(User $seller): array
+    {
+        $userId = $seller->id;
+
+        $totalRevenue = Order::where('artisan_id', $userId)
+            ->where('status', 'Completed')
+            ->sum('total_amount');
+
+        $stockExpenses = StockRequest::where('user_id', $userId)
+            ->whereIn('status', [
+                StockRequest::STATUS_ACCOUNTING_APPROVED,
+                StockRequest::STATUS_ORDERED,
+                StockRequest::STATUS_PARTIALLY_RECEIVED,
+                StockRequest::STATUS_RECEIVED,
+                StockRequest::STATUS_COMPLETED,
+            ])
+            ->sum('total_cost');
+
+        $payrollExpenses = Payroll::where('user_id', $userId)
+            ->where('status', 'Paid')
+            ->sum('total_amount');
+
+        $baseFunds = (float) ($seller->base_funds ?? 0);
+        $totalExpenses = (float) $stockExpenses + (float) $payrollExpenses;
+        $currentBalance = $baseFunds + (float) $totalRevenue - $totalExpenses;
+
+        return [
+            'base_funds' => $baseFunds,
+            'revenue' => (float) $totalRevenue,
+            'expenses' => $totalExpenses,
+            'balance' => $currentBalance,
+        ];
+    }
+
+    private function serializeStockRequest(StockRequest $request, float $currentBalance): array
+    {
+        $request->loadMissing(['supply', 'requester', 'user']);
+
+        $supply = $request->supply;
+        $requester = $this->resolveRequester($request);
+        $amount = (float) $request->total_cost;
+
+        return [
+            'id' => $request->id,
+            'type' => 'procurement',
+            'status' => $request->status,
+            'created_at' => $request->created_at?->toIso8601String(),
+            'updated_at' => $request->updated_at?->toIso8601String(),
+            'rejection_reason' => $request->rejection_reason,
+            'amount' => $amount,
+            'quantity' => (int) $request->quantity,
+            'requester' => $this->serializeRequester($requester),
+            'supply' => [
+                'id' => $supply?->id,
+                'name' => $supply?->name,
+                'category' => $supply?->category,
+                'supplier' => $supply?->supplier,
+                'unit' => $supply?->unit,
+                'current_stock' => (int) ($supply?->quantity ?? 0),
+                'min_stock' => (int) ($supply?->min_stock ?? 0),
+                'max_stock' => (int) ($supply?->max_stock ?? 0),
+                'available_capacity' => $supply ? (int) $supply->getAvailableCapacity() : 0,
+                'unit_cost' => (float) ($supply?->unit_cost ?? 0),
+            ],
+            'fund_snapshot' => [
+                'available_balance' => $currentBalance,
+                'remaining_balance' => $currentBalance - $amount,
+            ],
+        ];
+    }
+
+    private function serializePayroll(Payroll $payroll, User $seller, float $currentBalance): array
+    {
+        $payroll->loadMissing(['items.employee', 'requester', 'user']);
+
+        $workingDays = max((int) ($seller->payroll_working_days ?? 22), 1);
+        $requester = $this->resolveRequester($payroll);
+        $amount = (float) $payroll->total_amount;
+
+        return [
+            'id' => $payroll->id,
+            'type' => 'payroll',
+            'month' => $payroll->month,
+            'status' => $payroll->status,
+            'created_at' => $payroll->created_at?->toIso8601String(),
+            'updated_at' => $payroll->updated_at?->toIso8601String(),
+            'rejection_reason' => $payroll->rejection_reason,
+            'employee_count' => (int) $payroll->employee_count,
+            'amount' => $amount,
+            'requester' => $this->serializeRequester($requester),
+            'fund_snapshot' => [
+                'available_balance' => $currentBalance,
+                'remaining_balance' => $currentBalance - $amount,
+            ],
+            'line_items' => $payroll->items->map(function (PayrollItem $item) use ($workingDays) {
+                $dailyRate = $workingDays > 0 ? ((float) $item->base_salary / $workingDays) : 0;
+                $hourlyRate = $dailyRate / 8;
+
+                return [
+                    'id' => $item->id,
+                    'employee_name' => $item->employee?->name ?? "Employee #{$item->employee_id}",
+                    'base_salary' => (float) $item->base_salary,
+                    'days_worked' => (float) $item->days_worked,
+                    'absences_days' => (float) $item->absences_days,
+                    'absence_deduction' => round((float) $item->absences_days * $dailyRate, 2),
+                    'undertime_hours' => (float) $item->undertime_hours,
+                    'undertime_deduction' => round((float) $item->undertime_hours * $hourlyRate, 2),
+                    'overtime_hours' => (float) $item->overtime_hours,
+                    'overtime_pay' => (float) $item->overtime_pay,
+                    'net_pay' => (float) $item->net_pay,
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    private function resolveRequester(object $record): ?User
+    {
+        return $record->requester ?? $record->user ?? null;
+    }
+
+    private function serializeRequester(?User $requester): ?array
+    {
+        if (!$requester) {
+            return null;
+        }
+
+        return [
+            'id' => $requester->id,
+            'name' => $requester->name,
+            'role' => $requester->role,
+        ];
     }
 }

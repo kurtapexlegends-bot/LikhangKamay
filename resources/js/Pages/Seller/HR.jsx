@@ -832,6 +832,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                 <td className="px-5 py-4">
                                                     <div className="font-bold text-gray-900 text-sm">{formatShortDate(payroll.created_at)}</div>
                                                     <div className="mt-1 text-xs text-gray-500">{payroll.month}</div>
+                                                    <div className="mt-1 text-xs text-gray-400">
+                                                        Requested by <span className="font-bold text-gray-600">{payroll.requester?.name || 'Seller owner'}</span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-center font-bold text-gray-600">
                                                     {payroll.employee_count}

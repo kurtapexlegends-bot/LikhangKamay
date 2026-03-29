@@ -40,6 +40,8 @@ export default function NotificationDropdown() {
                 return <PackageCheck size={16} className="text-teal-500" />;
             case 'team_message':
                 return <Users size={16} className="text-emerald-500" />;
+            case 'accounting_rejected':
+                return <AlertTriangle size={16} className="text-red-500" />;
             default:
                 return <Bell size={16} className="text-gray-500" />;
         }

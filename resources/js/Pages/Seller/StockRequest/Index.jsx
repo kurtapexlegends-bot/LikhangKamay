@@ -295,6 +295,9 @@ export default function StockRequestIndex({ auth, requests }) {
                                                 <td className="px-4 py-3">
                                                     <p className="font-bold text-gray-900 text-sm">{req.supply?.name || 'Unknown Item'}</p>
                                                     <p className="text-[11px] text-gray-400 mt-0.5">{req.supply?.category}</p>
+                                                    <p className="text-[11px] text-gray-400 mt-1">
+                                                        Requested by <span className="font-bold text-gray-600">{req.requester?.name || 'Seller owner'}</span>
+                                                    </p>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <span className="text-sm font-bold text-gray-900">{req.quantity}</span>

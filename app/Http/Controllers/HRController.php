@@ -116,7 +116,8 @@ class HRController extends Controller
                 ];
             });
 
-        $payrolls = \App\Models\Payroll::where('user_id', $seller->id)
+        $payrolls = \App\Models\Payroll::with('requester:id,name')
+            ->where('user_id', $seller->id)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -472,6 +473,7 @@ class HRController extends Controller
 
                 $payroll = \App\Models\Payroll::create([
                     'user_id' => $sellerId,
+                    'requested_by_user_id' => $this->sellerActor()->id,
                     'month' => $validated['month'],
                     'total_amount' => 0,
                     'employee_count' => $employeeCount,

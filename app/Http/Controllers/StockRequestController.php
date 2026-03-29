@@ -20,7 +20,7 @@ class StockRequestController extends Controller
         $userId = $this->sellerOwnerId();
 
         // Fetch requests with associated supply details
-        $requests = StockRequest::with('supply')
+        $requests = StockRequest::with(['supply', 'requester:id,name'])
             ->where('user_id', $userId)
             ->latest()
             ->get();
@@ -57,6 +57,7 @@ class StockRequestController extends Controller
 
         StockRequest::create([
             'user_id' => $this->sellerOwnerId(),
+            'requested_by_user_id' => $this->sellerActor()->id,
             'supply_id' => $supply->id,
             'quantity' => $validated['quantity'],
             'total_cost' => $totalCost,

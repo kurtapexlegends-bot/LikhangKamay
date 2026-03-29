@@ -11,18 +11,31 @@ class AccountingRejectedNotification extends Notification
 {
     use Queueable;
 
-    protected $title;
-    protected $message;
-    protected $url;
+    protected string $title;
+    protected string $message;
+    protected string $url;
+    protected string $requestType;
+    protected int $requestId;
+    protected string $reason;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(string $title, string $message, string $url)
+    public function __construct(
+        string $title,
+        string $message,
+        string $url,
+        string $requestType,
+        int $requestId,
+        string $reason
+    )
     {
         $this->title = $title;
         $this->message = $message;
         $this->url = $url;
+        $this->requestType = $requestType;
+        $this->requestId = $requestId;
+        $this->reason = $reason;
     }
 
     /**
@@ -46,6 +59,9 @@ class AccountingRejectedNotification extends Notification
             'type' => 'accounting_rejected',
             'title' => $this->title,
             'message' => $this->message,
+            'reason' => $this->reason,
+            'request_type' => $this->requestType,
+            'request_id' => $this->requestId,
             'url' => $this->url,
         ];
     }
