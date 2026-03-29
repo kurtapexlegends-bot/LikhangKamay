@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { CheckCircle2, ChevronRight, AlertCircle, Crown, Search, X } from 'lucide-react';
+import { CheckCircle2, ChevronRight, AlertCircle, Crown, Search, X, Users } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
-export default function Subscription({ auth, currentPlan, activeProductsCount, limit, activeProducts }) {
+export default function Subscription({ auth, currentPlan, activeProductsCount, limit, activeProducts, linkedStaffCount = 0 }) {
     const [downgradeModalOpen, setDowngradeModalOpen] = useState(false);
     const [targetPlan, setTargetPlan] = useState(null);
     const [selectedProductsToKeep, setSelectedProductsToKeep] = useState([]);
@@ -31,11 +31,13 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         submitSubscriptionChange(route('seller.subscription.upgrade'), { plan: planValue });
     };
 
+    const needsStandardDowngradeWarning = (planValue) => currentPlan === 'super_premium' && planValue === 'free';
+
     const initiateDowngrade = (planValue, newLimit) => {
-        if (activeProductsCount > newLimit) {
+        if (activeProductsCount > newLimit || needsStandardDowngradeWarning(planValue)) {
             setTargetPlan({ value: planValue, limit: newLimit });
             setDowngradeModalOpen(true);
-            setSelectedProductsToKeep([]);
+            setSelectedProductsToKeep(activeProductsCount > newLimit ? [] : activeProducts.map((product) => product.id));
             reset();
         } else {
             // Direct downgrade since they are under the limit
@@ -59,11 +61,15 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     };
 
     const confirmDowngrade = () => {
+        const keepActiveIds = selectedProductsToKeep.length > 0
+            ? selectedProductsToKeep
+            : activeProducts.map((product) => product.id);
+
         submitSubscriptionChange(
             route('seller.subscription.downgrade'),
             {
                 plan: targetPlan.value,
-                keep_active_ids: selectedProductsToKeep,
+                keep_active_ids: keepActiveIds,
             },
             {
                 onSuccess: () => {
@@ -105,7 +111,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         {
             id: 'premium',
             name: 'Premium',
-            price: '₱199 / mo',
+            price: 'â‚±199 / mo',
             description: 'Grow your artisan business with stronger operational tools.',
             limit: 10,
             features: [
@@ -119,7 +125,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         {
             id: 'super_premium',
             name: 'Elite',
-            price: '₱399 / mo',
+            price: 'â‚±399 / mo',
             description: 'Unlock the full seller suite and sponsored placements.',
             limit: 50,
             features: [
@@ -137,6 +143,11 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
         p.sku.toLowerCase().includes(searchQuery.toLowerCase())
     );
+    const requiresProductSelection = activeProductsCount > (targetPlan?.limit ?? limit);
+    const showsStandardDowngradeWarning = currentPlan === 'super_premium' && targetPlan?.value === 'free';
+    const canConfirmDowngrade = !processing
+        && (!requiresProductSelection || selectedProductsToKeep.length > 0)
+        && (!requiresProductSelection || selectedProductsToKeep.length <= targetPlan?.limit);
 
     const closeDowngradeModal = () => {
         setDowngradeModalOpen(false);
@@ -272,7 +283,9 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             <Modal show={downgradeModalOpen} onClose={closeDowngradeModal} maxWidth="2xl">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                        <h2 className="text-lg font-bold text-stone-900">Select Products to Keep Active</h2>
+                        <h2 className="text-lg font-bold text-stone-900">
+                            {requiresProductSelection ? 'Select Products to Keep Active' : 'Confirm Downgrade to Standard'}
+                        </h2>
                         <button
                             onClick={closeDowngradeModal}
                             className="text-stone-400 hover:text-stone-600"
@@ -281,76 +294,100 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                         </button>
                     </div>
                     
-                    <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-4 text-sm flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                        <p>
-                            You are downgrading to a plan with a limit of <strong>{targetPlan?.limit}</strong> active products. 
-                            You currently have {activeProductsCount} active products. Please select which products you want to keep active. The rest will be set to Draft.
-                        </p>
-                    </div>
-
-                    <div className="flex justify-between items-center mb-4">
-                        <p className="text-sm font-medium text-stone-600">
-                            Selected: {selectedProductsToKeep.length} / {targetPlan?.limit}
-                        </p>
-                        <div className="relative w-64">
-                            <input 
-                                type="text" 
-                                placeholder="Search products..." 
-                                className="w-full pl-9 pr-4 py-2 text-sm border-stone-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    {requiresProductSelection && (
+                        <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-4 text-sm flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <p>
+                                You are downgrading to a plan with a limit of <strong>{targetPlan?.limit}</strong> active products. 
+                                You currently have {activeProductsCount} active products. Please select which products you want to keep active. The rest will be set to Draft.
+                            </p>
                         </div>
-                    </div>
+                    )}
+
+                    {showsStandardDowngradeWarning && (
+                        <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                            <Users className="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p className="font-bold">Standard plan warning</p>
+                                <p className="mt-1 leading-6">
+                                    Downgrading from Elite to Standard will suspend Elite-only seller features and suspend {linkedStaffCount} linked employee workspace account{linkedStaffCount === 1 ? '' : 's'} until this shop upgrades again.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {requiresProductSelection && (
+                        <div className="flex justify-between items-center mb-4">
+                            <p className="text-sm font-medium text-stone-600">
+                                Selected: {selectedProductsToKeep.length} / {targetPlan?.limit}
+                            </p>
+                            <div className="relative w-64">
+                                <input 
+                                    type="text" 
+                                    placeholder="Search products..." 
+                                    className="w-full pl-9 pr-4 py-2 text-sm border-stone-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            </div>
+                        </div>
+                    )}
 
                     {errors.limit && (
                         <p className="text-sm text-red-600 mb-4">{errors.limit}</p>
                     )}
 
-                    <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
-                        {filteredProducts.map(product => {
-                            const isSelected = selectedProductsToKeep.includes(product.id);
-                            const isDisabled = !isSelected && selectedProductsToKeep.length >= targetPlan?.limit;
+                    {requiresProductSelection && selectedProductsToKeep.length === 0 && (
+                        <p className="mb-4 text-sm text-amber-700">
+                            Select at least one product to keep active before confirming this downgrade.
+                        </p>
+                    )}
 
-                            return (
-                                <div 
-                                    key={product.id}
-                                    onClick={() => !isDisabled && toggleProductSelection(product.id)}
-                                    className={`flex items-center gap-4 p-3 rounded-xl border transition-colors ${
-                                        isSelected ? 'bg-orange-50 border-orange-200' : 
-                                        isDisabled ? 'opacity-50 cursor-not-allowed bg-stone-50 border-stone-200' : 
-                                        'bg-white border-stone-200 hover:border-orange-300 cursor-pointer'
-                                    }`}
-                                >
-                                    <div className="flex-shrink-0 flex items-center justify-center w-6 h-6">
-                                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? 'bg-orange-600 border-orange-600' : 'border-stone-300 bg-white'}`}>
-                                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                    {requiresProductSelection && (
+                        <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
+                            {filteredProducts.map(product => {
+                                const isSelected = selectedProductsToKeep.includes(product.id);
+                                const isDisabled = !isSelected && selectedProductsToKeep.length >= targetPlan?.limit;
+
+                                return (
+                                    <div 
+                                        key={product.id}
+                                        onClick={() => !isDisabled && toggleProductSelection(product.id)}
+                                        className={`flex items-center gap-4 p-3 rounded-xl border transition-colors ${
+                                            isSelected ? 'bg-orange-50 border-orange-200' : 
+                                            isDisabled ? 'opacity-50 cursor-not-allowed bg-stone-50 border-stone-200' : 
+                                            'bg-white border-stone-200 hover:border-orange-300 cursor-pointer'
+                                        }`}
+                                    >
+                                        <div className="flex-shrink-0 flex items-center justify-center w-6 h-6">
+                                            <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? 'bg-orange-600 border-orange-600' : 'border-stone-300 bg-white'}`}>
+                                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="w-12 h-12 bg-stone-100 rounded overflow-hidden flex-shrink-0">
+                                            {product.cover_photo_path ? (
+                                                <img src={`/storage/${product.cover_photo_path}`} className="w-full h-full object-cover" alt="" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-xs text-stone-400">No Img</div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-stone-900 truncate">{product.name}</p>
+                                            <p className="text-xs text-stone-500">SKU: {product.sku}</p>
+                                        </div>
+                                        <div className="font-medium text-sm text-stone-900">
+                                            â‚±{parseFloat(product.price).toFixed(2)}
                                         </div>
                                     </div>
-                                    
-                                    <div className="w-12 h-12 bg-stone-100 rounded overflow-hidden flex-shrink-0">
-                                        {product.cover_photo_path ? (
-                                            <img src={`/storage/${product.cover_photo_path}`} className="w-full h-full object-cover" alt="" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-xs text-stone-400">No Img</div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-stone-900 truncate">{product.name}</p>
-                                        <p className="text-xs text-stone-500">SKU: {product.sku}</p>
-                                    </div>
-                                    <div className="font-medium text-sm text-stone-900">
-                                        ₱{parseFloat(product.price).toFixed(2)}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {filteredProducts.length === 0 && (
-                            <p className="text-center text-stone-500 py-8 text-sm">No products found matching your search.</p>
-                        )}
-                    </div>
+                                );
+                            })}
+                            {filteredProducts.length === 0 && (
+                                <p className="text-center text-stone-500 py-8 text-sm">No products found matching your search.</p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-stone-200">
                         <button
@@ -361,9 +398,9 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                         </button>
                         <button
                             onClick={confirmDowngrade}
-                            disabled={selectedProductsToKeep.length > targetPlan?.limit || processing}
+                            disabled={!canConfirmDowngrade}
                             className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors ${
-                                selectedProductsToKeep.length <= targetPlan?.limit && !processing
+                                canConfirmDowngrade
                                     ? 'bg-orange-600 hover:bg-orange-700' 
                                     : 'bg-stone-300 cursor-not-allowed'
                             }`}
@@ -376,5 +413,6 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         </AuthenticatedLayout>
     );
 }
+
 
 

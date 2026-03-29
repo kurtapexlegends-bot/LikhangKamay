@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import {
     Package,
     ShoppingBag,
@@ -157,9 +158,9 @@ export default function Analytics({
                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
                                         <User size={16} /> Profile
                                     </Dropdown.Link>
-                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="flex items-center gap-2 text-red-600 hover:text-red-700">
+                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
                                         <LogOut size={16} /> Log Out
-                                    </Dropdown.Link>
+                                    </WorkspaceLogoutLink>
                                 </Dropdown.Content>
                             </Dropdown>
                         </div>
@@ -491,4 +492,5 @@ export default function Analytics({
         </div>
     );
 }
+
 

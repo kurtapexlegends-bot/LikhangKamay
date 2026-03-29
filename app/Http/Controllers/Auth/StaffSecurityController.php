@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\StaffAttendanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -32,6 +33,7 @@ class StaffSecurityController extends Controller
                 'email' => $user->email,
                 'role_preset_key' => $user->staff_role_preset_key,
                 'workspace_access_enabled' => $user->isWorkspaceAccessEnabled(),
+                'plan_workspace_suspended' => $user->isPlanWorkspaceSuspended(),
             ],
             'sellerOwner' => [
                 'id' => $user->getEffectiveSellerId(),
@@ -53,6 +55,15 @@ class StaffSecurityController extends Controller
         }
 
         return Inertia::render('Auth/StaffForcePasswordChange');
+    }
+
+    public function confirmLogout(Request $request, StaffAttendanceService $attendanceService): Response
+    {
+        $user = $this->getStaffUser($request);
+
+        return Inertia::render('Auth/StaffLogoutChoice', [
+            'attendance' => $attendanceService->buildLogoutContext($user),
+        ]);
     }
 
     public function updatePassword(Request $request): RedirectResponse

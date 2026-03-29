@@ -11,13 +11,10 @@ class PayrollItem extends Model
         'employee_id',
         'base_salary',
         'days_worked',
-        'absent_days',
+        'absences_days',
         'undertime_hours',
         'overtime_hours',
-        'overtime_rate',
         'overtime_pay',
-        'deductions',
-        'bonus',
         'net_pay'
     ];
 

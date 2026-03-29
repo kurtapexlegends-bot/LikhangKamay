@@ -5,6 +5,7 @@ import SellerSidebar from '@/Components/SellerSidebar';
 import { OrbitControls, Stage, PresentationControls, Float, useGLTF, Html, useProgress } from '@react-three/drei';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
@@ -183,9 +184,9 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2 text-xs">
                                         <User size={14} /> Profile
                                     </Dropdown.Link>
-                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="flex items-center gap-2 text-red-600 hover:text-red-700 text-xs">
+                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700 text-xs">
                                         <LogOut size={14} /> Log Out
-                                    </Dropdown.Link>
+                                    </WorkspaceLogoutLink>
                                 </Dropdown.Content>
                             </Dropdown>
                         </div>
@@ -480,3 +481,4 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
         </div>
     );
 }
+

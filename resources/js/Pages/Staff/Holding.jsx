@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import { Building2, LogOut, ShieldCheck, UserRoundCog } from 'lucide-react';
 
 const formatRolePreset = (value) => {
@@ -14,6 +15,7 @@ const formatRolePreset = (value) => {
 
 export default function Holding({ staffAccount, sellerOwner }) {
     const workspaceAccessEnabled = staffAccount?.workspace_access_enabled !== false;
+    const planSuspended = !!staffAccount?.plan_workspace_suspended;
 
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(196,143,103,0.14),_transparent_38%),linear-gradient(180deg,#fcfaf7_0%,#f4efe7_100%)] px-4 py-10 font-sans text-stone-800 sm:px-6">
@@ -28,27 +30,27 @@ export default function Holding({ staffAccount, sellerOwner }) {
                                     <ShieldCheck size={24} />
                                 </div>
                                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/70">
-                                    {workspaceAccessEnabled ? 'Phase 1 Staff Access' : 'Seller Access Suspended'}
+                                    {workspaceAccessEnabled ? 'Staff Workspace Status' : planSuspended ? 'Seller Plan Suspension' : 'Seller Access Suspended'}
                                 </p>
                                 <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight sm:text-4xl">
-                                    {workspaceAccessEnabled ? 'Your account is ready.' : 'Workspace access is paused.'}
+                                    {workspaceAccessEnabled ? 'Workspace access needs a route.' : planSuspended ? 'Workspace access is paused by the current seller plan.' : 'Workspace access is paused.'}
                                 </h1>
                                 <p className="mt-3 max-w-lg text-sm leading-6 text-stone-100/90">
                                     {workspaceAccessEnabled
-                                        ? 'We&apos;ve finished the security setup for your staff account. Seller modules stay locked in this phase while the shared seller workspace is being prepared safely.'
-                                        : 'This staff account still exists, but the shop owner has temporarily suspended seller workspace access. Contact the shop owner when access should be restored.'}
+                                        ? 'This page is now only used when a staff account signs in without an active seller workspace route. Once a seller context and workspace access are both available, the account should land in the role-specific staff hub instead.'
+                                        : planSuspended
+                                            ? 'This staff account still exists, but the seller recently downgraded plans and staff workspace access is paused until the shop upgrades again.'
+                                            : 'This staff account still exists, but the shop owner has temporarily suspended seller workspace access. Contact the shop owner when access should be restored.'}
                                 </p>
                             </div>
 
-                            <Link
-                                href={route('logout')}
-                                method="post"
-                                as="button"
+                            <WorkspaceLogoutLink
+                                variant="button"
                                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20"
                             >
                                 <LogOut size={14} />
                                 Log Out
-                            </Link>
+                            </WorkspaceLogoutLink>
                         </div>
                     </div>
 
@@ -68,7 +70,7 @@ export default function Holding({ staffAccount, sellerOwner }) {
                                 </div>
                                 {!workspaceAccessEnabled && (
                                     <div className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-                                        Access Suspended
+                                        {planSuspended ? 'Plan Suspended' : 'Access Suspended'}
                                     </div>
                                 )}
                             </div>
@@ -96,8 +98,10 @@ export default function Holding({ staffAccount, sellerOwner }) {
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm text-stone-600">
                                 {workspaceAccessEnabled
-                                    ? 'Phase 1 only establishes authentication, verification, and seller ownership context.'
-                                    : 'This account can sign in, but seller workspace routes stay blocked until the shop owner restores access.'}
+                                    ? 'Security setup is complete, but the workspace still needs a valid seller route before staff modules can open safely.'
+                                    : planSuspended
+                                        ? 'This account can still sign in, but seller workspace routes stay blocked until the shop upgrades to restore staff access.'
+                                        : 'This account can sign in, but seller workspace routes stay blocked until the shop owner restores access.'}
                             </p>
                             <Link
                                 href={route('home')}

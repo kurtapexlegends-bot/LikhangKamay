@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+ï»¿import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import { 
     Users, UserPlus, Trash2, ChevronDown, User, LogOut,
     Briefcase, Building2, Search, Menu, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff,
@@ -59,13 +60,20 @@ const formatShortDate = (value) => value
         day: 'numeric',
         year: 'numeric',
       }).format(new Date(value))
-    : '—';
+    : 'â€”';
 
 const getLoginAccessStatus = (loginAccount) => {
     if (!loginAccount) {
         return {
             label: 'No Login',
             className: 'border-stone-200 bg-stone-100 text-stone-600',
+        };
+    }
+
+    if (loginAccount.plan_workspace_suspended) {
+        return {
+            label: 'Plan Suspended',
+            className: 'border-amber-200 bg-amber-50 text-amber-700',
         };
     }
 
@@ -95,6 +103,55 @@ const getLoginAccessStatus = (loginAccount) => {
         className: 'border-stone-200 bg-stone-100 text-stone-700',
     };
 };
+
+const getAttendanceStatus = (attendance) => {
+    if (!attendance?.has_attendance_source) {
+        return {
+            label: 'Manual',
+            className: 'border-stone-200 bg-stone-100 text-stone-600',
+            note: 'No linked staff login',
+        };
+    }
+
+    if (attendance?.open_session || attendance?.current_state === 'clocked_in') {
+        return {
+            label: 'Clocked In',
+            className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+            note: 'Session active now',
+        };
+    }
+
+    if (attendance?.current_state === 'paused') {
+        return {
+            label: 'Paused',
+            className: 'border-amber-200 bg-amber-50 text-amber-700',
+            note: 'Will resume on next login',
+        };
+    }
+
+    if (attendance?.current_state === 'clocked_out') {
+        return {
+            label: 'Clocked Out',
+            className: 'border-stone-200 bg-stone-100 text-stone-700',
+            note: 'Last session closed',
+        };
+    }
+
+    return {
+        label: 'No Attendance',
+        className: 'border-stone-200 bg-stone-100 text-stone-600',
+        note: 'No sessions yet',
+    };
+};
+
+const formatAttendanceTime = (value) => value
+    ? new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(new Date(value))
+    : 'No clock-in yet';
 
 function RolePresetCard({ preset, isSelected, radioName, onSelect }) {
     const moduleCount = (preset.modules || []).length;
@@ -400,11 +457,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             employee_id: emp.id,
             name: emp.name,
             salary: Number(emp.salary),
-            absences_days: 0,
-            undertime_hours: 0,
-            overtime_hours: 0,
+            absences_days: Number(emp.payroll_prefill?.absences_days ?? 0),
+            undertime_hours: Number(emp.payroll_prefill?.undertime_hours ?? 0),
+            overtime_hours: Number(emp.payroll_prefill?.overtime_hours ?? 0),
+            attendance_days_worked: Number(emp.payroll_prefill?.days_worked ?? 0),
+            has_attendance_source: !!emp.attendance?.has_attendance_source,
             isSelected: true
         }));
+        setPayrollData('month', sellerSettings.attendance_month_label || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }));
         setPayrollData('items', initialItems);
         setIsPayrollModalOpen(true);
     };
@@ -539,9 +599,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
                                         <User size={16} /> Profile
                                     </Dropdown.Link>
-                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="flex items-center gap-2 text-red-600 hover:text-red-700">
+                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
                                         <LogOut size={16} /> Log Out
-                                    </Dropdown.Link>
+                                    </WorkspaceLogoutLink>
                                 </Dropdown.Content>
                             </Dropdown>
                         </div>
@@ -602,6 +662,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         <th className="px-5 py-3">Monthly Salary</th>
                                         <th className="px-5 py-3">Status</th>
                                         <th className="px-5 py-3">Login Access</th>
+                                        <th className="px-5 py-3">Attendance</th>
                                         <th className="px-5 py-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
@@ -609,6 +670,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     {filteredStaff.length > 0 ? (
                                         filteredStaff.map((emp) => {
                                             const loginAccessStatus = getLoginAccessStatus(emp.login_account);
+                                            const attendanceStatus = getAttendanceStatus(emp.attendance);
 
                                             return (
                                             <tr key={emp.id} className="hover:bg-gray-50/50 transition duration-150">
@@ -662,6 +724,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                                 <div className="break-all font-medium text-gray-700">
                                                                     {emp.login_account?.email}
                                                                 </div>
+                                                                {emp.login_account?.plan_workspace_suspended && (
+                                                                    <div className="mt-1 text-[10px] font-medium text-amber-700">
+                                                                        Seller plan downgrade is currently suspending this workspace login.
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ) : (
@@ -670,6 +737,29 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                             No linked login
                                                         </div>
                                                     )}
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <div className="min-w-[190px] rounded-2xl border border-stone-200 bg-white px-3 py-2">
+                                                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${attendanceStatus.className}`}>
+                                                            <span className={`h-1.5 w-1.5 rounded-full ${
+                                                                attendanceStatus.label === 'Clocked In'
+                                                                    ? 'bg-emerald-500'
+                                                                    : attendanceStatus.label === 'Paused'
+                                                                        ? 'bg-amber-500'
+                                                                        : 'bg-stone-400'
+                                                            }`}></span>
+                                                            {attendanceStatus.label}
+                                                        </span>
+                                                        <div className="mt-2 space-y-1 text-[11px] leading-tight text-stone-600">
+                                                            <div>{attendanceStatus.note}</div>
+                                                            <div className="font-medium text-gray-700">
+                                                                First today: {formatAttendanceTime(emp.attendance?.today_first_clock_in)}
+                                                            </div>
+                                                            <div className="text-[10px] text-stone-500">
+                                                                {sellerSettings.attendance_month_label || payrollData.month}: {emp.attendance?.days_worked || 0} worked day(s)
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-5 py-3 text-right">
                                                     <div className="flex justify-end gap-1.5">
@@ -701,7 +791,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         )})
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-20 text-center">
+                                            <td colSpan="7" className="px-6 py-20 text-center">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
                                                         <Users size={32} className="text-gray-300" />
@@ -762,7 +852,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     <div className={`text-xs leading-relaxed ${
                                                         payroll.rejection_reason ? 'text-red-600' : 'text-gray-400'
                                                     }`}>
-                                                        {payroll.rejection_reason || '—'}
+                                                        {payroll.rejection_reason || 'â€”'}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">
@@ -1386,6 +1476,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
                     </div>
 
+                    <div className="mb-4 rounded-2xl border border-[#E7D8C9] bg-[#FCF7F2] px-4 py-3 text-xs leading-6 text-clay-700">
+                        Attendance for {payrollData.month} now prefills absences, undertime, and overtime for linked staff logins. HR can still adjust the values before submitting payroll.
+                    </div>
+
                     <div className="overflow-x-auto border border-gray-200 rounded-xl mb-6">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-gray-50 font-bold text-gray-500 uppercase">
@@ -1410,7 +1504,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                 onChange={(e) => updatePayrollItem(index, 'isSelected', e.target.checked)}
                                             />
                                         </td>
-                                        <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
+                                        <td className="px-4 py-3 font-medium text-gray-900">
+                                            <div>{item.name}</div>
+                                            <div className="mt-1 text-[10px] font-medium text-gray-500">
+                                                {item.has_attendance_source
+                                                    ? `${item.attendance_days_worked || 0} attended day(s) used for prefill`
+                                                    : 'Manual payroll entry - no linked attendance source'}
+                                            </div>
+                                        </td>
                                         <td className="px-4 py-3 text-gray-500 drop-shadow-sm font-semibold">{formatPeso(item.salary)}</td>
                                         
                                         <td className="px-4 py-3 bg-red-50/20">
@@ -1514,4 +1615,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         </div>
     );
 }
+
+
 

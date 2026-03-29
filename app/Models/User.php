@@ -28,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'staff_role_preset_key',
         'staff_module_permissions',
         'must_change_password',
+        'staff_plan_suspended_at',
         'created_by_user_id',
         'employee_id',
         'shop_name',
@@ -91,6 +92,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'modules_enabled' => 'array',
             'staff_module_permissions' => 'array',
             'must_change_password' => 'boolean',
+            'staff_plan_suspended_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];
     }
@@ -149,6 +151,10 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
+        if ($this->isPlanWorkspaceSuspended()) {
+            return false;
+        }
+
         $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
 
         if (!array_key_exists(self::STAFF_WORKSPACE_ACCESS_FLAG, $permissions)) {
@@ -156,6 +162,11 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return (bool) $permissions[self::STAFF_WORKSPACE_ACCESS_FLAG];
+    }
+
+    public function isPlanWorkspaceSuspended(): bool
+    {
+        return $this->isStaff() && $this->staff_plan_suspended_at !== null;
     }
 
     /**
@@ -453,6 +464,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function employee()
     {
         return $this->belongsTo(\App\Models\Employee::class);
+    }
+
+    public function attendanceSessions()
+    {
+        return $this->hasMany(\App\Models\StaffAttendanceSession::class, 'staff_user_id');
     }
 
     /**

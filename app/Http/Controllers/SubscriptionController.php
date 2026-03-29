@@ -15,11 +15,13 @@ class SubscriptionController extends Controller
         $user = Auth::user();
         $activeProductsCount = $user->products()->where('status', 'Active')->count();
         $limit = $user->getActiveProductLimit();
+        $linkedStaffCount = $user->staffMembers()->count();
 
         return Inertia::render('Seller/Subscription', [
             'currentPlan' => $user->premium_tier,
             'activeProductsCount' => $activeProductsCount,
             'limit' => $limit,
+            'linkedStaffCount' => $linkedStaffCount,
             // Only send active products in case they need to manage downgrades
             'activeProducts' => $user->products()->where('status', 'Active')->select('id', 'name', 'sku', 'cover_photo_path', 'price')->get(),
         ]);
@@ -53,6 +55,7 @@ class SubscriptionController extends Controller
         ]);
 
         $user->update(['premium_tier' => $validated['plan']]);
+        $this->clearPlanBasedStaffSuspension($user);
         $planName = $validated['plan'] === 'super_premium' ? 'Elite' : ucfirst($validated['plan']);
         return back()->with('success', "Successfully upgraded to {$planName}!");
     }
@@ -73,6 +76,7 @@ class SubscriptionController extends Controller
         $newTier = $validated['plan'];
         $previousUrl = url()->previous();
         $previousTier = $user->premium_tier;
+        $shouldSuspendStaffForPlan = $previousTier === 'super_premium' && $newTier === 'free';
 
         // Determine new limit from User model
         $user->premium_tier = $newTier;
@@ -118,11 +122,18 @@ class SubscriptionController extends Controller
 
         $user->update(['premium_tier' => $newTier]);
 
+        if ($shouldSuspendStaffForPlan) {
+            $this->suspendStaffForStandardDowngrade($user);
+        }
+
         $redirectTo = $this->getSafePostDowngradeRedirect($user, $previousUrl);
+        $successMessage = $shouldSuspendStaffForPlan
+            ? 'Plan downgraded successfully. Excess products set to Draft. Elite-only features were suspended, and linked employee workspace accounts were suspended until you upgrade again.'
+            : 'Plan downgraded successfully. Excess products set to Draft.';
 
         return redirect()
             ->to($redirectTo)
-            ->with('success', 'Plan downgraded successfully. Excess products set to Draft.');
+            ->with('success', $successMessage);
     }
 
     private function getSafePostDowngradeRedirect(\App\Models\User $user, string $previousUrl): string
@@ -153,5 +164,23 @@ class SubscriptionController extends Controller
         // Keep the current page when still allowed (fixes forced /subscription redirects).
         // Use path-only redirect to avoid external redirect targets.
         return $path ?: route('dashboard');
+    }
+
+    private function suspendStaffForStandardDowngrade(\App\Models\User $seller): void
+    {
+        $seller->staffMembers()
+            ->whereNull('staff_plan_suspended_at')
+            ->update([
+                'staff_plan_suspended_at' => now(config('app.timezone')),
+            ]);
+    }
+
+    private function clearPlanBasedStaffSuspension(\App\Models\User $seller): void
+    {
+        $seller->staffMembers()
+            ->whereNotNull('staff_plan_suspended_at')
+            ->update([
+                'staff_plan_suspended_at' => null,
+            ]);
     }
 }

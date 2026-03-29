@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Employee;
 use App\Models\User;
+use App\Services\StaffAttendanceService;
 use App\Services\SellerEntitlementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class HRController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(SellerEntitlementService $entitlementService)
+    public function index(SellerEntitlementService $entitlementService, StaffAttendanceService $attendanceService)
     {
         $seller = $this->sellerOwner();
         $actor = $this->sellerActor();
@@ -49,10 +50,26 @@ class HRController extends Controller
             ]);
         }
 
-        $employees = $employeeQuery
-            ->get()
-            ->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions) {
+        $employeeRecords = $employeeQuery->get();
+        $attendanceMonthLabel = now(config('app.timezone'))->format('F Y');
+        $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller);
+
+        $employees = $employeeRecords
+            ->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
                 $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
+                $attendanceSummary = $attendanceSummaries[$employee->id] ?? [
+                    'current_state' => 'manual',
+                    'latest_action' => null,
+                    'today_first_clock_in' => null,
+                    'days_worked' => 0,
+                    'attended_days' => 0,
+                    'absences_days' => 0,
+                    'undertime_hours' => 0,
+                    'overtime_hours' => 0,
+                    'worked_minutes' => 0,
+                    'has_attendance_source' => false,
+                    'open_session' => false,
+                ];
 
                 return [
                     'id' => $employee->id,
@@ -69,6 +86,7 @@ class HRController extends Controller
                         'avatar' => $loginAccount->avatar,
                         'updated_at' => $loginAccount->updated_at,
                         'workspace_access_enabled' => $loginAccount->isWorkspaceAccessEnabled(),
+                        'plan_workspace_suspended' => $loginAccount->isPlanWorkspaceSuspended(),
                         'is_verified' => (bool) $loginAccount->email_verified_at,
                         'must_change_password' => $supportsMustChangePassword
                             ? (bool) $loginAccount->must_change_password
@@ -80,6 +98,21 @@ class HRController extends Controller
                             ? User::stripWorkspaceAccessFlag((array) $loginAccount->staff_module_permissions)
                             : [],
                     ] : null,
+                    'attendance' => [
+                        'current_state' => $attendanceSummary['current_state'],
+                        'latest_action' => $attendanceSummary['latest_action'],
+                        'today_first_clock_in' => $attendanceSummary['today_first_clock_in'],
+                        'days_worked' => $attendanceSummary['days_worked'],
+                        'worked_minutes' => $attendanceSummary['worked_minutes'],
+                        'has_attendance_source' => $attendanceSummary['has_attendance_source'],
+                        'open_session' => $attendanceSummary['open_session'],
+                    ],
+                    'payroll_prefill' => [
+                        'absences_days' => $attendanceSummary['absences_days'],
+                        'undertime_hours' => $attendanceSummary['undertime_hours'],
+                        'overtime_hours' => $attendanceSummary['overtime_hours'],
+                        'days_worked' => $attendanceSummary['days_worked'],
+                    ],
                 ];
             });
 
@@ -93,6 +126,7 @@ class HRController extends Controller
             'sellerSettings' => [
                 'overtime_rate' => $seller->overtime_rate ?? 50.00,
                 'payroll_working_days' => $seller->payroll_working_days ?? 22,
+                'attendance_month_label' => $attendanceMonthLabel,
             ],
             'staffProvisioning' => [
                 'canManageStaffAccounts' => $actor->canManageStaffAccounts() && $this->supportsStaffProvisioningSchema(),
@@ -467,13 +501,10 @@ class HRController extends Controller
                         'employee_id' => $employee->id,
                         'base_salary' => $employee->salary,
                         'days_worked' => round($daysWorked),
-                        'absent_days' => round($item['absences_days']),
+                        'absences_days' => round($item['absences_days']),
                         'undertime_hours' => $item['undertime_hours'],
                         'overtime_hours' => $item['overtime_hours'],
-                        'overtime_rate' => $otRate,
                         'overtime_pay' => $overtimePay,
-                        'deductions' => $absenceDeduction + $undertimeDeduction,
-                        'bonus' => 0.00,
                         'net_pay' => $netPay,
                     ]);
 

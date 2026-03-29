@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import { Eye, EyeOff, KeyRound, Lock, Loader2, ShieldCheck } from 'lucide-react';
 
 export default function StaffForcePasswordChange() {
@@ -43,14 +44,12 @@ export default function StaffForcePasswordChange() {
                             </p>
                         </div>
 
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
+                        <WorkspaceLogoutLink
+                            variant="button"
                             className="rounded-full border border-stone-200 px-4 py-2 text-xs font-bold text-stone-600 transition hover:border-stone-300 hover:bg-stone-50"
                         >
                             Log Out
-                        </Link>
+                        </WorkspaceLogoutLink>
                     </div>
 
                     <form onSubmit={submit} className="space-y-5">

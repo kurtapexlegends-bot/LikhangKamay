@@ -44,6 +44,12 @@ Route::middleware(['auth', 'staff.security'])->group(function () {
     Route::get('staff', [StaffSecurityController::class, 'home'])
         ->name('staff.home');
 
+    Route::get('staff/logout', [StaffSecurityController::class, 'confirmLogout'])
+        ->name('staff.logout.confirm');
+
+    Route::post('staff/logout', [AuthenticatedSessionController::class, 'destroyStaff'])
+        ->name('staff.logout');
+
     Route::get('staff/password', [StaffSecurityController::class, 'editPassword'])
         ->name('staff.password.edit');
 

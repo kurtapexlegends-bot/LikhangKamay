@@ -17,6 +17,8 @@ class EnsureStaffSecurityGate
         'verification.notice',
         'verification.verify',
         'verification.send',
+        'staff.logout.confirm',
+        'staff.logout',
         'logout',
     ];
 
@@ -28,6 +30,8 @@ class EnsureStaffSecurityGate
     protected array $passwordChangeRoutes = [
         'staff.password.edit',
         'staff.password.update',
+        'staff.logout.confirm',
+        'staff.logout',
         'logout',
     ];
 
@@ -38,6 +42,8 @@ class EnsureStaffSecurityGate
      */
     protected array $holdingRoutes = [
         'staff.home',
+        'staff.logout.confirm',
+        'staff.logout',
         'logout',
     ];
 

@@ -10,6 +10,7 @@ import UpdateProfileInformationForm from '@/Pages/Profile/Partials/UpdateProfile
 import SellerUpdateProfileInformationForm from './Partials/SellerUpdateProfileInformationForm';
 import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 
 export default function Edit({ mustVerifyEmail, status, addresses, profileMode = 'owner', workspaceShell = 'seller' }) {
     const { auth, flash } = usePage().props;
@@ -167,7 +168,7 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
                             </button>
                         </Dropdown.Trigger>
                         <Dropdown.Content>
-                            <Dropdown.Link href={route('logout')} method="post" as="button" className="text-red-600">Log Out</Dropdown.Link>
+                            <WorkspaceLogoutLink className="text-red-600">Log Out</WorkspaceLogoutLink>
                         </Dropdown.Content>
                     </Dropdown>
                 </header>
