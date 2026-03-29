@@ -401,8 +401,10 @@ class OrderController extends Controller
     public function store(Request $request, SponsorshipAnalyticsService $sponsorshipAnalytics)
     {
         $request->validate([
-            'items' => 'required|array',
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|integer|exists:products,id',
             'items.*.qty' => 'required|integer|min:1',
+            'items.*.variant' => 'nullable|string|max:255',
             'shipping_method' => 'required|string|in:Delivery,Pick Up',
             'shipping_address' => 'required_if:shipping_method,Delivery|nullable|string',
             'payment_method' => 'required|string',

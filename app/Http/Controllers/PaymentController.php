@@ -11,6 +11,7 @@ use Inertia\Inertia;
 class PaymentController extends Controller
 {
     protected $payMongoService;
+    private const PAYABLE_ONLINE_STATUSES = ['Pending', 'Accepted'];
 
     public function __construct(PayMongoService $payMongoService)
     {
@@ -28,6 +29,10 @@ class PaymentController extends Controller
 
         if ($order->payment_status === 'paid') {
             return redirect()->route('my-orders.index')->with('success', 'Order is already paid.');
+        }
+
+        if (!$this->canInitiateOnlinePayment($order)) {
+            return redirect()->route('my-orders.index')->with('error', 'This order is not eligible for online payment.');
         }
 
         if ($order->total_amount < 100) {
@@ -145,6 +150,10 @@ class PaymentController extends Controller
                 'has_paid_payment' => $hasPaidPayment,
             ]);
 
+            if (!$this->canInitiateOnlinePayment($order)) {
+                return redirect()->route('my-orders.index')->with('error', 'This payment can no longer be applied to the order. Please contact support if you were charged.');
+            }
+
             // Only mark as paid when the gateway explicitly says paid.
             if ($isPaid || $hasPaidPayment) {
                 // Determine if we need to update the status OR clear the session
@@ -181,5 +190,12 @@ class PaymentController extends Controller
     public function cancel(Request $request)
     {
          return redirect()->route('my-orders.index')->with('error', 'Payment was cancelled.');
+    }
+
+    private function canInitiateOnlinePayment(Order $order): bool
+    {
+        return $order->payment_method === 'GCash'
+            && in_array($order->status, self::PAYABLE_ONLINE_STATUSES, true)
+            && $order->payment_status === 'pending';
     }
 }
