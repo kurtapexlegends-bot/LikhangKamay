@@ -13,6 +13,7 @@ class UserAddressController extends Controller
     {
         $validated = $request->validate([
             'label' => 'required|string|max:50',
+            'address_type' => 'required|string|in:home,office,other',
             'recipient_name' => 'required|string|max:100',
             'phone_number' => 'required|string|max:20',
             'full_address' => 'required|string',
@@ -22,6 +23,9 @@ class UserAddressController extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $validated['label'] = trim((string) ($validated['label'] ?? '')) !== ''
+            ? $validated['label']
+            : ucfirst($validated['address_type']);
         $address = $user->addresses()->create($validated);
 
         // If it's the first address, make it default

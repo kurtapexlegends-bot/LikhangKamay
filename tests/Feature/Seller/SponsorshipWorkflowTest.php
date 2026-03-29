@@ -252,8 +252,9 @@ class SponsorshipWorkflowTest extends TestCase
                 ]],
                 'shipping_method' => 'Delivery',
                 'shipping_address' => 'Dasmarinas, Cavite',
+                'shipping_address_type' => 'home',
                 'payment_method' => 'GCash',
-                'total' => 2900,
+                'total' => 2920,
             ])
             ->assertRedirect(route('my-orders.index'));
 

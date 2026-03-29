@@ -422,6 +422,11 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(\App\Models\UserAddress::class);
     }
+
+    public function wallet()
+    {
+        return $this->hasOne(\App\Models\Wallet::class);
+    }
     
     public function sponsorshipRequests()
     {

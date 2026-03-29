@@ -12,6 +12,7 @@ class UserAddress extends Model
     protected $fillable = [
         'user_id',
         'label',
+        'address_type',
         'recipient_name',
         'phone_number',
         'region',

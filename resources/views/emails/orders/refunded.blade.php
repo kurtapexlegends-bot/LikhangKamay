@@ -5,11 +5,11 @@ Hi {{ $order->customer_name }},
 
 Your return/refund request for Order **#{{ $order->order_number }}** has been approved.
 
-We are currently processing your refund for the amount of **₱{{ number_format($order->total_amount, 2) }}**.
+The refund amount of **PHP {{ number_format($order->total_amount, 2) }}** has been credited to your LikhangKamay wallet.
 
-> **Note:** Please expect the amount to be credited back to your original payment method within **10-15 working days**, depending on your bank's processing time.
+You can use your wallet balance as a payment method for future eligible purchases.
 
-If you have any questions, feel free to contact the seller via the chat.
+If you have any questions, feel free to contact the seller via chat.
 
 Thanks,<br>
 {{ config('app.name') }}

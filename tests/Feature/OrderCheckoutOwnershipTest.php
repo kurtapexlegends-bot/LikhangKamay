@@ -50,8 +50,9 @@ class OrderCheckoutOwnershipTest extends TestCase
             ],
             'shipping_method' => 'Delivery',
             'shipping_address' => '123 Sample Street, Cavite',
+            'shipping_address_type' => 'home',
             'payment_method' => 'COD',
-            'total' => 1499,
+            'total' => 1519,
             'shipping_notes' => 'Leave at the gate.',
         ]);
 
@@ -112,8 +113,9 @@ class OrderCheckoutOwnershipTest extends TestCase
             ],
             'shipping_method' => 'Delivery',
             'shipping_address' => '456 Sample Street, Cavite',
+            'shipping_address_type' => 'office',
             'payment_method' => 'COD',
-            'total' => 999,
+            'total' => 1019,
             'shipping_notes' => 'Compatibility path.',
         ]);
 

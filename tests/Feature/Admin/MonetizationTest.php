@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\User;
 use App\Models\UserTierLog;
+use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -18,6 +19,8 @@ class MonetizationTest extends TestCase
         User::factory()->artisanApproved()->create(['premium_tier' => 'premium']);
         User::factory()->artisanApproved()->create(['premium_tier' => 'super_premium']);
 
+        app(WalletService::class)->credit($admin, 70, 'seed_platform_wallet', 'Seed platform wallet');
+
         $this->actingAs($admin)
             ->get(route('admin.monetization'))
             ->assertOk()
@@ -26,6 +29,8 @@ class MonetizationTest extends TestCase
                 ->where('metrics.mrr.value', 598)
                 ->where('metrics.mrr.is_projected', true)
                 ->where('metrics.mrr.basis', 'Based on current active artisan plan tiers.')
+                ->where('platformWallet.balance', 70)
+                ->where('platformWallet.currency', 'PHP')
             );
     }
 

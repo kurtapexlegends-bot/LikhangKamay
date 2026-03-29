@@ -1,17 +1,25 @@
 import { useState } from 'react';
-import { useForm, router } from '@inertiajs/react'; // Correct import for router
+import { useForm, router } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
 import { Plus, Trash2, CheckCircle, MapPin } from 'lucide-react';
+
+const ADDRESS_TYPES = [
+    { value: 'home', label: 'Home' },
+    { value: 'office', label: 'Office' },
+    { value: 'other', label: 'Other' },
+];
+
+const humanizeAddressType = (value) => ADDRESS_TYPES.find((type) => type.value === value)?.label || 'Other';
 
 export default function UpdateAddressForm({ addresses = [], className = '' }) {
     const [isAdding, setIsAdding] = useState(false);
 
     const { data, setData, post, processing, errors, reset, wasSuccessful } = useForm({
         label: 'Home',
+        address_type: 'home',
         recipient_name: '',
         phone_number: '',
         full_address: '',
@@ -68,6 +76,9 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-bold text-gray-800">{addr.label}</span>
+                                            <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100 font-bold uppercase tracking-wide">
+                                                {humanizeAddressType(addr.address_type)}
+                                            </span>
                                             {addr.is_default && (
                                                 <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                                                     <CheckCircle size={10} /> Default
@@ -106,9 +117,35 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
             {/* Add New Form */}
             {isAdding && (
                 <form onSubmit={submit} className="mt-6 space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div>
+                        <InputLabel value="Address Type" />
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                            {ADDRESS_TYPES.map((type) => (
+                                <button
+                                    key={type.value}
+                                    type="button"
+                                    onClick={() => {
+                                        setData('address_type', type.value);
+                                        if (!data.label.trim() || ['Home', 'Office', 'Other'].includes(data.label)) {
+                                            setData('label', type.label);
+                                        }
+                                    }}
+                                    className={`rounded-lg border px-3 py-2 text-sm font-bold transition ${
+                                        data.address_type === type.value
+                                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                            : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300'
+                                    }`}
+                                >
+                                    {type.label}
+                                </button>
+                            ))}
+                        </div>
+                        <InputError className="mt-2" message={errors.address_type} />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <InputLabel htmlFor="label" value="Label (e.g. Home)" />
+                            <InputLabel htmlFor="label" value="Label" />
                             <TextInput
                                 id="label"
                                 className="mt-1 block w-full"

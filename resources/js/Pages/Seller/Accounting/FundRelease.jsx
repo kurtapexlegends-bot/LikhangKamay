@@ -9,7 +9,7 @@ import {
     Building2, Users, Pencil
 } from 'lucide-react';
 
-export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], finances }) {
+export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], finances, wallet }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { flash } = usePage().props;
     const [showToast, setShowToast] = useState(false);
@@ -188,6 +188,52 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                              <Building2 size={80} className="absolute -right-4 -bottom-4 text-white/5 rotate-12 group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
                         </div>
                     </div>
+
+                    {wallet && (
+                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Seller Wallet</p>
+                                        <h3 className="mt-2 text-2xl font-bold text-emerald-900">
+                                            PHP {Number(wallet.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-emerald-700">Completed orders credit seller net payouts here. Refund reversals are also tracked here.</p>
+                                    </div>
+                                    <div className="rounded-2xl bg-white/80 p-3 text-emerald-700 shadow-sm">
+                                        <Wallet size={22} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent Wallet Ledger</p>
+                                    <p className="mt-1 text-sm text-gray-500">Every payout and reversal tied to seller wallet activity.</p>
+                                </div>
+
+                                <div className="mt-4 space-y-3">
+                                    {wallet.recent_transactions?.length ? wallet.recent_transactions.map((entry) => (
+                                        <div key={entry.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-3">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-gray-900">{entry.description || entry.category}</p>
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    {entry.order_number ? `Order ${entry.order_number}` : 'Wallet update'}{entry.created_at ? ` | ${entry.created_at}` : ''}
+                                                </p>
+                                            </div>
+                                            <div className={`shrink-0 text-sm font-bold ${entry.direction === 'credit' ? 'text-emerald-700' : 'text-red-600'}`}>
+                                                {entry.direction === 'credit' ? '+' : '-'}PHP {Number(entry.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">
+                                            No seller wallet activity yet. New completed orders will appear here.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* TABS */}
                     <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>

@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\Review;
 use App\Models\User;
 use App\Services\SponsorshipAnalyticsService;
+use App\Services\OrderFinanceService;
+use App\Services\WalletService;
 use App\Mail\OrderPlaced;
 use App\Mail\OrderAccepted;
 use App\Mail\OrderShipped;
@@ -20,6 +22,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 
@@ -49,7 +52,12 @@ class OrderController extends Controller
                     'payment_status' => $order->payment_status ?? 'pending',
                     'payment_method' => $order->payment_method,
                     'total' => number_format($order->total_amount, 2),
+                    'merchandise_subtotal' => (float) $order->merchandise_subtotal,
+                    'convenience_fee_amount' => (float) $order->convenience_fee_amount,
+                    'platform_commission_amount' => (float) $order->platform_commission_amount,
+                    'seller_net_amount' => (float) $order->seller_net_amount,
                     'shipping_address' => $order->shipping_address,
+                    'shipping_address_type' => $order->shipping_address_type,
                     'shipping_method' => $order->shipping_method, // New
                     'shipping_notes' => $order->shipping_notes,
                     'tracking_number' => $order->tracking_number,
@@ -119,7 +127,7 @@ class OrderController extends Controller
     /**
      * BUYER: Checkout page - prepare order
      */
-    public function create(Request $request)
+    public function create(Request $request, WalletService $walletService)
     {
         $items = [];
 
@@ -194,6 +202,10 @@ class OrderController extends Controller
         
         return Inertia::render('Shop/Checkout', [
             'items' => $items,
+            'wallet' => $walletService->buildSnapshotForUser($user, 6),
+            'pricing' => [
+                'convenience_fee_per_delivery_order' => OrderFinanceService::CONVENIENCE_FEE,
+            ],
             'auth' => [
                 'user' => $user->load('addresses'),
             ]
@@ -203,7 +215,7 @@ class OrderController extends Controller
     /**
      * SELLER: Update order status (Accept, Ship, Deliver, Reject, etc.)
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, OrderFinanceService $orderFinanceService)
     {
         $order = Order::where('order_number', $id)
             ->where('artisan_id', $this->sellerOwnerId())
@@ -246,8 +258,11 @@ class OrderController extends Controller
         if ($request->status === 'Accepted') {
             $updateData['accepted_at'] = now();
         } elseif ($request->status === 'Completed') {
-            // Ensure payment is collected
-            $updateData['payment_status'] = 'paid';
+            if ($order->payment_method === 'COD') {
+                $updateData['payment_status'] = 'paid';
+            } elseif ($order->payment_status !== 'paid') {
+                return back()->with('error', 'Cannot complete an unpaid order.');
+            }
         } elseif ($request->status === 'Shipped' || $request->status === 'Ready for Pickup') {
             $updateData['shipped_at'] = now();
         } elseif ($request->status === 'Delivered') {
@@ -284,6 +299,11 @@ class OrderController extends Controller
         }
 
         $order->update($updateData);
+        $order->refresh();
+
+        if ($request->status === 'Completed') {
+            $orderFinanceService->settleCompletedOrder($order);
+        }
 
         // Send email notifications based on status change
         $order->load(['items', 'user']);
@@ -326,7 +346,7 @@ class OrderController extends Controller
     /**
      * SELLER: Approve return request
      */
-    public function approveReturn(Request $request, $id)
+    public function approveReturn(Request $request, $id, OrderFinanceService $orderFinanceService)
     {
         $order = Order::where('order_number', $id)
             ->where('artisan_id', $this->sellerOwnerId())
@@ -338,11 +358,13 @@ class OrderController extends Controller
         ]);
 
         if ($request->action_type === 'refund') {
-            // Money Refund: No stock change (seller writes it off), mark as Refunded
             $order->update([
                 'status' => 'Refunded',
                 'payment_status' => 'refunded'
             ]);
+
+            $order->refresh();
+            $orderFinanceService->refundOrderToBuyerWallet($order);
             
             // Send refund email to buyer
             $order->load('user');
@@ -351,9 +373,8 @@ class OrderController extends Controller
                 Mail::to($buyer->email)->send(new RefundProcessed($order));
             }
             
-            return back()->with('success', 'Return approved. Money refunded (simulation).');
+            return back()->with('success', 'Return approved. Refund credited to the buyer wallet.');
         } else {
-            // Product Replacement: Validate and deduct stock securely inside a transaction
             try {
                 DB::transaction(function () use ($order) {
                     foreach ($order->items as $item) {
@@ -368,8 +389,10 @@ class OrderController extends Controller
                             $product->supply->update(['quantity' => $product->stock]);
                         }
                     }
+
                     $order->update(['status' => 'Replaced']);
                 });
+
                 return back()->with('success', 'Return approved. Replacement stock deducted.');
             } catch (\Exception $e) {
                 return back()->with('error', $e->getMessage());
@@ -387,7 +410,7 @@ class OrderController extends Controller
             ->firstOrFail();
 
         $request->validate([
-            'payment_status' => 'required|string|in:pending,paid,refunded'
+            'payment_status' => 'required|string|in:pending,paid'
         ]);
 
         $order->update(['payment_status' => $request->payment_status]);
@@ -398,7 +421,7 @@ class OrderController extends Controller
     /**
      * BUYER: Place a new order
      */
-    public function store(Request $request, SponsorshipAnalyticsService $sponsorshipAnalytics)
+    public function store(Request $request, SponsorshipAnalyticsService $sponsorshipAnalytics, WalletService $walletService, OrderFinanceService $orderFinanceService)
     {
         $request->validate([
             'items' => 'required|array|min:1',
@@ -406,26 +429,73 @@ class OrderController extends Controller
             'items.*.qty' => 'required|integer|min:1',
             'items.*.variant' => 'nullable|string|max:255',
             'shipping_method' => 'required|string|in:Delivery,Pick Up',
-            'shipping_address' => 'required_if:shipping_method,Delivery|nullable|string',
-            'payment_method' => 'required|string',
+            'selected_address_id' => 'nullable',
+            'shipping_address' => 'nullable|string',
+            'shipping_address_type' => 'nullable|string|in:home,office,other',
+            'recipient_name' => 'nullable|string|max:100',
+            'phone_number' => 'nullable|string|max:20',
+            'payment_method' => 'required|string|in:COD,GCash,Wallet',
             'total' => 'required|numeric',
             'shipping_notes' => 'nullable|string',
-            'save_address' => 'nullable|boolean'
+            'save_address' => 'nullable|boolean',
         ]);
 
-        // Handle Address for Pick Up
-        $shippingAddress = $request->shipping_method === 'Pick Up' 
-            ? 'Store Pick-up - Negotiate via Chat' 
-            : $request->shipping_address;
+        /** @var User $buyer */
+        $buyer = $request->user();
+        $selectedAddressId = $request->input('selected_address_id');
+        $selectedAddress = null;
+        $shippingAddressType = null;
+
+        if ($request->shipping_method === 'Delivery') {
+            if ($selectedAddressId !== null && $selectedAddressId !== '' && $selectedAddressId !== 'new') {
+                $selectedAddress = $buyer->addresses()->findOrFail($selectedAddressId);
+                $shippingAddress = $selectedAddress->full_address;
+                $shippingAddressType = $selectedAddress->address_type ?: 'home';
+            } else {
+                $request->validate([
+                    'shipping_address' => 'required|string',
+                    'shipping_address_type' => 'required|string|in:home,office,other',
+                ]);
+
+                $shippingAddress = $request->shipping_address;
+                $shippingAddressType = $request->shipping_address_type;
+            }
+        } else {
+            $shippingAddress = 'Store Pick-up - Negotiate via Chat';
+        }
 
         // Force COD for Pick Up
         $paymentMethod = $request->shipping_method === 'Pick Up' ? 'COD' : $request->payment_method;
 
-        // Save address if requested (Only for Delivery)
-        if ($request->save_address && $request->shipping_method === 'Delivery') {
-            /** @var User $user */
-            $user = $request->user();
-            $user->update(['saved_address' => $request->shipping_address]);
+        if ($paymentMethod === 'Wallet' && $request->shipping_method !== 'Delivery') {
+            throw ValidationException::withMessages([
+                'payment_method' => 'Wallet payment is available for delivery orders only.',
+            ]);
+        }
+
+        // Save address if requested (Only for Delivery + New Address)
+        if ($request->boolean('save_address') && $request->shipping_method === 'Delivery' && $selectedAddress === null) {
+            $request->validate([
+                'recipient_name' => 'required|string|max:100',
+                'phone_number' => 'required|string|max:20',
+            ]);
+
+            $buyer->addresses()->update(['is_default' => false]);
+
+            $buyer->addresses()->create([
+                'label' => ucfirst((string) $shippingAddressType),
+                'address_type' => $shippingAddressType,
+                'recipient_name' => $request->recipient_name,
+                'phone_number' => $request->phone_number,
+                'full_address' => $shippingAddress,
+                'city' => $buyer->city,
+                'region' => null,
+                'is_default' => true,
+            ]);
+
+            $buyer->update(['saved_address' => $shippingAddress]);
+        } elseif ($selectedAddress !== null) {
+            $buyer->update(['saved_address' => $selectedAddress->full_address]);
         }
 
         // Resolve each item from the database before grouping so seller ownership
@@ -447,36 +517,65 @@ class OrderController extends Controller
             })
             ->groupBy('artisan_id');
 
+        $financeBySeller = [];
+        $grandTotal = 0.0;
+
+        foreach ($groupedItems as $artisanId => $items) {
+            $merchandiseSubtotal = 0;
+
+            foreach ($items as $item) {
+                $product = Product::find($item['id']);
+                if ($product) {
+                    $merchandiseSubtotal += $product->price * $item['qty'];
+                }
+            }
+
+            $financeBySeller[(string) $artisanId] = $orderFinanceService->calculateAmounts($merchandiseSubtotal, $request->shipping_method);
+            $grandTotal += $financeBySeller[(string) $artisanId]['total_amount'];
+        }
+
+        if ($paymentMethod === 'Wallet') {
+            $buyerWalletBalance = (float) $walletService->buildSnapshotForUser($buyer, 1)['balance'];
+
+            if ($buyerWalletBalance < round($grandTotal, 2)) {
+                throw ValidationException::withMessages([
+                    'payment_method' => 'Insufficient wallet balance to pay for this order.',
+                ]);
+            }
+        }
+
         // Wrap in transaction to ensure stock is deducted only if order succeeds
         DB::transaction(function () use (
             $request,
+            $buyer,
             $groupedItems,
             $shippingAddress,
+            $shippingAddressType,
             $paymentMethod,
+            $financeBySeller,
+            $walletService,
             $sponsorshipAnalytics,
             $supportsWasSponsored,
             $supportsSponsorshipRequestId,
             $supportsSponsoredAtCheckout
         ) {
             foreach ($groupedItems as $artisanId => $items) {
-                // Recalculate server order total using DB prices securely
-                $serverOrderTotal = 0;
-                foreach ($items as $item) {
-                     $p = Product::find($item['id']);
-                     if ($p) $serverOrderTotal += $p->price * $item['qty'];
-                }
-                
-                // Set initial payment status
-                $paymentStatus = 'pending';
+                $finance = $financeBySeller[(string) $artisanId];
+                $paymentStatus = $paymentMethod === 'Wallet' ? 'paid' : 'pending';
                 
                 $order = Order::create([
                     'order_number' => 'ORD-' . strtoupper(uniqid()),
                     'user_id' => Auth::id(),
                     'artisan_id' => $artisanId,
                     'customer_name' => Auth::user()->name,
-                    'total_amount' => $serverOrderTotal,
+                    'merchandise_subtotal' => $finance['merchandise_subtotal'],
+                    'convenience_fee_amount' => $finance['convenience_fee_amount'],
+                    'platform_commission_amount' => $finance['platform_commission_amount'],
+                    'seller_net_amount' => $finance['seller_net_amount'],
+                    'total_amount' => $finance['total_amount'],
                     'status' => 'Pending',
                     'shipping_address' => $shippingAddress,
+                    'shipping_address_type' => $shippingAddressType,
                     'shipping_notes' => $request->shipping_notes,
                     'payment_method' => $paymentMethod,
                     'payment_status' => $paymentStatus,
@@ -537,6 +636,19 @@ class OrderController extends Controller
                     $order->items()->create($orderItemData);
                 }
 
+                if ($paymentMethod === 'Wallet') {
+                    $seller = User::find($artisanId);
+
+                    $walletService->debit(
+                        $buyer,
+                        (float) $finance['total_amount'],
+                        'checkout_wallet_payment',
+                        'Wallet payment for order ' . $order->order_number,
+                        $order,
+                        $seller,
+                    );
+                }
+
                 // Send email notification to seller
                 $seller = User::find($artisanId);
                 if ($seller && $seller->email) {
@@ -573,15 +685,16 @@ class OrderController extends Controller
     /**
      * BUYER: View my orders
      */
-    public function myOrders()
+    public function myOrders(WalletService $walletService)
     {
         $userId = Auth::id();
 
-        $orders = Order::where('user_id', $userId)
+        $rawOrders = Order::where('user_id', $userId)
             ->with(['items', 'user'])
             ->latest()
-            ->get()
-            ->map(function ($order) use ($userId) {
+            ->get();
+
+        $orders = $rawOrders->map(function ($order) use ($userId) {
                 // Calculate if return is allowed (within 1 day of received_at)
                 $canReturn = false;
                 if ($order->status === 'Completed' && $order->warranty_expires_at) {
@@ -598,6 +711,11 @@ class OrderController extends Controller
                     'payment_method' => $order->payment_method,
                     'shipping_method' => $order->shipping_method, // New
                     'shipping_address' => $order->shipping_address, // New
+                    'shipping_address_type' => $order->shipping_address_type,
+                    'merchandise_subtotal' => number_format((float) $order->merchandise_subtotal, 2),
+                    'convenience_fee_amount' => number_format((float) $order->convenience_fee_amount, 2),
+                    'platform_commission_amount' => number_format((float) $order->platform_commission_amount, 2),
+                    'seller_net_amount' => number_format((float) $order->seller_net_amount, 2),
                     'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null, // New
                     'seller_id' => $order->artisan_id,
                     'tracking_number' => $order->tracking_number,
@@ -629,14 +747,15 @@ class OrderController extends Controller
             });
 
         return Inertia::render('Buyer/MyOrders', [
-            'orders' => $orders
+            'orders' => $orders,
+            'wallet' => $walletService->buildSnapshotForUser(Auth::user(), 8),
         ]);
     }
 
     /**
      * BUYER: Confirm order received - triggers 1-day warranty window
      */
-    public function buyerReceiveOrder($id)
+    public function buyerReceiveOrder($id, OrderFinanceService $orderFinanceService)
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
@@ -644,6 +763,10 @@ class OrderController extends Controller
 
         if ($order->status !== 'Delivered') {
             return redirect()->back()->with('error', 'You can confirm receipt only after the order is marked as delivered.');
+        }
+
+        if ($order->payment_method !== 'COD' && $order->payment_method !== 'Wallet' && $order->payment_status !== 'paid') {
+            return redirect()->back()->with('error', 'Cannot confirm receipt until payment is completed.');
         }
 
         $updateData = [
@@ -658,6 +781,8 @@ class OrderController extends Controller
         }
 
         $order->update($updateData);
+        $order->refresh();
+        $orderFinanceService->settleCompletedOrder($order);
 
         // Send delivery confirmation email to buyer
         $order->load('items');
@@ -714,22 +839,19 @@ class OrderController extends Controller
     /**
      * BUYER: Cancel Return Request -> Mark as Completed
      */
-    public function buyerCancelReturn($id)
+    public function buyerCancelReturn($id, OrderFinanceService $orderFinanceService)
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
             ->where('status', 'Refund/Return')
             ->firstOrFail();
 
-        if ($order->return_status === 'Approved') {
-            return redirect()->back()->with('error', 'Cannot cancel an approved return.');
-        }
-
         // Cancelling return means accepting the item -> Complete the transaction
         $order->update([
             'status' => 'Completed',
-            'payment_status' => 'paid',
         ]);
+        $order->refresh();
+        $orderFinanceService->settleCompletedOrder($order);
 
         return redirect()->back()->with('success', 'Return request cancelled. Order marked as Completed.');
     }

@@ -17,6 +17,7 @@ use App\Mail\ArtisanApproved;
 use App\Mail\ArtisanRejected;
 use App\Models\ArtisanStatusLog;
 use App\Models\UserTierLog;
+use App\Services\WalletService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuperAdminController extends Controller
@@ -177,7 +178,7 @@ class SuperAdminController extends Controller
     /**
      * Monetization Dashboard
      */
-    public function monetization()
+    public function monetization(WalletService $walletService)
     {
         // Pricing constants based on system logic
         $premiumPrice = 199;
@@ -299,6 +300,7 @@ class SuperAdminController extends Controller
             ],
             'recentSubscribers' => $recentSubscribers,
             'recentSponsorships' => $recentSponsorships,
+            'platformWallet' => $walletService->buildPlatformSnapshot(8),
         ]);
     }
 

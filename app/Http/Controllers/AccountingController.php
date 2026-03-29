@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\StockRequest;
+use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -11,7 +12,7 @@ class AccountingController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index()
+    public function index(WalletService $walletService)
     {
         $seller = $this->sellerOwner();
         $userId = $seller->id;
@@ -83,6 +84,7 @@ class AccountingController extends Controller
             'pendingPayrolls' => $pendingPayrolls,
             'history' => $releasedHistory,
             'payrollHistory' => $payrollHistory,
+            'wallet' => $walletService->buildSnapshotForUser($seller, 8),
             'finances' => [
                 'baseFunds' => $baseFunds,
                 'revenue' => $totalRevenue,

@@ -316,14 +316,20 @@ const PaymentStatusBadge = ({ status, method }) => {
     return (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${bg} ${text} ${border}`}>
             <Wallet size={10} />
-            {label} • {method || 'COD'}
+            {label} - {method || 'COD'}
         </span>
     );
 };
 
+const humanizeAddressType = (value) => {
+    if (!value) return null;
 
+    return String(value)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
-export default function MyOrders({ auth, orders }) {
+export default function MyOrders({ auth, orders, wallet }) {
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -475,6 +481,52 @@ export default function MyOrders({ auth, orders }) {
                     <p className="text-gray-500 text-sm mt-1">Track your orders and manage returns</p>
                 </div>
 
+                {wallet && (
+                    <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Buyer Wallet</p>
+                                    <h2 className="mt-2 text-2xl font-bold text-emerald-900">
+                                        PHP {Number(wallet.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </h2>
+                                    <p className="mt-1 text-xs text-emerald-700">Refunded money lands here and can be used for eligible delivery orders.</p>
+                                </div>
+                                <div className="rounded-2xl bg-white/80 p-3 text-emerald-700 shadow-sm">
+                                    <Wallet size={22} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent Wallet Activity</p>
+                                <p className="mt-1 text-sm text-gray-500">Latest purchase and refund movements tied to your account.</p>
+                            </div>
+
+                            <div className="mt-4 space-y-3">
+                                {wallet.recent_transactions?.length ? wallet.recent_transactions.slice(0, 3).map((entry) => (
+                                    <div key={entry.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-3">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-gray-900">{entry.description || entry.category}</p>
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                {entry.order_number ? `Order ${entry.order_number}` : 'Wallet update'}{entry.created_at ? ` - ${entry.created_at}` : ''}
+                                            </p>
+                                        </div>
+                                        <div className={`shrink-0 text-sm font-bold ${entry.direction === 'credit' ? 'text-emerald-700' : 'text-red-600'}`}>
+                                            {entry.direction === 'credit' ? '+' : '-'}PHP {Number(entry.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">
+                                        No wallet activity yet. Refunds and eligible wallet purchases will appear here.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* --- TABS --- */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
                     <div className="flex overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -568,6 +620,11 @@ export default function MyOrders({ auth, orders }) {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-gray-900">Standard Delivery</p>
+                                                {order.shipping_address_type && (
+                                                    <span className="mt-1 inline-flex rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                                                        {humanizeAddressType(order.shipping_address_type)}
+                                                    </span>
+                                                )}
                                                 <p className="text-xs text-gray-500 mb-1">{order.shipping_address}</p>
                                                 <div className="flex flex-wrap gap-2 mt-1">
                                                     {order.tracking_number && (
@@ -584,6 +641,7 @@ export default function MyOrders({ auth, orders }) {
                                             </div>
                                         </div>
                                     )}
+
                                     {order.items.map((item, idx) => (
                                         <div key={idx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-gray-200 transition">
                                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden shrink-0 shadow-sm">
@@ -622,8 +680,21 @@ export default function MyOrders({ auth, orders }) {
                                 {/* Order Footer */}
                                 <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                     <div>
-                                        <p className="text-xs text-gray-400 font-medium">Order Total</p>
-                                        <p className="text-xl sm:text-2xl font-bold text-clay-700">₱{order.total}</p>
+                                        <p className="text-xs text-gray-400 font-medium">Order Breakdown</p>
+                                        <div className="mt-2 space-y-1 text-sm text-gray-500">
+                                            <div className="flex items-center gap-3">
+                                                <span className="min-w-[140px]">Merchandise Subtotal</span>
+                                                <span className="font-semibold text-gray-700">PHP {order.merchandise_subtotal}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="min-w-[140px]">Convenience Fee</span>
+                                                <span className="font-semibold text-gray-700">PHP {order.convenience_fee_amount}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="min-w-[140px]">Total Paid</span>
+                                                <span className="text-xl sm:text-2xl font-bold text-clay-700">PHP {order.total}</span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="flex w-full flex-wrap gap-2 justify-start sm:justify-end">
@@ -788,3 +859,5 @@ export default function MyOrders({ auth, orders }) {
         </div>
     );
 }
+
+
