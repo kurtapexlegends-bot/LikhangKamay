@@ -640,8 +640,11 @@ class OrderController extends Controller
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
-            ->whereIn('status', ['Shipped', 'Ready for Pickup', 'Delivered'])
             ->firstOrFail();
+
+        if ($order->status !== 'Delivered') {
+            return redirect()->back()->with('error', 'You can confirm receipt only after the order is marked as delivered.');
+        }
 
         $updateData = [
             'status' => 'Completed', // Auto-complete if paid

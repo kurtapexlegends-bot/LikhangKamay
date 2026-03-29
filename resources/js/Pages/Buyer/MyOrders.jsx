@@ -669,7 +669,7 @@ export default function MyOrders({ auth, orders }) {
                                         )}
 
                                         {/* DELIVERED / READY FOR PICKUP: Confirm Receipt */}
-                                        {(order.status === 'Shipped' || order.status === 'Ready for Pickup' || (order.status === 'Delivered' && !order.received_at)) && (
+                                        {(order.status === 'Delivered' && !order.received_at) && (
                                             <button 
                                                 onClick={() => openModal('receive', order.id)}
                                                 className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all hover:-translate-y-0.5 ${

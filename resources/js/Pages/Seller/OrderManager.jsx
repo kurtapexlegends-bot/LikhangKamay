@@ -613,7 +613,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         </div>
                                                     )}
 
-                                                    {order.status === 'Delivered' && (
+                                                    {order.status === 'Delivered' && !order.replacement_in_progress && (
                                                         <div className="space-y-3">
                                                             <div className="text-center p-4 bg-green-50 rounded-xl border-2 border-dashed border-green-200">
                                                                 <CheckCircle2 size={20} className="mx-auto text-green-500 mb-2" />
@@ -626,6 +626,16 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             >
                                                                 <CheckCircle2 size={18} /> Complete Transaction
                                                             </button>
+                                                        </div>
+                                                    )}
+
+                                                    {order.status === 'Delivered' && order.replacement_in_progress && (
+                                                        <div className="space-y-3">
+                                                            <div className="text-center p-4 bg-teal-50 rounded-xl border-2 border-dashed border-teal-200">
+                                                                <PackageCheck size={20} className="mx-auto text-teal-500 mb-2" />
+                                                                <p className="text-xs font-bold text-teal-700">Waiting for Buyer Confirmation</p>
+                                                                <p className="text-[10px] text-teal-600 mt-1">Replacement stays unresolved until the buyer officially receives it.</p>
+                                                            </div>
                                                         </div>
                                                     )}
 
