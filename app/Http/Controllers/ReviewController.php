@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Notifications\NewReviewNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ReviewController extends Controller
@@ -85,32 +87,26 @@ class ReviewController extends Controller
             ->where('product_id', $request->product_id)
             ->first();
 
+        if ($existingReview) {
+            return back()->with('error', 'A review already exists for this product. Use the review edit option after the replacement is resolved.');
+        }
+
         if ($request->hasFile('photos')) {
             $photoPaths = [];
             foreach ($request->file('photos') as $photo) {
                 $photoPaths[] = $photo->store('reviews', 'public');
             }
-
-            if ($existingReview && $existingReview->photos) {
-                foreach ($existingReview->photos as $oldPhoto) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPhoto);
-                }
-            }
         } else {
-            $photoPaths = $existingReview ? $existingReview->photos : [];
+            $photoPaths = [];
         }
 
-        $review = Review::updateOrCreate(
-            [
-                'user_id' => Auth::id(),
-                'product_id' => $request->product_id,
-            ],
-            [
-                'rating' => $request->rating,
-                'comment' => $request->comment,
-                'photos' => $photoPaths,
-            ]
-        );
+        $review = Review::create([
+            'user_id' => Auth::id(),
+            'product_id' => $request->product_id,
+            'rating' => $request->rating,
+            'comment' => $request->comment,
+            'photos' => $photoPaths,
+        ]);
 
         $product = Product::with('user')->find($request->product_id);
         if ($product && $product->user && $product->user->id !== Auth::id()) {
@@ -122,6 +118,63 @@ class ReviewController extends Controller
         }
 
         return back()->with('success', 'Review submitted successfully!');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $review = Review::where('user_id', Auth::id())->findOrFail($id);
+
+        if (!$this->canManageResolvedReplacementReview((int) Auth::id(), (int) $review->product_id)) {
+            abort(403, 'You can edit this review only after the seller successfully resolves the issue through a replacement.');
+        }
+
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+            'photos.*' => 'nullable|image|max:5120',
+        ]);
+
+        if ($request->hasFile('photos')) {
+            $photoPaths = [];
+            foreach ($request->file('photos') as $photo) {
+                $photoPaths[] = $photo->store('reviews', 'public');
+            }
+
+            if ($review->photos) {
+                foreach ($review->photos as $oldPhoto) {
+                    Storage::disk('public')->delete($oldPhoto);
+                }
+            }
+        } else {
+            $photoPaths = $review->photos ?? [];
+        }
+
+        $review->update([
+            'rating' => $request->rating,
+            'comment' => $request->comment,
+            'photos' => $photoPaths,
+        ]);
+
+        return back()->with('success', 'Review updated successfully!');
+    }
+
+    public function destroy($id)
+    {
+        $review = Review::where('user_id', Auth::id())->findOrFail($id);
+
+        if (!$this->canManageResolvedReplacementReview((int) Auth::id(), (int) $review->product_id)) {
+            abort(403, 'You can delete this review only after the seller successfully resolves the issue through a replacement.');
+        }
+
+        if ($review->photos) {
+            foreach ($review->photos as $photo) {
+                Storage::disk('public')->delete($photo);
+            }
+        }
+
+        $review->delete();
+
+        return back()->with('success', 'Review deleted successfully.');
     }
 
     public function reply(Request $request, $id)
@@ -170,5 +223,16 @@ class ReviewController extends Controller
         $review->update(['is_pinned' => true]);
 
         return back()->with('success', 'Review pinned to top!');
+    }
+
+    private function canManageResolvedReplacementReview(int $userId, int $productId): bool
+    {
+        return Order::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('replacement_resolved_at')
+            ->whereHas('items', function ($query) use ($productId) {
+                $query->where('product_id', $productId);
+            })
+            ->exists();
     }
 }

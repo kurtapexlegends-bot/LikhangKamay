@@ -642,6 +642,44 @@ export default function MyOrders({ auth, orders, wallet }) {
                                         </div>
                                     )}
 
+                                    {order.replacement_in_progress && (
+                                        <div className="flex items-start gap-3 rounded-xl border border-teal-200 bg-teal-50 p-4">
+                                            <div className="rounded-lg bg-white p-2 text-teal-600 shadow-sm">
+                                                <PackageCheck size={18} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-teal-800">Replacement in Progress</p>
+                                                {order.replacement_started_at && (
+                                                    <p className="mt-1 text-xs text-teal-700">Seller restarted fulfillment on {order.replacement_started_at}.</p>
+                                                )}
+                                                {order.replacement_resolution_description && (
+                                                    <div className="mt-2 rounded-lg border border-teal-100 bg-white/80 p-3 text-xs text-teal-900 whitespace-pre-wrap">
+                                                        <span className="mb-1 block font-bold">Compensation / Resolution</span>
+                                                        {order.replacement_resolution_description}
+                                                    </div>
+                                                )}
+                                                <p className="mt-2 text-xs text-teal-700">The replacement must still be delivered and officially received before the issue is considered resolved.</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {order.replacement_resolved_at && (
+                                        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                                            <div className="rounded-lg bg-white p-2 text-emerald-600 shadow-sm">
+                                                <CheckCircle size={18} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-emerald-800">Replacement Successfully Resolved</p>
+                                                <p className="mt-1 text-xs text-emerald-700">You confirmed the replacement on {order.replacement_resolved_at}.</p>
+                                                {order.replacement_resolution_description && (
+                                                    <p className="mt-2 text-xs text-emerald-700">
+                                                        Resolution: <span className="font-semibold">{order.replacement_resolution_description}</span>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {order.items.map((item, idx) => (
                                         <div key={idx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-gray-200 transition">
                                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden shrink-0 shadow-sm">
@@ -766,12 +804,15 @@ export default function MyOrders({ auth, orders, wallet }) {
                                                     <ShoppingBag size={16} /> Buy Again
                                                 </button>
 
-                                                {!order.items.every(item => item.is_rated) && (
+                                                {(!order.replacement_in_progress && (
+                                                    order.items.some(item => !item.is_rated) ||
+                                                    order.items.some(item => item.review?.can_manage_after_replacement)
+                                                )) && (
                                                     <button 
                                                         onClick={() => setRatingModal({ isOpen: true, order })}
                                                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 shadow-lg shadow-clay-200 transition-all hover:-translate-y-0.5"
                                                     >
-                                                        <Star size={16} /> Rate
+                                                        <Star size={16} /> {order.items.some(item => item.review?.can_manage_after_replacement) ? 'Manage Reviews' : 'Rate'}
                                                     </button>
                                                 )}
 

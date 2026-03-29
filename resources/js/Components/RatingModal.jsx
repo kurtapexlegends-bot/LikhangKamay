@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
-import { Star,  Image as ImageIcon, X, Send, Loader2, Trash2 } from 'lucide-react';
+import { Star, Image as ImageIcon, X, Send, Loader2, Trash2, Pencil } from 'lucide-react';
 
 const StarRating = ({ rating, setRating, readOnly = false, size = 24 }) => {
     const [hover, setHover] = useState(0);
@@ -20,13 +20,13 @@ const StarRating = ({ rating, setRating, readOnly = false, size = 24 }) => {
                         readOnly ? 'cursor-default' : 'cursor-pointer hover:scale-110'
                     }`}
                 >
-                    <Star 
-                        size={size} 
+                    <Star
+                        size={size}
                         className={`${
-                            star <= (hover || rating) 
-                                ? 'fill-yellow-400 text-yellow-400 shadow-yellow-200' 
+                            star <= (hover || rating)
+                                ? 'fill-yellow-400 text-yellow-400 shadow-yellow-200'
                                 : 'text-gray-300'
-                        } transition-colors duration-200`} 
+                        } transition-colors duration-200`}
                         strokeWidth={star <= (hover || rating) ? 0 : 2}
                     />
                 </button>
@@ -36,143 +36,190 @@ const StarRating = ({ rating, setRating, readOnly = false, size = 24 }) => {
 };
 
 const ReviewForm = ({ item, onSuccess }) => {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const existingReview = item.review;
+    const isEditing = Boolean(existingReview);
+    const [previewUrls, setPreviewUrls] = useState(existingReview?.photos || []);
+    const [isDragging, setIsDragging] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    const { data, setData, post, patch, processing, errors, reset } = useForm({
         product_id: item.product_id,
-        rating: 5,
-        comment: '',
-        photos: []
+        rating: existingReview?.rating || 5,
+        comment: existingReview?.comment || '',
+        photos: [],
     });
 
-    const [previewUrls, setPreviewUrls] = useState([]);
-    const [isDragging, setIsDragging] = useState(false);
-
     const handlePhotoChange = (e) => {
-        const files = Array.from(e.target.files || e.dataTransfer.files);
-        if (files.length > 0) {
-            const newPhotos = [...data.photos, ...files].slice(0, 5); // Limit to 5 photos
-            setData('photos', newPhotos);
-            
-            // Generate previews for new photos
-            const newPreviews = files.map(file => URL.createObjectURL(file));
-            setPreviewUrls(prev => [...prev, ...newPreviews].slice(0, 5));
+        const files = Array.from(e.target.files || e.dataTransfer.files || []);
+        if (!files.length) return;
+
+        const remainingSlots = Math.max(0, 5 - previewUrls.length);
+        const acceptedFiles = files.slice(0, remainingSlots);
+
+        if (!acceptedFiles.length) return;
+
+        const nextPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
+
+        if (isEditing) {
+            setData('photos', acceptedFiles);
+            setPreviewUrls(nextPreviews);
+            return;
         }
+
+        setData('photos', [...data.photos, ...acceptedFiles].slice(0, 5));
+        setPreviewUrls((current) => [...current, ...nextPreviews].slice(0, 5));
     };
 
     const removePhoto = (index) => {
-        const newPhotos = [...data.photos];
-        newPhotos.splice(index, 1);
-        setData('photos', newPhotos);
+        const nextPhotos = [...data.photos];
+        const nextPreviews = [...previewUrls];
+        const preview = nextPreviews[index];
 
-        const newPreviews = [...previewUrls];
-        URL.revokeObjectURL(newPreviews[index]); // Cleanup
-        newPreviews.splice(index, 1);
-        setPreviewUrls(newPreviews);
+        if (!preview?.startsWith?.('blob:')) return;
+
+        URL.revokeObjectURL(preview);
+
+        nextPhotos.splice(index, 1);
+        nextPreviews.splice(index, 1);
+
+        setData('photos', nextPhotos);
+        setPreviewUrls(nextPreviews);
     };
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('reviews.store'), {
+
+        const options = {
             forceFormData: true,
+            preserveScroll: true,
             onSuccess: () => {
-                reset();
+                reset('photos');
                 onSuccess();
             },
-            preserveScroll: true
+        };
+
+        if (isEditing) {
+            patch(route('reviews.update', existingReview.id), options);
+            return;
+        }
+
+        post(route('reviews.store'), options);
+    };
+
+    const handleDelete = () => {
+        if (!existingReview) return;
+
+        router.delete(route('reviews.destroy', existingReview.id), {
+            preserveScroll: true,
+            onStart: () => setDeleting(true),
+            onFinish: () => setDeleting(false),
+            onSuccess: () => onSuccess(),
         });
     };
 
     return (
-        <form onSubmit={submit} className="mt-4 p-5 bg-gray-50/80 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="flex items-center justify-between mb-4">
-                <h4 className="font-bold text-gray-900 text-sm">Reviewing <span className="text-clay-700">"{item.name}"</span></h4>
+        <form onSubmit={submit} className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-5 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="mb-4 flex items-center justify-between">
+                <h4 className="text-sm font-bold text-gray-900">
+                    {isEditing ? 'Updating' : 'Reviewing'} <span className="text-clay-700">"{item.name}"</span>
+                </h4>
                 {processing && <Loader2 size={16} className="animate-spin text-clay-600" />}
             </div>
-            
-            {/* Global Errors */}
+
             {Object.keys(errors).length > 0 && (
-                <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100 animate-pulse">
-                    <p className="font-bold mb-1">Please fix the following errors:</p>
-                    <ul className="list-disc list-inside">
+                <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-600 animate-pulse">
+                    <p className="mb-1 font-bold">Please fix the following errors:</p>
+                    <ul className="list-inside list-disc">
                         {Object.values(errors).map((err, i) => <li key={i}>{err}</li>)}
                     </ul>
                 </div>
             )}
 
-            {/* Star Rating */}
-            <div className="flex flex-col items-center gap-2 mb-5">
-                <StarRating rating={data.rating} setRating={(r) => setData('rating', r)} size={32} />
+            <div className="mb-5 flex flex-col items-center gap-2">
+                <StarRating rating={data.rating} setRating={(rating) => setData('rating', rating)} size={32} />
                 <span className={`text-sm font-bold transition-colors duration-300 ${
                     data.rating >= 4 ? 'text-green-600' : data.rating === 3 ? 'text-yellow-600' : 'text-red-500'
                 }`}>
-                    {data.rating === 5 ? 'Excellent!' : 
-                     data.rating === 4 ? 'Very Good' : 
-                     data.rating === 3 ? 'Good' : 
-                     data.rating === 2 ? 'Fair' : 'Poor'}
+                    {data.rating === 5 ? 'Excellent!' :
+                        data.rating === 4 ? 'Very Good' :
+                        data.rating === 3 ? 'Good' :
+                        data.rating === 2 ? 'Fair' : 'Poor'}
                 </span>
             </div>
 
-            {/* Comment */}
-            <div className="mb-4 relative">
+            <div className="relative mb-4">
                 <textarea
                     value={data.comment}
-                    onChange={e => setData('comment', e.target.value)}
+                    onChange={(e) => setData('comment', e.target.value)}
                     placeholder="Share your experience with this product..."
-                    className="w-full rounded-xl border-gray-200 focus:border-clay-500 focus:ring-clay-500 text-sm p-3 min-h-[100px] shadow-sm resize-y"
+                    className="min-h-[100px] w-full resize-y rounded-xl border-gray-200 p-3 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500"
                 />
-                <div className="absolute bottom-2 right-2 text-[10px] text-gray-400 font-medium">
+                <div className="absolute bottom-2 right-2 text-[10px] font-medium text-gray-400">
                     {data.comment.length}/1000
                 </div>
             </div>
 
-            {/* Photos Drag & Drop */}
             <div className="mb-4">
-                <p className="text-xs font-bold text-gray-500 mb-2">Add Photos (Max 5)</p>
+                <p className="mb-2 text-xs font-bold text-gray-500">Add Photos (Max 5)</p>
                 <div className="flex flex-wrap gap-2">
                     {previewUrls.map((url, idx) => (
-                        <div key={idx} className="w-20 h-20 rounded-xl overflow-hidden border border-gray-200 relative group shadow-sm">
-                            <img src={url} alt="Preview" className="w-full h-full object-cover" />
-                            <button 
-                                type="button"
-                                onClick={() => removePhoto(idx)}
-                                className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
-                            >
-                                <X size={12} />
-                            </button>
+                        <div key={`${url}-${idx}`} className="group relative h-20 w-20 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+                            <img src={url} alt="Preview" className="h-full w-full object-cover" />
+                            {url.startsWith('blob:') && (
+                                <button
+                                    type="button"
+                                    onClick={() => removePhoto(idx)}
+                                    className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
                         </div>
                     ))}
-                    
+
                     {previewUrls.length < 5 && (
-                        <label 
+                        <label
                             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                             onDragLeave={() => setIsDragging(false)}
                             onDrop={(e) => { e.preventDefault(); setIsDragging(false); handlePhotoChange(e); }}
                             className={`
-                                w-20 h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-200
-                                ${isDragging 
-                                    ? 'border-clay-500 bg-clay-50 text-clay-600 scale-105' 
-                                    : 'border-gray-300 text-gray-400 hover:border-clay-400 hover:text-clay-500 hover:bg-gray-50'}
+                                flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200
+                                ${isDragging
+                                    ? 'scale-105 border-clay-500 bg-clay-50 text-clay-600'
+                                    : 'border-gray-300 text-gray-400 hover:border-clay-400 hover:bg-gray-50 hover:text-clay-500'}
                             `}
                         >
                             <ImageIcon size={20} />
-                            <span className="text-[10px] mt-1 font-bold">Add</span>
+                            <span className="mt-1 text-[10px] font-bold">Add</span>
                             <input type="file" multiple accept="image/*" onChange={handlePhotoChange} className="hidden" />
                         </label>
                     )}
                 </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-200/50">
+            <div className="flex justify-end gap-2 border-t border-gray-200/50 pt-3">
+                {isEditing && (
+                    <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={deleting || processing}
+                        className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    >
+                        <Trash2 size={16} />
+                        {deleting ? 'Deleting...' : 'Delete Review'}
+                    </button>
+                )}
                 <button
                     type="submit"
-                    disabled={processing}
-                    className="px-6 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-clay-200 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                    disabled={processing || deleting}
+                    className="flex items-center gap-2 rounded-xl bg-clay-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-clay-200 transition-all hover:-translate-y-0.5 hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {processing ? (
                         <>Processing...</>
                     ) : (
                         <>
-                            <Send size={16} /> Submit Review
+                            {isEditing ? <Pencil size={16} /> : <Send size={16} />}
+                            {isEditing ? 'Update Review' : 'Submit Review'}
                         </>
                     )}
                 </button>
@@ -184,92 +231,109 @@ const ReviewForm = ({ item, onSuccess }) => {
 export default function RatingModal({ isOpen, onClose, order }) {
     const [activeItemId, setActiveItemId] = useState(null);
 
-    // Filter items? No, showing all is better context.
-    
     if (!order) return null;
 
-    // Sort items: Unrated first
-    const sortedItems = [...order.items].sort((a, b) => (a.is_rated === b.is_rated) ? 0 : a.is_rated ? 1 : -1);
+    const sortedItems = [...order.items].sort((a, b) => {
+        const aPriority = a.review?.can_manage_after_replacement ? 0 : a.is_rated ? 2 : 1;
+        const bPriority = b.review?.can_manage_after_replacement ? 0 : b.is_rated ? 2 : 1;
+
+        return aPriority - bPriority;
+    });
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="lg">
-            <div className="flex flex-col max-h-[85vh]">
-                {/* Header */}
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+            <div className="flex max-h-[85vh] flex-col">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white p-6">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Rate Your Order</h2>
                         <p className="text-xs text-gray-500">Order #{order.order_number || order.id}</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors">
+                    <button onClick={onClose} className="rounded-full bg-gray-50 p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-6 overflow-y-auto custom-scrollbar">
-                    <p className="text-sm text-gray-600 mb-6">
-                        Tell us about your purchase! Your feedback helps us and other buyers.
+                <div className="custom-scrollbar overflow-y-auto p-6">
+                    <p className="mb-6 text-sm text-gray-600">
+                        Tell us about your purchase. If a replacement was successfully resolved, you can also update or remove your earlier review here.
                     </p>
 
                     <div className="space-y-6">
-                        {sortedItems.map((item) => (
-                            <div key={item.id} className="group">
-                                <div className={`flex items-start gap-4 p-4 rounded-2xl transition-colors duration-200 ${
-                                    activeItemId === item.id ? 'bg-white' : 'bg-white hover:bg-gray-50 border border-transparent hover:border-gray-100'
-                                }`}>
-                                    <div className="w-16 h-16 rounded-xl overflow-hidden border border-gray-200 shrink-0 shadow-sm">
-                                        <img 
-                                            src={item.img} 
-                                            alt={item.name} 
-                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" 
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
-                                                <p className="text-xs text-gray-500">{item.variant}</p>
-                                            </div>
-                                            <p className="text-xs font-bold text-clay-700">₱{Number(item.price).toLocaleString()}</p>
+                        {sortedItems.map((item) => {
+                            const canManageReview = Boolean(item.review?.can_manage_after_replacement);
+                            const isEditingItem = activeItemId === item.id;
+
+                            return (
+                                <div key={item.id} className="group">
+                                    <div className={`flex items-start gap-4 rounded-2xl p-4 transition-colors duration-200 ${
+                                        isEditingItem ? 'bg-white' : 'border border-transparent bg-white hover:border-gray-100 hover:bg-gray-50'
+                                    }`}>
+                                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+                                            <img
+                                                src={item.img}
+                                                alt={item.name}
+                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            />
                                         </div>
-                                        
-                                        {item.is_rated ? (
-                                            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100">
-                                                <Star size={12} className="fill-green-700" strokeWidth={0} /> 
-                                                <span>You rated this item</span>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <h3 className="truncate text-sm font-bold text-gray-900">{item.name}</h3>
+                                                    <p className="text-xs text-gray-500">{item.variant}</p>
+                                                </div>
+                                                <p className="text-xs font-bold text-clay-700">PHP {Number(item.price).toLocaleString()}</p>
                                             </div>
-                                        ) : (
-                                            activeItemId !== item.id && (
-                                                <button 
+
+                                            {item.is_rated && !canManageReview && (
+                                                <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-green-100 bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                                                    <Star size={12} className="fill-green-700" strokeWidth={0} />
+                                                    <span>You rated this item</span>
+                                                </div>
+                                            )}
+
+                                            {!item.is_rated && !isEditingItem && (
+                                                <button
                                                     onClick={() => setActiveItemId(item.id)}
-                                                    className="mt-3 text-xs font-bold text-white bg-clay-600 hover:bg-clay-700 px-4 py-2 rounded-lg shadow-sm transition-all hover:-translate-y-0.5"
+                                                    className="mt-3 rounded-lg bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-clay-700"
                                                 >
                                                     Write a Review
                                                 </button>
-                                            )
-                                        )}
-                                    </div>
-                                </div>
+                                            )}
 
-                                {/* Review Form Expansion */}
-                                {activeItemId === item.id && !item.is_rated && (
-                                    <div className="border-l-2 border-clay-200 pl-4 ml-8 -mt-2 mb-6">
-                                        <ReviewForm 
-                                            item={item} 
-                                            onSuccess={() => setActiveItemId(null)}
-                                        />
+                                            {canManageReview && !isEditingItem && (
+                                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                    <span className="rounded-lg border border-teal-100 bg-teal-50 px-3 py-1 text-[11px] font-bold text-teal-700">
+                                                        Replacement resolved
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setActiveItemId(item.id)}
+                                                        className="rounded-lg border border-clay-200 bg-white px-4 py-2 text-xs font-bold text-clay-700 shadow-sm transition hover:bg-clay-50"
+                                                    >
+                                                        {item.is_rated ? 'Edit Review' : 'Write Review'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    {isEditingItem && (
+                                        <div className="mb-6 ml-8 -mt-2 border-l-2 border-clay-200 pl-4">
+                                            <ReviewForm
+                                                item={item}
+                                                onSuccess={() => setActiveItemId(null)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-lg flex justify-center">
-                    <button 
+                <div className="flex justify-center rounded-b-lg border-t border-gray-100 bg-gray-50 p-4">
+                    <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-gray-800 text-sm font-bold transition-colors"
+                        className="text-sm font-bold text-gray-500 transition-colors hover:text-gray-800"
                     >
                         Done
                     </button>

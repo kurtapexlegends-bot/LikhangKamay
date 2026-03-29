@@ -16,6 +16,7 @@ use App\Mail\OrderShipped;
 use App\Mail\OrderDelivered;
 use App\Mail\ReturnRequested;
 use App\Mail\RefundProcessed;
+use App\Notifications\ReplacementResolutionNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -64,6 +65,10 @@ class OrderController extends Controller
                     'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null, // New
                     'return_reason' => $order->return_reason,
                     'return_proof_image' => $order->return_proof_image ? '/storage/' . $order->return_proof_image : null,
+                    'replacement_resolution_description' => $order->replacement_resolution_description,
+                    'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
+                    'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),
+                    'replacement_in_progress' => $order->replacement_started_at !== null && $order->replacement_resolved_at === null,
                     'items' => $order->items->map(function ($item) {
                         return [
                             'name' => $item->product_name,
@@ -239,6 +244,12 @@ class OrderController extends Controller
             }
         }
 
+        $replacementInProgress = $order->replacement_started_at !== null && $order->replacement_resolved_at === null;
+
+        if ($request->status === 'Completed' && $replacementInProgress) {
+            return back()->with('error', 'Replacement orders must be marked as received by the buyer before completion.');
+        }
+
         $updateData = ['status' => $request->status];
 
         // Ensure Proof of Delivery is present BEFORE any database writes or side effects if the new status requires it.
@@ -355,6 +366,7 @@ class OrderController extends Controller
 
         $request->validate([
             'action_type' => 'required|in:refund,replace',
+            'replacement_resolution_description' => 'required_if:action_type,replace|string|max:2000',
         ]);
 
         if ($request->action_type === 'refund') {
@@ -375,9 +387,22 @@ class OrderController extends Controller
             
             return back()->with('success', 'Return approved. Refund credited to the buyer wallet.');
         } else {
+            $resolutionDescription = trim((string) $request->replacement_resolution_description);
+
             try {
-                DB::transaction(function () use ($order) {
-                    foreach ($order->items as $item) {
+                DB::transaction(function () use ($order, $resolutionDescription) {
+                    $lockedOrder = Order::query()
+                        ->with(['items', 'user'])
+                        ->lockForUpdate()
+                        ->findOrFail($order->id);
+
+                    $buyer = $lockedOrder->user;
+
+                    if ($lockedOrder->status !== 'Refund/Return') {
+                        throw new \Exception('This return request is no longer pending.');
+                    }
+
+                    foreach ($lockedOrder->items as $item) {
                         $product = Product::lockForUpdate()->find($item->product_id);
                         
                         if (!$product || $product->stock < $item->quantity) {
@@ -390,10 +415,27 @@ class OrderController extends Controller
                         }
                     }
 
-                    $order->update(['status' => 'Replaced']);
+                    $lockedOrder->update([
+                        'status' => 'Accepted',
+                        'accepted_at' => now(),
+                        'shipped_at' => null,
+                        'delivered_at' => null,
+                        'received_at' => null,
+                        'warranty_expires_at' => null,
+                        'tracking_number' => null,
+                        'shipping_notes' => null,
+                        'proof_of_delivery' => null,
+                        'replacement_resolution_description' => $resolutionDescription,
+                        'replacement_started_at' => now(),
+                        'replacement_resolved_at' => null,
+                    ]);
+
+                    if ($buyer) {
+                        $buyer->notify(new ReplacementResolutionNotification($lockedOrder, $resolutionDescription));
+                    }
                 });
 
-                return back()->with('success', 'Return approved. Replacement stock deducted.');
+                return back()->with('success', 'Replacement approved. Buyer notified and order returned to the delivery flow.');
             } catch (\Exception $e) {
                 return back()->with('error', $e->getMessage());
             }
@@ -694,12 +736,33 @@ class OrderController extends Controller
             ->latest()
             ->get();
 
-        $orders = $rawOrders->map(function ($order) use ($userId) {
+        $productIds = $rawOrders
+            ->flatMap(fn ($order) => $order->items->pluck('product_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $reviewsByProduct = Review::query()
+            ->where('user_id', $userId)
+            ->whereIn('product_id', $productIds)
+            ->get()
+            ->keyBy('product_id');
+
+        $resolvedReplacementProductIds = $rawOrders
+            ->filter(fn ($order) => $order->replacement_resolved_at !== null)
+            ->flatMap(fn ($order) => $order->items->pluck('product_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $orders = $rawOrders->map(function ($order) use ($reviewsByProduct, $resolvedReplacementProductIds) {
                 // Calculate if return is allowed (within 1 day of received_at)
                 $canReturn = false;
                 if ($order->status === 'Completed' && $order->warranty_expires_at) {
                     $canReturn = now()->lessThanOrEqualTo($order->warranty_expires_at);
                 }
+
+                $replacementInProgress = $order->replacement_started_at !== null && $order->replacement_resolved_at === null;
 
                 return [
                     'id' => $order->id,
@@ -722,23 +785,40 @@ class OrderController extends Controller
                     'shipping_notes' => $order->shipping_notes,
                     'received_at' => $order->received_at?->format('M d, Y h:i A'),
                     'warranty_expires_at' => $order->warranty_expires_at?->format('M d, Y h:i A'),
+                    'replacement_resolution_description' => $order->replacement_resolution_description,
+                    'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
+                    'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),
+                    'replacement_in_progress' => $replacementInProgress,
                     // Timeline timestamps
                     'created_at_raw' => $order->created_at?->format('M d, Y h:i A'),
                     'accepted_at' => $order->accepted_at?->format('M d, Y h:i A'),
                     'shipped_at' => $order->shipped_at?->format('M d, Y h:i A'),
                     'delivered_at' => $order->delivered_at?->format('M d, Y h:i A'),
-                    'items' => $order->items->map(function ($item) use ($userId) {
+                    'items' => $order->items->map(function ($item) use ($reviewsByProduct, $resolvedReplacementProductIds) {
+                        $existingReview = $reviewsByProduct->get($item->product_id);
+                        $canManageReview = $existingReview && $resolvedReplacementProductIds->contains($item->product_id);
+
                         return [
                             'id' => $item->id,
                             'product_id' => $item->product_id,
-                            'is_rated' => Review::where('user_id', $userId)->where('product_id', $item->product_id)->exists(),
+                            'is_rated' => $existingReview !== null,
                             'name' => $item->product_name,
                             'img' => $item->product_img 
                                 ? (str_starts_with($item->product_img, 'http') ? $item->product_img : '/storage/' . $item->product_img)
                                 : '/images/placeholder.svg',
                             'price' => $item->price,
                             'qty' => $item->quantity,
-                            'variant' => $item->variant ?? 'Standard'
+                            'variant' => $item->variant ?? 'Standard',
+                            'review' => $existingReview ? [
+                                'id' => $existingReview->id,
+                                'rating' => $existingReview->rating,
+                                'comment' => $existingReview->comment,
+                                'photos' => collect($existingReview->photos ?? [])
+                                    ->map(fn ($photo) => str_starts_with($photo, 'http') ? $photo : '/storage/' . $photo)
+                                    ->values()
+                                    ->all(),
+                                'can_manage_after_replacement' => $canManageReview,
+                            ] : null,
                         ];
                     }),
                     'can_return' => $canReturn,
@@ -775,6 +855,10 @@ class OrderController extends Controller
             'warranty_expires_at' => now()->addDay() // 1-day return window
         ];
 
+        if ($order->replacement_started_at !== null && $order->replacement_resolved_at === null) {
+            $updateData['replacement_resolved_at'] = now();
+        }
+
         // Only auto-mark as paid if it's COD. E-wallet orders must be verified by PayMongo.
         if ($order->payment_method === 'COD') {
             $updateData['payment_status'] = 'paid';
@@ -791,7 +875,11 @@ class OrderController extends Controller
             Mail::to($buyer->email)->queue(new OrderDelivered($order));
         }
 
-        return redirect()->back()->with('success', 'Order marked as received! You have 1 day to request a return if needed.');
+        $successMessage = $order->replacement_started_at !== null && $order->replacement_resolved_at !== null
+            ? 'Replacement received and order marked as completed.'
+            : 'Order marked as received! You have 1 day to request a return if needed.';
+
+        return redirect()->back()->with('success', $successMessage);
     }
 
     /**

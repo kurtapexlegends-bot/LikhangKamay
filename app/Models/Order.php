@@ -16,6 +16,7 @@ class Order extends Model
         'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
         'accepted_at', 'shipped_at', 'delivered_at', 'shipping_method', 'proof_of_delivery',
         'wallet_settled_at', 'refunded_to_wallet_at',
+        'replacement_resolution_description', 'replacement_started_at', 'replacement_resolved_at',
     ];
 
     // Format date automatically for frontend (e.g., "Oct 24, 2025")
@@ -28,6 +29,8 @@ class Order extends Model
         'delivered_at' => 'datetime',
         'wallet_settled_at' => 'datetime',
         'refunded_to_wallet_at' => 'datetime',
+        'replacement_started_at' => 'datetime',
+        'replacement_resolved_at' => 'datetime',
         'merchandise_subtotal' => 'decimal:2',
         'convenience_fee_amount' => 'decimal:2',
         'platform_commission_amount' => 'decimal:2',

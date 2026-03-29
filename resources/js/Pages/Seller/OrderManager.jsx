@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
@@ -86,9 +87,17 @@ const PaymentStatusBadge = ({ status, method }) => {
     return (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${bg} ${text} ${border}`}>
             <Wallet size={10} />
-            {label} • {method || 'COD'}
+            {label} - {method || 'COD'}
         </span>
     );
+};
+
+const humanizeAddressType = (value) => {
+    if (!value) return null;
+
+    return String(value)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 // --- MAIN COMPONENT ---
@@ -140,6 +149,14 @@ export default function OrderManager({ auth, orders = [] }) {
         proofOfDelivery: null,
         previewUrl: null,
         isPickup: false
+    });
+
+    const [replacementModal, setReplacementModal] = useState({
+        isOpen: false,
+        orderId: null,
+        resolutionDescription: '',
+        error: '',
+        processing: false,
     });
 
     // --- FILTER LOGIC ---
@@ -259,6 +276,26 @@ export default function OrderManager({ auth, orders = [] }) {
         });
     };
 
+    const openReplacementModal = (orderId) => {
+        setReplacementModal({
+            isOpen: true,
+            orderId,
+            resolutionDescription: '',
+            error: '',
+            processing: false,
+        });
+    };
+
+    const closeReplacementModal = () => {
+        setReplacementModal({
+            isOpen: false,
+            orderId: null,
+            resolutionDescription: '',
+            error: '',
+            processing: false,
+        });
+    };
+
     const submitShipping = () => {
         const formData = new FormData();
         const status = shippingModal.isPickup ? 'Ready for Pickup' : 'Shipped';
@@ -272,6 +309,33 @@ export default function OrderManager({ auth, orders = [] }) {
             preserveScroll: true,
             onSuccess: () => setShippingModal({ ...shippingModal, isOpen: false }),
             forceFormData: true,
+        });
+    };
+
+    const submitReplacementApproval = () => {
+        const description = replacementModal.resolutionDescription.trim();
+
+        if (!description) {
+            setReplacementModal((current) => ({
+                ...current,
+                error: 'Compensation or resolution details are required before approving a replacement.',
+            }));
+            return;
+        }
+
+        router.post(route('orders.approve-return', replacementModal.orderId), {
+            action_type: 'replace',
+            replacement_resolution_description: description,
+        }, {
+            preserveScroll: true,
+            onStart: () => setReplacementModal((current) => ({ ...current, processing: true, error: '' })),
+            onError: (errors) => setReplacementModal((current) => ({
+                ...current,
+                processing: false,
+                error: errors.replacement_resolution_description || errors.action_type || 'Unable to approve replacement.',
+            })),
+            onSuccess: () => closeReplacementModal(),
+            onFinish: () => setReplacementModal((current) => ({ ...current, processing: false })),
         });
     };
 
@@ -345,9 +409,9 @@ export default function OrderManager({ auth, orders = [] }) {
                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
                                         <User size={16} /> Profile
                                     </Dropdown.Link>
-                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="flex items-center gap-2 text-red-600 hover:text-red-700">
+                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
                                         <LogOut size={16} /> Log Out
-                                    </Dropdown.Link>
+                                    </WorkspaceLogoutLink>
                                 </Dropdown.Content>
                             </Dropdown>
                         </div>
@@ -506,6 +570,11 @@ export default function OrderManager({ auth, orders = [] }) {
                                                 <div className="inline-flex items-center gap-1.5 text-gray-500 text-xs">
                                                     <MapPin size={12} />
                                                     <span className="truncate max-w-[200px]">{order.shipping_address}</span>
+                                                    {order.shipping_address_type && (
+                                                        <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                                                            {humanizeAddressType(order.shipping_address_type)}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -639,6 +708,41 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         </div>
                                                     )}
 
+                                                    {order.replacement_in_progress && (
+                                                        <div className="mb-4 rounded-xl border border-teal-200 bg-teal-50 p-3 text-left">
+                                                            <div className="flex items-center gap-2">
+                                                                <PackageCheck size={16} className="text-teal-600" />
+                                                                <p className="text-sm font-bold text-teal-700">Replacement in Progress</p>
+                                                            </div>
+                                                            {order.replacement_started_at && (
+                                                                <p className="mt-2 text-[11px] font-medium text-teal-700">
+                                                                    Restarted on {order.replacement_started_at}
+                                                                </p>
+                                                            )}
+                                                            {order.replacement_resolution_description && (
+                                                                <div className="mt-2 rounded-lg border border-teal-100 bg-white/80 p-2 text-xs text-teal-900 whitespace-pre-wrap">
+                                                                    <span className="mb-1 block font-bold">Compensation / Resolution</span>
+                                                                    {order.replacement_resolution_description}
+                                                                </div>
+                                                            )}
+                                                            <p className="mt-2 text-[11px] text-teal-700">
+                                                                This order is back in the normal delivery loop and must be received by the buyer before it can be considered resolved.
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {order.replacement_resolved_at && (
+                                                        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-left">
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 size={16} className="text-emerald-600" />
+                                                                <p className="text-sm font-bold text-emerald-700">Replacement Resolved</p>
+                                                            </div>
+                                                            <p className="mt-2 text-[11px] text-emerald-700">
+                                                                Buyer confirmed receipt on {order.replacement_resolved_at}.
+                                                            </p>
+                                                        </div>
+                                                    )}
+
                                                     {order.status === 'Refund/Return' && (
                                                         <>
                                                             <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl mb-4 text-left">
@@ -679,9 +783,9 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                         Approve (Refund)
                                                                     </button>
                                                                     <button 
-                                                                        onClick={() => router.post(route('orders.approve-return', order.id), { action_type: 'replace' }, { preserveScroll: true })} 
+                                                                        onClick={() => openReplacementModal(order.id)} 
                                                                         className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm"
-                                                                        title="Sends a new item and deducts stock"
+                                                                        title="Restarts the delivery cycle and requires a compensation note"
                                                                     >
                                                                         Approve (Replace)
                                                                     </button>
@@ -891,6 +995,61 @@ export default function OrderManager({ auth, orders = [] }) {
                 </div>
             </Modal>
 
+            <Modal show={replacementModal.isOpen} onClose={closeReplacementModal} maxWidth="md">
+                <div className="p-6">
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="rounded-full bg-teal-100 p-3 text-teal-600">
+                            <PackageCheck size={22} />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900">Approve Replacement</h2>
+                            <p className="text-sm text-gray-500">Describe the compensation or resolution the buyer will receive.</p>
+                        </div>
+                    </div>
+
+                    <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-xs text-teal-800">
+                        The order will return to the normal delivery lifecycle and must be officially received by the buyer again.
+                    </div>
+
+                    <div className="mt-4">
+                        <label className="mb-2 block text-sm font-bold text-gray-700">Compensation / Resolution Description</label>
+                        <textarea
+                            rows={4}
+                            value={replacementModal.resolutionDescription}
+                            onChange={(event) => setReplacementModal((current) => ({
+                                ...current,
+                                resolutionDescription: event.target.value,
+                                error: '',
+                            }))}
+                            className="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500"
+                            placeholder="Example: We will send a replacement item with reinforced packaging and include a small courtesy item for the inconvenience."
+                        />
+                        {replacementModal.error && (
+                            <p className="mt-2 text-sm font-medium text-red-600">{replacementModal.error}</p>
+                        )}
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+                        <button
+                            type="button"
+                            onClick={closeReplacementModal}
+                            disabled={replacementModal.processing}
+                            className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={submitReplacementApproval}
+                            disabled={replacementModal.processing}
+                            className="rounded-xl bg-teal-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-teal-200 hover:bg-teal-700 disabled:opacity-50"
+                        >
+                            {replacementModal.processing ? 'Approving...' : 'Approve Replacement'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
             {/* --- TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
                 <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
@@ -909,4 +1068,6 @@ export default function OrderManager({ auth, orders = [] }) {
         </div>
     );
 }
+
+
 

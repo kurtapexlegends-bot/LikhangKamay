@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown'; 
+import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
     MessageCircle, ChevronDown, ShoppingBag, 
     Search, ShoppingCart, User, LogOut 
@@ -76,6 +77,8 @@ export default function BuyerNavbar() {
                                         </span>
                                     )}
                                 </Link>
+
+                                <NotificationDropdown />
 
                                 <div className="hidden sm:block h-8 w-px bg-gray-200 mx-1"></div>
 

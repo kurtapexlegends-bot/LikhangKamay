@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award } from 'lucide-react';
+import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function NotificationDropdown() {
@@ -36,6 +36,8 @@ export default function NotificationDropdown() {
                 return <AlertTriangle size={16} className="text-red-500" />;
             case 'sponsorship_status':
                 return <Award size={16} className="text-amber-500" />;
+            case 'replacement_resolution':
+                return <PackageCheck size={16} className="text-teal-500" />;
             default:
                 return <Bell size={16} className="text-gray-500" />;
         }

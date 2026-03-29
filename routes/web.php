@@ -247,6 +247,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // REVIEWS
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::patch('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 });
 
 // --- SUPER ADMIN ROUTES ---
