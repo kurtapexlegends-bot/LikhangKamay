@@ -22,6 +22,7 @@ class ApprovalConsentSourceTest extends TestCase
         $source = file_get_contents(base_path('resources/js/Components/LegalModal.jsx'));
 
         $this->assertNotFalse($source);
+        $this->assertStringContainsString('setExpandedSections(buildExpandedSections(doc.sections));', $source);
         $this->assertStringContainsString('disabled={!hasReachedBottom}', $source);
         $this->assertStringContainsString('onScroll={handleContentScroll}', $source);
         $this->assertStringContainsString('Scroll to the bottom of this document before continuing.', $source);

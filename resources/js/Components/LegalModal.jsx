@@ -6,26 +6,6 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
     const [hasReachedBottom, setHasReachedBottom] = useState(false);
     const contentRef = useRef(null);
 
-    useEffect(() => {
-        if (isOpen) {
-            setExpandedSections({});
-            setHasReachedBottom(false);
-
-            const frame = window.requestAnimationFrame(() => {
-                const container = contentRef.current;
-
-                if (!container) {
-                    return;
-                }
-
-                const isScrollable = container.scrollHeight > container.clientHeight + 4;
-                setHasReachedBottom(!isScrollable);
-            });
-
-            return () => window.cancelAnimationFrame(frame);
-        }
-    }, [isOpen, type]);
-
     if (!isOpen) return null;
 
     const toggleSection = (index) => {
@@ -129,6 +109,38 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
 
     const doc = content[type];
     const Icon = doc.icon;
+    const buildExpandedSections = (sections) =>
+        Object.fromEntries(sections.map((_, index) => [index, true]));
+
+    useEffect(() => {
+        if (!isOpen) {
+            return undefined;
+        }
+
+        setExpandedSections(buildExpandedSections(doc.sections));
+        setHasReachedBottom(false);
+
+        let nestedFrame = null;
+        const frame = window.requestAnimationFrame(() => {
+            nestedFrame = window.requestAnimationFrame(() => {
+                const container = contentRef.current;
+
+                if (!container) {
+                    return;
+                }
+
+                const isScrollable = container.scrollHeight > container.clientHeight + 4;
+                setHasReachedBottom(!isScrollable);
+            });
+        });
+
+        return () => {
+            window.cancelAnimationFrame(frame);
+            if (nestedFrame) {
+                window.cancelAnimationFrame(nestedFrame);
+            }
+        };
+    }, [isOpen, type]);
 
     return (
         <div 
