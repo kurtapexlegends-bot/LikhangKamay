@@ -11,6 +11,7 @@ import Checkbox from '@/Components/Checkbox';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
+import CompactPagination from '@/Components/CompactPagination';
 import { 
     Package, Search, AlertCircle, Cuboid, 
     TrendingUp, X, Tag, Image as ImageIcon,
@@ -87,6 +88,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+    const [currentPage, setCurrentPage] = useState(1);
 
     const { addToast } = useToast();
 
@@ -194,6 +196,23 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         }
         return result;
     }, [products, activeTab, searchQuery, sortConfig]);
+
+    const itemsPerPage = 8;
+    const totalPages = Math.max(1, Math.ceil(processedProducts.length / itemsPerPage));
+    const paginatedProducts = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return processedProducts.slice(startIndex, startIndex + itemsPerPage);
+    }, [currentPage, processedProducts]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab, searchQuery, sortConfig]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     // --- HANDLERS ---
     const generateSKU = () => 'LK-' + Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
@@ -522,8 +541,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {processedProducts.length > 0 ? (
-                                        processedProducts.map((product) => (
+                                    {paginatedProducts.length > 0 ? (
+                                        paginatedProducts.map((product) => (
                                             <tr key={product.id} className="hover:bg-gray-50/50 transition">
                                                 <td className="px-5 py-3">
                                                     <div className="flex items-center gap-3">
@@ -584,8 +603,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
                         {/* --- MOBILE CARD VIEW --- */}
                         <div className="md:hidden divide-y divide-gray-100">
-                             {processedProducts.length > 0 ? (
-                                processedProducts.map((product) => (
+                             {paginatedProducts.length > 0 ? (
+                                paginatedProducts.map((product) => (
                                     <div key={product.id} className="p-4 flex gap-4">
                                         <img src={product.img || '/images/no-image.png'} alt={product.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0" />
                                         <div className="flex-1 min-w-0">
@@ -626,6 +645,15 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                 </div>
                              )}
                         </div>
+
+                        <CompactPagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={processedProducts.length}
+                            itemsPerPage={itemsPerPage}
+                            itemLabel="products"
+                            onPageChange={setCurrentPage}
+                        />
                     </div>
                 </main>
             </div>
@@ -1119,5 +1147,4 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         </div>
     );
 }
-
 

@@ -7,6 +7,21 @@ use App\Models\User;
 class SellerEntitlementService
 {
     /**
+     * Workspace modules that should always stay available once the actor can enter
+     * the seller workspace.
+     *
+     * @return array<int, string>
+     */
+    protected function alwaysVisibleWorkspaceModulesFor(User $user): array
+    {
+        if ($user->isSellerOwner() || $user->isStaff()) {
+            return ['team_messages'];
+        }
+
+        return [];
+    }
+
+    /**
      * Modules that are safe to expose to staff.
      *
      * @return array<int, string>
@@ -76,11 +91,10 @@ class SellerEntitlementService
             ));
         }
 
-        if ($user->isSellerOwner() || $user->isStaff()) {
-            $visibleModules[] = 'team_messages';
-        }
-
-        $visibleModules = array_values(array_unique($visibleModules));
+        $visibleModules = array_values(array_unique([
+            ...$visibleModules,
+            ...$this->alwaysVisibleWorkspaceModulesFor($user),
+        ]));
 
         $canManageModuleSettings = $user->isSellerOwner() && $ownerEntitlements['showGear'];
         $canManageSubscription = $user->isSellerOwner();

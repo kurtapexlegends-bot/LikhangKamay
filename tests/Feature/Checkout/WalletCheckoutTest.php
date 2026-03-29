@@ -37,7 +37,7 @@ class WalletCheckoutTest extends TestCase
             'shipping_address' => '123 Wallet Street, Cavite',
             'shipping_address_type' => 'home',
             'payment_method' => 'Wallet',
-            'total' => 1220,
+            'total' => 1236,
             'shipping_notes' => 'Use the guarded gate.',
         ]);
 
@@ -50,17 +50,17 @@ class WalletCheckoutTest extends TestCase
         $this->assertSame('paid', $order->payment_status);
         $this->assertSame('home', $order->shipping_address_type);
         $this->assertSame(1200.0, (float) $order->merchandise_subtotal);
-        $this->assertSame(20.0, (float) $order->convenience_fee_amount);
-        $this->assertSame(1220.0, (float) $order->total_amount);
+        $this->assertSame(36.0, (float) $order->convenience_fee_amount);
+        $this->assertSame(1236.0, (float) $order->total_amount);
 
         $buyer->refresh();
-        $this->assertSame(3780.0, (float) $buyer->wallet->balance);
+        $this->assertSame(3764.0, (float) $buyer->wallet->balance);
         $this->assertDatabaseHas('wallet_transactions', [
             'wallet_id' => $buyer->wallet->id,
             'order_id' => $order->id,
             'direction' => 'debit',
             'category' => 'checkout_wallet_payment',
-            'amount' => 1220.00,
+            'amount' => 1236.00,
         ]);
     }
 
@@ -86,7 +86,7 @@ class WalletCheckoutTest extends TestCase
             'shipping_address' => '456 Low Balance Street, Cavite',
             'shipping_address_type' => 'office',
             'payment_method' => 'Wallet',
-            'total' => 870,
+            'total' => 875.50,
         ]);
 
         $response

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { router, usePage } from '@inertiajs/react';
-import { Crown, Sparkles, Zap, Check, X, ArrowRight, Star, Shield, Rocket, ChevronRight } from 'lucide-react';
+import { Crown, Sparkles, Zap, Check, X, ArrowRight, Star, Shield, Rocket, ChevronRight, AlertCircle, Users } from 'lucide-react';
 
 const PLAN_CONFIG = {
     free: {
@@ -103,13 +103,13 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
     const [isVisible, setIsVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [hoveredPlan, setHoveredPlan] = useState(null);
+    const [pendingDowngrade, setPendingDowngrade] = useState(null);
+    const [isDowngrading, setIsDowngrading] = useState(false);
     const overlayRef = useRef(null);
 
     useEffect(() => {
         if (isOpen) {
-            // Prevent body scroll
             document.body.style.overflow = 'hidden';
-            // Trigger entrance animation
             requestAnimationFrame(() => {
                 setIsVisible(true);
                 setIsAnimating(true);
@@ -118,18 +118,27 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
             document.body.style.overflow = '';
             setIsVisible(false);
             setIsAnimating(false);
+            setPendingDowngrade(null);
+            setIsDowngrading(false);
         }
-        return () => { document.body.style.overflow = ''; };
+
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen]);
 
     const handleClose = () => {
         setIsAnimating(false);
         setIsVisible(false);
+        setPendingDowngrade(null);
+        setIsDowngrading(false);
         setTimeout(() => onClose(), 280);
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === overlayRef.current) handleClose();
+        if (e.target === overlayRef.current) {
+            handleClose();
+        }
     };
 
     const handleUpgrade = (planId) => {
@@ -142,19 +151,32 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
         if (!canManagePlan) return;
         const activeCount = sellerSubscription?.activeCount ?? 0;
 
-        // If they exceed the target limit, send them to subscription page to choose kept products.
         if (activeCount > targetLimit) {
             router.visit(route('seller.subscription'));
             handleClose();
             return;
         }
 
+        const targetPlan = PLANS.find((plan) => plan.id === planId);
+        setPendingDowngrade({
+            id: planId,
+            name: targetPlan?.name ?? planId,
+            limit: targetLimit,
+        });
+    };
+
+    const confirmDowngrade = () => {
+        if (!pendingDowngrade || isDowngrading) return;
+
+        setIsDowngrading(true);
         router.post(
             route('seller.subscription.downgrade'),
-            { plan: planId },
+            { plan: pendingDowngrade.id },
             {
                 preserveScroll: true,
                 onSuccess: () => handleClose(),
+                onError: () => setIsDowngrading(false),
+                onFinish: () => setIsDowngrading(false),
             }
         );
     };
@@ -167,7 +189,10 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
 
     if (!isOpen && !isVisible) return null;
 
-    const currentIndex = PLANS.findIndex(p => p.id === currentTier);
+    const currentIndex = PLANS.findIndex((plan) => plan.id === currentTier);
+    const activeCount = sellerSubscription?.activeCount ?? 0;
+    const draftCount = pendingDowngrade ? Math.max(0, activeCount - pendingDowngrade.limit) : 0;
+    const showsEliteStandardWarning = currentTier === 'super_premium' && pendingDowngrade?.id === 'free';
 
     const modalContent = (
         <div
@@ -175,14 +200,14 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                 isAnimating ? 'bg-black/40 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-0'
             }`}
         >
-            <div 
+            <div
                 ref={overlayRef}
                 onClick={handleOverlayClick}
-                className="flex min-h-full items-center justify-center p-4 sm:p-6"
+                className="flex min-h-full items-center justify-center p-3 sm:p-4"
                 style={{ perspective: '1200px' }}
             >
                 <div
-                    className={`relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 ease-out my-4 ${
+                    className={`relative w-full max-w-[52rem] overflow-hidden rounded-[1.5rem] bg-white shadow-2xl transition-all duration-500 ease-out ${
                         isAnimating
                             ? 'opacity-100 translate-y-0 scale-100'
                             : 'opacity-0 translate-y-8 scale-95'
@@ -192,41 +217,39 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                     }}
                 >
-                    {/* ── Decorative top gradient line ── */}
-                    <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 via-orange-500 to-violet-500" />
+                    <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-orange-500 to-violet-500" />
 
-                    {/* ── Header ── */}
-                    <div className="relative px-5 sm:px-8 pt-6 pb-5 border-b border-stone-100">
-                        {/* Decorative blobs */}
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-100/40 to-orange-100/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-                        <div className="absolute top-4 left-4 w-24 h-24 bg-gradient-to-br from-violet-100/30 to-indigo-100/20 rounded-full blur-2xl pointer-events-none" />
+                    <div className="relative border-b border-stone-100 px-5 pb-3.5 pt-4.5 sm:px-6">
+                        <div className="absolute right-3 top-0 h-20 w-20 -translate-y-1/3 rounded-full bg-gradient-to-br from-amber-100/25 to-orange-100/20 blur-2xl pointer-events-none" />
+                        <div className="absolute left-3 top-3 h-14 w-14 rounded-full bg-gradient-to-br from-violet-100/20 to-indigo-100/10 blur-xl pointer-events-none" />
 
                         <div className="relative flex items-start justify-between">
                             <div>
-                                <div className="flex items-center gap-3 mb-1.5">
-                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200/50">
-                                        <Crown size={18} className="text-white" />
+                                <div className="mb-1 flex items-center gap-2.5">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm shadow-amber-200/40">
+                                        <Crown size={15} className="text-white" />
                                     </div>
-                                    <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight">
+                                    <h2 className="text-lg font-extrabold tracking-tight text-stone-900 sm:text-[1.35rem]">
                                         Choose Your Plan
                                     </h2>
                                 </div>
-                                <p className="text-xs sm:text-sm text-stone-500 font-medium ml-[48px]">
-                                    Unlock more features and grow your artisanal business
+
+                                <p className="ml-[38px] text-[11px] font-medium text-stone-500">
+                                    Unlock more features for your seller workspace.
                                 </p>
                             </div>
+
                             <button
                                 onClick={handleClose}
-                                className="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-400 hover:text-stone-600 transition-all duration-200 hover:rotate-90"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-400 transition-all duration-200 hover:bg-stone-200 hover:text-stone-600"
                             >
                                 <X size={16} />
                             </button>
                         </div>
                     </div>
 
-                    {/* ── Plan Cards ── */}
-                    <div className="p-5 sm:p-7 bg-stone-50/30">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="bg-stone-50/30 p-4.5 sm:p-5">
+                        <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-3">
                             {PLANS.map((plan, index) => {
                                 const isCurrent = plan.id === currentTier;
                                 const isUpgrade = index > currentIndex;
@@ -236,12 +259,12 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 return (
                                     <div
                                         key={plan.id}
-                                        className={`relative rounded-2xl border-2 p-5 transition-all duration-300 ease-out group cursor-pointer flex flex-col h-full bg-white ${
+                                        className={`relative flex h-full flex-col rounded-[1.25rem] border-2 bg-white p-5 transition-all duration-300 ease-out group cursor-pointer lg:min-h-[29rem] ${
                                             isCurrent
                                                 ? `${plan.lightBorder} ${plan.lightBg} ring-1 ring-offset-1 ring-offset-white ${plan.lightBorder} shadow-md`
                                                 : hoveredPlan === plan.id
                                                     ? 'border-stone-300 shadow-xl -translate-y-1'
-                                                    : 'border-stone-100 hover:border-stone-200 shadow-sm'
+                                                    : 'border-stone-100 shadow-sm hover:border-stone-200'
                                         }`}
                                         onMouseEnter={() => setHoveredPlan(plan.id)}
                                         onMouseLeave={() => setHoveredPlan(null)}
@@ -254,77 +277,86 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                             transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
                                         }}
                                     >
-                                        {/* Current/Recommended badge */}
                                         {isCurrent && (
-                                            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r ${plan.gradient} text-white text-[9px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg whitespace-nowrap`}>
+                                            <div className={`absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r ${plan.gradient} px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg`}>
                                                 Current Plan
                                             </div>
                                         )}
+
                                         {plan.recommended && !isCurrent && (
-                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1 whitespace-nowrap">
-                                                <Star size={10} fill="currentColor" /> Most Popular
+                                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg">
+                                                <Star size={10} fill="currentColor" />
+                                                Most Popular
                                             </div>
                                         )}
 
-                                        {/* Icon & Plan Name */}
-                                        <div className="flex items-center gap-3 mb-3 mt-1">
-                                            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110 rotate-3' : ''}`}>
-                                                <PlanIcon size={16} className="text-white" />
+                                        <div className="mb-3.5 mt-1 flex items-start gap-2.5">
+                                            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-105 rotate-3' : ''}`}>
+                                                <PlanIcon size={15} className="text-white" />
                                             </div>
                                             <div>
-                                                <h3 className="text-[15px] font-extrabold text-stone-900">{plan.name}</h3>
-                                                <p className="text-[11px] text-stone-500 font-medium leading-tight">{plan.description}</p>
+                                                <h3 className="text-[1.05rem] font-extrabold leading-none text-stone-900">{plan.name}</h3>
+                                                <p className="mt-1 text-[10px] font-medium leading-4 text-stone-500">{plan.description}</p>
                                             </div>
                                         </div>
 
-                                        {/* Price */}
                                         <div className="mb-5">
                                             <div className="flex items-baseline gap-1">
-                                                <span className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">{plan.price}</span>
+                                                <span className="text-[2rem] font-black tracking-tight text-stone-900">{plan.price}</span>
                                                 {plan.period && (
-                                                    <span className="text-xs sm:text-sm text-stone-400 font-semibold">{plan.period}</span>
+                                                    <span className="text-xs font-semibold text-stone-400">{plan.period}</span>
                                                 )}
                                             </div>
                                         </div>
 
-                                        {/* Features */}
-                                        <ul className="space-y-2.5 mb-6 flex-1">
-                                            {plan.features.map((feature, i) => (
-                                                <li key={i} className="flex items-start gap-2.5 text-xs text-stone-600 font-medium">
-                                                    <Check size={14} className={`mt-0.5 shrink-0 ${isCurrent ? plan.lightText : 'text-green-500'}`} strokeWidth={3} />
-                                                    <span className="leading-relaxed">{feature}</span>
+                                        <ul className="mb-6 flex-1 space-y-3">
+                                            {plan.features.map((feature, featureIndex) => (
+                                                <li key={featureIndex} className="flex items-start gap-2 text-[10.5px] font-medium leading-4 text-stone-600">
+                                                    <Check
+                                                        size={12}
+                                                        className={`mt-0.5 shrink-0 ${isCurrent ? plan.lightText : 'text-green-500'}`}
+                                                        strokeWidth={3}
+                                                    />
+                                                    <span>{feature}</span>
                                                 </li>
                                             ))}
                                         </ul>
 
-                                        {/* Action Button */}
                                         <div className="mt-auto">
                                             {isCurrent ? (
                                                 <button
                                                     disabled
-                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-stone-100 text-stone-400 cursor-not-allowed flex items-center justify-center gap-1.5"
+                                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-400 cursor-not-allowed"
                                                 >
-                                                    <Shield size={14} /> Active Plan
+                                                    <Shield size={14} />
+                                                    Active Plan
                                                 </button>
                                             ) : !canManagePlan ? (
                                                 <button
                                                     disabled
-                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-stone-100 text-stone-400 cursor-not-allowed flex items-center justify-center gap-1.5"
+                                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-400 cursor-not-allowed"
                                                 >
                                                     View Only
                                                 </button>
                                             ) : isUpgrade ? (
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); handleUpgrade(plan.id); }}
-                                                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r ${plan.gradient} hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 active:scale-[0.98]`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleUpgrade(plan.id);
+                                                    }}
+                                                    className={`flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r ${plan.gradient} px-4 py-2 text-[11px] font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]`}
                                                 >
-                                                    <Rocket size={14} /> Upgrade
+                                                    <Rocket size={14} />
+                                                    Upgrade
                                                     <ArrowRight size={13} className="ml-0.5" />
                                                 </button>
                                             ) : isDowngrade ? (
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); handleDowngrade(plan.id, plan.limit); }}
-                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-stone-600 bg-white border-2 border-stone-200 hover:border-stone-300 hover:text-stone-900 transition-all duration-200 flex items-center justify-center gap-1.5"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDowngrade(plan.id, plan.limit);
+                                                    }}
+                                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-stone-200 bg-white px-4 py-2 text-[11px] font-bold text-stone-600 transition-all duration-200 hover:border-stone-300 hover:text-stone-900"
                                                 >
                                                     Downgrade
                                                 </button>
@@ -336,27 +368,100 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         </div>
                     </div>
 
-                    {/* ── Footer ── */}
-                    <div className="px-5 sm:px-8 py-3.5 border-t border-stone-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <p className="text-[11px] text-stone-500 font-medium text-center sm:text-left">
+                    <div className="flex flex-col items-center justify-between gap-2.5 border-t border-stone-100 bg-white px-5 py-3 sm:flex-row sm:px-6">
+                        <p className="text-center text-[10px] font-medium text-stone-500 sm:text-left">
                             {canManagePlan
                                 ? 'Plans can be changed anytime. Downgrades may deactivate some products.'
                                 : 'Your access to subscription details is read-only.'}
                         </p>
+
                         {canManagePlan ? (
                             <button
                                 onClick={handleManage}
-                                className="text-[12px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 transition-colors group whitespace-nowrap"
+                                className="group flex items-center gap-1 whitespace-nowrap text-[11px] font-bold text-orange-600 transition-colors hover:text-orange-700"
                             >
                                 Manage Subscription
-                                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                                <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
                             </button>
                         ) : (
-                            <span className="text-[12px] font-bold text-stone-400 whitespace-nowrap">
+                            <span className="whitespace-nowrap text-[11px] font-bold text-stone-400">
                                 Owner-managed plan
                             </span>
                         )}
                     </div>
+
+                    {pendingDowngrade && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/65 p-4 backdrop-blur-[2px]">
+                            <div className="w-full max-w-md rounded-[1.35rem] border border-stone-200 bg-white p-5 shadow-2xl">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+                                            <AlertCircle size={18} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-extrabold text-stone-900">
+                                                Final downgrade warning
+                                            </h3>
+                                            <p className="mt-1 text-sm leading-6 text-stone-600">
+                                                You are about to move from {PLANS.find((plan) => plan.id === currentTier)?.name ?? currentTier} to {pendingDowngrade.name}.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setPendingDowngrade(null)}
+                                        className="rounded-lg bg-stone-100 p-1.5 text-stone-400 transition-colors hover:bg-stone-200 hover:text-stone-600"
+                                    >
+                                        <X size={15} />
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 space-y-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <ChevronRight size={15} className="mt-1 shrink-0 text-orange-600" />
+                                        <p className="text-sm leading-6 text-stone-700">
+                                            Your lower plan benefits and product limit will apply immediately after confirmation.
+                                        </p>
+                                    </div>
+
+                                    {draftCount > 0 && (
+                                        <div className="flex items-start gap-3">
+                                            <ChevronRight size={15} className="mt-1 shrink-0 text-orange-600" />
+                                            <p className="text-sm leading-6 text-stone-700">
+                                                <strong>{draftCount}</strong> active product{draftCount === 1 ? '' : 's'} may need to be set to Draft. You can review those on the Subscription page.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {showsEliteStandardWarning && (
+                                        <div className="flex items-start gap-3">
+                                            <Users size={15} className="mt-1 shrink-0 text-orange-600" />
+                                            <p className="text-sm leading-6 text-stone-700">
+                                                Downgrading from Elite to Standard will suspend Elite-only features and linked employee workspace accounts until you upgrade again.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-5 flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setPendingDowngrade(null)}
+                                        className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-600 transition-colors hover:bg-stone-50"
+                                    >
+                                        Go back
+                                    </button>
+                                    <button
+                                        onClick={confirmDowngrade}
+                                        disabled={isDowngrading}
+                                        className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition-colors ${
+                                            isDowngrading ? 'cursor-not-allowed bg-stone-300' : 'bg-orange-600 hover:bg-orange-700'
+                                        }`}
+                                    >
+                                        {isDowngrading ? 'Processing...' : 'Yes, downgrade now'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -6,6 +6,7 @@ import Modal from '@/Components/Modal';
 
 export default function Subscription({ auth, currentPlan, activeProductsCount, limit, activeProducts, linkedStaffCount = 0 }) {
     const [downgradeModalOpen, setDowngradeModalOpen] = useState(false);
+    const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [targetPlan, setTargetPlan] = useState(null);
     const [selectedProductsToKeep, setSelectedProductsToKeep] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -34,18 +35,11 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     const needsStandardDowngradeWarning = (planValue) => currentPlan === 'super_premium' && planValue === 'free';
 
     const initiateDowngrade = (planValue, newLimit) => {
-        if (activeProductsCount > newLimit || needsStandardDowngradeWarning(planValue)) {
-            setTargetPlan({ value: planValue, limit: newLimit });
-            setDowngradeModalOpen(true);
-            setSelectedProductsToKeep(activeProductsCount > newLimit ? [] : activeProducts.map((product) => product.id));
-            reset();
-        } else {
-            // Direct downgrade since they are under the limit
-            submitSubscriptionChange(route('seller.subscription.downgrade'), {
-                plan: planValue,
-                keep_active_ids: activeProducts.map(p => p.id),
-            });
-        }
+        setTargetPlan({ value: planValue, limit: newLimit });
+        setDowngradeModalOpen(true);
+        setFinalDowngradeModalOpen(false);
+        setSelectedProductsToKeep(activeProductsCount > newLimit ? [] : activeProducts.map((product) => product.id));
+        reset();
     };
 
     const toggleProductSelection = (id) => {
@@ -60,10 +54,36 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         }
     };
 
+    const getPlannedKeepActiveIds = () => {
+        if (selectedProductsToKeep.length > 0) {
+            return selectedProductsToKeep;
+        }
+
+        return activeProducts.map((product) => product.id);
+    };
+
+    const closeDowngradeFlow = () => {
+        setDowngradeModalOpen(false);
+        setFinalDowngradeModalOpen(false);
+        setSelectedProductsToKeep([]);
+        setTargetPlan(null);
+        setSearchQuery('');
+        reset();
+    };
+
+    const openFinalDowngradeConfirmation = () => {
+        if (!canConfirmDowngrade) return;
+        setDowngradeModalOpen(false);
+        setFinalDowngradeModalOpen(true);
+    };
+
+    const returnToDowngradeModal = () => {
+        setFinalDowngradeModalOpen(false);
+        setDowngradeModalOpen(true);
+    };
+
     const confirmDowngrade = () => {
-        const keepActiveIds = selectedProductsToKeep.length > 0
-            ? selectedProductsToKeep
-            : activeProducts.map((product) => product.id);
+        const keepActiveIds = getPlannedKeepActiveIds();
 
         submitSubscriptionChange(
             route('seller.subscription.downgrade'),
@@ -73,14 +93,11 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             },
             {
                 onSuccess: () => {
-                    setDowngradeModalOpen(false);
-                    setSelectedProductsToKeep([]);
-                    setTargetPlan(null);
-                    setSearchQuery('');
-                    reset();
+                    closeDowngradeFlow();
                 },
                 onError: () => {
                     // Keep the modal open so the seller can correct their selection.
+                    setFinalDowngradeModalOpen(false);
                     setDowngradeModalOpen(true);
                 }
             }
@@ -145,17 +162,13 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     );
     const requiresProductSelection = activeProductsCount > (targetPlan?.limit ?? limit);
     const showsStandardDowngradeWarning = currentPlan === 'super_premium' && targetPlan?.value === 'free';
+    const plannedKeepActiveIds = targetPlan ? getPlannedKeepActiveIds() : [];
+    const plannedDraftCount = Math.max(0, activeProductsCount - plannedKeepActiveIds.length);
     const canConfirmDowngrade = !processing
         && (!requiresProductSelection || selectedProductsToKeep.length > 0)
         && (!requiresProductSelection || selectedProductsToKeep.length <= targetPlan?.limit);
 
-    const closeDowngradeModal = () => {
-        setDowngradeModalOpen(false);
-        setSelectedProductsToKeep([]);
-        setTargetPlan(null);
-        setSearchQuery('');
-        reset();
-    };
+    const closeDowngradeModal = () => closeDowngradeFlow();
 
     return (
         <AuthenticatedLayout
@@ -397,7 +410,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                             Cancel
                         </button>
                         <button
-                            onClick={confirmDowngrade}
+                            onClick={openFinalDowngradeConfirmation}
                             disabled={!canConfirmDowngrade}
                             className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors ${
                                 canConfirmDowngrade
@@ -405,7 +418,90 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                     : 'bg-stone-300 cursor-not-allowed'
                             }`}
                         >
-                            {processing ? 'Processing...' : `Confirm Downgrade`}
+                            Continue
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal show={finalDowngradeModalOpen} onClose={returnToDowngradeModal} maxWidth="lg">
+                <div className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 rounded-xl bg-amber-100 p-2 text-amber-700">
+                                <AlertCircle className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-stone-900">
+                                    Final downgrade warning
+                                </h2>
+                                <p className="mt-1 text-sm leading-6 text-stone-600">
+                                    You are about to downgrade from {formatPlanName(currentPlan)} to {formatPlanName(targetPlan?.value)}.
+                                    Please review the effects before continuing.
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={returnToDowngradeModal}
+                            className="text-stone-400 hover:text-stone-600"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <div className="mt-5 space-y-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                        <div className="flex items-start gap-3">
+                            <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                            <p className="text-sm leading-6 text-stone-700">
+                                Your shop will move to the <strong>{formatPlanName(targetPlan?.value)}</strong> plan immediately after confirmation.
+                            </p>
+                        </div>
+
+                        {plannedDraftCount > 0 && (
+                            <div className="flex items-start gap-3">
+                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                                <p className="text-sm leading-6 text-stone-700">
+                                    <strong>{plannedDraftCount}</strong> active product{plannedDraftCount === 1 ? '' : 's'} will be set to Draft.
+                                </p>
+                            </div>
+                        )}
+
+                        {showsStandardDowngradeWarning && (
+                            <div className="flex items-start gap-3">
+                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                                <p className="text-sm leading-6 text-stone-700">
+                                    Elite-only features will be suspended, and <strong>{linkedStaffCount}</strong> linked employee workspace account{linkedStaffCount === 1 ? '' : 's'} will be suspended until you upgrade again.
+                                </p>
+                            </div>
+                        )}
+
+                        {!plannedDraftCount && !showsStandardDowngradeWarning && (
+                            <div className="flex items-start gap-3">
+                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                                <p className="text-sm leading-6 text-stone-700">
+                                    This change lowers your plan benefits and product limit, but no active products need to be drafted right now.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3 border-t border-stone-200 pt-4">
+                        <button
+                            onClick={returnToDowngradeModal}
+                            className="px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-300 rounded-lg hover:bg-stone-50"
+                        >
+                            Go back
+                        </button>
+                        <button
+                            onClick={confirmDowngrade}
+                            disabled={processing}
+                            className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors ${
+                                processing
+                                    ? 'bg-stone-300 cursor-not-allowed'
+                                    : 'bg-orange-600 hover:bg-orange-700'
+                            }`}
+                        >
+                            {processing ? 'Processing...' : 'Yes, downgrade now'}
                         </button>
                     </div>
                 </div>
@@ -413,6 +509,4 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         </AuthenticatedLayout>
     );
 }
-
-
 

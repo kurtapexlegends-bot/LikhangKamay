@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\User;
 use App\Services\SponsorshipAnalyticsService;
 use App\Services\OrderFinanceService;
+use App\Services\PayMongoService;
 use App\Services\WalletService;
 use App\Mail\OrderPlaced;
 use App\Mail\OrderAccepted;
@@ -209,7 +210,7 @@ class OrderController extends Controller
             'items' => $items,
             'wallet' => $walletService->buildSnapshotForUser($user, 6),
             'pricing' => [
-                'convenience_fee_per_delivery_order' => OrderFinanceService::CONVENIENCE_FEE,
+                'convenience_fee_rate' => OrderFinanceService::CONVENIENCE_FEE_RATE,
             ],
             'auth' => [
                 'user' => $user->load('addresses'),
@@ -370,21 +371,46 @@ class OrderController extends Controller
         ]);
 
         if ($request->action_type === 'refund') {
-            $order->update([
-                'status' => 'Refunded',
-                'payment_status' => 'refunded'
-            ]);
+            try {
+                DB::transaction(function () use ($order, $orderFinanceService) {
+                    $lockedOrder = Order::query()
+                        ->with('user')
+                        ->lockForUpdate()
+                        ->findOrFail($order->id);
 
-            $order->refresh();
-            $orderFinanceService->refundOrderToBuyerWallet($order);
-            
-            // Send refund email to buyer
-            $order->load('user');
-            $buyer = $order->user;
-            if ($buyer && $buyer->email) {
-                Mail::to($buyer->email)->send(new RefundProcessed($order));
+                    if ($lockedOrder->status !== 'Refund/Return') {
+                        throw new \RuntimeException('This return request is no longer pending.');
+                    }
+
+                    $lockedOrder->update([
+                        'status' => 'Refunded',
+                        'payment_status' => 'refunded',
+                    ]);
+
+                    $orderFinanceService->refundOrderToBuyerWallet($lockedOrder);
+                });
+            } catch (\Throwable $e) {
+                report($e);
+
+                $message = $e->getMessage() === 'This return request is no longer pending.'
+                    ? $e->getMessage()
+                    : 'Refund could not be completed. No wallet changes were applied.';
+
+                return back()->with('error', $message);
             }
-            
+
+            $order = $order->fresh(['user']);
+
+            try {
+                // Send refund email to buyer
+                $buyer = $order?->user;
+                if ($buyer && $buyer->email) {
+                    Mail::to($buyer->email)->send(new RefundProcessed($order));
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
             return back()->with('success', 'Return approved. Refund credited to the buyer wallet.');
         } else {
             $resolutionDescription = trim((string) $request->replacement_resolution_description);
@@ -452,8 +478,20 @@ class OrderController extends Controller
             ->firstOrFail();
 
         $request->validate([
-            'payment_status' => 'required|string|in:pending,paid'
+            'payment_status' => 'required|string|in:paid'
         ]);
+
+        if ($order->payment_method !== 'COD') {
+            return redirect()->back()->with('error', 'Only cash on delivery orders can be marked paid manually.');
+        }
+
+        if (in_array($order->status, ['Refunded', 'Cancelled', 'Rejected'], true) || $order->wallet_settled_at !== null) {
+            return redirect()->back()->with('error', 'Payment status can no longer be changed for this order.');
+        }
+
+        if ($order->payment_status === 'paid') {
+            return redirect()->back()->with('success', 'Payment status is already up to date.');
+        }
 
         $order->update(['payment_status' => $request->payment_status]);
 
@@ -490,7 +528,20 @@ class OrderController extends Controller
 
         if ($request->shipping_method === 'Delivery') {
             if ($selectedAddressId !== null && $selectedAddressId !== '' && $selectedAddressId !== 'new') {
-                $selectedAddress = $buyer->addresses()->findOrFail($selectedAddressId);
+                if (!is_scalar($selectedAddressId) || !ctype_digit((string) $selectedAddressId)) {
+                    throw ValidationException::withMessages([
+                        'selected_address_id' => 'Select a valid saved address or choose a new delivery address.',
+                    ]);
+                }
+
+                $selectedAddress = $buyer->addresses()->find((int) $selectedAddressId);
+
+                if (!$selectedAddress) {
+                    throw ValidationException::withMessages([
+                        'selected_address_id' => 'Select a valid saved address or choose a new delivery address.',
+                    ]);
+                }
+
                 $shippingAddress = $selectedAddress->full_address;
                 $shippingAddressType = $selectedAddress->address_type ?: 'home';
             } else {
@@ -727,9 +778,11 @@ class OrderController extends Controller
     /**
      * BUYER: View my orders
      */
-    public function myOrders(WalletService $walletService)
+    public function myOrders(WalletService $walletService, PayMongoService $payMongoService)
     {
         $userId = Auth::id();
+
+        $this->reconcilePendingOnlinePaymentsForUser(Auth::user(), $payMongoService);
 
         $rawOrders = Order::where('user_id', $userId)
             ->with(['items', 'user'])
@@ -748,14 +801,7 @@ class OrderController extends Controller
             ->get()
             ->keyBy('product_id');
 
-        $resolvedReplacementProductIds = $rawOrders
-            ->filter(fn ($order) => $order->replacement_resolved_at !== null)
-            ->flatMap(fn ($order) => $order->items->pluck('product_id'))
-            ->filter()
-            ->unique()
-            ->values();
-
-        $orders = $rawOrders->map(function ($order) use ($reviewsByProduct, $resolvedReplacementProductIds) {
+        $orders = $rawOrders->map(function ($order) use ($reviewsByProduct) {
                 // Calculate if return is allowed (within 1 day of received_at)
                 $canReturn = false;
                 if ($order->status === 'Completed' && $order->warranty_expires_at) {
@@ -794,9 +840,8 @@ class OrderController extends Controller
                     'accepted_at' => $order->accepted_at?->format('M d, Y h:i A'),
                     'shipped_at' => $order->shipped_at?->format('M d, Y h:i A'),
                     'delivered_at' => $order->delivered_at?->format('M d, Y h:i A'),
-                    'items' => $order->items->map(function ($item) use ($reviewsByProduct, $resolvedReplacementProductIds) {
+                    'items' => $order->items->map(function ($item) use ($reviewsByProduct) {
                         $existingReview = $reviewsByProduct->get($item->product_id);
-                        $canManageReview = $existingReview && $resolvedReplacementProductIds->contains($item->product_id);
 
                         return [
                             'id' => $item->id,
@@ -817,7 +862,7 @@ class OrderController extends Controller
                                     ->map(fn ($photo) => str_starts_with($photo, 'http') ? $photo : '/storage/' . $photo)
                                     ->values()
                                     ->all(),
-                                'can_manage_after_replacement' => $canManageReview,
+                                'can_manage_review' => true,
                             ] : null,
                         ];
                     }),
@@ -828,7 +873,16 @@ class OrderController extends Controller
 
         return Inertia::render('Buyer/MyOrders', [
             'orders' => $orders,
-            'wallet' => $walletService->buildSnapshotForUser(Auth::user(), 8),
+        ]);
+    }
+
+    /**
+     * BUYER: View wallet
+     */
+    public function myWallet(WalletService $walletService)
+    {
+        return Inertia::render('Buyer/MyWallet', [
+            'wallet' => $walletService->buildSnapshotForUser(Auth::user(), 12),
         ]);
     }
 
@@ -880,6 +934,51 @@ class OrderController extends Controller
             : 'Order marked as received! You have 1 day to request a return if needed.';
 
         return redirect()->back()->with('success', $successMessage);
+    }
+
+    private function reconcilePendingOnlinePaymentsForUser(User $user, PayMongoService $payMongoService): void
+    {
+        Order::query()
+            ->where('user_id', $user->id)
+            ->where('payment_method', 'GCash')
+            ->where('payment_status', 'pending')
+            ->whereNotNull('paymongo_session_id')
+            ->whereIn('status', ['Pending', 'Accepted'])
+            ->get()
+            ->each(function (Order $order) use ($payMongoService) {
+                try {
+                    $session = $payMongoService->retrieveCheckoutSession($order->paymongo_session_id);
+                    $attributes = $session['attributes'] ?? [];
+                    $referenceNumber = $attributes['reference_number'] ?? null;
+
+                    if ($referenceNumber && $referenceNumber !== $order->order_number) {
+                        return;
+                    }
+
+                    $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
+                    $hasPaidPayment = collect($session['included'] ?? [])
+                        ->contains(fn (array $included) => ($included['type'] ?? null) === 'payment'
+                            && (($included['attributes']['status'] ?? null) === 'paid'));
+
+                    if (!$hasPaidPayment && !empty($attributes['payments']) && is_array($attributes['payments'])) {
+                        $hasPaidPayment = collect($attributes['payments'])
+                            ->contains(function ($payment) {
+                                $paymentStatus = $payment['status'] ?? ($payment['attributes']['status'] ?? null);
+                                return $paymentStatus === 'paid';
+                            });
+                    }
+
+                    if ($isPaid || $hasPaidPayment) {
+                        $order->update([
+                            'payment_status' => 'paid',
+                            'payment_method' => $order->payment_method ?: 'GCash',
+                            'paymongo_session_id' => null,
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            });
     }
 
     /**

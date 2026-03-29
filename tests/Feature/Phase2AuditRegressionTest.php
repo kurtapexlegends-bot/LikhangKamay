@@ -124,6 +124,35 @@ class Phase2AuditRegressionTest extends TestCase
         $this->assertSame('cs_test_cancelled', $order->paymongo_session_id);
     }
 
+    public function test_seller_cannot_manually_mark_online_payment_order_as_paid(): void
+    {
+        $buyer = User::factory()->create();
+        $seller = User::factory()->artisanApproved()->create();
+
+        $order = Order::create([
+            'order_number' => 'ORD-MANUAL-' . strtoupper(fake()->bothify('??###')),
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'total_amount' => 500,
+            'status' => 'Accepted',
+            'payment_method' => 'GCash',
+            'payment_status' => 'pending',
+            'shipping_address' => '123 Pay Street, Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $response = $this->from('/orders')->actingAs($seller)->post(route('orders.payment-status', $order->order_number), [
+            'payment_status' => 'paid',
+        ]);
+
+        $response
+            ->assertRedirect('/orders')
+            ->assertSessionHas('error', 'Only cash on delivery orders can be marked paid manually.');
+
+        $this->assertSame('pending', $order->fresh()->payment_status);
+    }
+
     private function createProduct(User $seller, float $price): Product
     {
         return Product::create([

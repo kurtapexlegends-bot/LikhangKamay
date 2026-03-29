@@ -145,6 +145,25 @@ class SellerEntitlementsTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_all_workspace_enabled_staff_always_get_team_inbox_access(): void
+    {
+        $owner = User::factory()->artisanApproved()->create();
+        $staff = $this->createCompletedStaff($owner, 'custom');
+
+        $response = $this->actingAs($staff)->get(route('team-messages.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/TeamMessages')
+            ->where('sellerSidebar.actorType', 'staff')
+            ->where('sellerSidebar.visibleModules', function ($modules) {
+                $modules = $modules instanceof Collection ? $modules->all() : $modules;
+
+                return in_array('team_messages', $modules, true);
+            })
+        );
+    }
+
     public function test_suspended_staff_keeps_the_linked_account_but_loses_workspace_access(): void
     {
         $owner = $this->createPremiumOwner([

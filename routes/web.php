@@ -95,8 +95,8 @@ Route::post('/auth/complete-profile', [SocialAuthController::class, 'completePro
 Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // DASHBOARD & PROFILE
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('staff.attendance')->name('dashboard');
+    Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])->middleware('staff.attendance')->name('staff.dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['patch', 'post'], '/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -122,7 +122,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     })->name('artisan.pending');
 
     // SELLER ROUTES
-    Route::middleware(['seller.workspace'])->group(function () {
+    Route::middleware(['seller.workspace', 'staff.attendance'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
         Route::get('/orders/export', [OrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
         Route::post('/orders/{id}/update', [OrderController::class, 'update'])->middleware('seller.module:orders')->name('orders.update');
@@ -162,22 +162,22 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     });
 
     // CHAT SYSTEM & REVIEWS (CRM)
-    Route::get('/chat', [ChatController::class, 'index'])->middleware(['seller.workspace', 'seller.module:messages'])->name('chat.index'); 
+    Route::get('/chat', [ChatController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:messages'])->name('chat.index'); 
     Route::post('/chat/send', [ChatController::class, 'store'])->name('chat.store');
     Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->name('chat.seen');
     Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->name('chat.typing');
-    Route::get('/team-messages', [TeamMessageController::class, 'index'])->middleware(['seller.workspace', 'seller.module:team_messages'])->name('team-messages.index');
-    Route::post('/team-messages/send', [TeamMessageController::class, 'store'])->middleware(['seller.workspace', 'seller.module:team_messages'])->name('team-messages.store');
-    Route::post('/team-messages/seen', [TeamMessageController::class, 'markAsSeen'])->middleware(['seller.workspace', 'seller.module:team_messages'])->name('team-messages.seen');
+    Route::get('/team-messages', [TeamMessageController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.index');
+    Route::post('/team-messages/send', [TeamMessageController::class, 'store'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.store');
+    Route::post('/team-messages/seen', [TeamMessageController::class, 'markAsSeen'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.seen');
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
-    Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.index');
-    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.reply');
-    Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.destroy-reply');
-    Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->middleware(['seller.workspace', 'seller.module:reviews'])->name('reviews.toggle-pin');
+    Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.index');
+    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.reply');
+    Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.destroy-reply');
+    Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.toggle-pin');
 
     // ERP MODULES
-    Route::middleware(['seller.workspace'])->group(function () {
+    Route::middleware(['seller.workspace', 'staff.attendance'])->group(function () {
         Route::get('/hr', [HRController::class, 'index'])->middleware('seller.module:hr')->name('hr.index');
         Route::post('/hr/employees', [HRController::class, 'store'])->middleware('seller.module:hr')->name('hr.store');
         Route::patch('/hr/employees/{id}', [HRController::class, 'update'])->middleware('seller.module:hr')->name('hr.update');
@@ -225,10 +225,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // PAYMENT ROUTES
     Route::get('/payment/{orderId}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
-    Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
-    Route::get('/payment/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
     
     Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders.index');
+    Route::get('/my-wallet', [OrderController::class, 'myWallet'])->name('my-wallet.index');
     Route::post('/my-orders/{id}/receive', [OrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');
     Route::post('/my-orders/{id}/return', [OrderController::class, 'buyerRequestReturn'])->name('my-orders.return');
     Route::post('/my-orders/{id}/cancel', [OrderController::class, 'buyerCancelOrder'])->name('my-orders.cancel');
@@ -256,6 +255,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::patch('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update');
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 });
+
+Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
+Route::get('/payment/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
 
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {

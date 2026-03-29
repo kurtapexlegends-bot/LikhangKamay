@@ -7,7 +7,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import { 
     Users, UserPlus, Trash2, ChevronDown, User, LogOut,
-    Briefcase, Building2, Search, Menu, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff,
+    Briefcase, Building2, Search, Menu, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3,
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import UserAvatar from '@/Components/UserAvatar';
@@ -153,6 +153,78 @@ const formatAttendanceTime = (value) => value
       }).format(new Date(value))
     : 'No clock-in yet';
 
+const formatAttendanceDateLabel = (value) => value
+    ? new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(new Date(`${value}T12:00:00`))
+    : '—';
+
+const formatWorkedHoursCount = (minutes) => {
+    const hours = Number(minutes || 0) / 60;
+
+    if (hours <= 0) {
+        return '0';
+    }
+
+    const rounded = Math.round(hours * 10) / 10;
+
+    return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1).replace(/\.0$/, '');
+};
+
+const formatWorkedHoursLabel = (minutes) => {
+    const totalMinutes = Number(minutes || 0);
+
+    if (totalMinutes <= 0) {
+        return '0h';
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const remainingMinutes = totalMinutes % 60;
+
+    if (hours === 0) {
+        return `${remainingMinutes}m`;
+    }
+
+    if (remainingMinutes === 0) {
+        return `${hours}h`;
+    }
+
+    return `${hours}h ${remainingMinutes}m`;
+};
+
+const formatWorkedHoursSummary = (attendance) => {
+    const days = Number(attendance?.days_worked || 0);
+    const dayLabel = days === 1 ? 'day' : 'days';
+
+    return `${formatWorkedHoursCount(attendance?.worked_minutes)} worked hours (${days} ${dayLabel})`;
+};
+
+const buildAttendanceCalendarWeeks = (calendarDays = []) => {
+    if (!calendarDays.length) {
+        return [];
+    }
+
+    const leadingEmptyDays = Array.from(
+        { length: Number(calendarDays[0]?.weekday_index || 0) },
+        (_, index) => ({ key: `leading-${index}`, empty: true })
+    );
+
+    const cells = [
+        ...leadingEmptyDays,
+        ...calendarDays.map((day) => ({ ...day, key: day.date, empty: false })),
+    ];
+
+    while (cells.length % 7 !== 0) {
+        cells.push({ key: `trailing-${cells.length}`, empty: true });
+    }
+
+    return Array.from({ length: Math.ceil(cells.length / 7) }, (_, index) =>
+        cells.slice(index * 7, index * 7 + 7)
+    );
+};
+
 function RolePresetCard({ preset, isSelected, radioName, onSelect }) {
     const moduleCount = (preset.modules || []).length;
 
@@ -190,6 +262,233 @@ function RolePresetCard({ preset, isSelected, radioName, onSelect }) {
     );
 }
 
+function AttendanceSummaryCard({ attendance, attendanceStatus, monthLabel, onOpenCalendar }) {
+    const canOpen = attendance?.has_attendance_source && (attendance?.calendar_days?.length || 0) > 0;
+
+    return (
+        <button
+            type="button"
+            onClick={canOpen ? onOpenCalendar : undefined}
+            disabled={!canOpen}
+            className={`w-full min-w-[190px] rounded-2xl border px-3 py-2 text-left transition ${
+                canOpen
+                    ? 'border-stone-200 bg-white hover:border-clay-200 hover:bg-[#FCF7F2]'
+                    : 'border-stone-200 bg-white'
+            } ${!canOpen ? 'cursor-default' : 'cursor-pointer'}`}
+        >
+            <div className="flex items-start justify-between gap-2">
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${attendanceStatus.className}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${
+                        attendanceStatus.label === 'Clocked In'
+                            ? 'bg-emerald-500'
+                            : attendanceStatus.label === 'Paused'
+                                ? 'bg-amber-500'
+                                : 'bg-stone-400'
+                    }`}></span>
+                    {attendanceStatus.label}
+                </span>
+
+                {canOpen && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#E7D8C9] bg-[#FCF7F2] px-2 py-0.5 text-[10px] font-bold text-clay-700">
+                        <CalendarDays size={11} />
+                        View Dates
+                    </span>
+                )}
+            </div>
+
+            <div className="mt-2 space-y-1 text-[11px] leading-tight text-stone-600">
+                <div>{attendanceStatus.note}</div>
+                <div className="font-medium text-gray-700">
+                    First today: {formatAttendanceTime(attendance?.today_first_clock_in)}
+                </div>
+                <div className="text-[10px] text-stone-500">
+                    {(attendance?.month_label || monthLabel)}: {formatWorkedHoursSummary(attendance)}
+                </div>
+            </div>
+        </button>
+    );
+}
+
+function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose }) {
+    const calendarDays = employee?.attendance?.calendar_days || [];
+    const calendarWeeks = buildAttendanceCalendarWeeks(calendarDays);
+    const selectedDay = calendarDays.find((day) => day.date === selectedDate) || calendarDays.find((day) => day.is_today) || calendarDays.find((day) => day.has_hours) || calendarDays[0] || null;
+    const daysWorked = Number(employee?.attendance?.days_worked || 0);
+    const totalWorkedMinutes = Number(employee?.attendance?.worked_minutes || 0);
+    const averageWorkedMinutes = daysWorked > 0 ? Math.round(totalWorkedMinutes / daysWorked) : 0;
+    const selectedDayHoursLabel = selectedDay ? formatWorkedHoursLabel(selectedDay.worked_minutes) : '0h';
+    const bestLoggedDay = calendarDays.filter((day) => day.has_hours).sort((a, b) => b.worked_minutes - a.worked_minutes)[0] || null;
+
+    return (
+        <Modal show={!!employee} onClose={onClose} maxWidth="2xl">
+            <div className="bg-stone-50 p-2 sm:p-2.5">
+                <div className="rounded-[1.05rem] border border-stone-200 bg-white p-3 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)] sm:p-3.5">
+                    <div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-2.5">
+                        <div className="flex min-w-0 items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-clay-50 text-clay-600">
+                                <CalendarDays size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                                <h2 className="text-base font-bold tracking-tight text-gray-900">Attendance Calendar</h2>
+                                <p className="mt-0.5 truncate text-xs text-stone-500">
+                                    {employee?.name} · {employee?.attendance?.month_label || 'Current Month'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-full p-2 text-gray-400 transition hover:bg-stone-100 hover:text-gray-600"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.58fr)_220px]">
+                        <div className="rounded-[1rem] border border-stone-200 bg-white p-2.5">
+                            <div className="mb-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Daily View</p>
+                                    <p className="mt-1 text-[11px] text-stone-500">Select a date to review hours.</p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5">
+                                        <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                        Worked
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5">
+                                        <span className="h-2 w-2 rounded-full bg-clay-500"></span>
+                                        Selected
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">
+                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                                    <span key={day}>{day}</span>
+                                ))}
+                            </div>
+
+                            <div className="grid gap-1">
+                                {calendarWeeks.map((week, weekIndex) => (
+                                    <div key={`week-${weekIndex}`} className="grid grid-cols-7 gap-1">
+                                        {week.map((day) => day.empty ? (
+                                            <div key={day.key} className="min-h-[46px] rounded-lg border border-transparent bg-stone-50"></div>
+                                        ) : (
+                                            <button
+                                                key={day.key}
+                                                type="button"
+                                                onClick={() => onSelectDate(day.date)}
+                                                className={`min-h-[46px] rounded-lg border px-1.5 py-1 text-left transition ${
+                                                    selectedDay?.date === day.date
+                                                        ? 'border-clay-300 bg-clay-50 shadow-sm'
+                                                        : day.has_hours
+                                                            ? 'border-emerald-200 bg-emerald-50/70 hover:border-emerald-300'
+                                                            : 'border-stone-200 bg-white hover:border-stone-300'
+                                                } ${day.is_today ? 'ring-1 ring-clay-200' : ''}`}
+                                            >
+                                                <div className="flex items-start justify-between gap-1">
+                                                    <span className="text-xs font-bold text-gray-900">{day.day_number}</span>
+                                                    <span className={`mt-0.5 h-1.5 w-1.5 rounded-full ${
+                                                        selectedDay?.date === day.date
+                                                            ? 'bg-clay-500'
+                                                            : day.has_hours
+                                                                ? 'bg-emerald-500'
+                                                                : day.is_today
+                                                                    ? 'bg-clay-300'
+                                                            : 'bg-stone-200'
+                                                    }`}></span>
+                                                </div>
+
+                                                <div className="mt-0.5">
+                                                    {day.is_today && (
+                                                        <span className="inline-flex rounded-full bg-clay-100 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-clay-700">
+                                                            Today
+                                                        </span>
+                                                    )}
+                                                    <p className={`mt-0.5 text-[9px] font-semibold leading-snug ${
+                                                        day.has_hours ? 'text-emerald-700' : 'text-stone-400'
+                                                    }`}>
+                                                        {day.has_hours ? day.worked_hours_label : 'No hours'}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <div className="grid grid-cols-3 gap-1.5">
+                                <div className="rounded-xl border border-clay-100 bg-clay-50/60 px-2 py-1.5">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Total</p>
+                                    <p className="mt-0.5 text-xs font-bold text-gray-900">{formatWorkedHoursLabel(totalWorkedMinutes)}</p>
+                                </div>
+                                <div className="rounded-xl border border-stone-200 bg-stone-50 px-2 py-1.5">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Days</p>
+                                    <p className="mt-0.5 text-xs font-bold text-gray-900">{daysWorked}</p>
+                                </div>
+                                <div className="rounded-xl border border-stone-200 bg-stone-50 px-2 py-1.5">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Avg</p>
+                                    <p className="mt-0.5 text-xs font-bold text-gray-900">{formatWorkedHoursLabel(averageWorkedMinutes)}</p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-[1rem] border border-stone-200 bg-stone-50 p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Selected Date</p>
+                                <h3 className="mt-1 text-[15px] font-bold tracking-tight text-gray-900">
+                                    {selectedDay ? formatAttendanceDateLabel(selectedDay.date) : 'Choose a date'}
+                                </h3>
+
+                                <div className="mt-2 rounded-xl border border-stone-200 bg-white px-2.5 py-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-clay-50 text-clay-600">
+                                            <Clock3 size={15} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Worked</p>
+                                            <p className="mt-0.5 text-sm font-bold text-gray-900">{selectedDayHoursLabel}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p className="mt-2 text-xs leading-5 text-stone-600">
+                                    {selectedDay?.has_hours
+                                        ? `${employee?.name} logged ${selectedDayHoursLabel} on this date.`
+                                        : 'No attendance hours logged on this date.'}
+                                </p>
+                            </div>
+
+                            <div className="rounded-[1rem] border border-stone-200 bg-white p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Month Summary</p>
+
+                                <div className="mt-2.5 space-y-2">
+                                    <div className="rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-2">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Attendance Total</p>
+                                        <p className="mt-0.5 text-xs font-bold text-gray-900">{formatWorkedHoursSummary(employee?.attendance)}</p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-2">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Best Day</p>
+                                        <p className="mt-0.5 text-xs font-bold text-gray-900">{bestLoggedDay?.worked_hours_label || '0h'}</p>
+                                        <p className="mt-0.5 text-xs text-stone-500">
+                                            {bestLoggedDay ? formatAttendanceDateLabel(bestLoggedDay.date) : 'No attendance yet'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -198,6 +497,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddPassword, setShowAddPassword] = useState(false);
     const [showEditPassword, setShowEditPassword] = useState(false);
+    const [attendanceModalEmployee, setAttendanceModalEmployee] = useState(null);
+    const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
     const { addToast } = useToast();
     const canManageStaffAccounts = !!staffProvisioning.canManageStaffAccounts;
     const requiresStaffSchemaUpdate = !!staffProvisioning.requiresStaffSchemaUpdate;
@@ -443,6 +744,22 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.role.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const openAttendanceModal = (employee) => {
+        const calendarDays = employee?.attendance?.calendar_days || [];
+        const preferredDay = calendarDays.find((day) => day.is_today)
+            || calendarDays.find((day) => day.has_hours)
+            || calendarDays[0]
+            || null;
+
+        setAttendanceModalEmployee(employee);
+        setSelectedAttendanceDate(preferredDay?.date || null);
+    };
+
+    const closeAttendanceModal = () => {
+        setAttendanceModalEmployee(null);
+        setSelectedAttendanceDate(null);
+    };
 
     // PAYROLL FORM
     const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
@@ -739,27 +1056,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     )}
                                                 </td>
                                                 <td className="px-5 py-3">
-                                                    <div className="min-w-[190px] rounded-2xl border border-stone-200 bg-white px-3 py-2">
-                                                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${attendanceStatus.className}`}>
-                                                            <span className={`h-1.5 w-1.5 rounded-full ${
-                                                                attendanceStatus.label === 'Clocked In'
-                                                                    ? 'bg-emerald-500'
-                                                                    : attendanceStatus.label === 'Paused'
-                                                                        ? 'bg-amber-500'
-                                                                        : 'bg-stone-400'
-                                                            }`}></span>
-                                                            {attendanceStatus.label}
-                                                        </span>
-                                                        <div className="mt-2 space-y-1 text-[11px] leading-tight text-stone-600">
-                                                            <div>{attendanceStatus.note}</div>
-                                                            <div className="font-medium text-gray-700">
-                                                                First today: {formatAttendanceTime(emp.attendance?.today_first_clock_in)}
-                                                            </div>
-                                                            <div className="text-[10px] text-stone-500">
-                                                                {sellerSettings.attendance_month_label || payrollData.month}: {emp.attendance?.days_worked || 0} worked day(s)
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <AttendanceSummaryCard
+                                                        attendance={emp.attendance}
+                                                        attendanceStatus={attendanceStatus}
+                                                        monthLabel={sellerSettings.attendance_month_label || payrollData.month}
+                                                        onOpenCalendar={() => openAttendanceModal(emp)}
+                                                    />
                                                 </td>
                                                 <td className="px-5 py-3 text-right">
                                                     <div className="flex justify-end gap-1.5">
@@ -911,6 +1213,13 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
                 </main>
             </div>
+
+            <AttendanceCalendarModal
+                employee={attendanceModalEmployee}
+                selectedDate={selectedAttendanceDate}
+                onSelectDate={setSelectedAttendanceDate}
+                onClose={closeAttendanceModal}
+            />
 
             {/* ADD EMPLOYEE MODAL */}
             <Modal show={isModalOpen} onClose={closeAddModal} maxWidth="2xl">
@@ -1618,6 +1927,3 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         </div>
     );
 }
-
-
-

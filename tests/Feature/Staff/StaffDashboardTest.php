@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Staff;
 
+use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -74,6 +76,25 @@ class StaffDashboardTest extends TestCase
     public function test_customer_support_staff_lands_on_crm_hub(): void
     {
         $owner = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+        $product = Product::create([
+            'user_id' => $owner->id,
+            'sku' => 'CRM-HUB-001',
+            'name' => 'CRM Hub Product',
+            'category' => 'Home Decor',
+            'status' => 'Active',
+            'price' => 1200,
+            'stock' => 5,
+            'lead_time' => 3,
+            'sold' => 0,
+        ]);
+        Review::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'rating' => 5,
+            'comment' => 'Needs seller follow-up.',
+            'seller_reply' => null,
+        ]);
         $staff = $this->createStaff($owner, 'customer_support');
 
         $this->actingAs($staff)
@@ -83,6 +104,7 @@ class StaffDashboardTest extends TestCase
                 ->component('Staff/Dashboard')
                 ->where('hub.variant', 'crm')
                 ->where('hub.focus', 'Customer Support')
+                ->where('hub.stats.2.value', 1)
             );
     }
 

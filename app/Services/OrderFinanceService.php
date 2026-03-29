@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class OrderFinanceService
 {
-    public const CONVENIENCE_FEE = 20.00;
+    public const CONVENIENCE_FEE_RATE = 0.03;
     public const PLATFORM_COMMISSION_RATE = 0.05;
 
     public function __construct(
@@ -22,7 +22,9 @@ class OrderFinanceService
     public function calculateAmounts(float $merchandiseSubtotal, string $shippingMethod): array
     {
         $normalizedSubtotal = $this->money($merchandiseSubtotal);
-        $convenienceFee = $shippingMethod === 'Delivery' ? self::CONVENIENCE_FEE : 0.00;
+        $convenienceFee = $shippingMethod === 'Delivery'
+            ? $this->money($normalizedSubtotal * self::CONVENIENCE_FEE_RATE)
+            : 0.00;
         $platformCommission = $this->money($normalizedSubtotal * self::PLATFORM_COMMISSION_RATE);
         $sellerNet = $this->money($normalizedSubtotal - $platformCommission);
         $grandTotal = $this->money($normalizedSubtotal + $convenienceFee);

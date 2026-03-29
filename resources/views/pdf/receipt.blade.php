@@ -116,7 +116,7 @@
             <span>PHP {{ number_format($merchandiseSubtotal, 2) }}</span>
         </div>
         <div class="totals-row">
-            <span>Convenience Fee</span>
+            <span>Convenience Fee (3%)</span>
             <span>PHP {{ number_format($convenienceFee, 2) }}</span>
         </div>
         <div class="totals-row">

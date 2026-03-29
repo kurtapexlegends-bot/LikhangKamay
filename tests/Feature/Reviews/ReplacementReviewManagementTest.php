@@ -33,7 +33,7 @@ class ReplacementReviewManagementTest extends TestCase
         ]);
     }
 
-    public function test_review_update_is_blocked_before_replacement_resolution(): void
+    public function test_review_update_is_allowed_for_the_buyer_anytime(): void
     {
         [$buyer, $product] = $this->createCompletedPurchase();
 
@@ -46,14 +46,22 @@ class ReplacementReviewManagementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
+            ->from(route('my-orders.index'))
             ->patch(route('reviews.update', $review->id), [
                 'rating' => 4,
-                'comment' => 'Trying to edit too early.',
+                'comment' => 'Updated after thinking about it more.',
             ])
-            ->assertForbidden();
+            ->assertRedirect(route('my-orders.index', absolute: false))
+            ->assertSessionHas('success', 'Review updated successfully!');
+
+        $this->assertDatabaseHas('reviews', [
+            'id' => $review->id,
+            'rating' => 4,
+            'comment' => 'Updated after thinking about it more.',
+        ]);
     }
 
-    public function test_review_delete_is_blocked_before_replacement_resolution(): void
+    public function test_review_delete_is_allowed_for_the_buyer_anytime(): void
     {
         [$buyer, $product] = $this->createCompletedPurchase();
 
@@ -66,59 +74,6 @@ class ReplacementReviewManagementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->delete(route('reviews.destroy', $review->id))
-            ->assertForbidden();
-
-        $this->assertDatabaseHas('reviews', [
-            'id' => $review->id,
-        ]);
-    }
-
-    public function test_review_update_is_allowed_after_resolved_replacement_for_same_product(): void
-    {
-        [$buyer, $product] = $this->createCompletedPurchase();
-
-        $review = Review::create([
-            'user_id' => $buyer->id,
-            'product_id' => $product->id,
-            'rating' => 1,
-            'comment' => 'Damaged on first delivery.',
-            'photos' => [],
-        ]);
-
-        $this->createResolvedReplacementOrder($buyer, $product);
-
-        $this->actingAs($buyer)
-            ->from(route('my-orders.index'))
-            ->patch(route('reviews.update', $review->id), [
-                'rating' => 4,
-                'comment' => 'Seller replaced it and handled the issue well.',
-            ])
-            ->assertRedirect(route('my-orders.index', absolute: false))
-            ->assertSessionHas('success', 'Review updated successfully!');
-
-        $this->assertDatabaseHas('reviews', [
-            'id' => $review->id,
-            'rating' => 4,
-            'comment' => 'Seller replaced it and handled the issue well.',
-        ]);
-    }
-
-    public function test_review_delete_is_allowed_after_resolved_replacement_for_same_product(): void
-    {
-        [$buyer, $product] = $this->createCompletedPurchase();
-
-        $review = Review::create([
-            'user_id' => $buyer->id,
-            'product_id' => $product->id,
-            'rating' => 1,
-            'comment' => 'Damaged on first delivery.',
-            'photos' => [],
-        ]);
-
-        $this->createResolvedReplacementOrder($buyer, $product);
-
-        $this->actingAs($buyer)
             ->from(route('my-orders.index'))
             ->delete(route('reviews.destroy', $review->id))
             ->assertRedirect(route('my-orders.index', absolute: false))
@@ -127,6 +82,27 @@ class ReplacementReviewManagementTest extends TestCase
         $this->assertDatabaseMissing('reviews', [
             'id' => $review->id,
         ]);
+    }
+
+    public function test_duplicate_review_creation_is_still_blocked_for_the_same_product(): void
+    {
+        [$buyer, $product] = $this->createCompletedPurchase();
+
+        $review = Review::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'rating' => 1,
+            'comment' => 'Damaged on first delivery.',
+            'photos' => [],
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('reviews.store'), [
+                'product_id' => $product->id,
+                'rating' => 5,
+                'comment' => 'Trying to post a second review.',
+            ])
+            ->assertSessionHas('error', 'You already reviewed this product. Edit or delete it from My Orders.');
     }
 
     private function createCompletedPurchase(): array
@@ -155,10 +131,10 @@ class ReplacementReviewManagementTest extends TestCase
             'order_number' => 'ORD-REVIEW-' . strtoupper(uniqid()),
             'customer_name' => $buyer->name,
             'merchandise_subtotal' => 350,
-            'convenience_fee_amount' => 20,
+            'convenience_fee_amount' => 10.5,
             'platform_commission_amount' => 17.5,
             'seller_net_amount' => 332.5,
-            'total_amount' => 370,
+            'total_amount' => 360.5,
             'status' => 'Completed',
             'payment_method' => 'COD',
             'payment_status' => 'paid',
@@ -179,44 +155,5 @@ class ReplacementReviewManagementTest extends TestCase
         ]);
 
         return [$buyer, $product, $order];
-    }
-
-    private function createResolvedReplacementOrder(User $buyer, Product $product): Order
-    {
-        $seller = User::findOrFail($product->user_id);
-
-        $order = Order::create([
-            'artisan_id' => $seller->id,
-            'user_id' => $buyer->id,
-            'order_number' => 'ORD-REPLACE-REVIEW-' . strtoupper(uniqid()),
-            'customer_name' => $buyer->name,
-            'merchandise_subtotal' => 350,
-            'convenience_fee_amount' => 20,
-            'platform_commission_amount' => 17.5,
-            'seller_net_amount' => 332.5,
-            'total_amount' => 370,
-            'status' => 'Completed',
-            'payment_method' => 'COD',
-            'payment_status' => 'paid',
-            'shipping_address' => '123 Replacement Review Street',
-            'shipping_method' => 'Delivery',
-            'replacement_resolution_description' => 'Seller replaced the damaged item and reinforced the packaging.',
-            'replacement_started_at' => now()->subDays(2),
-            'replacement_resolved_at' => now()->subDay(),
-            'received_at' => now()->subDay(),
-            'warranty_expires_at' => now()->addDay(),
-        ]);
-
-        $order->items()->create([
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-            'variant' => 'Standard',
-            'price' => 350,
-            'cost' => 120,
-            'quantity' => 1,
-            'product_img' => 'products/review-test-vase.jpg',
-        ]);
-
-        return $order;
     }
 }

@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'; 
 import { Link, router, usePage } from '@inertiajs/react';
+import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, MessageCircle, Settings, X,
-    ClipboardList, Warehouse, FileQuestion, Sliders, Wallet, Star, Award, Crown, Sparkles, Zap, ChevronRight
+    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Crown, Sparkles, Zap, ChevronRight
 } from 'lucide-react';
 import { PlanModal } from './PlanBadge';
 
@@ -164,6 +165,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
     return (
         <>
+            <StaffAttendanceMonitor />
+
             {mobileOpen && (
                 <div 
                     className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity"
@@ -253,7 +256,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 <ModuleToggle 
                                     label="Accounting" 
                                     description={isElite ? "Always enabled in Elite." : "Track revenue, expenses, and fund requests."}
-                                    icon={Wallet}
+                                    icon={Banknote}
                                     enabled={modules.accounting} 
                                     onToggle={() => toggleModule('accounting')} 
                                     locked={isElite}
@@ -422,7 +425,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose}>HR</NavItem>
                             )}
                             {visibleModulesSet.has('accounting') && (
-                                <NavItem href={route('accounting.index')} icon={Wallet} active={active === 'accounting'} onClick={onClose}>Accounting</NavItem>
+                                <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose}>Accounting</NavItem>
                             )}
                             {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                 <div className="space-y-0.5">

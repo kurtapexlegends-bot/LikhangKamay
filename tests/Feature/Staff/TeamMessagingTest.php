@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Notifications\NewTeamMessageNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -66,6 +68,28 @@ class TeamMessagingTest extends TestCase
             'receiver_id' => $accountingStaff->id,
             'message' => 'Payroll draft is ready for your review.',
         ]);
+    }
+
+    public function test_team_inbox_supports_attachment_messages(): void
+    {
+        Storage::fake('public');
+
+        $owner = User::factory()->artisanApproved()->create();
+        $staff = $this->createStaff($owner, 'hr');
+
+        $this->actingAs($owner)
+            ->post(route('team-messages.store'), [
+                'receiver_id' => $staff->id,
+                'message' => '',
+                'attachment' => UploadedFile::fake()->image('proof.png'),
+            ])
+            ->assertRedirect();
+
+        $message = TeamMessage::query()->latest()->firstOrFail();
+
+        $this->assertSame('image', $message->attachment_type);
+        $this->assertNotNull($message->attachment_path);
+        Storage::disk('public')->assertExists($message->attachment_path);
     }
 
     public function test_cross_shop_team_messages_are_blocked(): void

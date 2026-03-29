@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\StaffAttendanceService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -63,6 +64,63 @@ class StaffSecurityController extends Controller
 
         return Inertia::render('Auth/StaffLogoutChoice', [
             'attendance' => $attendanceService->buildLogoutContext($user),
+        ]);
+    }
+
+    public function showResumePrompt(Request $request, StaffAttendanceService $attendanceService): Response|RedirectResponse
+    {
+        $user = $this->getStaffUser($request);
+
+        if (!$user->canAccessSellerWorkspace()) {
+            return redirect()->route('staff.home');
+        }
+
+        if (!$attendanceService->requiresResumePrompt($user)) {
+            $routeName = $user->getFirstAccessibleSellerRouteName();
+
+            return redirect()->route($routeName ?: 'staff.home');
+        }
+
+        return Inertia::render('Auth/StaffResumePrompt', [
+            'resumePrompt' => $attendanceService->buildResumeContext($user),
+        ]);
+    }
+
+    public function resumeAttendance(Request $request, StaffAttendanceService $attendanceService): RedirectResponse
+    {
+        $user = $this->getStaffUser($request);
+
+        abort_unless($user->canAccessSellerWorkspace(), 403, 'Staff workspace access only.');
+
+        $attendanceService->ensureClockedIn($user);
+
+        $intended = $request->session()->pull('staff.attendance.intended');
+        $routeName = $user->fresh()->getFirstAccessibleSellerRouteName();
+
+        if (is_string($intended) && $intended !== '') {
+            return redirect()->to($intended);
+        }
+
+        return redirect()->route($routeName ?: 'staff.home');
+    }
+
+    public function heartbeat(Request $request, StaffAttendanceService $attendanceService): JsonResponse
+    {
+        $user = $this->getStaffUser($request);
+
+        if ($attendanceService->requiresResumePrompt($user)) {
+            return response()->json([
+                'requires_resume' => true,
+                'resume_prompt' => $attendanceService->buildResumeContext($user),
+            ], 423);
+        }
+
+        $session = $attendanceService->touchHeartbeat($user);
+
+        return response()->json([
+            'ok' => true,
+            'active' => (bool) $session,
+            'last_heartbeat_at' => $session?->last_heartbeat_at?->toIso8601String(),
         ]);
     }
 

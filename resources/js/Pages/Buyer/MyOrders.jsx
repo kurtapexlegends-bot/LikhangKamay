@@ -218,12 +218,16 @@ const OrderTimeline = ({ status, isPickup }) => {
         );
     }
 
-    // Determine progress state
-    const currentStepIndex = steps.findIndex(s => s.key === status);
+    let normalizedStatus = status;
+    if (status === 'Ready for Pickup' && !isPickup) normalizedStatus = 'Shipped';
+    if (status === 'Shipped' && isPickup) normalizedStatus = 'Ready for Pickup';
+    if (status === 'Processing') normalizedStatus = 'Accepted';
+
+    const currentStepIndex = steps.findIndex((step) => step.key === normalizedStatus);
 
     return (
-        <div className="overflow-x-auto py-6 px-4 sm:px-6 bg-white border-t border-b border-gray-100">
-            <div className="flex min-w-[560px] items-center justify-between max-w-3xl mx-auto">
+        <div className="overflow-x-auto overflow-y-visible border-t border-b border-gray-100 bg-white px-4 py-6 sm:px-6">
+            <div className="mx-auto flex min-w-[560px] max-w-3xl items-center justify-between pb-8">
                 {steps.map((step, idx) => {
                     const stepStatus = getStepStatus(step.key);
                     const Icon = step.icon;
@@ -243,7 +247,6 @@ const OrderTimeline = ({ status, isPickup }) => {
                                 `}>
                                     {stepStatus === 'done' ? <CheckCircle size={18} strokeWidth={3} /> : <Icon size={18} />}
                                     
-                                    {/* Pulse effect for active */}
                                     {stepStatus === 'active' && (
                                         <span className="absolute inset-0 rounded-full bg-clay-400 opacity-20 animate-ping" />
                                     )}
@@ -329,7 +332,7 @@ const humanizeAddressType = (value) => {
         .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-export default function MyOrders({ auth, orders, wallet }) {
+export default function MyOrders({ auth, orders }) {
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -476,56 +479,19 @@ export default function MyOrders({ auth, orders, wallet }) {
                 )}
                 
                 {/* Page Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-serif font-bold text-gray-900">My Purchases</h1>
-                    <p className="text-gray-500 text-sm mt-1">Track your orders and manage returns</p>
-                </div>
-
-                {wallet && (
-                    <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Buyer Wallet</p>
-                                    <h2 className="mt-2 text-2xl font-bold text-emerald-900">
-                                        PHP {Number(wallet.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </h2>
-                                    <p className="mt-1 text-xs text-emerald-700">Refunded money lands here and can be used for eligible delivery orders.</p>
-                                </div>
-                                <div className="rounded-2xl bg-white/80 p-3 text-emerald-700 shadow-sm">
-                                    <Wallet size={22} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                            <div>
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent Wallet Activity</p>
-                                <p className="mt-1 text-sm text-gray-500">Latest purchase and refund movements tied to your account.</p>
-                            </div>
-
-                            <div className="mt-4 space-y-3">
-                                {wallet.recent_transactions?.length ? wallet.recent_transactions.slice(0, 3).map((entry) => (
-                                    <div key={entry.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-3">
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-bold text-gray-900">{entry.description || entry.category}</p>
-                                            <p className="mt-1 text-xs text-gray-500">
-                                                {entry.order_number ? `Order ${entry.order_number}` : 'Wallet update'}{entry.created_at ? ` - ${entry.created_at}` : ''}
-                                            </p>
-                                        </div>
-                                        <div className={`shrink-0 text-sm font-bold ${entry.direction === 'credit' ? 'text-emerald-700' : 'text-red-600'}`}>
-                                            {entry.direction === 'credit' ? '+' : '-'}PHP {Number(entry.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">
-                                        No wallet activity yet. Refunds and eligible wallet purchases will appear here.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-serif font-bold text-gray-900">My Purchases</h1>
+                        <p className="mt-1 text-sm text-gray-500">Track your orders and manage returns</p>
                     </div>
-                )}
+                    <Link
+                        href={route('my-wallet.index')}
+                        className="inline-flex items-center gap-2 self-start rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+                    >
+                        <Wallet size={16} />
+                        My Wallet
+                    </Link>
+                </div>
 
                 {/* --- TABS --- */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
@@ -725,7 +691,7 @@ export default function MyOrders({ auth, orders, wallet }) {
                                                 <span className="font-semibold text-gray-700">PHP {order.merchandise_subtotal}</span>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <span className="min-w-[140px]">Convenience Fee</span>
+                                                <span className="min-w-[140px]">Convenience Fee (3%)</span>
                                                 <span className="font-semibold text-gray-700">PHP {order.convenience_fee_amount}</span>
                                             </div>
                                             <div className="flex items-center gap-3">
@@ -806,13 +772,13 @@ export default function MyOrders({ auth, orders, wallet }) {
 
                                                 {(!order.replacement_in_progress && (
                                                     order.items.some(item => !item.is_rated) ||
-                                                    order.items.some(item => item.review?.can_manage_after_replacement)
+                                                    order.items.some(item => item.review?.can_manage_review)
                                                 )) && (
                                                     <button 
                                                         onClick={() => setRatingModal({ isOpen: true, order })}
                                                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 shadow-lg shadow-clay-200 transition-all hover:-translate-y-0.5"
                                                     >
-                                                        <Star size={16} /> {order.items.some(item => item.review?.can_manage_after_replacement) ? 'Manage Reviews' : 'Rate'}
+                                                        <Star size={16} /> {order.items.some(item => item.review?.can_manage_review) ? 'Manage Reviews' : 'Rate'}
                                                     </button>
                                                 )}
 
@@ -900,5 +866,3 @@ export default function MyOrders({ auth, orders, wallet }) {
         </div>
     );
 }
-
-

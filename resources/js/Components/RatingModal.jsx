@@ -42,7 +42,7 @@ const ReviewForm = ({ item, onSuccess }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    const { data, setData, post, patch, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         product_id: item.product_id,
         rating: existingReview?.rating || 5,
         comment: existingReview?.comment || '',
@@ -99,10 +99,15 @@ const ReviewForm = ({ item, onSuccess }) => {
         };
 
         if (isEditing) {
-            patch(route('reviews.update', existingReview.id), options);
+            transform((payload) => ({
+                ...payload,
+                _method: 'patch',
+            }));
+            post(route('reviews.update', existingReview.id), options);
             return;
         }
 
+        transform((payload) => payload);
         post(route('reviews.store'), options);
     };
 
@@ -234,8 +239,8 @@ export default function RatingModal({ isOpen, onClose, order }) {
     if (!order) return null;
 
     const sortedItems = [...order.items].sort((a, b) => {
-        const aPriority = a.review?.can_manage_after_replacement ? 0 : a.is_rated ? 2 : 1;
-        const bPriority = b.review?.can_manage_after_replacement ? 0 : b.is_rated ? 2 : 1;
+        const aPriority = a.is_rated ? 1 : 0;
+        const bPriority = b.is_rated ? 1 : 0;
 
         return aPriority - bPriority;
     });
@@ -255,12 +260,12 @@ export default function RatingModal({ isOpen, onClose, order }) {
 
                 <div className="custom-scrollbar overflow-y-auto p-6">
                     <p className="mb-6 text-sm text-gray-600">
-                        Tell us about your purchase. If a replacement was successfully resolved, you can also update or remove your earlier review here.
+                        Rate unrated items here, or update and delete your existing reviews anytime.
                     </p>
 
                     <div className="space-y-6">
                         {sortedItems.map((item) => {
-                            const canManageReview = Boolean(item.review?.can_manage_after_replacement);
+                            const canManageReview = Boolean(item.review?.can_manage_review);
                             const isEditingItem = activeItemId === item.id;
 
                             return (
@@ -284,13 +289,6 @@ export default function RatingModal({ isOpen, onClose, order }) {
                                                 <p className="text-xs font-bold text-clay-700">PHP {Number(item.price).toLocaleString()}</p>
                                             </div>
 
-                                            {item.is_rated && !canManageReview && (
-                                                <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-green-100 bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
-                                                    <Star size={12} className="fill-green-700" strokeWidth={0} />
-                                                    <span>You rated this item</span>
-                                                </div>
-                                            )}
-
                                             {!item.is_rated && !isEditingItem && (
                                                 <button
                                                     onClick={() => setActiveItemId(item.id)}
@@ -302,8 +300,8 @@ export default function RatingModal({ isOpen, onClose, order }) {
 
                                             {canManageReview && !isEditingItem && (
                                                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                                                    <span className="rounded-lg border border-teal-100 bg-teal-50 px-3 py-1 text-[11px] font-bold text-teal-700">
-                                                        Replacement resolved
+                                                    <span className="rounded-lg border border-clay-100 bg-clay-50 px-3 py-1 text-[11px] font-bold text-clay-700">
+                                                        Review saved
                                                     </span>
                                                     <button
                                                         onClick={() => setActiveItemId(item.id)}

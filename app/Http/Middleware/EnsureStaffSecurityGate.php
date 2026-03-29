@@ -17,6 +17,10 @@ class EnsureStaffSecurityGate
         'verification.notice',
         'verification.verify',
         'verification.send',
+        'staff.attendance.resume-prompt',
+        'staff.attendance.resume',
+        'staff.attendance.heartbeat',
+        'staff.logout.direct',
         'staff.logout.confirm',
         'staff.logout',
         'logout',
@@ -30,6 +34,10 @@ class EnsureStaffSecurityGate
     protected array $passwordChangeRoutes = [
         'staff.password.edit',
         'staff.password.update',
+        'staff.attendance.resume-prompt',
+        'staff.attendance.resume',
+        'staff.attendance.heartbeat',
+        'staff.logout.direct',
         'staff.logout.confirm',
         'staff.logout',
         'logout',
@@ -42,6 +50,10 @@ class EnsureStaffSecurityGate
      */
     protected array $holdingRoutes = [
         'staff.home',
+        'staff.attendance.resume-prompt',
+        'staff.attendance.resume',
+        'staff.attendance.heartbeat',
+        'staff.logout.direct',
         'staff.logout.confirm',
         'staff.logout',
         'logout',

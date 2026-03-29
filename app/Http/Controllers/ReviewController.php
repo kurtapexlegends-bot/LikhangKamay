@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
-use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Notifications\NewReviewNotification;
@@ -88,7 +87,7 @@ class ReviewController extends Controller
             ->first();
 
         if ($existingReview) {
-            return back()->with('error', 'A review already exists for this product. Use the review edit option after the replacement is resolved.');
+            return back()->with('error', 'You already reviewed this product. Edit or delete it from My Orders.');
         }
 
         if ($request->hasFile('photos')) {
@@ -124,10 +123,6 @@ class ReviewController extends Controller
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
 
-        if (!$this->canManageResolvedReplacementReview((int) Auth::id(), (int) $review->product_id)) {
-            abort(403, 'You can edit this review only after the seller successfully resolves the issue through a replacement.');
-        }
-
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
@@ -161,10 +156,6 @@ class ReviewController extends Controller
     public function destroy($id)
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
-
-        if (!$this->canManageResolvedReplacementReview((int) Auth::id(), (int) $review->product_id)) {
-            abort(403, 'You can delete this review only after the seller successfully resolves the issue through a replacement.');
-        }
 
         if ($review->photos) {
             foreach ($review->photos as $photo) {
@@ -223,16 +214,5 @@ class ReviewController extends Controller
         $review->update(['is_pinned' => true]);
 
         return back()->with('success', 'Review pinned to top!');
-    }
-
-    private function canManageResolvedReplacementReview(int $userId, int $productId): bool
-    {
-        return Order::query()
-            ->where('user_id', $userId)
-            ->whereNotNull('replacement_resolved_at')
-            ->whereHas('items', function ($query) use ($productId) {
-                $query->where('product_id', $productId);
-            })
-            ->exists();
     }
 }

@@ -6,8 +6,6 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
     const [hasReachedBottom, setHasReachedBottom] = useState(false);
     const contentRef = useRef(null);
 
-    if (!isOpen) return null;
-
     const toggleSection = (index) => {
         setExpandedSections(prev => ({
             ...prev,
@@ -20,10 +18,11 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
             return;
         }
 
-        if (onAccept) {
-            onAccept();
+        const shouldClose = onAccept ? onAccept() : true;
+
+        if (shouldClose !== false) {
+            onClose?.({ accepted: true });
         }
-        onClose();
     };
 
     const handleContentScroll = (event) => {
@@ -142,10 +141,12 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
         };
     }, [isOpen, type]);
 
+    if (!isOpen) return null;
+
     return (
         <div 
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
-            onClick={onClose}
+            onClick={() => onClose?.({ accepted: false })}
         >
             <div 
                 className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up overflow-hidden"
@@ -164,7 +165,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                             </div>
                         </div>
                         <button 
-                            onClick={onClose}
+                            onClick={() => onClose?.({ accepted: false })}
                             className="p-2 hover:bg-white/20 rounded-lg transition"
                         >
                             <X size={20} />

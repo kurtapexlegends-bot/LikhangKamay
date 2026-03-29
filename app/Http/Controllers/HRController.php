@@ -69,6 +69,8 @@ class HRController extends Controller
                     'worked_minutes' => 0,
                     'has_attendance_source' => false,
                     'open_session' => false,
+                    'month_label' => $attendanceMonthLabel,
+                    'calendar_days' => [],
                 ];
 
                 return [
@@ -106,6 +108,8 @@ class HRController extends Controller
                         'worked_minutes' => $attendanceSummary['worked_minutes'],
                         'has_attendance_source' => $attendanceSummary['has_attendance_source'],
                         'open_session' => $attendanceSummary['open_session'],
+                        'month_label' => $attendanceSummary['month_label'],
+                        'calendar_days' => $attendanceSummary['calendar_days'],
                     ],
                     'payroll_prefill' => [
                         'absences_days' => $attendanceSummary['absences_days'],

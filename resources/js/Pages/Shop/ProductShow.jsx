@@ -7,7 +7,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
     Rotate3d, Loader2, Heart, ChevronRight, Check, Pin,
-    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown
+    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2
 } from 'lucide-react';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 
@@ -45,6 +45,12 @@ import { useToast } from '@/Components/ToastContext';
 export default function ProductShow({ product, relatedProducts = [], auth }) {
     const { addToast } = useToast();
     const productRating = normalizeRating(product?.rating);
+    const currentUserReview = auth?.user
+        ? product?.reviews?.find((review) => Number(review.user_id) === Number(auth.user.id)) || null
+        : null;
+    const currentReviewPhotos = (currentUserReview?.photos || []).map((photo) =>
+        photo?.startsWith?.('http') || photo?.startsWith?.('/storage') ? photo : `/storage/${photo}`
+    );
     
     const [viewMode, setViewMode] = useState('image');
     const [quantity, setQuantity] = useState(1);
@@ -52,6 +58,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [addedToCart, setAddedToCart] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(false);
+    const [deletingReview, setDeletingReview] = useState(false);
 
     // Build gallery
     const gallery = [
@@ -60,16 +67,48 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     ].filter(Boolean);
 
     // Review Form
-    const { data, setData, post, processing, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         product_id: product.id,
-        rating: 5,
-        comment: '',
+        rating: currentUserReview?.rating || 5,
+        comment: currentUserReview?.comment || '',
+        photos: [],
     });
 
     const submitReview = (e) => {
         e.preventDefault();
-        post(route('reviews.store'), {
-            onSuccess: () => reset('comment'),
+        const options = {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                if (currentUserReview) {
+                    reset('photos');
+                    return;
+                }
+
+                reset('comment', 'photos');
+            },
+        };
+
+        if (currentUserReview) {
+            transform((payload) => ({
+                ...payload,
+                _method: 'patch',
+            }));
+            post(route('reviews.update', currentUserReview.id), options);
+            return;
+        }
+
+        transform((payload) => payload);
+        post(route('reviews.store'), options);
+    };
+
+    const handleDeleteReview = () => {
+        if (!currentUserReview) return;
+
+        router.delete(route('reviews.destroy', currentUserReview.id), {
+            preserveScroll: true,
+            onStart: () => setDeletingReview(true),
+            onFinish: () => setDeletingReview(false),
         });
     };
 
@@ -512,70 +551,116 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         {/* Write Review */}
                         <div className="lg:col-span-1">
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                <h3 className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wide">Write a Review</h3>
+                                <h3 className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wide">
+                                    {currentUserReview ? 'Your Review' : 'Write a Review'}
+                                </h3>
                                 
                                 {auth?.user ? (
-                                    <form onSubmit={submitReview} className="space-y-3">
-                                        <div>
-                                            <label className="text-xs text-gray-500 mb-1 block">Rating</label>
-                                            <div className="flex gap-1">
-                                                {[1,2,3,4,5].map((star) => (
-                                                    <button
-                                                        key={star}
-                                                        type="button"
-                                                        onClick={() => setData('rating', star)}
-                                                        className="focus:outline-none"
-                                                    >
-                                                        <Star
-                                                            size={20}
-                                                            className={star <= data.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300 hover:text-amber-200'}
-                                                        />
-                                                    </button>
-                                                ))}
+                                    (
+                                        <form onSubmit={submitReview} className="space-y-3">
+                                            {Object.keys(errors).length > 0 && (
+                                                <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                                                    {Object.values(errors).map((error, index) => (
+                                                        <p key={index}>{error}</p>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <label className="text-xs text-gray-500 mb-1 block">Rating</label>
+                                                <div className="flex gap-1">
+                                                    {[1,2,3,4,5].map((star) => (
+                                                        <button
+                                                            key={star}
+                                                            type="button"
+                                                            onClick={() => setData('rating', star)}
+                                                            className="focus:outline-none"
+                                                        >
+                                                            <Star
+                                                                size={20}
+                                                                className={star <= data.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300 hover:text-amber-200'}
+                                                            />
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500 mb-1 block">Comment</label>
-                                            <textarea
-                                                rows="3"
-                                                value={data.comment}
-                                                onChange={(e) => setData('comment', e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-clay-200 focus:border-clay-400"
-                                                placeholder="Share your thoughts..."
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500 mb-1 block">Add Photos (Max 3)</label>
-                                            <input 
-                                                type="file" 
-                                                multiple 
-                                                accept="image/*"
-                                                onChange={(e) => setData('photos', Array.from(e.target.files))}
-                                                className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-clay-50 file:text-clay-700 hover:file:bg-clay-100 transition"
-                                            />
-                                            {data.photos && data.photos.length > 0 && (
-                                                <div className="flex gap-2 mt-2">
+                                            <div>
+                                                <label className="text-xs text-gray-500 mb-1 block">Comment</label>
+                                                <textarea
+                                                    rows="3"
+                                                    value={data.comment}
+                                                    onChange={(e) => setData('comment', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-clay-200 focus:border-clay-400"
+                                                    placeholder="Share your thoughts..."
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-gray-500 mb-1 block">
+                                                    {currentUserReview ? 'Replace Photos (Optional, Max 3)' : 'Add Photos (Max 3)'}
+                                                </label>
+                                                <input 
+                                                    type="file" 
+                                                    multiple 
+                                                    accept="image/*"
+                                                    onChange={(e) => setData('photos', Array.from(e.target.files))}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-clay-50 file:text-clay-700 hover:file:bg-clay-100 transition"
+                                                />
+                                                {data.photos && data.photos.length > 0 && (
+                                                    <div className="flex gap-2 mt-2">
                                                     {data.photos.map((file, i) => (
                                                         <div key={i} className="w-10 h-10 rounded overflow-hidden border border-gray-200">
                                                             <img 
                                                                 src={URL.createObjectURL(file)} 
-                                                                alt="Preview" 
-                                                                className="w-full h-full object-cover" 
-                                                            />
+                                                                    alt="Preview" 
+                                                                    className="w-full h-full object-cover" 
+                                                                />
                                                         </div>
                                                     ))}
                                                 </div>
                                             )}
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="w-full py-2 bg-clay-600 text-white text-xs font-bold rounded hover:bg-clay-700 transition disabled:opacity-50"
-                                        >
-                                            {processing ? 'Submitting...' : 'Submit'}
-                                        </button>
-                                    </form>
+                                            {!data.photos?.length && currentReviewPhotos.length > 0 && (
+                                                <div className="mt-2">
+                                                    <p className="text-[11px] text-gray-400 mb-2">Current photos</p>
+                                                    <div className="flex gap-2">
+                                                        {currentReviewPhotos.map((photo, i) => (
+                                                            <div key={`${photo}-${i}`} className="w-10 h-10 rounded overflow-hidden border border-gray-200">
+                                                                <img
+                                                                    src={photo}
+                                                                    alt="Current review"
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {currentUserReview && (
+                                                <p className="text-[11px] text-gray-400">Upload new photos only if you want to replace the current ones.</p>
+                                            )}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {currentUserReview && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleDeleteReview}
+                                                        disabled={deletingReview || processing}
+                                                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-red-200 bg-red-50 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                        {deletingReview ? 'Deleting...' : 'Delete'}
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="submit"
+                                                    disabled={processing || deletingReview}
+                                                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded bg-clay-600 py-2 text-xs font-bold text-white transition hover:bg-clay-700 disabled:opacity-50"
+                                                >
+                                                    {currentUserReview ? <Pencil size={14} /> : null}
+                                                    {processing ? (currentUserReview ? 'Updating...' : 'Submitting...') : (currentUserReview ? 'Update Review' : 'Submit')}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )
                                 ) : (
                                     <div className="text-center py-4">
                                         <p className="text-xs text-gray-500 mb-2">Sign in to write a review</p>
@@ -608,9 +693,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 key={related.id} 
                                 className="bg-white rounded-xl border border-gray-100 hover:border-clay-200 hover:shadow-lg transition-all duration-300 group overflow-hidden"
                             >
-                                <div className="aspect-square relative bg-gray-50 overflow-hidden">
+                                <div className="aspect-square relative overflow-hidden bg-stone-100">
                                     <img 
                                         src={related.image ? (related.image.startsWith('http') || related.image.startsWith('/storage') ? related.image : `/storage/${related.image}`) : '/images/no-image.png'} 
+                                        alt={related.name}
+                                        className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                                         onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                     />
                                     {hasRating(related.rating) && (

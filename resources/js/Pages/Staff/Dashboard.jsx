@@ -70,11 +70,11 @@ const cardIconMap = {
 
 function StatCard({ stat, theme }) {
     return (
-        <div className={`rounded-2xl border bg-white p-5 shadow-sm ${theme.statBorder}`}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">
+        <div className={`rounded-[1.35rem] border bg-white px-4 py-3.5 shadow-sm ${theme.statBorder}`}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
                 {stat.label}
             </p>
-            <p className={`mt-3 text-3xl font-bold tracking-tight ${theme.statValue}`}>
+            <p className={`mt-2 text-2xl font-bold tracking-tight ${theme.statValue}`}>
                 {stat.value}
             </p>
         </div>
@@ -88,30 +88,30 @@ function ActionCard({ card }) {
     return (
         <Link
             href={route(card.routeName)}
-            className="group flex h-full flex-col rounded-[1.5rem] border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg"
+            className="group flex h-full flex-col rounded-[1.35rem] border border-stone-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md"
         >
             <div className="flex items-start justify-between gap-3">
-                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>
-                    <Icon size={22} />
+                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${tone}`}>
+                    <Icon size={18} />
                 </div>
-                <div className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${tone}`}>
+                <div className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${tone}`}>
                     {card.metricLabel}
                 </div>
             </div>
 
-            <div className="mt-5">
-                <h3 className="text-lg font-bold text-stone-900">{card.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-stone-500">{card.description}</p>
+            <div className="mt-4">
+                <h3 className="text-base font-bold text-stone-900">{card.title}</h3>
+                <p className="mt-1.5 text-sm leading-5 text-stone-500">{card.description}</p>
             </div>
 
-            <div className="mt-5 flex items-end justify-between gap-3">
+            <div className="mt-4 flex items-end justify-between gap-3">
                 <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
                         {card.metricLabel}
                     </p>
-                    <p className="mt-2 text-2xl font-bold text-stone-900">{card.metricValue}</p>
+                    <p className="mt-1.5 text-xl font-bold text-stone-900">{card.metricValue}</p>
                 </div>
-                <span className="inline-flex items-center gap-2 text-sm font-bold text-clay-600">
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-clay-600">
                     Open <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
                 </span>
             </div>
@@ -148,39 +148,39 @@ export default function StaffDashboard({ auth, hub }) {
             <div className="flex min-h-screen flex-col lg:ml-56">
                 <SellerHeader
                     title={hub.title}
-                    subtitle={`Role-focused workspace for ${emphasis}.`}
+                    subtitle={`Focused workspace for ${emphasis}.`}
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                     badge={{ label: hub.focus, iconColor: 'text-white' }}
                 />
 
-                <main className="flex-1 space-y-6 px-4 py-5 sm:px-6 lg:px-8">
-                    <section className={`overflow-hidden rounded-[2rem] bg-gradient-to-br ${theme.banner} p-6 text-white shadow-[0_24px_60px_-35px_rgba(15,23,42,0.45)] sm:p-8`}>
-                        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl">
-                                <div className="inline-flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-white/15 ring-1 ring-white/25">
-                                    <BannerIcon size={26} />
+                <main className="flex-1 space-y-4 px-4 py-4 sm:px-6 lg:px-8">
+                    <section className={`overflow-hidden rounded-[1.75rem] bg-gradient-to-br ${theme.banner} p-5 text-white shadow-[0_22px_55px_-38px_rgba(15,23,42,0.4)] sm:p-6`}>
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="max-w-2xl">
+                                <div className="inline-flex h-11 w-11 items-center justify-center rounded-[1rem] bg-white/15 ring-1 ring-white/25">
+                                    <BannerIcon size={20} />
                                 </div>
-                                <p className="mt-4 text-xs font-bold uppercase tracking-[0.28em] text-white/70">
+                                <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.24em] text-white/70">
                                     {hub.eyebrow}
                                 </p>
-                                <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                                <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-[2rem]">
                                     {hub.title}
                                 </h1>
-                                <p className="mt-3 max-w-2xl text-sm leading-7 text-white/88 sm:text-base">
-                                    {hub.subtitle} This workspace stays focused on what {hub.staffName} needs for {hub.sellerName}, instead of mirroring the owner dashboard.
+                                <p className="mt-2 max-w-xl text-sm leading-6 text-white/85">
+                                    {hub.subtitle} Only your allowed tools are shown for {hub.sellerName}.
                                 </p>
                             </div>
 
-                            <div className="rounded-[1.5rem] border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-sm">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/70">
-                                    Active Modules
+                            <div className="rounded-[1.35rem] border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm lg:max-w-sm">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+                                    Enabled
                                 </p>
-                                <div className="mt-3 flex max-w-sm flex-wrap gap-2">
+                                <div className="mt-2.5 flex flex-wrap gap-1.5">
                                     {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
                                         <span
                                             key={module}
-                                            className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold capitalize text-white"
+                                            className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-bold capitalize text-white"
                                         >
                                             {module.replace(/_/g, ' ')}
                                         </span>
@@ -190,61 +190,61 @@ export default function StaffDashboard({ auth, hub }) {
                         </div>
                     </section>
 
-                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         {hub.stats.map((stat) => (
                             <StatCard key={stat.label} stat={stat} theme={theme} />
                         ))}
                     </section>
 
-                    <section className="grid gap-6 xl:grid-cols-[1.6fr,0.9fr]">
-                        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <section className="grid gap-4 xl:grid-cols-[1.8fr,0.82fr]">
+                        <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
+                            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">
-                                        Role-Specific Tools
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                                        Priority Tools
                                     </p>
-                                    <h2 className="mt-2 text-2xl font-bold text-stone-900">
-                                        Jump into the work that matters
+                                    <h2 className="mt-1.5 text-xl font-bold text-stone-900">
+                                        Open the work queue
                                     </h2>
                                 </div>
-                                <p className="max-w-md text-sm leading-6 text-stone-500">
-                                    Every card here points to an allowed module or the internal inbox. No owner-only dashboard widgets, and no hidden-route shortcuts.
+                                <p className="max-w-md text-sm leading-5 text-stone-500">
+                                    Only assigned modules and the team inbox appear here.
                                 </p>
                             </div>
 
-                            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                            <div className="mt-4 grid gap-3 lg:grid-cols-2">
                                 {hub.cards.map((card) => (
                                     <ActionCard key={`${card.module}-${card.routeName}`} card={card} />
                                 ))}
                             </div>
                         </div>
 
-                        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">
-                                Why This Hub Exists
+                        <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                                Quick Notes
                             </p>
-                            <h2 className="mt-2 text-2xl font-bold text-stone-900">
-                                Role-first, not owner-first
+                            <h2 className="mt-1.5 text-xl font-bold text-stone-900">
+                                Keep the workflow tight
                             </h2>
 
-                            <div className="mt-6 space-y-4">
+                            <div className="mt-4 space-y-3">
                                 {hub.highlights.map((item) => (
-                                    <div key={item} className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
-                                        <p className="text-sm leading-6 text-stone-600">{item}</p>
+                                    <div key={item} className="rounded-2xl border border-stone-200 bg-stone-50/80 p-3.5">
+                                        <p className="text-sm leading-5 text-stone-600">{item}</p>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-700">
+                            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3.5">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">
                                     Team Messaging
                                 </p>
-                                <p className="mt-2 text-sm leading-6 text-emerald-800">
-                                    Staff and the seller owner coordinate through a separate internal inbox. Buyer conversations stay isolated in the customer chat module.
+                                <p className="mt-1.5 text-sm leading-5 text-emerald-800">
+                                    Coordinate here. Buyer chat stays separate.
                                 </p>
                                 <Link
                                     href={route(hub.teamMessagesRoute)}
-                                    className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-emerald-700"
+                                    className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-emerald-700"
                                 >
                                     Open Team Inbox <ArrowRight size={16} />
                                 </Link>

@@ -6,8 +6,10 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Notifications\ReplacementResolutionNotification;
+use App\Services\OrderFinanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Mockery;
 use Tests\TestCase;
 
 class ReplacementResolutionFlowTest extends TestCase
@@ -110,6 +112,35 @@ class ReplacementResolutionFlowTest extends TestCase
         $this->assertNotNull($order->replacement_resolved_at);
     }
 
+    public function test_refund_approval_does_not_change_order_state_when_wallet_refund_fails(): void
+    {
+        [$seller, $buyer, $product, $order] = $this->makeReturnOrder([
+            'payment_method' => 'GCash',
+            'payment_status' => 'paid',
+        ]);
+
+        $mock = Mockery::mock(OrderFinanceService::class);
+        $mock->shouldReceive('refundOrderToBuyerWallet')
+            ->once()
+            ->andThrow(new \RuntimeException('Wallet service unavailable.'));
+
+        $this->app->instance(OrderFinanceService::class, $mock);
+
+        $this->from('/orders')
+            ->actingAs($seller)
+            ->post(route('orders.approve-return', $order->order_number), [
+                'action_type' => 'refund',
+            ])
+            ->assertRedirect('/orders')
+            ->assertSessionHas('error', 'Refund could not be completed. No wallet changes were applied.');
+
+        $order->refresh();
+
+        $this->assertSame('Refund/Return', $order->status);
+        $this->assertSame('paid', $order->payment_status);
+        $this->assertNull($order->refunded_to_wallet_at);
+    }
+
     private function makeReturnOrder(array $overrides = []): array
     {
         $seller = User::factory()->artisanApproved()->create();
@@ -136,10 +167,10 @@ class ReplacementResolutionFlowTest extends TestCase
             'order_number' => 'ORD-REPLACE-' . strtoupper(uniqid()),
             'customer_name' => $buyer->name,
             'merchandise_subtotal' => 400,
-            'convenience_fee_amount' => 20,
+            'convenience_fee_amount' => 12,
             'platform_commission_amount' => 20,
             'seller_net_amount' => 380,
-            'total_amount' => 420,
+            'total_amount' => 412,
             'status' => 'Refund/Return',
             'payment_method' => 'COD',
             'payment_status' => 'paid',

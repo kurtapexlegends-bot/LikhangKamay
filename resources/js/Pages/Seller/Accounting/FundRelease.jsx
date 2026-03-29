@@ -3,7 +3,8 @@ import { Head, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
 import Modal from '@/Components/Modal';
-import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Eye, FileText, History, Pencil, Users, Wallet } from 'lucide-react';
+import CompactPagination from '@/Components/CompactPagination';
+import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Eye, FileText, History, Pencil, Users } from 'lucide-react';
 
 const formatMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const formatShortMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -24,7 +25,7 @@ const statusTone = (status) => {
 };
 const typeTone = (type) => (type === 'payroll' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100');
 
-export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], finances, wallet }) {
+export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], finances }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { flash } = usePage().props;
     const [showToast, setShowToast] = useState(false);
@@ -35,6 +36,8 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
     const [baseFundsValue, setBaseFundsValue] = useState(finances.baseFunds || 0);
     const [reviewModal, setReviewModal] = useState({ open: false, item: null, source: 'pending' });
     const [rejectReason, setRejectReason] = useState('');
+    const [pendingPage, setPendingPage] = useState(1);
+    const [historyPage, setHistoryPage] = useState(1);
 
     const allPending = useMemo(() => (
         [...pendingRequests, ...pendingPayrolls]
@@ -47,6 +50,18 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
             .map((item) => ({ ...item, _date: new Date(item.updated_at || item.created_at || Date.now()) }))
             .sort((a, b) => b._date - a._date)
     ), [history, payrollHistory]);
+
+    const itemsPerPage = 6;
+    const totalPendingPages = Math.max(1, Math.ceil(allPending.length / itemsPerPage));
+    const totalHistoryPages = Math.max(1, Math.ceil(allHistory.length / itemsPerPage));
+    const paginatedPending = useMemo(() => {
+        const startIndex = (pendingPage - 1) * itemsPerPage;
+        return allPending.slice(startIndex, startIndex + itemsPerPage);
+    }, [allPending, pendingPage]);
+    const paginatedHistory = useMemo(() => {
+        const startIndex = (historyPage - 1) * itemsPerPage;
+        return allHistory.slice(startIndex, startIndex + itemsPerPage);
+    }, [allHistory, historyPage]);
 
     useEffect(() => {
         if (flash.success) {
@@ -64,7 +79,23 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
         }
     }, [flash]);
 
+    useEffect(() => {
+        if (pendingPage > totalPendingPages) {
+            setPendingPage(totalPendingPages);
+        }
+    }, [pendingPage, totalPendingPages]);
+
+    useEffect(() => {
+        if (historyPage > totalHistoryPages) {
+            setHistoryPage(totalHistoryPages);
+        }
+    }, [historyPage, totalHistoryPages]);
+
     const closeReviewModal = () => {
+        setReviewModal((current) => ({ ...current, open: false }));
+    };
+
+    const resetReviewModal = () => {
         setReviewModal({ open: false, item: null, source: 'pending' });
         setRejectReason('');
     };
@@ -128,12 +159,12 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
                         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-300">
                             <div className="flex justify-between items-start mb-3 relative z-10">
-                                <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100"><Wallet size={20} /></div>
+                                <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100"><ClipboardList size={20} /></div>
                                 <span className="text-[9px] uppercase font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-full border border-rose-100">Total Expenses</span>
                             </div>
                             <h3 className="text-2xl font-bold text-gray-900 mb-0.5 relative z-10">{formatShortMoney(finances.expenses)}</h3>
                             <p className="text-[10px] text-gray-400 font-medium relative z-10">Stock Purchases & Payroll</p>
-                            <Wallet size={70} className="absolute -right-4 -bottom-4 text-rose-500/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                            <ClipboardList size={70} className="absolute -right-4 -bottom-4 text-rose-500/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
                         </div>
 
                         <div className="bg-gray-900 p-5 rounded-2xl shadow-xl relative overflow-hidden group hover:shadow-2xl transition duration-300">
@@ -149,42 +180,6 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                             <Building2 size={80} className="absolute -right-4 -bottom-4 text-white/5 rotate-12 group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
                         </div>
                     </div>
-
-                    {wallet && (
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Seller Wallet</p>
-                                        <h3 className="mt-2 text-2xl font-bold text-emerald-900">{formatMoney(wallet.balance)}</h3>
-                                        <p className="mt-1 text-xs text-emerald-700">Completed orders credit seller net payouts here. Refund reversals are also tracked here.</p>
-                                    </div>
-                                    <div className="rounded-2xl bg-white/80 p-3 text-emerald-700 shadow-sm"><Wallet size={22} /></div>
-                                </div>
-                            </div>
-
-                            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent Wallet Ledger</p>
-                                    <p className="mt-1 text-sm text-gray-500">Every payout and reversal tied to seller wallet activity.</p>
-                                </div>
-
-                                <div className="mt-4 space-y-3">
-                                    {wallet.recent_transactions?.length ? wallet.recent_transactions.map((entry) => (
-                                        <div key={entry.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-3">
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-bold text-gray-900">{entry.description || entry.category}</p>
-                                                <p className="mt-1 text-xs text-gray-500">{entry.order_number ? `Order ${entry.order_number}` : 'Wallet update'}{entry.created_at ? ` | ${entry.created_at}` : ''}</p>
-                                            </div>
-                                            <div className={`shrink-0 text-sm font-bold ${entry.direction === 'credit' ? 'text-emerald-700' : 'text-red-600'}`}>
-                                                {entry.direction === 'credit' ? '+' : '-'}{formatMoney(entry.amount)}
-                                            </div>
-                                        </div>
-                                    )) : <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">No seller wallet activity yet. Completed orders will start appearing here.</div>}
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                         <button onClick={() => setActiveTab('pending')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'pending' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
@@ -206,7 +201,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                             </div>
 
                             <div className="divide-y divide-gray-50">
-                                {allPending.length > 0 ? allPending.map((item) => (
+                                {paginatedPending.length > 0 ? paginatedPending.map((item) => (
                                     <div key={`${item.type}-${item.id}`} className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-gray-50/50 transition">
                                         <div className="flex items-start gap-3">
                                             <div className={`p-2.5 bg-white border border-gray-100 rounded-xl shadow-sm ${item.type === 'payroll' ? 'text-indigo-600' : 'text-clay-600'}`}>
@@ -241,6 +236,15 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                     </div>
                                 )}
                             </div>
+
+                            <CompactPagination
+                                currentPage={pendingPage}
+                                totalPages={totalPendingPages}
+                                totalItems={allPending.length}
+                                itemsPerPage={itemsPerPage}
+                                itemLabel="requests"
+                                onPageChange={setPendingPage}
+                            />
                         </div>
                     )}
 
@@ -252,8 +256,8 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                     <h3 className="font-bold text-gray-900 text-sm">Transaction Ledger</h3>
                                 </div>
                             </div>
-                            <div className="divide-y divide-gray-50 max-h-[560px] overflow-y-auto">
-                                {allHistory.length > 0 ? allHistory.map((item) => {
+                            <div className="divide-y divide-gray-50">
+                                {paginatedHistory.length > 0 ? paginatedHistory.map((item) => {
                                     const isApproved = ['paid', 'completed', 'accounting_approved', 'ordered', 'received', 'partially_received'].includes(String(item.status).toLowerCase());
 
                                     return (
@@ -291,6 +295,15 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                     );
                                 }) : <div className="p-8 text-center text-gray-400 text-sm">No transaction history yet.</div>}
                             </div>
+
+                            <CompactPagination
+                                currentPage={historyPage}
+                                totalPages={totalHistoryPages}
+                                totalItems={allHistory.length}
+                                itemsPerPage={itemsPerPage}
+                                itemLabel="entries"
+                                onPageChange={setHistoryPage}
+                            />
                         </div>
                     )}
                 </main>
@@ -298,7 +311,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
             <Modal show={showBaseFundsModal} onClose={() => setShowBaseFundsModal(false)} maxWidth="sm">
                 <form onSubmit={handleUpdateBaseFunds} className="p-6">
-                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4 border border-emerald-100 shadow-sm"><Wallet size={24} /></div>
+                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4 border border-emerald-100 shadow-sm"><Building2 size={24} /></div>
                     <h2 className="text-xl font-bold text-gray-900 mb-2">Edit Starting Balance</h2>
                     <p className="text-xs text-gray-500 mb-6 leading-relaxed">
                         Input your initial business capital. Your total Available Funds will be calculated as:
@@ -318,131 +331,159 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 </form>
             </Modal>
 
-            <Modal show={reviewModal.open} onClose={closeReviewModal} maxWidth="5xl">
-                <div className="p-5 sm:p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <Modal show={reviewModal.open} onClose={closeReviewModal} afterLeave={resetReviewModal} maxWidth={isPayroll ? '5xl' : '2xl'}>
+                <div className="p-3.5">
+                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex items-start gap-3">
-                            <div className={`mt-1 rounded-2xl border p-3 ${isPayroll ? 'border-indigo-100 bg-indigo-50 text-indigo-700' : 'border-emerald-100 bg-emerald-50 text-emerald-700'}`}>
-                                {isPayroll ? <Users size={22} /> : <FileText size={22} />}
+                            <div className={`mt-0.5 rounded-2xl border p-2 ${isPayroll ? 'border-indigo-100 bg-indigo-50 text-indigo-700' : 'border-emerald-100 bg-emerald-50 text-emerald-700'}`}>
+                                {isPayroll ? <Users size={18} /> : <FileText size={18} />}
                             </div>
                             <div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <h2 className="text-xl font-bold text-gray-900">{isPayroll ? `Payroll Review - ${selectedItem?.month || ''}` : `Stock Request Review - #${selectedItem?.id || ''}`}</h2>
+                                    <h2 className="text-[15px] font-bold text-gray-900 sm:text-base">{isPayroll ? `Payroll Review - ${selectedItem?.month || ''}` : `Stock Request Review - #${selectedItem?.id || ''}`}</h2>
                                     {selectedItem?.status && <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase ${statusTone(selectedItem.status)}`}>{String(selectedItem.status).replace(/_/g, ' ')}</span>}
                                 </div>
-                                <p className="mt-1 text-sm text-gray-500">{isPendingReview ? 'Review the complete breakdown before approving or rejecting this request.' : 'Review the stored breakdown and any rejection reason for this completed accounting action.'}</p>
+                                <p className="mt-0.5 text-[11px] text-gray-500 sm:text-xs">{isPendingReview ? 'Review the breakdown before approving or rejecting this request.' : 'Review the stored breakdown and any rejection reason for this action.'}</p>
                             </div>
                         </div>
-                        <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-right">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Requested Amount</p>
-                            <p className="mt-1 text-2xl font-bold text-gray-900">{formatMoney(selectedItem?.amount)}</p>
-                        </div>
+                        {isPayroll && (
+                            <div className="rounded-2xl border border-gray-100 bg-gray-50 px-3 py-2 text-right">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Requested Amount</p>
+                                <p className="mt-1 text-lg font-bold text-gray-900">{formatMoney(selectedItem?.amount)}</p>
+                            </div>
+                        )}
                     </div>
 
                     {selectedItem && (
-                        <div className="mt-6 space-y-6">
-                            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-                                <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Requester</p>
-                                    <div className="mt-3 space-y-1">
-                                        <p className="text-lg font-bold text-gray-900">{selectedItem.requester?.name || 'Seller owner'}</p>
-                                        <p className="text-sm text-gray-500">{formatRole(selectedItem.requester?.role)}</p>
-                                        <p className="text-xs text-gray-400">Submitted on {formatDate(selectedItem.created_at)}</p>
-                                    </div>
-                                </div>
-
-                                <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Fund Snapshot</p>
-                                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">Available Balance</p>
-                                            <p className="mt-1 text-lg font-bold text-gray-900">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</p>
-                                        </div>
-                                        <div className={`rounded-xl border px-3 py-3 ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'border-red-100 bg-red-50' : 'border-emerald-100 bg-emerald-50'}`}>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">After Release</p>
-                                            <p className={`mt-1 text-lg font-bold ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatMoney(selectedItem.fund_snapshot?.remaining_balance)}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                        <div className="mt-3.5 space-y-3">
                             {!isPayroll && (
-                                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Supply Breakdown</p>
-                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                            <DetailTile label="Supply Name" value={selectedItem.supply?.name} />
-                                            <DetailTile label="Category" value={selectedItem.supply?.category} />
-                                            <DetailTile label="Supplier" value={selectedItem.supply?.supplier || 'Not provided'} />
-                                            <DetailTile label="Unit" value={selectedItem.supply?.unit || 'N/A'} />
-                                            <DetailTile label="Current Stock" value={selectedItem.supply?.current_stock} />
-                                            <DetailTile label="Minimum Stock" value={selectedItem.supply?.min_stock} />
-                                            <DetailTile label="Maximum Stock" value={selectedItem.supply?.max_stock} />
-                                            <DetailTile label="Available Capacity" value={selectedItem.supply?.available_capacity} />
-                                        </div>
-                                    </div>
+                                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                                    <div className="grid divide-y divide-gray-100 md:grid-cols-2 md:divide-x md:divide-y-0">
+                                        <AuditSheet
+                                            title="Request & Supply"
+                                            rows={[
+                                                {
+                                                    label: 'Requester',
+                                                    value: (
+                                                        <div className="text-right">
+                                                            <div className="font-bold text-gray-900">{selectedItem.requester?.name || 'Seller owner'}</div>
+                                                            <div className="text-[11px] text-gray-500">{formatRole(selectedItem.requester?.role)}</div>
+                                                        </div>
+                                                    ),
+                                                },
+                                                { label: 'Submitted', value: formatDate(selectedItem.created_at) },
+                                                { label: 'Supply', value: selectedItem.supply?.name },
+                                                { label: 'Category', value: selectedItem.supply?.category },
+                                                { label: 'Supplier', value: selectedItem.supply?.supplier || 'Not provided' },
+                                                { label: 'Unit', value: selectedItem.supply?.unit || 'N/A' },
+                                            ]}
+                                        />
 
-                                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Release Breakdown</p>
-                                        <div className="mt-4 grid gap-3">
-                                            <DetailTile label="Requested Quantity" value={`${selectedItem.quantity} ${selectedItem.supply?.unit || ''}`.trim()} />
-                                            <DetailTile label="Unit Cost" value={formatMoney(selectedItem.supply?.unit_cost)} />
-                                            <DetailTile label="Computed Total Cost" value={formatMoney(selectedItem.amount)} />
-                                        </div>
+                                        <AuditSheet
+                                            title="Release & Inventory"
+                                            rows={[
+                                                { label: 'Requested', value: `${selectedItem.quantity} ${selectedItem.supply?.unit || ''}`.trim() },
+                                                { label: 'Unit Cost', value: formatMoney(selectedItem.supply?.unit_cost) },
+                                                { label: 'Total Cost', value: formatMoney(selectedItem.amount) },
+                                                {
+                                                    label: 'Funds',
+                                                    value: (
+                                                        <div className="text-right">
+                                                            <div className="font-bold text-gray-900">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</div>
+                                                            <div className={`text-[11px] font-semibold ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                                                After release: {formatMoney(selectedItem.fund_snapshot?.remaining_balance)}
+                                                            </div>
+                                                        </div>
+                                                    ),
+                                                },
+                                                {
+                                                    label: 'Stock',
+                                                    value: `Current ${selectedItem.supply?.current_stock ?? 'N/A'} | Min ${selectedItem.supply?.min_stock ?? 'N/A'} | Max ${selectedItem.supply?.max_stock ?? 'N/A'}`,
+                                                },
+                                                { label: 'Capacity', value: selectedItem.supply?.available_capacity },
+                                            ]}
+                                        />
                                     </div>
                                 </div>
                             )}
 
                             {isPayroll && (
-                                <div className="space-y-4">
-                                    <div className="grid gap-4 md:grid-cols-3">
-                                        <DetailTile label="Payroll Month" value={selectedItem.month} />
-                                        <DetailTile label="Employee Count" value={selectedItem.employee_count} />
-                                        <DetailTile label="Total Payroll Amount" value={formatMoney(selectedItem.amount)} />
-                                    </div>
-
-                                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Per-Employee Breakdown</p>
-                                            <p className="mt-1 text-sm text-gray-500">Detailed salary, attendance, and net-pay view before accounting action.</p>
+                                <>
+                                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+                                        <div className="rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm">
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Requester</p>
+                                            <div className="mt-2.5 space-y-1">
+                                                <p className="text-base font-bold text-gray-900">{selectedItem.requester?.name || 'Seller owner'}</p>
+                                                <p className="text-sm text-gray-500">{formatRole(selectedItem.requester?.role)}</p>
+                                                <p className="text-xs text-gray-400">Submitted on {formatDate(selectedItem.created_at)}</p>
+                                            </div>
                                         </div>
 
-                                        <div className="mt-4 overflow-x-auto">
-                                            <table className="w-full min-w-[980px] text-left">
-                                                <thead>
-                                                    <tr className="border-b border-gray-100 text-[10px] uppercase tracking-[0.18em] text-gray-400">
-                                                        <th className="py-3 pr-4 font-bold">Employee</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Base Salary</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Days Worked</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Absences</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Absence Deduction</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Undertime</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Undertime Deduction</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Overtime</th>
-                                                        <th className="py-3 pr-4 font-bold text-right">Overtime Pay</th>
-                                                        <th className="py-3 font-bold text-right">Net Pay</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50">
-                                                    {selectedItem.line_items?.map((line) => (
-                                                        <tr key={line.id} className="text-sm text-gray-700">
-                                                            <td className="py-3 pr-4 font-bold text-gray-900">{line.employee_name}</td>
-                                                            <td className="py-3 pr-4 text-right">{formatMoney(line.base_salary)}</td>
-                                                            <td className="py-3 pr-4 text-right">{line.days_worked}</td>
-                                                            <td className="py-3 pr-4 text-right">{line.absences_days}</td>
-                                                            <td className="py-3 pr-4 text-right text-red-600">{formatMoney(line.absence_deduction)}</td>
-                                                            <td className="py-3 pr-4 text-right">{line.undertime_hours}</td>
-                                                            <td className="py-3 pr-4 text-right text-red-600">{formatMoney(line.undertime_deduction)}</td>
-                                                            <td className="py-3 pr-4 text-right">{line.overtime_hours}</td>
-                                                            <td className="py-3 pr-4 text-right text-emerald-700">{formatMoney(line.overtime_pay)}</td>
-                                                            <td className="py-3 text-right font-bold text-gray-900">{formatMoney(line.net_pay)}</td>
+                                        <div className="rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm">
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Fund Snapshot</p>
+                                            <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                                                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">Available Balance</p>
+                                                    <p className="mt-1 text-base font-bold text-gray-900">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</p>
+                                                </div>
+                                                <div className={`rounded-xl border px-3 py-2.5 ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'border-red-100 bg-red-50' : 'border-emerald-100 bg-emerald-50'}`}>
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">After Release</p>
+                                                    <p className={`mt-1 text-base font-bold ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatMoney(selectedItem.fund_snapshot?.remaining_balance)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="grid gap-3 md:grid-cols-3">
+                                            <DetailTile label="Payroll Month" value={selectedItem.month} />
+                                            <DetailTile label="Employee Count" value={selectedItem.employee_count} />
+                                            <DetailTile label="Total Payroll Amount" value={formatMoney(selectedItem.amount)} />
+                                        </div>
+
+                                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Per-Employee Breakdown</p>
+                                                <p className="mt-1 text-sm text-gray-500">Detailed salary, attendance, and net-pay view before accounting action.</p>
+                                            </div>
+
+                                            <div className="mt-4 overflow-x-auto">
+                                                <table className="w-full min-w-[980px] text-left">
+                                                    <thead>
+                                                        <tr className="border-b border-gray-100 text-[10px] uppercase tracking-[0.18em] text-gray-400">
+                                                            <th className="py-3 pr-4 font-bold">Employee</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Base Salary</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Days Worked</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Absences</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Absence Deduction</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Undertime</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Undertime Deduction</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Overtime</th>
+                                                            <th className="py-3 pr-4 font-bold text-right">Overtime Pay</th>
+                                                            <th className="py-3 font-bold text-right">Net Pay</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-50">
+                                                        {selectedItem.line_items?.map((line) => (
+                                                            <tr key={line.id} className="text-sm text-gray-700">
+                                                                <td className="py-3 pr-4 font-bold text-gray-900">{line.employee_name}</td>
+                                                                <td className="py-3 pr-4 text-right">{formatMoney(line.base_salary)}</td>
+                                                                <td className="py-3 pr-4 text-right">{line.days_worked}</td>
+                                                                <td className="py-3 pr-4 text-right">{line.absences_days}</td>
+                                                                <td className="py-3 pr-4 text-right text-red-600">{formatMoney(line.absence_deduction)}</td>
+                                                                <td className="py-3 pr-4 text-right">{line.undertime_hours}</td>
+                                                                <td className="py-3 pr-4 text-right text-red-600">{formatMoney(line.undertime_deduction)}</td>
+                                                                <td className="py-3 pr-4 text-right">{line.overtime_hours}</td>
+                                                                <td className="py-3 pr-4 text-right text-emerald-700">{formatMoney(line.overtime_pay)}</td>
+                                                                <td className="py-3 text-right font-bold text-gray-900">{formatMoney(line.net_pay)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </>
                             )}
 
                             {selectedItem.rejection_reason && (
@@ -454,7 +495,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                         </div>
                     )}
 
-                    <div className="mt-6 border-t border-gray-100 pt-5">
+                    <div className="mt-3.5 border-t border-gray-100 pt-3">
                         {isPendingReview ? (
                             <div className="space-y-4">
                                 <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
@@ -493,6 +534,22 @@ function DetailTile({ label, value }) {
         <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">{label}</p>
             <p className="mt-1 text-sm font-bold text-gray-900">{value ?? 'N/A'}</p>
+        </div>
+    );
+}
+
+function AuditSheet({ title, rows }) {
+    return (
+        <div className="px-3.5 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">{title}</p>
+            <div className="mt-2.5 divide-y divide-gray-100">
+                {rows.map(({ label, value }) => (
+                    <div key={label} className="flex items-start justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                        <span className="text-[11px] font-medium text-gray-500">{label}</span>
+                        <span className="max-w-[65%] text-right text-sm font-bold text-gray-900">{value ?? 'N/A'}</span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

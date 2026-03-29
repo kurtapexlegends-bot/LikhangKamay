@@ -24,10 +24,10 @@ class PaymentConvenienceFeeTest extends TestCase
             'artisan_id' => $seller->id,
             'customer_name' => $buyer->name,
             'merchandise_subtotal' => 500,
-            'convenience_fee_amount' => 20,
+            'convenience_fee_amount' => 15,
             'platform_commission_amount' => 25,
             'seller_net_amount' => 475,
-            'total_amount' => 520,
+            'total_amount' => 515,
             'status' => 'Pending',
             'payment_method' => 'GCash',
             'payment_status' => 'pending',
@@ -51,8 +51,8 @@ class PaymentConvenienceFeeTest extends TestCase
                 $this->assertSame($order->order_number, $data['reference_number']);
                 $this->assertCount(2, $data['line_items']);
                 $this->assertSame('Payment Test Item', $data['line_items'][0]['name']);
-                $this->assertSame('Convenience Fee', $data['line_items'][1]['name']);
-                $this->assertSame(2000, $data['line_items'][1]['amount']);
+                $this->assertSame('Convenience Fee (3%)', $data['line_items'][1]['name']);
+                $this->assertSame(1500, $data['line_items'][1]['amount']);
                 return true;
             }))
             ->andReturn([
@@ -114,10 +114,10 @@ class PaymentConvenienceFeeTest extends TestCase
             'artisan_id' => $seller->id,
             'customer_name' => $buyer->name,
             'merchandise_subtotal' => 500,
-            'convenience_fee_amount' => 20,
+            'convenience_fee_amount' => 15,
             'platform_commission_amount' => 25,
             'seller_net_amount' => 475,
-            'total_amount' => 520,
+            'total_amount' => 515,
             'status' => 'Cancelled',
             'payment_method' => 'GCash',
             'payment_status' => 'pending',
@@ -159,5 +159,166 @@ class PaymentConvenienceFeeTest extends TestCase
         $this->assertSame('pending', $order->payment_status);
         $this->assertSame('Cancelled', $order->status);
         $this->assertSame('cs_test_cancelled', $order->paymongo_session_id);
+    }
+
+    public function test_guest_success_callback_can_finalize_a_paid_session_and_redirect_to_login(): void
+    {
+        $buyer = User::factory()->create();
+        $seller = User::factory()->artisanApproved()->create();
+
+        $order = Order::create([
+            'order_number' => 'ORD-GUEST-' . strtoupper(fake()->bothify('??###')),
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 500,
+            'convenience_fee_amount' => 15,
+            'platform_commission_amount' => 25,
+            'seller_net_amount' => 475,
+            'total_amount' => 515,
+            'status' => 'Pending',
+            'payment_method' => 'GCash',
+            'payment_status' => 'pending',
+            'paymongo_session_id' => 'cs_test_guest_paid',
+            'shipping_address' => '123 Pay Street, Cavite',
+            'shipping_address_type' => 'home',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $mock = Mockery::mock(PayMongoService::class);
+        $mock->shouldReceive('retrieveCheckoutSession')
+            ->once()
+            ->with('cs_test_guest_paid')
+            ->andReturn([
+                'attributes' => [
+                    'reference_number' => $order->order_number,
+                    'payment_status' => 'paid',
+                    'status' => 'completed',
+                ],
+                'included' => [
+                    [
+                        'type' => 'payment',
+                        'attributes' => [
+                            'status' => 'paid',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $this->app->instance(PayMongoService::class, $mock);
+
+        $response = $this->get(route('payment.success', ['order_id' => $order->order_number]));
+
+        $response
+            ->assertRedirect(route('login', absolute: false))
+            ->assertSessionHas('status', 'Payment verified successfully. Sign in to view your updated order.');
+
+        $order->refresh();
+        $this->assertSame('paid', $order->payment_status);
+        $this->assertNull($order->paymongo_session_id);
+    }
+
+    public function test_guest_success_callback_with_reference_mismatch_redirects_cleanly_to_login(): void
+    {
+        $buyer = User::factory()->create();
+        $seller = User::factory()->artisanApproved()->create();
+
+        $order = Order::create([
+            'order_number' => 'ORD-MISMATCH-' . strtoupper(fake()->bothify('??###')),
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 500,
+            'convenience_fee_amount' => 15,
+            'platform_commission_amount' => 25,
+            'seller_net_amount' => 475,
+            'total_amount' => 515,
+            'status' => 'Pending',
+            'payment_method' => 'GCash',
+            'payment_status' => 'pending',
+            'paymongo_session_id' => 'cs_test_mismatch',
+            'shipping_address' => '123 Pay Street, Cavite',
+            'shipping_address_type' => 'home',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $mock = Mockery::mock(PayMongoService::class);
+        $mock->shouldReceive('retrieveCheckoutSession')
+            ->once()
+            ->with('cs_test_mismatch')
+            ->andReturn([
+                'attributes' => [
+                    'reference_number' => 'ORD-OTHER-123',
+                    'payment_status' => 'paid',
+                    'status' => 'completed',
+                ],
+            ]);
+
+        $this->app->instance(PayMongoService::class, $mock);
+
+        $response = $this->get(route('payment.success', ['order_id' => $order->order_number]));
+
+        $response
+            ->assertRedirect(route('login', absolute: false))
+            ->assertSessionHas('status', 'Payment verification failed from this link. Sign in and contact support if you were charged.');
+
+        $order->refresh();
+        $this->assertSame('pending', $order->payment_status);
+        $this->assertSame('cs_test_mismatch', $order->paymongo_session_id);
+    }
+
+    public function test_my_orders_reconciles_a_paid_online_session_without_success_callback(): void
+    {
+        $buyer = User::factory()->create();
+        $seller = User::factory()->artisanApproved()->create();
+
+        $order = Order::create([
+            'order_number' => 'ORD-RECON-' . strtoupper(fake()->bothify('??###')),
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 500,
+            'convenience_fee_amount' => 15,
+            'platform_commission_amount' => 25,
+            'seller_net_amount' => 475,
+            'total_amount' => 515,
+            'status' => 'Pending',
+            'payment_method' => 'GCash',
+            'payment_status' => 'pending',
+            'paymongo_session_id' => 'cs_test_reconcile',
+            'shipping_address' => '123 Pay Street, Cavite',
+            'shipping_address_type' => 'home',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $mock = Mockery::mock(PayMongoService::class);
+        $mock->shouldReceive('retrieveCheckoutSession')
+            ->once()
+            ->with('cs_test_reconcile')
+            ->andReturn([
+                'attributes' => [
+                    'reference_number' => $order->order_number,
+                    'payment_status' => 'paid',
+                    'status' => 'completed',
+                ],
+                'included' => [
+                    [
+                        'type' => 'payment',
+                        'attributes' => [
+                            'status' => 'paid',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $this->app->instance(PayMongoService::class, $mock);
+
+        $this->actingAs($buyer)
+            ->get(route('my-orders.index'))
+            ->assertOk();
+
+        $order->refresh();
+        $this->assertSame('paid', $order->payment_status);
+        $this->assertNull($order->paymongo_session_id);
     }
 }

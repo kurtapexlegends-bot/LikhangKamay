@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/react';
 import { Transition } from '@headlessui/react'; // Standard Breeze uses this, but let's make it optional-safe
 // If you DON'T have @headlessui/react installed, remove the Transition wrapper and just render {open && children}
 
-const DropDownContext = createContext();
+export const DropDownContext = createContext(null);
 
 const Dropdown = ({ children }) => {
     const [open, setOpen] = useState(false);

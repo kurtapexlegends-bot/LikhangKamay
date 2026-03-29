@@ -540,7 +540,7 @@ export default function OrderManager({ auth, orders = [] }) {
 
                                         {/* Info Badges */}
                                         <div className="flex flex-wrap gap-2 mb-4">
-                                            {order.payment_status === 'pending' && (
+                                            {order.payment_status === 'pending' && order.payment_method === 'COD' && ['Pending', 'Accepted', 'Shipped', 'Ready for Pickup', 'Delivered'].includes(order.status) && (
                                                 <button
                                                     onClick={() => router.post(route('orders.payment-status', order.id), { payment_status: 'paid' })}
                                                     className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-green-700 hover:bg-green-100 transition"
@@ -1068,6 +1068,5 @@ export default function OrderManager({ auth, orders = [] }) {
         </div>
     );
 }
-
 
 

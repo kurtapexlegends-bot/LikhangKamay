@@ -9,7 +9,6 @@ use App\Models\PayrollItem;
 use App\Models\StockRequest;
 use App\Models\User;
 use App\Notifications\AccountingRejectedNotification;
-use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,7 +16,7 @@ class AccountingController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(WalletService $walletService)
+    public function index()
     {
         $seller = $this->sellerOwner();
         $financials = $this->buildFinancialSnapshot($seller);
@@ -64,7 +63,6 @@ class AccountingController extends Controller
             'pendingPayrolls' => $pendingPayrolls,
             'history' => $releasedHistory,
             'payrollHistory' => $payrollHistory,
-            'wallet' => $walletService->buildSnapshotForUser($seller, 8),
             'finances' => [
                 'baseFunds' => $financials['base_funds'],
                 'revenue' => $financials['revenue'],

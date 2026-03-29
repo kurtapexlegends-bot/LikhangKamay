@@ -7,6 +7,7 @@ use App\Models\Payroll;
 use App\Models\PayrollItem;
 use App\Models\StaffAttendanceSession;
 use App\Models\User;
+use App\Services\StaffAttendanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -42,8 +43,15 @@ class StaffAttendancePayrollTest extends TestCase
             ->has('staff', 1)
             ->where('staff.0.id', $employee->id)
             ->where('staff.0.attendance.current_state', 'clocked_out')
+            ->where('staff.0.attendance.month_label', now(config('app.timezone'))->format('F Y'))
             ->where('staff.0.attendance.days_worked', 3)
+            ->where('staff.0.attendance.worked_minutes', 1440)
             ->where('staff.0.attendance.has_attendance_source', true)
+            ->has('staff.0.attendance.calendar_days', $monthStart->copy()->endOfMonth()->day)
+            ->where('staff.0.attendance.calendar_days.0.date', $monthStart->toDateString())
+            ->where('staff.0.attendance.calendar_days.0.worked_minutes', 480)
+            ->where('staff.0.attendance.calendar_days.1.worked_minutes', 360)
+            ->where('staff.0.attendance.calendar_days.2.worked_minutes', 600)
             ->where('staff.0.payroll_prefill.days_worked', 3)
             ->where('staff.0.payroll_prefill.absences_days', 17)
             ->where('staff.0.payroll_prefill.undertime_hours', 2)
@@ -87,6 +95,50 @@ class StaffAttendancePayrollTest extends TestCase
         $this->assertGreaterThan(0, (float) $item->net_pay);
     }
 
+    public function test_hr_attendance_summary_aggregates_same_day_sessions_after_auto_pause_and_resume(): void
+    {
+        [$owner, $employee] = $this->createOwnerWithHrAccessAndEmployee();
+        $staffLogin = User::factory()->staff($owner)->create([
+            'name' => $employee->name,
+            'email_verified_at' => now(config('app.timezone')),
+            'must_change_password' => false,
+            'employee_id' => $employee->id,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['hr' => true], true),
+        ]);
+
+        $day = now(config('app.timezone'))->copy()->startOfMonth()->setTime(8, 0);
+
+        $this->createClosedSession(
+            $staffLogin,
+            $owner,
+            $employee,
+            $day->copy(),
+            $day->copy()->addHours(2),
+            StaffAttendanceService::MODE_PAUSED,
+            StaffAttendanceService::CLOSE_REASON_INACTIVITY_TIMEOUT
+        );
+        $this->createClosedSession(
+            $staffLogin,
+            $owner,
+            $employee,
+            $day->copy()->setTime(13, 0),
+            $day->copy()->setTime(17, 0),
+            StaffAttendanceService::MODE_CLOCKED_OUT,
+            StaffAttendanceService::CLOSE_REASON_MANUAL_CLOCK_OUT
+        );
+
+        $response = $this->actingAs($owner)->get(route('hr.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('staff.0.attendance.days_worked', 1)
+            ->where('staff.0.attendance.worked_minutes', 360)
+            ->where('staff.0.attendance.calendar_days.0.worked_minutes', 360)
+            ->where('staff.0.payroll_prefill.days_worked', 1)
+        );
+    }
+
     /**
      * @return array{0: \App\Models\User, 1: \App\Models\Employee}
      */
@@ -123,7 +175,8 @@ class StaffAttendancePayrollTest extends TestCase
         Employee $employee,
         \Carbon\CarbonInterface $clockIn,
         \Carbon\CarbonInterface $clockOut,
-        string $closeMode
+        string $closeMode,
+        ?string $closeReason = null
     ): void {
         StaffAttendanceSession::create([
             'staff_user_id' => $staff->id,
@@ -132,7 +185,9 @@ class StaffAttendancePayrollTest extends TestCase
             'attendance_date' => $clockIn->toDateString(),
             'clock_in_at' => $clockIn,
             'clock_out_at' => $clockOut,
+            'last_heartbeat_at' => $clockOut,
             'close_mode' => $closeMode,
+            'close_reason' => $closeReason,
             'worked_minutes' => $clockIn->diffInMinutes($clockOut),
         ]);
     }

@@ -77,8 +77,9 @@ class StaffDashboardController extends Controller
         $activeReturns = Order::where('artisan_id', $sellerId)
             ->where('status', 'Refund/Return')
             ->count();
-        $unresolvedReviews = Review::where('artisan_id', $sellerId)
+        $unresolvedReviews = Review::query()
             ->whereNull('seller_reply')
+            ->whereHas('product', fn ($query) => $query->where('user_id', $sellerId))
             ->count();
 
         $variantMeta = match ($variant) {

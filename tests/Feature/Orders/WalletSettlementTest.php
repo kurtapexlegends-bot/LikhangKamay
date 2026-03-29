@@ -29,7 +29,7 @@ class WalletSettlementTest extends TestCase
         $order->refresh();
 
         $this->assertSame(950.0, (float) $seller->wallet->balance);
-        $this->assertSame(70.0, (float) $admin->wallet->balance);
+        $this->assertSame(80.0, (float) $admin->wallet->balance);
         $this->assertNotNull($order->wallet_settled_at);
         $this->assertDatabaseCount('wallet_transactions', 2);
     }
@@ -52,7 +52,7 @@ class WalletSettlementTest extends TestCase
         $admin->refresh();
         $order->refresh();
 
-        $this->assertSame(1020.0, (float) $buyer->wallet->balance);
+        $this->assertSame(1030.0, (float) $buyer->wallet->balance);
         $this->assertSame(0.0, (float) $seller->wallet->balance);
         $this->assertSame(0.0, (float) $admin->wallet->balance);
         $this->assertNotNull($order->refunded_to_wallet_at);
@@ -62,7 +62,7 @@ class WalletSettlementTest extends TestCase
             'order_id' => $order->id,
             'direction' => 'credit',
             'category' => 'order_refund_credit',
-            'amount' => 1020.00,
+            'amount' => 1030.00,
         ]);
 
         $this->assertSame(5, \App\Models\WalletTransaction::query()->count());
@@ -76,10 +76,10 @@ class WalletSettlementTest extends TestCase
             'artisan_id' => $seller->id,
             'customer_name' => $buyer->name,
             'merchandise_subtotal' => 1000,
-            'convenience_fee_amount' => 20,
+            'convenience_fee_amount' => 30,
             'platform_commission_amount' => 50,
             'seller_net_amount' => 950,
-            'total_amount' => 1020,
+            'total_amount' => 1030,
             'status' => 'Completed',
             'payment_method' => 'COD',
             'payment_status' => 'paid',

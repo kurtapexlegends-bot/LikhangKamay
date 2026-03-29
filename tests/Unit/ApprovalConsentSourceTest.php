@@ -28,7 +28,7 @@ class ApprovalConsentSourceTest extends TestCase
         $this->assertStringContainsString('Scroll to the bottom of this document before continuing.', $source);
     }
 
-    public function test_registration_sources_keep_terms_checkbox_locked_until_both_documents_are_accepted(): void
+    public function test_registration_sources_open_legal_flow_from_checkbox_until_both_documents_are_accepted(): void
     {
         $buyerSource = file_get_contents(base_path('resources/js/Pages/Auth/Register.jsx'));
         $artisanSource = file_get_contents(base_path('resources/js/Pages/Auth/ArtisanRegister.jsx'));
@@ -36,9 +36,13 @@ class ApprovalConsentSourceTest extends TestCase
         $this->assertNotFalse($buyerSource);
         $this->assertNotFalse($artisanSource);
 
-        $this->assertStringContainsString('disabled={!canEnableTermsCheckbox}', $buyerSource);
-        $this->assertStringContainsString('disabled={!canEnableTermsCheckbox}', $artisanSource);
-        $this->assertStringContainsString('Open both documents and scroll to the bottom of each one to enable this checkbox.', $buyerSource);
-        $this->assertStringContainsString('Open both documents and scroll to the bottom of each one to enable this checkbox.', $artisanSource);
+        $this->assertStringContainsString('onChange={handleTermsCheckboxChange}', $buyerSource);
+        $this->assertStringContainsString('onChange={handleTermsCheckboxChange}', $artisanSource);
+        $this->assertStringContainsString('setIsGuidingTermsAcceptance(true);', $buyerSource);
+        $this->assertStringContainsString('setIsGuidingTermsAcceptance(true);', $artisanSource);
+        $this->assertStringContainsString('openNextRequiredLegalModal();', $buyerSource);
+        $this->assertStringContainsString('openNextRequiredLegalModal();', $artisanSource);
+        $this->assertStringNotContainsString('Open both documents and scroll to the bottom of each one to enable this checkbox.', $buyerSource);
+        $this->assertStringNotContainsString('Open both documents and scroll to the bottom of each one to enable this checkbox.', $artisanSource);
     }
 }

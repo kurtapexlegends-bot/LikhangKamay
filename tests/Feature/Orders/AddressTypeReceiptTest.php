@@ -44,7 +44,7 @@ class AddressTypeReceiptTest extends TestCase
             'shipping_method' => 'Delivery',
             'selected_address_id' => $savedAddress->id,
             'payment_method' => 'COD',
-            'total' => 920,
+            'total' => 927,
         ]);
 
         $response->assertRedirect(route('my-orders.index', absolute: false));
@@ -53,15 +53,15 @@ class AddressTypeReceiptTest extends TestCase
 
         $this->assertSame($savedAddress->full_address, $order->shipping_address);
         $this->assertSame('office', $order->shipping_address_type);
-        $this->assertSame(20.0, (float) $order->convenience_fee_amount);
+        $this->assertSame(27.0, (float) $order->convenience_fee_amount);
 
         $receiptResponse = $this->actingAs($buyer)->get(route('my-orders.receipt', $order->id));
 
         $receiptResponse
             ->assertOk()
-            ->assertSee('Convenience Fee', false)
+            ->assertSee('Convenience Fee (3%)', false)
             ->assertSee('Office', false)
-            ->assertSee('PHP 20.00', false)
+            ->assertSee('PHP 27.00', false)
             ->assertSee('Total Paid', false);
     }
 
@@ -89,7 +89,7 @@ class AddressTypeReceiptTest extends TestCase
             'phone_number' => '09998887777',
             'payment_method' => 'COD',
             'save_address' => true,
-            'total' => 660,
+            'total' => 659.20,
         ]);
 
         $response->assertRedirect(route('my-orders.index', absolute: false));
@@ -105,8 +105,66 @@ class AddressTypeReceiptTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'user_id' => $buyer->id,
             'shipping_address_type' => 'other',
-            'convenience_fee_amount' => 20.00,
+            'convenience_fee_amount' => 19.20,
         ]);
+    }
+
+    public function test_checkout_rejects_malformed_saved_address_selection_instead_of_crashing(): void
+    {
+        Mail::fake();
+        Notification::fake();
+
+        $buyer = User::factory()->create();
+        $seller = User::factory()->artisanApproved()->create();
+        $product = $this->createProduct($seller, 700);
+
+        $response = $this->from('/checkout')->actingAs($buyer)->post(route('checkout.store'), [
+            'items' => [[
+                'id' => $product->id,
+                'artisan_id' => $seller->id,
+                'qty' => 1,
+                'variant' => 'Standard',
+            ]],
+            'shipping_method' => 'Delivery',
+            'selected_address_id' => ['not-a-valid-id'],
+            'payment_method' => 'COD',
+            'total' => 721,
+        ]);
+
+        $response
+            ->assertRedirect('/checkout')
+            ->assertSessionHasErrors('selected_address_id');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_checkout_rejects_nonexistent_saved_address_selection_instead_of_404ing(): void
+    {
+        Mail::fake();
+        Notification::fake();
+
+        $buyer = User::factory()->create();
+        $seller = User::factory()->artisanApproved()->create();
+        $product = $this->createProduct($seller, 700);
+
+        $response = $this->from('/checkout')->actingAs($buyer)->post(route('checkout.store'), [
+            'items' => [[
+                'id' => $product->id,
+                'artisan_id' => $seller->id,
+                'qty' => 1,
+                'variant' => 'Standard',
+            ]],
+            'shipping_method' => 'Delivery',
+            'selected_address_id' => 999999,
+            'payment_method' => 'COD',
+            'total' => 721,
+        ]);
+
+        $response
+            ->assertRedirect('/checkout')
+            ->assertSessionHasErrors('selected_address_id');
+
+        $this->assertDatabaseCount('orders', 0);
     }
 
     private function createProduct(User $seller, float $price): Product

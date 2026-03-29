@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'seller.workspace' => \App\Http\Middleware\EnsureSellerWorkspaceAccess::class,
             'seller.module' => \App\Http\Middleware\EnsureSellerModuleAccess::class,
             'staff.security' => \App\Http\Middleware\EnsureStaffSecurityGate::class,
+            'staff.attendance' => \App\Http\Middleware\EnsureStaffAttendanceActive::class,
         ]);
         
     })

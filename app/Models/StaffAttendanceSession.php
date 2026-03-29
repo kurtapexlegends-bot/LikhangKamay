@@ -16,7 +16,9 @@ class StaffAttendanceSession extends Model
         'attendance_date',
         'clock_in_at',
         'clock_out_at',
+        'last_heartbeat_at',
         'close_mode',
+        'close_reason',
         'worked_minutes',
     ];
 
@@ -26,6 +28,7 @@ class StaffAttendanceSession extends Model
             'attendance_date' => 'date',
             'clock_in_at' => 'datetime',
             'clock_out_at' => 'datetime',
+            'last_heartbeat_at' => 'datetime',
             'worked_minutes' => 'integer',
         ];
     }

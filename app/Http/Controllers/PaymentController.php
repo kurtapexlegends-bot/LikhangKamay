@@ -59,8 +59,8 @@ class PaymentController extends Controller
             $lineItems[] = [
                 'currency' => 'PHP',
                 'amount' => (int) round(((float) $order->convenience_fee_amount) * 100),
-                'description' => 'Convenience fee for delivery order',
-                'name' => 'Convenience Fee',
+                'description' => 'Convenience fee (3%) for delivery order',
+                'name' => 'Convenience Fee (3%)',
                 'quantity' => 1,
             ];
 
@@ -101,12 +101,24 @@ class PaymentController extends Controller
     {
         $orderId = $request->query('order_id');
 
-        $order = Order::where('order_number', $orderId)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        $order = Order::where('order_number', $orderId)->firstOrFail();
+
+        if ($order->payment_status === 'paid') {
+            return $this->redirectAfterPaymentResolution(
+                $order,
+                'success',
+                'Payment successful! Order #' . $orderId . ' is now paid.',
+                'Payment was already verified. Sign in to view your updated order.'
+            );
+        }
 
         if (!$order->paymongo_session_id) {
-            return redirect()->route('my-orders.index')->with('error', 'Security Error: No payment session found.');
+            return $this->redirectAfterPaymentResolution(
+                $order,
+                'error',
+                'Security Error: No payment session found.',
+                'Payment verification could not be completed from this link. Sign in and try again.'
+            );
         }
 
         try {
@@ -121,7 +133,12 @@ class PaymentController extends Controller
                     'session_id' => $order->paymongo_session_id,
                 ]);
 
-                return redirect()->route('my-orders.index')->with('error', 'Payment verification failed. Please contact support.');
+                return $this->redirectAfterPaymentResolution(
+                    $order,
+                    'error',
+                    'Payment verification failed. Please contact support.',
+                    'Payment verification failed from this link. Sign in and contact support if you were charged.'
+                );
             }
 
             $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
@@ -156,7 +173,12 @@ class PaymentController extends Controller
             ]);
 
             if (!$this->canInitiateOnlinePayment($order)) {
-                return redirect()->route('my-orders.index')->with('error', 'This payment can no longer be applied to the order. Please contact support if you were charged.');
+                return $this->redirectAfterPaymentResolution(
+                    $order,
+                    'error',
+                    'This payment can no longer be applied to the order. Please contact support if you were charged.',
+                    'This payment can no longer be applied automatically. Sign in and contact support if you were charged.'
+                );
             }
 
             if ($isPaid || $hasPaidPayment) {
@@ -174,14 +196,29 @@ class PaymentController extends Controller
                     $order->update($updateData);
                 }
 
-                return redirect()->route('my-orders.index')->with('success', 'Payment successful! Order #' . $orderId . ' is now paid.');
+                return $this->redirectAfterPaymentResolution(
+                    $order->fresh(),
+                    'success',
+                    'Payment successful! Order #' . $orderId . ' is now paid.',
+                    'Payment verified successfully. Sign in to view your updated order.'
+                );
             }
 
-            return redirect()->route('my-orders.index')->with('error', 'Payment not yet confirmed. Please try again or contact support.');
+            return $this->redirectAfterPaymentResolution(
+                $order,
+                'error',
+                'Payment not yet confirmed. Please try again or contact support.',
+                'Payment is not yet confirmed. Sign in later to check your order status.'
+            );
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('PayMongo Verification Error: ' . $e->getMessage());
 
-            return redirect()->route('my-orders.index')->with('error', 'Payment verification error. Please contact support.');
+            return $this->redirectAfterPaymentResolution(
+                $order,
+                'error',
+                'Payment verification error. Please contact support.',
+                'Payment verification failed. Sign in and contact support if you were charged.'
+            );
         }
     }
 
@@ -190,7 +227,11 @@ class PaymentController extends Controller
      */
     public function cancel(Request $request)
     {
-        return redirect()->route('my-orders.index')->with('error', 'Payment was cancelled.');
+        if (Auth::check()) {
+            return redirect()->route('my-orders.index')->with('error', 'Payment was cancelled.');
+        }
+
+        return redirect()->route('login')->with('status', 'Payment was cancelled. Sign in to continue with your order.');
     }
 
     private function canInitiateOnlinePayment(Order $order): bool
@@ -198,5 +239,18 @@ class PaymentController extends Controller
         return $order->payment_method === 'GCash'
             && in_array($order->status, self::PAYABLE_ONLINE_STATUSES, true)
             && $order->payment_status === 'pending';
+    }
+
+    private function redirectAfterPaymentResolution(Order $order, string $flashKey, string $ownerMessage, string $guestMessage)
+    {
+        if (Auth::id() === $order->user_id) {
+            return redirect()->route('my-orders.index')->with($flashKey, $ownerMessage);
+        }
+
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('status', $guestMessage);
+        }
+
+        return redirect('/')->with($flashKey, $guestMessage);
     }
 }

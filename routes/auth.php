@@ -50,11 +50,23 @@ Route::middleware(['auth', 'staff.security'])->group(function () {
     Route::post('staff/logout', [AuthenticatedSessionController::class, 'destroyStaff'])
         ->name('staff.logout');
 
+    Route::post('staff/logout/direct', [AuthenticatedSessionController::class, 'destroy'])
+        ->name('staff.logout.direct');
+
     Route::get('staff/password', [StaffSecurityController::class, 'editPassword'])
         ->name('staff.password.edit');
 
     Route::put('staff/password', [StaffSecurityController::class, 'updatePassword'])
         ->name('staff.password.update');
+
+    Route::get('staff/attendance/resume', [StaffSecurityController::class, 'showResumePrompt'])
+        ->name('staff.attendance.resume-prompt');
+
+    Route::post('staff/attendance/resume', [StaffSecurityController::class, 'resumeAttendance'])
+        ->name('staff.attendance.resume');
+
+    Route::post('staff/attendance/heartbeat', [StaffSecurityController::class, 'heartbeat'])
+        ->name('staff.attendance.heartbeat');
 
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');

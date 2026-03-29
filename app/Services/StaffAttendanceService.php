@@ -12,6 +12,11 @@ class StaffAttendanceService
 {
     public const MODE_PAUSED = 'paused';
     public const MODE_CLOCKED_OUT = 'clocked_out';
+    public const CLOSE_REASON_MANUAL_PAUSE = 'manual_pause';
+    public const CLOSE_REASON_MANUAL_CLOCK_OUT = 'manual_clock_out';
+    public const CLOSE_REASON_INACTIVITY_TIMEOUT = 'inactivity_timeout';
+    public const HEARTBEAT_INTERVAL_SECONDS = 60;
+    public const INACTIVITY_TIMEOUT_MINUTES = 10;
     private const STANDARD_WORKDAY_MINUTES = 480;
 
     public function ensureClockedIn(User $staff): ?StaffAttendanceSession
@@ -34,11 +39,17 @@ class StaffAttendanceService
             'employee_id' => $staff->employee_id,
             'attendance_date' => $now->toDateString(),
             'clock_in_at' => $now,
+            'last_heartbeat_at' => $now,
             'worked_minutes' => 0,
         ]);
     }
 
-    public function closeOpenSession(User $staff, string $mode): ?StaffAttendanceSession
+    public function closeOpenSession(
+        User $staff,
+        string $mode,
+        ?string $reason = null,
+        ?CarbonInterface $closedAt = null
+    ): ?StaffAttendanceSession
     {
         if (!$staff->isStaff()) {
             return null;
@@ -54,16 +65,103 @@ class StaffAttendanceService
             return null;
         }
 
-        $now = $this->now();
+        $now = $closedAt ? Carbon::parse($closedAt) : $this->now();
         $workedMinutes = max(0, $openSession->clock_in_at->diffInMinutes($now));
+        $resolvedReason = $reason ?: $this->defaultCloseReasonFor($mode);
 
         $openSession->update([
             'clock_out_at' => $now,
+            'last_heartbeat_at' => $openSession->last_heartbeat_at ?: $now,
             'close_mode' => $mode,
+            'close_reason' => $resolvedReason,
             'worked_minutes' => $workedMinutes,
         ]);
 
         return $openSession->fresh();
+    }
+
+    public function touchHeartbeat(User $staff): ?StaffAttendanceSession
+    {
+        if (!$staff->isStaff()) {
+            return null;
+        }
+
+        $openSession = $this->getOpenSession($staff);
+
+        if (!$openSession) {
+            return null;
+        }
+
+        $openSession->forceFill([
+            'last_heartbeat_at' => $this->now(),
+        ])->save();
+
+        return $openSession->fresh();
+    }
+
+    public function requiresResumePrompt(User $staff): bool
+    {
+        if (!$staff->isStaff()) {
+            return false;
+        }
+
+        if ($this->getOpenSession($staff)) {
+            return false;
+        }
+
+        return $this->getLatestSession($staff)?->close_reason === self::CLOSE_REASON_INACTIVITY_TIMEOUT;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function buildResumeContext(User $staff): array
+    {
+        $latestSession = $this->getLatestSession($staff);
+        $workedMinutes = $latestSession ? $this->resolveWorkedMinutes($latestSession) : 0;
+
+        return [
+            'requires_resume' => $this->requiresResumePrompt($staff),
+            'timeout_minutes' => self::INACTIVITY_TIMEOUT_MINUTES,
+            'heartbeat_interval_seconds' => self::HEARTBEAT_INTERVAL_SECONDS,
+            'attendance_date' => $latestSession?->attendance_date?->toDateString(),
+            'clock_in_at' => $latestSession?->clock_in_at?->toIso8601String(),
+            'timed_out_at' => $latestSession?->clock_out_at?->toIso8601String(),
+            'worked_minutes' => $workedMinutes,
+            'worked_hours_label' => $this->formatWorkedHoursLabel($workedMinutes),
+            'close_reason' => $latestSession?->close_reason,
+        ];
+    }
+
+    public function autoPauseInactiveSessions(?CarbonInterface $referenceTime = null): int
+    {
+        $now = $referenceTime ? Carbon::parse($referenceTime) : $this->now();
+        $threshold = $now->copy()->subMinutes(self::INACTIVITY_TIMEOUT_MINUTES);
+
+        $sessions = StaffAttendanceSession::query()
+            ->whereNull('clock_out_at')
+            ->where(function ($query) use ($threshold) {
+                $query->where('last_heartbeat_at', '<=', $threshold)
+                    ->orWhere(function ($fallback) use ($threshold) {
+                        $fallback->whereNull('last_heartbeat_at')
+                            ->where('clock_in_at', '<=', $threshold);
+                    });
+            })
+            ->get();
+
+        foreach ($sessions as $session) {
+            $workedMinutes = max(0, $session->clock_in_at->diffInMinutes($now));
+
+            $session->update([
+                'clock_out_at' => $now,
+                'last_heartbeat_at' => $session->last_heartbeat_at ?: $threshold,
+                'close_mode' => self::MODE_PAUSED,
+                'close_reason' => self::CLOSE_REASON_INACTIVITY_TIMEOUT,
+                'worked_minutes' => $workedMinutes,
+            ]);
+        }
+
+        return $sessions->count();
     }
 
     public function getOpenSession(User $staff): ?StaffAttendanceSession
@@ -71,6 +169,14 @@ class StaffAttendanceService
         return StaffAttendanceSession::query()
             ->where('staff_user_id', $staff->id)
             ->whereNull('clock_out_at')
+            ->latest('clock_in_at')
+            ->first();
+    }
+
+    public function getLatestSession(User $staff): ?StaffAttendanceSession
+    {
+        return StaffAttendanceSession::query()
+            ->where('staff_user_id', $staff->id)
             ->latest('clock_in_at')
             ->first();
     }
@@ -97,7 +203,7 @@ class StaffAttendanceService
 
         $sessionsByEmployee = $sessions->groupBy('employee_id');
 
-        return $employees->mapWithKeys(function ($employee) use ($sessionsByEmployee, $today, $workingDays) {
+        return $employees->mapWithKeys(function ($employee) use ($sessionsByEmployee, $today, $workingDays, $period) {
             $employeeSessions = $sessionsByEmployee->get($employee->id, collect());
             $latestSession = $employeeSessions->last();
             $todaySessions = $employeeSessions->filter(function (StaffAttendanceSession $session) use ($today) {
@@ -121,6 +227,28 @@ class StaffAttendanceService
             $overtimeMinutes = $dailyMinutes
                 ->map(fn ($minutes) => max(0, $minutes - self::STANDARD_WORKDAY_MINUTES))
                 ->sum();
+            $calendarDays = [];
+            $cursor = $period->copy()->startOfMonth();
+            $periodEnd = $period->copy()->endOfMonth();
+
+            while ($cursor->lte($periodEnd)) {
+                $dateKey = $cursor->toDateString();
+                $workedMinutes = (int) ($dailyMinutes->get($dateKey, 0) ?? 0);
+
+                $calendarDays[] = [
+                    'date' => $dateKey,
+                    'day_number' => (int) $cursor->format('j'),
+                    'weekday_short' => $cursor->format('D'),
+                    'weekday_index' => (int) $cursor->dayOfWeek,
+                    'worked_minutes' => $workedMinutes,
+                    'worked_hours_decimal' => round($workedMinutes / 60, 2),
+                    'worked_hours_label' => $this->formatWorkedHoursLabel($workedMinutes),
+                    'has_hours' => $workedMinutes > 0,
+                    'is_today' => $dateKey === $today,
+                ];
+
+                $cursor->addDay();
+            }
 
             $hasLinkedStaffLogin = (bool) optional($employee->loginAccount)->id;
             $latestAction = null;
@@ -155,6 +283,8 @@ class StaffAttendanceService
                     'worked_minutes' => (int) $dailyMinutes->sum(),
                     'has_attendance_source' => $hasLinkedStaffLogin,
                     'open_session' => $latestSession && !$latestSession->clock_out_at,
+                    'month_label' => $period->format('F Y'),
+                    'calendar_days' => $calendarDays,
                 ],
             ];
         })->all();
@@ -188,8 +318,37 @@ class StaffAttendanceService
         return ($month ? Carbon::parse($month) : $this->now())->startOfMonth();
     }
 
+    protected function defaultCloseReasonFor(string $mode): string
+    {
+        return match ($mode) {
+            self::MODE_PAUSED => self::CLOSE_REASON_MANUAL_PAUSE,
+            self::MODE_CLOCKED_OUT => self::CLOSE_REASON_MANUAL_CLOCK_OUT,
+            default => throw new \InvalidArgumentException('Unsupported attendance close mode.'),
+        };
+    }
+
     protected function now(): CarbonInterface
     {
         return now(config('app.timezone'));
+    }
+
+    protected function formatWorkedHoursLabel(int $workedMinutes): string
+    {
+        if ($workedMinutes <= 0) {
+            return '0h';
+        }
+
+        $hours = intdiv($workedMinutes, 60);
+        $minutes = $workedMinutes % 60;
+
+        if ($hours === 0) {
+            return "{$minutes}m";
+        }
+
+        if ($minutes === 0) {
+            return "{$hours}h";
+        }
+
+        return "{$hours}h {$minutes}m";
     }
 }

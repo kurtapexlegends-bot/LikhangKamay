@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink'; 
 import Modal from '@/Components/Modal';
+import CompactPagination from '@/Components/CompactPagination';
 import { 
     Star, MessageSquare, Image as ImageIcon, Search, Filter, Pin, PinOff,
     Menu, ChevronDown, User, LogOut, Send, Bold, Italic, X,
@@ -61,6 +62,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
     const [confirmingDelete, setConfirmingDelete] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     React.useEffect(() => {
         if (flash?.success) {
@@ -93,6 +95,23 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         if (!a.is_pinned && b.is_pinned) return 1;
         return 0;
     });
+
+    const itemsPerPage = 6;
+    const totalPages = Math.max(1, Math.ceil(sortedReviews.length / itemsPerPage));
+    const paginatedReviews = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return sortedReviews.slice(startIndex, startIndex + itemsPerPage);
+    }, [currentPage, sortedReviews]);
+
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [filter]);
+
+    React.useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     const openReply = (reviewId) => {
         setReplyingTo(reviewId);
@@ -276,9 +295,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                         </div>
 
                         <div className="divide-y divide-gray-50">
-                            {sortedReviews.length > 0 ? (
-                                sortedReviews.map((review, index) => (
-                                    <div key={review.id} className={`p-4 sm:p-5 hover:bg-gray-50/50 transition-colors ${review.is_pinned ? 'bg-amber-50/30 border-l-4 border-amber-400' : ''} ${index === sortedReviews.length - 1 ? 'rounded-b-2xl' : ''}`}>
+                            {paginatedReviews.length > 0 ? (
+                                paginatedReviews.map((review, index) => (
+                                    <div key={review.id} className={`p-4 sm:p-5 hover:bg-gray-50/50 transition-colors ${review.is_pinned ? 'bg-amber-50/30 border-l-4 border-amber-400' : ''} ${index === paginatedReviews.length - 1 ? 'rounded-b-2xl' : ''}`}>
                                         
                                         {/* Pinned Badge */}
                                         {review.is_pinned && (
@@ -453,6 +472,15 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                 </div>
                             )}
                         </div>
+
+                        <CompactPagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={sortedReviews.length}
+                            itemsPerPage={itemsPerPage}
+                            itemLabel="reviews"
+                            onPageChange={setCurrentPage}
+                        />
                     </div>
                 </main>
             </div>
@@ -503,5 +531,3 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         </div>
     );
 }
-
-

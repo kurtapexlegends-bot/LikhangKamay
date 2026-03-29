@@ -370,11 +370,11 @@ export default function Catalog(props) {
                                         }`}
                                     >
                                         {/* Image */}
-                                        <div className="aspect-square relative bg-gray-50 overflow-hidden">
+                                        <div className="aspect-square relative overflow-hidden bg-stone-100">
                                             <img 
                                                 src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
                                                 alt={product.name} 
-                                                className="w-full h-full object-cover transform-gpu will-change-transform transition-transform duration-500 group-hover:scale-105"
+                                                className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                             />
                                             {product.is_sponsored ? (
