@@ -1,0 +1,26 @@
+.git
+.gitignore
+.vscode
+.agent
+.stubs
+
+tests
+phpunit.xml
+.phpunit.result.cache
+
+docs
+CAPSTONE DOCX
+tools
+
+.env
+.env.example
+.env.railway.example
+
+firebase-debug.log
+backup.diff
+patch.diff
+new_block.txt
+target_block.txt
+
+node_modules
+vendor
