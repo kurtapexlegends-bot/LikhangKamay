@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
-import { 
+import {
     Clock, Eye, CheckCircle, XCircle, 
     FileText, Phone, MapPin, AlertTriangle, X, Download
 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useToast } from '@/Components/ToastContext';
 
 const ARTISAN_DOCUMENTS = [
     { key: 'business_permit', label: 'Business Permit', icon: FileText },
@@ -21,6 +22,7 @@ const buildViewedDocumentMap = (artisanRows) =>
     }, {});
 
 export default function PendingArtisans({ artisans }) {
+    const { addToast } = useToast();
     const [viewingArtisan, setViewingArtisan] = useState(null);
     const [viewingDoc, setViewingDoc] = useState(null);
     const [rejectingArtisan, setRejectingArtisan] = useState(null);
@@ -118,15 +120,15 @@ export default function PendingArtisans({ artisans }) {
             onSuccess: () => {
                 setViewingDoc(null);
                 setViewingArtisan(null);
-            },
-            onFinish: () => {
-                setProcessing(false);
                 setRejectingArtisan(null);
                 setRejectReason('');
             },
+            onFinish: () => {
+                setProcessing(false);
+            },
             onError: (errors) => {
                 console.error('Rejection failed:', errors);
-                alert('Rejection failed. Check console for details.');
+                addToast(errors.reason ?? 'Rejection failed. Please review the form and try again.', 'error');
             },
         });
     };

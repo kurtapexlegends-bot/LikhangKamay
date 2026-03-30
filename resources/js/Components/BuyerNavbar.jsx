@@ -11,6 +11,9 @@ import UserAvatar from '@/Components/UserAvatar';
 export default function BuyerNavbar() {
     const { auth, cartCount, sellerSidebar } = usePage().props;
     const user = auth?.user;
+    const buyerDisplayName = user?.name?.trim()
+        ? user.name.trim().split(/\s+/).slice(0, 2).join(' ')
+        : user?.name || 'Account';
     const showBuyerChat = !!user && !auth?.isStaff && user.role !== 'super_admin';
     const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
         ? route(sellerSidebar.defaultRouteName)
@@ -92,7 +95,7 @@ export default function BuyerNavbar() {
                                                     className="w-9 h-9 border-2 border-white shadow-sm group-hover:border-clay-200 transition-colors" 
                                                 />
                                                 <div className="text-left hidden sm:block">
-                                                    <p className="text-sm font-bold text-gray-900 leading-none">{user.name}</p>
+                                                    <p className="text-sm font-bold text-gray-900 leading-none">{buyerDisplayName}</p>
                                                 </div>
                                                 <ChevronDown size={16} className="text-gray-400 group-hover:text-clay-600" />
                                             </button>

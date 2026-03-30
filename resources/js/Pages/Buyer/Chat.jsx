@@ -12,6 +12,7 @@ import EmojiPicker from 'emoji-picker-react';
 import OrderContextCard from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
 import MediaViewer from '@/Components/Chat/MediaViewer';
+import { formatStructuredAddress } from '@/lib/addressFormatting';
 
 export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +28,19 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     const imageInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
     const lastTypingSignal = useRef(0);
+    const currentChatUserAddress = formatStructuredAddress({
+        street_address: currentChatUser?.street_address,
+        barangay: currentChatUser?.barangay,
+        city: currentChatUser?.city,
+        region: currentChatUser?.region,
+        postal_code: currentChatUser?.zip_code,
+    });
+
+    const revokeAttachmentPreview = () => {
+        if (attachmentPreview?.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(attachmentPreview.url);
+        }
+    };
 
     const { data, setData, post, reset, processing } = useForm({
         receiver_id: currentChatUser?.id || '',
@@ -43,6 +57,10 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        return () => revokeAttachmentPreview();
+    }, [attachmentPreview]);
 
     // --- POLLING & SCROLLING ---
     useEffect(() => {
@@ -104,6 +122,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
         post(route('chat.store'), {
             onSuccess: () => {
                 reset('message', 'attachment');
+                revokeAttachmentPreview();
                 setAttachment(null);
                 setAttachmentPreview(null);
                 setShowEmojiPicker(false);
@@ -115,6 +134,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            revokeAttachmentPreview();
             setData('attachment', file);
             setAttachment(file);
             const previewUrl = URL.createObjectURL(file);
@@ -129,6 +149,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     };
 
     const removeAttachment = () => {
+        revokeAttachmentPreview();
         setData('attachment', null);
         setAttachment(null);
         setAttachmentPreview(null);
@@ -595,7 +616,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                                 <MapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-medium text-gray-900 break-words">
-                                                        {currentChatUser.street_address ? `${currentChatUser.street_address}${currentChatUser.city ? `, ${currentChatUser.city}` : ''}` : 'No address provided'}
+                                                        {currentChatUserAddress || 'No address provided'}
                                                     </p>
                                                     <p className="text-xs text-gray-500">Address</p>
                                                 </div>

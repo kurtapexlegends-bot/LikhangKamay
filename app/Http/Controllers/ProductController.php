@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Models\Order;
 use App\Models\Product;
+use App\Models\Supply;
+use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +17,8 @@ use Inertia\Inertia;
 class ProductController extends Controller
 {
     use InteractsWithSellerContext;
+
+    private const MAX_THREE_D_STORAGE_BYTES = 524288000;
 
     const VALID_CATEGORIES = [
         'Tableware',
@@ -69,11 +74,16 @@ class ProductController extends Controller
             'status' => 'required|string',
             'cover_photo' => 'nullable|image|max:10240',
             'gallery.*' => 'nullable|image|max:10240',
-            'model_3d' => 'required|file|max:51200',
+            'model_3d' => 'nullable|file|mimes:glb,gltf|max:51200',
         ]);
 
         $seller = $this->sellerOwner();
-        if ($validated['status'] === 'Active' && !$seller->canAddMoreProducts()) {
+        $requestedStatus = $this->normalizeStatusForThreeDRequirement(
+            $validated['status'],
+            $request->hasFile('model_3d')
+        );
+
+        if ($requestedStatus === 'Active' && !$seller->canAddMoreProducts()) {
             return back()->withErrors(['limit' => 'You have reached your active products limit. Please upgrade your plan to add more active products.']);
         }
 
@@ -84,6 +94,12 @@ class ProductController extends Controller
 
         $modelPath = null;
         if ($request->hasFile('model_3d')) {
+            if (!$this->canStoreThreeDModel($seller->id, $request->file('model_3d')->getSize())) {
+                return back()
+                    ->withErrors(['model_3d' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.'])
+                    ->withInput();
+            }
+
             $modelPath = $request->file('model_3d')->store('products/models', 'public');
         }
 
@@ -96,7 +112,7 @@ class ProductController extends Controller
 
         $sellerId = $seller->id;
 
-        DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId) {
+        DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus) {
             $product = Product::create([
                 'user_id' => $sellerId,
                 'sku' => $validated['sku'],
@@ -107,7 +123,7 @@ class ProductController extends Controller
                 'cost_price' => $validated['cost_price'] ?? 0,
                 'stock' => $validated['stock'],
                 'lead_time' => $validated['lead_time'] ?? 3,
-                'status' => $validated['status'],
+                'status' => $requestedStatus,
                 'clay_type' => $validated['clay_type'] ?? null,
                 'glaze_type' => $validated['glaze_type'] ?? null,
                 'firing_method' => $validated['firing_method'] ?? null,
@@ -122,7 +138,7 @@ class ProductController extends Controller
                 'track_as_supply' => true,
             ]);
 
-            \App\Models\Supply::create([
+            Supply::create(Supply::filterSchemaCompatibleAttributes([
                 'user_id' => $sellerId,
                 'product_id' => $product->id,
                 'name' => $validated['name'],
@@ -134,10 +150,12 @@ class ProductController extends Controller
                 'unit_cost' => $validated['cost_price'] ?? 0,
                 'supplier' => 'Self/External',
                 'notes' => 'Auto-generated from Product: ' . $validated['sku'],
-            ]);
+            ]));
         });
 
-        return redirect()->back()->with('success', 'Product created successfully!');
+        return redirect()->back()->with('success', $requestedStatus === 'Draft' && $validated['status'] === 'Active'
+            ? 'Product saved as Draft. Upload a 3D model before listing it as Active.'
+            : 'Product created successfully!');
     }
 
     public function update(Request $request, $id)
@@ -159,12 +177,24 @@ class ProductController extends Controller
             'cover_photo' => 'nullable|image|max:10240',
             'gallery.*' => 'nullable|image|max:10240',
             'retained_gallery' => 'nullable|array',
-            'model_3d' => $product->model_3d_path ? 'nullable|file|max:51200' : 'required|file|max:51200',
+            'model_3d' => 'nullable|file|mimes:glb,gltf|max:51200',
         ]);
 
         $seller = $this->sellerOwner();
-        if ($validated['status'] === 'Active' && $product->status !== 'Active' && !$seller->canAddMoreProducts()) {
+        $existingModelPath = $product->model_3d_path;
+        $requestedStatus = $this->normalizeStatusForThreeDRequirement(
+            $validated['status'],
+            $request->hasFile('model_3d') || filled($product->model_3d_path)
+        );
+
+        if ($requestedStatus === 'Active' && $product->status !== 'Active' && !$seller->canAddMoreProducts()) {
             return back()->withErrors(['limit' => 'You have reached your active products limit. Please upgrade your plan to activate more products.']);
+        }
+
+        if ($request->hasFile('model_3d') && !$this->canStoreThreeDModel($seller->id, $request->file('model_3d')->getSize(), $existingModelPath)) {
+            return back()
+                ->withErrors(['model_3d' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.'])
+                ->withInput();
         }
 
         if ($request->hasFile('cover_photo')) {
@@ -196,6 +226,8 @@ class ProductController extends Controller
         }
         $product->gallery_paths = $galleryPaths;
 
+        $existingSupplyLookupName = $product->name;
+
         $product->update([
             'name' => $request->name,
             'description' => $request->description,
@@ -203,7 +235,7 @@ class ProductController extends Controller
             'price' => $request->price,
             'cost_price' => $request->cost_price ?? 0,
             'stock' => $request->stock,
-            'status' => $request->status,
+            'status' => $requestedStatus,
             'clay_type' => $request->clay_type,
             'glaze_type' => $request->glaze_type,
             'firing_method' => $request->firing_method,
@@ -219,30 +251,28 @@ class ProductController extends Controller
             $product->save();
         }
 
-        $supply = \App\Models\Supply::firstOrCreate(
-            [
-                'user_id' => $sellerId,
-                'product_id' => $product->id,
-            ],
-            [
-                'name' => $product->name,
-                'category' => 'Finished Goods',
-                'quantity' => $product->stock,
-                'unit' => 'pcs',
-                'min_stock' => 5,
-                'max_stock' => 500,
-                'unit_cost' => $request->cost_price ?? 0,
-                'supplier' => 'Self/External',
-                'notes' => 'Auto-generated from Product: ' . $product->sku,
-            ]
-        );
+        $supply = $this->findSupplyForProduct($product, $sellerId, $existingSupplyLookupName);
 
-        $supply->update([
+        if (!$supply) {
+            $supply = new Supply($this->supplyLookupAttributes($product, $sellerId));
+        }
+
+        $supply->fill(Supply::filterSchemaCompatibleAttributes([
+            'name' => $product->name,
+            'category' => 'Finished Goods',
             'quantity' => $product->stock,
+            'unit' => 'pcs',
+            'min_stock' => 5,
+            'max_stock' => 500,
             'unit_cost' => $request->cost_price ?? 0,
-        ]);
+            'supplier' => 'Self/External',
+            'notes' => 'Auto-generated from Product: ' . $product->sku,
+        ]));
+        $supply->save();
 
-        return redirect()->back()->with('success', 'Product updated successfully!');
+        return redirect()->back()->with('success', $requestedStatus === 'Draft' && $validated['status'] === 'Active'
+            ? 'Product saved as Draft. Upload a 3D model before listing it as Active.'
+            : 'Product updated successfully!');
     }
 
     public function archive($id)
@@ -257,6 +287,12 @@ class ProductController extends Controller
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
         $seller = $this->sellerOwner();
+
+        if (!$product->model_3d_path) {
+            $product->update(['status' => 'Draft']);
+
+            return back()->with('error', 'Products need a 3D model before they can be listed as Active. It remains in Draft.');
+        }
 
         if (!$seller->canAddMoreProducts()) {
             return back()->with('error', 'You have reached your active products limit. Please upgrade your plan.');
@@ -276,13 +312,24 @@ class ProductController extends Controller
 
         $amount = $validated['amount'];
         $product->increment('stock', $amount);
-        $product->update(['status' => 'Active']);
+        $product->update([
+            'status' => $product->model_3d_path ? 'Active' : 'Draft',
+        ]);
 
         if ($product->track_as_supply && $product->supply) {
             $product->supply->update(['quantity' => $product->stock]);
         }
 
         return redirect()->back()->with('success', 'Product stock updated.');
+    }
+
+    private function normalizeStatusForThreeDRequirement(string $requestedStatus, bool $hasThreeDModel): string
+    {
+        if ($requestedStatus === 'Active' && !$hasThreeDModel) {
+            return 'Draft';
+        }
+
+        return $requestedStatus;
     }
 
     private function resizeAndSave($file, $path)
@@ -328,12 +375,27 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $product->load(['user', 'reviews.user']);
+        $viewer = Auth::user();
 
         $product->model_url = $product->model_3d_path
             ? asset('storage/' . $product->model_3d_path)
             : null;
 
         $product->image = $product->img;
+        $product->setRelation('reviews', $product->reviews->map(function ($review) {
+            $review->seller_reply = RichTextSanitizer::sanitize($review->seller_reply);
+
+            return $review;
+        }));
+        $product->viewer_can_review = $viewer
+            ? Order::query()
+                ->where('user_id', $viewer->id)
+                ->where('status', 'Completed')
+                ->whereHas('items', function ($query) use ($product) {
+                    $query->where('product_id', $product->id);
+                })
+                ->exists()
+            : false;
 
         $sellerLocation = $product->user->city
             ? $product->user->city . ', PH'
@@ -351,6 +413,7 @@ class ProductController extends Controller
         $relatedProducts = Product::where('category', $product->category)
             ->where('id', '!=', $product->id)
             ->where('status', 'Active')
+            ->with('user')
             ->inRandomOrder()
             ->take(4)
             ->get()
@@ -392,9 +455,7 @@ class ProductController extends Controller
         $product->decrement('stock', $validated['quantity']);
         $product->increment('sold', $validated['quantity']);
 
-        $supply = \App\Models\Supply::where('user_id', $this->sellerOwnerId())
-            ->where('product_id', $product->id)
-            ->first();
+        $supply = $this->findSupplyForProduct($product, $this->sellerOwnerId());
 
         if ($supply) {
             $newQuantity = max(0, $supply->quantity - $validated['quantity']);
@@ -402,5 +463,63 @@ class ProductController extends Controller
         }
 
         return back()->with('success', "Stock updated. Deducted {$validated['quantity']} units for {$validated['reason']}.");
+    }
+
+    private function canStoreThreeDModel(int $sellerId, int $incomingBytes, ?string $replacedPath = null): bool
+    {
+        $currentUsage = Product::where('user_id', $sellerId)
+            ->whereNotNull('model_3d_path')
+            ->get()
+            ->sum(fn (Product $product) => $this->getStoredFileSizeBytes($product->model_3d_path));
+
+        if ($replacedPath) {
+            $currentUsage -= $this->getStoredFileSizeBytes($replacedPath);
+        }
+
+        return ($currentUsage + $incomingBytes) <= self::MAX_THREE_D_STORAGE_BYTES;
+    }
+
+    private function getStoredFileSizeBytes(?string $path): int
+    {
+        if (!$path) {
+            return 0;
+        }
+
+        $fullPath = storage_path('app/public/' . $path);
+
+        return file_exists($fullPath) ? filesize($fullPath) : 0;
+    }
+
+    private function supplyLookupAttributes(Product $product, int $sellerId): array
+    {
+        return Supply::filterSchemaCompatibleAttributes([
+            'user_id' => $sellerId,
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'category' => 'Finished Goods',
+        ]);
+    }
+
+    private function findSupplyForProduct(Product $product, int $sellerId, ?string $fallbackName = null): ?Supply
+    {
+        $query = Supply::where('user_id', $sellerId);
+
+        if (Supply::supportsProductIdColumn()) {
+            return $query->where('product_id', $product->id)->first();
+        }
+
+        $names = collect([$product->name, $fallbackName])
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($names->isEmpty()) {
+            return null;
+        }
+
+        return $query
+            ->where('category', 'Finished Goods')
+            ->whereIn('name', $names->all())
+            ->first();
     }
 }

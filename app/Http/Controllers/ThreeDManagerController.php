@@ -12,6 +12,8 @@ class ThreeDManagerController extends Controller
 {
     use InteractsWithSellerContext;
 
+    private const MAX_STORAGE_BYTES = 524288000;
+
     public function index()
     {
         $sellerId = $this->sellerOwnerId();
@@ -43,15 +45,10 @@ class ThreeDManagerController extends Controller
                 return $this->getFileSizeBytes($product->model_3d_path);
             });
 
-        $maxStorage = 500 * 1024 * 1024;
-        $usagePercent = min(100, ($totalSize / $maxStorage) * 100);
+        $usagePercent = min(100, ($totalSize / self::MAX_STORAGE_BYTES) * 100);
 
         $availableProducts = Product::where('user_id', $sellerId)
-            ->where(function ($query) {
-                $query->whereNull('model_3d_path')
-                    ->orWhere('model_3d_path', '');
-            })
-            ->select('id', 'name')
+            ->select('id', 'name', 'model_3d_path')
             ->orderBy('name')
             ->get();
 
@@ -76,6 +73,18 @@ class ThreeDManagerController extends Controller
         $product = Product::where('id', $request->product_id)
             ->where('user_id', $this->sellerOwnerId())
             ->firstOrFail();
+        $incomingBytes = $request->file('model')->getSize();
+        $existingBytes = $this->getFileSizeBytes($product->model_3d_path);
+        $currentUsage = Product::where('user_id', $this->sellerOwnerId())
+            ->whereNotNull('model_3d_path')
+            ->get()
+            ->sum(fn (Product $existingProduct) => $this->getFileSizeBytes($existingProduct->model_3d_path));
+
+        if (($currentUsage - $existingBytes + $incomingBytes) > self::MAX_STORAGE_BYTES) {
+            return back()->withErrors([
+                'model' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.',
+            ]);
+        }
 
         if ($product->model_3d_path) {
             Storage::disk('public')->delete($product->model_3d_path);
@@ -90,13 +99,19 @@ class ThreeDManagerController extends Controller
     public function destroy(Product $product)
     {
         $this->authorizeSellerOwnership($product->user_id);
+        $wasActive = $product->status === 'Active';
 
         if ($product->model_3d_path) {
             Storage::disk('public')->delete($product->model_3d_path);
-            $product->update(['model_3d_path' => null]);
+            $product->update([
+                'model_3d_path' => null,
+                'status' => $wasActive ? 'Draft' : $product->status,
+            ]);
         }
 
-        return back()->with('success', '3D model removed.');
+        return back()->with('success', $wasActive
+            ? '3D model removed. The product was moved to Draft until a new 3D model is uploaded.'
+            : '3D model removed.');
     }
 
     private function getFileSize($path)

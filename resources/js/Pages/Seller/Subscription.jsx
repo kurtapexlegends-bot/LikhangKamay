@@ -128,7 +128,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         {
             id: 'premium',
             name: 'Premium',
-            price: 'â‚±199 / mo',
+            price: 'PHP 199 / mo',
             description: 'Grow your artisan business with stronger operational tools.',
             limit: 10,
             features: [
@@ -142,7 +142,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         {
             id: 'super_premium',
             name: 'Elite',
-            price: 'â‚±399 / mo',
+            price: 'PHP 399 / mo',
             description: 'Unlock the full seller suite and sponsored placements.',
             limit: 50,
             features: [
@@ -391,7 +391,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                             <p className="text-xs text-stone-500">SKU: {product.sku}</p>
                                         </div>
                                         <div className="font-medium text-sm text-stone-900">
-                                            â‚±{parseFloat(product.price).toFixed(2)}
+                                            PHP {parseFloat(product.price).toFixed(2)}
                                         </div>
                                     </div>
                                 );
@@ -509,4 +509,3 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         </AuthenticatedLayout>
     );
 }
-

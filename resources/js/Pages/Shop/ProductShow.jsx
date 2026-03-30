@@ -1,44 +1,17 @@
-import React, { useState, Suspense } from 'react';
+import React, { lazy, useEffect, useState, Suspense } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stage, useGLTF, Html, useProgress } from '@react-three/drei';
 import UserAvatar from '@/Components/UserAvatar';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
-    Rotate3d, Loader2, Heart, ChevronRight, Check, Pin,
+    Heart, ChevronRight, Check, Pin,
     Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2
 } from 'lucide-react';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 
-// --- Loading Indicator for 3D ---
-function Loader() {
-    const { progress } = useProgress();
-    return (
-        <Html center>
-            <div className="flex flex-col items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-3 rounded-lg shadow">
-                <Loader2 className="w-6 h-6 animate-spin text-clay-600" />
-                <span className="text-xs font-medium text-gray-500">{progress.toFixed(0)}%</span>
-            </div>
-        </Html>
-    );
-}
-
-// --- 3D Model Component ---
-function Model({ url }) {
-    if (url) {
-        const { scene } = useGLTF(url);
-        return <primitive object={scene.clone()} scale={1} />;
-    }
-    return (
-        <mesh castShadow receiveShadow>
-            <torusKnotGeometry args={[1, 0.35, 100, 16]} />
-            <meshStandardMaterial color="#c07251" roughness={0.4} />
-        </mesh>
-    );
-}
-
 import { useToast } from '@/Components/ToastContext';
+
+const ProductViewer3D = lazy(() => import('@/Components/ProductViewer3D'));
 
 
 
@@ -48,6 +21,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const currentUserReview = auth?.user
         ? product?.reviews?.find((review) => Number(review.user_id) === Number(auth.user.id)) || null
         : null;
+    const canWriteReview = Boolean(currentUserReview || product.viewer_can_review);
     const currentReviewPhotos = (currentUserReview?.photos || []).map((photo) =>
         photo?.startsWith?.('http') || photo?.startsWith?.('/storage') ? photo : `/storage/${photo}`
     );
@@ -59,6 +33,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const [addedToCart, setAddedToCart] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [deletingReview, setDeletingReview] = useState(false);
+    const [reviewPhotoPreviewUrls, setReviewPhotoPreviewUrls] = useState([]);
 
     // Build gallery
     const gallery = [
@@ -73,6 +48,20 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
         comment: currentUserReview?.comment || '',
         photos: [],
     });
+
+    useEffect(() => {
+        if (!data.photos?.length) {
+            setReviewPhotoPreviewUrls([]);
+            return;
+        }
+
+        const nextUrls = data.photos.map((file) => URL.createObjectURL(file));
+        setReviewPhotoPreviewUrls(nextUrls);
+
+        return () => {
+            nextUrls.forEach((url) => URL.revokeObjectURL(url));
+        };
+    }, [data.photos]);
 
     const submitReview = (e) => {
         e.preventDefault();
@@ -176,21 +165,14 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <div className="w-full h-full bg-gradient-to-b from-gray-50 to-white">
-                                        <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
-                                            <Suspense fallback={<Loader />}>
-                                                <Stage environment="city" intensity={0.5}>
-                                                    <Model url={product.model_url} />
-                                                </Stage>
-                                                <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
-                                            </Suspense>
-                                        </Canvas>
-                                        <div className="absolute bottom-3 left-0 right-0 text-center">
-                                            <span className="inline-flex items-center gap-1.5 bg-black/50 text-white px-2.5 py-1 rounded-full text-[10px] font-medium">
-                                                <Rotate3d size={12} /> Drag to rotate
-                                            </span>
-                                        </div>
-                                    </div>
+                                    <Suspense fallback={<div className="flex h-full items-center justify-center bg-gradient-to-b from-gray-50 to-white text-sm font-medium text-gray-500">Loading 3D view...</div>}>
+                                        <ProductViewer3D
+                                            modelUrl={product.model_url}
+                                            productName={product.name}
+                                            compact
+                                            className="h-full rounded-none border-0 bg-gradient-to-b from-gray-50 to-white"
+                                        />
+                                    </Suspense>
                                 )}
 
                                 {/* View Toggle */}
@@ -198,6 +180,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                     <div className="absolute top-3 right-3 flex bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                         <button
                                             onClick={() => setViewMode('image')}
+                                            aria-label="Show product images"
+                                            title="Show product images"
                                             className={`px-3 py-2 text-xs font-bold transition ${
                                                 viewMode === 'image' ? 'bg-clay-600 text-white' : 'text-gray-500 hover:bg-gray-50'
                                             }`}
@@ -206,6 +190,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         </button>
                                         <button
                                             onClick={() => setViewMode('3d')}
+                                            aria-label="Show 3D product view"
+                                            title="Show 3D product view"
                                             className={`px-3 py-2 text-xs font-bold transition ${
                                                 viewMode === '3d' ? 'bg-clay-600 text-white' : 'text-gray-500 hover:bg-gray-50'
                                             }`}
@@ -222,6 +208,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                     <button
                                         key={index}
                                         onClick={() => { setActiveImageIndex(index); setViewMode('image'); }}
+                                        aria-label={`Show product image ${index + 1}`}
+                                        title={`Show product image ${index + 1}`}
                                         className={`flex-shrink-0 w-16 h-16 rounded-xl border-2 overflow-hidden transition ${
                                             activeImageIndex === index && viewMode === 'image'
                                                 ? 'border-clay-600'
@@ -239,6 +227,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 {product.has3D && (
                                     <button
                                         onClick={() => setViewMode('3d')}
+                                        aria-label="Show 3D product view"
+                                        title="Show 3D product view"
                                         className={`flex-shrink-0 w-16 h-16 rounded-xl border-2 flex items-center justify-center transition ${
                                             viewMode === '3d' ? 'border-clay-600 bg-clay-50' : 'border-gray-200 hover:border-gray-300'
                                         }`}
@@ -293,7 +283,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             {/* Price Box */}
                             <div className="bg-clay-50/50 px-4 py-3 rounded-xl mb-4 border border-clay-100">
                                 <span className="text-xl sm:text-2xl font-bold text-clay-700">
-                                    ₱{Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                    PHP {Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
 
@@ -314,7 +304,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 {(product.height > 0 || product.width > 0) && (
                                     <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
                                         <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Dimensions</span>
-                                        <span className="text-gray-700 font-medium">{product.height || 0}"H × {product.width || 0}"W</span>
+                                        <span className="text-gray-700 font-medium">{product.height || 0}"H x {product.width || 0}"W</span>
                                     </div>
                                 )}
                                 {product.firing_method && (
@@ -556,7 +546,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 </h3>
                                 
                                 {auth?.user ? (
-                                    (
+                                    canWriteReview ? (
                                         <form onSubmit={submitReview} className="space-y-3">
                                             {Object.keys(errors).length > 0 && (
                                                 <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
@@ -573,6 +563,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                             key={star}
                                                             type="button"
                                                             onClick={() => setData('rating', star)}
+                                                            aria-label={`Set rating to ${star} star${star > 1 ? 's' : ''}`}
                                                             className="focus:outline-none"
                                                         >
                                                             <Star
@@ -607,10 +598,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                 />
                                                 {data.photos && data.photos.length > 0 && (
                                                     <div className="flex gap-2 mt-2">
-                                                    {data.photos.map((file, i) => (
+                                                    {reviewPhotoPreviewUrls.map((previewUrl, i) => (
                                                         <div key={i} className="w-10 h-10 rounded overflow-hidden border border-gray-200">
                                                             <img 
-                                                                src={URL.createObjectURL(file)} 
+                                                                src={previewUrl}
                                                                     alt="Preview" 
                                                                     className="w-full h-full object-cover" 
                                                                 />
@@ -660,6 +651,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                 </button>
                                             </div>
                                         </form>
+                                    ) : (
+                                        <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-xs leading-6 text-amber-700">
+                                            You can review this product after a completed purchase.
+                                        </div>
                                     )
                                 ) : (
                                     <div className="text-center py-4">
@@ -680,14 +675,14 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             </div>
 
             {/* ========== RELATED PRODUCTS ========== */}
-            {product.relatedProducts && product.relatedProducts.length > 0 && (
+            {relatedProducts.length > 0 && (
                 <div className="max-w-6xl mx-auto px-4 py-6 mb-8">
                     <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <span className="w-1 h-5 bg-clay-600 rounded-full"></span>
                         You Might Also Like
                     </h2>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {product.relatedProducts.map((related) => (
+                        {relatedProducts.map((related) => (
                             <Link 
                                 href={route('product.show', related.slug)} 
                                 key={related.id} 
@@ -712,7 +707,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                     </h3>
                                     <div className="flex items-center justify-between mt-2">
                                         <span className="text-clay-700 font-bold text-sm">
-                                            ₱{Number(related.price).toLocaleString()}
+                                            PHP {Number(related.price).toLocaleString()}
                                         </span>
                                         {related.sold > 0 && (
                                             <span className="text-[10px] text-gray-400">{related.sold} sold</span>

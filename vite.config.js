@@ -10,4 +10,28 @@ export default defineConfig({
         }),
         react(),
     ],
+    build: {
+        chunkSizeWarningLimit: 900,
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('@react-three/drei') || id.includes('three-stdlib')) {
+                        return 'react-three-drei';
+                    }
+
+                    if (id.includes('/three/examples/') || id.includes('\\three\\examples\\')) {
+                        return 'three-examples';
+                    }
+
+                    if (
+                        id.includes('@react-three/fiber') ||
+                        id.includes('/three/') ||
+                        id.includes('\\three\\')
+                    ) {
+                        return 'react-three-core';
+                    }
+                },
+            },
+        },
+    },
 });

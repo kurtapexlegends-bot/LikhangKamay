@@ -3,12 +3,16 @@
 namespace App\Models;
 
 use App\Services\SellerEntitlementService;
+use App\Models\UserAddress;
+use App\Support\StructuredAddress;
+use Illuminate\Support\Str;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -40,6 +44,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_number',
         'street_address',
         'city',
+        'barangay',
+        'region',
         'zip_code',
         'business_permit',
         'dti_registration',
@@ -411,6 +417,141 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getFirstAccessibleSellerRouteName(): ?string
     {
         return app(SellerEntitlementService::class)->getFirstAccessibleRouteName($this);
+    }
+
+    public function getDefaultAddress(): ?UserAddress
+    {
+        if ($this->relationLoaded('addresses')) {
+            $addresses = $this->getRelation('addresses');
+
+            return $addresses->firstWhere('is_default', true)
+                ?? $addresses->sortByDesc('id')->first();
+        }
+
+        return $this->addresses()
+            ->orderByDesc('is_default')
+            ->latest('id')
+            ->first();
+    }
+
+    public function getPreferredCourierPickupAddress(): ?string
+    {
+        $defaultAddress = $this->getDefaultAddress();
+        $address = trim((string) ($defaultAddress?->full_address ?? ''));
+
+        if ($address === '' && $defaultAddress) {
+            $address = StructuredAddress::formatPhilippineAddress([
+                'street_address' => $defaultAddress->street_address,
+                'barangay' => $defaultAddress->barangay,
+                'city' => $defaultAddress->city,
+                'region' => $defaultAddress->region,
+                'postal_code' => $defaultAddress->postal_code,
+            ]);
+        }
+
+        if ($address !== '') {
+            return $address;
+        }
+
+        $primaryParts = StructuredAddress::formatPhilippineAddress([
+            'street_address' => $this->street_address,
+            'barangay' => $this->barangay,
+            'city' => $this->city,
+            'region' => $this->region,
+            'postal_code' => $this->zip_code,
+        ]);
+
+        return $primaryParts !== '' ? $primaryParts : null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getCourierPickupAddressCandidates(): array
+    {
+        $defaultAddress = $this->getDefaultAddress();
+        $candidates = [];
+        $seen = [];
+
+        $pushCandidate = function (array $parts) use (&$candidates, &$seen): void {
+            $normalizedParts = [];
+
+            foreach ($parts as $part) {
+                $value = trim((string) $part);
+                if ($value === '') {
+                    continue;
+                }
+
+                $normalizedParts[] = $value;
+            }
+
+            if (empty($normalizedParts)) {
+                return;
+            }
+
+            $address = implode(', ', $normalizedParts);
+            $fingerprint = Str::lower(Str::ascii($address));
+
+            if (isset($seen[$fingerprint])) {
+                return;
+            }
+
+            $seen[$fingerprint] = true;
+            $candidates[] = $address;
+        };
+
+        if ($defaultAddress) {
+            $pushCandidate([
+                StructuredAddress::formatPhilippineAddress([
+                    'street_address' => $defaultAddress->street_address,
+                    'barangay' => $defaultAddress->barangay,
+                    'city' => $defaultAddress->city,
+                    'region' => $defaultAddress->region,
+                    'postal_code' => $defaultAddress->postal_code,
+                ]),
+            ]);
+            $pushCandidate([$defaultAddress->full_address]);
+        }
+
+        $pushCandidate([
+            StructuredAddress::formatPhilippineAddress([
+                'street_address' => $this->street_address,
+                'barangay' => $this->barangay,
+                'city' => $this->city,
+                'region' => $this->region,
+                'postal_code' => $this->zip_code,
+            ]),
+        ]);
+
+        $pushCandidate([$this->formatted_primary_address]);
+
+        return $candidates;
+    }
+
+    public function getFormattedPrimaryAddressAttribute(): ?string
+    {
+        $address = StructuredAddress::formatPhilippineAddress([
+            'street_address' => $this->street_address,
+            'barangay' => $this->barangay,
+            'city' => $this->city,
+            'region' => $this->region,
+            'postal_code' => $this->zip_code,
+        ]);
+
+        return $address !== '' ? $address : null;
+    }
+
+    public function getPreferredCourierContactPhone(): ?string
+    {
+        $primaryPhone = trim((string) $this->phone_number);
+
+        if ($primaryPhone !== '') {
+            return $primaryPhone;
+        }
+
+        $defaultAddressPhone = trim((string) ($this->getDefaultAddress()?->phone_number ?? ''));
+
+        return $defaultAddressPhone !== '' ? $defaultAddressPhone : null;
     }
 
     /**

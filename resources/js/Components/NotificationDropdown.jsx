@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users } from 'lucide-react';
+import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function NotificationDropdown() {
@@ -40,6 +40,8 @@ export default function NotificationDropdown() {
                 return <PackageCheck size={16} className="text-teal-500" />;
             case 'team_message':
                 return <Users size={16} className="text-emerald-500" />;
+            case 'delivery_update':
+                return <Truck size={16} className="text-indigo-500" />;
             case 'accounting_rejected':
                 return <AlertTriangle size={16} className="text-red-500" />;
             default:

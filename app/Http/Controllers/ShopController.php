@@ -282,7 +282,7 @@ class ShopController extends Controller
         $validated = $request->validate([
             'bio' => 'nullable|string|max:500',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
         $user->bio = $validated['bio'] ?? null;

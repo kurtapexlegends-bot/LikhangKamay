@@ -90,6 +90,12 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [activeMessages]);
 
+    useEffect(() => () => {
+        if (attachmentPreview?.url) {
+            URL.revokeObjectURL(attachmentPreview.url);
+        }
+    }, [attachmentPreview]);
+
     const filteredContacts = useMemo(() => {
         const query = searchTerm.trim().toLowerCase();
 
@@ -119,6 +125,9 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
+                if (attachmentPreview?.url) {
+                    URL.revokeObjectURL(attachmentPreview.url);
+                }
                 reset('message', 'attachment');
                 setAttachmentPreview(null);
                 setShowEmojiPicker(false);
@@ -135,6 +144,10 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
 
         if (!file) {
             return;
+        }
+
+        if (attachmentPreview?.url) {
+            URL.revokeObjectURL(attachmentPreview.url);
         }
 
         setData('attachment', file);
@@ -245,7 +258,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                         </div>
                     </aside>
 
-                    <section className={`min-w-0 flex-1 flex-col overflow-hidden bg-[#F7F3EE] ${showMobileList ? 'hidden sm:flex' : 'flex'}`}>
+                    <section className={`min-w-0 flex-1 flex-col overflow-hidden bg-[#FDFBF9] ${showMobileList ? 'hidden sm:flex' : 'flex'}`}>
                         {currentChatUser ? (
                             <>
                                 <div className="border-b border-stone-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-5">
@@ -345,7 +358,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
 
                                         {Object.keys(groupedMessages).length === 0 && (
                                             <div className="flex min-h-[50vh] flex-col items-center justify-center px-6 text-center">
-                                                <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-emerald-50 text-emerald-600 shadow-sm">
+                                                <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-stone-100 text-stone-300 shadow-sm">
                                                     <MessageSquareText size={34} />
                                                 </div>
                                                 <h2 className="mt-5 text-xl font-bold text-stone-900">Start the conversation</h2>
@@ -483,7 +496,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                             </>
                         ) : (
                             <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                                <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-emerald-50 text-emerald-600 shadow-sm">
+                                <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-stone-100 text-stone-300 shadow-sm">
                                     <MessageSquareText size={34} />
                                 </div>
                                 <h2 className="mt-5 text-xl font-bold text-stone-900">Open a team thread</h2>

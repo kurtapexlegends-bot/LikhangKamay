@@ -1,6 +1,6 @@
-import React, { Suspense, useState } from 'react';
+﻿import React, { Suspense, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stage, Environment, ContactShadows, Html, useProgress } from '@react-three/drei';
+import { OrbitControls, Html, useProgress } from '@react-three/drei';
 import GLTFModel from './GLTFModel';
 import { Loader2, Box, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 
@@ -82,25 +82,29 @@ export default function ProductViewer3D({
                 dpr={[1, 2]}
                 camera={{ fov: 45, position: [0, 0, 5] }}
                 className="cursor-grab active:cursor-grabbing"
+                shadows
             >
+                <color attach="background" args={['#f8fafc']} />
+                <ambientLight intensity={0.9} />
+                <hemisphereLight intensity={0.55} groundColor="#d6d3d1" />
+                <directionalLight
+                    position={[4, 6, 5]}
+                    intensity={1.15}
+                    castShadow
+                    shadow-mapSize-width={1024}
+                    shadow-mapSize-height={1024}
+                />
+                <directionalLight position={[-3, 2, -4]} intensity={0.35} />
                 <Suspense fallback={<Loader />}>
-                    <Stage 
-                        environment="city" 
-                        intensity={0.5}
-                        adjustCamera={false}
-                    >
-                        {modelUrl ? (
-                            <GLTFModel url={modelUrl} scale={zoom} />
-                        ) : (
-                            <PlaceholderModel />
-                        )}
-                    </Stage>
-                    <ContactShadows 
-                        position={[0, -1.5, 0]} 
-                        opacity={0.4} 
-                        blur={2} 
-                        far={4} 
-                    />
+                    {modelUrl ? (
+                        <GLTFModel url={modelUrl} scale={zoom} />
+                    ) : (
+                        <PlaceholderModel />
+                    )}
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+                        <planeGeometry args={[8, 8]} />
+                        <shadowMaterial transparent opacity={0.18} />
+                    </mesh>
                 </Suspense>
                 <OrbitControls 
                     autoRotate={autoRotate} 
@@ -115,11 +119,10 @@ export default function ProductViewer3D({
             {/* Product Name Footer */}
             {!compact && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white/90 via-white/50 to-transparent p-4 pt-8">
-                    <p className="text-xs text-gray-500 text-center">
-                        Drag to rotate • Scroll to zoom
-                    </p>
+                    <p className="text-xs text-gray-500 text-center">Drag to rotate and scroll to zoom</p>
                 </div>
             )}
         </div>
     );
 }
+

@@ -13,8 +13,9 @@ class Order extends Model
         'artisan_id', 'user_id', 'order_number', 'customer_name', 
         'merchandise_subtotal', 'convenience_fee_amount', 'platform_commission_amount', 'seller_net_amount',
         'total_amount', 'status', 'payment_method', 'payment_status', 'paymongo_session_id', 'review_reminder_sent', 'shipment_reminder_sent', 'shipping_address', 'shipping_address_type',
-        'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
-        'accepted_at', 'shipped_at', 'delivered_at', 'shipping_method', 'proof_of_delivery',
+        'shipping_street_address', 'shipping_barangay', 'shipping_city', 'shipping_region', 'shipping_postal_code',
+        'shipping_recipient_name', 'shipping_contact_phone', 'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
+        'accepted_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'cancellation_reason', 'shipping_method', 'proof_of_delivery',
         'wallet_settled_at', 'refunded_to_wallet_at',
         'replacement_resolution_description', 'replacement_started_at', 'replacement_resolved_at',
     ];
@@ -27,6 +28,7 @@ class Order extends Model
         'accepted_at' => 'datetime',
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'cancelled_at' => 'datetime',
         'wallet_settled_at' => 'datetime',
         'refunded_to_wallet_at' => 'datetime',
         'replacement_started_at' => 'datetime',
@@ -57,5 +59,10 @@ class Order extends Model
     public function walletTransactions()
     {
         return $this->hasMany(WalletTransaction::class);
+    }
+
+    public function delivery()
+    {
+        return $this->hasOne(OrderDelivery::class);
     }
 }

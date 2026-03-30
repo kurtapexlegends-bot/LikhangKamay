@@ -43,7 +43,7 @@ class ShipmentReminder extends Mailable
             markdown: 'emails.sellers.shipment_reminder',
             with: [
                 'order' => $this->order,
-                'url' => route('seller.orders.index'),
+                'url' => route('orders.index'),
             ],
         );
     }

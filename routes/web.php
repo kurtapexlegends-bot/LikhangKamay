@@ -3,6 +3,9 @@
 use App\Http\Controllers\HRController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\PaymentController; // Added
+use App\Http\Controllers\WalletTopUpController;
+use App\Http\Controllers\LalamoveDeliveryController;
+use App\Http\Controllers\LalamoveWebhookController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController; // <--- Make sure this is imported
 
@@ -104,6 +107,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // USER ADDRESSES
     Route::post('/user-addresses', [UserAddressController::class, 'store'])->name('user-addresses.store');
+    Route::patch('/user-addresses/{id}', [UserAddressController::class, 'update'])->name('user-addresses.update');
     Route::patch('/user-addresses/{id}/set-default', [UserAddressController::class, 'setDefault'])->name('user-addresses.set-default');
     Route::delete('/user-addresses/{id}', [UserAddressController::class, 'destroy'])->name('user-addresses.destroy');
 
@@ -125,9 +129,11 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::middleware(['seller.workspace', 'staff.attendance'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
         Route::get('/orders/export', [OrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
+        Route::get('/orders/{id}/receipt', [OrderController::class, 'sellerDownloadReceipt'])->middleware('seller.module:orders')->name('orders.receipt');
         Route::post('/orders/{id}/update', [OrderController::class, 'update'])->middleware('seller.module:orders')->name('orders.update');
         Route::post('/orders/{id}/approve-return', [OrderController::class, 'approveReturn'])->middleware('seller.module:orders')->name('orders.approve-return');
         Route::post('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus'])->middleware('seller.module:orders')->name('orders.payment-status');
+        Route::post('/orders/{id}/lalamove', [LalamoveDeliveryController::class, 'store'])->middleware('seller.module:orders')->name('orders.lalamove.store');
         
         Route::get('/analytics', [AnalyticsController::class, 'index'])->middleware('seller.module:analytics')->name('analytics.index');
         Route::get('/analytics/export', [AnalyticsController::class, 'export'])->middleware('seller.module:analytics')->name('analytics.export'); // <--- Added
@@ -228,6 +234,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders.index');
     Route::get('/my-wallet', [OrderController::class, 'myWallet'])->name('my-wallet.index');
+    Route::post('/my-wallet/top-up', [WalletTopUpController::class, 'store'])->name('my-wallet.top-up');
     Route::post('/my-orders/{id}/receive', [OrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');
     Route::post('/my-orders/{id}/return', [OrderController::class, 'buyerRequestReturn'])->name('my-orders.return');
     Route::post('/my-orders/{id}/cancel', [OrderController::class, 'buyerCancelOrder'])->name('my-orders.cancel');
@@ -258,6 +265,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
 Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
 Route::get('/payment/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+Route::get('/wallet/top-up/success', [WalletTopUpController::class, 'success'])->middleware('signed')->name('wallet.topups.success');
+Route::get('/wallet/top-up/cancel', [WalletTopUpController::class, 'cancel'])->middleware('signed')->name('wallet.topups.cancel');
+Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
 
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {

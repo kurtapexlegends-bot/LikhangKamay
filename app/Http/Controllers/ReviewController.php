@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
 use App\Models\Review;
 use App\Notifications\NewReviewNotification;
+use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +39,7 @@ class ReviewController extends Controller
                     'product_image' => $review->product->cover_photo_path
                         ? (str_starts_with($review->product->cover_photo_path, 'http') ? $review->product->cover_photo_path : '/storage/' . $review->product->cover_photo_path)
                         : null,
-                    'seller_reply' => $review->seller_reply,
+                    'seller_reply' => RichTextSanitizer::sanitize($review->seller_reply),
                     'is_pinned' => $review->is_pinned,
                 ];
             });
@@ -87,7 +88,7 @@ class ReviewController extends Controller
             ->first();
 
         if ($existingReview) {
-            return back()->with('error', 'You already reviewed this product. Edit or delete it from My Orders.');
+            return back()->with('error', 'You already reviewed this product. Update or delete your existing review instead.');
         }
 
         if ($request->hasFile('photos')) {
@@ -178,7 +179,7 @@ class ReviewController extends Controller
         $this->authorizeSellerOwnership($review->product->user_id);
 
         $review->update([
-            'seller_reply' => $request->seller_reply,
+            'seller_reply' => RichTextSanitizer::sanitize($request->seller_reply),
         ]);
 
         return back()->with('success', 'Reply posted successfully!');

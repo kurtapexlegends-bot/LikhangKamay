@@ -161,11 +161,11 @@ export default function SellerAgreement() {
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <Check size={16} className="mt-0.5 flex-shrink-0" />
-                                        Upload within <strong>30 days</strong> of creating a listing
+                                        Products remain in <strong>Draft</strong> until a 3D model is uploaded
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-                                        Products without 3D models may be <strong>delisted</strong>
+                                        Products without 3D models cannot be listed as <strong>Active</strong>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <Check size={16} className="mt-0.5 flex-shrink-0" />

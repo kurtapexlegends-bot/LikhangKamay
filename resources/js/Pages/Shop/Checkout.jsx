@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowLeft, CheckCircle, CheckCircle2, CreditCard, Info, MapPin, MessageCircle, Package, Save, ShieldCheck, Store, Truck, Wallet, X } from 'lucide-react';
+import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
+import { formatStructuredAddress } from '@/lib/addressFormatting';
 
 const TYPES = [
     { value: 'home', label: 'Home' },
@@ -10,6 +12,13 @@ const TYPES = [
 
 const peso = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const typeLabel = (value) => TYPES.find((type) => type.value === value)?.label || 'Other';
+const resolveAddressDisplay = (address) => address?.full_address || formatStructuredAddress({
+    street_address: address?.street_address,
+    barangay: address?.barangay,
+    city: address?.city,
+    region: address?.region,
+    postal_code: address?.postal_code,
+});
 
 export default function Checkout({ auth, wallet, pricing }) {
     const { flash, items: incomingItems = [] } = usePage().props;
@@ -48,10 +57,15 @@ export default function Checkout({ auth, wallet, pricing }) {
     const { data, setData, post, processing, errors } = useForm({
         items: incomingItems,
         selected_address_id: defaultAddress?.id || 'new',
-        shipping_address: defaultAddress?.full_address || auth.user.saved_address || auth.user.street_address || '',
+        shipping_address: resolveAddressDisplay(defaultAddress) || auth.user.saved_address || auth.user.street_address || '',
         shipping_address_type: defaultAddress?.address_type || 'home',
-        recipient_name: auth.user.name || '',
-        phone_number: auth.user.phone_number || '',
+        shipping_street_address: defaultAddress?.street_address || auth.user.street_address || '',
+        shipping_barangay: defaultAddress?.barangay || auth.user.barangay || '',
+        shipping_city: defaultAddress?.city || auth.user.city || '',
+        shipping_region: defaultAddress?.region || auth.user.region || '',
+        shipping_postal_code: defaultAddress?.postal_code || auth.user.zip_code || '',
+        recipient_name: defaultAddress?.recipient_name || auth.user.name || '',
+        phone_number: defaultAddress?.phone_number || auth.user.phone_number || '',
         shipping_notes: '',
         payment_method: 'COD',
         shipping_method: 'Delivery',
@@ -84,6 +98,30 @@ export default function Checkout({ auth, wallet, pricing }) {
     React.useEffect(() => {
         setData('total', summary.grandTotal);
     }, [setData, summary.grandTotal]);
+
+    const structuredShippingPreview = useMemo(() => formatStructuredAddress({
+        street_address: data.shipping_street_address,
+        barangay: data.shipping_barangay,
+        city: data.shipping_city,
+        region: data.shipping_region,
+        postal_code: data.shipping_postal_code,
+    }), [
+        data.shipping_barangay,
+        data.shipping_city,
+        data.shipping_postal_code,
+        data.shipping_region,
+        data.shipping_street_address,
+    ]);
+
+    React.useEffect(() => {
+        if (selectedAddressId !== 'new') {
+            return;
+        }
+
+        if (data.shipping_address !== structuredShippingPreview) {
+            setData('shipping_address', structuredShippingPreview);
+        }
+    }, [data.shipping_address, selectedAddressId, setData, structuredShippingPreview]);
 
     const walletBalance = Number(wallet?.balance || 0);
     const walletEligible = data.shipping_method === 'Delivery' && walletBalance >= summary.grandTotal;
@@ -118,14 +156,22 @@ export default function Checkout({ auth, wallet, pricing }) {
         }] : []),
     ];
     const isNewAddress = selectedAddressId === 'new' || !auth.user.addresses?.length;
+    const needsDeliveryContactDetails = data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim());
 
     const chooseSavedAddress = (address) => {
         setSelectedAddressId(address.id);
         setData((current) => ({
             ...current,
             selected_address_id: address.id,
-            shipping_address: address.full_address,
+            shipping_address: resolveAddressDisplay(address),
             shipping_address_type: address.address_type || 'home',
+            shipping_street_address: address.street_address || '',
+            shipping_barangay: address.barangay || '',
+            shipping_city: address.city || '',
+            shipping_region: address.region || '',
+            shipping_postal_code: address.postal_code || '',
+            recipient_name: address.recipient_name || auth.user.name || '',
+            phone_number: address.phone_number || auth.user.phone_number || '',
             save_address: false,
         }));
     };
@@ -137,11 +183,22 @@ export default function Checkout({ auth, wallet, pricing }) {
             selected_address_id: 'new',
             shipping_address: '',
             shipping_address_type: current.shipping_address_type || 'home',
+            shipping_street_address: auth.user.street_address || '',
+            shipping_barangay: auth.user.barangay || '',
+            shipping_city: auth.user.city || '',
+            shipping_region: auth.user.region || '',
+            shipping_postal_code: auth.user.zip_code || '',
+            recipient_name: auth.user.name || '',
+            phone_number: auth.user.phone_number || '',
+            save_address: false,
         }));
     };
 
+    const activeShippingAddress = isNewAddress ? structuredShippingPreview : data.shipping_address;
+
     const submitDisabled = processing
-        || (data.shipping_method === 'Delivery' && !data.shipping_address.trim())
+        || (data.shipping_method === 'Delivery' && !activeShippingAddress.trim())
+        || (data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim()))
         || (data.payment_method === 'Wallet' && !walletEligible)
         || (data.save_address && isNewAddress && (!data.recipient_name.trim() || !data.phone_number.trim()));
 
@@ -241,7 +298,7 @@ export default function Checkout({ auth, wallet, pricing }) {
                                                     </div>
                                                     {selectedAddressId === address.id && <CheckCircle2 size={16} className="text-clay-600" />}
                                                 </div>
-                                                <p className="mt-2 line-clamp-2 text-xs text-gray-600">{address.full_address}</p>
+                                                <p className="mt-2 line-clamp-2 text-xs text-gray-600">{resolveAddressDisplay(address)}</p>
                                                 <p className="mt-1 text-[10px] text-gray-500">{address.recipient_name} | {address.phone_number}</p>
                                             </div>
                                         ))}
@@ -262,14 +319,71 @@ export default function Checkout({ auth, wallet, pricing }) {
                                             </div>
                                             {errors.shipping_address_type && <p className="mt-1 text-sm text-red-500">{errors.shipping_address_type}</p>}
                                         </div>
-                                        <textarea rows="3" className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500" placeholder="Enter your full delivery address..." value={data.shipping_address} onChange={(event) => setData('shipping_address', event.target.value)} />
-                                        <label className="flex items-center gap-3"><input type="checkbox" checked={data.save_address} onChange={(event) => setData('save_address', event.target.checked)} className="h-4 w-4 rounded border-gray-300 text-clay-600 focus:ring-clay-500" /><span className="flex items-center gap-1.5 text-sm text-gray-600"><Save size={14} className="text-gray-400" />Save as my default address</span></label>
-                                        {data.save_address && (
-                                            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-                                                <div><label className="mb-1 block text-sm font-bold text-gray-700">Recipient Name</label><input type="text" value={data.recipient_name} onChange={(event) => setData('recipient_name', event.target.value)} className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500" placeholder="Full recipient name" />{errors.recipient_name && <p className="mt-1 text-sm text-red-500">{errors.recipient_name}</p>}</div>
-                                                <div><label className="mb-1 block text-sm font-bold text-gray-700">Phone Number</label><input type="text" value={data.phone_number} onChange={(event) => setData('phone_number', event.target.value)} className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500" placeholder="09XXXXXXXXX" />{errors.phone_number && <p className="mt-1 text-sm text-red-500">{errors.phone_number}</p>}</div>
+                                        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                                            <div>
+                                                <label className="mb-1 block text-sm font-bold text-gray-700">Recipient Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.recipient_name}
+                                                    onChange={(event) => setData('recipient_name', event.target.value)}
+                                                    className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                                    placeholder="Full recipient name"
+                                                />
+                                                {errors.recipient_name && <p className="mt-1 text-sm text-red-500">{errors.recipient_name}</p>}
                                             </div>
-                                        )}
+                                            <div>
+                                                <label className="mb-1 block text-sm font-bold text-gray-700">Phone Number</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.phone_number}
+                                                    onChange={(event) => setData('phone_number', event.target.value)}
+                                                    className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                                    placeholder="09XXXXXXXXX"
+                                                />
+                                                {errors.phone_number && <p className="mt-1 text-sm text-red-500">{errors.phone_number}</p>}
+                                            </div>
+                                        </div>
+                                        <StructuredAddressFields
+                                            key={`checkout-address-${selectedAddressId}`}
+                                            data={data}
+                                            setData={setData}
+                                            errors={errors}
+                                            prefix="shipping_"
+                                            required
+                                            helperText="Use the buyer's exact delivery address."
+                                            previewLabel="Delivery Address"
+                                        />
+                                        <label className="flex items-center gap-3"><input type="checkbox" checked={data.save_address} onChange={(event) => setData('save_address', event.target.checked)} className="h-4 w-4 rounded border-gray-300 text-clay-600 focus:ring-clay-500" /><span className="flex items-center gap-1.5 text-sm text-gray-600"><Save size={14} className="text-gray-400" />Save as my default address</span></label>
+                                    </div>
+                                )}
+                                {!isNewAddress && needsDeliveryContactDetails && (
+                                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                        <p className="text-sm font-bold text-amber-800">Complete delivery contact details</p>
+                                        <p className="mt-1 text-xs text-amber-700">This saved address is missing recipient details required for courier booking.</p>
+                                        <div className="mt-3 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                                            <div>
+                                                <label className="mb-1 block text-sm font-bold text-gray-700">Recipient Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.recipient_name}
+                                                    onChange={(event) => setData('recipient_name', event.target.value)}
+                                                    className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                                    placeholder="Full recipient name"
+                                                />
+                                                {errors.recipient_name && <p className="mt-1 text-sm text-red-500">{errors.recipient_name}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-bold text-gray-700">Phone Number</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.phone_number}
+                                                    onChange={(event) => setData('phone_number', event.target.value)}
+                                                    className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                                    placeholder="09XXXXXXXXX"
+                                                />
+                                                {errors.phone_number && <p className="mt-1 text-sm text-red-500">{errors.phone_number}</p>}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                                 {errors.shipping_address && <p className="mt-1 text-sm text-red-500">{errors.shipping_address}</p>}
@@ -285,9 +399,9 @@ export default function Checkout({ auth, wallet, pricing }) {
                         )}
 
                         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
-                            <div className="mb-3 flex items-center gap-3 text-clay-700"><Truck size={18} /><h2 className="text-base font-bold">Shipping Preferences</h2><span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Optional</span></div>
-                            <textarea rows="2" className="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500" placeholder="e.g. Preferred courier: Lalamove, Available time: 9 AM - 5 PM" value={data.shipping_notes} onChange={(event) => setData('shipping_notes', event.target.value)} />
-                            <p className="mt-2 flex items-center gap-1 text-xs text-gray-400"><Info size={12} />Shared with sellers when arranging delivery.</p>
+                            <div className="mb-3 flex items-center gap-3 text-clay-700"><Truck size={18} /><h2 className="text-base font-bold">Delivery Notes</h2><span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Optional</span></div>
+                            <textarea rows="2" className="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500" placeholder="e.g. Gate code, landmark, available time, or handoff instructions" value={data.shipping_notes} onChange={(event) => setData('shipping_notes', event.target.value)} />
+                            <p className="mt-2 flex items-center gap-1 text-xs text-gray-400"><Info size={12} />Shared with the seller and courier if this order is booked through Lalamove.</p>
                         </div>
 
                         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">

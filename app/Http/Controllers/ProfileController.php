@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\StructuredAddress;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,6 +47,12 @@ class ProfileController extends Controller
     {
         $data = $request->validated();
         $user = $request->user();
+
+        foreach (['phone_number', 'street_address', 'barangay', 'city', 'region', 'zip_code'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $data[$field] = StructuredAddress::clean($data[$field]);
+            }
+        }
 
         // Handle Avatar Upload
         if ($request->hasFile('avatar')) {

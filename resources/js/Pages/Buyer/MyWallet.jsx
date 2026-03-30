@@ -1,7 +1,8 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useMemo, useState } from 'react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
-import { ArrowDownLeft, ArrowUpRight, RefreshCcw, ShieldCheck, ShoppingBag, Wallet } from 'lucide-react';
+import Modal from '@/Components/Modal';
+import { ArrowDownLeft, ArrowUpRight, Plus, RefreshCcw, ShieldCheck, ShoppingBag, Wallet } from 'lucide-react';
 
 const formatMoney = (value) => {
     return Number(value || 0).toLocaleString(undefined, {
@@ -11,6 +12,12 @@ const formatMoney = (value) => {
 };
 
 export default function MyWallet({ wallet }) {
+    const { flash = {} } = usePage().props;
+    const [showTopUpModal, setShowTopUpModal] = useState(false);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        amount: '500',
+    });
+
     const recentTransactions = wallet?.recent_transactions || [];
     const recentCredits = recentTransactions
         .filter((entry) => entry.direction === 'credit')
@@ -19,6 +26,23 @@ export default function MyWallet({ wallet }) {
         .filter((entry) => entry.direction === 'debit')
         .reduce((total, entry) => total + Number(entry.amount || 0), 0);
     const latestActivity = recentTransactions[0]?.created_at || 'No activity yet';
+    const quickAmounts = useMemo(() => ['100', '250', '500', '1000'], []);
+
+    const submitTopUp = (e) => {
+        e.preventDefault();
+        post(route('my-wallet.top-up'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowTopUpModal(false);
+                reset('amount');
+            },
+        });
+    };
+
+    const closeTopUpModal = () => {
+        setShowTopUpModal(false);
+        reset('amount');
+    };
 
     return (
         <div className="min-h-screen bg-[#FDFBF9]">
@@ -26,6 +50,21 @@ export default function MyWallet({ wallet }) {
             <BuyerNavbar />
 
             <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+                {(flash.success || flash.error) && (
+                    <div className="mb-4 space-y-3">
+                        {flash.success && (
+                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                                {flash.success}
+                            </div>
+                        )}
+                        {flash.error && (
+                            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                                {flash.error}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <section className="relative overflow-hidden rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-[#F4EEE7] px-5 py-5 shadow-sm sm:px-6 sm:py-6">
                     <div className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-emerald-200/30 blur-3xl" />
                     <div className="pointer-events-none absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-clay-200/25 blur-2xl" />
@@ -60,6 +99,14 @@ export default function MyWallet({ wallet }) {
                             </div>
 
                             <div className="mt-5 flex flex-wrap gap-2.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowTopUpModal(true)}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3.5 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
+                                >
+                                    <Plus size={15} />
+                                    Top Up
+                                </button>
                                 <Link
                                     href={route('my-orders.index')}
                                     className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3.5 py-2 text-sm font-bold text-white transition hover:bg-clay-700"
@@ -114,6 +161,83 @@ export default function MyWallet({ wallet }) {
                         </div>
                     </div>
                 </section>
+
+                <Modal show={showTopUpModal} onClose={closeTopUpModal} maxWidth="md">
+                    <form onSubmit={submitTopUp} className="p-5 sm:p-6">
+                        <div className="flex items-start gap-3">
+                            <div className="rounded-2xl bg-emerald-100 p-2.5 text-emerald-700">
+                                <Wallet size={18} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-black text-gray-900">Top Up Wallet</h2>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Add funds to your buyer wallet using online payment.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-5">
+                            <label className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+                                Amount
+                            </label>
+                            <div className="mt-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm font-bold text-gray-500">PHP</span>
+                                    <input
+                                        type="number"
+                                        min="100"
+                                        step="0.01"
+                                        value={data.amount}
+                                        onChange={(e) => setData('amount', e.target.value)}
+                                        className="w-full border-0 bg-transparent p-0 text-2xl font-black text-gray-900 focus:outline-none focus:ring-0"
+                                        placeholder="500.00"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500">
+                                Minimum online top up is PHP 100.00.
+                            </p>
+                            {errors.amount && (
+                                <p className="mt-2 text-xs font-semibold text-red-600">{errors.amount}</p>
+                            )}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {quickAmounts.map((amount) => (
+                                <button
+                                    key={amount}
+                                    type="button"
+                                    onClick={() => setData('amount', amount)}
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                                        data.amount === amount
+                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                            : 'border-gray-200 bg-white text-gray-600 hover:border-emerald-200 hover:bg-emerald-50/60'
+                                    }`}
+                                >
+                                    PHP {Number(amount).toLocaleString()}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-2.5">
+                            <button
+                                type="button"
+                                onClick={closeTopUpModal}
+                                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="rounded-xl bg-clay-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {processing ? 'Starting...' : 'Proceed to Payment'}
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
 
                 <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-gray-100 bg-white shadow-sm">
                     <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">

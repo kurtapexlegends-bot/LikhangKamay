@@ -55,14 +55,14 @@ class StockRequestController extends Controller
 
         $totalCost = $validated['quantity'] * ($supply->unit_cost ?? 0);
 
-        StockRequest::create([
+        StockRequest::create(StockRequest::filterSchemaCompatibleAttributes([
             'user_id' => $this->sellerOwnerId(),
             'requested_by_user_id' => $this->sellerActor()->id,
             'supply_id' => $supply->id,
             'quantity' => $validated['quantity'],
             'total_cost' => $totalCost,
             'status' => StockRequest::STATUS_PENDING
-        ]);
+        ]));
 
         return redirect()->route('stock-requests.index')->with('success', 'Stock request created. Waiting for Finance approval.');
     }
@@ -132,10 +132,10 @@ class StockRequestController extends Controller
             $supply->increment('quantity', $validated['quantity']);
 
             // Sync to linked Product (Track as Supply)
-            if ($supply->product_id && $supply->product) {
+            if ($linkedProduct = $supply->product) {
                 // Bug M4 Fix: Use fresh supply quantity
                 $supply->refresh();
-                $supply->product->update(['stock' => $supply->quantity]);
+                $linkedProduct->update(['stock' => $supply->quantity]);
             }
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\StructuredAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -46,6 +47,7 @@ class ArtisanSetupController extends Controller
                 'shop_name' => ['required', 'string', 'max:30', Rule::unique('users', 'shop_name')->ignore($user->id)],
                 'phone_number' => 'required|string|max:20',
                 'street_address' => 'required|string|max:255',
+                'region' => 'required|string|max:255',
                 'city' => 'required|string',
                 'zip_code' => 'required|string|max:10',
                 'barangay' => 'required|string', 
@@ -55,9 +57,33 @@ class ArtisanSetupController extends Controller
                 'shop_name' => $validated['shop_name'],
                 'phone_number' => $validated['phone_number'],
                 'street_address' => $validated['street_address'],
+                'barangay' => $validated['barangay'],
                 'city' => $validated['city'],
+                'region' => $validated['region'],
                 'zip_code' => $validated['zip_code'],
             ]);
+
+            if (!$user->addresses()->exists()) {
+                $user->addresses()->create([
+                    'label' => 'Shop',
+                    'address_type' => 'office',
+                    'recipient_name' => $user->name,
+                    'phone_number' => $validated['phone_number'],
+                    'street_address' => $validated['street_address'],
+                    'barangay' => $validated['barangay'],
+                    'city' => $validated['city'],
+                    'region' => $validated['region'],
+                    'postal_code' => $validated['zip_code'],
+                    'full_address' => StructuredAddress::formatPhilippineAddress([
+                        'street_address' => $validated['street_address'],
+                        'barangay' => $validated['barangay'],
+                        'city' => $validated['city'],
+                        'region' => $validated['region'],
+                        'postal_code' => $validated['zip_code'],
+                    ]),
+                    'is_default' => true,
+                ]);
+            }
 
             return back(); 
         }

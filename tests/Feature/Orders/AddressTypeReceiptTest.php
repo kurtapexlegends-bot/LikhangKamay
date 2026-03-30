@@ -65,6 +65,52 @@ class AddressTypeReceiptTest extends TestCase
             ->assertSee('Total Paid', false);
     }
 
+    public function test_seller_can_open_receipt_for_owned_order(): void
+    {
+        Mail::fake();
+        Notification::fake();
+
+        $buyer = User::factory()->create();
+        $seller = User::factory()->artisanApproved()->create();
+        $product = $this->createProduct($seller, 900);
+
+        $order = Order::create([
+            'order_number' => 'ORD-SELLER-RECEIPT',
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 900,
+            'convenience_fee_amount' => 27,
+            'platform_commission_amount' => 45,
+            'seller_net_amount' => 855,
+            'total_amount' => 927,
+            'status' => 'Completed',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_method' => 'Delivery',
+            'shipping_address' => 'Unit 9 Office Plaza, Dasmarinas City',
+            'shipping_address_type' => 'office',
+        ]);
+
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'variant' => 'Standard',
+            'price' => $product->price,
+            'cost' => $product->cost_price,
+            'quantity' => 1,
+            'product_img' => null,
+        ]);
+
+        $receiptResponse = $this->actingAs($seller)->get(route('orders.receipt', $order->order_number));
+
+        $receiptResponse
+            ->assertOk()
+            ->assertSee('Order Receipt', false)
+            ->assertSee('ORD-SELLER-RECEIPT', false)
+            ->assertSee('Total Paid', false);
+    }
+
     public function test_new_delivery_address_type_can_be_saved_from_checkout(): void
     {
         Mail::fake();

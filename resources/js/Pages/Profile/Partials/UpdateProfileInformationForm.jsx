@@ -4,6 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
@@ -27,6 +28,16 @@ export default function UpdateProfileInformation({
             forceFormData: true,
         });
     };
+
+    const revokePreview = (url) => {
+        if (typeof url === 'string' && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    useEffect(() => {
+        return () => revokePreview(data.preview_url);
+    }, [data.preview_url]);
 
     return (
         <section className={className}>
@@ -77,6 +88,7 @@ export default function UpdateProfileInformation({
                                 const file = e.target.files[0];
                                 if (file) {
                                     setData('avatar', file);
+                                    revokePreview(data.preview_url);
                                     setData('preview_url', URL.createObjectURL(file));
                                 }
                             }}
@@ -107,7 +119,7 @@ export default function UpdateProfileInformation({
                                 </button>
                             )}
                             
-                            <span className="text-xs text-gray-400">JPG, GIF or PNG. Max 5MB.</span>
+                            <span className="text-xs text-gray-400">JPG, GIF or PNG. Max 10MB.</span>
                         </div>
                         <InputError className="mt-1" message={errors.avatar} />
                     </div>

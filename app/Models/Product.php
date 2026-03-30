@@ -71,7 +71,11 @@ class Product extends Model
 
     public function supply()
     {
-        return $this->hasOne(Supply::class);
+        $relation = Supply::supportsProductIdColumn()
+            ? $this->hasOne(Supply::class)
+            : $this->hasOne(Supply::class, 'name', 'name')->where('user_id', $this->user_id);
+
+        return $relation;
     }
 
     public function sponsorshipRequests()

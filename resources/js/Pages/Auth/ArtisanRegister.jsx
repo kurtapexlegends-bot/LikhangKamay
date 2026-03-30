@@ -21,6 +21,7 @@ export default function ArtisanRegister() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [legalModal, setLegalModal] = useState({ isOpen: false, type: 'seller' });
+    const [isGuidingTermsAcceptance, setIsGuidingTermsAcceptance] = useState(false);
     const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState({
         seller: false,
         sellerPrivacy: false,
@@ -45,11 +46,60 @@ export default function ArtisanRegister() {
         setLegalModal({ isOpen: false, type: legalModal.type });
     };
 
+    const openNextRequiredLegalModal = (documents = acceptedLegalDocuments) => {
+        if (!documents.seller) {
+            setLegalModal({ isOpen: true, type: 'seller' });
+            return;
+        }
+
+        if (!documents.sellerPrivacy) {
+            setLegalModal({ isOpen: true, type: 'sellerPrivacy' });
+            return;
+        }
+
+        setIsGuidingTermsAcceptance(false);
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
+        setData('terms', true);
+    };
+
+    const handleLegalModalClose = (payload = {}) => {
+        if (!payload.accepted) {
+            setIsGuidingTermsAcceptance(false);
+        }
+
+        closeLegalModal();
+    };
+
     const handleLegalAccept = () => {
-        setAcceptedLegalDocuments((previous) => ({
-            ...previous,
+        const updatedDocuments = {
+            ...acceptedLegalDocuments,
             [legalModal.type]: true,
-        }));
+        };
+
+        setAcceptedLegalDocuments(updatedDocuments);
+
+        if (isGuidingTermsAcceptance) {
+            openNextRequiredLegalModal(updatedDocuments);
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleTermsCheckboxChange = (e) => {
+        if (!e.target.checked) {
+            setData('terms', false);
+            return;
+        }
+
+        if (canEnableTermsCheckbox) {
+            setData('terms', true);
+            return;
+        }
+
+        setData('terms', false);
+        setIsGuidingTermsAcceptance(true);
+        openNextRequiredLegalModal();
     };
 
     const canEnableTermsCheckbox = acceptedLegalDocuments.seller && acceptedLegalDocuments.sellerPrivacy;
@@ -152,7 +202,7 @@ export default function ArtisanRegister() {
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
                                 required
-                                placeholder="••••••••"
+                                placeholder="********"
                             />
                             <button
                                 type="button"
@@ -178,7 +228,7 @@ export default function ArtisanRegister() {
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
                                 required
-                                placeholder="••••••••"
+                                placeholder="********"
                             />
                         </div>
                     </div>
@@ -190,8 +240,7 @@ export default function ArtisanRegister() {
                         <Checkbox
                             name="terms"
                             checked={data.terms}
-                            disabled={!canEnableTermsCheckbox}
-                            onChange={(e) => setData('terms', e.target.checked)}
+                            onChange={handleTermsCheckboxChange}
                             className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
                         />
                         <span className="ms-3 text-sm text-stone-600 leading-snug">
@@ -211,11 +260,6 @@ export default function ArtisanRegister() {
                             >
                                 Data Privacy Policy
                             </button>.
-                            {!canEnableTermsCheckbox && (
-                                <span className="mt-1 block text-xs font-medium text-stone-500">
-                                    Open both documents and scroll to the bottom of each one to enable this checkbox.
-                                </span>
-                            )}
                         </span>
                     </div>
                     <InputError message={errors.terms} className="mt-2" />
@@ -291,10 +335,11 @@ export default function ArtisanRegister() {
             {/* Legal Modal */}
             <LegalModal 
                 isOpen={legalModal.isOpen} 
-                onClose={closeLegalModal} 
+                onClose={handleLegalModalClose} 
                 onAccept={handleLegalAccept}
                 type={legalModal.type} 
             />
         </GuestLayout>
     );
 }
+

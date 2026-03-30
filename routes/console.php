@@ -28,4 +28,6 @@ Schedule::command('staff:auto-pause-inactive')->everyMinute();
 Schedule::command('orders:cancel-unpaid')->hourly();
 Schedule::command('reviews:remind')->dailyAt('10:00');
 Schedule::command('orders:remind-shipping')->dailyAt('09:00');
+Schedule::command('orders:sync-lalamove')->everyFifteenMinutes();
+Schedule::command('orders:auto-cancel-failed-deliveries')->everyFifteenMinutes();
 Schedule::command('sponsorships:expire')->daily();

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
@@ -12,7 +12,7 @@ import {
     Clock, XCircle, Printer, AlertCircle, MessageCircle, X, 
     ChevronDown, User, LogOut, AlertTriangle, Hash, MapPin, 
     PackageCheck, RotateCcw, Box, Eye, Wallet, DollarSign, Menu, Camera as CameraIcon,
-    CheckCircle, Calendar, ChevronLeft, ChevronRight
+    CheckCircle, Calendar, ChevronLeft, ChevronRight, ExternalLink, LoaderCircle
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
@@ -100,6 +100,80 @@ const humanizeAddressType = (value) => {
         .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+const isLalamoveManagedOrder = (order) => order?.shipping_method === 'Delivery' && !!order?.delivery?.external_order_id;
+
+const lalamoveStatusConfig = (status) => {
+    const normalized = String(status || '').toUpperCase();
+
+    const configs = {
+        ASSIGNING_DRIVER: {
+            label: 'Assigning Driver',
+            tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+            detail: 'Lalamove is looking for a courier.',
+        },
+        ON_GOING: {
+            label: 'On Going',
+            tone: 'border-sky-200 bg-sky-50 text-sky-700',
+            detail: 'Courier is actively handling the order.',
+        },
+        PICKED_UP: {
+            label: 'Picked Up',
+            tone: 'border-blue-200 bg-blue-50 text-blue-700',
+            detail: 'Package has already been picked up.',
+        },
+        COMPLETED: {
+            label: 'Completed',
+            tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+            detail: 'Courier marked the delivery as completed.',
+        },
+        CANCELED: {
+            label: 'Canceled',
+            tone: 'border-red-200 bg-red-50 text-red-700',
+            detail: 'Courier canceled the delivery.',
+        },
+        REJECTED: {
+            label: 'Rejected',
+            tone: 'border-red-200 bg-red-50 text-red-700',
+            detail: 'Lalamove rejected the delivery request.',
+        },
+        EXPIRED: {
+            label: 'Expired',
+            tone: 'border-amber-200 bg-amber-50 text-amber-700',
+            detail: 'The booking expired before courier completion.',
+        },
+    };
+
+    return configs[normalized] || {
+        label: normalized || 'Pending',
+        tone: 'border-gray-200 bg-gray-50 text-gray-700',
+        detail: 'Waiting for courier updates.',
+    };
+};
+
+const sellerCourierTrackingState = (order) => {
+    const base = lalamoveStatusConfig(order?.delivery?.status);
+
+    if (String(order?.delivery?.status || '').toUpperCase() === 'COMPLETED' && order?.status === 'Delivered') {
+        return {
+            ...base,
+            label: 'Awaiting Buyer',
+            tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+            detail: 'Courier completed delivery. Waiting for the buyer to confirm receipt.',
+        };
+    }
+
+    if (String(order?.delivery?.status || '').toUpperCase() === 'COMPLETED' && order?.status === 'Completed') {
+        return {
+            ...base,
+            label: 'Buyer Confirmed',
+            tone: 'border-green-200 bg-green-50 text-green-700',
+            detail: 'Courier completed delivery and the buyer already confirmed receipt.',
+        };
+    }
+
+    return base;
+};
+
 // --- MAIN COMPONENT ---
 export default function OrderManager({ auth, orders = [] }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -107,6 +181,7 @@ export default function OrderManager({ auth, orders = [] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [currentPage, setCurrentPage] = useState(1);
+    const [bookingOrderId, setBookingOrderId] = useState(null);
     const itemsPerPage = 10;
 
     // --- FLASH MESSAGE HANDLING ---
@@ -151,6 +226,12 @@ export default function OrderManager({ auth, orders = [] }) {
         isPickup: false
     });
 
+    const revokeShippingPreview = () => {
+        if (shippingModal.previewUrl?.startsWith('blob:')) {
+            URL.revokeObjectURL(shippingModal.previewUrl);
+        }
+    };
+
     const [replacementModal, setReplacementModal] = useState({
         isOpen: false,
         orderId: null,
@@ -158,6 +239,36 @@ export default function OrderManager({ auth, orders = [] }) {
         error: '',
         processing: false,
     });
+
+    const hasActiveCourierTracking = useMemo(() => {
+        return orders.some((order) => {
+            if (!isLalamoveManagedOrder(order)) {
+                return false;
+            }
+
+            return !['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED'].includes(String(order?.delivery?.status || '').toUpperCase());
+        });
+    }, [orders]);
+
+    useEffect(() => {
+        if (!hasActiveCourierTracking || typeof window === 'undefined') {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(() => {
+            if (document.hidden) {
+                return;
+            }
+
+            router.reload({
+                only: ['orders'],
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }, 15000);
+
+        return () => window.clearInterval(intervalId);
+    }, [hasActiveCourierTracking]);
 
     // --- FILTER LOGIC ---
     const filteredOrders = useMemo(() => {
@@ -265,6 +376,7 @@ export default function OrderManager({ auth, orders = [] }) {
     };
 
     const openShippingModal = (order) => {
+        revokeShippingPreview();
         setShippingModal({
             isOpen: true,
             orderId: order.id,
@@ -275,6 +387,20 @@ export default function OrderManager({ auth, orders = [] }) {
             isPickup: order.shipping_method === 'Pick Up'
         });
     };
+
+    const closeShippingModal = () => {
+        revokeShippingPreview();
+        setShippingModal((current) => ({
+            ...current,
+            isOpen: false,
+            proofOfDelivery: null,
+            previewUrl: null,
+        }));
+    };
+
+    useEffect(() => {
+        return () => revokeShippingPreview();
+    }, [shippingModal.previewUrl]);
 
     const openReplacementModal = (orderId) => {
         setReplacementModal({
@@ -307,8 +433,16 @@ export default function OrderManager({ auth, orders = [] }) {
 
         router.post(route('orders.update', shippingModal.orderId), formData, {
             preserveScroll: true,
-            onSuccess: () => setShippingModal({ ...shippingModal, isOpen: false }),
+            onSuccess: () => closeShippingModal(),
             forceFormData: true,
+        });
+    };
+
+    const createLalamoveDelivery = (orderId) => {
+        router.post(route('orders.lalamove.store', orderId), {}, {
+            preserveScroll: true,
+            onStart: () => setBookingOrderId(orderId),
+            onFinish: () => setBookingOrderId(null),
         });
     };
 
@@ -513,16 +647,16 @@ export default function OrderManager({ auth, orders = [] }) {
                         <div className="divide-y divide-gray-100">
                             {paginatedOrders.length > 0 ? (
                                 paginatedOrders.map((order) => (
-                                    <div key={order.id} className="p-4 sm:p-5 hover:bg-gray-50/50 transition-all group">
+                                    <div key={order.id} className="px-3.5 py-3 sm:px-4 sm:py-3.5 hover:bg-gray-50/50 transition-all group">
                                         
                                         {/* Order Header */}
-                                        <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
-                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 min-w-0">
+                                        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                                            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
                                                 <div>
                                                     <span className="text-[10px] text-gray-400 uppercase tracking-wide">Order</span>
                                                     <h3 className="font-bold text-gray-900 text-sm">{order.id}</h3>
                                                 </div>
-                                                <div className="hidden sm:block h-8 w-px bg-gray-200" />
+                                                <div className="hidden sm:block h-6 w-px bg-gray-200" />
                                                 <div className="flex items-center gap-1.5 text-gray-500">
                                                     <Clock size={12} />
                                                     <span className="text-xs font-medium">{order.date}</span>
@@ -539,7 +673,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                         </div>
 
                                         {/* Info Badges */}
-                                        <div className="flex flex-wrap gap-2 mb-4">
+                                        <div className="mb-3 flex flex-wrap gap-1.5 sm:gap-2">
                                             {order.payment_status === 'pending' && order.payment_method === 'COD' && ['Pending', 'Accepted', 'Shipped', 'Ready for Pickup', 'Delivered'].includes(order.status) && (
                                                 <button
                                                     onClick={() => router.post(route('orders.payment-status', order.id), { payment_status: 'paid' })}
@@ -567,26 +701,32 @@ export default function OrderManager({ auth, orders = [] }) {
                                                 </a>
                                             )}
                                             {order.shipping_address && (
-                                                <div className="inline-flex items-center gap-1.5 text-gray-500 text-xs">
+                                                <div className="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
                                                     <MapPin size={12} />
-                                                    <span className="truncate max-w-[200px]">{order.shipping_address}</span>
-                                                    {order.shipping_address_type && (
-                                                        <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">
-                                                            {humanizeAddressType(order.shipping_address_type)}
-                                                        </span>
-                                                    )}
+                                                    <span className="truncate max-w-[180px] sm:max-w-[220px]">{order.shipping_address}</span>
+                                                </div>
+                                            )}
+                                            {order.shipping_contact_phone && (
+                                                <span className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-bold text-gray-600 inline-flex items-center gap-1">
+                                                    {order.shipping_contact_phone}
+                                                </span>
+                                            )}
+                                            {order.delivery && (
+                                                <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold ${sellerCourierTrackingState(order).tone}`}>
+                                                    <Truck size={12} />
+                                                    Lalamove {sellerCourierTrackingState(order).label}
                                                 </div>
                                             )}
                                         </div>
 
                                         {/* Order Items + Actions */}
-                                        <div className="flex flex-col lg:flex-row gap-6">
+                                        <div className="flex flex-col gap-4 lg:flex-row">
                                             
                                             {/* Items */}
-                                            <div className="flex-1 space-y-3">
+                                            <div className="flex-1 space-y-2">
                                                 {order.items.map((item, idx) => (
-                                                    <div key={idx} className="flex flex-col gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 sm:flex-row sm:items-center sm:gap-4">
-                                                        <div className="w-14 h-14 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden shrink-0">
+                                                    <div key={idx} className="flex flex-col gap-2.5 rounded-lg border border-gray-100 bg-gray-50 p-2.5 sm:flex-row sm:items-center sm:gap-3">
+                                                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
                                                             <img 
                                                                 src={item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`} 
                                                                 alt={item.name} 
@@ -595,30 +735,76 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
-                                                            <p className="text-xs text-gray-500">Var: {item.variant} • x{item.qty}</p>
+                                                            <p className="truncate text-[13px] font-bold text-gray-900">{item.name}</p>
+                                                            <p className="text-[11px] text-gray-500">Variant: {item.variant} / Qty {item.qty}</p>
                                                         </div>
-                                                        <div className="text-sm font-bold text-gray-700">₱{Number(item.price).toLocaleString()}</div>
+                                                        <div className="text-[13px] font-bold text-gray-700">PHP {Number(item.price).toLocaleString()}</div>
                                                     </div>
                                                 ))}
                                             </div>
 
                                             {/* Action Panel */}
-                                            <div className="border-t border-gray-100 pt-4 lg:w-72 lg:pt-0 lg:pl-6 lg:border-l lg:border-t-0">
-                                                <div className="text-left lg:text-right mb-4">
-                                                    <p className="text-xs text-gray-400 font-medium">Total Amount</p>
-                                                    <p className="text-2xl font-bold text-clay-700">₱{order.total}</p>
+                                            <div className="border-t border-gray-100 pt-3 lg:w-64 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+                                                <div className="mb-3 text-left lg:text-right">
+                                                    <p className="text-[11px] font-medium text-gray-400">Total</p>
+                                                    <p className="text-xl font-bold text-clay-700">PHP {order.total}</p>
                                                 </div>
                                                 
                                                 {/* Status-specific Actions */}
                                                 <div className="space-y-2">
+                                                    {order.delivery && (
+                                                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-left">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <div className="min-w-0">
+                                                                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">Courier</p>
+                                                                    <div className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-bold ${sellerCourierTrackingState(order).tone}`}>
+                                                                        <Truck size={12} />
+                                                                        {sellerCourierTrackingState(order).label}
+                                                                    </div>
+                                                                    <p className="mt-1 text-[11px] leading-4 text-gray-600">{sellerCourierTrackingState(order).detail}</p>
+                                                                </div>
+                                                                {order.delivery.share_link && (
+                                                                    <a
+                                                                        href={order.delivery.share_link}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-bold text-gray-700 hover:bg-gray-100 shrink-0"
+                                                                    >
+                                                                        Track <ExternalLink size={11} />
+                                                                    </a>
+                                                                )}
+                                                            </div>
+
+                                                            {(order.delivery.external_order_id || order.delivery.quotation_id) && (
+                                                                <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] text-gray-500">
+                                                                    {order.delivery.external_order_id && (
+                                                                        <span className="rounded-full border border-gray-200 bg-white px-2 py-0.5 font-bold text-gray-700">
+                                                                            Courier ID: {order.delivery.external_order_id}
+                                                                        </span>
+                                                                    )}
+                                                                    {order.delivery.last_updated_at && (
+                                                                        <span className="rounded-full border border-gray-200 bg-white px-2 py-0.5 font-medium">
+                                                                            Updated: {order.delivery.last_updated_at}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                            {order.delivery.pending_auto_cancel && (
+                                                                <div className="mt-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                                                                    <p className="font-bold">Return-to-sender hold active</p>
+                                                                    <p className="mt-1">Courier reported a terminal delivery failure. The system will auto-cancel this order after {order.delivery.cancel_hold_ends_at} if it does not recover.</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                     
                                                     {order.status === 'Pending' && (
                                                         <>
                                                             {canAccessMessages && (
                                                                 <button 
                                                                     onClick={() => openChat(order.user_id)} 
-                                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition shadow-sm"
+                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition hover:bg-gray-50"
                                                                 >
                                                                     <MessageCircle size={16} /> Discuss Shipping
                                                                 </button>
@@ -626,13 +812,13 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             <div className="flex gap-2">
                                                                 <button 
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Rejected')} 
-                                                                    className="flex-1 px-3 py-2.5 border border-red-200 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition"
+                                                                    className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
                                                                 >
                                                                     <XCircle size={14} className="inline mr-1" /> Reject
                                                                 </button>
                                                                 <button 
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Accepted')} 
-                                                                    className="flex-1 px-3 py-2.5 bg-clay-600 text-white rounded-xl text-xs font-bold hover:bg-clay-700 shadow-md transition"
+                                                                    className="flex-1 rounded-lg bg-clay-600 px-3 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-clay-700"
                                                                 >
                                                                     <CheckCircle2 size={14} className="inline mr-1" /> Accept
                                                                 </button>
@@ -644,7 +830,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         <>
                                                             {/* SHIPPING GUARD: Prevent shipping if unpaid & not COD */}
                                                             {(order.payment_method !== 'COD' && order.payment_status !== 'paid') ? (
-                                                                <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-center">
+                                                                <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-center">
                                                                     <div className="flex items-center justify-center gap-2 text-red-600 font-bold text-xs mb-1">
                                                                         <AlertTriangle size={14} />
                                                                         <span>Payment Pending</span>
@@ -653,63 +839,96 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                         Wait for payment before shipping.
                                                                     </p>
                                                                 </div>
-                                                            ) : (
+                                                            ) : order.shipping_method === 'Pick Up' ? (
                                                                 <button 
                                                                     onClick={() => openShippingModal(order)} 
-                                                                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-white rounded-xl text-sm font-bold shadow-lg transition-all hover:-translate-y-0.5 ${
-                                                                        order.shipping_method === 'Pick Up' 
-                                                                        ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200' 
-                                                                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
-                                                                    }`}
+                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5 hover:bg-orange-600"
                                                                 >
-                                                                    {order.shipping_method === 'Pick Up' ? (
-                                                                        <><PackageCheck size={18} /> Mark as Ready for Pickup</>
-                                                                    ) : (
-                                                                        <><Truck size={18} /> Mark as Shipped</>
-                                                                    )}
+                                                                    <PackageCheck size={18} /> Mark as Ready for Pickup
                                                                 </button>
+                                                            ) : (
+                                                                <div className="space-y-2.5">
+                                                                    <button
+                                                                        onClick={() => createLalamoveDelivery(order.id)}
+                                                                        disabled={!order.lalamove_booking_ready || bookingOrderId === order.id}
+                                                                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                                                                    >
+                                                                        {bookingOrderId === order.id ? (
+                                                                            <>
+                                                                                <LoaderCircle size={18} className="animate-spin" />
+                                                                                Creating Lalamove Delivery...
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Truck size={18} />
+                                                                                Create Lalamove Delivery
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                    {!order.lalamove_booking_ready && (
+                                                                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-left">
+                                                                            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Booking requirements</p>
+                                                                            <ul className="mt-2 space-y-1 text-[11px] text-amber-700">
+                                                                                {order.lalamove_booking_requirements.map((requirement) => (
+                                                                                    <li key={requirement} className="flex gap-2">
+                                                                                        <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                                                                                        <span>{requirement}</span>
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </>
                                                     )}
 
                                                     {(order.status === 'Shipped' || order.status === 'Ready for Pickup') && (
-                                                        <div className="text-center p-4 bg-blue-50 rounded-xl border-2 border-dashed border-blue-200">
-                                                            <Truck size={20} className="mx-auto text-blue-400 mb-2" />
+                                                        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-center">
+                                                            <Truck size={18} className="mx-auto mb-1.5 text-blue-400" />
                                                             <p className="text-xs font-bold text-blue-600">
                                                                 {order.status === 'Ready for Pickup' ? 'Ready for Pickup' : 'Shipment in Progress'}
                                                             </p>
-                                                            <p className="text-[10px] text-blue-400 mt-1">Waiting for Buyer to Receive</p>
+                                                            <p className="mt-1 text-[10px] text-blue-500">Waiting for buyer receipt</p>
                                                         </div>
                                                     )}
 
-                                                    {order.status === 'Delivered' && !order.replacement_in_progress && (
-                                                        <div className="space-y-3">
-                                                            <div className="text-center p-4 bg-green-50 rounded-xl border-2 border-dashed border-green-200">
-                                                                <CheckCircle2 size={20} className="mx-auto text-green-500 mb-2" />
-                                                                <p className="text-xs font-bold text-green-700">Delivered & Received</p>
-                                                                <p className="text-[10px] text-green-600 mt-1">Buyer confirmed receipt</p>
+                                                    {order.status === 'Delivered' && !order.replacement_in_progress && !isLalamoveManagedOrder(order) && (
+                                                        <div className="space-y-2.5">
+                                                            <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-3 text-center">
+                                                                <CheckCircle2 size={18} className="mx-auto mb-1.5 text-green-500" />
+                                                                <p className="text-xs font-bold text-green-700">Delivered to Buyer</p>
+                                                                <p className="mt-1 text-[10px] text-green-600">You can complete this after final confirmation.</p>
                                                             </div>
                                                             <button 
                                                                 onClick={() => initiateStatusUpdate(order.id, 'Completed')} 
-                                                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-green-200 hover:bg-green-700 transition-all hover:-translate-y-0.5"
+                                                                className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-200 transition-all hover:-translate-y-0.5 hover:bg-green-700"
                                                             >
                                                                 <CheckCircle2 size={18} /> Complete Transaction
                                                             </button>
                                                         </div>
                                                     )}
 
+                                                    {order.status === 'Delivered' && !order.replacement_in_progress && isLalamoveManagedOrder(order) && (
+                                                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-center">
+                                                            <CheckCircle2 size={18} className="mx-auto mb-1.5 text-emerald-500" />
+                                                            <p className="text-xs font-bold text-emerald-700">Courier marked this order delivered</p>
+                                                            <p className="mt-1 text-[10px] text-emerald-700">The buyer needs to confirm receipt before completion.</p>
+                                                        </div>
+                                                    )}
+
                                                     {order.status === 'Delivered' && order.replacement_in_progress && (
-                                                        <div className="space-y-3">
-                                                            <div className="text-center p-4 bg-teal-50 rounded-xl border-2 border-dashed border-teal-200">
-                                                                <PackageCheck size={20} className="mx-auto text-teal-500 mb-2" />
+                                                        <div className="space-y-2.5">
+                                                            <div className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-3 text-center">
+                                                                <PackageCheck size={18} className="mx-auto mb-1.5 text-teal-500" />
                                                                 <p className="text-xs font-bold text-teal-700">Waiting for Buyer Confirmation</p>
-                                                                <p className="text-[10px] text-teal-600 mt-1">Replacement stays unresolved until the buyer officially receives it.</p>
+                                                                <p className="mt-1 text-[10px] text-teal-600">Replacement stays unresolved until buyer receipt.</p>
                                                             </div>
                                                         </div>
                                                     )}
 
                                                     {order.replacement_in_progress && (
-                                                        <div className="mb-4 rounded-xl border border-teal-200 bg-teal-50 p-3 text-left">
+                                                        <div className="mb-3 rounded-lg border border-teal-200 bg-teal-50 p-3 text-left">
                                                             <div className="flex items-center gap-2">
                                                                 <PackageCheck size={16} className="text-teal-600" />
                                                                 <p className="text-sm font-bold text-teal-700">Replacement in Progress</p>
@@ -732,7 +951,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     )}
 
                                                     {order.replacement_resolved_at && (
-                                                        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-left">
+                                                        <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-left">
                                                             <div className="flex items-center gap-2">
                                                                 <CheckCircle2 size={16} className="text-emerald-600" />
                                                                 <p className="text-sm font-bold text-emerald-700">Replacement Resolved</p>
@@ -745,7 +964,7 @@ export default function OrderManager({ auth, orders = [] }) {
 
                                                     {order.status === 'Refund/Return' && (
                                                         <>
-                                                            <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl mb-4 text-left">
+                                                            <div className="mb-3 rounded-lg border border-orange-200 bg-orange-50 p-3 text-left">
                                                                 <div className="flex items-center gap-2 mb-2">
                                                                     <RotateCcw size={16} className="text-orange-600" />
                                                                     <p className="text-sm font-bold text-orange-700">Return Requested</p>
@@ -768,7 +987,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             {canAccessMessages && (
                                                                 <button 
                                                                     onClick={() => openChat(order.user_id)} 
-                                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition shadow-md"
+                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-clay-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-clay-700"
                                                                 >
                                                                     <MessageCircle size={16} /> Negotiate
                                                                 </button>
@@ -801,13 +1020,18 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     )}
 
                                                     {order.status === 'Completed' && (
-                                                        <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-green-600 font-bold text-sm hover:underline">
+                                                        <a
+                                                            href={route('orders.receipt', order.id)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-green-600 font-bold text-sm hover:underline"
+                                                        >
                                                             <Printer size={16} /> View Receipt
-                                                        </button>
+                                                        </a>
                                                     )}
 
                                                     {(order.status === 'Cancelled' || order.status === 'Rejected') && (
-                                                        <div className="text-center p-3 bg-gray-50 rounded-xl">
+                                                        <div className="rounded-lg bg-gray-50 p-3 text-center">
                                                             <p className="text-xs font-medium text-gray-500">Order {order.status.toLowerCase()}</p>
                                                         </div>
                                                     )}
@@ -896,7 +1120,7 @@ export default function OrderManager({ auth, orders = [] }) {
             </Modal>
 
             {/* --- SHIPPING MODAL --- */}
-            <Modal show={shippingModal.isOpen} onClose={() => setShippingModal({ ...shippingModal, isOpen: false })} maxWidth="md">
+            <Modal show={shippingModal.isOpen} onClose={closeShippingModal} maxWidth="md">
                 <div className="p-6">
                     <div className="flex items-center gap-4 mb-6">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${shippingModal.isPickup ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -943,6 +1167,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                         onChange={(e) => {
                                             const file = e.target.files[0];
                                             if (file) {
+                                                revokeShippingPreview();
                                                 setShippingModal({
                                                     ...shippingModal,
                                                     proofOfDelivery: file,
@@ -979,7 +1204,7 @@ export default function OrderManager({ auth, orders = [] }) {
 
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
                         <button 
-                            onClick={() => setShippingModal({ ...shippingModal, isOpen: false })} 
+                            onClick={closeShippingModal} 
                             className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition"
                         >
                             Cancel
@@ -1068,5 +1293,3 @@ export default function OrderManager({ auth, orders = [] }) {
         </div>
     );
 }
-
-

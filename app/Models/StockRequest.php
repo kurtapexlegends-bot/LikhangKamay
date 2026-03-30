@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class StockRequest extends Model
 {
     use HasFactory;
+
+    protected static ?bool $supportsRequestedByUserIdColumn = null;
 
     const STATUS_PENDING = 'pending';
 
@@ -43,5 +46,23 @@ class StockRequest extends Model
     public function supply()
     {
         return $this->belongsTo(Supply::class);
+    }
+
+    public static function supportsRequestedByUserIdColumn(): bool
+    {
+        if (static::$supportsRequestedByUserIdColumn === null) {
+            static::$supportsRequestedByUserIdColumn = Schema::hasColumn((new static())->getTable(), 'requested_by_user_id');
+        }
+
+        return static::$supportsRequestedByUserIdColumn;
+    }
+
+    public static function filterSchemaCompatibleAttributes(array $attributes): array
+    {
+        if (!static::supportsRequestedByUserIdColumn()) {
+            unset($attributes['requested_by_user_id']);
+        }
+
+        return $attributes;
     }
 }

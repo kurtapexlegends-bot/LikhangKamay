@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
@@ -31,10 +31,22 @@ export default function ShopSettings({ auth, user, stats }) {
         avatar: null,
     });
 
+    const revokePreview = (url) => {
+        if (typeof url === 'string' && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    useEffect(() => () => {
+        revokePreview(avatarPreview);
+        revokePreview(bannerPreview);
+    }, [avatarPreview, bannerPreview]);
+
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setData('avatar', file);
+            revokePreview(avatarPreview);
             setAvatarPreview(URL.createObjectURL(file));
         }
     };
@@ -43,6 +55,7 @@ export default function ShopSettings({ auth, user, stats }) {
         const file = e.target.files[0];
         if (file) {
             setData('banner_image', file);
+            revokePreview(bannerPreview);
             setBannerPreview(URL.createObjectURL(file));
         }
     };
@@ -69,13 +82,13 @@ export default function ShopSettings({ auth, user, stats }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
-            <Head title="Shop Settings — Artisan Dashboard" />
+            <Head title="Shop Settings - Artisan Dashboard" />
             <SellerSidebar active="settings" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <div className="flex-1 flex flex-col min-h-screen overflow-hidden lg:ml-56">
                 <SellerHeader
                     title="Shop Settings"
-                    subtitle="Edit your shop directly — what you see is what buyers see"
+                    subtitle="Edit your shop directly - what you see is what buyers see"
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
@@ -122,7 +135,7 @@ export default function ShopSettings({ auth, user, stats }) {
                                             <Camera className="w-6 h-6" />
                                         </div>
                                         <span className="text-sm font-semibold drop-shadow">Click to change banner</span>
-                                        <span className="text-xs text-white/70">1200×300 recommended · max 5 MB</span>
+                                        <span className="text-xs text-white/70">1200 x 300 recommended • max 5 MB</span>
                                     </div>
                                 </div>
 
@@ -196,7 +209,7 @@ export default function ShopSettings({ auth, user, stats }) {
                                             <textarea
                                                 value={data.bio}
                                                 onChange={(e) => setData('bio', e.target.value)}
-                                                placeholder="Write your artisan story — buyers love knowing the person behind the craft…"
+                                                placeholder="Write your artisan story - buyers love knowing the person behind the craft..."
                                                 maxLength={500}
                                                 rows={3}
                                                 className="w-full text-stone-600 text-[13px] leading-relaxed bg-transparent border border-transparent hover:border-stone-200 focus:border-orange-300 focus:bg-white focus:outline-none rounded-xl px-2 pt-2 pb-1 -mx-2 transition-all resize-none placeholder-stone-300"
@@ -216,16 +229,16 @@ export default function ShopSettings({ auth, user, stats }) {
                                     <div className="flex bg-stone-50 rounded-2xl border border-stone-100 p-1.5 self-center md:self-start overflow-hidden shrink-0">
                                         <div className="px-5 py-2 text-center border-r border-stone-200">
                                             <p className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-0.5">Products</p>
-                                            <p className="text-xl font-bold text-stone-900">{stats?.products ?? '—'}</p>
+                                            <p className="text-xl font-bold text-stone-900">{stats?.products ?? '-'}</p>
                                         </div>
                                         <div className="px-5 py-2 text-center border-r border-stone-200">
                                             <p className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-0.5">Sales</p>
-                                            <p className="text-xl font-bold text-stone-900">{stats?.sales ?? '—'}</p>
+                                            <p className="text-xl font-bold text-stone-900">{stats?.sales ?? '-'}</p>
                                         </div>
                                         <div className="px-5 py-2 text-center">
                                             <p className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-0.5">Rating</p>
                                             <div className="flex items-center justify-center gap-1 text-xl font-bold text-stone-900">
-                                                {stats?.rating ?? '—'} <Star size={14} className="fill-amber-400 text-amber-400 -mt-0.5" />
+                                                {stats?.rating ?? '-'} <Star size={14} className="fill-amber-400 text-amber-400 -mt-0.5" />
                                             </div>
                                         </div>
                                     </div>
@@ -276,7 +289,7 @@ export default function ShopSettings({ auth, user, stats }) {
                                             </h3>
                                             <div className="flex items-end justify-between mt-auto">
                                                 <div className="font-bold text-sm text-stone-900 tracking-tight">
-                                                    ₱{Number(product.price).toLocaleString('en-PH')}
+                                                    PHP {Number(product.price).toLocaleString('en-PH')}
                                                 </div>
                                                 {product.sold > 0 && (
                                                     <span className="text-[10px] text-stone-500 font-medium bg-stone-100 px-1.5 py-0.5 rounded-md">{product.sold} sold</span>
@@ -326,7 +339,7 @@ export default function ShopSettings({ auth, user, stats }) {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                                         </svg>
-                                        Saving…
+                                        Saving...
                                     </>
                                 ) : (
                                     <>

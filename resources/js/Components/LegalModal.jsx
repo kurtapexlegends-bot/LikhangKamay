@@ -236,11 +236,11 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                                     <ul className="text-clay-700 text-xs space-y-1">
                                         <li className="flex items-start gap-1.5">
                                             <Check size={12} className="mt-0.5 flex-shrink-0" />
-                                            Upload within 30 days of listing
+                                            Products stay in Draft until a .glb or .gltf model is uploaded
                                         </li>
                                         <li className="flex items-start gap-1.5">
                                             <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
-                                            Products may be delisted without 3D models
+                                            Active listings require a 3D model in 3D Manager
                                         </li>
                                         <li className="flex items-start gap-1.5">
                                             <Check size={12} className="mt-0.5 flex-shrink-0" />

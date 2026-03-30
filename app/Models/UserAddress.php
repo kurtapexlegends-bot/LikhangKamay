@@ -15,6 +15,7 @@ class UserAddress extends Model
         'address_type',
         'recipient_name',
         'phone_number',
+        'street_address',
         'region',
         'city',
         'barangay',

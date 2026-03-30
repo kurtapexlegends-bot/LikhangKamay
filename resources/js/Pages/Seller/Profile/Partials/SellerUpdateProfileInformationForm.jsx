@@ -2,8 +2,10 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
 import { Transition } from '@headlessui/react';
 import { useForm, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 export default function SellerUpdateProfileInformation({
     mustVerifyEmail,
@@ -19,7 +21,10 @@ export default function SellerUpdateProfileInformation({
             shop_name: user.shop_name || '',
             phone_number: user.phone_number || '',
             street_address: user.street_address || '',
+            barangay: user.barangay || '',
             city: user.city || '',
+            region: user.region || '',
+            zip_code: user.zip_code || '',
             avatar: null,
             preview_url: null,
         });
@@ -30,6 +35,16 @@ export default function SellerUpdateProfileInformation({
             forceFormData: true,
         });
     };
+
+    const revokePreview = (url) => {
+        if (typeof url === 'string' && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    useEffect(() => {
+        return () => revokePreview(data.preview_url);
+    }, [data.preview_url]);
 
     return (
         <section className={className}>
@@ -81,6 +96,7 @@ export default function SellerUpdateProfileInformation({
                                 const file = e.target.files[0];
                                 if (file) {
                                     setData('avatar', file);
+                                    revokePreview(data.preview_url);
                                     setData('preview_url', URL.createObjectURL(file));
                                 }
                             }}
@@ -111,7 +127,7 @@ export default function SellerUpdateProfileInformation({
                                 </button>
                             )}
 
-                            <span className="text-[10px] text-gray-400">JPG, GIF or PNG. Max 5MB.</span>
+                            <span className="text-[10px] text-gray-400">JPG, GIF or PNG. Max 10MB.</span>
                         </div>
                         <InputError className="mt-1" message={errors.avatar} />
                     </div>
@@ -151,7 +167,7 @@ export default function SellerUpdateProfileInformation({
                     />
                 </div>
 
-                {/* Primary Phone (Read Only) */}
+                {/* Primary Phone */}
                 <div>
                     <InputLabel htmlFor="phone_number" value="Primary Phone Number (Manage additional numbers in Address Book)" />
                     <TextInput
@@ -160,31 +176,23 @@ export default function SellerUpdateProfileInformation({
                         value={data.phone_number}
                         disabled={true}
                     />
+                    <InputError className="mt-2" message={errors.phone_number} />
                 </div>
 
-                {/* Primary Address (Read Only) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <InputLabel htmlFor="street_address" value="Primary Street Address" />
-                        <TextInput
-                            id="street_address"
-                            className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-                            value={data.street_address}
-                            disabled={true}
-                        />
-                    </div>
-                     <div>
-                        <InputLabel htmlFor="city" value="Primary City / Municipality" />
-                        <TextInput
-                            id="city"
-                            className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-                            value={data.city}
-                            disabled={true}
-                        />
-                    </div>
+                {/* Primary Address */}
+                <div className="space-y-4">
+                    <StructuredAddressFields
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        fieldNames={{ postal_code: 'zip_code' }}
+                        helperText=""
+                        readOnly
+                        showPreview={false}
+                    />
                 </div>
                 <div className="mt-1 text-xs text-gray-500 italic">
-                    Primary address cannot be changed directly. Use the Address Book below to add additional addresses and contact numbers.
+                    Default Address Book is used first for courier pickup. This saved profile address is the fallback.
                 </div>
 
                 <div className="flex items-center gap-4">

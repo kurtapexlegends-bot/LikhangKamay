@@ -52,4 +52,17 @@ return [
         'secret_key' => env('PAYMONGO_SECRET_KEY'),
     ],
 
+    'lalamove' => [
+        'api_key' => env('LALAMOVE_API_KEY'),
+        'api_secret' => env('LALAMOVE_API_SECRET'),
+        'environment' => env('LALAMOVE_ENV', 'sandbox'),
+        'market' => env('LALAMOVE_MARKET', 'PH'),
+        'service_type' => env('LALAMOVE_SERVICE_TYPE', 'MOTORCYCLE'),
+        'webhook_secret' => env('LALAMOVE_WEBHOOK_SECRET'),
+    ],
+
+    'nominatim' => [
+        'base_url' => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
+    ],
+
 ];

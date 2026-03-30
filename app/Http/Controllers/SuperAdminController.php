@@ -18,6 +18,7 @@ use App\Mail\ArtisanRejected;
 use App\Models\ArtisanStatusLog;
 use App\Models\UserTierLog;
 use App\Services\WalletService;
+use App\Support\StructuredAddress;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuperAdminController extends Controller
@@ -616,6 +617,14 @@ class SuperAdminController extends Controller
             ->orderBy('setup_completed_at', 'asc')
             ->get()
             ->map(function($user) {
+                $address = StructuredAddress::formatPhilippineAddress([
+                    'street_address' => $user->street_address,
+                    'barangay' => $user->barangay,
+                    'city' => $user->city,
+                    'region' => $user->region,
+                    'postal_code' => $user->zip_code,
+                ]);
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -623,7 +632,7 @@ class SuperAdminController extends Controller
                     'avatar' => $user->avatar,
                     'shop_name' => $user->shop_name,
                     'phone_number' => $user->phone_number,
-                    'address' => $user->street_address . ', ' . $user->city . ' ' . $user->zip_code,
+                    'address' => $address,
                     'business_permit' => $user->business_permit ? asset('storage/' . $user->business_permit) : null,
                     'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
                     'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
@@ -755,6 +764,13 @@ class SuperAdminController extends Controller
     public function viewArtisan($id)
     {
         $artisan = User::where('role', 'artisan')->findOrFail($id);
+        $address = StructuredAddress::formatPhilippineAddress([
+            'street_address' => $artisan->street_address,
+            'barangay' => $artisan->barangay,
+            'city' => $artisan->city,
+            'region' => $artisan->region,
+            'postal_code' => $artisan->zip_code,
+        ]);
 
         return Inertia::render('Admin/ViewArtisan', [
             'artisan' => [
@@ -763,7 +779,7 @@ class SuperAdminController extends Controller
                 'email' => $artisan->email,
                 'shop_name' => $artisan->shop_name,
                 'phone_number' => $artisan->phone_number,
-                'address' => $artisan->street_address . ', ' . $artisan->city . ' ' . $artisan->zip_code,
+                'address' => $address,
                 'artisan_status' => $artisan->artisan_status,
                 'artisan_rejection_reason' => $artisan->artisan_rejection_reason,
                 'business_permit' => $artisan->business_permit ? asset('storage/' . $artisan->business_permit) : null,

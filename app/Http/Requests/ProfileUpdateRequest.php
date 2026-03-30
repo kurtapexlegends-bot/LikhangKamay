@@ -29,8 +29,11 @@ class ProfileUpdateRequest extends FormRequest
             'shop_name' => ['nullable', 'string', 'max:255'],
             'phone_number' => ['nullable', 'string', 'max:20'],
             'street_address' => ['nullable', 'string', 'max:255'],
+            'barangay' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
-            'avatar' => ['nullable', 'image', 'max:5120'], // Max 5MB
+            'region' => ['nullable', 'string', 'max:255'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'avatar' => ['nullable', 'image', 'max:10240'], // Max 10MB
         ];
     }
 }

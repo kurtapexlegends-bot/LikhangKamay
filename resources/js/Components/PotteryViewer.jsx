@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stage } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 
 function PlaceholderVase(props) {
   const meshRef = useRef();
@@ -18,12 +18,17 @@ function PlaceholderVase(props) {
 export default function PotteryViewer() {
   return (
     <div className="h-full w-full bg-transparent"> 
-      {/* Light background for the canvas itself */}
       <Canvas shadows dpr={[1, 2]} camera={{ fov: 45 }}>
-        {/* 'rembrandt' gives a nice studio lighting effect */}
-        <Stage environment="city" intensity={0.5} contactShadow={{ opacity: 0.2, blur: 3 }}>
-          <PlaceholderVase />
-        </Stage>
+        <color attach="background" args={['#f8fafc']} />
+        <ambientLight intensity={0.9} />
+        <hemisphereLight intensity={0.55} groundColor="#d6d3d1" />
+        <directionalLight position={[4, 6, 5]} intensity={1.1} castShadow />
+        <directionalLight position={[-3, 2, -4]} intensity={0.35} />
+        <PlaceholderVase />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.05, 0]} receiveShadow>
+          <planeGeometry args={[8, 8]} />
+          <shadowMaterial transparent opacity={0.18} />
+        </mesh>
         <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={false} />
       </Canvas>
     </div>

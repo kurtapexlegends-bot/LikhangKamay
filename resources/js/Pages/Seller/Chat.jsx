@@ -13,6 +13,7 @@ import OrderContextCard, { SellerOrderActionBar } from '@/Components/Chat/OrderC
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import MediaViewer from '@/Components/Chat/MediaViewer';
+import { formatStructuredAddress } from '@/lib/addressFormatting';
 
 export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -29,6 +30,19 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const imageInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
     const lastTypingSignal = useRef(0);
+    const currentChatUserAddress = formatStructuredAddress({
+        street_address: currentChatUser?.street_address,
+        barangay: currentChatUser?.barangay,
+        city: currentChatUser?.city,
+        region: currentChatUser?.region,
+        postal_code: currentChatUser?.zip_code,
+    });
+
+    const revokeAttachmentPreview = () => {
+        if (attachmentPreview?.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(attachmentPreview.url);
+        }
+    };
 
     const { data, setData, post, reset, processing } = useForm({
         receiver_id: currentChatUser?.id || '',
@@ -45,6 +59,10 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        return () => revokeAttachmentPreview();
+    }, [attachmentPreview]);
 
     // --- REAL-TIME POLLING ---
     useEffect(() => {
@@ -110,6 +128,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         post(route('chat.store'), {
             onSuccess: () => {
                 reset('message', 'attachment');
+                revokeAttachmentPreview();
                 setAttachment(null);
                 setAttachmentPreview(null);
                 setShowEmojiPicker(false);
@@ -135,6 +154,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            revokeAttachmentPreview();
             setData('attachment', file);
             setAttachment(file);
             const previewUrl = URL.createObjectURL(file);
@@ -149,6 +169,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     };
 
     const removeAttachment = () => {
+        revokeAttachmentPreview();
         setData('attachment', null);
         setAttachment(null);
         setAttachmentPreview(null);
@@ -683,7 +704,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                 <MapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-medium text-gray-900 break-words">
-                                                        {currentChatUser.street_address ? `${currentChatUser.street_address}${currentChatUser.city ? `, ${currentChatUser.city}` : ''}` : 'No address provided'}
+                                                        {currentChatUserAddress || 'No address provided'}
                                                     </p>
                                                     <p className="text-xs text-gray-500">Address</p>
                                                 </div>

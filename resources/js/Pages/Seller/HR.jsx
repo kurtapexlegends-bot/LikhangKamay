@@ -2,6 +2,7 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
@@ -499,6 +500,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [showEditPassword, setShowEditPassword] = useState(false);
     const [attendanceModalEmployee, setAttendanceModalEmployee] = useState(null);
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
     const { addToast } = useToast();
     const canManageStaffAccounts = !!staffProvisioning.canManageStaffAccounts;
     const requiresStaffSchemaUpdate = !!staffProvisioning.requiresStaffSchemaUpdate;
@@ -726,12 +728,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         });
     };
 
+    const closeConfirmModal = () => {
+        setConfirmModal({ isOpen: false, type: null, id: null });
+    };
+
     const deleteEmployee = (id) => {
-        if(confirm('Remove this employee? This will stop their payroll calculation.')) {
-            router.delete(route('hr.destroy', id), {
-                onSuccess: (page) => addToast(getFlashSuccessMessage(page, 'Employee removed'), 'success')
-            });
-        }
+        setConfirmModal({ isOpen: true, type: 'employee', id });
     };
 
     const editHasLinkedLogin = !!editingEmployee?.has_login_account;
@@ -821,9 +823,26 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const deletePayroll = (id) => {
-        if(confirm('Are you sure you want to delete this payroll request?')) {
-            router.delete(route('hr.payroll.destroy', id), {
-                onSuccess: () => addToast('Payroll request deleted', 'success')
+        setConfirmModal({ isOpen: true, type: 'payroll', id });
+    };
+
+    const confirmDeleteAction = () => {
+        if (!confirmModal.id) {
+            return;
+        }
+
+        if (confirmModal.type === 'employee') {
+            router.delete(route('hr.destroy', confirmModal.id), {
+                onSuccess: (page) => addToast(getFlashSuccessMessage(page, 'Employee removed'), 'success'),
+                onFinish: closeConfirmModal,
+            });
+            return;
+        }
+
+        if (confirmModal.type === 'payroll') {
+            router.delete(route('hr.payroll.destroy', confirmModal.id), {
+                onSuccess: () => addToast('Payroll request deleted', 'success'),
+                onFinish: closeConfirmModal,
             });
         }
     };
@@ -1924,6 +1943,20 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
                 </form>
             </Modal>
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeConfirmModal}
+                onConfirm={confirmDeleteAction}
+                title={confirmModal.type === 'employee' ? 'Remove employee?' : 'Delete payroll request?'}
+                message={confirmModal.type === 'employee'
+                    ? 'This will remove the employee record and stop their payroll calculation.'
+                    : 'This payroll request will be removed from the list.'}
+                icon={Trash2}
+                iconBg="bg-red-50 text-red-600"
+                confirmText={confirmModal.type === 'employee' ? 'Remove' : 'Delete'}
+                confirmColor="bg-red-600 hover:bg-red-700"
+            />
         </div>
     );
 }

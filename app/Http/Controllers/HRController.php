@@ -475,14 +475,14 @@ class HRController extends Controller
                 $sellerId = $seller->id;
                 $otRate = $seller->overtime_rate ?? 50.00;
 
-                $payroll = \App\Models\Payroll::create([
+                $payroll = \App\Models\Payroll::create(\App\Models\Payroll::filterSchemaCompatibleAttributes([
                     'user_id' => $sellerId,
                     'requested_by_user_id' => $this->sellerActor()->id,
                     'month' => $validated['month'],
                     'total_amount' => 0,
                     'employee_count' => $employeeCount,
                     'status' => 'Pending',
-                ]);
+                ]));
 
                 $workingDays = $seller->payroll_working_days ?? 22;
 

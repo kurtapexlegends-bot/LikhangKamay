@@ -12,6 +12,7 @@ import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import CompactPagination from '@/Components/CompactPagination';
+import External3DToolLink from '@/Components/External3DToolLink';
 import { 
     Package, Search, AlertCircle, Cuboid, 
     TrendingUp, X, Tag, Image as ImageIcon,
@@ -137,6 +138,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         cover_photo: null,
         gallery: [],
         model_3d: null,
+        model_3d_path: null,
     });
 
     // Deduction Form (Phase 1)
@@ -147,6 +149,18 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     });
 
     const [previews, setPreviews] = useState({ cover: null, gallery: [] });
+    const hasThreeDReady = Boolean(data.model_3d || data.model_3d_path);
+
+    const revokeBlobUrl = (url) => {
+        if (typeof url === 'string' && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    const cleanupPreviews = () => {
+        revokeBlobUrl(previews.cover);
+        (previews.gallery || []).forEach(revokeBlobUrl);
+    };
 
     // --- SORT LOGIC ---
     const requestSort = (key) => {
@@ -218,6 +232,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const generateSKU = () => 'LK-' + Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 
     const openAddModal = () => {
+        cleanupPreviews();
         setSelectedProduct(null);
         reset(); 
         clearErrors();
@@ -232,17 +247,19 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             clay_type: 'Stoneware',
             glaze_type: 'Matte',
             firing_method: 'Electric Kiln',
-            status: 'Active',
+            status: 'Draft',
             lead_time: 3,
             colors: [],
             retained_gallery: [],
             gallery: [],
+            model_3d_path: null,
             track_as_supply: false,
         });
         setProductModalOpen(true);
     };
 
     const openEditModal = (product) => {
+        cleanupPreviews();
         setSelectedProduct(product);
         clearErrors();
         setActiveFormTab('Essentials');
@@ -257,6 +274,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             cover_photo: null, 
             gallery: [],
             model_3d: null,
+            status: product.model_3d_path || product.status !== 'Active' ? product.status : 'Draft',
             track_as_supply: product.track_as_supply || false,
         });
         setPreviews({
@@ -264,6 +282,11 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             gallery: product.gallery_paths ? product.gallery_paths.map(path => `/storage/${path}`) : [] 
         });
         setProductModalOpen(true);
+    };
+
+    const closeProductModal = () => {
+        cleanupPreviews();
+        setProductModalOpen(false);
     };
 
     const handleFileChange = (e, field) => {
@@ -279,6 +302,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             }));
         } else if (field === 'cover_photo') {
             setData('cover_photo', file);
+            if (previews.cover) {
+                revokeBlobUrl(previews.cover);
+            }
             setPreviews(prev => ({ ...prev, cover: file ? URL.createObjectURL(file) : null }));
         } else {
             setData(field, file);
@@ -304,6 +330,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         // Remove from previews
         setPreviews(prev => {
             const updatedPreviews = [...prev.gallery];
+            revokeBlobUrl(updatedPreviews[indexToRemove]);
             updatedPreviews.splice(indexToRemove, 1);
             return { ...prev, gallery: updatedPreviews };
         });
@@ -329,6 +356,16 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         setData('colors', data.colors.filter(c => c !== colorToRemove));
     };
 
+    useEffect(() => {
+        if (!hasThreeDReady && data.status === 'Active') {
+            setData('status', 'Draft');
+        }
+    }, [data.status, hasThreeDReady]);
+
+    useEffect(() => {
+        return () => cleanupPreviews();
+    }, []);
+
     // --- SUBMIT LOGIC ---
     const submitProduct = (e) => {
         e.preventDefault();
@@ -344,9 +381,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
         const options = {
             onSuccess: () => {
-                setProductModalOpen(false);
+                closeProductModal();
                 reset();
-                addToast('Product saved successfully', 'success');
             },
             onError: (err) => {
                 console.error("Validation Failed:", err);
@@ -379,7 +415,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             router.post(route('products.restock', selectedProduct.id), { amount: restockAmount }, { 
                 onSuccess: () => {
                     setRestockModalOpen(false);
-                    addToast(`Successfully restocked ${selectedProduct.name}`, 'success');
                 } 
             }); 
         }
@@ -395,14 +430,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             router.post(route('products.activate', selectedProduct.id), {}, { 
                 onSuccess: () => {
                     setArchiveModalOpen(false);
-                    addToast(`Activated ${selectedProduct.name}`, 'success');
                 } 
             });
         } else {
             router.post(route('products.archive', selectedProduct.id), {}, { 
                 onSuccess: () => {
                     setArchiveModalOpen(false);
-                    addToast(`Archived ${selectedProduct.name}`, 'success');
                 }
             }); 
         }
@@ -424,7 +457,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             onSuccess: () => {
                 setDeductModalOpen(false);
                 deductForm.reset();
-                addToast('Stock manually deducted successfully', 'success');
             },
             onError: (err) => {
                 console.error("Deduction Failed:", err);
@@ -711,7 +743,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             </Modal>
 
             {/* --- ADD/EDIT MODAL --- */}
-            <Modal show={productModalOpen} onClose={() => setProductModalOpen(false)} maxWidth="2xl">
+            <Modal show={productModalOpen} onClose={closeProductModal} maxWidth="2xl">
                 <form onSubmit={submitProduct} className="p-5 sm:p-6 max-h-[82dvh] sm:max-h-[85vh] overflow-y-auto">
                     
                     {/* --- TABBED FORM HEADER --- */}
@@ -789,10 +821,15 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                             value={data.status} 
                                             onChange={(e) => setData('status', e.target.value)}
                                         >
-                                            <option value="Active">Active</option>
+                                            <option value="Active" disabled={!hasThreeDReady}>Active</option>
                                             <option value="Draft">Draft</option>
                                             <option value="Archived">Archived</option>
                                         </select>
+                                        <p className={`mt-2 text-[11px] ${hasThreeDReady ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                            {hasThreeDReady
+                                                ? '3D model ready. You can list this product as Active.'
+                                                : 'Active listings require a 3D model. Products without one stay in Draft.'}
+                                        </p>
                                     </div>
 
                                     <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
@@ -932,7 +969,11 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                                                         <button 
                                                             type="button" 
-                                                            onClick={() => { setData('cover_photo', null); setPreviews(prev => ({ ...prev, cover: null })) }} 
+                                                            onClick={() => {
+                                                                revokeBlobUrl(previews.cover);
+                                                                setData('cover_photo', null);
+                                                                setPreviews(prev => ({ ...prev, cover: null }));
+                                                            }} 
                                                             className="bg-white text-red-600 px-4 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-red-50 transition"
                                                         >
                                                             Remove Photo
@@ -996,7 +1037,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         </div>
 
                                         <div className="pt-6 border-t border-gray-100">
-                                            <InputLabel value="3D Model *" className="mb-2" />
+                                            <InputLabel value="3D Model" className="mb-2" />
                                             
                                             {/* Case 1: New File Selected */}
                                             {data.model_3d ? (
@@ -1032,12 +1073,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                         <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:shadow-sm transition"><Cuboid size={20} className="text-gray-400 group-hover:text-clay-600" /></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm font-bold text-gray-700">Upload .glb / .gltf</p>
-                                                            <p className="text-[10px] text-gray-400 group-hover:text-clay-500">Required. Bring your product to life in 3D.</p>
+                                                            <p className="text-[10px] text-gray-400 group-hover:text-clay-500">Required before the product can be listed as Active.</p>
                                                         </div>
                                                         <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
                                                     </label>
                                                 )
                                             )}
+                                            <External3DToolLink />
                                             <InputError message={errors.model_3d} className="mt-2" />
                                         </div>
                                     </div>
@@ -1048,7 +1090,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
                     {/* FOOTER ACTIONS */}
                     <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-100">
-                        <button type="button" onClick={() => setProductModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-sm px-2">Cancel</button>
+                        <button type="button" onClick={closeProductModal} className="text-gray-400 hover:text-gray-600 font-bold text-sm px-2">Cancel</button>
                         
                         <div className="flex gap-3">
                             {activeFormTab !== 'Essentials' && (
@@ -1147,4 +1189,3 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         </div>
     );
 }
-

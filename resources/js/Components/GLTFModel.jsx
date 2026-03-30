@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, Suspense } from 'react';
+import React, { useRef, useEffect, Suspense, useMemo } from 'react';
 import { useGLTF, useAnimations } from '@react-three/drei';
+import * as THREE from 'three';
 
 /**
  * GLTFModel Component
@@ -15,6 +16,8 @@ export default function GLTFModel({
     scale = 1, 
     position = [0, 0, 0], 
     rotation = [0, 0, 0],
+    normalize = true,
+    fitSize = 2.4,
     ...props 
 }) {
     const groupRef = useRef();
@@ -35,8 +38,31 @@ export default function GLTFModel({
         }
     }, [actions, animations]);
 
-    // Clone scene to avoid mutation issues when same model used multiple times
-    const clonedScene = scene.clone();
+    const clonedScene = useMemo(() => {
+        const clone = scene.clone();
+
+        clone.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        if (normalize) {
+            const box = new THREE.Box3().setFromObject(clone);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDimension = Math.max(size.x, size.y, size.z) || 1;
+            const normalizedScale = fitSize / maxDimension;
+
+            clone.position.x -= center.x;
+            clone.position.y -= box.min.y;
+            clone.position.z -= center.z;
+            clone.scale.setScalar(normalizedScale);
+        }
+
+        return clone;
+    }, [scene, normalize, fitSize]);
 
     return (
         <group ref={groupRef} {...props} dispose={null}>

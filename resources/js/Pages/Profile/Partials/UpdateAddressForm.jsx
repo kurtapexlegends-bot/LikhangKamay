@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { useForm, router } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
+import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Plus, Trash2, CheckCircle, MapPin } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, MapPin, Pencil, AlertTriangle } from 'lucide-react';
+import { formatStructuredAddress } from '@/lib/addressFormatting';
 
 const ADDRESS_TYPES = [
     { value: 'home', label: 'Home' },
@@ -13,38 +16,107 @@ const ADDRESS_TYPES = [
 ];
 
 const humanizeAddressType = (value) => ADDRESS_TYPES.find((type) => type.value === value)?.label || 'Other';
+const resolveAddressDisplay = (address) => address?.full_address || formatStructuredAddress({
+    street_address: address?.street_address,
+    barangay: address?.barangay,
+    city: address?.city,
+    region: address?.region,
+    postal_code: address?.postal_code,
+});
 
 export default function UpdateAddressForm({ addresses = [], className = '' }) {
     const [isAdding, setIsAdding] = useState(false);
+    const [editingAddressId, setEditingAddressId] = useState(null);
+    const [deleteAddressTarget, setDeleteAddressTarget] = useState(null);
 
-    const { data, setData, post, processing, errors, reset, wasSuccessful } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         label: 'Home',
         address_type: 'home',
         recipient_name: '',
         phone_number: '',
-        full_address: '',
+        street_address: '',
+        barangay: '',
         region: '',
         city: '',
+        postal_code: '',
     });
+
+    const resetFormState = () => {
+        reset();
+        setData({
+            label: 'Home',
+            address_type: 'home',
+            recipient_name: '',
+            phone_number: '',
+            street_address: '',
+            barangay: '',
+            region: '',
+            city: '',
+            postal_code: '',
+        });
+        setIsAdding(false);
+        setEditingAddressId(null);
+    };
+
+    const startAdding = () => {
+        resetFormState();
+        setIsAdding(true);
+    };
+
+    const startEditing = (address) => {
+        setData({
+            label: address.label || humanizeAddressType(address.address_type).toLowerCase(),
+            address_type: address.address_type || 'home',
+            recipient_name: address.recipient_name || '',
+            phone_number: address.phone_number || '',
+            street_address: address.street_address || resolveAddressDisplay(address) || '',
+            barangay: address.barangay || '',
+            region: address.region || '',
+            city: address.city || '',
+            postal_code: address.postal_code || '',
+        });
+        setEditingAddressId(address.id);
+        setIsAdding(false);
+    };
+
+    const cancelForm = () => {
+        resetFormState();
+    };
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('user-addresses.store'), {
-            onSuccess: () => {
-                reset();
-                setIsAdding(false);
-            },
-        });
+        const onSuccess = () => {
+            resetFormState();
+        };
+
+        if (editingAddressId) {
+            router.patch(route('user-addresses.update', editingAddressId), data, { onSuccess });
+            return;
+        }
+
+        post(route('user-addresses.store'), { onSuccess });
     };
 
     const setDefault = (id) => {
         router.patch(route('user-addresses.set-default', id));
     };
 
-    const deleteAddress = (id) => {
-        if (confirm('Are you sure you want to delete this address?')) {
-            router.delete(route('user-addresses.destroy', id));
+    const openDeleteAddressModal = (address) => {
+        setDeleteAddressTarget(address);
+    };
+
+    const closeDeleteAddressModal = () => {
+        setDeleteAddressTarget(null);
+    };
+
+    const deleteAddress = () => {
+        if (!deleteAddressTarget) {
+            return;
         }
+
+        router.delete(route('user-addresses.destroy', deleteAddressTarget.id), {
+            onFinish: closeDeleteAddressModal,
+        });
     };
 
     return (
@@ -57,15 +129,20 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                     </p>
                 </div>
                 <button 
-                    onClick={() => setIsAdding(!isAdding)}
+                    onClick={() => (isAdding || editingAddressId ? cancelForm() : startAdding())}
                     className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
                 >
-                    <Plus size={16} /> {isAdding ? 'Cancel' : 'Add New'}
+                    {isAdding || editingAddressId ? 'Cancel' : (
+                        <>
+                            <Plus size={14} />
+                            Add New
+                        </>
+                    )}
                 </button>
             </header>
 
             {/* Address List */}
-            {!isAdding && (
+            {!isAdding && !editingAddressId && (
                 <div className="mt-6 space-y-4">
                     {addresses.length === 0 ? (
                         <p className="text-sm text-gray-400 italic">No saved addresses yet.</p>
@@ -88,23 +165,32 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                                         <p className="text-sm text-gray-900 font-medium">{addr.recipient_name} | {addr.phone_number}</p>
                                         <p className="text-sm text-gray-600 mt-1 flex gap-1">
                                             <MapPin size={14} className="mt-0.5 shrink-0" /> 
-                                            {addr.full_address}
+                                            {resolveAddressDisplay(addr)}
                                         </p>
                                     </div>
-                                    <div className="flex flex-col gap-2 items-end">
+                                    <div className="flex items-center gap-1 self-start sm:self-auto">
                                         {!addr.is_default && (
-                                            <button 
+                                            <button
                                                 onClick={() => setDefault(addr.id)}
-                                                className="text-xs text-indigo-600 hover:underline"
+                                                className="rounded-md px-2 py-1 text-[11px] font-medium text-gray-500 transition hover:bg-white hover:text-indigo-600"
                                             >
                                                 Set Default
                                             </button>
                                         )}
-                                        <button 
-                                            onClick={() => deleteAddress(addr.id)}
-                                            className="text-gray-400 hover:text-red-600 transition"
+                                        <button
+                                            onClick={() => startEditing(addr)}
+                                            className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-gray-500 transition hover:bg-white hover:text-indigo-600"
                                         >
-                                            <Trash2 size={16} />
+                                            <Pencil size={13} />
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => openDeleteAddressModal(addr)}
+                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-red-600"
+                                            aria-label={`Delete ${addr.label} address`}
+                                            title="Delete address"
+                                        >
+                                            <Trash2 size={15} />
                                         </button>
                                     </div>
                                 </div>
@@ -115,7 +201,7 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
             )}
 
             {/* Add New Form */}
-            {isAdding && (
+            {(isAdding || editingAddressId) && (
                 <form onSubmit={submit} className="mt-6 space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <div>
                         <InputLabel value="Address Type" />
@@ -180,24 +266,23 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                         <InputError className="mt-2" message={errors.recipient_name} />
                     </div>
 
-                    <div>
-                        <InputLabel htmlFor="full_address" value="Full Address (Street, Brgy, City, Province, Zip)" />
-                        <textarea
-                            id="full_address"
-                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            rows="3"
-                            value={data.full_address}
-                            onChange={(e) => setData('full_address', e.target.value)}
-                            required
-                        ></textarea>
-                        <InputError className="mt-2" message={errors.full_address} />
-                    </div>
+                    <StructuredAddressFields
+                        key={`address-form-${editingAddressId ?? 'new'}`}
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        required
+                        helperText="Save a complete address."
+                        previewLabel="Saved Address"
+                    />
 
                     <div className="flex items-center gap-4">
-                        <PrimaryButton disabled={processing}>Save Address</PrimaryButton>
+                        <PrimaryButton disabled={processing}>
+                            {editingAddressId ? 'Save Changes' : 'Save Address'}
+                        </PrimaryButton>
                         <button 
                             type="button" 
-                            onClick={() => setIsAdding(false)}
+                            onClick={cancelForm}
                             className="text-sm text-gray-500 hover:text-gray-700 underline"
                         >
                             Cancel
@@ -205,6 +290,20 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                     </div>
                 </form>
             )}
+
+            <ConfirmationModal
+                isOpen={!!deleteAddressTarget}
+                onClose={closeDeleteAddressModal}
+                onConfirm={deleteAddress}
+                title="Delete address?"
+                message={deleteAddressTarget
+                    ? `Remove ${deleteAddressTarget.label} from your address book?`
+                    : 'Are you sure you want to delete this address?'}
+                icon={AlertTriangle}
+                iconBg="bg-red-50 text-red-600"
+                confirmText="Delete"
+                confirmColor="bg-red-600 hover:bg-red-700"
+            />
         </section>
     );
 }

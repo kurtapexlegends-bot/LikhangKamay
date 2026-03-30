@@ -153,11 +153,11 @@ class ProcurementController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        Supply::create([
+        Supply::create(Supply::filterSchemaCompatibleAttributes([
             'user_id' => $this->sellerOwnerId(),
             'max_stock' => $validated['max_stock'] ?? 500, // Phase 1: Default 500
             ...$validated,
-        ]);
+        ]));
 
         return back()->with('success', 'Supply item added successfully!');
     }
@@ -182,7 +182,7 @@ class ProcurementController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $supply->update($validated);
+        $supply->update(Supply::filterSchemaCompatibleAttributes($validated));
 
         return back()->with('success', 'Supply item updated!');
     }
@@ -201,8 +201,8 @@ class ProcurementController extends Controller
         $supply->increment('quantity', $validated['quantity']);
 
         // Sync to linked Product (Track as Supply)
-        if ($supply->product_id && $supply->product) {
-            $supply->product->update(['stock' => $supply->quantity]);
+        if ($linkedProduct = $supply->product) {
+            $linkedProduct->update(['stock' => $supply->quantity]);
         }
 
         return back()->with('success', "Added {$validated['quantity']} {$supply->unit} to {$supply->name}!");
@@ -239,14 +239,14 @@ class ProcurementController extends Controller
 
         $totalCost = $validated['quantity'] * ($supply->unit_cost ?? 0);
 
-        StockRequest::create([
+        StockRequest::create(StockRequest::filterSchemaCompatibleAttributes([
             'user_id' => $this->sellerOwnerId(),
             'requested_by_user_id' => $this->sellerActor()->id,
             'supply_id' => $supply->id,
             'quantity' => $validated['quantity'],
             'total_cost' => $totalCost,
             'status' => 'pending'
-        ]);
+        ]));
 
         return redirect()->route('stock-requests.index')->with('success', 'Restock request submitted to Accounting!');
     }

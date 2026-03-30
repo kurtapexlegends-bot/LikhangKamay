@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { router, useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import { Star, Image as ImageIcon, X, Send, Loader2, Trash2, Pencil } from 'lucide-react';
@@ -49,6 +49,18 @@ const ReviewForm = ({ item, onSuccess }) => {
         photos: [],
     });
 
+    const revokeBlobPreviews = (urls) => {
+        urls.forEach((url) => {
+            if (url?.startsWith?.('blob:')) {
+                URL.revokeObjectURL(url);
+            }
+        });
+    };
+
+    useEffect(() => () => {
+        revokeBlobPreviews(previewUrls);
+    }, [previewUrls]);
+
     const handlePhotoChange = (e) => {
         const files = Array.from(e.target.files || e.dataTransfer.files || []);
         if (!files.length) return;
@@ -61,6 +73,7 @@ const ReviewForm = ({ item, onSuccess }) => {
         const nextPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
 
         if (isEditing) {
+            revokeBlobPreviews(previewUrls);
             setData('photos', acceptedFiles);
             setPreviewUrls(nextPreviews);
             return;
@@ -93,6 +106,7 @@ const ReviewForm = ({ item, onSuccess }) => {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
+                revokeBlobPreviews(previewUrls);
                 reset('photos');
                 onSuccess();
             },

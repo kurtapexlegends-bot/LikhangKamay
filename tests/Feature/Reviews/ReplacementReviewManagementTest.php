@@ -102,7 +102,7 @@ class ReplacementReviewManagementTest extends TestCase
                 'rating' => 5,
                 'comment' => 'Trying to post a second review.',
             ])
-            ->assertSessionHas('error', 'You already reviewed this product. Edit or delete it from My Orders.');
+            ->assertSessionHas('error', 'You already reviewed this product. Update or delete your existing review instead.');
     }
 
     private function createCompletedPurchase(): array
