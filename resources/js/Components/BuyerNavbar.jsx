@@ -11,9 +11,11 @@ import UserAvatar from '@/Components/UserAvatar';
 export default function BuyerNavbar() {
     const { auth, cartCount, sellerSidebar } = usePage().props;
     const user = auth?.user;
-    const buyerDisplayName = user?.name?.trim()
-        ? user.name.trim().split(/\s+/).slice(0, 2).join(' ')
-        : user?.name || 'Account';
+    const rawBuyerName = user?.name?.trim()
+        || [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
+    const buyerDisplayName = rawBuyerName
+        ? rawBuyerName.split(/\s+/).slice(0, 2).join(' ')
+        : 'Account';
     const showBuyerChat = !!user && !auth?.isStaff && user.role !== 'super_admin';
     const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
         ? route(sellerSidebar.defaultRouteName)

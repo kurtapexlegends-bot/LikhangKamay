@@ -82,7 +82,8 @@ class ProfileTest extends TestCase
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => 'test@example.com',
             ]);
 
@@ -93,6 +94,8 @@ class ProfileTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
+        $this->assertSame('Test', $user->first_name);
+        $this->assertSame('User', $user->last_name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
     }
@@ -104,7 +107,8 @@ class ProfileTest extends TestCase
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => $user->email,
             ]);
 
@@ -123,7 +127,7 @@ class ProfileTest extends TestCase
             'city' => 'Dasmarinas City',
             'barangay' => null,
             'region' => null,
-            'zip_code' => null,
+                'zip_code' => null,
         ]);
 
         $response = $this
@@ -152,6 +156,28 @@ class ProfileTest extends TestCase
         $this->assertSame('Dasmarinas City', $seller->city);
         $this->assertSame('Cavite', $seller->region);
         $this->assertSame('4114', $seller->zip_code);
+    }
+
+    public function test_profile_information_can_still_be_updated_with_legacy_name_field(): void
+    {
+        $user = User::factory()->createOne();
+
+        $response = $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => 'Legacy Name',
+                'email' => 'legacy@example.com',
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $user->refresh();
+
+        $this->assertSame('Legacy Name', $user->name);
+        $this->assertSame('Legacy', $user->first_name);
+        $this->assertSame('Name', $user->last_name);
     }
 
     public function test_user_can_update_their_saved_address(): void

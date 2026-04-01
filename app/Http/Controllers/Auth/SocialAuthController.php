@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\PersonName;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -154,10 +155,13 @@ class SocialAuthController extends Controller
         }
 
         $isArtisan = ($socialData['role'] ?? 'buyer') === 'artisan';
+        [$suggestedFirstName, $suggestedLastName] = PersonName::split($socialData['name']);
 
         return Inertia::render('Auth/CompleteProfile', [
             'email' => $socialData['email'],
             'suggestedName' => $socialData['name'],
+            'suggestedFirstName' => $suggestedFirstName,
+            'suggestedLastName' => $suggestedLastName,
             'provider' => $socialData['provider'],
             'isArtisan' => $isArtisan,
         ]);
@@ -179,20 +183,32 @@ class SocialAuthController extends Controller
         // Different validation for artisan vs buyer
         if ($isArtisan) {
             $request->validate([
-                'name' => 'required|string|max:255',
+                'first_name' => 'required_without:name|string|max:255',
+                'last_name' => 'nullable|string|max:255',
+                'name' => 'required_without:first_name|string|max:255',
                 'shop_name' => ['required', 'string', 'max:30', Rule::unique('users', 'shop_name')],
                 'password' => 'required|string|min:8|confirmed',
             ]);
         } else {
             $request->validate([
-                'name' => 'required|string|max:255',
+                'first_name' => 'required_without:name|string|max:255',
+                'last_name' => 'nullable|string|max:255',
+                'name' => 'required_without:first_name|string|max:255',
                 'password' => 'required|string|min:8|confirmed',
             ]);
         }
 
+        $name = PersonName::normalize(
+            $request->input('first_name'),
+            $request->input('last_name'),
+            $request->input('name'),
+        );
+
         // Create user with appropriate role
         $userData = [
-            'name' => $request->name,
+            'name' => $name['name'],
+            'first_name' => $name['first_name'],
+            'last_name' => $name['last_name'],
             'email' => $socialData['email'],
             'password' => Hash::make($request->password),
             'role' => $isArtisan ? 'artisan' : 'buyer',

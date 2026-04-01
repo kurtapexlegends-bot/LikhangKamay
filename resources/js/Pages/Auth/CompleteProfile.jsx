@@ -7,9 +7,14 @@ import TextInput from '@/Components/TextInput';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, CheckCircle, Store } from 'lucide-react';
 
-export default function CompleteProfile({ email, suggestedName, provider, isArtisan = false }) {
+export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false }) {
+    const suggestedNameParts = typeof suggestedName === 'string'
+        ? suggestedName.trim().split(/\s+/).filter(Boolean)
+        : [];
+
     const { data, setData, post, processing, errors } = useForm({
-        name: suggestedName || '',
+        first_name: suggestedFirstName || suggestedNameParts[0] || '',
+        last_name: suggestedLastName || suggestedNameParts.slice(1).join(' ') || '',
         shop_name: '',
         password: '',
         password_confirmation: '',
@@ -73,21 +78,34 @@ export default function CompleteProfile({ email, suggestedName, provider, isArti
                 </div>
 
                 {isArtisan ? (
-                    /* Artisan: Owner Name + Shop Name in 2 columns */
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    /* Artisan: First/Last Name + Shop Name */
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <InputLabel htmlFor="name" value="Owner Name" className="text-gray-700 font-bold mb-1.5" />
+                            <InputLabel htmlFor="first_name" value="First Name" className="text-gray-700 font-bold mb-1.5" />
                             <TextInput
-                                id="name"
-                                name="name"
-                                value={data.name}
+                                id="first_name"
+                                name="first_name"
+                                value={data.first_name}
                                 className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
-                                autoComplete="name"
+                                autoComplete="given-name"
                                 isFocused={true}
-                                onChange={(e) => setData('name', e.target.value)}
-                                placeholder="Full Name"
+                                onChange={(e) => setData('first_name', e.target.value)}
+                                placeholder="First name"
                             />
-                            <InputError message={errors.name} className="mt-2" />
+                            <InputError message={errors.first_name} className="mt-2" />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="last_name" value="Last Name" className="text-gray-700 font-bold mb-1.5" />
+                            <TextInput
+                                id="last_name"
+                                name="last_name"
+                                value={data.last_name}
+                                className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
+                                autoComplete="family-name"
+                                onChange={(e) => setData('last_name', e.target.value)}
+                                placeholder="Last name"
+                            />
+                            <InputError message={errors.last_name} className="mt-2" />
                         </div>
                         <div>
                             <InputLabel htmlFor="shop_name" value="Shop Name" className="text-gray-700 font-bold mb-1.5" />
@@ -104,20 +122,35 @@ export default function CompleteProfile({ email, suggestedName, provider, isArti
                         </div>
                     </div>
                 ) : (
-                    /* Buyer: Just Full Name */
-                    <div>
-                        <InputLabel htmlFor="name" value="Full Name" className="text-gray-700 font-bold mb-1.5" />
-                        <TextInput
-                            id="name"
-                            name="name"
-                            value={data.name}
-                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
-                            autoComplete="name"
-                            isFocused={true}
-                            onChange={(e) => setData('name', e.target.value)}
-                            placeholder="John Doe"
-                        />
-                        <InputError message={errors.name} className="mt-2" />
+                    /* Buyer: First/Last Name */
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <InputLabel htmlFor="first_name" value="First Name" className="text-gray-700 font-bold mb-1.5" />
+                            <TextInput
+                                id="first_name"
+                                name="first_name"
+                                value={data.first_name}
+                                className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
+                                autoComplete="given-name"
+                                isFocused={true}
+                                onChange={(e) => setData('first_name', e.target.value)}
+                                placeholder="John"
+                            />
+                            <InputError message={errors.first_name} className="mt-2" />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="last_name" value="Last Name" className="text-gray-700 font-bold mb-1.5" />
+                            <TextInput
+                                id="last_name"
+                                name="last_name"
+                                value={data.last_name}
+                                className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 transition-all"
+                                autoComplete="family-name"
+                                onChange={(e) => setData('last_name', e.target.value)}
+                                placeholder="Doe"
+                            />
+                            <InputError message={errors.last_name} className="mt-2" />
+                        </div>
                     </div>
                 )}
 

@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\PersonName;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
@@ -31,17 +31,27 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required_without:name|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'name' => 'required_without:first_name|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'shop_name' => 'nullable|string|max:255',
             'terms' => 'accepted', // <--- CRITICAL: Enforces terms acceptance on server
         ]);
 
+        $name = PersonName::normalize(
+            $request->input('first_name'),
+            $request->input('last_name'),
+            $request->input('name'),
+        );
+
         $role = $request->filled('shop_name') ? 'artisan' : 'buyer';
 
         $user = User::create([
-            'name' => $request->name,
+            'name' => $name['name'],
+            'first_name' => $name['first_name'],
+            'last_name' => $name['last_name'],
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $role,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\PersonName;
 use App\Support\StructuredAddress;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -47,6 +48,16 @@ class ProfileController extends Controller
     {
         $data = $request->validated();
         $user = $request->user();
+
+        $name = PersonName::normalize(
+            $data['first_name'] ?? null,
+            $data['last_name'] ?? null,
+            $data['name'] ?? $user->name,
+        );
+
+        $data['name'] = $name['name'];
+        $data['first_name'] = $name['first_name'];
+        $data['last_name'] = $name['last_name'];
 
         foreach (['phone_number', 'street_address', 'barangay', 'city', 'region', 'zip_code'] as $field) {
             if (array_key_exists($field, $data)) {

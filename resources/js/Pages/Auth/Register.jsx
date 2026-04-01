@@ -11,7 +11,8 @@ import { Eye, EyeOff, Loader2, Store, Mail, Lock, User } from 'lucide-react';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
         password_confirmation: '',
@@ -116,25 +117,46 @@ export default function Register() {
             </div>
 
             <form onSubmit={submit} className="space-y-4">
-                <div>
-                    <InputLabel htmlFor="name" value="Full Name" className="text-stone-700 font-bold mb-1.5" />
-                    <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                            <User size={18} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <InputLabel htmlFor="first_name" value="First Name" className="text-stone-700 font-bold mb-1.5" />
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                                <User size={18} />
+                            </div>
+                            <TextInput
+                                id="first_name"
+                                name="first_name"
+                                value={data.first_name}
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                autoComplete="given-name"
+                                isFocused={true}
+                                onChange={(e) => setData('first_name', e.target.value)}
+                                required
+                                placeholder="John"
+                            />
                         </div>
-                        <TextInput
-                            id="name"
-                            name="name"
-                            value={data.name}
-                            className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
-                            autoComplete="name"
-                            isFocused={true}
-                            onChange={(e) => setData('name', e.target.value)}
-                            required
-                            placeholder="John Doe"
-                        />
+                        <InputError message={errors.first_name} className="mt-2" />
                     </div>
-                    <InputError message={errors.name} className="mt-2" />
+
+                    <div>
+                        <InputLabel htmlFor="last_name" value="Last Name" className="text-stone-700 font-bold mb-1.5" />
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                                <User size={18} />
+                            </div>
+                            <TextInput
+                                id="last_name"
+                                name="last_name"
+                                value={data.last_name}
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                autoComplete="family-name"
+                                onChange={(e) => setData('last_name', e.target.value)}
+                                placeholder="Doe"
+                            />
+                        </div>
+                        <InputError message={errors.last_name} className="mt-2" />
+                    </div>
                 </div>
 
                 <div>

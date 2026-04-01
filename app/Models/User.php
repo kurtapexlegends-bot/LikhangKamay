@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\SellerEntitlementService;
 use App\Models\UserAddress;
+use App\Support\PersonName;
 use App\Support\StructuredAddress;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -25,6 +26,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
         'role',
@@ -618,6 +621,31 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     protected static function boot()
     {
         parent::boot();
+
+        static::saving(function ($user) {
+            $firstNameChanged = $user->isDirty('first_name');
+            $lastNameChanged = $user->isDirty('last_name');
+            $nameChanged = $user->isDirty('name');
+
+            if ($nameChanged) {
+                $normalized = PersonName::normalize(null, null, $user->name);
+                $user->first_name = $normalized['first_name'];
+                $user->last_name = $normalized['last_name'];
+
+                return;
+            }
+
+            if ($firstNameChanged || $lastNameChanged) {
+                $normalized = PersonName::normalize($user->first_name, $user->last_name);
+
+                if ($normalized['name'] !== '') {
+                    $user->name = $normalized['name'];
+                }
+
+                $user->first_name = $normalized['first_name'];
+                $user->last_name = $normalized['last_name'];
+            }
+        });
 
         static::creating(function ($user) {
             if ($user->role === 'artisan' && !empty($user->shop_name)) {

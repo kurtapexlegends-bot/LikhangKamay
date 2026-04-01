@@ -12,10 +12,14 @@ export default function UpdateProfileInformation({
     className = '',
 }) {
     const user = usePage().props.auth.user;
+    const fallbackNameParts = (user.name || '').trim().split(/\s+/).filter(Boolean);
+    const fallbackFirstName = fallbackNameParts[0] || '';
+    const fallbackLastName = fallbackNameParts.slice(1).join(' ');
 
     const { data, setData, post, errors, processing, recentlySuccessful } =
         useForm({
-            name: user.name,
+            first_name: user.first_name || fallbackFirstName,
+            last_name: user.last_name || fallbackLastName,
             email: user.email,
             avatar: null,
             preview_url: null,
@@ -125,20 +129,35 @@ export default function UpdateProfileInformation({
                     </div>
                 </div>
 
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <InputLabel htmlFor="first_name" value="First Name" />
 
-                    <TextInput
-                        id="name"
-                        className="mt-1 block w-full"
-                        value={data.name}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                        isFocused
-                        autoComplete="name"
-                    />
+                        <TextInput
+                            id="first_name"
+                            className="mt-1 block w-full"
+                            value={data.first_name}
+                            onChange={(e) => setData('first_name', e.target.value)}
+                            required
+                            isFocused
+                            autoComplete="given-name"
+                        />
 
-                    <InputError className="mt-2" message={errors.name} />
+                        <InputError className="mt-2" message={errors.first_name} />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="last_name" value="Last Name" />
+
+                        <TextInput
+                            id="last_name"
+                            className="mt-1 block w-full"
+                            value={data.last_name}
+                            onChange={(e) => setData('last_name', e.target.value)}
+                            autoComplete="family-name"
+                        />
+
+                        <InputError className="mt-2" message={errors.last_name} />
+                    </div>
                 </div>
 
                 <div>

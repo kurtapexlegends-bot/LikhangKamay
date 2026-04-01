@@ -19,7 +19,8 @@ class RegistrationTest extends TestCase
     public function test_new_users_can_register(): void
     {
         $response = $this->post('/register', [
-            'name' => 'Test User',
+            'first_name' => 'Test',
+            'last_name' => 'User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -33,7 +34,8 @@ class RegistrationTest extends TestCase
     public function test_new_artisans_can_register_before_completing_shop_setup(): void
     {
         $response = $this->post('/register', [
-            'name' => 'Clay Seller',
+            'first_name' => 'Clay',
+            'last_name' => 'Seller',
             'shop_name' => 'Clay Seller Studio',
             'email' => 'artisan@example.com',
             'password' => 'password',
@@ -48,6 +50,63 @@ class RegistrationTest extends TestCase
             'email' => 'artisan@example.com',
             'role' => 'artisan',
             'shop_name' => 'Clay Seller Studio',
+            'name' => 'Clay Seller',
+            'first_name' => 'Clay',
+            'last_name' => 'Seller',
+        ]);
+    }
+
+    public function test_registration_still_accepts_a_single_first_name(): void
+    {
+        $response = $this->post('/register', [
+            'first_name' => 'Madonna',
+            'last_name' => '',
+            'email' => 'madonna@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'terms' => true,
+        ]);
+
+        $response->assertRedirect(route('login', absolute: false));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'madonna@example.com',
+            'name' => 'Madonna',
+            'first_name' => 'Madonna',
+            'last_name' => null,
+        ]);
+    }
+
+    public function test_social_complete_profile_accepts_first_and_last_name_fields(): void
+    {
+        $response = $this
+            ->withSession([
+                'social_auth' => [
+                    'provider' => 'google',
+                    'id' => 'google-123',
+                    'email' => 'social@example.com',
+                    'name' => 'Social User',
+                    'avatar' => 'https://example.com/avatar.png',
+                    'role' => 'buyer',
+                    'remember' => false,
+                ],
+            ])
+            ->post(route('auth.complete-profile.store'), [
+                'first_name' => 'Social',
+                'last_name' => 'User',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+            ]);
+
+        $response->assertRedirect('/');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'social@example.com',
+            'name' => 'Social User',
+            'first_name' => 'Social',
+            'last_name' => 'User',
+            'social_provider' => 'google',
+            'social_id' => 'google-123',
         ]);
     }
 }
