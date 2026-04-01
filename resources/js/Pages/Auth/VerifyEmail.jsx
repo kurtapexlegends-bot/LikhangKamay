@@ -1,11 +1,12 @@
 import PrimaryButton from '@/Components/PrimaryButton';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Mail, RefreshCw, LogOut, CheckCircle, Clock } from 'lucide-react';
 
 export default function VerifyEmail({ status }) {
     const { post, processing } = useForm({});
+    const { flash = {} } = usePage().props;
 
     const submit = (e) => {
         e.preventDefault();
@@ -39,6 +40,13 @@ export default function VerifyEmail({ status }) {
                                         A new verification link has been sent to your email address.
                                     </p>
                                 </div>
+                            </div>
+                        )}
+
+                        {flash.error && (
+                            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+                                <p className="text-sm font-bold text-red-800">Unable to send email</p>
+                                <p className="mt-1 text-xs text-red-700">{flash.error}</p>
                             </div>
                         )}
 

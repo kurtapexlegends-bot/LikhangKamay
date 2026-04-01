@@ -30,6 +30,19 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect('/shop');
     }
 
+    public function test_unverified_buyers_are_redirected_to_email_verification_after_login(): void
+    {
+        $user = User::factory()->unverified()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('verification.notice', absolute: false));
+    }
+
     public function test_super_admins_are_redirected_to_the_admin_dashboard_after_login(): void
     {
         $user = User::factory()->superAdmin()->create();
@@ -54,6 +67,19 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $response->assertRedirect(route('artisan.setup', absolute: false));
+    }
+
+    public function test_unverified_artisan_owners_are_redirected_to_email_verification_after_login(): void
+    {
+        $user = User::factory()->artisanWithoutSetup()->unverified()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('verification.notice', absolute: false));
     }
 
     public function test_pending_artisan_owners_are_redirected_to_pending_after_login(): void

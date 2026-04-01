@@ -38,6 +38,10 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
 
         if ($user->isAdmin()) {
+            if (!$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+
             return redirect()->route('admin.dashboard');
         }
 
@@ -57,6 +61,10 @@ class AuthenticatedSessionController extends Controller
             return $routeName
                 ? redirect()->route($routeName)
                 : redirect()->route('staff.home');
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
         }
 
         if ($user->isArtisan()) {

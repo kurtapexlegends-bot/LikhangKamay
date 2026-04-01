@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class EmailVerificationNotificationController extends Controller
 {
@@ -14,11 +16,54 @@ class EmailVerificationNotificationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false));
+            return redirect()->intended($this->redirectPathForVerifiedUser($request->user()));
         }
 
-        $request->user()->sendEmailVerificationNotification();
+        try {
+            $request->user()->sendEmailVerificationNotification();
+        } catch (Throwable $exception) {
+            Log::error('Email verification resend failed.', [
+                'user_id' => $request->user()?->id,
+                'email' => $request->user()?->email,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->with('error', 'Unable to send the verification email right now. Please try again later.');
+        }
 
         return back()->with('status', 'verification-link-sent');
+    }
+
+    protected function redirectPathForVerifiedUser(\App\Models\User $user): string
+    {
+        if ($user->isAdmin()) {
+            return route('admin.dashboard', absolute: false);
+        }
+
+        if ($user->isStaff()) {
+            if ($user->requiresStaffPasswordChange()) {
+                return route('staff.password.edit', absolute: false);
+            }
+
+            $routeName = $user->getFirstAccessibleSellerRouteName();
+
+            return $routeName
+                ? route($routeName, absolute: false)
+                : route('staff.home', absolute: false);
+        }
+
+        if ($user->isArtisan()) {
+            if (is_null($user->setup_completed_at) || $user->artisan_status === 'rejected') {
+                return route('artisan.setup', absolute: false);
+            }
+
+            if ($user->artisan_status === 'pending') {
+                return route('artisan.pending', absolute: false);
+            }
+
+            return route('dashboard', absolute: false);
+        }
+
+        return '/shop';
     }
 }
