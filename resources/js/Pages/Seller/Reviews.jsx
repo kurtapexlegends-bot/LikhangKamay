@@ -3,10 +3,10 @@ import { Head, Link, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink'; 
+import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import CompactPagination from '@/Components/CompactPagination';
-import { 
+import {
     Star, MessageSquare, Image as ImageIcon, Search, Filter, Pin, PinOff,
     Menu, ChevronDown, User, LogOut, Send, Bold, Italic, X,
     CheckCircle, AlertCircle, Edit2, Trash2, Zap, Reply
@@ -85,8 +85,8 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         "Thank you for sharing your feedback. We are always striving to improve and your input is incredibly valuable to us."
     ];
 
-    const filteredReviews = filter === 'All' 
-        ? reviews 
+    const filteredReviews = filter === 'All'
+        ? reviews
         : reviews.filter(r => r.rating === parseInt(filter));
 
     // Sort: pinned first, then by date (already sorted by latest from backend)
@@ -170,16 +170,16 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
             <Head title="Shop Reviews" />
-            
-            <SellerSidebar 
-                active="reviews" 
-                user={auth.user} 
-                mobileOpen={sidebarOpen} 
-                onClose={() => setSidebarOpen(false)} 
+
+            <SellerSidebar
+                active="reviews"
+                user={auth.user}
+                mobileOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
             />
 
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
-                
+
                 {/* --- HEADER --- */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
                     <div className="flex min-w-0 items-center gap-3">
@@ -192,7 +192,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                         </div>
                     </div>
 
-                                        
+
                     <div className="flex items-center gap-2 sm:gap-6">
                         <div className="flex items-center gap-2 sm:gap-3">
                             <NotificationDropdown />
@@ -225,7 +225,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-                    
+
                     {/* Stats Overview */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
@@ -233,10 +233,10 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             <h1 className="text-5xl font-black text-gray-900 mb-3">{stats.average ? stats.average.toFixed(1) : '0.0'}</h1>
                             <div className="flex items-center gap-0.5 mb-1.5">
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star 
-                                        key={star} 
-                                        size={20} 
-                                        className={star <= Math.round(stats.average || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} 
+                                    <Star
+                                        key={star}
+                                        size={20}
+                                        className={star <= Math.round(stats.average || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
                                     />
                                 ))}
                             </div>
@@ -256,8 +256,8 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 <Star size={12} className="fill-amber-400 text-amber-400" />
                                             </div>
                                             <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                                <div 
-                                                    className="h-full bg-amber-400 rounded-full" 
+                                                <div
+                                                    className="h-full bg-amber-400 rounded-full"
                                                     style={{ width: `${percentage}%` }}
                                                 />
                                             </div>
@@ -276,17 +276,16 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                 <h3 className="text-base font-bold text-gray-900">Recent Customer Reviews</h3>
                                 <p className="text-xs text-gray-500 mt-0.5">Read what your customers are saying</p>
                             </div>
-                            
+
                             <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto">
                                 {['All', '5', '4', '3', '2', '1'].map((option) => (
                                     <button
                                         key={option}
                                         onClick={() => setFilter(option)}
-                                        className={`px-4 py-1.5 whitespace-nowrap rounded-md text-xs font-bold transition-all ${
-                                            filter === option 
-                                                ? 'bg-white text-clay-900 shadow-sm' 
-                                                : 'text-gray-500 hover:text-gray-700'
-                                        }`}
+                                        className={`px-4 py-1.5 whitespace-nowrap rounded-md text-xs font-bold transition-all ${filter === option
+                                            ? 'bg-white text-clay-900 shadow-sm'
+                                            : 'text-gray-500 hover:text-gray-700'
+                                            }`}
                                     >
                                         {option === 'All' ? 'All Reviews' : `${option} Star`}
                                     </button>
@@ -298,12 +297,12 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             {paginatedReviews.length > 0 ? (
                                 paginatedReviews.map((review, index) => (
                                     <div key={review.id} className={`p-4 sm:p-5 hover:bg-gray-50/50 transition-colors ${review.is_pinned ? 'bg-amber-50/30 border-l-4 border-amber-400' : ''} ${index === paginatedReviews.length - 1 ? 'rounded-b-2xl' : ''}`}>
-                                        
+
                                         {/* Pinned Badge */}
                                         {review.is_pinned && (
                                             <div className="flex items-center gap-1.5 mb-2">
                                                 <Pin size={10} className="text-amber-500 fill-amber-500" />
-                                                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Pinned Focus</span>
+                                                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Pinned Review</span>
                                             </div>
                                         )}
 
@@ -311,10 +310,10 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                             {/* Product Image */}
                                             <div className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
                                                 {review.product_image ? (
-                                                    <img 
-                                                        src={review.product_image.startsWith('http') || review.product_image.startsWith('/storage') ? review.product_image : `/storage/${review.product_image}`} 
-                                                        alt={review.product_name} 
-                                                        className="w-full h-full object-cover" 
+                                                    <img
+                                                        src={review.product_image.startsWith('http') || review.product_image.startsWith('/storage') ? review.product_image : `/storage/${review.product_image}`}
+                                                        alt={review.product_name}
+                                                        className="w-full h-full object-cover"
                                                         onError={(e) => { e.target.style.display = 'none'; }}
                                                     />
                                                 ) : (
@@ -331,9 +330,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                             <h4 className="font-bold text-sm text-gray-900">{review.customer}</h4>
                                                             <div className="flex items-center gap-0.5">
                                                                 {[1, 2, 3, 4, 5].map((s) => (
-                                                                    <Star 
-                                                                        key={s} 
-                                                                        size={12} 
+                                                                    <Star
+                                                                        key={s}
+                                                                        size={12}
                                                                         className={s <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
                                                                     />
                                                                 ))}
@@ -364,9 +363,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                     <div className="flex gap-2 mt-2 mb-3 overflow-x-auto pb-1">
                                                         {review.photos.map((photo, idx) => (
                                                             <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 shrink-0">
-                                                                <img 
-                                                                    src={photo.startsWith('http') ? photo : `/storage/${photo}`} 
-                                                                    alt={`Review photo ${idx + 1}`} 
+                                                                <img
+                                                                    src={photo.startsWith('http') ? photo : `/storage/${photo}`}
+                                                                    alt={`Review photo ${idx + 1}`}
                                                                     className="w-full h-full object-cover cursor-pointer hover:opacity-90"
                                                                 />
                                                             </div>
@@ -431,9 +430,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 {/* Reply Editor */}
                                                 {replyingTo === review.id && (
                                                     <div id={`reply-form-${review.id}`} className="mt-3 space-y-2">
-                                                        <RichTextEditor 
-                                                            value={replyText} 
-                                                            onChange={setReplyText} 
+                                                        <RichTextEditor
+                                                            value={replyText}
+                                                            onChange={setReplyText}
                                                             placeholder="Write your reply..."
                                                         />
                                                         <div className="flex items-center justify-between gap-4 pt-1">

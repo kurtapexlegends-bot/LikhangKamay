@@ -654,16 +654,6 @@ class SuperAdminController extends Controller
     {
         $artisan = $this->findPendingArtisanOrFail($id);
 
-        $requiredDocumentKeys = $this->getSubmittedArtisanDocumentKeys($artisan);
-        $viewedDocumentKeys = $this->getViewedArtisanDocumentKeys($artisan);
-        $missingDocumentKeys = array_values(array_diff($requiredDocumentKeys, $viewedDocumentKeys));
-
-        if (!empty($missingDocumentKeys)) {
-            throw ValidationException::withMessages([
-                'documents' => 'Open every submitted document before approving this shop.',
-            ]);
-        }
-
         ArtisanStatusLog::create([
             'user_id' => $artisan->id,
             'previous_status' => $artisan->artisan_status,

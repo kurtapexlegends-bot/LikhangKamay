@@ -3,13 +3,14 @@ import { Link, Head, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
-import { 
-    LayoutDashboard, 
-    Users, 
-    Store, 
-    LogOut, 
-    Menu, 
-    X, 
+import NotificationDropdown from '@/Components/NotificationDropdown';
+import {
+    LayoutDashboard,
+    Users,
+    Store,
+    LogOut,
+    Menu,
+    X,
     Bell,
     Settings,
     ChevronDown,
@@ -36,12 +37,12 @@ export default function AdminLayout({ title, children }) {
             title: 'User Management',
             items: [
                 { name: 'Users', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
-                { 
-                    name: 'Pending Artisans', 
-                    href: route('admin.pending'), 
-                    icon: Store, 
+                {
+                    name: 'Pending Artisans',
+                    href: route('admin.pending'),
+                    icon: Store,
                     current: route().current('admin.pending'),
-                    badge: pendingArtisanCount > 0 ? pendingArtisanCount : null 
+                    badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
             ]
         },
@@ -59,7 +60,7 @@ export default function AdminLayout({ title, children }) {
 
             {/* Mobile Sidebar Overlay */}
             {isMobileMenuOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
@@ -74,16 +75,16 @@ export default function AdminLayout({ title, children }) {
                 {/* Brand Header */}
                 <div className="px-5 py-3 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                        <img 
-                            src="/images/logo.png" 
-                            alt="LikhangKamay" 
+                        <img
+                            src="/images/logo.png"
+                            alt="LikhangKamay"
                             className="w-7 h-7 object-contain"
                         />
                         <span className="font-serif text-lg font-bold text-gray-900 tracking-tight">LikhangKamay</span>
                     </div>
 
                     {/* Mobile Close Button */}
-                    <button 
+                    <button
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="lg:hidden text-gray-400 hover:text-gray-600"
                     >
@@ -105,23 +106,22 @@ export default function AdminLayout({ title, children }) {
                                         href={item.href}
                                         className={`
                                             flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200
-                                            ${item.current 
-                                                ? 'bg-clay-600 text-white shadow-md shadow-clay-200' 
+                                            ${item.current
+                                                ? 'bg-clay-600 text-white shadow-md shadow-clay-200'
                                                 : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
                                         `}
                                     >
                                         <div className="flex items-center gap-2.5">
-                                            <item.icon 
-                                                size={16} 
+                                            <item.icon
+                                                size={16}
                                                 strokeWidth={2.5}
-                                                className={item.current ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'} 
+                                                className={item.current ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'}
                                             />
                                             {item.name}
                                         </div>
                                         {item.badge && (
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                                                item.current ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
-                                            }`}>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${item.current ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
+                                                }`}>
                                                 {item.badge}
                                             </span>
                                         )}
@@ -138,7 +138,7 @@ export default function AdminLayout({ title, children }) {
                 {/* Header (Desktop & Mobile) */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-all duration-300">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                        <button 
+                        <button
                             onClick={() => setIsMobileMenuOpen(true)}
                             className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg transition lg:hidden"
                         >
@@ -154,17 +154,14 @@ export default function AdminLayout({ title, children }) {
                         </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2 sm:gap-6">
+                    <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-6">
                         {/* Notifications */}
-                         {pendingArtisanCount > 0 && (
-                            <Link href={route('admin.pending')} className="relative p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition group" title="Pending Applications">
-                                <Bell size={20} />
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-                            </Link>
-                         )}
+                        <div className="flex items-center gap-2">
+                            <NotificationDropdown />
+                        </div>
 
-                         {/* Divider */}
-                         <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
+                        {/* Divider */}
+                        <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
 
                         {/* User Profile Dropdown */}
                         <div className="relative">

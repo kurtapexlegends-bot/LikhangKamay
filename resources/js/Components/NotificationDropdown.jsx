@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck } from 'lucide-react';
+import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function NotificationDropdown() {
@@ -44,6 +44,8 @@ export default function NotificationDropdown() {
                 return <Truck size={16} className="text-indigo-500" />;
             case 'accounting_rejected':
                 return <AlertTriangle size={16} className="text-red-500" />;
+            case 'artisan_application':
+                return <Store size={16} className="text-clay-600" />;
             default:
                 return <Bell size={16} className="text-gray-500" />;
         }

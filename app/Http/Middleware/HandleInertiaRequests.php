@@ -66,7 +66,7 @@ class HandleInertiaRequests extends Middleware
             'notifications' => $notifications,
             'unreadNotificationCount' => $unreadNotificationCount,
             'pendingArtisanCount' => $request->user() && $request->user()->role === 'super_admin' 
-                ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->count() 
+                ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
                 : 0,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

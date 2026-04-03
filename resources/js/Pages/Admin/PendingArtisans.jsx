@@ -80,7 +80,7 @@ export default function PendingArtisans({ artisans }) {
 
     const submittedDocuments = currentDocuments.filter((document) => document.url);
     const viewedSubmittedCount = submittedDocuments.filter((document) => document.viewed).length;
-    const canApproveCurrentArtisan = submittedDocuments.every((document) => document.viewed);
+    const canApproveCurrentArtisan = true;
 
     const confirmApprove = () => {
         if (!viewingArtisan) {
@@ -100,7 +100,7 @@ export default function PendingArtisans({ artisans }) {
                 setApprovalError('');
             },
             onError: (errors) => {
-                setApprovalError(errors.documents ?? 'Approval failed. Open every submitted document before approving this shop.');
+                setApprovalError(errors.documents ?? 'Approval failed. Please try again.');
             },
             onFinish: () => {
                 setProcessing(false);
@@ -137,23 +137,30 @@ export default function PendingArtisans({ artisans }) {
         <AdminLayout title="Pending Artisans">
 
             {artisans.length === 0 ? (
-                <div className="bg-white rounded-3xl shadow-sm border border-stone-100 p-8 sm:p-16 text-center">
-                    <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle size={48} className="text-green-500" />
+                <div className="bg-[#FDFBF9] rounded-3xl shadow-sm border border-stone-200/60 p-8 sm:p-16 text-center mt-6">
+                    <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner border border-emerald-100/50">
+                        <CheckCircle size={32} className="text-emerald-500" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">All Caught Up!</h3>
-                    <p className="text-gray-500 max-w-md mx-auto">There are no pending artisan applications at the moment. Great job keeping the queue clean!</p>
-                    <Link href={route('admin.dashboard')} className="inline-block mt-8 px-6 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition">
+                    <h3 className="text-xl font-bold tracking-tight text-stone-900 mb-2">Queue is Empty</h3>
+                    <p className="text-stone-500 text-[13px] max-w-sm mx-auto">There are no pending artisan applications at the moment. Great job keeping the queue clean!</p>
+                    <Link href={route('admin.dashboard')} className="inline-block mt-6 px-6 py-2.5 bg-stone-900 text-white rounded-xl text-[13px] font-bold hover:bg-stone-800 transition shadow-md shadow-stone-200 hover:-translate-y-0.5">
                         Return to Dashboard
                     </Link>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-6">
-                    {artisans.map(artisan => (
-                        <div key={artisan.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group">
-                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <div className="w-14 h-14 bg-clay-500 text-white rounded-xl flex items-center justify-center text-xl font-bold shadow-md shadow-clay-200 shrink-0 overflow-hidden">
+                <div className="mt-6 bg-[#FDFBF9] rounded-2xl shadow-[0_2px_4px_rgba(0,0,0,0.02)] border border-stone-200/60 overflow-hidden">
+                    {/* Header Row */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-stone-50 border-b border-stone-100/80 text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                        <div className="col-span-5">Artisan Shop</div>
+                        <div className="col-span-4">Contact & Location</div>
+                        <div className="col-span-2 text-center">Status</div>
+                        <div className="col-span-1 text-right">Action</div>
+                    </div>
+                    <div className="divide-y divide-stone-100/80">
+                        {artisans.map(artisan => (
+                            <div key={artisan.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center px-4 sm:px-6 py-4 hover:bg-stone-50/50 transition">
+                                <div className="col-span-5 flex items-center gap-3.5">
+                                    <div className="w-10 h-10 bg-clay-50 border border-clay-100 text-clay-700 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden shadow-sm">
                                         {artisan.avatar ? (
                                             <img 
                                                 src={artisan.avatar.startsWith('http') ? artisan.avatar : `/storage/${artisan.avatar}`} 
@@ -164,60 +171,63 @@ export default function PendingArtisans({ artisans }) {
                                             artisan.name?.charAt(0).toUpperCase()
                                         )}
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-bold text-gray-900 text-lg">{artisan.shop_name}</h3>
-                                            <span className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                                                <Clock size={10} /> Pending
-                                            </span>
-                                        </div>
-                                        <p className="text-gray-500 flex items-center gap-2 text-sm">
-                                            <span className="font-medium text-gray-900">{artisan.name}</span> • {artisan.email}
-                                        </p>
-                                        
-                                        <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
-                                            <span className="flex items-center gap-1 text-gray-500 bg-stone-50 px-2 py-1 rounded border border-stone-100">
-                                                <Phone size={12} /> {artisan.phone_number}
-                                            </span>
-                                            <span className="flex items-center gap-1 text-gray-500 bg-stone-50 px-2 py-1 rounded border border-stone-100">
-                                                <MapPin size={12} /> {artisan.address}
-                                            </span>
-                                            <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100 font-medium">
-                                                <Clock size={12} /> {artisan.submitted_at}
-                                            </span>
-                                        </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-[13px] text-stone-900 truncate">{artisan.shop_name}</h3>
+                                        <p className="text-stone-500 text-[12px] truncate">{artisan.name}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto mt-3 md:mt-0 pt-3 md:pt-0 border-t md:border-none border-stone-100">
+                                <div className="col-span-4 flex flex-col gap-1.5 text-[11px] text-stone-500">
+                                    <div className="flex items-center gap-1.5 truncate">
+                                        <div className="w-4 h-4 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-400 shrink-0"><Phone size={9} /></div>
+                                        <span className="truncate font-medium">{artisan.phone_number}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 truncate">
+                                        <div className="w-4 h-4 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-400 shrink-0"><MapPin size={9} /></div>
+                                        <span className="truncate">{artisan.address}</span>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-2 flex justify-start md:justify-center">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200/50 px-2.5 py-1 rounded-md">
+                                        <Clock size={10} /> Pending
+                                    </span>
+                                </div>
+
+                                <div className="col-span-1 flex justify-start md:justify-end mt-1 md:mt-0">
                                     <button
                                         onClick={() => openReviewModal(artisan)}
-                                        className="flex-1 md:flex-none px-4 py-2 bg-stone-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-stone-200 transition flex items-center justify-center gap-1.5"
+                                        className="inline-flex px-3.5 py-1.5 bg-white border border-stone-200 text-stone-700 rounded-lg text-[11px] font-bold hover:bg-stone-50 hover:border-clay-300 transition items-center gap-1.5 shadow-sm"
                                     >
-                                        <Eye size={16} /> Review
+                                        <Eye size={12} className="text-clay-500" /> Review
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             )}
 
             {/* View Documents Modal */}
             <Modal show={!!viewingArtisan} onClose={() => !viewingDoc && setViewingArtisan(null)} maxWidth="2xl">
                 {viewingArtisan && (
-                    <div className="p-0 overflow-hidden">
-                        <div className="bg-white px-6 py-4 border-b border-stone-100 flex items-center justify-between sticky top-0 z-20 shadow-sm">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900">{viewingArtisan.shop_name}</h3>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">Application Documents</p>
+                    <div className="p-0 overflow-hidden bg-[#FDFBF9]">
+                        <div className="bg-white px-5 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-clay-50 border border-clay-100 text-clay-700 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm">
+                                    {viewingArtisan.shop_name?.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 className="text-[15px] font-bold text-stone-900 leading-tight">{viewingArtisan.shop_name}</h3>
+                                    <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mt-0.5">Application Documents</p>
+                                </div>
                             </div>
-                            <button onClick={() => setViewingArtisan(null)} className="p-1.5 hover:bg-stone-100 rounded-full transition text-gray-400 hover:text-gray-600">
-                                <X size={18} />
+                            <button onClick={() => setViewingArtisan(null)} className="p-1.5 bg-stone-50 hover:bg-stone-100 border border-stone-100 rounded-full transition text-stone-400 hover:text-stone-600">
+                                <X size={16} />
                             </button>
                         </div>
                         
-                        <div className="p-4 sm:p-6 bg-stone-50 max-h-[60vh] overflow-y-auto no-scrollbar">
+                        <div className="p-4 sm:p-5 max-h-[60vh] overflow-y-auto no-scrollbar">
                             <style>{`
                                 .no-scrollbar::-webkit-scrollbar {
                                     display: none;
@@ -227,30 +237,30 @@ export default function PendingArtisans({ artisans }) {
                                     scrollbar-width: none;
                                 }
                             `}</style>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 {currentDocuments.map(doc => (
                                     <div 
                                         key={doc.key}
                                         onClick={() => openDocumentPreview(doc)}
-                                        className={`bg-white border border-stone-200 rounded-2xl p-5 transition-all group relative overflow-hidden ${doc.url ? 'hover:border-clay-300 hover:shadow-lg cursor-pointer' : 'opacity-70'}`}
+                                        className={`bg-white border border-stone-200 rounded-xl p-4 transition-all group relative overflow-hidden ${doc.url ? 'hover:border-clay-300 hover:shadow-md cursor-pointer' : 'opacity-60 bg-stone-50/50'}`}
                                     >
                                         
-                                        <div className="flex items-center justify-between mb-4 relative z-10">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-stone-50 rounded-xl group-hover:bg-clay-50 transition-colors border border-stone-100 group-hover:border-clay-100">
-                                                    <doc.icon size={20} className="text-gray-400 group-hover:text-clay-600 transition-colors" />
+                                        <div className="flex items-center justify-between mb-3 relative z-10">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="p-2 bg-stone-50 rounded-lg group-hover:bg-clay-50 transition-colors border border-stone-100 group-hover:border-clay-100">
+                                                    <doc.icon size={16} className="text-stone-400 group-hover:text-clay-600 transition-colors" />
                                                 </div>
                                                 <div>
-                                                    <span className="font-bold text-gray-800 block">{doc.label}</span>
-                                                    <span className="text-xs text-gray-400 font-medium">
+                                                    <span className="font-bold text-[12px] text-stone-800 block">{doc.label}</span>
+                                                    <span className="text-[10px] text-stone-400 font-medium">
                                                         {doc.url ? (doc.viewed ? 'Viewed' : 'Click to Preview') : 'Missing File'}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5">
                                                 {doc.viewed && (
-                                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                                                        <CheckCircle size={10} /> Viewed
+                                                    <span className="inline-flex items-center gap-1 rounded border border-emerald-200/50 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+                                                        <CheckCircle size={8} /> OK
                                                     </span>
                                                 )}
                                                 {doc.url && (
@@ -258,36 +268,36 @@ export default function PendingArtisans({ artisans }) {
                                                         href={doc.url} 
                                                         download 
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="text-gray-400 hover:text-clay-600 transition p-2 hover:bg-stone-50 rounded-full"
+                                                        className="text-stone-300 hover:text-clay-600 transition p-1 hover:bg-stone-50 rounded-full"
                                                     >
-                                                        <Download size={18} />
+                                                        <Download size={14} />
                                                     </a>
                                                 )}
                                             </div>
                                         </div>
                                         
                                         {doc.url ? (
-                                            <div className="block w-full aspect-video bg-stone-100 rounded-xl overflow-hidden border border-stone-200 group-hover:ring-4 group-hover:ring-clay-50/50 transition-all relative shadow-inner">
+                                            <div className="block w-full aspect-video bg-stone-100 rounded-lg overflow-hidden border border-stone-200 group-hover:ring-2 group-hover:ring-clay-100 transition-all relative shadow-inner">
                                                 {doc.url.endsWith('.pdf') ? (
-                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50 text-gray-500 gap-2">
-                                                        <FileText size={48} className="text-clay-200" />
-                                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">PDF Document</span>
+                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-[#FDFBF9] text-stone-400 gap-1.5">
+                                                        <FileText size={32} className="text-clay-200" />
+                                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">PDF Document</span>
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <img src={doc.url} alt={doc.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 backdrop-blur-[2px]">
-                                                            <span className="bg-white text-gray-900 px-4 py-2 rounded-full text-xs font-bold shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-2">
-                                                                <Eye size={14} /> Preview
+                                                        <img src={doc.url} alt={doc.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 backdrop-blur-[1px]">
+                                                            <span className="bg-white/90 text-stone-900 px-3 py-1.5 rounded-full text-[10px] font-bold shadow-sm transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-1.5">
+                                                                <Eye size={12} /> Preview
                                                             </span>
                                                         </div>
                                                     </>
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="w-full aspect-video bg-stone-50 rounded-xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center text-gray-400 gap-2">
-                                                <XCircle size={32} className="text-stone-300" />
-                                                <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Not Uploaded</span>
+                                            <div className="w-full aspect-video bg-stone-50 rounded-lg border focus-within:ring-2 border-dashed border-stone-200 flex flex-col items-center justify-center text-stone-400 gap-1.5 shadow-inner">
+                                                <XCircle size={24} className="text-stone-300" />
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Not Uploaded</span>
                                             </div>
                                         )}
                                     </div>
@@ -295,37 +305,31 @@ export default function PendingArtisans({ artisans }) {
                             </div>
                         </div>
 
-                        <div className="bg-white px-4 sm:px-8 py-4 sm:py-5 border-t border-stone-100 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                             <div className="space-y-1">
-                                <div className="text-sm text-gray-500 font-medium">
-                                    Reviewing <span className="text-gray-900 font-bold">{viewingArtisan.shop_name}</span>
-                                </div>
-                                <div className="text-xs font-medium text-gray-500">
-                                    Viewed {viewedSubmittedCount} of {submittedDocuments.length} submitted documents
+                        <div className="bg-white px-5 sm:px-6 py-4 border-t border-stone-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sticky bottom-0 z-20">
+                             <div className="space-y-0.5">
+                                <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                                    Application Documents Ready
                                 </div>
                                 {approvalError && (
-                                    <p className="text-xs font-semibold text-red-600">{approvalError}</p>
-                                )}
-                                {!approvalError && !canApproveCurrentArtisan && (
-                                    <p className="text-xs font-semibold text-amber-700">Open every submitted document preview to enable approval.</p>
+                                    <p className="text-[10px] font-semibold text-red-600">{approvalError}</p>
                                 )}
                              </div>
-                             <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
+                             <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                                 <button
                                     onClick={() => {
                                         setApprovalError('');
                                         setRejectingArtisan(viewingArtisan);
                                     }}
-                                    className="px-6 py-2.5 bg-white text-red-600 border border-gray-200 rounded-xl font-bold hover:bg-red-50 hover:border-red-200 transition text-sm flex items-center gap-2"
+                                    className="px-4 py-2 bg-white text-stone-600 border border-stone-200 rounded-lg font-bold hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition text-[12px] flex items-center justify-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
                                 >
-                                    <XCircle size={16} /> Reject
+                                    <XCircle size={14} /> Reject
                                 </button>
                                 <button
                                     onClick={confirmApprove}
-                                    disabled={processing || !canApproveCurrentArtisan}
-                                    className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow-lg shadow-green-200 text-sm flex items-center gap-2 disabled:cursor-not-allowed disabled:bg-green-300 disabled:shadow-none"
+                                    disabled={processing}
+                                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition shadow-sm shadow-emerald-200/50 text-[12px] flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 disabled:shadow-none"
                                 >
-                                    <CheckCircle size={16} /> {processing ? 'Approving...' : 'Approve'}
+                                    <CheckCircle size={14} /> {processing ? 'Approving...' : 'Approve Application'}
                                 </button>
                              </div>
                         </div>
@@ -381,41 +385,51 @@ export default function PendingArtisans({ artisans }) {
             {/* Reject Modal */}
             <Modal show={!!rejectingArtisan} onClose={() => setRejectingArtisan(null)} maxWidth="lg">
                 {rejectingArtisan && (
-                    <div className="p-6 sm:p-8">
-                        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
-                            <AlertTriangle size={32} className="text-red-500" />
-                        </div>
-                        
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Reject Application</h3>
-                        <p className="text-gray-500 text-sm mb-6">
-                            Please explain why you are rejecting <span className="font-bold">{rejectingArtisan.shop_name}</span>. This will be sent to the artisan.
-                        </p>
-
-                        <textarea
-                            value={rejectReason}
-                            onChange={(e) => setRejectReason(e.target.value)}
-                            placeholder="E.g., The business permit uploaded is expired. Please upload a valid 2024 permit..."
-                            className="w-full h-32 bg-stone-50 border-stone-200 rounded-xl p-4 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none text-sm"
-                        />
-                        <div className="flex justify-between items-center mt-2 mb-6">
-                            <span className={`text-xs font-bold ${rejectReason.length < 10 ? 'text-red-500' : 'text-green-600'}`}>
-                                {rejectReason.length} chars (min 10)
-                            </span>
+                    <div className="p-5 sm:p-6 bg-[#FDFBF9]">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-red-50 text-red-600 border border-red-100 rounded-xl flex items-center justify-center shrink-0">
+                                    <AlertTriangle size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-[15px] font-bold text-stone-900 leading-tight">Reject Application</h3>
+                                    <p className="text-stone-500 text-[11px]">Specify a reason for <span className="font-bold text-stone-700">{rejectingArtisan.shop_name}</span></p>
+                                </div>
+                            </div>
+                            <button onClick={() => setRejectingArtisan(null)} className="p-1 px-1.5 bg-white border border-stone-200 rounded hover:bg-stone-50 transition text-stone-400">
+                                <X size={14} />
+                            </button>
                         </div>
 
-                        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 ml-1">Rejection Reason</label>
+                            <textarea
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                placeholder="E.g., The uploaded business permit belongs to a different entity. Please upload..."
+                                className="w-full h-28 bg-white border border-stone-200 rounded-xl p-3 focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none text-[13px] shadow-inner"
+                            />
+                            <div className="flex justify-between items-center px-1">
+                                <p className="text-[10px] text-stone-400">This will be shared with the artisan.</p>
+                                <span className={`text-[10px] font-bold ${rejectReason.length < 10 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                    {rejectReason.length} chars (min 10)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 mt-5">
                             <button
                                 onClick={() => setRejectingArtisan(null)}
-                                className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition"
+                                className="px-4 py-2 bg-white border border-stone-200 text-stone-600 rounded-lg text-[12px] font-bold hover:bg-stone-50 transition shadow-sm"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={rejectArtisan}
                                 disabled={processing || rejectReason.length < 10}
-                                className="px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-200"
+                                className="px-5 py-2 bg-red-600 text-white rounded-lg text-[12px] font-bold hover:bg-red-700 transition shadow-sm shadow-red-200/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                             >
-                                {processing ? 'Rejecting...' : 'Confirm Rejection'}
+                                <XCircle size={14} /> {processing ? 'Rejecting...' : 'Confirm'}
                             </button>
                         </div>
                     </div>

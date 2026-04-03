@@ -11,6 +11,8 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Mail\NewArtisanApplication;
 use App\Models\ArtisanStatusLog;
+use App\Models\User as UserModel;
+use App\Notifications\NewArtisanApplicationNotification;
 
 class ArtisanSetupController extends Controller
 {
@@ -119,6 +121,12 @@ class ArtisanSetupController extends Controller
                 'artisan_status' => 'pending',
                 'artisan_rejection_reason' => null,
             ]);
+
+            UserModel::query()
+                ->where('role', 'super_admin')
+                ->each(function (UserModel $admin) use ($user): void {
+                    $admin->notify(new NewArtisanApplicationNotification($user));
+                });
 
             $adminEmail = config('services.artisan_applications.notification_email');
 

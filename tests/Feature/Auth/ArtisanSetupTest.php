@@ -4,9 +4,11 @@ namespace Tests\Feature\Auth;
 
 use App\Mail\NewArtisanApplication;
 use App\Models\User;
+use App\Notifications\NewArtisanApplicationNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -18,7 +20,13 @@ class ArtisanSetupTest extends TestCase
     {
         Storage::fake('public');
         Mail::fake();
+        Notification::fake();
         config()->set('services.artisan_applications.notification_email', 'admin@example.com');
+
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+            'email_verified_at' => now(),
+        ]);
 
         $user = User::factory()->create([
             'role' => 'artisan',
@@ -38,15 +46,22 @@ class ArtisanSetupTest extends TestCase
         Mail::assertSent(NewArtisanApplication::class, function (NewArtisanApplication $mail) {
             return $mail->hasTo('admin@example.com');
         });
+        Notification::assertSentTo($admin, NewArtisanApplicationNotification::class);
     }
 
     public function test_artisan_setup_still_completes_when_admin_notification_email_fails(): void
     {
         Storage::fake('public');
+        Notification::fake();
         config()->set('services.artisan_applications.notification_email', 'admin@example.com');
 
         Mail::shouldReceive('to')->once()->with('admin@example.com')->andReturnSelf();
         Mail::shouldReceive('send')->once()->andThrow(new \RuntimeException('SMTP unavailable'));
+
+        $admin = User::factory()->create([
+            'role' => 'super_admin',
+            'email_verified_at' => now(),
+        ]);
 
         $user = User::factory()->create([
             'role' => 'artisan',
@@ -68,5 +83,6 @@ class ArtisanSetupTest extends TestCase
             'id' => $user->id,
             'artisan_status' => 'pending',
         ]);
+        Notification::assertSentTo($admin, NewArtisanApplicationNotification::class);
     }
 }
