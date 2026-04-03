@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\AuthRedirectService;
 use App\Services\StaffAttendanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request, StaffAttendanceService $attendanceService): RedirectResponse
+    public function store(LoginRequest $request, AuthRedirectService $authRedirectService): RedirectResponse
     {
         $request->authenticate();
 
@@ -37,53 +38,7 @@ class AuthenticatedSessionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        if ($user->isAdmin()) {
-            if (!$user->hasVerifiedEmail()) {
-                return redirect()->route('verification.notice');
-            }
-
-            return redirect()->route('admin.dashboard');
-        }
-
-        if ($user->isStaff()) {
-            $attendanceService->ensureClockedIn($user);
-
-            if (!$user->hasVerifiedEmail()) {
-                return redirect()->route('verification.notice');
-            }
-
-            if ($user->requiresStaffPasswordChange()) {
-                return redirect()->route('staff.password.edit');
-            }
-
-            $routeName = $user->getFirstAccessibleSellerRouteName();
-
-            return $routeName
-                ? redirect()->route($routeName)
-                : redirect()->route('staff.home');
-        }
-
-        if (!$user->hasVerifiedEmail()) {
-            return redirect()->route('verification.notice');
-        }
-
-        if ($user->isArtisan()) {
-            if (is_null($user->setup_completed_at)) {
-                return redirect()->route('artisan.setup');
-            }
-
-            if ($user->artisan_status === 'pending') {
-                return redirect()->route('artisan.pending');
-            }
-
-            if ($user->artisan_status === 'rejected') {
-                return redirect()->route('artisan.setup');
-            }
-
-            return redirect()->route('dashboard');
-        }
-
-        return redirect('/shop');
+        return $authRedirectService->redirectAfterLogin($user);
     }
 
     public function destroyStaff(Request $request, StaffAttendanceService $attendanceService): RedirectResponse

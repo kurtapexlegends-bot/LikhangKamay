@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import Dropdown from '@/Components/Dropdown'; 
@@ -8,7 +8,7 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import { 
     Package, Truck, CheckCircle, Clock, RotateCcw, XCircle,
     MessageCircle, Search, ShoppingBag, ChevronDown, AlertTriangle, 
-    MapPin, Hash, Star, PackageCheck, AlertCircle, Wallet, CreditCard, Printer, Store, UploadCloud, ExternalLink
+    MapPin, Hash, Star, PackageCheck, AlertCircle, Wallet, CreditCard, Printer, Store, UploadCloud 
 } from 'lucide-react';
 
 // --- RETURN REQUEST MODAL COMPONENT ---
@@ -20,30 +20,18 @@ const ReturnRequestModal = ({ isOpen, onClose, order }) => {
 
     const [previewUrl, setPreviewUrl] = useState(null);
 
-    const revokePreview = () => {
-        if (previewUrl?.startsWith('blob:')) {
-            URL.revokeObjectURL(previewUrl);
-        }
-    };
-
     React.useEffect(() => {
         if (!isOpen) {
             reset();
             clearErrors();
-            revokePreview();
             setPreviewUrl(null);
         }
     }, [isOpen]);
-
-    React.useEffect(() => {
-        return () => revokePreview();
-    }, [previewUrl]);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setData('return_proof_image', file);
-            revokePreview();
             setPreviewUrl(URL.createObjectURL(file));
         }
     };
@@ -230,16 +218,12 @@ const OrderTimeline = ({ status, isPickup }) => {
         );
     }
 
-    let normalizedStatus = status;
-    if (status === 'Ready for Pickup' && !isPickup) normalizedStatus = 'Shipped';
-    if (status === 'Shipped' && isPickup) normalizedStatus = 'Ready for Pickup';
-    if (status === 'Processing') normalizedStatus = 'Accepted';
-
-    const currentStepIndex = steps.findIndex((step) => step.key === normalizedStatus);
+    // Determine progress state
+    const currentStepIndex = steps.findIndex(s => s.key === status);
 
     return (
-        <div className="overflow-x-auto overflow-y-visible border-t border-b border-stone-100 bg-white px-4 py-5 sm:px-6">
-            <div className="mx-auto flex min-w-[560px] max-w-3xl items-center justify-between pb-6">
+        <div className="overflow-x-auto py-6 px-4 sm:px-6 bg-white border-t border-b border-gray-100">
+            <div className="flex min-w-[560px] items-center justify-between max-w-3xl mx-auto">
                 {steps.map((step, idx) => {
                     const stepStatus = getStepStatus(step.key);
                     const Icon = step.icon;
@@ -259,6 +243,7 @@ const OrderTimeline = ({ status, isPickup }) => {
                                 `}>
                                     {stepStatus === 'done' ? <CheckCircle size={18} strokeWidth={3} /> : <Icon size={18} />}
                                     
+                                    {/* Pulse effect for active */}
                                     {stepStatus === 'active' && (
                                         <span className="absolute inset-0 rounded-full bg-clay-400 opacity-20 animate-ping" />
                                     )}
@@ -331,90 +316,12 @@ const PaymentStatusBadge = ({ status, method }) => {
     return (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${bg} ${text} ${border}`}>
             <Wallet size={10} />
-            {label} - {method || 'COD'}
+            {label} ΓÇó {method || 'COD'}
         </span>
     );
 };
 
-const humanizeAddressType = (value) => {
-    if (!value) return null;
 
-    return String(value)
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-};
-
-const deliveryStatusConfig = (status) => {
-    const normalized = String(status || '').toUpperCase();
-
-    const configs = {
-        ASSIGNING_DRIVER: {
-            label: 'Assigning Driver',
-            tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
-            detail: 'Lalamove is assigning a courier.',
-        },
-        ON_GOING: {
-            label: 'On Going',
-            tone: 'border-sky-200 bg-sky-50 text-sky-700',
-            detail: 'Courier is moving with your order.',
-        },
-        PICKED_UP: {
-            label: 'Picked Up',
-            tone: 'border-blue-200 bg-blue-50 text-blue-700',
-            detail: 'Your package has been picked up.',
-        },
-        COMPLETED: {
-            label: 'Completed',
-            tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-            detail: 'Lalamove marked this delivery as completed.',
-        },
-        CANCELED: {
-            label: 'Canceled',
-            tone: 'border-red-200 bg-red-50 text-red-700',
-            detail: 'Courier canceled the delivery.',
-        },
-        REJECTED: {
-            label: 'Rejected',
-            tone: 'border-red-200 bg-red-50 text-red-700',
-            detail: 'Lalamove rejected the delivery request.',
-        },
-        EXPIRED: {
-            label: 'Expired',
-            tone: 'border-amber-200 bg-amber-50 text-amber-700',
-            detail: 'The delivery request expired.',
-        },
-    };
-
-    return configs[normalized] || {
-        label: normalized || 'Pending',
-        tone: 'border-gray-200 bg-gray-50 text-gray-700',
-        detail: 'Waiting for courier updates.',
-    };
-};
-
-const buyerCourierTrackingState = (order) => {
-    const base = deliveryStatusConfig(order?.delivery?.status);
-
-    if (String(order?.delivery?.status || '').toUpperCase() === 'COMPLETED' && order?.status === 'Delivered') {
-        return {
-            ...base,
-            label: 'Awaiting Your Confirmation',
-            tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-            detail: 'Courier completed delivery. Confirm receipt once the order is safely with you.',
-        };
-    }
-
-    if (String(order?.delivery?.status || '').toUpperCase() === 'COMPLETED' && order?.status === 'Completed') {
-        return {
-            ...base,
-            label: 'Delivered',
-            tone: 'border-green-200 bg-green-50 text-green-700',
-            detail: 'Courier completed delivery and you already confirmed receipt.',
-        };
-    }
-
-    return base;
-};
 
 export default function MyOrders({ auth, orders }) {
     const [activeTab, setActiveTab] = useState('All');
@@ -430,34 +337,6 @@ export default function MyOrders({ auth, orders }) {
         type: null, // 'receive', 'return', 'cancel'
         orderId: null
     });
-
-    const hasActiveCourierTracking = orders.some((order) => {
-        if (order?.delivery?.provider !== 'lalamove' || !order?.delivery?.external_order_id) {
-            return false;
-        }
-
-        return !['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED'].includes(String(order?.delivery?.status || '').toUpperCase());
-    });
-
-    React.useEffect(() => {
-        if (!hasActiveCourierTracking || typeof window === 'undefined') {
-            return undefined;
-        }
-
-        const intervalId = window.setInterval(() => {
-            if (document.hidden) {
-                return;
-            }
-
-            router.reload({
-                only: ['orders'],
-                preserveState: true,
-                preserveScroll: true,
-            });
-        }, 15000);
-
-        return () => window.clearInterval(intervalId);
-    }, [hasActiveCourierTracking]);
 
     const tabs = [
         { id: 'All', label: 'All Orders', count: orders.length },
@@ -574,39 +453,30 @@ export default function MyOrders({ auth, orders }) {
             {/* --- NAVBAR --- */}
             <BuyerNavbar />
 
-            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 
                 {/* --- FLASH MESSAGES --- */}
                 {usePage().props.flash?.success && (
-                    <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-start gap-2">
-                        <CheckCircle size={16} />
-                        <span className="text-[13px] font-bold">{usePage().props.flash.success}</span>
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-start gap-2">
+                        <CheckCircle size={18} />
+                        <span className="text-sm font-bold">{usePage().props.flash.success}</span>
                     </div>
                 )}
                 {usePage().props.flash?.error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2">
-                        <AlertCircle size={16} />
-                        <span className="text-[13px] font-bold">{usePage().props.flash.error}</span>
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-start gap-2">
+                        <AlertCircle size={18} />
+                        <span className="text-sm font-bold">{usePage().props.flash.error}</span>
                     </div>
                 )}
                 
                 {/* Page Header */}
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-stone-900">My Purchases</h1>
-                        <p className="mt-0.5 text-xs text-stone-500">Track your orders and manage returns.</p>
-                    </div>
-                    <Link
-                        href={route('my-wallet.index')}
-                        className="inline-flex items-center gap-1.5 self-start rounded-lg border border-stone-200 bg-white px-3 py-2 text-[12px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
-                    >
-                        <Wallet size={14} strokeWidth={2.5} />
-                        My Wallet
-                    </Link>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-serif font-bold text-gray-900">My Purchases</h1>
+                    <p className="text-gray-500 text-sm mt-1">Track your orders and manage returns</p>
                 </div>
 
                 {/* --- TABS --- */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
                     <div className="flex overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                         {tabs.map(tab => {
                             const count = getTabCount(tab.id);
@@ -635,14 +505,14 @@ export default function MyOrders({ auth, orders }) {
                 </div>
 
                 {/* --- SEARCH BAR --- */}
-                <div className="relative mb-4">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                <div className="relative mb-6">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
                         type="text" 
                         placeholder="Search by Order ID or Product Name..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-lg text-[12px] font-medium placeholder:text-stone-400 focus:ring-2 focus:ring-clay-200 focus:border-clay-500 shadow-sm transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-clay-200 focus:border-clay-500 shadow-sm transition-all"
                     />
                 </div>
 
@@ -650,19 +520,19 @@ export default function MyOrders({ auth, orders }) {
                 <div className="space-y-6">
                     {filteredOrders.length > 0 ? (
                         filteredOrders.map(order => (
-                            <div key={order.id} className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.05)] transition-all duration-300">
+                            <div key={order.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300">
                                 
                                 {/* Order Header */}
-                                <div className="px-4 py-3 bg-[#FDFBF9] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-stone-100">
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Order Ref</span>
-                                            <h3 className="font-bold tracking-tight text-stone-900 text-[13px]">#{order.order_number || order.id}</h3>
+                                <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-gray-100">
+                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                                        <div>
+                                            <span className="text-xs text-gray-400 font-medium">Order</span>
+                                            <h3 className="font-bold text-gray-900 text-sm">#{order.order_number || order.id}</h3>
                                         </div>
-                                        <div className="hidden sm:block h-4 w-px bg-stone-200" />
-                                        <div className="flex items-center gap-1 text-stone-500">
-                                            <Clock size={12} />
-                                            <span className="text-[11px] font-medium">{order.date}</span>
+                                        <div className="hidden sm:block h-8 w-px bg-gray-200" />
+                                        <div className="flex items-center gap-1.5 text-gray-500">
+                                            <Clock size={14} />
+                                            <span className="text-xs font-medium">{order.date}</span>
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2">
@@ -692,157 +562,48 @@ export default function MyOrders({ auth, orders }) {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="space-y-2 rounded-xl border border-blue-100 bg-blue-50 p-3">
-                                            <div className="flex items-start gap-2.5">
-                                                <div className="p-1.5 bg-white rounded-md shadow-sm text-blue-600">
-                                                    <MapPin size={16} />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-[13px] font-bold text-gray-900 leading-none mt-0.5">
-                                                        {order.delivery?.provider === 'lalamove' ? 'Lalamove Delivery' : 'Standard Delivery'}
-                                                    </p>
-                                                    {order.shipping_address_type && (
-                                                        <span className="mt-1 inline-flex rounded-md border border-blue-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-blue-700">
-                                                            {humanizeAddressType(order.shipping_address_type)}
+                                        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                                            <div className="p-2 bg-white rounded-lg shadow-sm text-blue-600">
+                                                <MapPin size={18} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900">Standard Delivery</p>
+                                                <p className="text-xs text-gray-500 mb-1">{order.shipping_address}</p>
+                                                <div className="flex flex-wrap gap-2 mt-1">
+                                                    {order.tracking_number && (
+                                                        <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-blue-200 text-blue-600 font-medium">
+                                                            Tracker: {order.tracking_number}
                                                         </span>
                                                     )}
-                                                    <p className="mt-1 text-[11px] text-gray-500 leading-snug">{order.shipping_address}</p>
-                                                    {(order.shipping_recipient_name || order.shipping_contact_phone) && (
-                                                        <p className="mt-0.5 text-[10px] text-gray-500">
-                                                            {order.shipping_recipient_name}
-                                                            {order.shipping_recipient_name && order.shipping_contact_phone ? ' | ' : ''}
-                                                            {order.shipping_contact_phone}
-                                                        </p>
-                                                    )}
-                                                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                        {order.tracking_number && (
-                                                            <span className="text-[9px] bg-white px-1.5 py-0.5 rounded border border-blue-200 text-blue-600 font-medium">
-                                                                Tracker: {order.tracking_number}
-                                                            </span>
-                                                        )}
-                                                        {order.proof_of_delivery && (
-                                                            <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 underline hover:text-blue-800 flex items-center gap-1">
-                                                                <PackageCheck size={10} /> View Proof of Delivery
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {order.delivery && (
-                                                <div className="rounded-lg border border-gray-200 bg-white/80 px-2.5 py-2">
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div className="min-w-0">
-                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">Courier</p>
-                                                            <div className={`mt-1 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold ${buyerCourierTrackingState(order).tone}`}>
-                                                                <Truck size={10} />
-                                                                {buyerCourierTrackingState(order).label}
-                                                            </div>
-                                                            <p className="mt-1 text-[10px] leading-snug text-gray-600">{buyerCourierTrackingState(order).detail}</p>
-                                                        </div>
-                                                        {order.delivery.share_link && (
-                                                            <a
-                                                                href={order.delivery.share_link}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-[9px] font-bold text-gray-700 hover:bg-gray-100 shrink-0 shadow-sm"
-                                                            >
-                                                                Track <ExternalLink size={10} />
-                                                            </a>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="mt-1.5 flex flex-wrap gap-1 text-[9px] text-gray-500">
-                                                        {order.delivery.external_order_id && (
-                                                            <span className="rounded-md border border-gray-200 bg-white px-1.5 py-0.5 font-bold text-gray-700 shadow-sm">
-                                                                Courier ID: {order.delivery.external_order_id}
-                                                            </span>
-                                                        )}
-                                                        {order.delivery.last_updated_at && (
-                                                            <span className="rounded-md border border-gray-200 bg-white px-1.5 py-0.5 shadow-sm">
-                                                                Updated: {order.delivery.last_updated_at}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    {order.delivery.pending_auto_cancel && (
-                                                        <div className="mt-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-[10px] text-red-700">
-                                                            <p className="font-bold">Return-to-sender hold active</p>
-                                                            <p className="mt-0.5">The courier reported a terminal delivery failure. The system will auto-cancel this order after {order.delivery.cancel_hold_ends_at} if it does not recover.</p>
-                                                        </div>
+                                                    {order.proof_of_delivery && (
+                                                        <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-600 underline hover:text-blue-800 flex items-center gap-1">
+                                                            <PackageCheck size={12} /> View Proof of Delivery
+                                                        </a>
                                                     )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {order.replacement_in_progress && (
-                                        <div className="flex items-start gap-3 rounded-xl border border-teal-200 bg-teal-50 p-4">
-                                            <div className="rounded-lg bg-white p-2 text-teal-600 shadow-sm">
-                                                <PackageCheck size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-teal-800">Replacement in Progress</p>
-                                                {order.replacement_started_at && (
-                                                    <p className="mt-1 text-xs text-teal-700">Seller restarted fulfillment on {order.replacement_started_at}.</p>
-                                                )}
-                                                {order.replacement_resolution_description && (
-                                                    <div className="mt-2 rounded-lg border border-teal-100 bg-white/80 p-3 text-xs text-teal-900 whitespace-pre-wrap">
-                                                        <span className="mb-1 block font-bold">Compensation / Resolution</span>
-                                                        {order.replacement_resolution_description}
-                                                    </div>
-                                                )}
-                                                <p className="mt-2 text-xs text-teal-700">The replacement must still be delivered and officially received before the issue is considered resolved.</p>
                                             </div>
                                         </div>
                                     )}
-
-                                    {order.replacement_resolved_at && (
-                                        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                                            <div className="rounded-lg bg-white p-2 text-emerald-600 shadow-sm">
-                                                <CheckCircle size={18} />
+                                    {order.items.map((item, idx) => (
+                                        <div key={idx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-gray-200 transition">
+                                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden shrink-0 shadow-sm">
+                                                <img 
+                                                    src={item.img} 
+                                                    alt={item.name} 
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                                />
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-emerald-800">Replacement Successfully Resolved</p>
-                                                <p className="mt-1 text-xs text-emerald-700">You confirmed the replacement on {order.replacement_resolved_at}.</p>
-                                                {order.replacement_resolution_description && (
-                                                    <p className="mt-2 text-xs text-emerald-700">
-                                                        Resolution: <span className="font-semibold">{order.replacement_resolution_description}</span>
-                                                    </p>
-                                                )}
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-gray-900 text-sm truncate">{item.name}</h4>
+                                                <p className="text-xs text-gray-500 mt-1">Variation: {item.variant}</p>
+                                                <p className="text-xs text-gray-400">Qty: {item.qty}</p>
                                             </div>
-                                        </div>
-                                    )}
-
-                                    {order.items.length > 0 && (
-                                        <div className="overflow-hidden rounded-lg border border-stone-100 bg-[#FCFAF7]">
-                                            <div className="divide-y divide-stone-100/70">
-                                                {order.items.map((item, idx) => (
-                                                    <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 transition-colors hover:bg-white">
-                                                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg border border-stone-200 overflow-hidden shrink-0 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)]">
-                                                            <img 
-                                                                src={item.img} 
-                                                                alt={item.name} 
-                                                                className="w-full h-full object-cover"
-                                                                onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0 self-center">
-                                                            <h4 className="font-bold text-stone-900 text-[14px] truncate">{item.name}</h4>
-                                                            <div className="mt-1 flex items-center gap-3 text-[12px] text-stone-500">
-                                                                <span>Var: {item.variant}</span>
-                                                                <span className="h-1 w-1 rounded-full bg-stone-300"></span>
-                                                                <span>Qty: {item.qty}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="w-full text-left sm:w-auto sm:text-right shrink-0 sm:self-center mt-3 sm:mt-0">
-                                                            <p className="font-black tracking-tight text-stone-900 text-[16px]">PHP {Number(item.price).toLocaleString()}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                            <div className="text-left sm:text-right shrink-0">
+                                                <p className="font-bold text-clay-700">Γé▒{Number(item.price).toLocaleString()}</p>
                                             </div>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
 
                                 {/* Warranty Info (if applicable) */}
@@ -859,23 +620,10 @@ export default function MyOrders({ auth, orders }) {
 
 
                                 {/* Order Footer */}
-                                <div className="px-4 py-3 bg-[#FDFBF9] border-t border-stone-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                    <div className="w-full sm:w-auto">
-                                        <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Order Breakdown</p>
-                                        <div className="space-y-1 text-[12px] text-stone-500">
-                                            <div className="flex items-center justify-between gap-4 sm:justify-start">
-                                                <span className="min-w-[120px]">Subtotal</span>
-                                                <span className="font-bold text-stone-800 text-right whitespace-nowrap shrink-0">PHP {order.merchandise_subtotal}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between gap-4 sm:justify-start">
-                                                <span className="min-w-[120px]">Fee (3%)</span>
-                                                <span className="font-bold text-stone-800 text-right whitespace-nowrap shrink-0">PHP {order.convenience_fee_amount}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between gap-4 pt-1.5 mt-1.5 border-t border-stone-200/60 sm:justify-start">
-                                                <span className="min-w-[120px] font-bold text-stone-900 text-[13px]">Total</span>
-                                                <span className="text-[15px] font-black tracking-tight text-[#c8764b] text-right whitespace-nowrap shrink-0">PHP {order.total}</span>
-                                            </div>
-                                        </div>
+                                <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div>
+                                        <p className="text-xs text-gray-400 font-medium">Order Total</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-clay-700">Γé▒{order.total}</p>
                                     </div>
 
                                     <div className="flex w-full flex-wrap gap-2 justify-start sm:justify-end">
@@ -884,9 +632,9 @@ export default function MyOrders({ auth, orders }) {
                                         <a 
                                             href={`/my-orders/${order.id}/receipt`}
                                             target="_blank"
-                                            className="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-200 bg-white rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
+                                            className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
                                         >
-                                            <Printer size={14} /> Receipt
+                                            <Printer size={16} /> Receipt
                                         </a>
 
                                         {/* Contact Seller */}
@@ -894,9 +642,9 @@ export default function MyOrders({ auth, orders }) {
                                         {order.status !== 'Completed' && (
                                             <button 
                                                 onClick={() => contactSeller(order.seller_id)}
-                                                className="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-200 bg-white rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
+                                                className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
                                             >
-                                                <MessageCircle size={14} /> Chat
+                                                <MessageCircle size={16} /> Chat
                                             </button>
                                         )}
 
@@ -904,9 +652,9 @@ export default function MyOrders({ auth, orders }) {
                                         {['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
                                             <a 
                                                 href={route('payment.pay', order.order_number)}
-                                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all hover:-translate-y-0.5"
+                                                className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5"
                                             >
-                                                <CreditCard size={14} /> Pay Now
+                                                <CreditCard size={16} /> Pay Now
                                             </a>
                                         )}
 
@@ -914,9 +662,9 @@ export default function MyOrders({ auth, orders }) {
                                         {order.can_cancel && (
                                             <button 
                                                 onClick={() => openModal('cancel', order.id)}
-                                                className="inline-flex items-center gap-1.5 px-3 py-2 border border-red-200 bg-red-50 rounded-lg text-[12px] font-bold text-red-600 hover:bg-red-100 transition"
+                                                className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 bg-red-50 rounded-xl text-sm font-bold text-red-600 hover:bg-red-100 transition"
                                             >
-                                                <XCircle size={14} /> Cancel
+                                                <XCircle size={16} /> Cancel
                                             </button>
                                         )}
 
@@ -924,45 +672,44 @@ export default function MyOrders({ auth, orders }) {
                                         {(order.status === 'Delivered' && !order.received_at) && (
                                             <button 
                                                 onClick={() => openModal('receive', order.id)}
-                                                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold shadow-md transition-all hover:-translate-y-0.5 ${
+                                                className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all hover:-translate-y-0.5 ${
                                                     order.shipping_method === 'Pick Up'
                                                     ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-200'
                                                     : 'bg-green-600 text-white hover:bg-green-700 shadow-green-200'
                                                 }`}
                                             >
-                                                {order.shipping_method === 'Pick Up' ? <PackageCheck size={14} /> : <CheckCircle size={14} />}
+                                                {order.shipping_method === 'Pick Up' ? <PackageCheck size={16} /> : <CheckCircle size={16} />}
                                                 {order.shipping_method === 'Pick Up' ? 'Confirm Pick Up' : 'Order Received'}
                                             </button>
                                         )}
 
                                         {/* COMPLETED: Rate & Return */}
+                                        {/* COMPLETED: Rate & Return */}
+                                        {/* COMPLETED: Rate & Return & Buy Again */}
                                         {order.status === 'Completed' && (
                                             <>
                                                 <button 
                                                     onClick={() => buyAgain(order.id)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-2 border border-clay-200 bg-clay-50 text-clay-700 rounded-lg text-[12px] font-bold hover:bg-clay-100 transition shadow-sm"
+                                                    className="inline-flex items-center gap-2 px-4 py-2.5 border border-clay-200 bg-clay-50 text-clay-700 rounded-xl text-sm font-bold hover:bg-clay-100 transition shadow-sm"
                                                 >
-                                                    <ShoppingBag size={14} /> Buy Again
+                                                    <ShoppingBag size={16} /> Buy Again
                                                 </button>
 
-                                                {(!order.replacement_in_progress && (
-                                                    order.items.some(item => !item.is_rated) ||
-                                                    order.items.some(item => item.review?.can_manage_review)
-                                                )) && (
+                                                {!order.items.every(item => item.is_rated) && (
                                                     <button 
                                                         onClick={() => setRatingModal({ isOpen: true, order })}
-                                                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all hover:-translate-y-0.5"
+                                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 shadow-lg shadow-clay-200 transition-all hover:-translate-y-0.5"
                                                     >
-                                                        <Star size={14} /> {order.items.some(item => item.review?.can_manage_review) ? 'Manage Reviews' : 'Rate'}
+                                                        <Star size={16} /> Rate
                                                     </button>
                                                 )}
 
                                                 {order.can_return && (
                                                     <button 
                                                         onClick={() => setReturnModalState({ isOpen: true, order })}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-2 border border-orange-200 bg-orange-50 rounded-lg text-[12px] font-bold text-orange-600 hover:bg-orange-100 transition"
+                                                        className="inline-flex items-center gap-2 px-4 py-2.5 border border-orange-200 bg-orange-50 rounded-xl text-sm font-bold text-orange-600 hover:bg-orange-100 transition"
                                                     >
-                                                        <RotateCcw size={14} /> Return
+                                                        <RotateCcw size={16} /> Return
                                                     </button>
                                                 )}
                                             </>
@@ -973,15 +720,15 @@ export default function MyOrders({ auth, orders }) {
                                             <>
                                                 <button 
                                                     onClick={() => openModal('cancelReturn', order.id)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-2 border border-red-200 bg-red-50 text-red-600 rounded-lg text-[12px] font-bold hover:bg-red-100 transition shadow-sm"
+                                                    className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition shadow-sm"
                                                 >
-                                                    <XCircle size={14} /> Cancel Return
+                                                    <XCircle size={16} /> Cancel Return
                                                 </button>
                                                 <button 
                                                     onClick={() => contactSeller(order.seller_id)}
-                                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-[12px] font-bold hover:bg-orange-600 shadow-md shadow-orange-200 transition-all hover:-translate-y-0.5"
+                                                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5"
                                                 >
-                                                    <MessageCircle size={14} /> Negotiate Return
+                                                    <MessageCircle size={16} /> Negotiate Return
                                                 </button>
                                             </>
                                         )}
@@ -990,18 +737,18 @@ export default function MyOrders({ auth, orders }) {
                             </div>
                         ))
                     ) : (
-                        <div className="py-24 text-center bg-white rounded-2xl border border-stone-100 shadow-sm">
-                            <div className="w-20 h-20 bg-[#FCFAF7] border border-stone-200/60 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
-                                <ShoppingBag size={32} strokeWidth={1.5} className="text-stone-400" />
+                        <div className="py-20 text-center bg-white rounded-2xl border border-gray-100 shadow-sm">
+                            <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <ShoppingBag size={40} className="text-gray-300" />
                             </div>
-                            <h3 className="text-[17px] font-bold tracking-tight text-stone-900">No orders found</h3>
-                            <p className="text-stone-500 text-[13px] mb-6 mt-1.5 max-w-sm mx-auto">
+                            <h3 className="text-lg font-bold text-gray-900">No orders found</h3>
+                            <p className="text-gray-500 text-sm mb-6 mt-1">
                                 {activeTab === 'All' 
-                                    ? "You haven't placed any orders yet. Start exploring artisan products." 
-                                    : `No orders found in the "${tabs.find(t => t.id === activeTab)?.label}" category.`}
+                                    ? "You haven't placed any orders yet." 
+                                    : `No orders in "${tabs.find(t => t.id === activeTab)?.label}" category.`}
                             </p>
-                            <Link href="/shop" className="inline-flex items-center gap-2 px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold hover:bg-clay-800 shadow-sm transition-all">
-                                <ShoppingBag size={16} strokeWidth={2.5} /> Start Shopping
+                            <Link href="/shop" className="inline-flex items-center gap-2 px-6 py-3 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 shadow-lg shadow-clay-200 transition-all hover:-translate-y-0.5">
+                                <ShoppingBag size={18} /> Start Shopping
                             </Link>
                         </div>
                     )}

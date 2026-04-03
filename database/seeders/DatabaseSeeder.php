@@ -15,10 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        if (!$this->app->environment(['local', 'testing'])) {
+            $this->command?->warn('DatabaseSeeder skipped non-production-safe sample accounts outside local/testing.');
+            return;
+        }
 
         User::factory()->create([
             'name' => 'Test User',
+            'first_name' => 'Test',
+            'last_name' => 'User',
             'email' => 'test@example.com',
         ]);
     }

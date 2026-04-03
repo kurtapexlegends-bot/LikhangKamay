@@ -120,9 +120,19 @@ class ArtisanSetupController extends Controller
                 'artisan_rejection_reason' => null,
             ]);
 
-            // Notify super admin about new application
-            $adminEmail = 'likhangkamaybusiness@gmail.com';
-            Mail::to($adminEmail)->send(new NewArtisanApplication($user));
+            $adminEmail = config('services.artisan_applications.notification_email');
+
+            if (filled($adminEmail)) {
+                try {
+                    Mail::to($adminEmail)->send(new NewArtisanApplication($user));
+                } catch (\Throwable $e) {
+                    report($e);
+
+                    return redirect()
+                        ->route('artisan.pending')
+                        ->with('warning', 'Application submitted, but the admin notification email could not be sent.');
+                }
+            }
 
             return redirect()->route('artisan.pending');
         }

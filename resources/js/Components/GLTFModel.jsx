@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, Suspense, useMemo } from 'react';
+import React, { useRef, useEffect, Suspense } from 'react';
 import { useGLTF, useAnimations } from '@react-three/drei';
-import * as THREE from 'three';
 
 /**
  * GLTFModel Component
@@ -16,20 +15,14 @@ export default function GLTFModel({
     scale = 1, 
     position = [0, 0, 0], 
     rotation = [0, 0, 0],
-    normalize = true,
-    fitSize = 2.4,
     ...props 
 }) {
     const groupRef = useRef();
     
-    // Load the GLTF model
     const { scene, animations } = useGLTF(url);
-    
-    // Handle animations if present
     const { actions } = useAnimations(animations, groupRef);
     
     useEffect(() => {
-        // Play the first animation if available
         if (animations.length > 0) {
             const firstAction = Object.values(actions)[0];
             if (firstAction) {
@@ -38,31 +31,7 @@ export default function GLTFModel({
         }
     }, [actions, animations]);
 
-    const clonedScene = useMemo(() => {
-        const clone = scene.clone();
-
-        clone.traverse((child) => {
-            if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-        });
-
-        if (normalize) {
-            const box = new THREE.Box3().setFromObject(clone);
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-            const maxDimension = Math.max(size.x, size.y, size.z) || 1;
-            const normalizedScale = fitSize / maxDimension;
-
-            clone.position.x -= center.x;
-            clone.position.y -= box.min.y;
-            clone.position.z -= center.z;
-            clone.scale.setScalar(normalizedScale);
-        }
-
-        return clone;
-    }, [scene, normalize, fitSize]);
+    const clonedScene = scene.clone();
 
     return (
         <group ref={groupRef} {...props} dispose={null}>
@@ -76,14 +45,10 @@ export default function GLTFModel({
     );
 }
 
-// Preload helper for better performance
 GLTFModel.preload = (url) => {
     useGLTF.preload(url);
 };
 
-/**
- * Wrapper component with loading fallback
- */
 export function GLTFModelWithFallback({ url, fallback, ...props }) {
     return (
         <Suspense fallback={fallback || <LoadingPlaceholder />}>
@@ -92,7 +57,6 @@ export function GLTFModelWithFallback({ url, fallback, ...props }) {
     );
 }
 
-// Simple loading placeholder mesh
 function LoadingPlaceholder() {
     return (
         <mesh>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuthRedirectService;
 use App\Support\PersonName;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -71,7 +72,7 @@ class SocialAuthController extends Controller
     /**
      * Handle OAuth callback
      */
-    public function callback(string $provider)
+    public function callback(string $provider, AuthRedirectService $authRedirectService)
     {
         if (!in_array($provider, $this->providers)) {
             return redirect()->route('login')->with('error', 'Unsupported provider.');
@@ -106,25 +107,14 @@ class SocialAuthController extends Controller
             }
 
             Auth::login($existingUser, $rememberSocialLogin);
+            request()->session()->regenerate();
             session()->forget([
                 'social_auth',
                 'social_auth_role',
                 'social_auth_remember',
             ]);
-            
-            // Redirect based on their actual role
-            if ($existingUser->isAdmin()) {
-                return redirect()->route('admin.dashboard');
-            }
-            
-            if ($existingUser->isArtisan()) {
-                if ($existingUser->isApproved()) {
-                    return redirect()->route('dashboard');
-                }
-                return redirect()->route('artisan.setup');
-            }
-            
-            return redirect()->intended('/');
+
+            return $authRedirectService->redirectAfterLogin($existingUser);
         }
 
         // New user - store social data in session and redirect to complete profile
@@ -170,7 +160,7 @@ class SocialAuthController extends Controller
     /**
      * Complete profile and create user account
      */
-    public function completeProfile(Request $request)
+    public function completeProfile(Request $request, AuthRedirectService $authRedirectService)
     {
         $socialData = session('social_auth');
 
@@ -188,6 +178,7 @@ class SocialAuthController extends Controller
                 'name' => 'required_without:first_name|string|max:255',
                 'shop_name' => ['required', 'string', 'max:30', Rule::unique('users', 'shop_name')],
                 'password' => 'required|string|min:8|confirmed',
+                'terms' => 'accepted',
             ]);
         } else {
             $request->validate([
@@ -195,6 +186,7 @@ class SocialAuthController extends Controller
                 'last_name' => 'nullable|string|max:255',
                 'name' => 'required_without:first_name|string|max:255',
                 'password' => 'required|string|min:8|confirmed',
+                'terms' => 'accepted',
             ]);
         }
 
@@ -238,12 +230,8 @@ class SocialAuthController extends Controller
             event(new \Illuminate\Auth\Events\Verified($user));
         }
         Auth::login($user, (bool) ($socialData['remember'] ?? false));
+        $request->session()->regenerate();
 
-        // Redirect based on role
-        if ($isArtisan) {
-            return redirect()->route('artisan.setup');
-        }
-
-        return redirect('/');
+        return redirect()->to($authRedirectService->pathForVerifiedUser($user));
     }
 }

@@ -65,4 +65,8 @@ return [
         'base_url' => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
     ],
 
+    'artisan_applications' => [
+        'notification_email' => env('ARTISAN_APPLICATION_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS')),
+    ],
+
 ];

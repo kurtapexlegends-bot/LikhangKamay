@@ -49,112 +49,100 @@ export default function MyWallet({ wallet }) {
             <Head title="My Wallet" />
             <BuyerNavbar />
 
-            <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+            <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
                 {(flash.success || flash.error) && (
-                    <div className="mb-4 space-y-3">
+                    <div className="mb-6 space-y-3">
                         {flash.success && (
-                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                            <div className="rounded-xl border border-[#2c3b35] bg-[#F2FAF6] px-4 py-3 text-[13px] font-bold text-[#1f2b26] shadow-sm">
                                 {flash.success}
                             </div>
                         )}
                         {flash.error && (
-                            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                            <div className="rounded-xl border border-red-200 bg-[#FCF3F3] px-4 py-3 text-[13px] font-bold text-red-800 shadow-sm">
                                 {flash.error}
                             </div>
                         )}
                     </div>
                 )}
 
-                <section className="relative overflow-hidden rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-[#F4EEE7] px-5 py-5 shadow-sm sm:px-6 sm:py-6">
-                    <div className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-emerald-200/30 blur-3xl" />
-                    <div className="pointer-events-none absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-clay-200/25 blur-2xl" />
+                <section className="relative overflow-hidden rounded-[1.5rem] border border-[#2c3b35] bg-[#1a231f] px-6 py-8 shadow-xl shadow-stone-900/10 sm:p-10">
+                    <div className="pointer-events-none absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-clay-500/10 blur-[80px]" />
+                    <div className="pointer-events-none absolute -bottom-32 -left-32 h-[350px] w-[350px] rounded-full bg-stone-500/10 blur-[70px]" />
 
-                    <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-                        <div>
-                            <div className="flex items-start gap-3">
-                                <div className="rounded-2xl bg-white/90 p-2.5 text-emerald-700 shadow-sm ring-1 ring-emerald-100">
-                                    <Wallet size={20} />
+                    <div className="relative grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
+                        <div className="flex flex-col justify-center">
+                            <div className="flex items-center gap-3">
+                                <div className="inline-flex items-center justify-center rounded-xl bg-white/10 p-2 text-stone-200 shadow-sm backdrop-blur-md ring-1 ring-white/20">
+                                    <Wallet size={20} strokeWidth={2.5} />
                                 </div>
-                                <div>
-                                    <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">My Wallet</h1>
-                                    <p className="mt-1.5 max-w-xl text-sm leading-6 text-gray-600">
-                                        Refunds go here. Use this balance for eligible delivery checkouts.
-                                    </p>
-                                </div>
+                                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Artisan Wallet</h1>
                             </div>
 
-                            <div className="mt-6">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-700">Available balance</p>
-                                <div className="mt-2.5 flex items-end gap-2.5">
-                                    <h2 className="text-3xl font-black tracking-tight text-emerald-950 sm:text-4xl">
-                                        PHP {formatMoney(wallet?.balance)}
+                            <div className="mt-8">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Available Balance</p>
+                                <div className="mt-3 flex items-end gap-3">
+                                    <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                                        <span className="text-stone-400 mr-1.5 font-bold text-3xl sm:text-4xl">PHP</span>
+                                        {formatMoney(wallet?.balance)}
                                     </h2>
-                                    <span className="pb-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-800/80">
-                                        {wallet?.currency || 'PHP'}
-                                    </span>
                                 </div>
-                                <p className="mt-2 text-sm text-gray-600">
-                                    Auto-updates after refunds and wallet payments.
+                                <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-stone-400">
+                                    Your central fund for artisan refunds and seamless delivery checkouts. Balance updates occur immediately upon verification.
                                 </p>
                             </div>
 
-                            <div className="mt-5 flex flex-wrap gap-2.5">
+                            <div className="mt-8 flex flex-wrap gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setShowTopUpModal(true)}
-                                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3.5 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
+                                    className="inline-flex items-center gap-2 rounded-lg bg-clay-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm ring-1 ring-inset ring-white/10 transition hover:bg-clay-700"
                                 >
-                                    <Plus size={15} />
-                                    Top Up
+                                    <Plus size={16} strokeWidth={2.5} />
+                                    Top Up Funds
                                 </button>
                                 <Link
                                     href={route('my-orders.index')}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3.5 py-2 text-sm font-bold text-white transition hover:bg-clay-700"
+                                    className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-5 py-2.5 text-[13px] font-bold text-stone-300 shadow-sm ring-1 ring-inset ring-white/10 transition hover:bg-white/10 hover:text-white"
                                 >
-                                    <ShoppingBag size={15} />
-                                    My Orders
+                                    <ShoppingBag size={16} strokeWidth={2.5} />
+                                    View Past Orders
                                 </Link>
                             </div>
                         </div>
 
-                        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
-                            <div className="rounded-2xl border border-white/80 bg-white/85 p-3.5 shadow-sm backdrop-blur">
+                        <div className="flex flex-col gap-3">
+                            <div className="rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm transition hover:bg-white/10">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent credits</p>
-                                        <p className="mt-1.5 text-xl font-black text-emerald-700">PHP {formatMoney(recentCredits)}</p>
-                                        <p className="mt-1.5 text-xs leading-5 text-gray-500">Recent wallet credits.</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Recent Credits</p>
+                                        <p className="mt-1 text-xl font-bold tracking-tight text-white"><span className="text-stone-500 mr-1 text-sm">PHP</span>{formatMoney(recentCredits)}</p>
                                     </div>
-                                    <div className="rounded-2xl bg-emerald-100 p-2 text-emerald-700">
-                                        <ArrowDownLeft size={16} />
+                                    <div className="rounded-lg bg-[#F2FAF6]/10 p-2 text-emerald-400">
+                                        <ArrowDownLeft size={18} strokeWidth={2.5} />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-white/80 bg-white/85 p-3.5 shadow-sm backdrop-blur">
+                            <div className="rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm transition hover:bg-white/10">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent debits</p>
-                                        <p className="mt-1.5 text-xl font-black text-red-600">PHP {formatMoney(recentDebits)}</p>
-                                        <p className="mt-1.5 text-xs leading-5 text-gray-500">Recent wallet deductions.</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Recent Debits</p>
+                                        <p className="mt-1 text-xl font-bold tracking-tight text-white"><span className="text-stone-500 mr-1 text-sm">PHP</span>{formatMoney(recentDebits)}</p>
                                     </div>
-                                    <div className="rounded-2xl bg-red-100 p-2 text-red-600">
-                                        <ArrowUpRight size={16} />
+                                    <div className="rounded-lg bg-[#FCF3F3]/10 p-2 text-[#e37f7a]">
+                                        <ArrowUpRight size={18} strokeWidth={2.5} />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-white/80 bg-white/85 p-3.5 shadow-sm backdrop-blur sm:col-span-2 lg:col-span-1">
-                                <div className="flex items-start gap-3">
-                                    <div className="rounded-2xl bg-gray-100 p-2 text-gray-600">
-                                        <ShieldCheck size={16} />
+                            <div className="rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm transition hover:bg-white/10">
+                                <div className="flex items-start gap-4">
+                                    <div className="rounded-lg bg-white/10 p-2 text-stone-400">
+                                        <ShieldCheck size={18} strokeWidth={2.5} />
                                     </div>
-                                    <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Latest activity</p>
-                                        <p className="mt-1.5 text-sm font-bold text-gray-900">{latestActivity}</p>
-                                        <p className="mt-1.5 text-xs leading-5 text-gray-500">
-                                            Each entry shows the updated balance.
-                                        </p>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Status Synced</p>
+                                        <p className="mt-1 truncate text-[13px] font-bold text-stone-200">{latestActivity}</p>
                                     </div>
                                 </div>
                             </div>
@@ -163,140 +151,150 @@ export default function MyWallet({ wallet }) {
                 </section>
 
                 <Modal show={showTopUpModal} onClose={closeTopUpModal} maxWidth="md">
-                    <form onSubmit={submitTopUp} className="p-5 sm:p-6">
-                        <div className="flex items-start gap-3">
-                            <div className="rounded-2xl bg-emerald-100 p-2.5 text-emerald-700">
-                                <Wallet size={18} />
-                            </div>
+                    <form onSubmit={submitTopUp} className="flex flex-col bg-[#FDFBF9]">
+                        <div className="shrink-0 flex items-center justify-between px-6 py-5 border-b border-stone-100 bg-white">
                             <div>
-                                <h2 className="text-lg font-black text-gray-900">Top Up Wallet</h2>
-                                <p className="mt-1 text-sm text-gray-500">
-                                    Add funds to your buyer wallet using online payment.
+                                <h2 className="text-[19px] font-bold tracking-tight text-stone-900">Add Wallet Funds</h2>
+                                <p className="mt-1 text-[13px] font-medium text-stone-500">
+                                    Recharge your balance via standard online checkout.
                                 </p>
                             </div>
+                            <button type="button" onClick={closeTopUpModal} className="text-stone-400 transition hover:text-stone-700">
+                                <Plus size={20} className="rotate-45" />
+                            </button>
                         </div>
 
-                        <div className="mt-5">
-                            <label className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                                Amount
+                        <div className="p-6">
+                            <label className="text-[11px] font-bold uppercase tracking-[0.15em] text-stone-800">
+                                Deposit Amount
                             </label>
-                            <div className="mt-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-bold text-gray-500">PHP</span>
-                                    <input
-                                        type="number"
-                                        min="100"
-                                        step="0.01"
-                                        value={data.amount}
-                                        onChange={(e) => setData('amount', e.target.value)}
-                                        className="w-full border-0 bg-transparent p-0 text-2xl font-black text-gray-900 focus:outline-none focus:ring-0"
-                                        placeholder="500.00"
-                                        required
-                                    />
-                                </div>
+                            <div className="mt-2.5 flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3.5 shadow-sm transition-colors focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500">
+                                <span className="text-[15px] font-black text-stone-400">PHP</span>
+                                <input
+                                    type="number"
+                                    min="100"
+                                    step="0.01"
+                                    value={data.amount}
+                                    onChange={(e) => setData('amount', e.target.value)}
+                                    className="w-full border-0 bg-transparent p-0 text-xl font-black text-stone-900 focus:outline-none focus:ring-0 placeholder:text-stone-200"
+                                    placeholder="500.00"
+                                    required
+                                />
                             </div>
-                            <p className="mt-2 text-xs text-gray-500">
-                                Minimum online top up is PHP 100.00.
+                            <p className="mt-2 text-[12px] font-medium text-stone-500">
+                                Minimum top up required is PHP 100.00.
                             </p>
                             {errors.amount && (
-                                <p className="mt-2 text-xs font-semibold text-red-600">{errors.amount}</p>
+                                <p className="mt-2 text-[12px] font-bold text-red-600">{errors.amount}</p>
                             )}
+
+                            <div className="mt-6">
+                                <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.15em] text-stone-500">Or Select a Preset</p>
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {quickAmounts.map((amount) => (
+                                        <button
+                                            key={amount}
+                                            type="button"
+                                            onClick={() => setData('amount', amount)}
+                                            className={`rounded-lg border px-2 py-2 text-[13px] font-bold transition-all duration-200 ${
+                                                data.amount === amount
+                                                    ? 'border-clay-700 bg-clay-700 text-white shadow-[0_2px_10px_-4px_rgba(120,79,46,0.5)]'
+                                                    : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50'
+                                            }`}
+                                        >
+                                            {Number(amount).toLocaleString()}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {quickAmounts.map((amount) => (
-                                <button
-                                    key={amount}
-                                    type="button"
-                                    onClick={() => setData('amount', amount)}
-                                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-                                        data.amount === amount
-                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                                            : 'border-gray-200 bg-white text-gray-600 hover:border-emerald-200 hover:bg-emerald-50/60'
-                                    }`}
-                                >
-                                    PHP {Number(amount).toLocaleString()}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="mt-6 flex justify-end gap-2.5">
+                        <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-stone-100 bg-[#FCF7F2]/50">
                             <button
                                 type="button"
                                 onClick={closeTopUpModal}
-                                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50"
+                                className="px-5 py-2.5 text-[13px] font-bold text-stone-600 transition hover:text-stone-900"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="rounded-xl bg-clay-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="rounded-xl bg-clay-700 px-6 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-clay-800 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                {processing ? 'Starting...' : 'Proceed to Payment'}
+                                {processing ? 'Initializing...' : 'Proceed to Gateway'}
                             </button>
                         </div>
                     </form>
                 </Modal>
 
-                <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-gray-100 bg-white shadow-sm">
-                    <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+                <section className="mt-8 overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
+                    <div className="flex flex-col gap-3 border-b border-stone-100 px-6 py-5 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Transaction History</p>
-                            <h2 className="mt-1.5 text-xl font-bold text-gray-900">Recent Wallet Activity</h2>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Recent wallet credits and debits.
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Statement</p>
+                            <h2 className="mt-1 text-[19px] font-bold tracking-tight text-stone-900">Transaction History</h2>
+                            <p className="mt-1 text-[13px] font-medium text-stone-500">
+                                Complete ledger of account credits and debits.
                             </p>
                         </div>
-                        <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-500">
-                            <RefreshCcw size={14} />
-                            Latest entries
+                        <div className="inline-flex items-center gap-2 rounded-lg bg-stone-50 px-3 py-1.5 text-[11px] font-bold tracking-wide text-stone-500 ring-1 ring-inset ring-stone-200">
+                            <RefreshCcw size={14} className="opacity-70" />
+                            Live Sync Active
                         </div>
                     </div>
 
-                    <div className="p-4 sm:p-5">
+                    <div className="">
                         {recentTransactions.length ? (
-                            <div className="space-y-2.5">
+                            <div className="divide-y divide-stone-100">
                                 {recentTransactions.map((entry) => {
                                     const isCredit = entry.direction === 'credit';
 
                                     return (
-                                        <div key={entry.id} className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-[#FCFAF7] p-3.5 transition hover:border-gray-200 hover:bg-white sm:flex-row sm:items-start sm:justify-between">
-                                            <div className="flex min-w-0 gap-3">
-                                                <div className={`mt-0.5 rounded-2xl p-2 ${isCredit ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
-                                                    {isCredit ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                                        <div key={entry.id} className="flex flex-col gap-4 p-5 transition hover:bg-[#FDFBF9] sm:flex-row sm:items-center sm:justify-between">
+                                            <div className="flex min-w-0 items-start gap-4">
+                                                <div className={`mt-0.5 rounded-xl p-2.5 shadow-sm ring-1 ring-inset ${
+                                                    isCredit 
+                                                        ? 'bg-[#F2FAF6] text-[#2c3b35] ring-emerald-200/50' 
+                                                        : 'bg-[#FCF3F3] text-red-800 ring-red-200/50'
+                                                }`}>
+                                                    {isCredit ? <ArrowDownLeft size={18} strokeWidth={2.5} /> : <ArrowUpRight size={18} strokeWidth={2.5} />}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <p className="text-sm font-bold text-gray-900">
-                                                            {entry.description || entry.category || 'Wallet update'}
+                                                        <p className="text-[14px] font-bold tracking-tight text-stone-900">
+                                                            {entry.description || entry.category || 'Wallet ledger update'}
                                                         </p>
-                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
                                                             isCredit
-                                                                ? 'bg-emerald-100 text-emerald-700'
-                                                                : 'bg-red-100 text-red-600'
+                                                                ? 'bg-[#F2FAF6] text-[#2c3b35]'
+                                                                : 'bg-[#FCF3F3] text-red-800'
                                                         }`}>
                                                             {isCredit ? 'Credit' : 'Debit'}
                                                         </span>
                                                     </div>
-                                                    <p className="mt-1 text-xs text-gray-500">
-                                                        {entry.order_number ? `Order ${entry.order_number}` : 'Wallet update'}
-                                                        {entry.created_at ? ` - ${entry.created_at}` : ''}
-                                                    </p>
+                                                    <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] font-medium text-stone-500">
+                                                        <span>{entry.order_number ? `Order / Ref: ${entry.order_number}` : 'System generated'}</span>
+                                                        {entry.created_at && (
+                                                            <>
+                                                                <span className="hidden h-1 w-1 rounded-full bg-stone-300 sm:inline-block"></span>
+                                                                <span>{entry.created_at}</span>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                     {entry.counterparty_name && (
-                                                        <p className="mt-1 text-xs text-gray-500">
-                                                            Counterparty: {entry.counterparty_name}
+                                                        <p className="mt-1 text-[12px] font-medium text-stone-500">
+                                                            Account: {entry.counterparty_name}
                                                         </p>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <div className="grid shrink-0 gap-1 text-left sm:min-w-[170px] sm:text-right">
-                                                <p className={`text-sm font-black ${isCredit ? 'text-emerald-700' : 'text-red-600'}`}>
-                                                    {isCredit ? '+' : '-'}PHP {formatMoney(entry.amount)}
+                                            <div className="flex shrink-0 items-center justify-between sm:block sm:text-right border-t border-stone-100 pt-3 sm:BORDER-0 sm:pt-0">
+                                                <p className={`text-[15px] font-black tracking-tight ${isCredit ? 'text-[#2c3b35]' : 'text-red-700'}`}>
+                                                    {isCredit ? '+' : '-'}{formatMoney(entry.amount)}
                                                 </p>
-                                                <p className="text-xs font-medium text-gray-500">
-                                                    Balance after: PHP {formatMoney(entry.balance_after)}
+                                                <p className="text-[11px] font-bold tracking-wide text-stone-400 mt-1 uppercase">
+                                                    Bal: {formatMoney(entry.balance_after)}
                                                 </p>
                                             </div>
                                         </div>
@@ -304,13 +302,13 @@ export default function MyWallet({ wallet }) {
                                 })}
                             </div>
                         ) : (
-                            <div className="rounded-[1.5rem] border border-dashed border-gray-200 bg-[#FCFAF7] px-5 py-8 text-center">
-                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
-                                    <Wallet size={20} />
+                            <div className="flex flex-col items-center justify-center p-12 text-center">
+                                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-stone-50 text-stone-400 ring-1 ring-inset ring-stone-200">
+                                    <Wallet size={20} strokeWidth={2.5} />
                                 </div>
-                                <p className="mt-3 text-base font-bold text-gray-800">No wallet activity yet</p>
-                                <p className="mt-1.5 text-sm leading-6 text-gray-500">
-                                    Refunds and wallet purchases will appear here.
+                                <h3 className="mt-4 text-[15px] font-bold tracking-tight text-stone-900">No transactions found</h3>
+                                <p className="mt-1 max-w-sm text-[13px] font-medium text-stone-500">
+                                    As you top-up or receive refunds, your ledger updates will appear here chronologically.
                                 </p>
                             </div>
                         )}

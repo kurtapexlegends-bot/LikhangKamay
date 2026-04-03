@@ -22,7 +22,7 @@ class NewArtisanApplication extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '📋 New Artisan Application - ' . $this->artisan->shop_name,
+            subject: 'New Artisan Application - '.$this->artisan->shop_name,
         );
     }
 

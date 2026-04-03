@@ -2,7 +2,7 @@ import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Canvas } from '@react-three/fiber';
 import SellerSidebar from '@/Components/SellerSidebar';
-import { OrbitControls, Html, useProgress } from '@react-three/drei';
+import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
@@ -256,21 +256,14 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
 
                         <div className="flex-1 w-full h-full cursor-grab active:cursor-grabbing">
                             <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
-                                <color attach="background" args={['#f8fafc']} />
-                                <ambientLight intensity={0.9} />
-                                <hemisphereLight intensity={0.55} groundColor="#d6d3d1" />
-                                <directionalLight position={[4, 6, 5]} intensity={1.15} castShadow />
-                                <directionalLight position={[-3, 2, -4]} intensity={0.35} />
                                 <Suspense fallback={<Loader />}>
-                                    {selectedModel?.url ? (
-                                        <GLTFModel url={selectedModel.url} scale={1} />
-                                    ) : (
-                                        <DemoPottery scale={0.6} />
-                                    )}
-                                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-                                        <planeGeometry args={[8, 8]} />
-                                        <shadowMaterial transparent opacity={0.18} />
-                                    </mesh>
+                                    <Stage environment="city" intensity={0.5}>
+                                        {selectedModel?.url ? (
+                                            <GLTFModel url={selectedModel.url} scale={1.0} />
+                                        ) : (
+                                            <DemoPottery scale={0.65} />
+                                        )}
+                                    </Stage>
                                     <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
                                 </Suspense>
                             </Canvas>
@@ -428,17 +421,10 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative">
                                             <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
-                                                <color attach="background" args={['#f8fafc']} />
-                                                <ambientLight intensity={0.9} />
-                                                <hemisphereLight intensity={0.55} groundColor="#d6d3d1" />
-                                                <directionalLight position={[4, 6, 5]} intensity={1.15} castShadow />
-                                                <directionalLight position={[-3, 2, -4]} intensity={0.35} />
                                                 <Suspense fallback={null}>
-                                                    {previewUrl ? <GLTFModel url={previewUrl} /> : null}
-                                                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-                                                        <planeGeometry args={[8, 8]} />
-                                                        <shadowMaterial transparent opacity={0.18} />
-                                                    </mesh>
+                                                    <Stage environment="city" intensity={0.5}>
+                                                        {previewUrl ? <GLTFModel url={previewUrl} scale={1.08} /> : null}
+                                                    </Stage>
                                                 </Suspense>
                                                 <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
                                             </Canvas>
@@ -545,4 +531,5 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
         </div>
     );
 }
+
 

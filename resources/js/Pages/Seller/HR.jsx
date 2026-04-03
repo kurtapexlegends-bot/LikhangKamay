@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
@@ -231,32 +231,32 @@ function RolePresetCard({ preset, isSelected, radioName, onSelect }) {
 
     return (
         <label
-            className={`cursor-pointer rounded-2xl border p-3 transition ${
+            className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${
                 isSelected
-                    ? 'border-clay-300 bg-[#FCF7F2] shadow-sm'
-                    : 'border-stone-200 bg-white hover:border-stone-300'
+                    ? 'border-clay-700 bg-clay-50/50 shadow-sm ring-1 ring-clay-700/10'
+                    : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50'
             }`}
         >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2.5">
                 <input
                     type="radio"
                     name={radioName}
-                    className="mt-0.5 border-gray-300 text-clay-600 focus:ring-clay-500"
+                    className="mt-0.5 h-3.5 w-3.5 border-stone-300 text-clay-700 focus:ring-clay-700"
                     checked={isSelected}
                     onChange={onSelect}
                 />
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                        <span className="min-w-0 text-sm font-bold leading-tight text-gray-900">
+                    <div className="flex items-start justify-between gap-2">
+                        <span className={`min-w-0 text-[13px] font-bold leading-tight ${isSelected ? 'text-clay-900' : 'text-stone-700'}`}>
                             {preset.label}
                         </span>
                         {moduleCount > 0 && (
-                            <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-clay-600 px-1.5 text-[10px] font-bold text-white shadow-sm shadow-clay-200">
-                                {moduleCount}
+                            <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${isSelected ? 'bg-clay-200 text-clay-800' : 'bg-stone-100 text-stone-500'}`}>
+                                {moduleCount} mods
                             </span>
                         )}
                     </div>
-                    <p className="mt-1 text-[11px] leading-relaxed text-gray-500">{preset.description}</p>
+                    <p className={`mt-1 text-[11px] leading-relaxed ${isSelected ? 'text-clay-800/80' : 'text-stone-500'}`}>{preset.description}</p>
                 </div>
             </div>
         </label>
@@ -321,165 +321,147 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
     const bestLoggedDay = calendarDays.filter((day) => day.has_hours).sort((a, b) => b.worked_minutes - a.worked_minutes)[0] || null;
 
     return (
-        <Modal show={!!employee} onClose={onClose} maxWidth="2xl">
-            <div className="bg-stone-50 p-2 sm:p-2.5">
-                <div className="rounded-[1.05rem] border border-stone-200 bg-white p-3 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)] sm:p-3.5">
-                    <div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-2.5">
-                        <div className="flex min-w-0 items-start gap-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-clay-50 text-clay-600">
-                                <CalendarDays size={16} />
-                            </div>
+        <Modal show={!!employee} onClose={onClose} maxWidth="3xl">
+            <div className="flex flex-col bg-white">
+                {/* Premium Header */}
+                <div className="bg-gradient-to-r from-[#FCF7F2]/80 to-white px-5 py-4 border-b border-stone-100 flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3.5">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-clay-600 shadow-sm border border-[#E7D8C9]">
+                            <CalendarDays size={18} />
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="text-lg font-bold tracking-tight text-gray-900 leading-none">Attendance Calendar</h2>
+                            <p className="mt-1 truncate text-xs text-stone-500 font-medium">
+                                <span className="font-bold text-stone-700">{employee?.name}</span> · {employee?.attendance?.month_label || 'Current Month'}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
 
-                            <div className="min-w-0">
-                                <h2 className="text-base font-bold tracking-tight text-gray-900">Attendance Calendar</h2>
-                                <p className="mt-0.5 truncate text-xs text-stone-500">
-                                    {employee?.name} · {employee?.attendance?.month_label || 'Current Month'}
-                                </p>
+                {/* Main Content Layout */}
+                <div className="flex flex-col md:flex-row">
+                    {/* Left: Calendar Grid */}
+                    <div className="flex-1 p-5 border-b md:border-b-0 md:border-r border-stone-100">
+                        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Daily View</p>
+                                <p className="animate-fade-in mt-1 text-[11px] text-stone-500">Select any date to review logged hours.</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 border border-emerald-100">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Worked
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCF7F2] text-clay-700 px-2 py-0.5 border border-[#E7D8C9]">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-clay-500"></span> Selected
+                                </span>
                             </div>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded-full p-2 text-gray-400 transition hover:bg-stone-100 hover:text-gray-600"
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
+                        <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 border-b border-stone-50 pb-2">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                                <span key={day}>{day}</span>
+                            ))}
+                        </div>
 
-                    <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.58fr)_220px]">
-                        <div className="rounded-[1rem] border border-stone-200 bg-white p-2.5">
-                            <div className="mb-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Daily View</p>
-                                    <p className="mt-1 text-[11px] text-stone-500">Select a date to review hours.</p>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500">
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5">
-                                        <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                        Worked
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5">
-                                        <span className="h-2 w-2 rounded-full bg-clay-500"></span>
-                                        Selected
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">
-                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                                    <span key={day}>{day}</span>
-                                ))}
-                            </div>
-
-                            <div className="grid gap-1">
-                                {calendarWeeks.map((week, weekIndex) => (
-                                    <div key={`week-${weekIndex}`} className="grid grid-cols-7 gap-1">
-                                        {week.map((day) => day.empty ? (
-                                            <div key={day.key} className="min-h-[46px] rounded-lg border border-transparent bg-stone-50"></div>
-                                        ) : (
-                                            <button
-                                                key={day.key}
-                                                type="button"
-                                                onClick={() => onSelectDate(day.date)}
-                                                className={`min-h-[46px] rounded-lg border px-1.5 py-1 text-left transition ${
-                                                    selectedDay?.date === day.date
-                                                        ? 'border-clay-300 bg-clay-50 shadow-sm'
-                                                        : day.has_hours
-                                                            ? 'border-emerald-200 bg-emerald-50/70 hover:border-emerald-300'
-                                                            : 'border-stone-200 bg-white hover:border-stone-300'
-                                                } ${day.is_today ? 'ring-1 ring-clay-200' : ''}`}
-                                            >
-                                                <div className="flex items-start justify-between gap-1">
-                                                    <span className="text-xs font-bold text-gray-900">{day.day_number}</span>
-                                                    <span className={`mt-0.5 h-1.5 w-1.5 rounded-full ${
+                        <div className="grid gap-1.5">
+                            {calendarWeeks.map((week, weekIndex) => (
+                                <div key={`week-${weekIndex}`} className="grid grid-cols-7 gap-1.5">
+                                    {week.map((day) => day.empty ? (
+                                        <div key={day.key} className="min-h-[50px] rounded-xl border border-dashed border-stone-200/60 bg-transparent"></div>
+                                    ) : (
+                                        <button
+                                            key={day.key}
+                                            type="button"
+                                            onClick={() => onSelectDate(day.date)}
+                                            className={`min-h-[50px] relative rounded-xl border px-1.5 py-1 text-left transition ${
+                                                selectedDay?.date === day.date
+                                                    ? 'border-clay-300 bg-[#FCF7F2] ring-2 ring-clay-200 ring-offset-1'
+                                                    : day.has_hours
+                                                        ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-300'
+                                                        : 'border-stone-100 bg-stone-50/50 hover:bg-stone-100'
+                                            } ${day.is_today && selectedDay?.date !== day.date ? 'ring-1 ring-stone-200' : ''}`}
+                                        >
+                                            <div className="flex flex-col h-full justify-between">
+                                                <div className="flex items-start justify-between">
+                                                    <span className={`text-xs font-bold ${
                                                         selectedDay?.date === day.date
-                                                            ? 'bg-clay-500'
+                                                            ? 'text-clay-900'
                                                             : day.has_hours
-                                                                ? 'bg-emerald-500'
-                                                                : day.is_today
-                                                                    ? 'bg-clay-300'
-                                                            : 'bg-stone-200'
-                                                    }`}></span>
-                                                </div>
-
-                                                <div className="mt-0.5">
+                                                                ? 'text-emerald-900'
+                                                                : 'text-stone-700'
+                                                    }`}>{day.day_number}</span>
                                                     {day.is_today && (
-                                                        <span className="inline-flex rounded-full bg-clay-100 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-clay-700">
+                                                        <span className="inline-flex rounded-sm bg-clay-100 px-1 py-0.5 text-[8px] font-bold uppercase tracking-widest text-clay-700">
                                                             Today
                                                         </span>
                                                     )}
-                                                    <p className={`mt-0.5 text-[9px] font-semibold leading-snug ${
-                                                        day.has_hours ? 'text-emerald-700' : 'text-stone-400'
-                                                    }`}>
-                                                        {day.has_hours ? day.worked_hours_label : 'No hours'}
-                                                    </p>
                                                 </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                ))}
+                                                <p className={`text-[10px] font-semibold leading-tight mt-1 ${
+                                                    day.has_hours ? 'text-emerald-700' : 'text-stone-400'
+                                                }`}>
+                                                    {day.has_hours ? day.worked_hours_label : '—'}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right: Summary Sidebar */}
+                    <div className="w-full md:w-64 bg-stone-50/50 p-5 flex flex-col gap-4">
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-xl border border-stone-200 bg-white px-3 py-2.5 shadow-sm">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Total Hours</p>
+                                <p className="mt-0.5 text-sm font-bold text-gray-900">{formatWorkedHoursLabel(totalWorkedMinutes)}</p>
+                            </div>
+                            <div className="rounded-xl border border-stone-200 bg-white px-3 py-2.5 shadow-sm">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Days Logged</p>
+                                <p className="mt-0.5 text-sm font-bold text-gray-900">{daysWorked}</p>
                             </div>
                         </div>
 
-                        <div className="space-y-2.5">
-                            <div className="grid grid-cols-3 gap-1.5">
-                                <div className="rounded-xl border border-clay-100 bg-clay-50/60 px-2 py-1.5">
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Total</p>
-                                    <p className="mt-0.5 text-xs font-bold text-gray-900">{formatWorkedHoursLabel(totalWorkedMinutes)}</p>
-                                </div>
-                                <div className="rounded-xl border border-stone-200 bg-stone-50 px-2 py-1.5">
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Days</p>
-                                    <p className="mt-0.5 text-xs font-bold text-gray-900">{daysWorked}</p>
-                                </div>
-                                <div className="rounded-xl border border-stone-200 bg-stone-50 px-2 py-1.5">
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Avg</p>
-                                    <p className="mt-0.5 text-xs font-bold text-gray-900">{formatWorkedHoursLabel(averageWorkedMinutes)}</p>
-                                </div>
-                            </div>
-
-                            <div className="rounded-[1rem] border border-stone-200 bg-stone-50 p-3">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Selected Date</p>
-                                <h3 className="mt-1 text-[15px] font-bold tracking-tight text-gray-900">
+                        <div className="rounded-xl border border-clay-100 bg-white shadow-sm overflow-hidden flex flex-col relative mt-2">
+                            <div className="p-3">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">Selected</p>
+                                <h3 className="mt-1 text-sm font-bold tracking-tight text-gray-900">
                                     {selectedDay ? formatAttendanceDateLabel(selectedDay.date) : 'Choose a date'}
                                 </h3>
 
-                                <div className="mt-2 rounded-xl border border-stone-200 bg-white px-2.5 py-2">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-clay-50 text-clay-600">
-                                            <Clock3 size={15} />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Worked</p>
-                                            <p className="mt-0.5 text-sm font-bold text-gray-900">{selectedDayHoursLabel}</p>
-                                        </div>
+                                <div className="mt-2.5 bg-stone-50 rounded-lg p-2 flex items-center gap-2.5 border border-stone-100">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white border border-[#E7D8C9] text-clay-600 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                                        <Clock3 size={14} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">Worked</p>
+                                        <p className="text-xs font-bold text-gray-900 truncate">{selectedDayHoursLabel}</p>
                                     </div>
                                 </div>
-
-                                <p className="mt-2 text-xs leading-5 text-stone-600">
+                                <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
                                     {selectedDay?.has_hours
                                         ? `${employee?.name} logged ${selectedDayHoursLabel} on this date.`
                                         : 'No attendance hours logged on this date.'}
                                 </p>
                             </div>
+                        </div>
 
-                            <div className="rounded-[1rem] border border-stone-200 bg-white p-3">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Month Summary</p>
-
-                                <div className="mt-2.5 space-y-2">
-                                    <div className="rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-2">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Attendance Total</p>
-                                        <p className="mt-0.5 text-xs font-bold text-gray-900">{formatWorkedHoursSummary(employee?.attendance)}</p>
-                                    </div>
-
-                                    <div className="rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-2">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Best Day</p>
-                                        <p className="mt-0.5 text-xs font-bold text-gray-900">{bestLoggedDay?.worked_hours_label || '0h'}</p>
-                                        <p className="mt-0.5 text-xs text-stone-500">
-                                            {bestLoggedDay ? formatAttendanceDateLabel(bestLoggedDay.date) : 'No attendance yet'}
-                                        </p>
-                                    </div>
+                        <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm flex flex-col gap-2 mt-auto">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400 border-b border-stone-100 pb-1.5">Month Highlights</p>
+                            <div>
+                                <p className="text-[10px] font-bold text-stone-500">Best Day</p>
+                                <div className="flex items-center justify-between mt-0.5">
+                                    <p className="text-xs font-bold text-gray-900">{bestLoggedDay?.worked_hours_label || '0h'}</p>
+                                    <p className="text-[10px] text-stone-400">
+                                        {bestLoggedDay ? formatAttendanceDateLabel(bestLoggedDay.date) : 'No attendance yet'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -991,26 +973,25 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         {/* Table Body */}
                         <div className="overflow-x-auto flex-1">
                             <table className="w-full min-w-[860px] text-left">
-                                <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                <thead className="bg-stone-50/50 text-[10px] font-bold text-stone-500 uppercase tracking-widest border-b border-gray-100">
                                     <tr>
-                                        <th className="px-5 py-3">Employee Name</th>
-                                        <th className="px-5 py-3">Position / Role</th>
+                                        <th className="px-5 py-3">Employee</th>
                                         <th className="px-5 py-3">Monthly Salary</th>
                                         <th className="px-5 py-3">Status</th>
                                         <th className="px-5 py-3">Login Access</th>
                                         <th className="px-5 py-3">Attendance</th>
-                                        <th className="px-5 py-3 text-right">Actions</th>
+                                        <th className="px-5 py-3 pr-6 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-gray-50 bg-white">
                                     {filteredStaff.length > 0 ? (
                                         filteredStaff.map((emp) => {
                                             const loginAccessStatus = getLoginAccessStatus(emp.login_account);
                                             const attendanceStatus = getAttendanceStatus(emp.attendance);
 
                                             return (
-                                            <tr key={emp.id} className="hover:bg-gray-50/50 transition duration-150">
-                                                <td className="px-5 py-3">
+                                            <tr key={emp.id} className="group hover:bg-[#FCF7F2]/50 transition duration-150">
+                                                <td className="px-5 py-3.5">
                                                     <div className="flex items-center gap-3 min-w-0">
                                                         {emp.has_login_account ? (
                                                             <UserAvatar
@@ -1019,74 +1000,95 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                                     name: emp.login_account?.name || emp.name,
                                                                     role: 'staff',
                                                                 }}
-                                                                className="w-8 h-8 text-xs"
+                                                                className="w-9 h-9 text-xs shadow-sm ring-1 ring-stone-900/5 cursor-pointer"
                                                             />
                                                         ) : (
-                                                            <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold border border-clay-200 text-xs">
+                                                            <div className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 font-bold border border-stone-200 text-xs shadow-sm">
                                                                 {emp.name.charAt(0)}
                                                             </div>
                                                         )}
-                                                        <span className="font-bold text-gray-900 text-sm">{emp.name}</span>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="font-bold text-gray-900 text-sm truncate">{emp.name}</span>
+                                                            <span className="text-xs text-stone-500 font-medium truncate">{emp.role}</span>
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-5 py-3 text-xs text-gray-600 font-medium">{emp.role}</td>
-                                                <td className="px-5 py-3 font-bold text-gray-900 text-sm">{formatPeso(emp.salary)}</td>
-                                                <td className="px-5 py-3">
-                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Active
+                                                <td className="px-5 py-3.5 font-bold text-gray-900 text-sm">{formatPeso(emp.salary)}</td>
+                                                <td className="px-5 py-3.5">
+                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
                                                     </span>
                                                 </td>
-                                                <td className="px-5 py-3">
+                                                <td className="px-5 py-3.5">
                                                     {emp.has_login_account ? (
-                                                        <div className="min-w-[190px] rounded-2xl border border-stone-200 bg-stone-50/80 px-3 py-2">
-                                                            <div className="flex items-start justify-between gap-2">
-                                                                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold ${loginAccessStatus.className}`}>
-                                                                    <span className={`h-1.5 w-1.5 rounded-full ${
-                                                                        emp.login_account?.workspace_access_enabled === false
-                                                                            ? 'bg-red-500'
-                                                                            : emp.login_account?.is_verified
-                                                                                ? emp.login_account?.must_change_password
-                                                                                    ? 'bg-amber-500'
-                                                                                    : 'bg-clay-500'
-                                                                                : 'bg-stone-400'
-                                                                    }`}></span>
-                                                                    {loginAccessStatus.label}
-                                                                </span>
-                                                                <span className="shrink-0 rounded-full border border-[#E7D8C9] bg-white px-2 py-0.5 text-[10px] font-bold text-clay-700">
-                                                                    {presetLabelByKey[emp.login_account?.role_preset_key] || 'Custom'}
-                                                                </span>
-                                                            </div>
-                                                            <div className="mt-2 text-[11px] leading-tight text-stone-600">
-                                                                <div className="break-all font-medium text-gray-700">
-                                                                    {emp.login_account?.email}
-                                                                </div>
-                                                                {emp.login_account?.plan_workspace_suspended && (
-                                                                    <div className="mt-1 text-[10px] font-medium text-amber-700">
-                                                                        Seller plan downgrade is currently suspending this workspace login.
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                        <div className="flex flex-col gap-1 w-full max-w-[200px]">
+                                                             <div className="flex items-center gap-1.5">
+                                                                  <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase ${
+                                                                      emp.login_account?.workspace_access_enabled === false
+                                                                          ? 'border-red-200 bg-red-50 text-red-700'
+                                                                          : emp.login_account?.is_verified
+                                                                              ? emp.login_account?.must_change_password
+                                                                                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                                                                  : 'border-[#E7D8C9] bg-[#FCF7F2] text-clay-700'
+                                                                              : 'border-stone-200 bg-stone-100 text-stone-600'
+                                                                  }`}>
+                                                                      <span className={`h-1.5 w-1.5 rounded-full ${
+                                                                          emp.login_account?.workspace_access_enabled === false
+                                                                              ? 'bg-red-500'
+                                                                              : emp.login_account?.is_verified
+                                                                                  ? emp.login_account?.must_change_password
+                                                                                      ? 'bg-amber-500'
+                                                                                      : 'bg-clay-500'
+                                                                                  : 'bg-stone-400'
+                                                                      }`}></span>
+                                                                      {loginAccessStatus.label}
+                                                                  </span>
+                                                                  <span className="rounded-full bg-stone-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-stone-500 uppercase border border-stone-200">
+                                                                      {presetLabelByKey[emp.login_account?.role_preset_key] || 'Custom'}
+                                                                  </span>
+                                                             </div>
+                                                             <span className="text-[11px] text-stone-500 truncate" title={emp.login_account?.email}>{emp.login_account?.email}</span>
                                                         </div>
                                                     ) : (
-                                                        <div className="inline-flex min-w-[150px] items-center gap-2 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-medium text-stone-500">
-                                                            <span className="h-2 w-2 rounded-full bg-stone-300"></span>
-                                                            No linked login
-                                                        </div>
+                                                        <span className="text-[11px] font-medium text-stone-400 italic">No linked login</span>
                                                     )}
                                                 </td>
-                                                <td className="px-5 py-3">
-                                                    <AttendanceSummaryCard
-                                                        attendance={emp.attendance}
-                                                        attendanceStatus={attendanceStatus}
-                                                        monthLabel={sellerSettings.attendance_month_label || payrollData.month}
-                                                        onOpenCalendar={() => openAttendanceModal(emp)}
-                                                    />
+                                                <td className="px-5 py-3.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openAttendanceModal(emp)}
+                                                        disabled={!emp.attendance?.has_attendance_source || (emp.attendance?.calendar_days?.length || 0) === 0}
+                                                        className={`flex flex-col gap-1 w-full max-w-[160px] text-left transition rounded-lg p-1.5 -ml-1.5 ${
+                                                            emp.attendance?.has_attendance_source && (emp.attendance?.calendar_days?.length || 0) > 0
+                                                                ? 'hover:bg-stone-100'
+                                                                : 'cursor-default'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-1.5">
+                                                             <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase shadow-sm ${attendanceStatus.className}`}>
+                                                                 <span className={`h-1.5 w-1.5 rounded-full ${
+                                                                     attendanceStatus.label === 'Clocked In'
+                                                                         ? 'bg-emerald-500 animate-pulse'
+                                                                         : attendanceStatus.label === 'Paused'
+                                                                             ? 'bg-amber-500'
+                                                                             : 'bg-stone-400'
+                                                                 }`}></span>
+                                                                 {attendanceStatus.label}
+                                                             </span>
+                                                        </div>
+                                                        <div className="text-[10px] text-stone-500 flex items-center justify-between gap-2 mt-0.5">
+                                                             <span className="truncate">{attendanceStatus.note}</span>
+                                                             {emp.attendance?.has_attendance_source && (emp.attendance?.calendar_days?.length || 0) > 0 && (
+                                                                <span className="font-bold text-gray-900 group-hover:text-clay-600 truncate">{formatWorkedHoursSummary(emp.attendance).split(' ')[0]}</span>
+                                                             )}
+                                                        </div>
+                                                    </button>
                                                 </td>
-                                                <td className="px-5 py-3 text-right">
-                                                    <div className="flex justify-end gap-1.5">
+                                                <td className="px-5 py-3.5 pr-6 text-right align-middle">
+                                                    <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                         <button
                                                             onClick={() => openEditModal(emp)}
-                                                            className="p-1.5 text-clay-600 hover:bg-[#FCF7F2] rounded-md transition"
+                                                            className="p-1.5 text-stone-500 hover:text-clay-600 bg-white border border-stone-200 shadow-sm hover:bg-[#FCF7F2] hover:border-[#E7D8C9] rounded-lg transition"
                                                             title="Update Data"
                                                             type="button"
                                                         >
@@ -1095,10 +1097,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                         <button
                                                             onClick={() => deleteEmployee(emp.id)}
                                                             disabled={emp.has_login_account && !canManageStaffAccounts}
-                                                            className={`p-1.5 rounded-md transition ${
+                                                            className={`p-1.5 rounded-lg border shadow-sm transition ${
                                                                 emp.has_login_account && !canManageStaffAccounts
-                                                                    ? 'cursor-not-allowed text-gray-300'
-                                                                    : 'text-red-500 hover:bg-red-50'
+                                                                    ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300'
+                                                                    : 'bg-white border-stone-200 text-stone-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
                                                             }`}
                                                             title={emp.has_login_account && !canManageStaffAccounts
                                                                 ? 'Only the shop owner can remove employees with login access'
@@ -1112,14 +1114,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         )})
                                     ) : (
                                         <tr>
-                                            <td colSpan="7" className="px-6 py-20 text-center">
+                                            <td colSpan="6" className="px-6 py-20 text-center">
                                                 <div className="flex flex-col items-center justify-center">
-                                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                                                        <Users size={32} className="text-gray-300" />
+                                                    <div className="w-16 h-16 bg-[#FCF7F2] rounded-full flex items-center justify-center mb-4 border border-[#E7D8C9]">
+                                                        <Users size={32} className="text-clay-300" />
                                                     </div>
                                                     <h3 className="text-lg font-bold text-gray-900 mb-1">No Staff Found</h3>
-                                                    <p className="text-sm text-gray-500 mb-6">Start by adding your first employee to the list.</p>
-                                                    <button onClick={() => setIsModalOpen(true)} className="text-clay-600 font-bold hover:underline text-sm">Create New Record</button>
+                                                    <p className="text-sm text-stone-500 mb-6">Start by adding your first employee to the directory.</p>
+                                                    <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-clay-600 text-white font-bold rounded-xl shadow-lg shadow-clay-200 hover:bg-clay-700 transition">Create New Record</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1242,187 +1244,148 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
             {/* ADD EMPLOYEE MODAL */}
             <Modal show={isModalOpen} onClose={closeAddModal} maxWidth="2xl">
-                <form onSubmit={submit} className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
-                    <div className="flex justify-between items-center mb-6">
+                <form onSubmit={submit} className="flex flex-col max-h-[85vh]">
+                    <div className="shrink-0 flex justify-between items-center px-6 py-5 border-b border-stone-100 bg-white">
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900">Add New Staff</h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Create an employee record and optionally provision seller portal access.
+                            <h2 className="text-[19px] font-bold text-stone-900 tracking-tight">Add New Staff</h2>
+                            <p className="text-[13px] text-stone-500 mt-0.5 font-medium">
+                                Create an employee record and provision workspace access.
                             </p>
                         </div>
-                        <button type="button" onClick={closeAddModal} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                        <button type="button" onClick={closeAddModal} className="text-stone-400 hover:text-stone-600 transition"><X size={20} /></button>
                     </div>
                     
-                    <div className="space-y-5">
-                        <div className={`rounded-2xl border px-4 py-3 shadow-sm ${canProvisionStaffAccounts ? 'border-[#E7D8C9] bg-[#FCF7F2]' : 'border-stone-200 bg-stone-50'}`}>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm font-bold text-gray-900">Seller Portal Login</p>
-                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                            data.create_login_account
-                                                ? 'bg-clay-600 text-white'
-                                                : 'bg-stone-200 text-stone-600'
-                                        }`}>
-                                            {data.create_login_account ? 'On' : 'Off'}
-                                        </span>
-                                    </div>
-                                    <p className="mt-1 text-xs leading-relaxed text-stone-500">
-                                        Enable this only for employees who need seller workspace access.
-                                    </p>
-                                </div>
-
-                                <label className={`relative inline-flex shrink-0 items-center ${canProvisionStaffAccounts ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
-                                    <input
-                                        type="checkbox"
-                                        className="peer sr-only"
-                                        checked={data.create_login_account}
-                                        disabled={!canProvisionStaffAccounts}
-                                        onChange={(e) => handleProvisionToggle(e.target.checked)}
-                                    />
-                                    <div className="h-6 w-11 rounded-full bg-stone-300 transition-colors peer-checked:bg-clay-600 peer-focus:ring-2 peer-focus:ring-clay-500 peer-focus:ring-offset-2" />
-                                    <div className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
+                    <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#FDFBF9]">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/60 pb-5">
+                            <div className="min-w-0">
+                                <label className="flex items-center gap-2 text-sm font-bold text-stone-900">
+                                    Enable Seller Portal Login
+                                    <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
+                                        data.create_login_account ? 'bg-clay-600 text-white shadow-sm' : 'bg-stone-200 text-stone-600'
+                                    }`}>
+                                        {data.create_login_account ? 'Active' : 'Disabled'}
+                                    </span>
                                 </label>
+                                <p className="mt-1 text-[13px] leading-snug text-stone-500">
+                                    Turn this on if they need to log in to the dashboard. Usually not required for floor staff.
+                                </p>
                             </div>
-
-                            {requiresStaffSchemaUpdate && (
-                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-                                    Database migration required before this feature can be used.
-                                </div>
-                            )}
-
-                            {!requiresStaffSchemaUpdate && !canManageStaffAccounts && (
-                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-                                    Only the shop owner can create staff login accounts.
-                                </div>
-                            )}
+                            <label className={`relative inline-flex shrink-0 items-center ${canProvisionStaffAccounts ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                                <input
+                                    type="checkbox"
+                                    className="peer sr-only"
+                                    checked={data.create_login_account}
+                                    disabled={!canProvisionStaffAccounts}
+                                    onChange={(e) => handleProvisionToggle(e.target.checked)}
+                                />
+                                <div className="h-6 w-11 rounded-full bg-stone-200 border border-stone-300 transition-colors peer-checked:bg-clay-700 peer-checked:border-clay-700 peer-focus:ring-2 peer-focus:ring-clay-500 peer-focus:ring-offset-2" />
+                                <div className="pointer-events-none absolute left-[3px] top-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[20px]" />
+                            </label>
                         </div>
 
-                        {!data.create_login_account && (
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="md:col-span-2">
-                                    <label className="mb-1 block text-sm font-bold text-gray-700">Employee Name</label>
-                                    <input
-                                        type="text"
-                                        className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                        placeholder="e.g. John Doe"
-                                        value={data.name}
-                                        onChange={e => setData('name', e.target.value)}
-                                        required
-                                    />
-                                    {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-sm font-bold text-gray-700">Position / Role</label>
-                                    <select
-                                        className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                        value={data.role}
-                                        onChange={e => handleManualRoleChange(e.target.value)}
-                                    >
-                                        {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
-                                            <option key={roleOption}>{roleOption}</option>
-                                        ))}
-                                    </select>
-                                    {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role}</p>}
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-sm font-bold text-gray-700">Monthly Salary (PHP)</label>
-                                    <input
-                                        type="number"
-                                        className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                        placeholder="e.g. 15000"
-                                        value={data.salary}
-                                        onChange={e => setData('salary', e.target.value)}
-                                        required
-                                    />
-                                    {errors.salary && <p className="mt-1 text-xs text-red-500">{errors.salary}</p>}
-                                </div>
+                        {requiresStaffSchemaUpdate && (
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
+                                Database migration required before login provisioning is available.
                             </div>
                         )}
 
-                        {data.create_login_account && canProvisionStaffAccounts && (
-                            <div className="space-y-5">
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <div className="md:col-span-2">
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">Employee Name</label>
-                                        <input
-                                            type="text"
-                                            className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                            placeholder="e.g. John Doe"
-                                            value={data.name}
-                                            onChange={e => setData('name', e.target.value)}
-                                            required
-                                        />
-                                        {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
-                                    </div>
+                        {!requiresStaffSchemaUpdate && !canManageStaffAccounts && (
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
+                                Only the shop owner can provision staff login accounts.
+                            </div>
+                        )}
 
+                        <div className="grid gap-5 md:grid-cols-2">
+                            <div className="md:col-span-2">
+                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Legal Full Name</label>
+                                <input
+                                    type="text"
+                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    placeholder="e.g. Maria Clara"
+                                    value={data.name}
+                                    onChange={e => setData('name', e.target.value)}
+                                    required
+                                />
+                                {errors.name && <p className="mt-1 text-xs text-red-500 font-medium">{errors.name}</p>}
+                            </div>
+
+                            {data.create_login_account && canProvisionStaffAccounts && (
+                                <>
                                     <div>
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">Email Address</label>
+                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Email Address</label>
                                         <input
                                             type="email"
-                                            className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                            placeholder="employee@gmail.com"
+                                            className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                            placeholder="maria@likhangkamay.com"
                                             value={data.email}
                                             onChange={(e) => setData('email', e.target.value)}
                                         />
-                                        {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                                        {errors.email && <p className="mt-1 text-xs text-red-500 font-medium">{errors.email}</p>}
                                     </div>
-
                                     <div>
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">Initial Password</label>
+                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Initial Credential</label>
                                         <div className="relative">
                                             <input
                                                 type={showAddPassword ? 'text' : 'password'}
-                                                className="w-full rounded-xl border-gray-300 pr-11 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                                placeholder="Set initial password"
+                                                className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5 pr-11"
+                                                placeholder="Temp password"
                                                 value={data.default_password}
                                                 onChange={(e) => setData('default_password', e.target.value)}
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowAddPassword((value) => !value)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-stone-600"
-                                                aria-label={showAddPassword ? 'Hide initial password' : 'Show initial password'}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-stone-700"
                                             >
-                                                {showAddPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                {showAddPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
-                                        {errors.default_password && <p className="mt-1 text-xs text-red-500">{errors.default_password}</p>}
+                                        {errors.default_password && <p className="mt-1 text-xs text-red-500 font-medium">{errors.default_password}</p>}
                                     </div>
+                                </>
+                            )}
 
-                                    <div className="md:col-span-2">
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">Monthly Salary (PHP)</label>
-                                        <input
-                                            type="number"
-                                            className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                            placeholder="e.g. 15000"
-                                            value={data.salary}
-                                            onChange={e => setData('salary', e.target.value)}
-                                            required
-                                        />
-                                        {errors.salary && <p className="mt-1 text-xs text-red-500">{errors.salary}</p>}
-                                    </div>
-                                </div>
+                            <div>
+                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
+                                <select
+                                    className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    value={data.role}
+                                    onChange={e => handleManualRoleChange(e.target.value)}
+                                >
+                                    {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
+                                        <option key={roleOption}>{roleOption}</option>
+                                    ))}
+                                </select>
+                                {errors.role && <p className="mt-1 text-xs text-red-500 font-medium">{errors.role}</p>}
+                            </div>
 
-                                <div className="rounded-2xl border border-[#E7D8C9] bg-[#FCF7F2] px-4 py-3 text-xs leading-relaxed text-stone-600">
-                                    Use the employee&apos;s active Gmail account. The selected role preset will also be saved as this employee&apos;s role, and they must verify the email plus replace the initial password before entering seller modules.
-                                </div>
+                            <div>
+                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Monthly Compensation (PHP)</label>
+                                <input
+                                    type="number"
+                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    placeholder="0"
+                                    value={data.salary}
+                                    onChange={e => setData('salary', e.target.value)}
+                                    required
+                                />
+                                {errors.salary && <p className="mt-1 text-xs text-red-500 font-medium">{errors.salary}</p>}
+                            </div>
+                        </div>
 
-                                {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role}</p>}
-
-                                <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                        {data.create_login_account && canProvisionStaffAccounts && (
+                            <div className="space-y-6 pt-2">
+                                <div>
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Role Preset</label>
-                                            <p className="mt-1 text-xs text-gray-500">Choose the closest access role, then adjust modules if needed.</p>
+                                            <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Pick the closest base template for their role.</p>
                                         </div>
-                                        <span className="rounded-full border border-clay-200 bg-[#FCF7F2] px-3 py-1 text-[11px] font-bold text-clay-700">
+                                        <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
                                             {presetLabelByKey[data.staff_role_preset_key] || 'Custom'}
                                         </span>
                                     </div>
-                                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid gap-2.5 md:grid-cols-2">
                                         {rolePresets.map((preset) => (
                                             <RolePresetCard
                                                 key={preset.key}
@@ -1433,307 +1396,274 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                             />
                                         ))}
                                     </div>
-                                    {errors.staff_role_preset_key && <p className="mt-1 text-xs text-red-500">{errors.staff_role_preset_key}</p>}
+                                    {errors.staff_role_preset_key && <p className="mt-1 text-xs text-red-500 font-medium">{errors.staff_role_preset_key}</p>}
                                 </div>
 
-                                <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                                <div className="border-t border-stone-200/60 pt-5">
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Module Access Overrides</label>
-                                            <p className="mt-1 text-xs text-gray-500">Turn modules on or off based on the employee&apos;s actual responsibilities.</p>
+                                            <h3 className="text-sm font-bold text-stone-900">Module Access Details</h3>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Fine-tune the individual areas this template unlocks.</p>
                                         </div>
-                                        <span className="rounded-full border border-[#E7D8C9] bg-[#FCF7F2] px-3 py-1 text-[11px] font-bold text-clay-700">
-                                            {Object.values(data.module_overrides || {}).filter(Boolean).length} enabled
-                                        </span>
                                     </div>
-                                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                                         {availableModules.map((module) => (
                                             <label
                                                 key={module.key}
-                                                className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 transition ${
+                                                className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${
                                                     data.module_overrides?.[module.key]
-                                                        ? 'border-clay-300 bg-[#FCF7F2]'
-                                                        : 'border-stone-200 bg-white hover:border-stone-300'
+                                                        ? 'border-stone-300 bg-white shadow-sm'
+                                                        : 'border-stone-200/50 bg-stone-50/30 hover:border-stone-200 opacity-80'
                                                 }`}
                                             >
                                                 <input
                                                     type="checkbox"
-                                                    className="mt-0.5 rounded border-gray-300 text-clay-600 focus:ring-clay-500"
+                                                    className="mt-0.5 h-3.5 w-3.5 rounded border-stone-300 text-clay-700 focus:ring-clay-700"
                                                     checked={!!data.module_overrides?.[module.key]}
                                                     onChange={() => toggleModuleOverride(module.key)}
                                                 />
                                                 <div className="min-w-0">
-                                                    <div className="text-xs font-bold text-gray-900">{module.label}</div>
-                                                    <p className="mt-0.5 text-[11px] leading-relaxed text-gray-500">{module.description}</p>
+                                                    <div className={`text-[12px] font-bold leading-tight ${data.module_overrides?.[module.key] ? 'text-stone-900' : 'text-stone-500'}`}>
+                                                        {module.label}
+                                                    </div>
                                                 </div>
                                             </label>
                                         ))}
                                     </div>
-                                    {errors.module_overrides && <p className="mt-1 text-xs text-red-500">{errors.module_overrides}</p>}
+                                    {errors.module_overrides && <p className="mt-1 text-xs text-red-500 font-medium">{errors.module_overrides}</p>}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
-                        <button type="button" onClick={closeAddModal} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={processing} className="px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition">
-                            {data.create_login_account ? 'Save Employee & Login' : 'Save Employee'}
+                    <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-stone-100 bg-[#FCF7F2]/50">
+                        <button type="button" onClick={closeAddModal} className="px-5 py-2.5 text-[13px] font-bold text-stone-600 hover:text-stone-900 transition">
+                            Cancel Setup
+                        </button>
+                        <button type="submit" disabled={processing} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
+                            {data.create_login_account ? 'Register & Provision' : 'Register Employee'}
                         </button>
                     </div>
                 </form>
             </Modal>
 
-            <Modal show={isEditModalOpen} onClose={closeEditModal} maxWidth="lg">
-                <form onSubmit={submitEdit} className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
-                    <div className="mb-6 flex items-center justify-between">
+            <Modal show={isEditModalOpen} onClose={closeEditModal} maxWidth="2xl">
+                <form onSubmit={submitEdit} className="flex flex-col max-h-[85vh]">
+                    <div className="shrink-0 flex items-center justify-between px-6 py-5 border-b border-stone-100 bg-white">
                         <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <h2 className="text-xl font-bold text-gray-900">Update Employee</h2>
-                                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold ${
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                <h2 className="text-[19px] font-bold text-stone-900 tracking-tight">Update Employee</h2>
+                                <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
                                     editHasLinkedLogin
                                         ? editLinkedLoginIsSuspended
-                                            ? 'border-red-200 bg-red-50 text-red-700'
-                                            : 'border-[#E7D8C9] bg-[#FCF7F2] text-clay-700'
-                                        : 'border-stone-200 bg-stone-100 text-stone-600'
+                                            ? 'border border-red-200 bg-red-50 text-red-700'
+                                            : 'border border-clay-200 bg-clay-50 text-clay-800'
+                                        : 'border border-stone-200 bg-stone-50 text-stone-600'
                                 }`}>
                                     <span className={`h-1.5 w-1.5 rounded-full ${
                                         editHasLinkedLogin
                                             ? editLinkedLoginIsSuspended
                                                 ? 'bg-red-500'
-                                                : 'bg-clay-500'
+                                                : 'bg-clay-600'
                                             : 'bg-stone-400'
                                     }`}></span>
                                     {editHasLinkedLogin
                                         ? editLinkedLoginIsSuspended
-                                            ? 'Access Suspended'
-                                            : 'Workspace Active'
-                                        : 'No Login Yet'}
+                                            ? 'Suspended'
+                                            : 'Active Login'
+                                        : 'No Login'}
                                 </span>
                             </div>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Update the employee record and, when allowed, the linked seller workspace access.
+                            <p className="mt-1 text-[13px] font-medium text-stone-500">
+                                Update the employee record and linked workspace access.
                             </p>
                         </div>
-                        <button type="button" onClick={closeEditModal} className="text-gray-400 hover:text-gray-600">
+                        <button type="button" onClick={closeEditModal} className="text-stone-400 hover:text-stone-600 transition">
                             <X size={20} />
                         </button>
                     </div>
 
-                    <div className="space-y-5">
-                        <div className={`rounded-2xl border px-4 py-3 shadow-sm ${canProvisionStaffAccounts ? 'border-[#E7D8C9] bg-[#FCF7F2]' : 'border-stone-200 bg-stone-50'}`}>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm font-bold text-gray-900">Seller Portal Login</p>
-                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                            editHasLinkedLogin && !editData.create_login_account
-                                                ? 'bg-red-600 text-white'
-                                                : editData.create_login_account
-                                                ? 'bg-clay-600 text-white'
-                                                : 'bg-stone-200 text-stone-600'
-                                        }`}>
-                                            {editHasLinkedLogin && !editData.create_login_account
-                                                ? 'Suspended'
-                                                : editData.create_login_account ? 'On' : 'Off'}
-                                        </span>
-                                    </div>
-                                    <p className="mt-1 text-xs leading-relaxed text-stone-500">
-                                        {editHasLinkedLogin
-                                            ? 'Suspend or restore workspace access here without deleting the linked staff account.'
-                                            : 'Enable this only when the employee needs seller workspace access.'}
-                                    </p>
-                                </div>
-
-                                <label className={`relative inline-flex shrink-0 items-center ${
-                                    canProvisionStaffAccounts
-                                        ? 'cursor-pointer'
-                                        : 'cursor-not-allowed opacity-60'
-                                }`}>
-                                    <input
-                                        type="checkbox"
-                                        className="peer sr-only"
-                                        checked={editData.create_login_account}
-                                        disabled={!canProvisionStaffAccounts}
-                                        onChange={(e) => handleEditProvisionToggle(e.target.checked)}
-                                    />
-                                    <div className="h-6 w-11 rounded-full bg-stone-300 transition-colors peer-checked:bg-clay-600 peer-focus:ring-2 peer-focus:ring-clay-500 peer-focus:ring-offset-2" />
-                                    <div className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
+                    <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#FDFBF9]">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/60 pb-5">
+                            <div className="min-w-0">
+                                <label className="flex items-center gap-2 text-sm font-bold text-stone-900">
+                                    Enable Seller Portal Login
+                                    <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
+                                        editHasLinkedLogin && !editData.create_login_account
+                                            ? 'bg-[#8c2a2a] text-white shadow-sm'
+                                            : editData.create_login_account
+                                            ? 'bg-clay-600 text-white shadow-sm'
+                                            : 'bg-stone-200 text-stone-600'
+                                    }`}>
+                                        {editHasLinkedLogin && !editData.create_login_account
+                                            ? 'Suspended'
+                                            : editData.create_login_account ? 'Active' : 'Disabled'}
+                                    </span>
                                 </label>
+                                <p className="mt-1 text-[13px] leading-snug text-stone-500">
+                                    {editHasLinkedLogin
+                                        ? 'Suspend or restore workspace access here without deleting the linked staff account.'
+                                        : 'Enable this only when the employee needs seller workspace access.'}
+                                </p>
                             </div>
 
-                            {requiresStaffSchemaUpdate && (
-                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-                                    Database migration required before login access can be updated here.
-                                </div>
-                            )}
-
-                            {!requiresStaffSchemaUpdate && !canManageStaffAccounts && (
-                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-                                    Only the shop owner can update seller login access, role presets, and module permissions.
-                                </div>
-                            )}
-
-                            {editHasLinkedLogin && canProvisionStaffAccounts && (
-                                <div className="mt-3 rounded-xl border border-[#E7D8C9] bg-white px-3 py-2 text-xs font-medium text-stone-600">
-                                    This employee already has a linked seller login. You can update the linked email, reset the password, adjust access below, or suspend workspace access while keeping the account ready for restoration later.
-                                </div>
-                            )}
-
-                            {isSuspendingLinkedLogin && (
-                                <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 shadow-sm">
-                                    <div className="flex items-center gap-2">
-                                        <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                                            Access Suspension
-                                        </span>
-                                        <span className="font-bold">Seller workspace access will be suspended when you submit this update.</span>
-                                    </div>
-                                    <div className="mt-2 space-y-1 leading-relaxed">
-                                        <p>The employee record will stay in HR and payroll history.</p>
-                                        <p>The linked seller login account, email, and role setup will be preserved.</p>
-                                        <p>All seller workspace module access will stay blocked until you restore access here.</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {editLinkedLoginIsSuspended && editData.create_login_account && canProvisionStaffAccounts && (
-                                <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800 shadow-sm">
-                                    <div className="flex items-center gap-2">
-                                        <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                                            Access Restore
-                                        </span>
-                                        <span className="font-bold">Seller workspace access will be restored when you submit this update.</span>
-                                    </div>
-                                    <div className="mt-2 space-y-1 leading-relaxed">
-                                        <p>The existing linked login account will be reused.</p>
-                                        <p>Saved role preset and module settings can be updated before the account is reactivated.</p>
-                                    </div>
-                                </div>
-                            )}
+                            <label className={`relative inline-flex shrink-0 items-center ${
+                                canProvisionStaffAccounts
+                                    ? 'cursor-pointer'
+                                    : 'cursor-not-allowed opacity-60'
+                            }`}>
+                                <input
+                                    type="checkbox"
+                                    className="peer sr-only"
+                                    checked={editData.create_login_account}
+                                    disabled={!canProvisionStaffAccounts}
+                                    onChange={(e) => handleEditProvisionToggle(e.target.checked)}
+                                />
+                                <div className="h-6 w-11 rounded-full bg-stone-200 border border-stone-300 transition-colors peer-checked:bg-clay-700 peer-checked:border-clay-700 peer-focus:ring-2 peer-focus:ring-clay-500 peer-focus:ring-offset-2" />
+                                <div className="pointer-events-none absolute left-[3px] top-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[20px]" />
+                            </label>
                         </div>
 
-                        {!showLinkedLoginUpdateFields && (
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="md:col-span-2">
-                                    <label className="mb-1 block text-sm font-bold text-gray-700">Employee Name</label>
-                                    <input
-                                        type="text"
-                                        className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                        value={editData.name}
-                                        onChange={(e) => setEditData('name', e.target.value)}
-                                        required
-                                    />
-                                    {editErrors.name && <p className="mt-1 text-xs text-red-500">{editErrors.name}</p>}
-                                </div>
+                        {requiresStaffSchemaUpdate && (
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
+                                Database migration required before login access can be updated here.
+                            </div>
+                        )}
 
-                                <div>
-                                    <label className="mb-1 block text-sm font-bold text-gray-700">Position / Role</label>
-                                    <select
-                                        className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                        value={editData.role}
-                                        onChange={(e) => handleEditManualRoleChange(e.target.value)}
-                                    >
-                                        {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
-                                            <option key={roleOption}>{roleOption}</option>
-                                        ))}
-                                    </select>
-                                    {editErrors.role && <p className="mt-1 text-xs text-red-500">{editErrors.role}</p>}
-                                </div>
+                        {!requiresStaffSchemaUpdate && !canManageStaffAccounts && (
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
+                                Only the shop owner can update seller login access, role presets, and module permissions.
+                            </div>
+                        )}
 
-                                <div>
-                                    <label className="mb-1 block text-sm font-bold text-gray-700">Monthly Salary (PHP)</label>
-                                    <input
-                                        type="number"
-                                        className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                        value={editData.salary}
-                                        onChange={(e) => setEditData('salary', e.target.value)}
-                                        required
-                                    />
-                                    {editErrors.salary && <p className="mt-1 text-xs text-red-500">{editErrors.salary}</p>}
+                        {editHasLinkedLogin && canProvisionStaffAccounts && (
+                            <div className="rounded-xl border border-clay-200 bg-clay-50/50 px-4 py-3 text-[13px] font-medium text-stone-600 shadow-sm">
+                                This employee already has a linked seller login. You can update the linked email, reset the password, adjust access below, or suspend workspace access while keeping the account ready for restoration later.
+                            </div>
+                        )}
+
+                        {isSuspendingLinkedLogin && (
+                            <div className="rounded-xl border border-red-200 bg-[#FCF3F3] px-5 py-4 text-[13px] text-red-800 shadow-sm">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="rounded-md bg-red-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+                                        Access Suspension
+                                    </span>
+                                    <span className="font-bold text-red-900 tracking-tight">Seller workspace access will be suspended.</span>
+                                </div>
+                                <div className="mt-3 space-y-1.5 leading-relaxed font-medium">
+                                    <p>• The employee record will stay in HR and payroll history.</p>
+                                    <p>• The linked seller login account, email, and role setup will be preserved.</p>
+                                    <p>• All seller workspace module access will stay blocked until you restore access here.</p>
                                 </div>
                             </div>
                         )}
 
-                        {showLinkedLoginUpdateFields && (
-                            <div className="space-y-5">
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <div className="md:col-span-2">
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">Employee Name</label>
-                                        <input
-                                            type="text"
-                                            className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                            value={editData.name}
-                                            onChange={(e) => setEditData('name', e.target.value)}
-                                            required
-                                        />
-                                        {editErrors.name && <p className="mt-1 text-xs text-red-500">{editErrors.name}</p>}
-                                    </div>
+                        {editLinkedLoginIsSuspended && editData.create_login_account && canProvisionStaffAccounts && (
+                            <div className="rounded-xl border border-emerald-200 bg-[#F2FAF6] px-5 py-4 text-[13px] text-emerald-800 shadow-sm">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="rounded-md bg-emerald-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+                                        Access Restore
+                                    </span>
+                                    <span className="font-bold text-emerald-900 tracking-tight">Seller workspace access will be restored.</span>
+                                </div>
+                                <div className="mt-3 space-y-1.5 leading-relaxed font-medium">
+                                    <p>• The existing linked login account will be reused.</p>
+                                    <p>• Saved role preset and module settings can be updated before the account is reactivated.</p>
+                                </div>
+                            </div>
+                        )}
 
+                        <div className="grid gap-5 md:grid-cols-2">
+                            <div className="md:col-span-2">
+                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Legal Full Name</label>
+                                <input
+                                    type="text"
+                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    value={editData.name}
+                                    onChange={(e) => setEditData('name', e.target.value)}
+                                    required
+                                />
+                                {editErrors.name && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.name}</p>}
+                            </div>
+
+                            {showLinkedLoginUpdateFields && (
+                                <>
                                     <div>
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">Email Address</label>
+                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Email Address</label>
                                         <input
                                             type="email"
-                                            className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
+                                            className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
                                             value={editData.email}
                                             onChange={(e) => setEditData('email', e.target.value)}
                                         />
-                                        {editErrors.email && <p className="mt-1 text-xs text-red-500">{editErrors.email}</p>}
+                                        {editErrors.email && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.email}</p>}
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">
+                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">
                                             {editingEmployee?.has_login_account ? 'Reset Password (Optional)' : 'Initial Password'}
                                         </label>
                                         <div className="relative">
                                             <input
                                                 type={showEditPassword ? 'text' : 'password'}
-                                                className="w-full rounded-xl border-gray-300 pr-11 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                                placeholder={editingEmployee?.has_login_account ? 'Leave blank to keep current password' : 'Set initial password'}
+                                                className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5 pr-11"
+                                                placeholder={editingEmployee?.has_login_account ? 'Leave blank to keep password' : 'Set temp password'}
                                                 value={editData.default_password}
                                                 onChange={(e) => setEditData('default_password', e.target.value)}
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowEditPassword((value) => !value)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-stone-600"
-                                                aria-label={showEditPassword ? 'Hide password field' : 'Show password field'}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-stone-700"
                                             >
-                                                {showEditPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                {showEditPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
-                                        {editErrors.default_password && <p className="mt-1 text-xs text-red-500">{editErrors.default_password}</p>}
+                                        {editErrors.default_password && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.default_password}</p>}
                                     </div>
+                                </>
+                            )}
 
-                                    <div className="md:col-span-2">
-                                        <label className="mb-1 block text-sm font-bold text-gray-700">Monthly Salary (PHP)</label>
-                                        <input
-                                            type="number"
-                                            className="w-full rounded-xl border-gray-300 shadow-sm transition focus:border-clay-500 focus:ring-clay-500"
-                                            value={editData.salary}
-                                            onChange={(e) => setEditData('salary', e.target.value)}
-                                            required
-                                        />
-                                        {editErrors.salary && <p className="mt-1 text-xs text-red-500">{editErrors.salary}</p>}
-                                    </div>
-                                </div>
+                            <div>
+                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
+                                <select
+                                    className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    value={editData.role}
+                                    onChange={(e) => handleEditManualRoleChange(e.target.value)}
+                                >
+                                    {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
+                                        <option key={roleOption}>{roleOption}</option>
+                                    ))}
+                                </select>
+                                {editErrors.role && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.role}</p>}
+                            </div>
 
-                                <div className="rounded-2xl border border-[#E7D8C9] bg-[#FCF7F2] px-4 py-3 text-xs leading-relaxed text-stone-600">
-                                    Use the employee&apos;s active Gmail account. If you change the email, they&apos;ll need to verify it again. If you set a new password, they&apos;ll be asked to change it on next login.
-                                </div>
+                            <div>
+                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Monthly Compensation (PHP)</label>
+                                <input
+                                    type="number"
+                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    value={editData.salary}
+                                    onChange={(e) => setEditData('salary', e.target.value)}
+                                    required
+                                />
+                                {editErrors.salary && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.salary}</p>}
+                            </div>
+                        </div>
 
-                                {editErrors.role && <p className="mt-1 text-xs text-red-500">{editErrors.role}</p>}
-
-                                <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                        {showLinkedLoginUpdateFields && (
+                            <div className="space-y-6 pt-2">
+                                <div>
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Role Preset</label>
-                                            <p className="mt-1 text-xs text-gray-500">Choose the closest access role, then adjust modules if needed.</p>
+                                            <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Pick the closest base template for their role.</p>
                                         </div>
-                                        <span className="rounded-full border border-clay-200 bg-[#FCF7F2] px-3 py-1 text-[11px] font-bold text-clay-700">
+                                        <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
                                             {presetLabelByKey[editData.staff_role_preset_key] || 'Custom'}
                                         </span>
                                     </div>
-                                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid gap-2.5 md:grid-cols-2">
                                         {rolePresets.map((preset) => (
                                             <RolePresetCard
                                                 key={preset.key}
@@ -1744,53 +1674,49 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                             />
                                         ))}
                                     </div>
-                                    {editErrors.staff_role_preset_key && <p className="mt-1 text-xs text-red-500">{editErrors.staff_role_preset_key}</p>}
+                                    {editErrors.staff_role_preset_key && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.staff_role_preset_key}</p>}
                                 </div>
 
-                                <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                                <div className="border-t border-stone-200/60 pt-5">
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Module Access Overrides</label>
-                                            <p className="mt-1 text-xs text-gray-500">Turn modules on or off based on the employee&apos;s actual responsibilities.</p>
+                                            <h3 className="text-sm font-bold text-stone-900">Module Access Details</h3>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Fine-tune the individual areas this template unlocks.</p>
                                         </div>
-                                        <span className="rounded-full border border-[#E7D8C9] bg-[#FCF7F2] px-3 py-1 text-[11px] font-bold text-clay-700">
-                                            {Object.values(editData.module_overrides || {}).filter(Boolean).length} enabled
-                                        </span>
                                     </div>
-                                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                                         {availableModules.map((module) => (
                                             <label
                                                 key={module.key}
-                                                className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 transition ${
+                                                className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${
                                                     editData.module_overrides?.[module.key]
-                                                        ? 'border-clay-300 bg-[#FCF7F2]'
-                                                        : 'border-stone-200 bg-white hover:border-stone-300'
+                                                        ? 'border-stone-300 bg-white shadow-sm'
+                                                        : 'border-stone-200/50 bg-stone-50/30 hover:border-stone-200 opacity-80'
                                                 }`}
                                             >
                                                 <input
                                                     type="checkbox"
-                                                    className="mt-0.5 rounded border-gray-300 text-clay-600 focus:ring-clay-500"
+                                                    className="mt-0.5 h-3.5 w-3.5 rounded border-stone-300 text-clay-700 focus:ring-clay-700"
                                                     checked={!!editData.module_overrides?.[module.key]}
                                                     onChange={() => toggleEditModuleOverride(module.key)}
                                                 />
                                                 <div className="min-w-0">
-                                                    <div className="text-xs font-bold text-gray-900">{module.label}</div>
-                                                    <p className="mt-0.5 text-[11px] leading-relaxed text-gray-500">{module.description}</p>
+                                                    <div className={`text-[12px] font-bold leading-tight ${editData.module_overrides?.[module.key] ? 'text-stone-900' : 'text-stone-500'}`}>{module.label}</div>
                                                 </div>
                                             </label>
                                         ))}
                                     </div>
-                                    {editErrors.module_overrides && <p className="mt-1 text-xs text-red-500">{editErrors.module_overrides}</p>}
+                                    {editErrors.module_overrides && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.module_overrides}</p>}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="mt-8 flex justify-end gap-3 border-t border-gray-100 pt-4">
-                        <button type="button" onClick={closeEditModal} className="rounded-lg px-4 py-2 font-bold text-gray-500 transition hover:bg-gray-50">
+                    <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-stone-100 bg-[#FCF7F2]/50">
+                        <button type="button" onClick={closeEditModal} className="px-5 py-2.5 text-[13px] font-bold text-stone-600 hover:text-stone-900 transition">
                             Cancel
                         </button>
-                        <button type="submit" disabled={editProcessing} className="rounded-xl bg-clay-600 px-6 py-2 font-bold text-white transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-70">
+                        <button type="submit" disabled={editProcessing} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
                             Update Record
                         </button>
                     </div>

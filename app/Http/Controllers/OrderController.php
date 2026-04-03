@@ -898,7 +898,7 @@ class OrderController extends Controller
         }
         Session::put('cart', $cart);
 
-        return redirect()->route('my-orders.index')->with('success', 'Order placed successfully! Chat with the seller to discuss shipping.');
+        return redirect()->route('my-orders.index')->with('success', 'Order placed successfully. The seller will confirm it and arrange delivery or pickup next.');
     }
 
     // ==========================================

@@ -96,9 +96,10 @@ class RegistrationTest extends TestCase
                 'last_name' => 'User',
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
+                'terms' => true,
             ]);
 
-        $response->assertRedirect('/');
+        $response->assertRedirect('/shop');
 
         $this->assertDatabaseHas('users', [
             'email' => 'social@example.com',
@@ -108,5 +109,62 @@ class RegistrationTest extends TestCase
             'social_provider' => 'google',
             'social_id' => 'google-123',
         ]);
+    }
+
+    public function test_social_complete_profile_requires_accepted_terms_for_buyers(): void
+    {
+        $response = $this
+            ->withSession([
+                'social_auth' => [
+                    'provider' => 'google',
+                    'id' => 'google-terms',
+                    'email' => 'social-terms@example.com',
+                    'name' => 'Social Terms',
+                    'avatar' => 'https://example.com/avatar.png',
+                    'role' => 'buyer',
+                    'remember' => false,
+                ],
+            ])
+            ->from(route('auth.complete-profile'))
+            ->post(route('auth.complete-profile.store'), [
+                'first_name' => 'Social',
+                'last_name' => 'Terms',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+                'terms' => false,
+            ]);
+
+        $response->assertRedirect(route('auth.complete-profile'));
+        $response->assertSessionHasErrors('terms');
+        $this->assertDatabaseMissing('users', ['email' => 'social-terms@example.com']);
+    }
+
+    public function test_social_complete_profile_requires_accepted_terms_for_artisans(): void
+    {
+        $response = $this
+            ->withSession([
+                'social_auth' => [
+                    'provider' => 'google',
+                    'id' => 'google-artisan-terms',
+                    'email' => 'artisan-social@example.com',
+                    'name' => 'Artisan Social',
+                    'avatar' => 'https://example.com/avatar.png',
+                    'role' => 'artisan',
+                    'remember' => false,
+                ],
+            ])
+            ->from(route('auth.complete-profile'))
+            ->post(route('auth.complete-profile.store'), [
+                'first_name' => 'Artisan',
+                'last_name' => 'Social',
+                'shop_name' => 'Social Pottery',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+                'terms' => false,
+            ]);
+
+        $response->assertRedirect(route('auth.complete-profile'));
+        $response->assertSessionHasErrors('terms');
+        $this->assertDatabaseMissing('users', ['email' => 'artisan-social@example.com']);
     }
 }

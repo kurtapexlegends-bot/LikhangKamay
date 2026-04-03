@@ -1,24 +1,31 @@
 import { router } from '@inertiajs/react';
 import { Clock3, LogOut, PauseCircle, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
-function ActionTile({ icon: Icon, title, description, tone, disabled, onClick }) {
+function ActionTile({ icon: Icon, title, description, isPrimary, disabled, onClick }) {
     return (
         <button
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className={`w-full rounded-2xl border px-4 py-4 text-left transition ${tone} ${disabled ? 'cursor-not-allowed opacity-70' : ''}`}
+            className={`w-full group relative flex flex-col justify-between overflow-hidden rounded-xl border p-4 text-left shadow-sm transition-all duration-300 ${
+                isPrimary
+                    ? 'border-[#2c3b35] bg-[#1a231f] text-stone-100 hover:bg-[#232f2a]'
+                    : 'border-stone-200 bg-white text-stone-800 hover:border-clay-300 hover:bg-[#FCF7F2]'
+            } ${disabled ? 'cursor-not-allowed opacity-60' : 'hover:-translate-y-0.5 hover:shadow-md'}`}
         >
-            <div className="flex items-start gap-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm">
-                    <Icon size={18} />
+            <div className="flex items-center gap-3 mb-2">
+                <div className={`inline-flex items-center justify-center rounded-lg p-2 ${
+                    isPrimary ? 'bg-white/10 text-stone-200' : 'bg-stone-100 text-stone-600 group-hover:bg-white group-hover:text-clay-700 group-hover:shadow-sm'
+                } transition-colors`}>
+                    <Icon size={16} strokeWidth={2.5} />
                 </div>
-                <div className="min-w-0">
-                    <p className="text-sm font-bold">{title}</p>
-                    <p className="mt-1 text-xs leading-5 opacity-90">{description}</p>
-                </div>
+                <p className="text-[14px] font-bold tracking-tight">{title}</p>
             </div>
+            <p className={`text-[12px] leading-relaxed ${isPrimary ? 'text-stone-400' : 'text-stone-500 group-hover:text-stone-700'}`}>
+                {description}
+            </p>
         </button>
     );
 }
@@ -27,12 +34,8 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
     const [processingAction, setProcessingAction] = useState(null);
 
     const submit = (action) => {
-        if (processingAction) {
-            return;
-        }
-
+        if (processingAction) return;
         setProcessingAction(action);
-
         router.post(route('staff.logout'), { action }, {
             onFinish: () => setProcessingAction(null),
         });
@@ -48,88 +51,96 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
         : null;
 
     return (
-        <div className="w-full max-w-md rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-[0_24px_80px_-42px_rgba(120,79,46,0.45)] sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-clay-100 text-clay-700">
-                        <Clock3 size={20} />
+        <div className="w-full max-w-sm rounded-[1.25rem] border border-stone-200 bg-[#FDFBF9] shadow-xl overflow-hidden sm:max-w-md">
+            <div className="border-b border-stone-100 bg-white px-5 py-4 sm:px-6">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 className="text-lg font-bold tracking-tight text-stone-900">
+                            End Context Session
+                        </h2>
+                        <p className="mt-0.5 text-[13px] text-stone-500 font-medium">
+                            Determine the state of the current attendance.
+                        </p>
                     </div>
-                    <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">
-                        Staff Session
-                    </p>
-                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-stone-900">
-                        Sign out
-                    </h2>
-                    <p className="mt-1.5 text-sm leading-6 text-stone-500">
-                        Choose how to end this session.
-                    </p>
+
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-full p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+                            aria-label="Close sign out prompt"
+                        >
+                            <X size={18} />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="px-5 py-5 sm:px-6">
+                {attendance?.has_open_session ? (
+                    <div className="mb-5 flex flex-col justify-center rounded-xl bg-stone-100/60 border border-stone-200 px-4 py-3">
+                        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-500">
+                            Active Time Log
+                        </span>
+                        <div className="mt-1 flex items-center gap-1.5 text-stone-800">
+                            <Clock3 size={14} className="text-clay-600" />
+                            <span className="text-[13px] font-bold">
+                                {startedAt ? `Checked in: ${startedAt}` : 'Checked in and recording'}
+                            </span>
+                        </div>
+                    </div>
+                ) : null}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <ActionTile
+                        icon={PauseCircle}
+                        title={processingAction === 'pause' ? 'Pausing' : 'Pause Activity'}
+                        description="Sign out temporarily. Retain session for next return."
+                        isPrimary={false}
+                        disabled={!!processingAction}
+                        onClick={() => submit('pause')}
+                    />
+                    <ActionTile
+                        icon={LogOut}
+                        title={processingAction === 'clock_out' ? 'Clocking Out' : 'Clock Out'}
+                        description="End the scheduled session and conclude."
+                        isPrimary={true}
+                        disabled={!!processingAction}
+                        onClick={() => submit('clock_out')}
+                    />
                 </div>
 
                 {onClose && (
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
-                        aria-label="Close sign out prompt"
-                    >
-                        <X size={18} />
-                    </button>
+                    <div className="mt-5 border-t border-stone-200 pt-5 text-center">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="text-[13px] font-bold text-stone-500 underline-offset-4 hover:text-stone-900 hover:underline transition-colors"
+                        >
+                            Nevermind, continue working
+                        </button>
+                    </div>
                 )}
             </div>
-
-            {attendance?.has_open_session && (
-                <div className="mt-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                        Current Session
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-stone-800">
-                        {startedAt ? `Clocked in since ${startedAt}` : 'Clocked in'}
-                    </p>
-                </div>
-            )}
-
-            <div className="mt-5 grid gap-3">
-                <ActionTile
-                    icon={PauseCircle}
-                    title={processingAction === 'pause' ? 'Pausing...' : 'Pause Time'}
-                    description="Sign out now. Next login starts a new session."
-                    tone="border-amber-200 bg-amber-50 text-amber-900 hover:border-amber-300 hover:bg-amber-100"
-                    disabled={!!processingAction}
-                    onClick={() => submit('pause')}
-                />
-                <ActionTile
-                    icon={LogOut}
-                    title={processingAction === 'clock_out' ? 'Clocking Out...' : 'Clock Out'}
-                    description="End this session and sign out."
-                    tone="border-red-200 bg-red-50 text-red-900 hover:border-red-300 hover:bg-red-100"
-                    disabled={!!processingAction}
-                    onClick={() => submit('clock_out')}
-                />
-            </div>
-
-            {onClose && (
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="mt-4 w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:border-stone-300 hover:bg-stone-50"
-                >
-                    Keep Working
-                </button>
-            )}
         </div>
     );
 }
 
 export default function StaffLogoutModal({ open, attendance = null, onClose }) {
-    if (!open) {
-        return null;
-    }
+    const [mounted, setMounted] = useState(false);
+    
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
-    return (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-stone-950/35 px-4 py-6 backdrop-blur-sm" onClick={onClose}>
-            <div onClick={(event) => event.stopPropagation()}>
+    if (!open || !mounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/40 px-4 py-6 backdrop-blur-[2px]" onClick={onClose}>
+            <div onClick={(e) => e.stopPropagation()}>
                 <StaffLogoutDecisionPanel attendance={attendance} onClose={onClose} />
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuthRedirectService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,40 +13,7 @@ use Inertia\Response;
 
 class VerifyEmailController extends Controller
 {
-    protected function redirectPathForVerifiedUser(User $user): string
-    {
-        if ($user->isAdmin()) {
-            return route('admin.dashboard', absolute: false);
-        }
-
-        if ($user->isStaff()) {
-            if ($user->requiresStaffPasswordChange()) {
-                return route('staff.password.edit', absolute: false);
-            }
-
-            $routeName = $user->getFirstAccessibleSellerRouteName();
-
-            return $routeName
-                ? route($routeName, absolute: false)
-                : route('staff.home', absolute: false);
-        }
-
-        if ($user->isArtisan()) {
-            if (is_null($user->setup_completed_at) || $user->artisan_status === 'rejected') {
-                return route('artisan.setup', absolute: false);
-            }
-
-            if ($user->artisan_status === 'pending') {
-                return route('artisan.pending', absolute: false);
-            }
-
-            return route('dashboard', absolute: false);
-        }
-
-        return '/shop';
-    }
-
-    public function __invoke(Request $request): RedirectResponse|Response
+    public function __invoke(Request $request, AuthRedirectService $authRedirectService): RedirectResponse|Response
     {
         $user = User::findOrFail($request->route('id'));
 
@@ -61,7 +29,7 @@ class VerifyEmailController extends Controller
 
         if ($request->user()?->is($user)) {
             return redirect()->intended(
-                $this->redirectPathForVerifiedUser($user).'?verified=1'
+                $authRedirectService->pathForVerifiedUser($user).'?verified=1'
             );
         }
 

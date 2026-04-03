@@ -191,14 +191,13 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                     subtitle="Internal messages only."
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
-                    badge={{ label: 'Internal', iconColor: 'text-emerald-400' }}
+                    badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                 />
 
                 <div className="min-h-0 flex flex-1 overflow-hidden">
                     <aside
-                        className={`w-full shrink-0 border-r border-stone-200 bg-white sm:w-80 sm:min-w-[20rem] sm:max-w-[20rem] ${
-                            showMobileList ? 'block' : 'hidden sm:block'
-                        }`}
+                        className={`w-full shrink-0 border-r border-stone-200 bg-white sm:w-80 sm:min-w-[20rem] sm:max-w-[20rem] ${showMobileList ? 'block' : 'hidden sm:block'
+                            }`}
                     >
                         <div className="flex h-full min-h-0 flex-col">
                             <div className="border-b border-stone-100 px-3.5 py-3">
@@ -218,11 +217,10 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                     <Link
                                         key={contact.id}
                                         href={route('team-messages.index', { user_id: contact.id })}
-                                        className={`flex w-full items-start gap-3 border-l-[3px] px-3.5 py-3 transition ${
-                                            currentChatUser?.id === contact.id
-                                                ? 'border-emerald-500 bg-emerald-50/60'
-                                                : 'border-transparent hover:bg-stone-50'
-                                        }`}
+                                        className={`flex w-full items-start gap-3 border-l-[3px] px-3.5 py-3 transition ${currentChatUser?.id === contact.id
+                                            ? 'border-emerald-500 bg-emerald-50/60'
+                                            : 'border-transparent hover:bg-stone-50'
+                                            }`}
                                     >
                                         <div className="relative shrink-0">
                                             <UserAvatar user={contact} className="h-10 w-10 shadow-sm" />
@@ -305,11 +303,10 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                                             className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                                                         >
                                                             <div
-                                                                className={`max-w-[78%] rounded-[1.35rem] px-3.5 py-3 shadow-sm ${
-                                                                    message.sender === 'me'
-                                                                        ? 'rounded-br-md bg-clay-600 text-white'
-                                                                        : 'rounded-bl-md border border-stone-200 bg-white text-stone-700'
-                                                                }`}
+                                                                className={`max-w-[78%] rounded-[1.35rem] px-3.5 py-3 shadow-sm ${message.sender === 'me'
+                                                                    ? 'rounded-br-md bg-clay-600 text-white'
+                                                                    : 'rounded-bl-md border border-stone-200 bg-white text-stone-700'
+                                                                    }`}
                                                             >
                                                                 {message.attachment_path && message.attachment_type === 'image' && (
                                                                     <div className="mb-2 overflow-hidden rounded-xl bg-white/10">
@@ -332,11 +329,10 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                                                         href={`/storage/${message.attachment_path}`}
                                                                         target="_blank"
                                                                         rel="noreferrer"
-                                                                        className={`mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-                                                                            message.sender === 'me'
-                                                                                ? 'border-white/15 bg-white/10 text-white hover:bg-white/15'
-                                                                                : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
-                                                                        }`}
+                                                                        className={`mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${message.sender === 'me'
+                                                                            ? 'border-white/15 bg-white/10 text-white hover:bg-white/15'
+                                                                            : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
+                                                                            }`}
                                                                     >
                                                                         <FileIcon size={16} />
                                                                         <span>{attachmentLabel(message)}</span>
@@ -497,7 +493,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                         ) : (
                             <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
                                 <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-stone-100 text-stone-300 shadow-sm">
-                                    <MessageSquareText size={34} />
+                                    <MessageSquareText size={34} color="green" />
                                 </div>
                                 <h2 className="mt-5 text-xl font-bold text-stone-900">Open a team thread</h2>
                                 <p className="mt-2 max-w-sm text-sm leading-6 text-stone-500">

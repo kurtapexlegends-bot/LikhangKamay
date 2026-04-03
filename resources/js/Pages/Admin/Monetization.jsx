@@ -103,42 +103,57 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
             </div>
 
             {platformWallet && (
-                <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Platform Wallet</p>
-                                <h3 className="mt-2 text-2xl font-bold text-emerald-900">{formatMoney(platformWallet.balance)}</h3>
-                                <p className="mt-1 text-xs text-emerald-700">Wallet credits come from completed-order commission and delivery convenience fees.</p>
+                <div className="mb-8 overflow-hidden rounded-[1.5rem] border border-[#2c3b35] bg-[#1a231f] shadow-xl shadow-stone-900/10 grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+                    <div className="relative p-6 sm:p-10">
+                        <div className="pointer-events-none absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-clay-500/10 blur-[80px]" />
+                        <div className="relative">
+                            <div className="flex items-center gap-3">
+                                <div className="inline-flex items-center justify-center rounded-xl bg-white/10 p-2 text-stone-200 shadow-sm backdrop-blur-md ring-1 ring-white/20">
+                                    <CircleDollarSign size={20} strokeWidth={2.5} />
+                                </div>
+                                <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">Platform Wallet</h2>
                             </div>
-                            <div className="rounded-2xl bg-white/80 p-3 text-emerald-700 shadow-sm">
-                                <CircleDollarSign size={22} />
+
+                            <div className="mt-8">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Total Treasury Balance</p>
+                                <div className="mt-2 flex items-end gap-3">
+                                    <h3 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                                        <span className="text-stone-400 mr-2 font-bold text-3xl">PHP</span>
+                                        {formatMoney(platformWallet.balance).replace('PHP ', '')}
+                                    </h3>
+                                </div>
+                                <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-stone-400">
+                                    Central ledger for completed-order commissions and delivery convenience fees. Real-time synced.
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                    <div className="flex flex-col border-t border-white/10 bg-[#161d19] xl:border-l xl:border-t-0 p-6 sm:p-8">
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Recent Wallet Activity</p>
-                            <p className="mt-1 text-sm text-gray-500">Traceable commission, convenience-fee, and reversal entries for the platform.</p>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Recent Ledger Activity</p>
+                            <p className="mt-1 text-[13px] text-stone-500">Traceable commission and convenience-fee entries.</p>
                         </div>
 
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-5 flex-1 flex flex-col gap-3">
                             {platformWallet.recent_transactions?.length ? platformWallet.recent_transactions.map((entry) => (
-                                <div key={entry.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-3">
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-bold text-gray-900">{entry.description || entry.category}</p>
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            {entry.order_number ? `Order ${entry.order_number}` : 'Platform wallet update'}{entry.created_at ? ` - ${entry.created_at}` : ''}
-                                        </p>
-                                    </div>
-                                    <div className={`shrink-0 text-sm font-bold ${entry.direction === 'credit' ? 'text-emerald-700' : 'text-red-600'}`}>
-                                        {entry.direction === 'credit' ? '+' : '-'}{formatMoney(entry.amount)}
+                                <div key={entry.id} className="rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm transition hover:bg-white/10">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-[13px] font-bold text-stone-100">{entry.description || entry.category}</p>
+                                            <p className="mt-1.5 text-[11px] font-medium text-stone-400">
+                                                {entry.order_number ? `Ref: ${entry.order_number}` : 'Platform update'}{entry.created_at ? ` • ${entry.created_at}` : ''}
+                                            </p>
+                                        </div>
+                                        <div className={`shrink-0 text-[14px] font-black ${entry.direction === 'credit' ? 'text-emerald-400' : 'text-[#e37f7a]'}`}>
+                                            {entry.direction === 'credit' ? '+' : '-'}{formatMoney(entry.amount)}
+                                        </div>
                                     </div>
                                 </div>
                             )) : (
-                                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">
-                                    No platform wallet activity yet. New completed orders will appear here.
+                                <div className="flex flex-1 flex-col justify-center rounded-2xl border border-dashed border-white/10 p-6 text-center">
+                                    <p className="text-[13px] font-bold text-stone-300">No recent activity.</p>
+                                    <p className="mt-1 text-[12px] text-stone-500">Completed order credits appear here.</p>
                                 </div>
                             )}
                         </div>

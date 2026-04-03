@@ -15,45 +15,65 @@ import {
 
 const themeConfig = {
     clay: {
-        banner: 'from-clay-600 via-clay-500 to-amber-500',
+        banner: 'bg-stone-900 border border-stone-800 shadow-xl shadow-stone-900/20',
+        bannerIconRing: 'bg-clay-500/20 text-clay-400 ring-1 ring-clay-500/30',
+        bannerEyebrow: 'text-clay-400',
+        bannerTitle: 'text-white',
+        bannerSubtitle: 'text-stone-400',
+        cardGlow: 'group-hover:border-clay-200 group-hover:shadow-[0_8px_30px_rgb(205,180,150,0.12)]',
         statBorder: 'border-clay-100',
         statValue: 'text-clay-700',
-        cardTone: 'bg-clay-50 text-clay-700',
+        statBar: 'bg-clay-500',
         icon: Users,
     },
     emerald: {
-        banner: 'from-emerald-700 via-emerald-600 to-teal-500',
+        banner: 'bg-[#15231c] border border-[#1e3328] shadow-xl shadow-emerald-900/10',
+        bannerIconRing: 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30',
+        bannerEyebrow: 'text-emerald-400',
+        bannerTitle: 'text-white',
+        bannerSubtitle: 'text-emerald-100/50',
+        cardGlow: 'group-hover:border-emerald-200 group-hover:shadow-[0_8px_30px_rgba(16,185,129,0.1)]',
         statBorder: 'border-emerald-100',
         statValue: 'text-emerald-700',
-        cardTone: 'bg-emerald-50 text-emerald-700',
+        statBar: 'bg-emerald-500',
         icon: Calculator,
     },
     amber: {
-        banner: 'from-amber-700 via-amber-600 to-orange-500',
+        banner: 'bg-[#2a1c12] border border-[#3f2716] shadow-xl shadow-amber-900/10',
+        bannerIconRing: 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30',
+        bannerEyebrow: 'text-amber-500',
+        bannerTitle: 'text-white',
+        bannerSubtitle: 'text-amber-100/50',
+        cardGlow: 'group-hover:border-amber-200 group-hover:shadow-[0_8px_30px_rgba(245,158,11,0.1)]',
         statBorder: 'border-amber-100',
         statValue: 'text-amber-700',
-        cardTone: 'bg-amber-50 text-amber-700',
+        statBar: 'bg-amber-500',
         icon: PackageSearch,
     },
     sky: {
-        banner: 'from-sky-700 via-cyan-600 to-teal-500',
+        banner: 'bg-[#111e29] border border-[#1a2d3d] shadow-xl shadow-sky-900/10',
+        bannerIconRing: 'bg-sky-500/20 text-sky-400 ring-1 ring-sky-500/30',
+        bannerEyebrow: 'text-sky-400',
+        bannerTitle: 'text-white',
+        bannerSubtitle: 'text-sky-100/50',
+        cardGlow: 'group-hover:border-sky-200 group-hover:shadow-[0_8px_30px_rgba(14,165,233,0.1)]',
         statBorder: 'border-sky-100',
         statValue: 'text-sky-700',
-        cardTone: 'bg-sky-50 text-sky-700',
+        statBar: 'bg-sky-500',
         icon: MessageSquareText,
     },
 };
 
 const toneChipMap = {
-    clay: 'bg-clay-50 text-clay-700 border-clay-100',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    amber: 'bg-amber-50 text-amber-700 border-amber-100',
-    sky: 'bg-sky-50 text-sky-700 border-sky-100',
-    violet: 'bg-violet-50 text-violet-700 border-violet-100',
-    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-    rose: 'bg-rose-50 text-rose-700 border-rose-100',
-    slate: 'bg-slate-50 text-slate-700 border-slate-100',
-    red: 'bg-red-50 text-red-700 border-red-100',
+    clay: 'bg-[#FCF7F2] text-clay-700 border-[#E7D8C9]',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    amber: 'bg-amber-50 text-amber-700 border-amber-200',
+    sky: 'bg-sky-50 text-sky-700 border-sky-200',
+    violet: 'bg-violet-50 text-violet-700 border-violet-200',
+    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    rose: 'bg-rose-50 text-rose-700 border-rose-200',
+    slate: 'bg-stone-50 text-stone-700 border-stone-200',
+    red: 'bg-red-50 text-red-700 border-red-200',
 };
 
 const cardIconMap = {
@@ -70,7 +90,7 @@ const cardIconMap = {
 
 function StatCard({ stat, theme }) {
     return (
-        <div className={`rounded-[1.35rem] border bg-white px-4 py-3.5 shadow-sm ${theme.statBorder}`}>
+        <div className={`rounded-[1.25rem] border bg-white px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${theme.statBorder}`}>
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
                 {stat.label}
             </p>
@@ -81,39 +101,41 @@ function StatCard({ stat, theme }) {
     );
 }
 
-function ActionCard({ card }) {
+function ActionCard({ card, theme }) {
     const Icon = cardIconMap[card.module] || Briefcase;
     const tone = toneChipMap[card.tone] || toneChipMap.slate;
 
     return (
         <Link
             href={route(card.routeName)}
-            className="group flex h-full flex-col rounded-[1.35rem] border border-stone-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md"
+            className={`group flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 transition duration-300 ${theme.cardGlow}`}
         >
             <div className="flex items-start justify-between gap-3">
-                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${tone}`}>
-                    <Icon size={18} />
+                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-stone-100 bg-stone-50 text-stone-600 transition duration-300 group-hover:scale-110 shadow-sm`}>
+                    <Icon size={18} strokeWidth={2.5} />
                 </div>
-                <div className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${tone}`}>
+                <div className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] shadow-sm ${tone}`}>
                     {card.metricLabel}
                 </div>
             </div>
 
-            <div className="mt-4">
-                <h3 className="text-base font-bold text-stone-900">{card.title}</h3>
-                <p className="mt-1.5 text-sm leading-5 text-stone-500">{card.description}</p>
+            <div className="mt-5">
+                <h3 className="text-[17px] font-bold text-gray-900">{card.title}</h3>
+                <p className="mt-1.5 text-xs font-medium leading-5 text-stone-500">{card.description}</p>
             </div>
 
-            <div className="mt-4 flex items-end justify-between gap-3">
+            <div className="mt-5 flex items-end justify-between gap-3 pt-4 border-t border-stone-50">
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
                         {card.metricLabel}
                     </p>
-                    <p className="mt-1.5 text-xl font-bold text-stone-900">{card.metricValue}</p>
+                    <p className="mt-1 text-lg font-bold text-gray-900">{card.metricValue}</p>
                 </div>
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-clay-600">
-                    Open <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
-                </span>
+                
+                {/* Minimal pill action reveal */}
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-stone-50 border border-stone-200 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-stone-500 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:bg-gray-900 group-hover:text-white group-hover:border-gray-900">
+                    Open <ArrowRight size={12} className="transition group-hover:translate-x-0.5" />
+                </div>
             </div>
         </Link>
     );
@@ -154,33 +176,43 @@ export default function StaffDashboard({ auth, hub }) {
                     badge={{ label: hub.focus, iconColor: 'text-white' }}
                 />
 
-                <main className="flex-1 space-y-4 px-4 py-4 sm:px-6 lg:px-8">
-                    <section className={`overflow-hidden rounded-[1.75rem] bg-gradient-to-br ${theme.banner} p-5 text-white shadow-[0_22px_55px_-38px_rgba(15,23,42,0.4)] sm:p-6`}>
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <main className="flex-1 space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+                    {/* Bespoke Dark Theme Banner */}
+                    <section className={`overflow-hidden rounded-[2rem] ${theme.banner} p-6 sm:p-8 relative`}>
+                        {/* Subtle background texture overlay */}
+                        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                        
+                        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                             <div className="max-w-2xl">
-                                <div className="inline-flex h-11 w-11 items-center justify-center rounded-[1rem] bg-white/15 ring-1 ring-white/25">
-                                    <BannerIcon size={20} />
+                                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-[1rem] ${theme.bannerIconRing}`}>
+                                    <BannerIcon size={22} strokeWidth={2.5} />
                                 </div>
-                                <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.24em] text-white/70">
+                                <p className={`mt-4 text-[10px] font-bold uppercase tracking-[0.24em] ${theme.bannerEyebrow}`}>
                                     {hub.eyebrow}
                                 </p>
-                                <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-[2rem]">
+                                <h1 className={`mt-2 text-3xl font-bold tracking-tight sm:text-4xl ${theme.bannerTitle}`}>
                                     {hub.title}
                                 </h1>
-                                <p className="mt-2 max-w-xl text-sm leading-6 text-white/85">
+                                <p className={`mt-3 max-w-xl text-sm leading-6 ${theme.bannerSubtitle}`}>
                                     {hub.subtitle} Only your allowed tools are shown for {hub.sellerName}.
                                 </p>
                             </div>
 
-                            <div className="rounded-[1.35rem] border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm lg:max-w-sm">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
-                                    Enabled
-                                </p>
-                                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-md lg:min-w-[260px]">
+                                <div className="flex items-center gap-2">
+                                    <span className="relative flex h-2 w-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/60">
+                                        Active Privileges
+                                    </p>
+                                </div>
+                                <div className="mt-1 flex flex-wrap gap-2">
                                     {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
                                         <span
                                             key={module}
-                                            className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-bold capitalize text-white"
+                                            className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
                                         >
                                             {module.replace(/_/g, ' ')}
                                         </span>
@@ -190,63 +222,78 @@ export default function StaffDashboard({ auth, hub }) {
                         </div>
                     </section>
 
-                    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         {hub.stats.map((stat) => (
                             <StatCard key={stat.label} stat={stat} theme={theme} />
                         ))}
                     </section>
 
-                    <section className="grid gap-4 xl:grid-cols-[1.8fr,0.82fr]">
-                        <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
-                            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
+                    <section className="grid gap-5 xl:grid-cols-[1.8fr,0.85fr]">
+                        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between border-b border-stone-100 pb-4 mb-5">
                                 <div>
                                     <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                                        Priority Tools
+                                        Directory
                                     </p>
-                                    <h2 className="mt-1.5 text-xl font-bold text-stone-900">
-                                        Open the work queue
+                                    <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">
+                                        Open your modules
                                     </h2>
                                 </div>
-                                <p className="max-w-md text-sm leading-5 text-stone-500">
-                                    Only assigned modules and the team inbox appear here.
+                                <p className="max-w-md text-sm font-medium leading-5 text-stone-500 sm:text-right">
+                                    Only spaces explicitly assigned to your role are available.
                                 </p>
                             </div>
 
-                            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                            <div className="grid gap-4 lg:grid-cols-2">
                                 {hub.cards.map((card) => (
-                                    <ActionCard key={`${card.module}-${card.routeName}`} card={card} />
+                                    <ActionCard key={`${card.module}-${card.routeName}`} card={card} theme={theme} />
                                 ))}
                             </div>
                         </div>
 
-                        <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                                Quick Notes
-                            </p>
-                            <h2 className="mt-1.5 text-xl font-bold text-stone-900">
-                                Keep the workflow tight
-                            </h2>
+                        <div className="flex flex-col gap-4">
+                            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                                    Quick Notes
+                                </p>
+                                <h2 className="mt-1.5 text-xl font-bold tracking-tight text-gray-900 border-b border-stone-100 pb-3">
+                                    Keep workflows tight
+                                </h2>
 
-                            <div className="mt-4 space-y-3">
-                                {hub.highlights.map((item) => (
-                                    <div key={item} className="rounded-2xl border border-stone-200 bg-stone-50/80 p-3.5">
-                                        <p className="text-sm leading-5 text-stone-600">{item}</p>
-                                    </div>
-                                ))}
+                                <div className="mt-4 space-y-3">
+                                    {hub.highlights.map((item) => (
+                                        <div key={item} className="flex gap-3 items-start group">
+                                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-clay-400 transition group-hover:bg-clay-600"></span>
+                                            <p className="text-sm font-medium leading-relaxed text-stone-600">{item}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-
-                            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3.5">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">
-                                    Team Messaging
-                                </p>
-                                <p className="mt-1.5 text-sm leading-5 text-emerald-800">
-                                    Coordinate here. Buyer chat stays separate.
-                                </p>
+                            
+                            {/* Premium Team Messaging Block */}
+                            <div className="relative overflow-hidden rounded-[2rem] bg-[#1a231f] border border-[#26332d] shadow-lg flex flex-col justify-between p-6">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <MessageSquareText size={120} strokeWidth={1} className="text-emerald-400 -m-6 -mt-10 transform rotate-12" />
+                                </div>
+                                <div className="relative z-10">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-400">
+                                        Team Messaging
+                                    </p>
+                                    <h3 className="mt-2 text-xl font-bold tracking-tight text-white">
+                                        Coordinate directly
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-relaxed text-emerald-100/70">
+                                        Use internal chats for staff synergy. Buyer order messages remain separated in the Inbox.
+                                    </p>
+                                </div>
                                 <Link
                                     href={route(hub.teamMessagesRoute)}
-                                    className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-emerald-700"
+                                    className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500/20 hover:border-emerald-500/50"
                                 >
-                                    Open Team Inbox <ArrowRight size={16} />
+                                    Access Team Inbox
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50">
+                                        <ArrowRight size={12} className="text-emerald-800" />
+                                    </div>
                                 </Link>
                             </div>
                         </div>
