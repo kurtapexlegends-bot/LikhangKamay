@@ -99,7 +99,7 @@ class RegistrationTest extends TestCase
                 'terms' => true,
             ]);
 
-        $response->assertRedirect('/shop');
+        $response->assertRedirect('/');
 
         $this->assertDatabaseHas('users', [
             'email' => 'social@example.com',

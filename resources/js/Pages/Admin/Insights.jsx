@@ -260,8 +260,8 @@ export default function Insights({ revenue, churn, categories, health }) {
                         {/* Artisan Churn Overview */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4 sm:p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <h3 className="font-bold text-gray-900 text-lg mb-1">Artisan Engagement</h3>
-                                <p className="text-sm text-gray-500">Tracking activity based on last login (30 / 60 / 60+ days)</p>
+                                <h3 className="font-bold text-gray-900 text-lg mb-1">Artisan Activity</h3>
+                                <p className="text-sm text-gray-500">Tracking recent activity based on each artisan&apos;s last active request (30 / 60 / 60+ days)</p>
                             </div>
                             <div className="flex items-center justify-between gap-4 sm:gap-6 w-full sm:w-auto">
                                 <div className="text-center">
@@ -287,7 +287,7 @@ export default function Insights({ revenue, churn, categories, health }) {
                                 <AlertTriangle className="text-amber-500" size={20} />
                                 At-Risk Artisans
                             </h3>
-                            <p className="text-xs text-gray-400 mt-1">Inactive for 30-60 days. Immediate follow-up recommended.</p>
+                            <p className="text-xs text-gray-400 mt-1">No recent activity for 30-60 days. Immediate follow-up recommended.</p>
                         </div>
                         <div className="overflow-x-auto">
                             {churn.atRiskList?.length > 0 ? (

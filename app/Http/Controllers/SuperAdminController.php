@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use App\Models\SponsorshipRequest;
@@ -830,20 +831,9 @@ class SuperAdminController extends Controller
             $targetDate = now()->subMonths($i)->endOfMonth();
             $label      = $targetDate->format('M Y');
 
-            // Count users on each tier at that point using tier logs
-            $artisans = User::where('role', 'artisan')->get('id');
-            $premiumCount = 0;
-            $eliteCount   = 0;
-
-            foreach ($artisans as $artisan) {
-                $log = UserTierLog::where('user_id', $artisan->id)
-                    ->where('created_at', '<=', $targetDate)
-                    ->orderBy('created_at', 'desc')
-                    ->first();
-                $tier = $log ? $log->new_tier : 'free';
-                if ($tier === 'premium')        $premiumCount++;
-                elseif ($tier === 'super_premium') $eliteCount++;
-            }
+            $tierSnapshot = $this->getHistoricalTierSnapshot($targetDate);
+            $premiumCount = $tierSnapshot['premium'];
+            $eliteCount = $tierSnapshot['super_premium'];
 
             $mrrHistory[] = [
                 'month'  => $label,
@@ -964,20 +954,9 @@ class SuperAdminController extends Controller
      */
     private function getHistoricalTierCount($tier, $daysAgo = 30)
     {
-        $targetDate = now()->subDays($daysAgo);
-        $users = User::where('role', 'artisan')->get();
-        $count = 0;
-        foreach ($users as $user) {
-            $latestLog = UserTierLog::where('user_id', $user->id)
-                ->where('created_at', '<=', $targetDate)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            $tierAtTime = $latestLog ? $latestLog->new_tier : 'free';
-            if ($tierAtTime === $tier) {
-                $count++;
-            }
-        }
-        return $count;
+        $snapshot = $this->getHistoricalTierSnapshot(now()->subDays($daysAgo));
+
+        return $snapshot[$tier] ?? 0;
     }
 
     /**
@@ -985,19 +964,49 @@ class SuperAdminController extends Controller
      */
     private function getHistoricalStatusCount($status, $daysAgo = 30)
     {
-        $targetDate = now()->subDays($daysAgo);
-        $users = User::where('role', 'artisan')->get();
-        $count = 0;
-        foreach ($users as $user) {
-            $latestLog = ArtisanStatusLog::where('user_id', $user->id)
-                ->where('created_at', '<=', $targetDate)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            $statusAtTime = $latestLog ? $latestLog->new_status : null;
-            if ($statusAtTime === $status) {
-                $count++;
-            }
+        $statusLogs = ArtisanStatusLog::query()
+            ->whereIn('user_id', $this->artisanIds())
+            ->where('created_at', '<=', now()->subDays($daysAgo))
+            ->orderBy('user_id')
+            ->orderByDesc('created_at')
+            ->get()
+            ->unique('user_id');
+
+        return $statusLogs->where('new_status', $status)->count();
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    private function artisanIds(): Collection
+    {
+        static $artisanIds;
+
+        if ($artisanIds instanceof Collection) {
+            return $artisanIds;
         }
-        return $count;
+
+        $artisanIds = User::where('role', 'artisan')->pluck('id');
+
+        return $artisanIds;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function getHistoricalTierSnapshot($targetDate): array
+    {
+        $tierLogs = UserTierLog::query()
+            ->whereIn('user_id', $this->artisanIds())
+            ->where('created_at', '<=', $targetDate)
+            ->orderBy('user_id')
+            ->orderByDesc('created_at')
+            ->get()
+            ->unique('user_id');
+
+        return [
+            'premium' => $tierLogs->where('new_tier', 'premium')->count(),
+            'super_premium' => $tierLogs->where('new_tier', 'super_premium')->count(),
+        ];
     }
 }

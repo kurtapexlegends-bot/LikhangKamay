@@ -11,60 +11,12 @@ class PendingArtisanApprovalTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_super_admin_cannot_approve_artisan_before_viewing_any_documents(): void
+    public function test_super_admin_can_approve_artisan_directly_from_review_flow(): void
     {
         Mail::fake();
 
         $admin = User::factory()->superAdmin()->create();
         $artisan = $this->createPendingArtisanWithDocuments();
-
-        $this->actingAs($admin)
-            ->post(route('admin.artisan.approve', $artisan->id))
-            ->assertSessionHasErrors('documents');
-
-        $artisan->refresh();
-
-        $this->assertSame('pending', $artisan->artisan_status);
-        $this->assertNull($artisan->approved_at);
-    }
-
-    public function test_super_admin_cannot_approve_artisan_after_viewing_only_some_documents(): void
-    {
-        Mail::fake();
-
-        $admin = User::factory()->superAdmin()->create();
-        $artisan = $this->createPendingArtisanWithDocuments();
-
-        $this->actingAs($admin)
-            ->post(route('admin.artisan.documents.viewed', $artisan->id), [
-                'document' => 'business_permit',
-            ])
-            ->assertOk();
-
-        $this->actingAs($admin)
-            ->post(route('admin.artisan.approve', $artisan->id))
-            ->assertSessionHasErrors('documents');
-
-        $artisan->refresh();
-
-        $this->assertSame('pending', $artisan->artisan_status);
-        $this->assertNull($artisan->approved_at);
-    }
-
-    public function test_super_admin_can_approve_artisan_after_viewing_all_submitted_documents(): void
-    {
-        Mail::fake();
-
-        $admin = User::factory()->superAdmin()->create();
-        $artisan = $this->createPendingArtisanWithDocuments();
-
-        foreach (['business_permit', 'dti_registration', 'valid_id', 'tin_id'] as $documentKey) {
-            $this->actingAs($admin)
-                ->post(route('admin.artisan.documents.viewed', $artisan->id), [
-                    'document' => $documentKey,
-                ])
-                ->assertOk();
-        }
 
         $this->actingAs($admin)
             ->post(route('admin.artisan.approve', $artisan->id))
@@ -76,6 +28,21 @@ class PendingArtisanApprovalTest extends TestCase
         $this->assertSame('approved', $artisan->artisan_status);
         $this->assertNotNull($artisan->approved_at);
         $this->assertSame($admin->id, $artisan->approved_by);
+    }
+
+    public function test_super_admin_can_mark_submitted_documents_as_viewed_during_review(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = $this->createPendingArtisanWithDocuments();
+
+        $this->actingAs($admin)
+            ->post(route('admin.artisan.documents.viewed', $artisan->id), [
+                'document' => 'business_permit',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'viewed_document_keys' => ['business_permit'],
+            ]);
     }
 
     public function test_super_admin_can_reject_artisan_from_review_flow(): void

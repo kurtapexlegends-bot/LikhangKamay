@@ -27,7 +27,24 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect('/shop');
+        $response->assertRedirect('/');
+    }
+
+    public function test_buyers_return_to_the_previous_page_after_logging_in(): void
+    {
+        $user = User::factory()->create();
+
+        $this->from(route('terms'))
+            ->get(route('login'))
+            ->assertOk();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('terms', absolute: false));
     }
 
     public function test_unverified_buyers_are_redirected_to_email_verification_after_login(): void

@@ -78,10 +78,6 @@ export default function PendingArtisans({ artisans }) {
         [viewingArtisan, viewedDocumentsByArtisan],
     );
 
-    const submittedDocuments = currentDocuments.filter((document) => document.url);
-    const viewedSubmittedCount = submittedDocuments.filter((document) => document.viewed).length;
-    const canApproveCurrentArtisan = true;
-
     const confirmApprove = () => {
         if (!viewingArtisan) {
             return;
@@ -307,9 +303,6 @@ export default function PendingArtisans({ artisans }) {
 
                         <div className="bg-white px-5 sm:px-6 py-4 border-t border-stone-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sticky bottom-0 z-20">
                              <div className="space-y-0.5">
-                                <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-                                    Application Documents Ready
-                                </div>
                                 {approvalError && (
                                     <p className="text-[10px] font-semibold text-red-600">{approvalError}</p>
                                 )}

@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowUpRight, Cuboid } from 'lucide-react';
 
 const MESHY_IMAGE_TO_3D_URL = 'https://www.meshy.ai/features/image-to-3d';
+const TRELLIS_2_URL = 'https://huggingface.co/spaces/microsoft/TRELLIS.2';
 
 export default function External3DToolLink({ className = '' }) {
     return (
@@ -21,9 +22,19 @@ export default function External3DToolLink({ className = '' }) {
                         Open Meshy (free tier)
                         <ArrowUpRight size={12} />
                     </a>
+                    <span className="mx-1 text-stone-400">|</span>
+                    <a
+                        href={TRELLIS_2_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-bold text-clay-600 transition hover:text-clay-700 hover:underline"
+                    >
+                        Trellis 2
+                        <ArrowUpRight size={12} />
+                    </a>
                 </p>
                 <p className="mt-0.5 text-[10px] leading-4 text-stone-500">
-                    Generate in Meshy, export as .glb or .gltf, then upload it back here.
+                    Generate in Meshy or Trellis 2, export as .glb or .gltf, then upload it back here.
                 </p>
             </div>
         </div>

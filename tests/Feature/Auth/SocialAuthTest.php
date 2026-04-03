@@ -45,7 +45,7 @@ class SocialAuthTest extends TestCase
             ->get('/auth/google/callback');
 
         $this->assertAuthenticatedAs($user);
-        $response->assertRedirect('/shop');
+        $response->assertRedirect('/');
     }
 
     public function test_existing_unverified_users_using_social_auth_are_redirected_to_email_verification(): void

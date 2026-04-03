@@ -44,7 +44,9 @@ class AuthRedirectService
             return redirect()->route('verification.notice');
         }
 
-        return redirect()->to($this->pathForVerifiedUser($user));
+        return $user->isArtisan()
+            ? redirect()->to($this->pathForVerifiedUser($user))
+            : redirect()->intended($this->pathForVerifiedUser($user));
     }
 
     public function pathForVerifiedUser(User $user): string

@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,8 +19,10 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $this->rememberSafePreviousUrl($request);
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
@@ -87,5 +90,69 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function rememberSafePreviousUrl(Request $request): void
+    {
+        if ($request->session()->has('url.intended')) {
+            return;
+        }
+
+        $referer = $request->headers->get('referer');
+
+        if (!is_string($referer) || $referer === '') {
+            return;
+        }
+
+        $refererParts = parse_url($referer);
+
+        if (!is_array($refererParts)) {
+            return;
+        }
+
+        $currentOrigin = sprintf('%s://%s', $request->getScheme(), $request->getHttpHost());
+        $refererOrigin = isset($refererParts['scheme'], $refererParts['host'])
+            ? sprintf(
+                '%s://%s%s',
+                $refererParts['scheme'],
+                $refererParts['host'],
+                isset($refererParts['port']) ? ':' . $refererParts['port'] : ''
+            )
+            : null;
+
+        if ($refererOrigin !== $currentOrigin) {
+            return;
+        }
+
+        $refererPath = $refererParts['path'] ?? '/';
+
+        if ($refererPath === $request->getPathInfo()) {
+            return;
+        }
+
+        $blockedPrefixes = [
+            '/login',
+            '/register',
+            '/forgot-password',
+            '/reset-password',
+            '/auth/',
+            '/verify-email',
+            '/confirm-password',
+            '/logout',
+        ];
+
+        foreach ($blockedPrefixes as $prefix) {
+            if (Str::startsWith($refererPath, $prefix)) {
+                return;
+            }
+        }
+
+        $intendedUrl = $refererPath;
+
+        if (!empty($refererParts['query'])) {
+            $intendedUrl .= '?' . $refererParts['query'];
+        }
+
+        $request->session()->put('url.intended', $intendedUrl);
     }
 }

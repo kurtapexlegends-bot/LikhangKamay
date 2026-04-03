@@ -232,6 +232,8 @@ class SocialAuthController extends Controller
         Auth::login($user, (bool) ($socialData['remember'] ?? false));
         $request->session()->regenerate();
 
-        return redirect()->to($authRedirectService->pathForVerifiedUser($user));
+        return $isArtisan
+            ? redirect()->to($authRedirectService->pathForVerifiedUser($user))
+            : redirect()->intended($authRedirectService->pathForVerifiedUser($user));
     }
 }
