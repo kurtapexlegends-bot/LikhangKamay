@@ -326,9 +326,6 @@ export default function ArtisanRegister() {
                         <img src="/images/google-icon.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
                         <span className="text-sm font-semibold text-stone-600">Google</span>
                     </a>
-                    <p className="text-xs text-stone-400">
-                        Quick sign-up with your Google account
-                    </p>
                 </div>
             </div>
 

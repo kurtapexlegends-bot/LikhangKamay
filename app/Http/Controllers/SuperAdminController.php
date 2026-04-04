@@ -673,7 +673,7 @@ class SuperAdminController extends Controller
         // Send approval email
         try {
             if ($artisan->email) {
-                Mail::to($artisan->email)->send(new ArtisanApproved($artisan));
+                Mail::to($artisan->email)->queue(new ArtisanApproved($artisan));
             }
         } catch (\Exception $e) {
             // Log error but continue
@@ -710,7 +710,7 @@ class SuperAdminController extends Controller
         // Send rejection email
         try {
             if ($artisan->email) {
-                Mail::to($artisan->email)->send(new ArtisanRejected($artisan));
+                Mail::to($artisan->email)->queue(new ArtisanRejected($artisan));
             }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send rejection email: ' . $e->getMessage());

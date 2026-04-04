@@ -449,7 +449,7 @@ class OrderController extends Controller
                 // Send refund email to buyer
                 $buyer = $order?->user;
                 if ($buyer && $buyer->email) {
-                    Mail::to($buyer->email)->send(new RefundProcessed($order));
+                    Mail::to($buyer->email)->queue(new RefundProcessed($order));
                 }
             } catch (\Throwable $e) {
                 report($e);
