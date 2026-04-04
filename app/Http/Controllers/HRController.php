@@ -55,7 +55,7 @@ class HRController extends Controller
         $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller);
 
         $employees = $employeeRecords
-            ->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
+            ->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries, $attendanceMonthLabel) {
                 $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
                 $attendanceSummary = $attendanceSummaries[$employee->id] ?? [
                     'current_state' => 'manual',
