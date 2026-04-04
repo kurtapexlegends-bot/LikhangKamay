@@ -599,7 +599,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     getFlashSuccessMessage(
                         page,
                         isProvisioningLogin
-                            ? 'Employee and staff login created. A verification email was sent.'
+                            ? 'Employee and staff login created. A verification email was queued for delivery.'
                             : 'Employee added successfully.'
                     ),
                     'success'

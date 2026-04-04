@@ -231,7 +231,7 @@ class HRController extends Controller
         if ($staffAccount) {
             $staffAccount->sendEmailVerificationNotification();
 
-            return redirect()->back()->with('success', 'Employee and staff login created. A verification email was sent.');
+            return redirect()->back()->with('success', 'Employee and staff login created. A verification email was queued for delivery.');
         }
 
         return redirect()->back()->with('success', 'Employee added successfully.');
@@ -595,7 +595,7 @@ class HRController extends Controller
         bool $passwordReset
     ): string {
         if ($createdLogin) {
-            return 'Employee updated and seller login created. A verification email was sent.';
+            return 'Employee updated and seller login created. A verification email was queued for delivery.';
         }
 
         if ($workspaceSuspended) {
@@ -626,7 +626,7 @@ class HRController extends Controller
         $followUps = [];
 
         if ($emailChanged) {
-            $followUps[] = 'A verification email was sent to the updated address.';
+            $followUps[] = 'A verification email was queued for delivery to the updated address.';
         }
 
         if ($passwordReset) {

@@ -37,9 +37,9 @@ export default function ForgotPassword({ status }) {
                 <div className="mb-8 p-4 bg-green-50/80 border border-green-200 rounded-xl flex items-start gap-3 backdrop-blur-sm">
                     <CheckCircle size={20} className="text-green-600 mt-0.5 shrink-0" />
                     <div>
-                        <p className="text-sm font-semibold text-green-800">Email Sent!</p>
+                        <p className="text-sm font-semibold text-green-800">Email Queued</p>
                         <p className="text-xs text-green-700 mt-1 leading-relaxed">
-                            Check your inbox for a password reset link. If you don't see it, check your spam folder.
+                            A password reset email has been queued for delivery. Check your inbox shortly, and if you don't see it, check your spam folder.
                         </p>
                     </div>
                 </div>

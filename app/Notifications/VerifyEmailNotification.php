@@ -8,7 +8,9 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use Throwable;
 
 class VerifyEmailNotification extends Notification implements ShouldQueue
 {
@@ -47,5 +49,12 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
         );
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::error('Queued email verification notification failed.', [
+            'message' => $exception->getMessage(),
+        ]);
     }
 }
