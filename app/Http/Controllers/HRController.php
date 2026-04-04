@@ -51,11 +51,10 @@ class HRController extends Controller
         }
 
         $employeeRecords = $employeeQuery->get();
-        $attendanceMonthLabel = now(config('app.timezone'))->format('F Y');
         $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller);
 
         $employees = $employeeRecords
-            ->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries, $attendanceMonthLabel) {
+            ->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
                 $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
                 $attendanceSummary = $attendanceSummaries[$employee->id] ?? [
                     'current_state' => 'manual',
@@ -69,7 +68,7 @@ class HRController extends Controller
                     'worked_minutes' => 0,
                     'has_attendance_source' => false,
                     'open_session' => false,
-                    'month_label' => $attendanceMonthLabel,
+                    'month_label' => $this->attendanceMonthLabel(),
                     'calendar_days' => [],
                 ];
 
@@ -131,7 +130,7 @@ class HRController extends Controller
             'sellerSettings' => [
                 'overtime_rate' => $seller->overtime_rate ?? 50.00,
                 'payroll_working_days' => $seller->payroll_working_days ?? 22,
-                'attendance_month_label' => $attendanceMonthLabel,
+                'attendance_month_label' => $this->attendanceMonthLabel(),
             ],
             'staffProvisioning' => [
                 'canManageStaffAccounts' => $actor->canManageStaffAccounts() && $this->supportsStaffProvisioningSchema(),
@@ -140,6 +139,11 @@ class HRController extends Controller
                 'requiresStaffSchemaUpdate' => !$this->supportsStaffProvisioningSchema(),
             ],
         ]);
+    }
+
+    protected function attendanceMonthLabel(): string
+    {
+        return now(config('app.timezone'))->format('F Y');
     }
 
     public function store(Request $request, SellerEntitlementService $entitlementService)
