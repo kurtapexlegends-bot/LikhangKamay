@@ -55,9 +55,15 @@ class ProfileController extends Controller
             $data['name'] ?? $user->name,
         );
 
-        $data['name'] = $name['name'];
-        $data['first_name'] = $name['first_name'];
-        $data['last_name'] = $name['last_name'];
+        $persistableName = \App\Models\User::persistableNameAttributes($name);
+        $data['name'] = $persistableName['name'];
+
+        if (\App\Models\User::supportsSplitNameColumns()) {
+            $data['first_name'] = $persistableName['first_name'] ?? null;
+            $data['last_name'] = $persistableName['last_name'] ?? null;
+        } else {
+            unset($data['first_name'], $data['last_name']);
+        }
 
         foreach (['phone_number', 'street_address', 'barangay', 'city', 'region', 'zip_code'] as $field) {
             if (array_key_exists($field, $data)) {

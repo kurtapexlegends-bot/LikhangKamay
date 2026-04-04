@@ -32,12 +32,21 @@ patch_*
 .phpstorm.meta.php
 _ide_helper.php
 _ide_helper_models.php
+/.npm-cache/
 
 # Root-level debug dumps and scratch outputs
 /*.txt
 /backfill.php
+/*.diff
+/*.patch
+/90%
+/old_orders*.jsx
+/original.jsx
+/repomix-output.xml
 
 # Project docs to keep local-only
 /PROJECT_GUIDELINES.md
 /CAPSTONE DOCX/
+/docs/awesome-design-md/
+/docs/design-md-usage.md
 remove_badges*

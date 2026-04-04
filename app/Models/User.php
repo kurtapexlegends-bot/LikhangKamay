@@ -6,18 +6,22 @@ use App\Services\SellerEntitlementService;
 use App\Models\UserAddress;
 use App\Support\PersonName;
 use App\Support\StructuredAddress;
+use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
     public const STAFF_WORKSPACE_ACCESS_FLAG = '__workspace_access_enabled';
+
+    protected static ?bool $hasSplitNameColumns = null;
 
     /**
      * The attributes that are mass assignable.
@@ -627,6 +631,22 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             $lastNameChanged = $user->isDirty('last_name');
             $nameChanged = $user->isDirty('name');
 
+            if (!static::supportsSplitNameColumns()) {
+                $normalized = PersonName::normalize(
+                    $user->first_name,
+                    $user->last_name,
+                    $user->name,
+                );
+
+                if ($normalized['name'] !== '') {
+                    $user->name = $normalized['name'];
+                }
+
+                unset($user->attributes['first_name'], $user->attributes['last_name']);
+
+                return;
+            }
+
             if ($nameChanged) {
                 $normalized = PersonName::normalize(null, null, $user->name);
                 $user->first_name = $normalized['first_name'];
@@ -666,5 +686,39 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public function getRouteKeyName()
     {
         return 'shop_slug';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function persistableNameAttributes(array $normalizedName): array
+    {
+        $attributes = [
+            'name' => $normalizedName['name'] ?? null,
+        ];
+
+        if (static::supportsSplitNameColumns()) {
+            $attributes['first_name'] = $normalizedName['first_name'] ?? null;
+            $attributes['last_name'] = $normalizedName['last_name'] ?? null;
+        }
+
+        return $attributes;
+    }
+
+    public static function supportsSplitNameColumns(): bool
+    {
+        if (static::$hasSplitNameColumns !== null) {
+            return static::$hasSplitNameColumns;
+        }
+
+        try {
+            /** @var SchemaBuilder $schema */
+            $schema = Schema::connection((new static())->getConnectionName());
+            static::$hasSplitNameColumns = $schema->hasColumns('users', ['first_name', 'last_name']);
+        } catch (\Throwable) {
+            static::$hasSplitNameColumns = false;
+        }
+
+        return static::$hasSplitNameColumns;
     }
 }

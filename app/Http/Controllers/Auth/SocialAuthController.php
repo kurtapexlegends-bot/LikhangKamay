@@ -198,9 +198,7 @@ class SocialAuthController extends Controller
 
         // Create user with appropriate role
         $userData = [
-            'name' => $name['name'],
-            'first_name' => $name['first_name'],
-            'last_name' => $name['last_name'],
+            ...User::persistableNameAttributes($name),
             'email' => $socialData['email'],
             'password' => Hash::make($request->password),
             'role' => $isArtisan ? 'artisan' : 'buyer',

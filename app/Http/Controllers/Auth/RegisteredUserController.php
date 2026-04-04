@@ -49,9 +49,7 @@ class RegisteredUserController extends Controller
         $role = $request->filled('shop_name') ? 'artisan' : 'buyer';
 
         $user = User::create([
-            'name' => $name['name'],
-            'first_name' => $name['first_name'],
-            'last_name' => $name['last_name'],
+            ...User::persistableNameAttributes($name),
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $role,

@@ -139,7 +139,7 @@ export default function ArtisanRegister() {
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
                                 required
-                                placeholder="Kurt"
+                                placeholder="John"
                             />
                         </div>
                         <InputError message={errors.first_name} className="mt-2" />
@@ -157,7 +157,7 @@ export default function ArtisanRegister() {
                                 className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
-                                placeholder="Talastas"
+                                placeholder="Doe"
                             />
                         </div>
                         <InputError message={errors.last_name} className="mt-2" />
