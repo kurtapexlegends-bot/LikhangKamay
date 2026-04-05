@@ -221,7 +221,13 @@ class SellerEntitlementService
     }
 
     /**
-     * @return array<string, bool>
+     * @return array{
+     *     visibleModules: array<int, string>,
+     *     toggleableModules: array<int, string>,
+     *     enabledToggleableModules: array<int, string>,
+     *     showGear: bool,
+     *     allModulesUnlocked: bool
+     * }
      */
     protected function buildOwnerEntitlements(User $seller): array
     {
