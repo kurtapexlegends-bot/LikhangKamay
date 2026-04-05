@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check } from 'lucide-react';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 
 export default function Cart({ cart }) {
     const [updatingId, setUpdatingId] = useState(null);
     const [removingId, setRemovingId] = useState(null);
     const [selectedItems, setSelectedItems] = useState(new Set());
+    const { addToast } = useToast();
     const currency = useMemo(() => new Intl.NumberFormat('en-PH', {
         style: 'currency',
         currency: 'PHP',
@@ -16,24 +19,7 @@ export default function Cart({ cart }) {
 
     // --- FLASH MESSAGE HANDLING ---
     const { flash } = usePage().props;
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success'); // 'success' or 'error'
-
-    React.useEffect(() => {
-        if (flash.success) {
-            setToastType('success');
-            setToastMessage(flash.success);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-        if (flash.error) {
-            setToastType('error');
-            setToastMessage(flash.error);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 5000);
-        }
-    }, [flash]);
+    useFlashToast(flash, addToast);
 
     // Convert the cart object (from PHP Session) into an array
     const cartItems = Object.values(cart || {});
@@ -400,22 +386,6 @@ export default function Cart({ cart }) {
                     </div>
                 )}
 
-            </div>
-
-            {/* --- TOAST NOTIFICATION --- */}
-            <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-                <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
-                    <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                        {toastType === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}
-                    </div>
-                    <div>
-                        <h4 className={`text-sm font-bold ${toastType === 'success' ? 'text-green-900' : 'text-red-900'}`}>
-                            {toastType === 'success' ? 'Success' : 'Error'}
-                        </h4>
-                        <p className="text-xs text-gray-500">{toastMessage}</p>
-                    </div>
-                    <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600"><X size={14} /></button>
-                </div>
             </div>
         </ShopLayout>
     );

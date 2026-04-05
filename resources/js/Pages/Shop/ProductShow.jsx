@@ -110,7 +110,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             preserveScroll: true,
             onSuccess: () => {
                 setAddedToCart(true);
-                addToast("Added to cart successfully!", 'success');
+                addToast('Added to cart.', 'success');
                 setTimeout(() => setAddedToCart(false), 2000);
             },
             onError: () => {

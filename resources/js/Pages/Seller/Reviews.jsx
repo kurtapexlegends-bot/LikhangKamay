@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 
 // --- Simple Rich Text Toolbar ---
 const RichTextEditor = ({ value, onChange, placeholder }) => {
@@ -54,30 +56,14 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
 };
 
 export default function Reviews({ auth, reviews, stats, flash }) {
+    const { addToast } = useToast();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [filter, setFilter] = useState('All');
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyText, setReplyText] = useState('');
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success');
     const [confirmingDelete, setConfirmingDelete] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-
-    React.useEffect(() => {
-        if (flash?.success) {
-            setToastType('success');
-            setToastMessage(flash.success);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-        if (flash?.error) {
-            setToastType('error');
-            setToastMessage(flash.error);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 5000);
-        }
-    }, [flash]);
+    useFlashToast(flash, addToast);
 
     const QUICK_REPLIES = [
         "Thank you for your purchase and your kind words! We truly appreciate your support and hope to serve you again.",
@@ -511,22 +497,6 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     </div>
                 </div>
             </Modal>
-
-            {/* --- TOAST --- */}
-            <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
-                    <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                        {toastType === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-                    </div>
-                    <div>
-                        <h4 className={`text-sm font-bold ${toastType === 'success' ? 'text-green-900' : 'text-red-900'}`}>
-                            {toastType === 'success' ? 'Success' : 'Error'}
-                        </h4>
-                        <p className="text-xs text-gray-500">{toastMessage}</p>
-                    </div>
-                    <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600"><X size={14} /></button>
-                </div>
-            </div>
         </div>
     );
 }

@@ -65,10 +65,10 @@ export default function ShopSettings({ auth, user, stats }) {
         post(route('shop.settings.update'), { 
             preserveScroll: true,
             onSuccess: () => {
-                addToast('Shop settings updated successfully', 'success');
+                addToast('Shop settings updated.', 'success');
             },
             onError: () => {
-                addToast('Failed to update shop settings. Please check the errors.', 'error');
+                addToast('Failed to update shop settings.', 'error');
             }
         });
     };

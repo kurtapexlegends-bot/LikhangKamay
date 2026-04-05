@@ -18,11 +18,14 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 
 const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other']; // Phase 1: Removed Raw Materials
 const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
 
 export default function ProcurementIndex({ auth, supplies, requests, finances, totalItems, lowStockItems, totalValue, categories, initTab }) {
+    const { addToast } = useToast();
     const [showAddModal, setShowAddModal] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showRestockModal, setShowRestockModal] = useState(false);
@@ -37,24 +40,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
     // --- FLASH MESSAGE HANDLING ---
     const { flash } = usePage().props;
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success'); // 'success' or 'error'
-
-    React.useEffect(() => {
-        if (flash.success) {
-            setToastType('success');
-            setToastMessage(flash.success);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-        if (flash.error) {
-            setToastType('error');
-            setToastMessage(flash.error);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 5000);
-        }
-    }, [flash]);
+    useFlashToast(flash, addToast);
 
     // --- TABS & FINANCE STATE ---
     const [activeTab, setActiveTab] = useState(initTab || 'inventory');
@@ -136,15 +122,6 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
             
             {/* SIDEBAR */}
             <SellerSidebar active="procurement" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            {/* TOAST NOTIFICATION */}
-            {showToast && (
-                <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${toastType === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
-                    {toastType === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-                    <p className="font-bold text-sm">{toastMessage}</p>
-                    <button onClick={() => setShowToast(false)} className="ml-2 hover:opacity-80"><X size={16} /></button>
-                </div>
-            )}
 
             {/* MAIN CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
@@ -611,5 +588,4 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         </div>
     );
 }
-
 

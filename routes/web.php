@@ -30,6 +30,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\TeamMessageController;
+use App\Http\Controllers\SellerWalletController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
 use App\Models\Product;
@@ -149,6 +150,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/3d-manager', [ThreeDManagerController::class, 'index'])->middleware('seller.module:3d')->name('3d.index');
         Route::post('/3d-manager/upload', [ThreeDManagerController::class, 'upload'])->middleware('seller.module:3d')->name('3d.upload');
         Route::delete('/3d-manager/{product}', [ThreeDManagerController::class, 'destroy'])->middleware('seller.module:3d')->name('3d.destroy');
+
+        Route::get('/seller-wallet', [SellerWalletController::class, 'index'])->middleware('seller.module:wallet')->name('seller.wallet.index');
+        Route::post('/seller-wallet/withdrawals', [SellerWalletController::class, 'storeWithdrawalRequest'])->middleware('seller.module:wallet')->name('seller.wallet.withdrawals.store');
 
         // SHOP SETTINGS
         Route::get('/shop-settings', [ShopController::class, 'settings'])->middleware('seller.module:shop_settings')->name('shop.settings');
@@ -273,6 +277,7 @@ Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware(
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
+    Route::post('/monetization/withdraw', [SuperAdminController::class, 'withdrawPlatformWallet'])->name('admin.monetization.withdraw');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
@@ -284,6 +289,8 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');
     Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\SponsorshipController::class, 'approve'])->name('admin.sponsorships.approve');
     Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\SponsorshipController::class, 'reject'])->name('admin.sponsorships.reject');
+    Route::post('/wallet-withdrawals/{withdrawalRequest}/approve', [SuperAdminController::class, 'approveSellerWalletWithdrawal'])->name('admin.wallet-withdrawals.approve');
+    Route::post('/wallet-withdrawals/{withdrawalRequest}/reject', [SuperAdminController::class, 'rejectSellerWalletWithdrawal'])->name('admin.wallet-withdrawals.reject');
 });
 
 

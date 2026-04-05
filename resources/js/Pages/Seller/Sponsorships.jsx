@@ -30,7 +30,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
         post(route('seller.sponsorships.store'), {
             onSuccess: () => {
                 reset();
-                addToast('Sponsorship requested successfully!', 'success');
+                addToast('Sponsorship request submitted.', 'success');
             },
             onError: (err) => {
                 addToast(err.error || 'Failed to request sponsorship.', 'error');
@@ -291,4 +291,3 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
         </div>
     );
 }
-

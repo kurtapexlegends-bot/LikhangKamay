@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\SellerWalletWithdrawalRequest;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -107,6 +108,60 @@ class WalletService
         ]);
 
         return $this->mapSnapshot($wallet);
+    }
+
+    public function buildSellerSnapshot(User $seller, int $limit = 10): array
+    {
+        $wallet = $this->getOrCreateWallet($seller)->load([
+            'transactions' => fn ($query) => $query
+                ->with(['order:id,order_number', 'counterparty:id,name'])
+                ->latest()
+                ->limit($limit),
+            'withdrawalRequests' => fn ($query) => $query
+                ->latest()
+                ->limit(5),
+        ]);
+
+        $snapshot = $this->mapSnapshot($wallet);
+        $pendingSettlementBalance = Order::query()
+            ->where('artisan_id', $seller->id)
+            ->whereNull('wallet_settled_at')
+            ->whereNull('refunded_to_wallet_at')
+            ->where('payment_status', 'paid')
+            ->where('shipping_method', 'Delivery')
+            ->where('payment_method', '!=', 'COD')
+            ->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
+            ->sum('seller_net_amount');
+
+        $pendingWithdrawals = SellerWalletWithdrawalRequest::query()
+            ->where('wallet_id', $wallet->id)
+            ->where('status', SellerWalletWithdrawalRequest::STATUS_PENDING)
+            ->sum('amount');
+
+        $approvedWithdrawals = SellerWalletWithdrawalRequest::query()
+            ->where('wallet_id', $wallet->id)
+            ->where('status', SellerWalletWithdrawalRequest::STATUS_APPROVED)
+            ->sum('amount');
+
+        return [
+            ...$snapshot,
+            'pending_settlement_balance' => $this->normalizeAmount((float) $pendingSettlementBalance),
+            'pending_withdrawals' => $this->normalizeAmount((float) $pendingWithdrawals),
+            'approved_withdrawals_total' => $this->normalizeAmount((float) $approvedWithdrawals),
+            'recent_withdrawal_requests' => $wallet->withdrawalRequests
+                ->map(fn (SellerWalletWithdrawalRequest $request) => [
+                    'id' => $request->id,
+                    'amount' => (float) $request->amount,
+                    'currency' => $request->currency,
+                    'status' => $request->status,
+                    'note' => $request->note,
+                    'rejection_reason' => $request->rejection_reason,
+                    'created_at' => $request->created_at?->format('M d, Y h:i A'),
+                    'reviewed_at' => $request->reviewed_at?->format('M d, Y h:i A'),
+                ])
+                ->values()
+                ->all(),
+        ];
     }
 
     public function buildPlatformSnapshot(int $limit = 5): ?array

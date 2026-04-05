@@ -380,6 +380,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     {
         return [
             'overview',
+            'wallet',
             'products',
             'analytics',
             '3d',
@@ -664,6 +665,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public function wallet()
     {
         return $this->hasOne(\App\Models\Wallet::class);
+    }
+
+    public function sellerWalletWithdrawalRequests()
+    {
+        return $this->hasMany(\App\Models\SellerWalletWithdrawalRequest::class);
     }
     
     public function sponsorshipRequests()

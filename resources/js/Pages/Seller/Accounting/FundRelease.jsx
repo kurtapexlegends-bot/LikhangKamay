@@ -4,7 +4,9 @@ import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
 import Modal from '@/Components/Modal';
 import CompactPagination from '@/Components/CompactPagination';
-import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Eye, FileText, History, Pencil, Users } from 'lucide-react';
+import { Banknote, Building2, ClipboardList, Eye, FileText, History, Pencil, Users } from 'lucide-react';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 
 const formatMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const formatShortMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -28,9 +30,7 @@ const typeTone = (type) => (type === 'payroll' ? 'bg-indigo-50 text-indigo-700 b
 export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], finances }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { flash } = usePage().props;
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success');
+    const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState('pending');
     const [showBaseFundsModal, setShowBaseFundsModal] = useState(false);
     const [baseFundsValue, setBaseFundsValue] = useState(finances.baseFunds || 0);
@@ -63,21 +63,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
         return allHistory.slice(startIndex, startIndex + itemsPerPage);
     }, [allHistory, historyPage]);
 
-    useEffect(() => {
-        if (flash.success) {
-            setToastType('success');
-            setToastMessage(flash.success);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-
-        if (flash.error) {
-            setToastType('error');
-            setToastMessage(flash.error);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 5000);
-        }
-    }, [flash]);
+    useFlashToast(flash, addToast);
 
     useEffect(() => {
         if (pendingPage > totalPendingPages) {
@@ -518,13 +504,6 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                     </div>
                 </div>
             </Modal>
-
-            {showToast && (
-                <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 px-6 py-4 rounded-xl shadow-2xl flex items-start gap-3 z-50 animate-slide-up ${toastType === 'success' ? 'bg-gray-900/95 text-white' : 'bg-red-500 text-white'}`}>
-                    {toastType === 'success' ? <CheckCircle size={20} className="text-emerald-400" /> : <AlertCircle size={20} />}
-                    <p className="font-bold text-sm tracking-wide">{toastMessage}</p>
-                </div>
-            )}
         </div>
     );
 }

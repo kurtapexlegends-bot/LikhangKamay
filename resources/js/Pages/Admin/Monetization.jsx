@@ -1,17 +1,19 @@
-import React from "react";
-import { Head, Link } from "@inertiajs/react";
+import React, { useEffect, useState } from "react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import {
     Users,
     TrendingUp,
     TrendingDown,
     CircleDollarSign,
+    Banknote,
     Award,
     ChevronRight,
     Star,
     CheckCircle,
     XCircle,
     Clock,
-    Minus
+    Minus,
+    ArrowUpRight
 } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
@@ -57,7 +59,7 @@ const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }
                         {derivedTrend === 'up' && <TrendingUp size={12}/>}
                         {derivedTrend === 'down' && <TrendingDown size={12}/>}
                         {derivedTrend === 'neutral' && <Minus size={12}/>}
-                        <span>{derivedTrend === 'up' ? '+' : ''}{growth}% vs last 30 days</span>
+                        <span>{derivedTrend === 'up' ? '+' : ''}{growth}% vs 30 days ago</span>
                     </div>
                 )}
                 {subtitle && (
@@ -74,10 +76,69 @@ const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }
     );
 };
 
-export default function Monetization({ metrics, recentSubscribers, recentSponsorships, platformWallet }) {
-    
+export default function Monetization({ metrics, recentSubscribers, recentSponsorships, pendingWalletWithdrawals, platformWallet }) {
+    const { flash } = usePage().props;
+    const [showWithdrawForm, setShowWithdrawForm] = useState(false);
+    const [rejectingWithdrawalId, setRejectingWithdrawalId] = useState(null);
+    const [rejectionReasons, setRejectionReasons] = useState({});
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+        amount: '',
+        note: '',
+    });
+
+    useEffect(() => {
+        if (flash?.success) {
+            reset();
+            clearErrors();
+            setShowWithdrawForm(false);
+        }
+    }, [flash?.success, reset, clearErrors]);
+
+    const submitWithdrawal = (event) => {
+        event.preventDefault();
+
+        post(route('admin.monetization.withdraw'), {
+            preserveScroll: true,
+        });
+    };
+
+    const approveSellerWithdrawal = (id) => {
+        post(route('admin.wallet-withdrawals.approve', id), {
+            preserveScroll: true,
+        });
+    };
+
+    const rejectSellerWithdrawal = (id) => {
+        const reason = (rejectionReasons[id] || '').trim();
+
+        if (!reason) {
+            setRejectingWithdrawalId(id);
+            return;
+        }
+
+        router.post(route('admin.wallet-withdrawals.reject', id), {
+            rejection_reason: reason,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setRejectingWithdrawalId(null);
+                setRejectionReasons((current) => ({ ...current, [id]: '' }));
+            },
+        });
+    };
+
     return (
         <AdminLayout title="Monetization">
+            {(flash?.success || flash?.error) && (
+                <div className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-medium ${
+                    flash?.success
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border-red-200 bg-red-50 text-red-700'
+                }`}>
+                    {flash?.success || flash?.error}
+                </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 <StatCard
@@ -119,11 +180,25 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                     <div className="relative p-6 sm:p-10">
                         <div className="pointer-events-none absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-clay-500/10 blur-[80px]" />
                         <div className="relative">
-                            <div className="flex items-center gap-3">
-                                <div className="inline-flex items-center justify-center rounded-xl bg-white/10 p-2 text-stone-200 shadow-sm backdrop-blur-md ring-1 ring-white/20">
-                                    <CircleDollarSign size={20} strokeWidth={2.5} />
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="inline-flex items-center justify-center rounded-xl bg-white/10 p-2 text-stone-200 shadow-sm backdrop-blur-md ring-1 ring-white/20">
+                                        <CircleDollarSign size={20} strokeWidth={2.5} />
+                                    </div>
+                                    <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">Platform Wallet</h2>
                                 </div>
-                                <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">Platform Wallet</h2>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowWithdrawForm((current) => !current);
+                                        clearErrors();
+                                    }}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/15"
+                                >
+                                    <ArrowUpRight size={16} />
+                                    Withdraw
+                                </button>
                             </div>
 
                             <div className="mt-8">
@@ -135,9 +210,70 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                     </h3>
                                 </div>
                                 <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-stone-400">
-                                    Central ledger for completed-order commissions and delivery convenience fees. Real-time synced.
+                                    Central ledger for settled online Delivery commissions and convenience fees. COD and Pick Up stay out of this wallet.
                                 </p>
                             </div>
+
+                            {showWithdrawForm && (
+                                <form onSubmit={submitWithdrawal} className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                                    <div className="grid gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                                Amount
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0.01"
+                                                step="0.01"
+                                                value={data.amount}
+                                                onChange={(event) => setData('amount', event.target.value)}
+                                                className="w-full rounded-xl border border-white/10 bg-[#111814] px-4 py-3 text-sm font-semibold text-white outline-none transition placeholder:text-stone-500 focus:border-clay-400"
+                                                placeholder="0.00"
+                                            />
+                                            {errors.amount && <p className="mt-1 text-xs text-[#e37f7a]">{errors.amount}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                                Note
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={data.note}
+                                                onChange={(event) => setData('note', event.target.value)}
+                                                className="w-full rounded-xl border border-white/10 bg-[#111814] px-4 py-3 text-sm font-medium text-white outline-none transition placeholder:text-stone-500 focus:border-clay-400"
+                                                placeholder="Optional withdrawal note"
+                                            />
+                                            {errors.note && <p className="mt-1 text-xs text-[#e37f7a]">{errors.note}</p>}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <p className="text-xs text-stone-500">
+                                            This deducts from the platform wallet and records a ledger debit.
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    reset();
+                                                    clearErrors();
+                                                    setShowWithdrawForm(false);
+                                                }}
+                                                className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-stone-300 transition hover:bg-white/5"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={processing}
+                                                className="rounded-xl bg-clay-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                {processing ? 'Withdrawing...' : 'Confirm Withdraw'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            )}
                         </div>
                     </div>
 
@@ -172,6 +308,111 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                     </div>
                 </div>
             )}
+
+            <div className="mb-8 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900">Seller Wallet Withdrawals</h3>
+                        <p className="mt-1 text-[13px] font-medium text-gray-500">
+                            Review withdrawal requests coming from settled online Delivery earnings.
+                        </p>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-lg bg-stone-50 px-3 py-1.5 text-[11px] font-bold tracking-wide text-stone-500 ring-1 ring-inset ring-stone-200">
+                        <Banknote size={14} className="opacity-70" />
+                        {pendingWalletWithdrawals?.length || 0} tracked request{(pendingWalletWithdrawals?.length || 0) === 1 ? '' : 's'}
+                    </div>
+                </div>
+
+                {pendingWalletWithdrawals?.length ? (
+                    <div className="divide-y divide-gray-100">
+                        {pendingWalletWithdrawals.map((request) => (
+                            <div key={request.id} className="px-6 py-5">
+                                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-start gap-3">
+                                            <UserAvatar user={request.user} className="w-11 h-11 border border-clay-200" />
+                                            <div className="min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="text-[15px] font-bold text-gray-900">{request.user?.shop_name || request.user?.name}</p>
+                                                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                                                        request.status === 'approved'
+                                                            ? 'bg-emerald-50 text-emerald-700'
+                                                            : request.status === 'rejected'
+                                                                ? 'bg-red-50 text-red-700'
+                                                                : 'bg-amber-50 text-amber-700'
+                                                    }`}>
+                                                        {request.status}
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 text-[13px] font-medium text-gray-500">
+                                                    Requested by {request.user?.name} • {request.created_at}
+                                                </p>
+                                                <p className="mt-2 text-[12px] font-medium text-gray-600">
+                                                    Amount: <span className="font-bold text-gray-900">{formatMoney(request.amount)}</span>
+                                                </p>
+                                                {request.note && (
+                                                    <p className="mt-2 text-[12px] leading-relaxed text-gray-600">
+                                                        {request.note}
+                                                    </p>
+                                                )}
+                                                {request.rejection_reason && (
+                                                    <p className="mt-2 text-[12px] leading-relaxed text-red-700">
+                                                        Rejection reason: {request.rejection_reason}
+                                                    </p>
+                                                )}
+                                                {request.reviewed_by_name && (
+                                                    <p className="mt-2 text-[12px] font-medium text-gray-500">
+                                                        Reviewed by {request.reviewed_by_name}{request.reviewed_at ? ` • ${request.reviewed_at}` : ''}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {request.status === 'pending' && (
+                                        <div className="w-full xl:w-[320px] rounded-2xl border border-gray-100 bg-stone-50 p-4">
+                                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-stone-500">Review Actions</p>
+                                            <textarea
+                                                value={rejectionReasons[request.id] || ''}
+                                                onChange={(event) => setRejectionReasons((current) => ({ ...current, [request.id]: event.target.value }))}
+                                                rows={3}
+                                                placeholder="Reason if rejecting"
+                                                className="mt-3 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm font-medium text-stone-700 placeholder:text-stone-300 focus:border-clay-400 focus:ring-clay-400"
+                                            />
+                                            {rejectingWithdrawalId === request.id && !(rejectionReasons[request.id] || '').trim() && (
+                                                <p className="mt-2 text-[12px] font-bold text-red-600">A rejection reason is required.</p>
+                                            )}
+                                            <div className="mt-3 flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => approveSellerWithdrawal(request.id)}
+                                                    className="flex-1 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => rejectSellerWithdrawal(request.id)}
+                                                    className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-red-700"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="px-6 py-10 text-center">
+                        <p className="text-sm font-bold text-gray-900">No seller wallet withdrawals yet.</p>
+                        <p className="mt-1 text-[13px] font-medium text-gray-500">
+                            Pending payout reviews will appear here once sellers submit withdrawal requests.
+                        </p>
+                    </div>
+                )}
+            </div>
 
             {/* Quick Actions (Pending Sponsorships) */}
             {metrics.pendingSponsorships > 0 && (

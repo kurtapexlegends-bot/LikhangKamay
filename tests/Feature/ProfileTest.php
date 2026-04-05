@@ -100,6 +100,28 @@ class ProfileTest extends TestCase
         $this->assertNull($user->email_verified_at);
     }
 
+    public function test_profile_update_keeps_existing_avatar_when_no_new_avatar_is_uploaded(): void
+    {
+        $user = User::factory()->createOne([
+            'avatar' => 'avatars/existing-avatar.jpg',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'email' => $user->email,
+                'avatar' => null,
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $this->assertSame('avatars/existing-avatar.jpg', $user->refresh()->avatar);
+    }
+
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
         $user = User::factory()->createOne();

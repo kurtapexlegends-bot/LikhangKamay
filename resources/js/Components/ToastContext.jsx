@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Check, X, Info, AlertTriangle } from 'lucide-react';
 
 const ToastContext = createContext();
@@ -9,20 +9,22 @@ export function useToast() {
 
 export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
+    const nextToastId = useRef(0);
 
-    const addToast = (message, type = 'success', duration = 3000) => {
-        const id = Date.now();
+    const addToast = useCallback((message, type = 'success', duration = 3000) => {
+        nextToastId.current += 1;
+        const id = `toast-${nextToastId.current}`;
         setToasts(prev => [...prev, { id, message, type, duration }]);
-    };
+    }, []);
 
-    const removeToast = (id) => {
+    const removeToast = useCallback((id) => {
         setToasts(prev => prev.filter(t => t.id !== id));
-    };
+    }, []);
 
     return (
         <ToastContext.Provider value={{ addToast }}>
             {children}
-            <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
+            <div className="pointer-events-none fixed bottom-5 right-5 z-[120] flex max-w-[calc(100vw-2.5rem)] flex-col gap-2">
                 {toasts.map(toast => (
                     <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
                 ))}
@@ -54,7 +56,7 @@ function ToastItem({ toast, onRemove }) {
     };
 
     return (
-        <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white transform transition-all duration-300 animate-in slide-in-from-right-10 fade-in ${bgColors[toast.type] || 'bg-gray-800'}`}>
+        <div className={`pointer-events-auto flex items-center gap-3 rounded-lg px-4 py-3 text-white shadow-lg transform transition-all duration-300 animate-in slide-in-from-right-10 fade-in ${bgColors[toast.type] || 'bg-gray-800'}`}>
             <div className={`p-1 rounded-full bg-white/20`}>
                 {icons[toast.type]}
             </div>

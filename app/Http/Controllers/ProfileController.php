@@ -71,6 +71,11 @@ class ProfileController extends Controller
             }
         }
 
+        // Keep the existing avatar unless the user explicitly uploads a replacement.
+        if (!$request->hasFile('avatar')) {
+            unset($data['avatar']);
+        }
+
         // Handle Avatar Upload
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists

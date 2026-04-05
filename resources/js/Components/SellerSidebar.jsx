@@ -12,7 +12,7 @@ const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
 const resolveActiveGroup = (active) => {
     if (['staff-dashboard'].includes(active)) return 'workspace';
-    if (['overview', 'products', 'analytics', '3d'].includes(active)) return 'core';
+    if (['overview', 'wallet', 'products', 'analytics', '3d'].includes(active)) return 'core';
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['settings'].includes(active)) return 'appearance';
     if (['sponsorships'].includes(active)) return 'marketing';
@@ -73,10 +73,10 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         return {
             tierLabel: isElite ? 'Elite' : isPremium ? 'Premium' : 'Standard',
             visibleModules: isElite
-                ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'hr', 'accounting', 'procurement', 'stock_requests']
+                ? ['overview', 'wallet', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'hr', 'accounting', 'procurement', 'stock_requests']
                 : isPremium
-                    ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests']
-                    : ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
+                    ? ['overview', 'wallet', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests']
+                    : ['overview', 'wallet', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
             toggleableModules: isElite || isPremium ? ['hr', 'accounting', 'procurement'] : [],
             enabledToggleableModules: isElite ? ['hr', 'accounting', 'procurement'] : ['procurement'],
             showGear: user?.role === 'artisan' && (isElite || isPremium),
@@ -155,8 +155,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     };
 
     const hasCore = isStaffActor
-        ? ['products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
-        : ['overview', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName));
+        ? ['wallet', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
+        : ['overview', 'wallet', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName));
     const hasCrm = ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
     const hasAppearance = visibleModulesSet.has('shop_settings');
     const hasMarketing = visibleModulesSet.has('sponsorships');
@@ -359,6 +359,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                         >
                             {!isStaffActor && visibleModulesSet.has('overview') && (
                                 <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose}>Overview</NavItem>
+                            )}
+                            {visibleModulesSet.has('wallet') && (
+                                <NavItem href={route('seller.wallet.index')} icon={Banknote} active={active === 'wallet'} onClick={onClose}>Wallet</NavItem>
                             )}
                             {visibleModulesSet.has('products') && (
                                 <NavItem href={route('products.index')} icon={Package} active={active === 'products'} onClick={onClose}>Products</NavItem>

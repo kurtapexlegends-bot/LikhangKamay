@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 
 const STATUS_TABS = [
     { id: 'all', label: 'All Requests', icon: ClipboardList },
@@ -35,6 +37,7 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
 const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
 export default function StockRequestIndex({ auth, requests }) {
+    const { addToast } = useToast();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('all');
     const [processingId, setProcessingId] = useState(null);
@@ -62,24 +65,7 @@ export default function StockRequestIndex({ auth, requests }) {
 
     // --- FLASH MESSAGE HANDLING ---
     const { flash } = usePage().props;
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success');
-
-    React.useEffect(() => {
-        if (flash.success) {
-            setToastType('success');
-            setToastMessage(flash.success);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-        if (flash.error) {
-            setToastType('error');
-            setToastMessage(flash.error);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 5000);
-        }
-    }, [flash]);
+    useFlashToast(flash, addToast);
 
     // 1. Mark as Ordered
     const handleMarkAsOrdered = () => {
@@ -468,17 +454,8 @@ export default function StockRequestIndex({ auth, requests }) {
                     </div>
                 </Modal>
             </div>
-            {/* TOAST NOTIFICATION */}
-            {showToast && (
-                <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 px-5 py-3.5 rounded-2xl shadow-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${toastType === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
-                    {toastType === 'error' ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
-                    <p className="font-bold text-sm">{toastMessage}</p>
-                    <button onClick={() => setShowToast(false)} className="ml-2 hover:opacity-80"><XCircle size={16} /></button>
-                </div>
-            )}
         </div>
     );
 }
-
 
 

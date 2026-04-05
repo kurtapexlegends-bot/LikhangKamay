@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 
 const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-300">
@@ -176,6 +178,7 @@ const sellerCourierTrackingState = (order) => {
 
 // --- MAIN COMPONENT ---
 export default function OrderManager({ auth, orders = [] }) {
+    const { addToast } = useToast();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
@@ -187,24 +190,7 @@ export default function OrderManager({ auth, orders = [] }) {
     // --- FLASH MESSAGE HANDLING ---
     const { flash, sellerSidebar } = usePage().props;
     const canAccessMessages = sellerSidebar?.visibleModules?.includes('messages');
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success'); // 'success' or 'error'
-
-    React.useEffect(() => {
-        if (flash.success) {
-            setToastType('success');
-            setToastMessage(flash.success);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-        if (flash.error) {
-            setToastType('error');
-            setToastMessage(flash.error);
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 5000);
-        }
-    }, [flash]);
+    useFlashToast(flash, addToast);
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState({
@@ -1274,22 +1260,6 @@ export default function OrderManager({ auth, orders = [] }) {
                     </div>
                 </div>
             </Modal>
-
-            {/* --- TOAST NOTIFICATION --- */}
-            <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] transition-all duration-500 transform ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-                <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl border ${toastType === 'success' ? 'bg-white border-green-100' : 'bg-white border-red-100'}`}>
-                    <div className={`p-2 rounded-full ${toastType === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                        {toastType === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}
-                    </div>
-                    <div>
-                        <h4 className={`text-sm font-bold ${toastType === 'success' ? 'text-green-900' : 'text-red-900'}`}>
-                            {toastType === 'success' ? 'Success' : 'Error'}
-                        </h4>
-                        <p className="text-xs text-gray-500">{toastMessage}</p>
-                    </div>
-                    <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600"><X size={14} /></button>
-                </div>
-            </div>
         </div>
     );
 }

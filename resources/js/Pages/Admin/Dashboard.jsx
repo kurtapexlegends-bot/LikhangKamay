@@ -49,7 +49,7 @@ const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
                         {derivedTrend === "up" && <TrendingUp size={12} />}
                         {derivedTrend === "down" && <TrendingDown size={12} />}
                         {derivedTrend === "neutral" && <Minus size={12} />}
-                        <span>{derivedTrend === "up" ? "+" : ""}{growth}% vs last 30 days</span>
+                        <span>{derivedTrend === "up" ? "+" : ""}{growth}% vs 30 days ago</span>
                     </div>
                 )}
                 {growth === undefined && subtitle && (

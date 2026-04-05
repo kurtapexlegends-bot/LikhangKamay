@@ -565,7 +565,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         postSettings(route('hr.settings'), {
             onSuccess: () => {
                 setIsSettingsOpen(false);
-                addToast('Payroll settings updated successfully', 'success');
+                addToast('Payroll settings updated.', 'success');
             }
         });
     };
@@ -649,8 +649,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     getFlashSuccessMessage(
                         page,
                         isProvisioningLogin
-                            ? 'Employee and staff login created. A verification email was sent.'
-                            : 'Employee added successfully.'
+                            ? 'Employee and staff login created. Verification email sent.'
+                            : 'Employee added.'
                     ),
                     'success'
                 );
@@ -757,7 +757,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         patch(route('hr.update', editingEmployee.id), {
             onSuccess: (page) => {
                 closeEditModal();
-                addToast(getFlashSuccessMessage(page, 'Employee details updated successfully.'), 'success');
+                addToast(getFlashSuccessMessage(page, 'Employee details updated.'), 'success');
             },
         });
     };
@@ -858,7 +858,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                 setIsPayrollModalOpen(false);
                 resetPayroll();
-                addToast(getFlashSuccessMessage(page, 'Payroll generated successfully! Waiting for Accounting approval.'), "success");
+                addToast(getFlashSuccessMessage(page, 'Payroll request sent to Accounting.'), "success");
             },
             onError: (errors) => {
                 const firstError = errors.items || errors.month || Object.values(errors)[0];

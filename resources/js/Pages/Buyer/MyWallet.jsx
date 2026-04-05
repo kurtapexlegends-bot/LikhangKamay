@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import Modal from '@/Components/Modal';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 import { ArrowDownLeft, ArrowUpRight, Plus, RefreshCcw, ShieldCheck, ShoppingBag, Wallet } from 'lucide-react';
 
 const formatMoney = (value) => {
@@ -13,6 +15,7 @@ const formatMoney = (value) => {
 
 export default function MyWallet({ wallet }) {
     const { flash = {} } = usePage().props;
+    const { addToast } = useToast();
     const [showTopUpModal, setShowTopUpModal] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({
         amount: '500',
@@ -27,6 +30,7 @@ export default function MyWallet({ wallet }) {
         .reduce((total, entry) => total + Number(entry.amount || 0), 0);
     const latestActivity = recentTransactions[0]?.created_at || 'No activity yet';
     const quickAmounts = useMemo(() => ['100', '250', '500', '1000'], []);
+    useFlashToast(flash, addToast);
 
     const submitTopUp = (e) => {
         e.preventDefault();
@@ -50,21 +54,6 @@ export default function MyWallet({ wallet }) {
             <BuyerNavbar />
 
             <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-                {(flash.success || flash.error) && (
-                    <div className="mb-6 space-y-3">
-                        {flash.success && (
-                            <div className="rounded-xl border border-[#2c3b35] bg-[#F2FAF6] px-4 py-3 text-[13px] font-bold text-[#1f2b26] shadow-sm">
-                                {flash.success}
-                            </div>
-                        )}
-                        {flash.error && (
-                            <div className="rounded-xl border border-red-200 bg-[#FCF3F3] px-4 py-3 text-[13px] font-bold text-red-800 shadow-sm">
-                                {flash.error}
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 <section className="relative overflow-hidden rounded-[1.5rem] border border-[#2c3b35] bg-[#1a231f] px-6 py-8 shadow-xl shadow-stone-900/10 sm:p-10">
                     <div className="pointer-events-none absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-clay-500/10 blur-[80px]" />
                     <div className="pointer-events-none absolute -bottom-32 -left-32 h-[350px] w-[350px] rounded-full bg-stone-500/10 blur-[70px]" />

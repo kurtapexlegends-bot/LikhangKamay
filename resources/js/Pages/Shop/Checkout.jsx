@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AlertCircle, ArrowLeft, CheckCircle, CheckCircle2, CreditCard, Info, MapPin, MessageCircle, Package, Save, ShieldCheck, Store, Truck, Wallet, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, CreditCard, Info, MapPin, MessageCircle, Package, Save, ShieldCheck, Store, Truck, Wallet } from 'lucide-react';
 import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
+import { useToast } from '@/Components/ToastContext';
+import useFlashToast from '@/hooks/useFlashToast';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 
 const TYPES = [
@@ -22,24 +24,11 @@ const resolveAddressDisplay = (address) => address?.full_address || formatStruct
 
 export default function Checkout({ auth, wallet, pricing }) {
     const { flash, items: incomingItems = [] } = usePage().props;
+    const { addToast } = useToast();
     const convenienceFeeRate = pricing?.convenience_fee_rate ?? 0.03;
     const defaultAddress = auth.user.addresses?.find((address) => address.is_default) || null;
     const [selectedAddressId, setSelectedAddressId] = useState(defaultAddress?.id || 'new');
-    const [showToast, setShowToast] = useState(false);
-    const [toast, setToast] = useState({ type: 'success', message: '' });
-
-    React.useEffect(() => {
-        if (flash.success) {
-            setToast({ type: 'success', message: flash.success });
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }
-        if (flash.error) {
-            setToast({ type: 'error', message: flash.error });
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 5000);
-        }
-    }, [flash]);
+    useFlashToast(flash, addToast);
 
     const grouped = useMemo(() => incomingItems.reduce((groups, item) => {
         const sellerId = item.artisan_id || 'unknown';
@@ -457,14 +446,6 @@ export default function Checkout({ auth, wallet, pricing }) {
                             <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400"><MessageCircle size={12} />Message seller{totalSellers > 1 ? 's' : ''} after ordering</p>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div className={`fixed bottom-4 left-4 right-4 z-[100] transform transition-all duration-500 sm:bottom-6 sm:left-auto sm:right-6 ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-                <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 shadow-2xl ${toast.type === 'success' ? 'border-green-100 bg-white' : 'border-red-100 bg-white'}`}>
-                    <div className={`rounded-full p-2 ${toast.type === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{toast.type === 'success' ? <CheckCircle size={20} className="stroke-2" /> : <AlertCircle size={20} className="stroke-2" />}</div>
-                    <div><h4 className={`text-sm font-bold ${toast.type === 'success' ? 'text-green-900' : 'text-red-900'}`}>{toast.type === 'success' ? 'Success' : 'Error'}</h4><p className="text-xs text-gray-500">{toast.message}</p></div>
-                    <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600"><X size={14} /></button>
                 </div>
             </div>
         </div>

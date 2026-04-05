@@ -30,6 +30,7 @@ class SellerEntitlementService
     {
         return [
             'overview',
+            'wallet',
             'products',
             'analytics',
             '3d',
@@ -52,7 +53,7 @@ class SellerEntitlementService
     {
         return [
             'hr' => ['hr'],
-            'accounting' => ['accounting'],
+            'accounting' => ['accounting', 'wallet'],
             'procurement' => ['procurement', 'stock_requests'],
             'customer_support' => ['orders', 'reviews'],
             'custom' => [],
@@ -307,6 +308,7 @@ class SellerEntitlementService
     {
         return [
             'overview',
+            'wallet',
             'orders',
             'products',
             'analytics',
@@ -330,6 +332,7 @@ class SellerEntitlementService
     {
         return [
             'overview' => 'dashboard',
+            'wallet' => 'seller.wallet.index',
             'orders' => 'orders.index',
             'products' => 'products.index',
             'analytics' => 'analytics.index',
