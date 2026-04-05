@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Models\Supply;
 use App\Models\StockRequest;
 use App\Models\Order;
@@ -239,7 +240,7 @@ class ProcurementController extends Controller
 
         $totalCost = $validated['quantity'] * ($supply->unit_cost ?? 0);
 
-        StockRequest::create(StockRequest::filterSchemaCompatibleAttributes([
+        $stockRequest = StockRequest::create(StockRequest::filterSchemaCompatibleAttributes([
             'user_id' => $this->sellerOwnerId(),
             'requested_by_user_id' => $this->sellerActor()->id,
             'supply_id' => $supply->id,
@@ -247,6 +248,19 @@ class ProcurementController extends Controller
             'total_cost' => $totalCost,
             'status' => 'pending'
         ]));
+
+        $requesterName = $this->sellerActor()->name ?: 'A staff member';
+        $message = "{$requesterName} submitted a stock request for {$supply->name} for accounting approval.";
+
+        $this->accountingRecipientsForSeller()->each(function ($recipient) use ($stockRequest, $message) {
+            $recipient->notify(new AccountingApprovalRequestedNotification(
+                'New Stock Request',
+                $message,
+                route('accounting.index'),
+                'stock_request',
+                $stockRequest->id,
+            ));
+        });
 
         return redirect()->route('stock-requests.index')->with('success', 'Restock request submitted to Accounting!');
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Models\StockRequest;
 use App\Models\Supply;
 use Illuminate\Http\Request;
@@ -55,7 +56,7 @@ class StockRequestController extends Controller
 
         $totalCost = $validated['quantity'] * ($supply->unit_cost ?? 0);
 
-        StockRequest::create(StockRequest::filterSchemaCompatibleAttributes([
+        $stockRequest = StockRequest::create(StockRequest::filterSchemaCompatibleAttributes([
             'user_id' => $this->sellerOwnerId(),
             'requested_by_user_id' => $this->sellerActor()->id,
             'supply_id' => $supply->id,
@@ -63,6 +64,19 @@ class StockRequestController extends Controller
             'total_cost' => $totalCost,
             'status' => StockRequest::STATUS_PENDING
         ]));
+
+        $requesterName = $this->sellerActor()->name ?: 'A staff member';
+        $message = "{$requesterName} submitted a stock request for {$supply->name} for accounting approval.";
+
+        $this->accountingRecipientsForSeller()->each(function ($recipient) use ($stockRequest, $message) {
+            $recipient->notify(new AccountingApprovalRequestedNotification(
+                'New Stock Request',
+                $message,
+                route('accounting.index'),
+                'stock_request',
+                $stockRequest->id,
+            ));
+        });
 
         return redirect()->route('stock-requests.index')->with('success', 'Stock request created. Waiting for Finance approval.');
     }

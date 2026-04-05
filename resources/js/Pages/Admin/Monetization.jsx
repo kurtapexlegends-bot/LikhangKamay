@@ -18,6 +18,18 @@ import UserAvatar from "@/Components/UserAvatar";
 
 const formatMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const planTierBadgeClasses = {
+    Elite: 'bg-gradient-to-r from-fuchsia-100 to-purple-100 text-fuchsia-800 border-fuchsia-200',
+    Premium: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    Free: 'bg-stone-100 text-stone-600 border-stone-200',
+};
+
+const changeDirectionBadgeClasses = {
+    upgrade: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    downgrade: 'bg-amber-50 text-amber-700 border-amber-100',
+    change: 'bg-stone-100 text-stone-600 border-stone-200',
+};
+
 // Stat Card Component
 const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }) => {
     // Metric might be a simple number (fallback) or an object { value, growth }
@@ -213,7 +225,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                         Artisan
                                     </th>
                                     <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                        Tier
+                                        Plan Change
                                     </th>
                                     <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                         Date
@@ -226,32 +238,43 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-3">
                                                 <UserAvatar user={user} className="w-9 h-9 border border-clay-200" />
-                                                <div className="text-left">
+                                                <div className="min-w-0 text-left">
                                                     <p className="font-bold text-gray-900 text-sm">
                                                         {user.name}
                                                     </p>
                                                     <p className="text-xs text-gray-500">
                                                         {user.shop_name || "No Shop Name"}
                                                     </p>
-                                                    {user.previous_tier && (
-                                                        <p className="text-[10px] text-gray-400">
-                                                            {user.previous_tier} to {user.tier}
-                                                        </p>
-                                                    )}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide
-                                                ${user.tier === 'Elite' 
-                                                    ? 'bg-gradient-to-r from-fuchsia-100 to-purple-100 text-fuchsia-800 border-fuchsia-200' 
-                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}
-                                            >
-                                                {user.tier}
-                                            </span>
+                                            <div className="flex flex-col items-center gap-2">
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide ${
+                                                    changeDirectionBadgeClasses[user.change_direction] || changeDirectionBadgeClasses.change
+                                                }`}>
+                                                    {user.change_direction === 'upgrade' && <TrendingUp size={12} />}
+                                                    {user.change_direction === 'downgrade' && <TrendingDown size={12} />}
+                                                    {user.change_direction === 'change' && <Minus size={12} />}
+                                                    {user.change_direction}
+                                                </span>
+
+                                                <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-stone-500">
+                                                    <span className="text-stone-500">{user.previous_tier_label || 'Free'}</span>
+                                                    <ChevronRight size={12} className="text-stone-300" />
+                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide ${
+                                                        planTierBadgeClasses[user.tier] || planTierBadgeClasses.Free
+                                                    }`}>
+                                                        {user.tier}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-xs text-gray-500 font-medium text-center">
-                                            {user.date}
+                                            <div className="space-y-1">
+                                                <div>{user.date}</div>
+                                                <div className="text-[10px] text-stone-400">{user.change_label}</div>
+                                            </div>
                                         </td>
                                     </tr>
                                 )) : (

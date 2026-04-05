@@ -9,6 +9,8 @@ use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use App\Services\StaffAttendanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -93,6 +95,71 @@ class StaffAttendancePayrollTest extends TestCase
         $this->assertEquals(1.5, (float) $item->undertime_hours);
         $this->assertEquals(2.0, (float) $item->overtime_hours);
         $this->assertGreaterThan(0, (float) $item->net_pay);
+    }
+
+    public function test_generate_payroll_still_reaches_accounting_when_payroll_items_use_legacy_columns(): void
+    {
+        [$owner, $employee] = $this->createOwnerWithHrAccessAndEmployee();
+        $owner->modules_enabled = [
+            'hr' => true,
+            'accounting' => true,
+            'procurement' => true,
+        ];
+        $owner->save();
+
+        Schema::table('payroll_items', function (Blueprint $table) {
+            if (Schema::hasColumn('payroll_items', 'absences_days')) {
+                $table->dropColumn('absences_days');
+            }
+
+            if (Schema::hasColumn('payroll_items', 'undertime_hours')) {
+                $table->dropColumn('undertime_hours');
+            }
+
+            if (!Schema::hasColumn('payroll_items', 'deductions')) {
+                $table->decimal('deductions', 10, 2)->default(0);
+            }
+
+            if (!Schema::hasColumn('payroll_items', 'bonus')) {
+                $table->decimal('bonus', 10, 2)->default(0);
+            }
+        });
+
+        PayrollItem::forgetSchemaSupportCache();
+
+        $response = $this->actingAs($owner)->post(route('hr.generate'), [
+            'month' => now(config('app.timezone'))->format('F Y'),
+            'items' => [
+                [
+                    'employee_id' => $employee->id,
+                    'absences_days' => 1,
+                    'undertime_hours' => 1.5,
+                    'overtime_hours' => 2,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Payroll generated successfully! Waiting for Accounting approval.');
+
+        $payroll = Payroll::query()->firstOrFail();
+        $item = PayrollItem::query()->where('payroll_id', $payroll->id)->firstOrFail();
+
+        $this->assertSame('Pending', $payroll->status);
+        $this->assertSame($employee->id, $item->employee_id);
+        $this->assertEquals(1187.5, (float) $item->deductions);
+        $this->assertEquals(0.0, (float) $item->bonus);
+
+        $this->actingAs($owner)
+            ->get(route('accounting.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('pendingPayrolls.0.id', $payroll->id)
+                ->where('pendingPayrolls.0.month', now(config('app.timezone'))->format('F Y'))
+                ->where('pendingPayrolls.0.status', 'Pending')
+            );
+
+        PayrollItem::forgetSchemaSupportCache();
     }
 
     public function test_hr_attendance_summary_aggregates_same_day_sessions_after_auto_pause_and_resume(): void

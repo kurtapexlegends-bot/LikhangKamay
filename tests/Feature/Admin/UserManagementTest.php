@@ -55,34 +55,6 @@ class UserManagementTest extends TestCase
             );
     }
 
-    public function test_legacy_staff_filter_is_normalized_to_artisan_rows(): void
-    {
-        $admin = User::factory()->superAdmin()->create();
-        $owner = User::factory()->artisanApproved()->create();
-        $staff = User::factory()->staff($owner)->create();
-        User::factory()->create();
-        User::factory()->artisanApproved()->create();
-
-        $this->actingAs($admin)
-            ->get(route('admin.users', ['role' => 'staff']))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Users')
-                ->where('filters.role', 'artisan')
-                ->where('users.data', function ($users) use ($owner, $staff) {
-                    $roles = collect($users)->pluck('role')->unique()->values()->all();
-                    $topLevelIds = collect($users)->pluck('id');
-                    $ownerRow = collect($users)->firstWhere('id', $owner->id);
-
-                    return $topLevelIds->contains($owner->id)
-                        && !$topLevelIds->contains($staff->id)
-                        && $roles === ['artisan']
-                        && $ownerRow !== null
-                        && $ownerRow['staff_count'] === 1;
-                })
-            );
-    }
-
     public function test_super_admin_can_filter_super_admin_accounts(): void
     {
         $admin = User::factory()->superAdmin()->create();

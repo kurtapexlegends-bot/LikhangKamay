@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Employee;
 use App\Models\User;
+use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Services\StaffAttendanceService;
 use App\Services\SellerEntitlementService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Throwable;
 
 class HRController extends Controller
 {
@@ -92,11 +95,12 @@ class HRController extends Controller
                         'must_change_password' => $supportsMustChangePassword
                             ? (bool) $loginAccount->must_change_password
                             : false,
+                        'user_level' => $loginAccount->getStaffUserLevel(),
                         'role_preset_key' => $supportsRolePresetKey
                             ? ($loginAccount->staff_role_preset_key ?: 'custom')
                             : 'custom',
                         'module_permissions' => $supportsStaffModulePermissions
-                            ? User::stripWorkspaceAccessFlag((array) $loginAccount->staff_module_permissions)
+                            ? User::stripStaffControlFlags((array) $loginAccount->staff_module_permissions)
                             : [],
                     ] : null,
                     'attendance' => [
@@ -135,6 +139,7 @@ class HRController extends Controller
             'staffProvisioning' => [
                 'canManageStaffAccounts' => $actor->canManageStaffAccounts() && $this->supportsStaffProvisioningSchema(),
                 'rolePresets' => $this->rolePresetOptions($entitlementService),
+                'userLevels' => $this->userLevelOptions(),
                 'availableModules' => $this->moduleOptions($entitlementService),
                 'requiresStaffSchemaUpdate' => !$this->supportsStaffProvisioningSchema(),
             ],
@@ -177,12 +182,13 @@ class HRController extends Controller
                     ->withInput();
             }
 
-            abort_unless($actor->canManageStaffAccounts(), 403, 'Only the shop owner can create staff login accounts.');
+            abort_unless($actor->canManageStaffAccounts(), 403, 'Only the shop owner or a staff manager can create staff login accounts.');
 
             $rules = array_merge($rules, [
                 'email' => ['required', 'string', 'email', 'max:255', 'regex:/^[A-Z0-9._%+-]+@gmail\.com$/i', 'unique:users,email'],
                 'default_password' => ['required', 'string', Password::defaults()],
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
+                'staff_user_level' => ['required', 'string', Rule::in(User::staffUserLevels())],
                 'module_overrides' => ['nullable', 'array'],
                 'module_overrides.*' => ['boolean'],
             ]);
@@ -216,6 +222,7 @@ class HRController extends Controller
                 })
                 ->all();
             $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, true);
+            $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
 
             $staffAccount = User::create([
                 'name' => $employee->name,
@@ -233,9 +240,19 @@ class HRController extends Controller
         });
 
         if ($staffAccount) {
-            $staffAccount->sendEmailVerificationNotification();
+            try {
+                $staffAccount->sendEmailVerificationNotification();
+            } catch (Throwable $exception) {
+                Log::error('Staff verification email failed to send.', [
+                    'staff_user_id' => $staffAccount->id,
+                    'email' => $staffAccount->email,
+                    'message' => $exception->getMessage(),
+                ]);
 
-            return redirect()->back()->with('success', 'Employee and staff login created. A verification email was queued for delivery.');
+                return redirect()->back()->with('error', 'Employee and staff login were created, but the verification email could not be sent right now.');
+            }
+
+            return redirect()->back()->with('success', 'Employee and staff login created. A verification email was sent.');
         }
 
         return redirect()->back()->with('success', 'Employee added successfully.');
@@ -257,7 +274,7 @@ class HRController extends Controller
         $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
 
         if ($linkedLogin && !$actor->canManageStaffAccounts()) {
-            abort(403, 'Only the shop owner can remove staff login accounts.');
+            abort(403, 'Only the shop owner or a staff manager can remove staff login accounts.');
         }
 
         DB::transaction(function () use ($employee, $linkedLogin) {
@@ -321,6 +338,7 @@ class HRController extends Controller
                 ],
                 'default_password' => [$linkedLogin ? 'nullable' : 'required', 'string', Password::defaults()],
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
+                'staff_user_level' => ['required', 'string', Rule::in(User::staffUserLevels())],
                 'module_overrides' => ['nullable', 'array'],
                 'module_overrides.*' => ['boolean'],
             ]);
@@ -381,6 +399,7 @@ class HRController extends Controller
                 })
                 ->all();
             $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, $wantsLoginAccount);
+            $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
 
             if ($linkedLogin) {
                 $previousWorkspaceAccess = $linkedLogin->isWorkspaceAccessEnabled();
@@ -433,7 +452,17 @@ class HRController extends Controller
         });
 
         if ($sendVerification && $linkedLogin?->exists) {
-            $linkedLogin->sendEmailVerificationNotification();
+            try {
+                $linkedLogin->sendEmailVerificationNotification();
+            } catch (Throwable $exception) {
+                Log::error('Updated staff verification email failed to send.', [
+                    'staff_user_id' => $linkedLogin->id,
+                    'email' => $linkedLogin->email,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                return redirect()->back()->with('error', 'Employee details were updated, but the verification email could not be sent right now.');
+            }
         }
 
         return redirect()->back()->with('success', $this->buildEmployeeUpdateSuccessMessage(
@@ -466,15 +495,35 @@ class HRController extends Controller
             'month' => 'required|string',
             'items' => 'required|array',
             'items.*.employee_id' => 'required|exists:employees,id',
-            'items.*.absences_days' => 'required|numeric|min:0',
-            'items.*.undertime_hours' => 'required|numeric|min:0',
-            'items.*.overtime_hours' => 'required|numeric|min:0',
+            'items.*.absences_days' => 'nullable|numeric|min:0',
+            'items.*.undertime_hours' => 'nullable|numeric|min:0',
+            'items.*.overtime_hours' => 'nullable|numeric|min:0',
+            'items.*.isSelected' => 'nullable|boolean',
         ]);
 
+        $selectedItems = collect($validated['items'])
+            ->filter(fn (array $item) => !array_key_exists('isSelected', $item) || (bool) $item['isSelected'])
+            ->map(function (array $item) {
+                return [
+                    'employee_id' => $item['employee_id'],
+                    'absences_days' => (float) ($item['absences_days'] ?? 0),
+                    'undertime_hours' => (float) ($item['undertime_hours'] ?? 0),
+                    'overtime_hours' => (float) ($item['overtime_hours'] ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+
+        if (empty($selectedItems)) {
+            return redirect()->back()->withErrors([
+                'items' => 'Select at least one employee to generate payroll.',
+            ]);
+        }
+
         try {
-            DB::transaction(function () use ($validated) {
+            DB::transaction(function () use ($validated, $selectedItems) {
                 $totalAmount = 0;
-                $employeeCount = count($validated['items']);
+                $employeeCount = count($selectedItems);
                 $seller = $this->sellerOwner();
                 $sellerId = $seller->id;
                 $otRate = $seller->overtime_rate ?? 50.00;
@@ -490,7 +539,7 @@ class HRController extends Controller
 
                 $workingDays = $seller->payroll_working_days ?? 22;
 
-                foreach ($validated['items'] as $item) {
+                foreach ($selectedItems as $item) {
                     $employee = Employee::where('user_id', $sellerId)->findOrFail($item['employee_id']);
 
                     $dailyRate = $employee->salary / $workingDays;
@@ -506,22 +555,38 @@ class HRController extends Controller
 
                     $daysWorked = max(0, $workingDays - $item['absences_days']);
 
-                    \App\Models\PayrollItem::create([
+                    \App\Models\PayrollItem::create(\App\Models\PayrollItem::filterSchemaCompatibleAttributes([
                         'payroll_id' => $payroll->id,
                         'employee_id' => $employee->id,
                         'base_salary' => $employee->salary,
                         'days_worked' => round($daysWorked),
                         'absences_days' => round($item['absences_days']),
+                        'absence_deduction' => $absenceDeduction,
                         'undertime_hours' => $item['undertime_hours'],
+                        'undertime_deduction' => $undertimeDeduction,
                         'overtime_hours' => $item['overtime_hours'],
                         'overtime_pay' => $overtimePay,
+                        'bonus' => 0,
                         'net_pay' => $netPay,
-                    ]);
+                    ]));
 
                     $totalAmount += $netPay;
                 }
 
                 $payroll->update(['total_amount' => $totalAmount]);
+
+                $requesterName = $this->sellerActor()->name ?: 'A staff member';
+                $message = "{$requesterName} submitted the payroll request for {$validated['month']} for accounting approval.";
+
+                $this->accountingRecipientsForSeller($seller)->each(function (User $recipient) use ($payroll, $message) {
+                    $recipient->notify(new AccountingApprovalRequestedNotification(
+                        'New Payroll Request',
+                        $message,
+                        route('accounting.index'),
+                        'payroll',
+                        $payroll->id,
+                    ));
+                });
             });
 
             return redirect()->back()->with('success', 'Payroll generated successfully! Waiting for Accounting approval.');
@@ -591,6 +656,25 @@ class HRController extends Controller
             && Schema::hasColumn('users', 'employee_id');
     }
 
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function userLevelOptions(): array
+    {
+        return [
+            [
+                'key' => User::DEFAULT_STAFF_USER_LEVEL,
+                'label' => 'Standard Staff',
+                'description' => 'Can use the modules you grant, but cannot manage other staff logins or permissions.',
+            ],
+            [
+                'key' => User::STAFF_MANAGER_USER_LEVEL,
+                'label' => 'Staff Manager',
+                'description' => 'Can manage employee logins and staff permissions inside HR when HR access is enabled.',
+            ],
+        ];
+    }
+
     private function buildEmployeeUpdateSuccessMessage(
         bool $createdLogin,
         bool $workspaceSuspended,
@@ -599,7 +683,7 @@ class HRController extends Controller
         bool $passwordReset
     ): string {
         if ($createdLogin) {
-            return 'Employee updated and seller login created. A verification email was queued for delivery.';
+            return 'Employee updated and seller login created. A verification email was sent.';
         }
 
         if ($workspaceSuspended) {
@@ -630,7 +714,7 @@ class HRController extends Controller
         $followUps = [];
 
         if ($emailChanged) {
-            $followUps[] = 'A verification email was queued for delivery to the updated address.';
+            $followUps[] = 'A verification email was sent to the updated address.';
         }
 
         if ($passwordReset) {

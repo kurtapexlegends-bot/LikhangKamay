@@ -199,7 +199,7 @@ export default function ArtisanRegister() {
                             autoComplete="username"
                             onChange={(e) => setData('email', e.target.value)}
                             required
-                            placeholder="contact@yourshop.com"
+                            placeholder="example@yourshop.com"
                         />
                     </div>
                     <InputError message={errors.email} className="mt-2" />

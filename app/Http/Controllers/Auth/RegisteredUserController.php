@@ -8,10 +8,13 @@ use App\Support\PersonName;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class RegisteredUserController extends Controller
 {
@@ -56,8 +59,22 @@ class RegisteredUserController extends Controller
             'shop_name' => $request->shop_name,
         ]);
 
-        event(new Registered($user));
+        Auth::login($user);
+        $request->session()->regenerate();
 
-        return redirect()->route('login')->with('status', 'Account created! Please log in.');
+        try {
+            event(new Registered($user));
+        } catch (Throwable $exception) {
+            Log::error('Registration verification email failed to send.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return redirect()->route('verification.notice')
+                ->with('error', 'Account created, but we could not send the verification email right now. Please try resending it from the verification page.');
+        }
+
+        return redirect()->route('verification.notice')->with('status', 'verification-link-sent');
     }
 }

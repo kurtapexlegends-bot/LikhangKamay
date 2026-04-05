@@ -52,6 +52,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => true,
             'email' => 'jose.reyes@gmail.com',
             'default_password' => 'password',
+            'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'accounting',
             'module_overrides' => [
                 'accounting' => true,
@@ -72,6 +73,7 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertSame($employee->id, $staff->employee_id);
         $this->assertSame($owner->id, $staff->seller_owner_id);
         $this->assertSame($owner->id, $staff->created_by_user_id);
+        $this->assertSame('standard', $staff->getStaffUserLevel());
         $this->assertSame('accounting', $staff->staff_role_preset_key);
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'accounting'));
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'overview'));
@@ -101,6 +103,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => true,
             'email' => 'ana@company.com',
             'default_password' => 'password',
+            'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'hr',
             'module_overrides' => [
                 'hr' => true,
@@ -132,6 +135,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => true,
             'email' => 'blocked.user@gmail.com',
             'default_password' => 'password',
+            'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'procurement',
             'module_overrides' => [
                 'procurement' => true,
@@ -141,6 +145,44 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertForbidden();
         $this->assertDatabaseMissing('users', ['email' => 'blocked.user@gmail.com']);
         Notification::assertNothingSent();
+    }
+
+    public function test_staff_manager_with_hr_access_can_create_login_accounts(): void
+    {
+        Notification::fake();
+
+        $owner = $this->createOwnerWithHrAccess();
+        $manager = User::factory()->staff($owner)->create([
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => User::withStaffUserLevelFlag(['hr' => true], 'manager'),
+        ]);
+
+        $response = $this->actingAs($manager)->post(route('hr.store'), [
+            'name' => 'Managed User',
+            'role' => 'Assistant',
+            'salary' => 13800,
+            'create_login_account' => true,
+            'email' => 'managed.user@gmail.com',
+            'default_password' => 'password',
+            'staff_user_level' => 'standard',
+            'staff_role_preset_key' => 'customer_support',
+            'module_overrides' => [
+                'orders' => true,
+                'reviews' => true,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+
+        $staff = User::where('email', 'managed.user@gmail.com')->first();
+
+        $this->assertNotNull($staff);
+        $this->assertSame('standard', $staff->getStaffUserLevel());
+        $this->assertSame('customer_support', $staff->staff_role_preset_key);
+        Notification::assertSentTo($staff, VerifyEmailNotification::class);
     }
 
     public function test_hr_staff_cannot_delete_employees_with_linked_login_accounts(): void
@@ -229,6 +271,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => true,
             'email' => $linkedLogin->email,
             'default_password' => '',
+            'staff_user_level' => 'standard',
             'staff_role_preset_key' => $linkedLogin->staff_role_preset_key,
             'module_overrides' => [
                 'hr' => true,
@@ -281,6 +324,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => true,
             'email' => 'linked.updated@gmail.com',
             'default_password' => 'password',
+            'staff_user_level' => 'manager',
             'staff_role_preset_key' => 'accounting',
             'module_overrides' => [
                 'accounting' => true,
@@ -304,6 +348,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 19500,
         ]);
         $this->assertSame('linked.updated@gmail.com', $linkedLogin->email);
+        $this->assertSame('manager', $linkedLogin->getStaffUserLevel());
         $this->assertSame('accounting', $linkedLogin->staff_role_preset_key);
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'accounting'));
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'overview'));
@@ -336,6 +381,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => true,
             'email' => 'provision.later@gmail.com',
             'default_password' => 'password',
+            'staff_user_level' => 'manager',
             'staff_role_preset_key' => 'procurement',
             'module_overrides' => [
                 'procurement' => true,
@@ -350,6 +396,7 @@ class HrStaffProvisioningTest extends TestCase
 
         $this->assertNotNull($staff);
         $this->assertSame('provision.later@gmail.com', $staff->email);
+        $this->assertSame('manager', $staff->getStaffUserLevel());
         $this->assertSame('procurement', $staff->staff_role_preset_key);
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'procurement'));
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'stock_requests'));
@@ -386,6 +433,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => false,
             'email' => 'revoke.access@gmail.com',
             'default_password' => '',
+            'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'hr',
             'module_overrides' => [
                 'hr' => true,
@@ -440,6 +488,7 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => true,
             'email' => 'restore.access@gmail.com',
             'default_password' => '',
+            'staff_user_level' => 'manager',
             'staff_role_preset_key' => 'accounting',
             'module_overrides' => [
                 'accounting' => true,
@@ -453,6 +502,7 @@ class HrStaffProvisioningTest extends TestCase
         $linkedLogin->refresh();
 
         $this->assertTrue($linkedLogin->isWorkspaceAccessEnabled());
+        $this->assertSame('manager', $linkedLogin->getStaffUserLevel());
         $this->assertSame('accounting', $linkedLogin->staff_role_preset_key);
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'accounting'));
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'overview'));

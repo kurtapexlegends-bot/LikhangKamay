@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store } from 'lucide-react';
+import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function NotificationDropdown() {
@@ -44,6 +44,8 @@ export default function NotificationDropdown() {
                 return <Truck size={16} className="text-indigo-500" />;
             case 'accounting_rejected':
                 return <AlertTriangle size={16} className="text-red-500" />;
+            case 'accounting_request':
+                return <Banknote size={16} className="text-emerald-500" />;
             case 'artisan_application':
                 return <Store size={16} className="text-clay-600" />;
             default:
@@ -51,14 +53,14 @@ export default function NotificationDropdown() {
         }
     };
 
-    const handleMarkAsRead = (id, url) => {
+    const handleMarkAsRead = (id, url = null, shouldNavigate = true) => {
         router.post(route('notifications.read', id), {}, {
             preserveScroll: true,
             onSuccess: () => {
-                if (url) {
+                if (shouldNavigate && url) {
                     router.visit(url);
                 }
-            }
+            },
         });
     };
 
@@ -149,7 +151,7 @@ export default function NotificationDropdown() {
                                     }`}
                                 >
                                     <div 
-                                        onClick={() => handleMarkAsRead(notification.id, notification.url)}
+                                        onClick={() => handleMarkAsRead(notification.id, notification.url, true)}
                                         className="flex items-start gap-3 cursor-pointer"
                                     >
                                         <div className="p-2 rounded-lg bg-gray-100 shrink-0">
@@ -186,7 +188,7 @@ export default function NotificationDropdown() {
                                     {activeMenu === notification.id && (
                                         <div className="absolute top-8 right-2 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1 animate-in fade-in zoom-in-95 duration-100">
                                             <button
-                                                onClick={(e) => notification.read_at ? handleMarkAsUnread(e, notification.id) : handleMarkAsRead(notification.id, null)}
+                                                onClick={(e) => notification.read_at ? handleMarkAsUnread(e, notification.id) : handleMarkAsRead(notification.id, null, false)}
                                                 className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                             >
                                                 {notification.read_at ? <Mail size={12} /> : <MailOpen size={12} />}

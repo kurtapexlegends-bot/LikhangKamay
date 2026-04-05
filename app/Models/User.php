@@ -20,6 +20,9 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     use HasFactory, Notifiable;
 
     public const STAFF_WORKSPACE_ACCESS_FLAG = '__workspace_access_enabled';
+    public const STAFF_USER_LEVEL_FLAG = '__staff_user_level';
+    public const DEFAULT_STAFF_USER_LEVEL = 'standard';
+    public const STAFF_MANAGER_USER_LEVEL = 'manager';
 
     protected static ?bool $hasSplitNameColumns = null;
 
@@ -182,6 +185,22 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->isStaff() && $this->staff_plan_suspended_at !== null;
     }
 
+    public function getStaffUserLevel(): string
+    {
+        if (!$this->isStaff()) {
+            return self::STAFF_MANAGER_USER_LEVEL;
+        }
+
+        $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
+
+        return static::normalizeStaffUserLevel($permissions[self::STAFF_USER_LEVEL_FLAG] ?? null);
+    }
+
+    public function isStaffManager(): bool
+    {
+        return $this->isStaff() && $this->getStaffUserLevel() === self::STAFF_MANAGER_USER_LEVEL;
+    }
+
     /**
      * @param  array<string, mixed>|null  $permissions
      * @return array<string, mixed>
@@ -204,6 +223,57 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         unset($normalized[self::STAFF_WORKSPACE_ACCESS_FLAG]);
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function withStaffUserLevelFlag(?array $permissions, ?string $level): array
+    {
+        $normalized = static::stripStaffUserLevelFlag($permissions);
+        $normalized[self::STAFF_USER_LEVEL_FLAG] = static::normalizeStaffUserLevel($level);
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function stripStaffUserLevelFlag(?array $permissions): array
+    {
+        $normalized = is_array($permissions) ? $permissions : [];
+        unset($normalized[self::STAFF_USER_LEVEL_FLAG]);
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function stripStaffControlFlags(?array $permissions): array
+    {
+        return static::stripStaffUserLevelFlag(static::stripWorkspaceAccessFlag($permissions));
+    }
+
+    public static function normalizeStaffUserLevel(mixed $level): string
+    {
+        return in_array($level, static::staffUserLevels(), true)
+            ? $level
+            : self::DEFAULT_STAFF_USER_LEVEL;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function staffUserLevels(): array
+    {
+        return [
+            self::DEFAULT_STAFF_USER_LEVEL,
+            self::STAFF_MANAGER_USER_LEVEL,
+        ];
     }
 
     public function hasCompletedStaffSecurityGate(): bool
@@ -410,7 +480,15 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public function canManageStaffAccounts(): bool
     {
-        return $this->isSellerOwner();
+        if ($this->isSellerOwner()) {
+            return true;
+        }
+
+        if (!$this->isStaffManager() || !$this->isWorkspaceAccessEnabled()) {
+            return false;
+        }
+
+        return in_array('hr', app(SellerEntitlementService::class)->getGrantedStaffModules($this), true);
     }
 
     /**

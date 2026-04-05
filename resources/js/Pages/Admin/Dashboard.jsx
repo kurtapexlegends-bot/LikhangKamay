@@ -70,7 +70,7 @@ export default function AdminDashboard({ stats, recentUsers }) {
     const pendingCount = typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans;
 
     return (
-        <AdminLayout title="Dashboard">
+        <AdminLayout title="Overview">
             <div className="mb-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Total Artisans"

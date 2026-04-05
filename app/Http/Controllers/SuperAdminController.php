@@ -252,10 +252,21 @@ class SuperAdminController extends Controller
                     return null;
                 }
 
-                $tierLabel = match ($log->new_tier) {
-                    'super_premium' => 'Elite',
-                    'premium' => 'Premium',
-                    default => ucfirst((string) $log->new_tier),
+                $formatTierLabel = static function (?string $tier): string {
+                    return match ($tier) {
+                        'super_premium' => 'Elite',
+                        'premium' => 'Premium',
+                        'free', null, '' => 'Free',
+                        default => ucfirst(str_replace('_', ' ', (string) $tier)),
+                    };
+                };
+
+                $newTierLabel = $formatTierLabel($log->new_tier);
+                $previousTierLabel = $formatTierLabel($log->previous_tier);
+                $changeDirection = match ([$log->previous_tier, $log->new_tier]) {
+                    ['premium', 'super_premium'], ['free', 'premium'], ['free', 'super_premium'], [null, 'premium'], [null, 'super_premium'] => 'upgrade',
+                    ['super_premium', 'premium'], ['premium', 'free'], ['super_premium', 'free'] => 'downgrade',
+                    default => 'change',
                 };
 
                 return [
@@ -266,8 +277,11 @@ class SuperAdminController extends Controller
                     'avatar' => $user->avatar,
                     'premium_tier' => $log->new_tier,
                     'previous_tier' => $log->previous_tier,
-                    'tier' => $tierLabel,
-                    'date' => $log->created_at->format('M d, Y h:i A')
+                    'previous_tier_label' => $previousTierLabel,
+                    'tier' => $newTierLabel,
+                    'change_label' => "{$previousTierLabel} to {$newTierLabel}",
+                    'change_direction' => $changeDirection,
+                    'date' => $log->created_at->format('M d, Y h:i A'),
                 ];
             })
             ->filter()
@@ -392,10 +406,6 @@ class SuperAdminController extends Controller
 
     private function normalizeAdminUserRoleFilter(string $roleFilter): string
     {
-        if ($roleFilter === 'staff') {
-            return 'artisan';
-        }
-
         return in_array($roleFilter, ['all', 'artisan', 'buyer', 'super_admin'], true)
             ? $roleFilter
             : 'all';
@@ -472,6 +482,7 @@ class SuperAdminController extends Controller
             'employee_name' => $staffMember->employee?->name,
             'employee_linked' => $staffMember->employee !== null,
             'staff_role_preset_key' => $staffMember->staff_role_preset_key ?: 'custom',
+            'staff_user_level' => $staffMember->getStaffUserLevel(),
             'requires_password_change' => $staffMember->requiresStaffPasswordChange(),
             'created_at' => $staffMember->created_at->format('M d, Y'),
         ];

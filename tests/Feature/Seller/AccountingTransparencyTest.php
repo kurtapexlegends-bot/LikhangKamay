@@ -8,6 +8,7 @@ use App\Models\PayrollItem;
 use App\Models\StockRequest;
 use App\Models\Supply;
 use App\Models\User;
+use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Notifications\AccountingRejectedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -20,10 +21,15 @@ class AccountingTransparencyTest extends TestCase
 
     public function test_stock_request_submission_tracks_requester_and_exposes_detailed_accounting_breakdown(): void
     {
+        Notification::fake();
+
         $owner = $this->createSellerOwner();
         $requester = $this->createStaff($owner, 'procurement', [
             'procurement' => true,
             'stock_requests' => true,
+        ]);
+        $accountingStaff = $this->createStaff($owner, 'accounting', [
+            'accounting' => true,
         ]);
         $supply = $this->createSupply($owner, [
             'quantity' => 12,
@@ -39,6 +45,7 @@ class AccountingTransparencyTest extends TestCase
         $request = StockRequest::firstOrFail();
 
         $this->assertSame($requester->id, $request->requested_by_user_id);
+        Notification::assertSentTo([$owner, $accountingStaff], AccountingApprovalRequestedNotification::class);
 
         $this->actingAs($owner)
             ->get(route('accounting.index'))
@@ -62,9 +69,14 @@ class AccountingTransparencyTest extends TestCase
 
     public function test_payroll_generation_tracks_requester_and_exposes_detailed_accounting_breakdown(): void
     {
+        Notification::fake();
+
         $owner = $this->createSellerOwner();
         $requester = $this->createStaff($owner, 'hr', [
             'hr' => true,
+        ]);
+        $accountingStaff = $this->createStaff($owner, 'accounting', [
+            'accounting' => true,
         ]);
         $employee = Employee::create([
             'user_id' => $owner->id,
@@ -90,6 +102,7 @@ class AccountingTransparencyTest extends TestCase
         $payroll = Payroll::firstOrFail();
 
         $this->assertSame($requester->id, $payroll->requested_by_user_id);
+        Notification::assertSentTo([$owner, $accountingStaff], AccountingApprovalRequestedNotification::class);
 
         $this->actingAs($owner)
             ->get(route('accounting.index'))

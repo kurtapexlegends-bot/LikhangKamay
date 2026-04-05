@@ -116,9 +116,11 @@ class SellerEntitlementService
             'canAccessOverview' => in_array('overview', $visibleModules, true),
             'canManageSubscription' => $canManageSubscription,
             'canManageModuleSettings' => $canManageModuleSettings,
+            'canManageStaffAccounts' => $user->canManageStaffAccounts(),
             'canViewPayrollData' => $this->containsAny($visibleModules, ['hr', 'accounting']),
             'showPlanPanel' => $user->isSellerOwner(),
             'rolePresetKey' => $user->isStaff() ? ($user->staff_role_preset_key ?: 'custom') : null,
+            'staffUserLevel' => $user->isStaff() ? $user->getStaffUserLevel() : null,
             'actorType' => $user->isStaff() ? 'staff' : 'owner',
             'defaultRouteName' => $defaultRouteName,
         ];

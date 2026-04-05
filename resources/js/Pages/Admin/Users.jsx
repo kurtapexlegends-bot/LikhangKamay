@@ -4,7 +4,7 @@ import { Users, Store, Search, Shield, Briefcase, ChevronDown } from 'lucide-rea
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 
-const roleTabs = ['all', 'artisan', 'staff', 'buyer', 'super_admin'];
+const roleTabs = ['all', 'artisan', 'buyer', 'super_admin'];
 
 const roleBadgeClasses = {
     artisan: 'bg-amber-50 text-amber-900 border-amber-200/60 shadow-[0_1px_2px_-1px_rgba(251,191,36,0.2)]',
@@ -28,6 +28,11 @@ const staffPresetLabels = {
     procurement: 'Procurement',
 };
 
+const staffUserLevelLabels = {
+    manager: 'Staff Manager',
+    standard: 'Standard Staff',
+};
+
 const getAutoExpandedRows = (accounts) =>
     accounts.reduce((expandedMap, account) => {
         if ((account.matched_staff_count ?? 0) > 0) {
@@ -46,6 +51,8 @@ const formatStaffPreset = (presetKey) => {
 
     return staffPresetLabels[presetKey] || presetKey.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
+
+const formatStaffUserLevel = (userLevel) => staffUserLevelLabels[userLevel] || 'Standard Staff';
 
 function StaffMemberList({ staffMembers, emptyMessage }) {
     if (!staffMembers.length) {
@@ -79,6 +86,9 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                     <div className="mt-3.5 flex flex-wrap items-center gap-2">
                         <span className="inline-flex items-center rounded-md bg-[#F2EAE1] border border-[#E8D9CB] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#7A5037]">
                             {formatStaffPreset(staffMember.staff_role_preset_key)}
+                        </span>
+                        <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold tracking-wider text-stone-600">
+                            {formatStaffUserLevel(staffMember.staff_user_level)}
                         </span>
                         <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold tracking-wider text-stone-600">
                             {staffMember.employee_linked ? (staffMember.employee_name || 'Employee linked') : 'No employee record'}
@@ -190,7 +200,6 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                 >
                                     {role === 'all' && 'All Users'}
                                     {role === 'artisan' && <><Store size={14} /> Artisans</>}
-                                    {role === 'staff' && <><Briefcase size={14} /> Staff</>}
                                     {role === 'buyer' && <><Users size={14} /> Buyers</>}
                                     {role === 'super_admin' && <><Shield size={14} /> Admins</>}
                                     

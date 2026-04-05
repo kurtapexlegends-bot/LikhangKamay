@@ -2,18 +2,11 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Lang;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class ResetPasswordNotification extends Notification
 {
-    use Queueable;
-
     /**
      * The password reset token.
      */
@@ -56,12 +49,5 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [];
-    }
-
-    public function failed(Throwable $exception): void
-    {
-        Log::error('Queued password reset notification failed.', [
-            'message' => $exception->getMessage(),
-        ]);
     }
 }

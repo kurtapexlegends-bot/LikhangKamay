@@ -28,7 +28,7 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'Platform Overview',
             items: [
-                { name: 'Dashboard', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
+                { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
                 { name: 'Monetization', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
             ]
@@ -146,11 +146,12 @@ export default function AdminLayout({ title, children }) {
                         </button>
                         <div className="min-w-0">
                             <h1 className="truncate text-xl font-bold text-gray-900">{title}</h1>
-                            {title === 'Dashboard' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Overview of platform performance</p>}
+                            {title === 'Overview' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Overview of platform performance</p>}
                             {title === 'Monetization' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track revenue and subscription metrics</p>}
                             {title === 'Platform Insights' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Deep dive into revenue forecasts, category performance, and platform health</p>}
                             {title === 'User Management' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage buyers, artisans, staff, and admins</p>}
                             {title === 'Pending Artisans' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review artisan applications</p>}
+                            {title === 'Sponsorship Requests' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review and manage artisan product sponsorship requests</p>}
                         </div>
                     </div>
 

@@ -224,9 +224,9 @@ export default function SponsorshipRequests({ requests }) {
                                                     </div>
                                                     <div className="max-w-[220px]">
                                                         <p className="text-sm font-bold text-gray-900 truncate">{req.product?.name || 'Unknown Product'}</p>
-                                                        {req.product?.slug && (
-                                                            <a href={route('product.show', req.product.slug)} target="_blank" rel="noreferrer" className="text-[10px] font-medium text-clay-600 hover:underline">View Product</a>
-                                                        )}
+                                                        <p className="text-[10px] text-gray-500 mt-1 truncate">
+                                                            Shop: {req.user?.shop_name || req.user?.name || 'Unknown Shop'}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </td>

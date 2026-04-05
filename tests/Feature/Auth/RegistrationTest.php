@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -18,6 +20,8 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        Notification::fake();
+
         $response = $this->post('/register', [
             'first_name' => 'Test',
             'last_name' => 'User',
@@ -27,12 +31,15 @@ class RegistrationTest extends TestCase
             'terms' => true,
         ]);
 
-        $this->assertGuest();
-        $response->assertRedirect(route('login', absolute: false));
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('verification.notice', absolute: false));
+        Notification::assertSentTo(auth()->user(), VerifyEmailNotification::class);
     }
 
     public function test_new_artisans_can_register_before_completing_shop_setup(): void
     {
+        Notification::fake();
+
         $response = $this->post('/register', [
             'first_name' => 'Clay',
             'last_name' => 'Seller',
@@ -43,8 +50,9 @@ class RegistrationTest extends TestCase
             'terms' => true,
         ]);
 
-        $this->assertGuest();
-        $response->assertRedirect(route('login', absolute: false));
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('verification.notice', absolute: false));
+        Notification::assertSentTo(auth()->user(), VerifyEmailNotification::class);
 
         $this->assertDatabaseHas('users', [
             'email' => 'artisan@example.com',
@@ -58,6 +66,8 @@ class RegistrationTest extends TestCase
 
     public function test_registration_still_accepts_a_single_first_name(): void
     {
+        Notification::fake();
+
         $response = $this->post('/register', [
             'first_name' => 'Madonna',
             'last_name' => '',
@@ -67,7 +77,9 @@ class RegistrationTest extends TestCase
             'terms' => true,
         ]);
 
-        $response->assertRedirect(route('login', absolute: false));
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('verification.notice', absolute: false));
+        Notification::assertSentTo(auth()->user(), VerifyEmailNotification::class);
 
         $this->assertDatabaseHas('users', [
             'email' => 'madonna@example.com',

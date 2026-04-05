@@ -1,7 +1,7 @@
 import PrimaryButton from '@/Components/PrimaryButton';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Mail, RefreshCw, LogOut, CheckCircle, Clock } from 'lucide-react';
 
 export default function VerifyEmail({ status }) {
@@ -35,9 +35,9 @@ export default function VerifyEmail({ status }) {
                             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
                                 <CheckCircle size={20} className="text-green-600 mt-0.5 shrink-0" />
                                 <div>
-                                    <p className="text-sm font-bold text-green-800">Email Queued</p>
+                                    <p className="text-sm font-bold text-green-800">Email Sent</p>
                                     <p className="text-xs text-green-700 mt-1">
-                                        A new verification link has been queued for delivery to your email address.
+                                        A verification link has been sent to your email address.
                                     </p>
                                 </div>
                             </div>
@@ -56,7 +56,7 @@ export default function VerifyEmail({ status }) {
                             <div>
                                 <p className="text-sm font-bold text-amber-800">Check Your Inbox</p>
                                 <p className="text-xs text-amber-700 mt-1">
-                                    We will send a verification link to your email. Click the link once it arrives to verify your account and start using LikhangKamay.
+                                    We sent a verification link to your email. Click the link once it arrives to verify your account and start using LikhangKamay.
                                 </p>
                             </div>
                         </div>

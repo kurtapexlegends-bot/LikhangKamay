@@ -76,6 +76,44 @@ class SellerEntitlementsTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_hr_staff_manager_receives_staff_management_entitlement(): void
+    {
+        $owner = $this->createPremiumOwner([
+            'hr' => true,
+        ]);
+        $staff = $this->createCompletedStaff($owner, 'hr', ['hr' => true], 'manager');
+
+        $response = $this->actingAs($staff)->get(route('hr.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/HR')
+            ->where('sellerSidebar.actorType', 'staff')
+            ->where('sellerSidebar.canManageStaffAccounts', true)
+            ->where('sellerSidebar.staffUserLevel', 'manager')
+            ->where('staffProvisioning.canManageStaffAccounts', true)
+        );
+    }
+
+    public function test_staff_manager_without_hr_module_does_not_receive_staff_management_entitlement(): void
+    {
+        $owner = $this->createPremiumOwner([
+            'hr' => true,
+            'procurement' => true,
+        ]);
+        $staff = $this->createCompletedStaff($owner, 'procurement', ['procurement' => true, 'stock_requests' => true], 'manager');
+
+        $response = $this->actingAs($staff)->get(route('procurement.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Procurement/Index')
+            ->where('sellerSidebar.actorType', 'staff')
+            ->where('sellerSidebar.staffUserLevel', 'manager')
+            ->where('sellerSidebar.canManageStaffAccounts', false)
+        );
+    }
+
     public function test_staff_dashboard_route_redirects_to_staff_hub_instead_of_owner_dashboard(): void
     {
         $owner = $this->createPremiumOwner([
@@ -210,13 +248,13 @@ class SellerEntitlementsTest extends TestCase
         return $owner;
     }
 
-    private function createCompletedStaff(User $owner, string $presetKey = 'custom', array $permissions = []): User
+    private function createCompletedStaff(User $owner, string $presetKey = 'custom', array $permissions = [], string $userLevel = 'standard'): User
     {
         return User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => $presetKey,
-            'staff_module_permissions' => $permissions,
+            'staff_module_permissions' => User::withStaffUserLevelFlag($permissions, $userLevel),
         ]);
     }
 }
