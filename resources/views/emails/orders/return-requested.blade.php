@@ -38,6 +38,21 @@
                 <strong>Order Date:</strong> {{ $order->created_at->format('F d, Y') }}<br>
                 <strong>Received:</strong> {{ $order->received_at ? $order->received_at->format('F d, Y h:i A') : 'Unknown' }}
             </p>
+
+            @if($order->return_reason)
+            <div style="margin-top: 16px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px;">
+                <strong style="display: block; color: #9a3412; margin-bottom: 6px;">Reason for Return</strong>
+                <span style="color: #7c2d12;">{{ $order->return_reason }}</span>
+            </div>
+            @endif
+
+            @if($order->return_proof_image)
+            <div style="margin-top: 12px;">
+                <a href="{{ asset('storage/' . $order->return_proof_image) }}" style="color: #b45309; font-weight: 600; text-decoration: underline;">
+                    View buyer proof image
+                </a>
+            </div>
+            @endif
             
             <div style="margin-top: 16px;">
                 @foreach($order->items as $item)

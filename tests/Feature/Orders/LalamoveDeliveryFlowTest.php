@@ -125,6 +125,98 @@ class LalamoveDeliveryFlowTest extends TestCase
         Mail::assertQueued(\App\Mail\OrderShipped::class);
     }
 
+    public function test_seller_can_create_a_two_way_lalamove_replacement_exchange_for_an_accepted_replacement_order(): void
+    {
+        Mail::fake();
+        Notification::fake();
+
+        $seller = $this->createSeller();
+        $buyer = User::factory()->createOne([
+            'name' => 'Buyer Example',
+            'phone_number' => '09171234567',
+        ]);
+
+        $product = $this->createProduct($seller, stock: 10);
+        $order = $this->createAcceptedDeliveryOrder($seller, $buyer, $product, [
+            'replacement_started_at' => now()->subMinute(),
+            'replacement_resolution_description' => 'Replacement approved.',
+        ]);
+
+        $geocoder = Mockery::mock(AddressGeocodingService::class);
+        $geocoder->shouldReceive('geocode')
+            ->once()
+            ->with(Mockery::type('array'), 'seller pickup')
+            ->andReturn([
+                'lat' => '14.3294',
+                'lng' => '120.9367',
+                'display_name' => 'Seller',
+                'matched_query' => '123 Seller Street, San Miguel I, Dasmarinas City, Cavite, 4115, Philippines',
+            ]);
+        $geocoder->shouldReceive('geocode')
+            ->once()
+            ->with(Mockery::on(function ($value) use ($order) {
+                return is_array($value)
+                    && in_array($order->shipping_address, $value, true);
+            }), 'buyer drop-off')
+            ->andReturn([
+                'lat' => '14.3330',
+                'lng' => '120.9420',
+                'display_name' => 'Buyer',
+                'matched_query' => $order->shipping_address,
+            ]);
+        $this->app->instance(AddressGeocodingService::class, $geocoder);
+
+        $lalamove = Mockery::mock(LalamoveService::class);
+        $lalamove->shouldReceive('createQuotation')
+            ->once()
+            ->with(Mockery::on(function (array $payload) {
+                return count($payload['stops'] ?? []) === 3;
+            }))
+            ->andReturn([
+                'quotationId' => 'qt_replacement_manual',
+                'serviceType' => 'MOTORCYCLE',
+                'priceBreakdown' => ['currency' => 'PHP', 'total' => 185.50],
+                'stops' => [
+                    ['stopId' => 'stop_pickup'],
+                    ['stopId' => 'stop_exchange'],
+                    ['stopId' => 'stop_return'],
+                ],
+            ]);
+        $lalamove->shouldReceive('normalizePhone')
+            ->times(3)
+            ->andReturn('+639171234567');
+        $lalamove->shouldReceive('createOrder')
+            ->once()
+            ->with(Mockery::on(function (array $payload) {
+                return ($payload['metadata']['flowType'] ?? null) === 'replacement_exchange'
+                    && count($payload['recipients'] ?? []) === 2;
+            }))
+            ->andReturn([
+                'orderId' => 'llm_replacement_manual',
+                'status' => 'ASSIGNING_DRIVER',
+                'shareLink' => 'https://track.lalamove.test/llm_replacement_manual',
+                'priceBreakdown' => ['currency' => 'PHP', 'total' => 185.50],
+            ]);
+        $this->app->instance(LalamoveService::class, $lalamove);
+
+        $response = $this
+            ->from(route('orders.index'))
+            ->actingAs($seller)
+            ->post(route('orders.lalamove.store', $order->order_number));
+
+        $response
+            ->assertRedirect(route('orders.index'))
+            ->assertSessionHas('success', 'Replacement exchange courier created successfully.');
+
+        $order->refresh();
+        $delivery = $order->delivery;
+
+        $this->assertNotNull($delivery);
+        $this->assertSame('Shipped', $order->status);
+        $this->assertSame('llm_replacement_manual', $order->tracking_number);
+        $this->assertSame('replacement_exchange', data_get($delivery->order_payload, 'metadata.flowType'));
+    }
+
     public function test_seller_default_address_book_entry_is_used_for_pickup_booking(): void
     {
         Mail::fake();

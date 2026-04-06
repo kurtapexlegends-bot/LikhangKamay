@@ -185,6 +185,36 @@ class HrStaffProvisioningTest extends TestCase
         Notification::assertSentTo($staff, VerifyEmailNotification::class);
     }
 
+    public function test_owner_can_submit_staff_only_alias_and_it_normalizes_to_standard_level(): void
+    {
+        Notification::fake();
+
+        $owner = $this->createOwnerWithHrAccess();
+
+        $response = $this->actingAs($owner)->post(route('hr.store'), [
+            'name' => 'Staff Alias User',
+            'role' => 'Assistant',
+            'salary' => 13800,
+            'create_login_account' => true,
+            'email' => 'staff.only.alias@gmail.com',
+            'default_password' => 'password',
+            'staff_user_level' => 'staff_only',
+            'staff_role_preset_key' => 'customer_support',
+            'module_overrides' => [
+                'orders' => true,
+                'reviews' => true,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+
+        $staff = User::where('email', 'staff.only.alias@gmail.com')->first();
+
+        $this->assertNotNull($staff);
+        $this->assertSame('standard', $staff->getStaffUserLevel());
+    }
+
     public function test_hr_staff_cannot_delete_employees_with_linked_login_accounts(): void
     {
         $owner = $this->createOwnerWithHrAccess();
@@ -603,12 +633,13 @@ class HrStaffProvisioningTest extends TestCase
         $response = $this->actingAs($owner)->get(route('hr.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/HR')
-            ->where('staff.0.name', 'Legacy Employee')
-            ->where('staff.0.has_login_account', false)
-            ->where('staff.0.login_account', null)
-            ->where('staffProvisioning.canManageStaffAccounts', true)
+        $response->assertInertia(
+            fn(Assert $page) => $page
+                ->component('Seller/HR')
+                ->where('staff.0.name', 'Legacy Employee')
+                ->where('staff.0.has_login_account', false)
+                ->where('staff.0.login_account', null)
+                ->where('staffProvisioning.canManageStaffAccounts', true)
         );
     }
 
@@ -635,11 +666,42 @@ class HrStaffProvisioningTest extends TestCase
         $response = $this->actingAs($owner)->get(route('hr.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/HR')
-            ->where('staff.0.has_login_account', true)
-            ->where('staff.0.login_account.id', $linkedLogin->id)
-            ->where('staff.0.login_account.avatar', 'avatars/staff-avatar.png')
+        $response->assertInertia(
+            fn(Assert $page) => $page
+                ->component('Seller/HR')
+                ->where('staff.0.has_login_account', true)
+                ->where('staff.0.login_account.id', $linkedLogin->id)
+                ->where('staff.0.login_account.avatar', 'avatars/staff-avatar.png')
+        );
+    }
+
+    public function test_hr_directory_preserves_standard_staff_user_level_for_linked_login_accounts(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Standard Staff Member',
+            'role' => 'Assistant',
+            'salary' => 15000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        User::factory()->staff($owner)->create([
+            'employee_id' => $employee->id,
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_module_permissions' => User::withStaffUserLevelFlag(['orders' => true], 'standard'),
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('hr.index'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn(Assert $page) => $page
+                ->component('Seller/HR')
+                ->where('staff.0.login_account.user_level', 'standard')
         );
     }
 
@@ -648,14 +710,16 @@ class HrStaffProvisioningTest extends TestCase
         Schema::partialMock()
             ->shouldReceive('hasColumn')
             ->andReturnUsing(function (string $table, string $column) {
-                if ($table === 'users' && in_array($column, [
-                    'seller_owner_id',
-                    'staff_role_preset_key',
-                    'staff_module_permissions',
-                    'must_change_password',
-                    'created_by_user_id',
-                    'employee_id',
-                ], true)) {
+                if (
+                    $table === 'users' && in_array($column, [
+                        'seller_owner_id',
+                        'staff_role_preset_key',
+                        'staff_module_permissions',
+                        'must_change_password',
+                        'created_by_user_id',
+                        'employee_id',
+                    ], true)
+                ) {
                     return false;
                 }
 
@@ -676,13 +740,14 @@ class HrStaffProvisioningTest extends TestCase
         $response = $this->actingAs($owner)->get(route('hr.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/HR')
-            ->where('staff.0.name', 'Legacy Employee')
-            ->where('staff.0.has_login_account', false)
-            ->where('staff.0.login_account', null)
-            ->where('staffProvisioning.canManageStaffAccounts', false)
-            ->where('staffProvisioning.requiresStaffSchemaUpdate', true)
+        $response->assertInertia(
+            fn(Assert $page) => $page
+                ->component('Seller/HR')
+                ->where('staff.0.name', 'Legacy Employee')
+                ->where('staff.0.has_login_account', false)
+                ->where('staff.0.login_account', null)
+                ->where('staffProvisioning.canManageStaffAccounts', false)
+                ->where('staffProvisioning.requiresStaffSchemaUpdate', true)
         );
     }
 

@@ -394,22 +394,34 @@ const deliveryStatusConfig = (status) => {
 
 const buyerCourierTrackingState = (order) => {
     const base = deliveryStatusConfig(order?.delivery?.status);
+    const isReplacementExchange = order?.delivery?.flow_type === 'replacement_exchange';
 
     if (String(order?.delivery?.status || '').toUpperCase() === 'COMPLETED' && order?.status === 'Delivered') {
         return {
             ...base,
-            label: 'Awaiting Your Confirmation',
+            label: isReplacementExchange ? 'Exchange Completed' : 'Awaiting Your Confirmation',
             tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-            detail: 'Courier completed delivery. Confirm receipt once the order is safely with you.',
+            detail: isReplacementExchange
+                ? 'Courier completed the replacement exchange. Confirm receipt once the replacement item is safely with you.'
+                : 'Courier completed delivery. Confirm receipt once the order is safely with you.',
         };
     }
 
     if (String(order?.delivery?.status || '').toUpperCase() === 'COMPLETED' && order?.status === 'Completed') {
         return {
             ...base,
-            label: 'Delivered',
+            label: isReplacementExchange ? 'Exchange Resolved' : 'Delivered',
             tone: 'border-green-200 bg-green-50 text-green-700',
-            detail: 'Courier completed delivery and you already confirmed receipt.',
+            detail: isReplacementExchange
+                ? 'Courier completed the replacement exchange and you already confirmed receipt.'
+                : 'Courier completed delivery and you already confirmed receipt.',
+        };
+    }
+
+    if (isReplacementExchange) {
+        return {
+            ...base,
+            detail: 'Replacement exchange is in progress. Courier will deliver the replacement item and return the rejected item to the seller.',
         };
     }
 
@@ -430,6 +442,9 @@ export default function MyOrders({ auth, orders }) {
         type: null, // 'receive', 'return', 'cancel'
         orderId: null
     });
+
+    // Extract flash messages unconditionally (must not be called inside JSX/conditionals)
+    const { props: { flash } } = usePage();
 
     const hasActiveCourierTracking = orders.some((order) => {
         if (order?.delivery?.provider !== 'lalamove' || !order?.delivery?.external_order_id) {
@@ -577,16 +592,16 @@ export default function MyOrders({ auth, orders }) {
             <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
                 
                 {/* --- FLASH MESSAGES --- */}
-                {usePage().props.flash?.success && (
+                {flash?.success && (
                     <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-start gap-2">
                         <CheckCircle size={16} />
-                        <span className="text-[13px] font-bold">{usePage().props.flash.success}</span>
+                        <span className="text-[13px] font-bold">{flash.success}</span>
                     </div>
                 )}
-                {usePage().props.flash?.error && (
+                {flash?.error && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2">
                         <AlertCircle size={16} />
-                        <span className="text-[13px] font-bold">{usePage().props.flash.error}</span>
+                        <span className="text-[13px] font-bold">{flash.error}</span>
                     </div>
                 )}
                 
@@ -676,99 +691,124 @@ export default function MyOrders({ auth, orders }) {
 
                                 {/* Order Items */}
                                 <div className="p-4 sm:p-6 space-y-4">
+                                    {/* Pickup / Delivery Info */}
                                     {order.shipping_method === 'Pick Up' ? (
-                                        <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl">
-                                            <div className="p-2 bg-white rounded-lg shadow-sm text-orange-600">
-                                                <Store size={18} />
+                                        <div className="flex items-center gap-2.5 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2">
+                                            <div className="p-1.5 bg-white rounded-lg shadow-sm text-orange-600 shrink-0">
+                                                <Store size={14} />
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-900">Store Pick Up</p>
-                                                <p className="text-xs text-gray-500 mb-1">Please coordinate with seller via chat.</p>
+                                            <div className="min-w-0">
+                                                <p className="text-[12px] font-bold text-gray-900">Store Pick Up</p>
+                                                <p className="text-[10px] text-gray-500">Coordinate pickup time with seller via chat.</p>
                                                 {order.proof_of_delivery && (
-                                                    <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-600 underline hover:text-orange-800 flex items-center gap-1 mt-1">
-                                                        <PackageCheck size={12} /> View Proof of Readiness
+                                                    <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-600 underline hover:text-orange-800 flex items-center gap-1 mt-0.5">
+                                                        <PackageCheck size={11} /> View Proof of Readiness
                                                     </a>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="space-y-2 rounded-xl border border-blue-100 bg-blue-50 p-3">
-                                            <div className="flex items-start gap-2.5">
-                                                <div className="p-1.5 bg-white rounded-md shadow-sm text-blue-600">
-                                                    <MapPin size={16} />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-[13px] font-bold text-gray-900 leading-none mt-0.5">
-                                                        {order.delivery?.provider === 'lalamove' ? 'Lalamove Delivery' : 'Standard Delivery'}
-                                                    </p>
-                                                    {order.shipping_address_type && (
-                                                        <span className="mt-1 inline-flex rounded-md border border-blue-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-blue-700">
-                                                            {humanizeAddressType(order.shipping_address_type)}
-                                                        </span>
-                                                    )}
-                                                    <p className="mt-1 text-[11px] text-gray-500 leading-snug">{order.shipping_address}</p>
-                                                    {(order.shipping_recipient_name || order.shipping_contact_phone) && (
-                                                        <p className="mt-0.5 text-[10px] text-gray-500">
-                                                            {order.shipping_recipient_name}
-                                                            {order.shipping_recipient_name && order.shipping_contact_phone ? ' | ' : ''}
-                                                            {order.shipping_contact_phone}
-                                                        </p>
-                                                    )}
-                                                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                        {order.tracking_number && (
-                                                            <span className="text-[9px] bg-white px-1.5 py-0.5 rounded border border-blue-200 text-blue-600 font-medium">
-                                                                Tracker: {order.tracking_number}
-                                                            </span>
+                                        <div className="space-y-1.5">
+                                            {/* Address row */}
+                                            <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                                                <div className="flex items-start gap-2">
+                                                    <div className="p-1 bg-white rounded shadow-sm text-blue-600 shrink-0 mt-0.5">
+                                                        <MapPin size={13} />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <p className="text-[12px] font-bold text-gray-900">
+                                                                {order.delivery?.provider === 'lalamove' ? 'Lalamove Delivery' : 'Standard Delivery'}
+                                                            </p>
+                                                            {order.shipping_address_type && (
+                                                                <span className="inline-flex rounded border border-blue-200 bg-white px-1.5 py-0 text-[9px] font-bold uppercase tracking-wide text-blue-700">
+                                                                    {humanizeAddressType(order.shipping_address_type)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-500 leading-snug">{order.shipping_address}</p>
+                                                        {(order.shipping_recipient_name || order.shipping_contact_phone) && (
+                                                            <p className="text-[10px] text-gray-400">
+                                                                {order.shipping_recipient_name}
+                                                                {order.shipping_recipient_name && order.shipping_contact_phone ? ' | ' : ''}
+                                                                {order.shipping_contact_phone}
+                                                            </p>
                                                         )}
-                                                        {order.proof_of_delivery && (
-                                                            <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 underline hover:text-blue-800 flex items-center gap-1">
-                                                                <PackageCheck size={10} /> View Proof of Delivery
-                                                            </a>
-                                                        )}
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {order.tracking_number && (
+                                                                <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-blue-200 text-blue-600 font-medium">
+                                                                    Tracker: {order.tracking_number}
+                                                                </span>
+                                                            )}
+                                                            {order.proof_of_delivery && (
+                                                                <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 underline hover:text-blue-800 flex items-center gap-1">
+                                                                    <PackageCheck size={9} /> View Proof
+                                                                </a>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
+                                            {/* Courier tracking card */}
                                             {order.delivery && (
                                                 <div className="rounded-lg border border-gray-200 bg-white/80 px-2.5 py-2">
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div className="min-w-0">
-                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">Courier</p>
-                                                            <div className={`mt-1 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold ${buyerCourierTrackingState(order).tone}`}>
-                                                                <Truck size={10} />
-                                                                {buyerCourierTrackingState(order).label}
-                                                            </div>
-                                                            <p className="mt-1 text-[10px] leading-snug text-gray-600">{buyerCourierTrackingState(order).detail}</p>
-                                                        </div>
+                                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                        <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-gray-400">Courier</p>
                                                         {order.delivery.share_link && (
                                                             <a
                                                                 href={order.delivery.share_link}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-[9px] font-bold text-gray-700 hover:bg-gray-100 shrink-0 shadow-sm"
+                                                                className="inline-flex items-center gap-0.5 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] font-bold text-gray-600 hover:bg-gray-100 shadow-sm"
                                                             >
-                                                                Track <ExternalLink size={10} />
+                                                                Track <ExternalLink size={9} />
                                                             </a>
                                                         )}
                                                     </div>
 
-                                                    <div className="mt-1.5 flex flex-wrap gap-1 text-[9px] text-gray-500">
-                                                        {order.delivery.external_order_id && (
-                                                            <span className="rounded-md border border-gray-200 bg-white px-1.5 py-0.5 font-bold text-gray-700 shadow-sm">
-                                                                Courier ID: {order.delivery.external_order_id}
+                                                    <div className="flex flex-wrap items-center gap-1 mb-1.5">
+                                                        {order.delivery.flow_type === 'replacement_exchange' && (
+                                                            <span className="inline-flex rounded border border-teal-200 bg-teal-50 px-1.5 py-0 text-[9px] font-bold text-teal-700">
+                                                                {order.delivery.flow_label}
                                                             </span>
                                                         )}
-                                                        {order.delivery.last_updated_at && (
-                                                            <span className="rounded-md border border-gray-200 bg-white px-1.5 py-0.5 shadow-sm">
-                                                                Updated: {order.delivery.last_updated_at}
-                                                            </span>
-                                                        )}
+                                                        <div className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-bold ${buyerCourierTrackingState(order).tone}`}>
+                                                            <Truck size={10} />
+                                                            {buyerCourierTrackingState(order).label}
+                                                        </div>
                                                     </div>
 
+                                                    <p className="text-[10px] leading-snug text-gray-500 mb-1.5">{buyerCourierTrackingState(order).detail}</p>
+
+                                                    {order.delivery.flow_type === 'replacement_exchange' && order.delivery.route_legs?.length > 0 && (
+                                                        <div className="mb-1.5 flex flex-col gap-0.5">
+                                                            {order.delivery.route_legs.map((leg) => (
+                                                                <p key={`${leg.label}-${leg.from}-${leg.to}`} className="text-[9px] text-teal-700 font-medium">
+                                                                    <span className="font-bold">{leg.label}:</span> {leg.from} → {leg.to}
+                                                                </p>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {(order.delivery.external_order_id || order.delivery.last_updated_at) && (
+                                                        <div className="flex flex-wrap gap-1 text-[9px]">
+                                                            {order.delivery.external_order_id && (
+                                                                <span className="rounded border border-gray-200 bg-white px-1.5 py-0 font-bold text-gray-600">
+                                                                    ID: {order.delivery.external_order_id}
+                                                                </span>
+                                                            )}
+                                                            {order.delivery.last_updated_at && (
+                                                                <span className="rounded border border-gray-200 bg-white px-1.5 py-0 text-gray-500">
+                                                                    {order.delivery.last_updated_at}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+
                                                     {order.delivery.pending_auto_cancel && (
-                                                        <div className="mt-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-[10px] text-red-700">
-                                                            <p className="font-bold">Return-to-sender hold active</p>
-                                                            <p className="mt-0.5">The courier reported a terminal delivery failure. The system will auto-cancel this order after {order.delivery.cancel_hold_ends_at} if it does not recover.</p>
+                                                        <div className="mt-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-[9px] text-red-700">
+                                                            <span className="font-bold">Return-to-sender hold —</span> Auto-cancel after {order.delivery.cancel_hold_ends_at} if unresolved.
                                                         </div>
                                                     )}
                                                 </div>
@@ -776,40 +816,40 @@ export default function MyOrders({ auth, orders }) {
                                         </div>
                                     )}
 
+                                    {/* Replacement in Progress */}
                                     {order.replacement_in_progress && (
-                                        <div className="flex items-start gap-3 rounded-xl border border-teal-200 bg-teal-50 p-4">
-                                            <div className="rounded-lg bg-white p-2 text-teal-600 shadow-sm">
-                                                <PackageCheck size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-teal-800">Replacement in Progress</p>
+                                        <div className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-1.5">
+                                                    <PackageCheck size={13} className="text-teal-600 shrink-0" />
+                                                    <p className="text-[12px] font-bold text-teal-800">Replacement in Progress</p>
+                                                </div>
                                                 {order.replacement_started_at && (
-                                                    <p className="mt-1 text-xs text-teal-700">Seller restarted fulfillment on {order.replacement_started_at}.</p>
+                                                    <span className="text-[9px] text-teal-600 font-medium whitespace-nowrap">{order.replacement_started_at}</span>
                                                 )}
-                                                {order.replacement_resolution_description && (
-                                                    <div className="mt-2 rounded-lg border border-teal-100 bg-white/80 p-3 text-xs text-teal-900 whitespace-pre-wrap">
-                                                        <span className="mb-1 block font-bold">Compensation / Resolution</span>
-                                                        {order.replacement_resolution_description}
-                                                    </div>
-                                                )}
-                                                <p className="mt-2 text-xs text-teal-700">The replacement must still be delivered and officially received before the issue is considered resolved.</p>
                                             </div>
+                                            {order.replacement_resolution_description && (
+                                                <div className="mt-1.5 rounded border border-teal-100 bg-white/70 px-2 py-1 text-[9px] text-teal-900 whitespace-pre-wrap">
+                                                    <span className="font-bold">Resolution: </span>{order.replacement_resolution_description}
+                                                </div>
+                                            )}
+                                            <p className="mt-1 text-[9px] text-teal-700 leading-snug">
+                                                {order.delivery?.flow_type === 'replacement_exchange'
+                                                    ? 'Courier will deliver the replacement to you and return the rejected item to the seller.'
+                                                    : 'Replacement must be delivered and confirmed before the issue is resolved.'}
+                                            </p>
                                         </div>
                                     )}
 
+                                    {/* Replacement Resolved */}
                                     {order.replacement_resolved_at && (
-                                        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                                            <div className="rounded-lg bg-white p-2 text-emerald-600 shadow-sm">
-                                                <CheckCircle size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-emerald-800">Replacement Successfully Resolved</p>
-                                                <p className="mt-1 text-xs text-emerald-700">You confirmed the replacement on {order.replacement_resolved_at}.</p>
-                                                {order.replacement_resolution_description && (
-                                                    <p className="mt-2 text-xs text-emerald-700">
-                                                        Resolution: <span className="font-semibold">{order.replacement_resolution_description}</span>
-                                                    </p>
-                                                )}
+                                        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                                            <CheckCircle size={13} className="text-emerald-600 shrink-0" />
+                                            <div className="min-w-0">
+                                                <p className="text-[12px] font-bold text-emerald-800">Replacement Resolved</p>
+                                                <p className="text-[10px] text-emerald-700">Confirmed on {order.replacement_resolved_at}.
+                                                    {order.replacement_resolution_description && <span> · {order.replacement_resolution_description}</span>}
+                                                </p>
                                             </div>
                                         </div>
                                     )}

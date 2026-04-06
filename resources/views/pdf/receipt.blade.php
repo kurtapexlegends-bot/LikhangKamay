@@ -6,7 +6,8 @@
     @php
         $merchandiseSubtotal = (float) ($order->merchandise_subtotal ?? $order->total_amount ?? 0);
         $convenienceFee = (float) ($order->convenience_fee_amount ?? 0);
-        $totalPaid = (float) ($order->total_amount ?? ($merchandiseSubtotal + $convenienceFee));
+        $shippingFee = (float) ($order->shipping_fee_amount ?? 0);
+        $totalPaid = (float) ($order->total_amount ?? ($merchandiseSubtotal + $convenienceFee + $shippingFee));
         $shippingAddressType = $order->shipping_address_type ? ucfirst(str_replace('_', ' ', $order->shipping_address_type)) : 'Not specified';
     @endphp
     <style>
@@ -121,7 +122,7 @@
         </div>
         <div class="totals-row">
             <span>Shipping Fee</span>
-            <span>Negotiated via chat</span>
+            <span>PHP {{ number_format($shippingFee, 2) }}</span>
         </div>
         <div class="totals-row total">
             <span>Total Paid</span>

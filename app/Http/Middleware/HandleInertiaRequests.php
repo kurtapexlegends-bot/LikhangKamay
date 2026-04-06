@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\SellerEntitlementService;
+use App\Services\StaffAttendanceService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Illuminate\Support\Facades\Session; // <--- Import Session
@@ -50,6 +51,9 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $sellerSidebar = $user?->getSellerSidebarEntitlements();
         $sellerSubscription = app(SellerEntitlementService::class)->getSubscriptionPayload($user);
+        $attendance = $user?->isStaff()
+            ? app(StaffAttendanceService::class)->buildLogoutContext($user)
+            : null;
 
         return [
             ...parent::share($request),
@@ -61,6 +65,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'sellerSubscription' => $sellerSubscription,
             'sellerSidebar' => $sellerSidebar,
+            'attendance' => $attendance,
             // Global Variables for Frontend
             'cartCount' => $cartCount,
             'notifications' => $notifications,

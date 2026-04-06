@@ -58,9 +58,13 @@ class StaffSecurityController extends Controller
         return Inertia::render('Auth/StaffForcePasswordChange');
     }
 
-    public function confirmLogout(Request $request, StaffAttendanceService $attendanceService): Response
+    public function confirmLogout(Request $request, StaffAttendanceService $attendanceService): Response|RedirectResponse
     {
         $user = $this->getStaffUser($request);
+
+        if ($user->canAccessSellerWorkspace()) {
+            return redirect()->route('staff.dashboard');
+        }
 
         return Inertia::render('Auth/StaffLogoutChoice', [
             'attendance' => $attendanceService->buildLogoutContext($user),
@@ -76,9 +80,7 @@ class StaffSecurityController extends Controller
         }
 
         if (!$attendanceService->requiresResumePrompt($user)) {
-            $routeName = $user->getFirstAccessibleSellerRouteName();
-
-            return redirect()->route($routeName ?: 'staff.home');
+            return redirect()->route('staff.dashboard');
         }
 
         return Inertia::render('Auth/StaffResumePrompt', [
@@ -95,13 +97,23 @@ class StaffSecurityController extends Controller
         $attendanceService->ensureClockedIn($user);
 
         $intended = $request->session()->pull('staff.attendance.intended');
-        $routeName = $user->fresh()->getFirstAccessibleSellerRouteName();
 
         if (is_string($intended) && $intended !== '') {
             return redirect()->to($intended);
         }
 
-        return redirect()->route($routeName ?: 'staff.home');
+        return $this->redirectToWorkspaceReferrer($request);
+    }
+
+    public function pauseAttendance(Request $request, StaffAttendanceService $attendanceService): RedirectResponse
+    {
+        $user = $this->getStaffUser($request);
+
+        abort_unless($user->canAccessSellerWorkspace(), 403, 'Staff workspace access only.');
+
+        $attendanceService->closeOpenSession($user, StaffAttendanceService::MODE_PAUSED);
+
+        return redirect()->route('staff.dashboard');
     }
 
     public function heartbeat(Request $request, StaffAttendanceService $attendanceService): JsonResponse
@@ -146,11 +158,37 @@ class StaffSecurityController extends Controller
             'must_change_password' => false,
         ]);
 
-        $routeName = $user->fresh()->getFirstAccessibleSellerRouteName();
-
         return redirect()
-            ->route($routeName ?: 'staff.home')
+            ->route('staff.dashboard')
             ->with('success', 'Password updated successfully.');
+    }
+
+    protected function redirectToWorkspaceReferrer(Request $request): RedirectResponse
+    {
+        $referer = $request->headers->get('referer');
+        $fallback = route('staff.dashboard');
+
+        if (!is_string($referer) || $referer === '') {
+            return redirect()->to($fallback);
+        }
+
+        $parts = parse_url($referer);
+
+        if (!is_array($parts)) {
+            return redirect()->to($fallback);
+        }
+
+        $path = $parts['path'] ?? '';
+
+        if ($path === '' || str_contains($path, '/staff/attendance/resume')) {
+            return redirect()->to($fallback);
+        }
+
+        if (isset($parts['query']) && $parts['query'] !== '') {
+            $path .= '?' . $parts['query'];
+        }
+
+        return redirect()->to($path);
     }
 
     protected function getStaffUser(Request $request): \App\Models\User

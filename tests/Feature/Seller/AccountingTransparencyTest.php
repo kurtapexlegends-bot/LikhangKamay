@@ -5,6 +5,7 @@ namespace Tests\Feature\Seller;
 use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\PayrollItem;
+use App\Models\StaffAttendanceSession;
 use App\Models\StockRequest;
 use App\Models\Supply;
 use App\Models\User;
@@ -28,6 +29,7 @@ class AccountingTransparencyTest extends TestCase
             'procurement' => true,
             'stock_requests' => true,
         ]);
+        $this->clockInStaff($requester);
         $accountingStaff = $this->createStaff($owner, 'accounting', [
             'accounting' => true,
         ]);
@@ -75,6 +77,7 @@ class AccountingTransparencyTest extends TestCase
         $requester = $this->createStaff($owner, 'hr', [
             'hr' => true,
         ]);
+        $this->clockInStaff($requester);
         $accountingStaff = $this->createStaff($owner, 'accounting', [
             'accounting' => true,
         ]);
@@ -131,6 +134,7 @@ class AccountingTransparencyTest extends TestCase
             'procurement' => true,
             'stock_requests' => true,
         ]);
+        $this->clockInStaff($requester);
         $request = $this->createPendingStockRequest($owner, $requester);
 
         $this->actingAs($owner)
@@ -187,6 +191,7 @@ class AccountingTransparencyTest extends TestCase
         $requester = $this->createStaff($owner, 'hr', [
             'hr' => true,
         ]);
+        $this->clockInStaff($requester);
         $payroll = $this->createPendingPayroll($owner, $requester);
 
         $this->actingAs($owner)
@@ -295,6 +300,19 @@ class AccountingTransparencyTest extends TestCase
             'must_change_password' => false,
             'staff_role_preset_key' => $presetKey,
             'staff_module_permissions' => User::withWorkspaceAccessFlag($permissions, true),
+        ]);
+    }
+
+    private function clockInStaff(User $staff): void
+    {
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $staff->seller_owner_id,
+            'employee_id' => $staff->employee_id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 0,
         ]);
     }
 

@@ -100,7 +100,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // DASHBOARD & PROFILE
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('staff.attendance')->name('dashboard');
-    Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])->middleware('staff.attendance')->name('staff.dashboard');
+    Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['patch', 'post'], '/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -231,6 +231,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // BUYER: SHOPPING & ORDERS
     Route::get('/checkout', [OrderController::class, 'create'])->name('checkout.create');
+    Route::post('/checkout/shipping-quote', [OrderController::class, 'quoteShipping'])->name('checkout.shipping-quote');
     Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
 
     // PAYMENT ROUTES
@@ -269,6 +270,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
 Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
 Route::get('/payment/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+Route::get('/subscription/payment/success', [SubscriptionController::class, 'success'])->middleware('signed')->name('seller.subscription.payment.success');
+Route::get('/subscription/payment/cancel', [SubscriptionController::class, 'cancel'])->middleware('signed')->name('seller.subscription.payment.cancel');
 Route::get('/wallet/top-up/success', [WalletTopUpController::class, 'success'])->middleware('signed')->name('wallet.topups.success');
 Route::get('/wallet/top-up/cancel', [WalletTopUpController::class, 'cancel'])->middleware('signed')->name('wallet.topups.cancel');
 Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');

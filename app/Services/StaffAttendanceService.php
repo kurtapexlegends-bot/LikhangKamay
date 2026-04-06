@@ -296,12 +296,53 @@ class StaffAttendanceService
     public function buildLogoutContext(User $staff): array
     {
         $openSession = $this->getOpenSession($staff);
+        $latestSession = $openSession ?: $this->getLatestSession($staff);
+        $currentState = 'no_record';
+        $todaySessions = $this->getTodaySessions($staff);
+        $todayFirstClockIn = $todaySessions
+            ->sortBy('clock_in_at')
+            ->first()?->clock_in_at;
+        $todayWorkedMinutes = $todaySessions->sum(function (StaffAttendanceSession $session) {
+            return $this->resolveWorkedMinutes($session);
+        });
+        $todayCompletedWorkedSeconds = $todaySessions
+            ->filter(fn (StaffAttendanceSession $session) => (bool) $session->clock_out_at)
+            ->sum(fn (StaffAttendanceSession $session) => max(0, (int) $session->worked_minutes) * 60);
+
+        if ($openSession) {
+            $currentState = 'clocked_in';
+        } elseif ($latestSession?->close_mode === self::MODE_PAUSED) {
+            $currentState = 'paused';
+        } elseif ($latestSession?->close_mode === self::MODE_CLOCKED_OUT) {
+            $currentState = 'clocked_out';
+        }
 
         return [
             'has_open_session' => (bool) $openSession,
             'clock_in_at' => $openSession?->clock_in_at?->toIso8601String(),
             'attendance_date' => $openSession?->attendance_date?->toDateString(),
+            'current_state' => $currentState,
+            'latest_action_at' => $latestSession?->clock_out_at?->toIso8601String(),
+            'today_first_clock_in' => $todayFirstClockIn?->toIso8601String(),
+            'today_worked_minutes' => $todayWorkedMinutes,
+            'today_worked_seconds_base' => $todayCompletedWorkedSeconds,
+            'active_session_started_at' => $openSession?->clock_in_at?->toIso8601String(),
+            'break_started_at' => $currentState === 'paused'
+                ? $latestSession?->clock_out_at?->toIso8601String()
+                : null,
         ];
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, \App\Models\StaffAttendanceSession>
+     */
+    protected function getTodaySessions(User $staff): Collection
+    {
+        return StaffAttendanceSession::query()
+            ->where('staff_user_id', $staff->id)
+            ->whereDate('attendance_date', $this->now()->toDateString())
+            ->orderBy('clock_in_at')
+            ->get();
     }
 
     protected function resolveWorkedMinutes(StaffAttendanceSession $session): int

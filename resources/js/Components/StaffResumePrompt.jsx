@@ -81,10 +81,10 @@ export function StaffResumePromptCard({ prompt = null, compact = false }) {
                 Staff Attendance
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-stone-900">
-                Time paused for inactivity
+                Session paused for inactivity
             </h2>
             <p className="mt-2 text-sm leading-6 text-stone-500">
-                No workspace heartbeat reached the server for {timeoutLabel}. Resume time to reopen your attendance session, or log out.
+                No workspace heartbeat reached the server for {timeoutLabel}. Resume work to reopen your attendance session, or log out.
             </p>
 
             <div className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
@@ -106,7 +106,7 @@ export function StaffResumePromptCard({ prompt = null, compact = false }) {
             <div className="mt-5 grid gap-3">
                 <ActionButton
                     icon={PlayCircle}
-                    label={processingAction === 'resume' ? 'Resuming...' : 'Resume Time'}
+                    label={processingAction === 'resume' ? 'Resuming...' : 'Resume Work'}
                     description="Start a fresh attendance session and go back into the workspace."
                     tone="border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100"
                     busy={!!processingAction}

@@ -67,6 +67,20 @@ class PaymentController extends Controller
             $calculatedTotal += (float) $order->convenience_fee_amount;
         }
 
+        $shippingFeeAmount = $order->getResolvedShippingFeeAmount();
+
+        if ($shippingFeeAmount > 0) {
+            $lineItems[] = [
+                'currency' => 'PHP',
+                'amount' => (int) round($shippingFeeAmount * 100),
+                'description' => 'Estimated delivery fee for this order',
+                'name' => 'Shipping Fee',
+                'quantity' => 1,
+            ];
+
+            $calculatedTotal += $shippingFeeAmount;
+        }
+
         if ((float) $order->total_amount !== (float) $calculatedTotal) {
             $order->update(['total_amount' => $calculatedTotal]);
         }

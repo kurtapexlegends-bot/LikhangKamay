@@ -45,11 +45,7 @@ class EmailVerificationNotificationController extends Controller
                 return route('staff.password.edit', absolute: false);
             }
 
-            $routeName = $user->getFirstAccessibleSellerRouteName();
-
-            return $routeName
-                ? route($routeName, absolute: false)
-                : route('staff.home', absolute: false);
+            return route('staff.dashboard', absolute: false);
         }
 
         if ($user->isArtisan()) {

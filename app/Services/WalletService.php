@@ -123,15 +123,26 @@ class WalletService
         ]);
 
         $snapshot = $this->mapSnapshot($wallet);
-        $pendingSettlementBalance = Order::query()
-            ->where('artisan_id', $seller->id)
-            ->whereNull('wallet_settled_at')
-            ->whereNull('refunded_to_wallet_at')
-            ->where('payment_status', 'paid')
-            ->where('shipping_method', 'Delivery')
-            ->where('payment_method', '!=', 'COD')
-            ->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
-            ->sum('seller_net_amount');
+        $pendingSettlementBalance = 0.0;
+
+        if (Order::supportsWalletSettledAtColumn() && Order::supportsRefundedToWalletAtColumn()) {
+            $pendingSettlementQuery = Order::query()
+                ->where('artisan_id', $seller->id)
+                ->whereNull('wallet_settled_at')
+                ->whereNull('refunded_to_wallet_at')
+                ->where('payment_status', 'paid')
+                ->where('shipping_method', 'Delivery')
+                ->where('payment_method', '!=', 'COD')
+                ->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected']);
+
+            if (Order::supportsSellerNetAmountColumn()) {
+                $pendingSettlementBalance = (float) $pendingSettlementQuery->sum('seller_net_amount');
+            } else {
+                $pendingSettlementBalance = (float) $pendingSettlementQuery
+                    ->get(['id', 'merchandise_subtotal'])
+                    ->sum(fn (Order $order) => $order->getResolvedSellerNetAmount());
+            }
+        }
 
         $pendingWithdrawals = SellerWalletWithdrawalRequest::query()
             ->where('wallet_id', $wallet->id)

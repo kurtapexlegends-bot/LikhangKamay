@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Http\Controllers\Concerns\ValidatesThreeDModelUploads;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -11,6 +12,7 @@ use Inertia\Inertia;
 class ThreeDManagerController extends Controller
 {
     use InteractsWithSellerContext;
+    use ValidatesThreeDModelUploads;
 
     private const MAX_STORAGE_BYTES = 524288000;
 
@@ -66,7 +68,7 @@ class ThreeDManagerController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'model' => 'required|file|mimes:glb,gltf|max:51200',
+            'model' => $this->threeDModelUploadRules(required: true),
             'product_id' => 'required|exists:products,id',
         ]);
 

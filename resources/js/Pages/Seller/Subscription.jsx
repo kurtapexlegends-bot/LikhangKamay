@@ -1,19 +1,98 @@
 ﻿import React, { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { CheckCircle2, ChevronRight, AlertCircle, Crown, Search, X, Users } from 'lucide-react';
+import { Head, useForm } from '@inertiajs/react';
+import SellerSidebar from '@/Components/SellerSidebar';
+import SellerHeader from '@/Components/SellerHeader';
+import { AlertCircle, ArrowRight, CheckCircle2, ChevronRight, Crown, Package, ShieldCheck, Sparkles, X, Users } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
-export default function Subscription({ auth, currentPlan, activeProductsCount, limit, activeProducts, linkedStaffCount = 0 }) {
-    const [downgradeModalOpen, setDowngradeModalOpen] = useState(false);
+const PLAN_CONFIG = [
+    {
+        id: 'free',
+        name: 'Standard',
+        eyebrow: 'Foundational',
+        price: 'Free',
+        billingNote: 'No monthly fee',
+        description: 'Keep your shop live with the essentials for catalog, orders, and seller workspace basics.',
+        limit: 3,
+        icon: Package,
+        badgeClass: 'border-stone-200 bg-stone-100 text-stone-700',
+        iconClass: 'bg-stone-100 text-stone-600',
+        cardClass: 'border-stone-200 bg-white',
+        currentClass: 'border-stone-300 ring-1 ring-stone-200',
+        featureIconClass: 'text-stone-500',
+        upgradeButtonClass: 'bg-stone-900 text-white hover:bg-stone-800',
+        downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50',
+        heroStripeClass: 'from-stone-300 via-stone-200 to-[#F4EEE8]',
+        benefitCardClass: 'border-stone-200 bg-stone-50/70',
+        supportCopy: 'Best for new artisan shops keeping a focused active catalog.',
+        features: [
+            'Up to 3 active products',
+            'Core seller workspace',
+            'Basic analytics dashboard',
+        ],
+    },
+    {
+        id: 'premium',
+        name: 'Premium',
+        eyebrow: 'Most Popular',
+        price: 'PHP 199',
+        billingNote: 'per month',
+        description: 'Add more shelf space and stronger operational tools once your shop starts growing beyond the basics.',
+        limit: 10,
+        icon: Crown,
+        badgeClass: 'border-amber-200 bg-amber-50 text-amber-700',
+        iconClass: 'bg-orange-100 text-orange-600',
+        cardClass: 'border-amber-200 bg-white',
+        currentClass: 'border-orange-500 ring-1 ring-orange-500',
+        featureIconClass: 'text-green-500',
+        upgradeButtonClass: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md',
+        downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-orange-300',
+        heroStripeClass: 'from-[#F3D7BA] via-[#EBC8A4] to-[#FCF7F2]',
+        benefitCardClass: 'border-[#E7D8C9] bg-[#FCF7F2]',
+        supportCopy: 'A balanced plan for shops that need more products and stronger reporting.',
+        features: [
+            'Up to 10 active products',
+            'Premium badge visibility',
+            'Analytics report export',
+            'Module customization',
+        ],
+    },
+    {
+        id: 'super_premium',
+        name: 'Elite',
+        eyebrow: 'Full Access',
+        price: 'PHP 399',
+        billingNote: 'per month',
+        description: 'Unlock the complete seller suite for larger shops, staff workflows, and sponsorship-driven growth.',
+        limit: 50,
+        icon: Sparkles,
+        badgeClass: 'border-stone-800 bg-stone-800 text-stone-100',
+        iconClass: 'bg-stone-900 text-amber-300',
+        cardClass: 'border-stone-300 bg-gradient-to-b from-white to-stone-50',
+        currentClass: 'border-orange-500 ring-1 ring-orange-500',
+        featureIconClass: 'text-green-500',
+        upgradeButtonClass: 'bg-stone-900 text-white hover:bg-stone-800 shadow-sm shadow-stone-900/10',
+        downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-400',
+        heroStripeClass: 'from-stone-900 via-stone-700 to-[#B78A5A]',
+        benefitCardClass: 'border-stone-200 bg-stone-50',
+        supportCopy: 'Built for artisan shops using advanced modules, staff accounts, and sponsored reach.',
+        features: [
+            'Up to 50 active products',
+            'Elite badge',
+            '5 sponsorship credits every 30 days',
+            'All seller modules unlocked',
+            'Sponsored homepage and catalog placement',
+        ],
+    },
+];
+
+export default function Subscription({ auth, currentPlan, activeProductsCount, limit, activeProducts, linkedStaffCount = 0, pendingUpgrade = null }) {
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [targetPlan, setTargetPlan] = useState(null);
-    const [selectedProductsToKeep, setSelectedProductsToKeep] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
 
-    const { post, processing, errors, reset } = useForm({
+    const { post, processing, reset } = useForm({
         plan: '',
-        keep_active_ids: []
     });
 
     const isCurrentPlan = (plan) => currentPlan === plan;
@@ -32,73 +111,30 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         submitSubscriptionChange(route('seller.subscription.upgrade'), { plan: planValue });
     };
 
-    const needsStandardDowngradeWarning = (planValue) => currentPlan === 'super_premium' && planValue === 'free';
-
     const initiateDowngrade = (planValue, newLimit) => {
         setTargetPlan({ value: planValue, limit: newLimit });
-        setDowngradeModalOpen(true);
-        setFinalDowngradeModalOpen(false);
-        setSelectedProductsToKeep(activeProductsCount > newLimit ? [] : activeProducts.map((product) => product.id));
+        setFinalDowngradeModalOpen(true);
         reset();
-    };
-
-    const toggleProductSelection = (id) => {
-        if (selectedProductsToKeep.includes(id)) {
-            setSelectedProductsToKeep(prev => prev.filter(pid => pid !== id));
-        } else {
-            if (targetPlan && selectedProductsToKeep.length >= targetPlan.limit) {
-                // Ignore if limit reached
-                return;
-            }
-            setSelectedProductsToKeep(prev => [...prev, id]);
-        }
-    };
-
-    const getPlannedKeepActiveIds = () => {
-        if (selectedProductsToKeep.length > 0) {
-            return selectedProductsToKeep;
-        }
-
-        return activeProducts.map((product) => product.id);
     };
 
     const closeDowngradeFlow = () => {
-        setDowngradeModalOpen(false);
         setFinalDowngradeModalOpen(false);
-        setSelectedProductsToKeep([]);
         setTargetPlan(null);
-        setSearchQuery('');
         reset();
     };
 
-    const openFinalDowngradeConfirmation = () => {
-        if (!canConfirmDowngrade) return;
-        setDowngradeModalOpen(false);
-        setFinalDowngradeModalOpen(true);
-    };
-
-    const returnToDowngradeModal = () => {
-        setFinalDowngradeModalOpen(false);
-        setDowngradeModalOpen(true);
-    };
-
     const confirmDowngrade = () => {
-        const keepActiveIds = getPlannedKeepActiveIds();
-
         submitSubscriptionChange(
             route('seller.subscription.downgrade'),
             {
                 plan: targetPlan.value,
-                keep_active_ids: keepActiveIds,
             },
             {
                 onSuccess: () => {
                     closeDowngradeFlow();
                 },
                 onError: () => {
-                    // Keep the modal open so the seller can correct their selection.
-                    setFinalDowngradeModalOpen(false);
-                    setDowngradeModalOpen(true);
+                    setFinalDowngradeModalOpen(true);
                 }
             }
         );
@@ -111,328 +147,203 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         return plan;
     };
 
-    const plans = [
-        {
-            id: 'free',
-            name: 'Standard',
-            price: 'Free',
-            description: 'Start selling your craft to the world.',
-            limit: 3,
-            features: [
-                'Up to 3 Active Products',
-                'Core Seller Workspace',
-                'Basic Analytics Dashboard',
-            ],
-            buttonText: 'Current Plan',
-        },
-        {
-            id: 'premium',
-            name: 'Premium',
-            price: 'PHP 199 / mo',
-            description: 'Grow your artisan business with stronger operational tools.',
-            limit: 10,
-            features: [
-                'Up to 10 Active Products',
-                'Premium Badge (Crown Icon)',
-                'Analytics Report Export',
-                'Module Customization',
-            ],
-            recommended: true,
-        },
-        {
-            id: 'super_premium',
-            name: 'Elite',
-            price: 'PHP 399 / mo',
-            description: 'Unlock the full seller suite and sponsored placements.',
-            limit: 50,
-            features: [
-                'Up to 50 Active Products',
-                'Elite Badge',
-                '5 Sponsorship Credits Every 30 Days',
-                'All Seller Modules Unlocked',
-                'Sponsored Homepage and Catalog Placement',
-            ],
-            isSuper: true,
-        }
-    ];
-
-    const filteredProducts = activeProducts.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.sku.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    const requiresProductSelection = activeProductsCount > (targetPlan?.limit ?? limit);
+    const formatCurrency = (amount, currency = pendingUpgrade?.currency || 'PHP') => new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+    }).format(Number(amount || 0));
+    const plans = PLAN_CONFIG;
+    const requiresAutomaticDrafting = activeProductsCount > (targetPlan?.limit ?? limit);
     const showsStandardDowngradeWarning = currentPlan === 'super_premium' && targetPlan?.value === 'free';
-    const plannedKeepActiveIds = targetPlan ? getPlannedKeepActiveIds() : [];
-    const plannedDraftCount = Math.max(0, activeProductsCount - plannedKeepActiveIds.length);
-    const canConfirmDowngrade = !processing
-        && (!requiresProductSelection || selectedProductsToKeep.length > 0)
-        && (!requiresProductSelection || selectedProductsToKeep.length <= targetPlan?.limit);
-
-    const closeDowngradeModal = () => closeDowngradeFlow();
+    const plannedDraftCount = targetPlan ? Math.max(0, activeProductsCount - targetPlan.limit) : 0;
+    const pendingUpgradeDate = pendingUpgrade?.createdAt
+        ? new Date(pendingUpgrade.createdAt).toLocaleString('en-PH', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        })
+        : null;
+    const currentPlanMeta = plans.find((plan) => plan.id === currentPlan) ?? plans[0];
+    const closeFinalDowngradeModal = () => closeDowngradeFlow();
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
-                <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => window.history.length > 1 ? window.history.back() : router.visit(route('dashboard'))}
-                        className="p-2 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-full transition-colors flex items-center justify-center group"
-                        title="Go back"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left transition-transform group-hover:-translate-x-1">
-                            <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
-                        </svg>
-                    </button>
-                    <h2 className="font-semibold text-xl text-stone-800 leading-tight">Subscription Plan</h2>
-                </div>
-            }
-        >
+        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
             <Head title="Subscription Plan" />
+            <SellerSidebar active="subscription" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-                    
-                    {/* Current Usage Banner */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col md:flex-row justify-between items-start md:items-center">
-                        <div>
-                            <h3 className="text-lg font-bold text-stone-800 flex items-center gap-2">
-                                Your Current Plan: {formatPlanName(currentPlan)}
-                                {currentPlan !== 'free' && <Crown className="w-5 h-5 text-amber-500" />}
-                            </h3>
-                            <p className="text-stone-500 mt-1">
-                                You are using {activeProductsCount} of your {limit} active product slots.
-                            </p>
-                        </div>
-                        <div className="mt-4 md:mt-0">
-                            <div className="w-full md:w-64 bg-stone-100 rounded-full h-2.5">
-                                <div 
-                                    className={`h-2.5 rounded-full ${activeProductsCount >= limit ? 'bg-red-500' : 'bg-green-500'}`}
-                                    style={{ width: `${Math.min(100, (activeProductsCount / limit) * 100)}%` }}
-                                ></div>
-                            </div>
-                            <p className="text-xs text-stone-500 text-right mt-1">{limit - activeProductsCount} slots remaining</p>
-                        </div>
-                    </div>
+            <div className="flex min-h-screen flex-col lg:ml-56">
+                <SellerHeader
+                    title="Subscription Plan"
+                    subtitle="Manage product capacity, workspace access, and plan upgrades."
+                    auth={auth}
+                    onMenuClick={() => setSidebarOpen(true)}
+                />
 
-                    {/* Pricing Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {plans.map((plan) => {
-                            const current = isCurrentPlan(plan.id);
-                            const tierIndex = plans.findIndex(p => p.id === plan.id);
-                            const currentTierIndex = plans.findIndex(p => p.id === currentPlan);
-                            const isUpgrade = tierIndex > currentTierIndex;
-                            const isDowngrade = tierIndex < currentTierIndex;
+                <main className="mx-auto w-full max-w-[1120px] px-4 py-5 sm:px-6 lg:px-7">
+                    <div className="space-y-5">
+                        <section className="mx-auto max-w-[1020px] overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.32)]">
+                            <div className="h-1 bg-gradient-to-r from-[#FFA426] via-[#FF8A1C] to-[#8B5CF6]" />
 
-                            return (
-                                <div key={plan.id} className={`relative flex flex-col p-8 bg-white border rounded-3xl shadow-sm transition-all duration-300 ${
-                                    current ? 'border-orange-500 shadow-md ring-1 ring-orange-500' : 
-                                    plan.recommended ? 'border-amber-400 shadow-lg scale-105' : 'border-stone-200 hover:border-stone-300'
-                                }`}>
-                                    {plan.recommended && !current && (
-                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
-                                            Most Popular
-                                        </div>
-                                    )}
-                                    {current && (
-                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-stone-800 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                                            Current Plan
-                                        </div>
-                                    )}
-
-                                    <div className="flex-1">
-                                        <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                                            {plan.name}
-                                            {plan.isSuper && <Crown className="w-5 h-5 text-amber-500" />}
-                                        </h3>
-                                        <p className="mt-4 flex items-baseline text-stone-900">
-                                            <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
-                                        </p>
-                                        <p className="mt-2 text-sm text-stone-500">{plan.description}</p>
-                                        
-                                        <ul className="mt-8 space-y-4">
-                                            {plan.features.map((feature, i) => (
-                                                <li key={i} className="flex items-start">
-                                                    <CheckCircle2 className="flex-shrink-0 w-5 h-5 text-green-500" />
-                                                    <span className="ml-3 text-sm text-stone-700">{feature}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
+                            <div className="border-b border-stone-100 px-5 py-4 sm:px-6">
+                                <div className="flex items-start gap-3.5">
+                                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-[1.05rem] bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white shadow-sm">
+                                        <Crown className="h-[18px] w-[18px]" />
                                     </div>
-
-                                    <div className="mt-8">
-                                        {current ? (
-                                            <button disabled className="w-full inline-flex justify-center items-center py-3 px-4 rounded-xl text-sm font-semibold bg-stone-100 text-stone-400 cursor-not-allowed">
-                                                Active
-                                            </button>
-                                        ) : isUpgrade ? (
-                                            <button
-                                                onClick={() => handleUpgrade(plan.id)}
-                                                className={`w-full inline-flex justify-center items-center py-3 px-4 rounded-xl text-sm font-semibold transition-colors duration-200 ${
-                                                    plan.recommended 
-                                                        ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-md hover:shadow-lg' 
-                                                        : 'bg-stone-900 text-white hover:bg-stone-800'
-                                                }`}
-                                            >
-                                                Upgrade to {plan.name}
-                                            </button>
-                                        ) : isDowngrade ? (
-                                            <button
-                                                onClick={() => initiateDowngrade(plan.id, plan.limit)}
-                                                className="w-full inline-flex justify-center items-center py-3 px-4 rounded-xl text-sm font-semibold bg-white border-2 border-stone-200 text-stone-600 hover:border-stone-300 hover:text-stone-800 transition-colors"
-                                            >
-                                                Downgrade to {plan.name}
-                                            </button>
-                                        ) : null}
+                                    <div>
+                                        <h2 className="text-[1.6rem] font-black tracking-tight text-stone-900 sm:text-[1.7rem]">Choose Your Plan</h2>
+                                        <p className="mt-1 text-[13px] font-medium text-stone-500">Unlock more features for your seller workspace.</p>
+                                        {pendingUpgrade && (
+                                            <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                                                Payment pending
+                                                {pendingUpgradeDate ? ` • ${pendingUpgradeDate}` : ''}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
-                            );
-                        })}
+                            </div>
+
+                            <div className="px-5 py-5 sm:px-6">
+                                <div className="grid gap-3 lg:grid-cols-3">
+                                    {plans.map((plan) => {
+                                        const current = isCurrentPlan(plan.id);
+                                        const tierIndex = plans.findIndex((item) => item.id === plan.id);
+                                        const currentTierIndex = plans.findIndex((item) => item.id === currentPlan);
+                                        const isUpgrade = tierIndex > currentTierIndex;
+                                        const isDowngrade = tierIndex < currentTierIndex;
+                                        const isPendingPlan = pendingUpgrade?.plan === plan.id && !!pendingUpgrade?.checkoutUrl;
+                                        const PlanIcon = plan.icon;
+                                        const isPremiumPlan = plan.id === 'premium';
+                                        const isElitePlan = plan.id === 'super_premium';
+
+                                        const cardClass = current
+                                            ? 'border-[#C4B5FD] ring-2 ring-[#DDD6FE] shadow-[0_28px_50px_-42px_rgba(109,94,246,0.55)]'
+                                            : isPremiumPlan
+                                                ? 'border-stone-300 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
+                                                : 'border-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]';
+
+                                        const labelClass = current
+                                            ? 'bg-[#6D5EF6] text-white shadow-sm'
+                                            : isPremiumPlan
+                                                ? 'bg-gradient-to-r from-[#FFB432] to-[#FF8A1C] text-white shadow-sm'
+                                                : 'hidden';
+
+                                        const iconClass = isElitePlan
+                                            ? 'bg-[#6D5EF6] text-white'
+                                            : isPremiumPlan
+                                                ? 'bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white'
+                                                : 'bg-[#6D625C] text-white';
+
+                                        const upgradeButtonClass = isElitePlan
+                                            ? 'bg-[#6D5EF6] text-white hover:bg-[#5C4DEA]'
+                                            : 'bg-orange-600 text-white hover:bg-orange-700';
+
+                                        return (
+                                            <article
+                                                key={plan.id}
+                                                className={`relative flex flex-col rounded-[1.7rem] border bg-white px-5 pb-5 pt-4 ${cardClass}`}
+                                            >
+                                                {(current || isPremiumPlan) && (
+                                                    <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+                                                        <span className={`rounded-full px-3.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] ${labelClass}`}>
+                                                            {current ? 'Current Plan' : 'Most Popular'}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-start gap-3">
+                                                    <div className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] ${iconClass}`}>
+                                                        <PlanIcon className="h-4 w-4" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
+                                                        <p className="mt-1 max-w-[210px] text-[13px] font-medium leading-6 text-stone-500">{plan.description}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-5 flex items-end gap-1.5">
+                                                    <p className={`${plan.id === 'free' ? 'text-[2.45rem]' : 'text-[2.35rem]'} font-black tracking-tight text-stone-900`}>
+                                                        {plan.id === 'free' ? 'Free' : `₱${plan.price.replace('PHP ', '')}`}
+                                                    </p>
+                                                    {plan.id !== 'free' && (
+                                                        <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">/ mo</p>
+                                                    )}
+                                                </div>
+
+                                                <ul className="mt-5 space-y-3">
+                                                    {plan.features.map((feature, index) => (
+                                                        <li key={index} className="flex items-start gap-3">
+                                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${isElitePlan ? 'text-[#6D5EF6]' : 'text-green-500'}`} />
+                                                            <span className="text-[13px] leading-6 text-stone-700">{feature}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+
+                                                <div className="mt-auto pt-5">
+                                                    {current ? (
+                                                        <button
+                                                            type="button"
+                                                            disabled
+                                                            className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 px-4 py-2.5 text-[14px] font-bold text-stone-400"
+                                                        >
+                                                            <ShieldCheck className="h-4 w-4" />
+                                                            Active Plan
+                                                        </button>
+                                                    ) : isUpgrade ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => (isPendingPlan ? window.location.assign(pendingUpgrade.checkoutUrl) : handleUpgrade(plan.id))}
+                                                            className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition ${upgradeButtonClass}`}
+                                                        >
+                                                            {isPendingPlan ? 'Continue Payment' : `Upgrade to ${plan.name}`}
+                                                            <ArrowRight className="h-[15px] w-[15px]" />
+                                                        </button>
+                                                    ) : isDowngrade ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => initiateDowngrade(plan.id, plan.limit)}
+                                                            className="inline-flex w-full items-center justify-center rounded-[1rem] border-2 border-stone-200 bg-white px-4 py-2.5 text-[14px] font-bold text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
+                                                        >
+                                                            Downgrade
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+                                            </article>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2.5 border-t border-stone-100 px-5 py-3 text-[12px] text-stone-500 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                                <p>Plans can be changed anytime. Downgrades may deactivate some products.</p>
+                                {pendingUpgrade && pendingUpgrade.checkoutUrl ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => window.location.assign(pendingUpgrade.checkoutUrl)}
+                                        className="inline-flex items-center gap-1.5 font-bold text-orange-600 transition hover:text-orange-700"
+                                    >
+                                        Continue Payment
+                                        <ChevronRight className="h-[15px] w-[15px]" />
+                                    </button>
+                                ) : (
+                                    <p className="font-semibold text-orange-600">Current plan: {currentPlanMeta.name}</p>
+                                )}
+                            </div>
+                        </section>
                     </div>
-                </div>
+                </main>
             </div>
 
-            {/* Downgrade Product Selection Modal */}
-            <Modal show={downgradeModalOpen} onClose={closeDowngradeModal} maxWidth="2xl">
-                <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                        <h2 className="text-lg font-bold text-stone-900">
-                            {requiresProductSelection ? 'Select Products to Keep Active' : 'Confirm Downgrade to Standard'}
-                        </h2>
-                        <button
-                            onClick={closeDowngradeModal}
-                            className="text-stone-400 hover:text-stone-600"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-                    
-                    {requiresProductSelection && (
-                        <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-4 text-sm flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                            <p>
-                                You are downgrading to a plan with a limit of <strong>{targetPlan?.limit}</strong> active products. 
-                                You currently have {activeProductsCount} active products. Please select which products you want to keep active. The rest will be set to Draft.
-                            </p>
-                        </div>
-                    )}
-
-                    {showsStandardDowngradeWarning && (
-                        <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                            <Users className="mt-0.5 h-5 w-5 shrink-0" />
-                            <div>
-                                <p className="font-bold">Standard plan warning</p>
-                                <p className="mt-1 leading-6">
-                                    Downgrading from Elite to Standard will suspend Elite-only seller features and suspend {linkedStaffCount} linked employee workspace account{linkedStaffCount === 1 ? '' : 's'} until this shop upgrades again.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {requiresProductSelection && (
-                        <div className="flex justify-between items-center mb-4">
-                            <p className="text-sm font-medium text-stone-600">
-                                Selected: {selectedProductsToKeep.length} / {targetPlan?.limit}
-                            </p>
-                            <div className="relative w-64">
-                                <input 
-                                    type="text" 
-                                    placeholder="Search products..." 
-                                    className="w-full pl-9 pr-4 py-2 text-sm border-stone-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            </div>
-                        </div>
-                    )}
-
-                    {errors.limit && (
-                        <p className="text-sm text-red-600 mb-4">{errors.limit}</p>
-                    )}
-
-                    {requiresProductSelection && selectedProductsToKeep.length === 0 && (
-                        <p className="mb-4 text-sm text-amber-700">
-                            Select at least one product to keep active before confirming this downgrade.
-                        </p>
-                    )}
-
-                    {requiresProductSelection && (
-                        <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
-                            {filteredProducts.map(product => {
-                                const isSelected = selectedProductsToKeep.includes(product.id);
-                                const isDisabled = !isSelected && selectedProductsToKeep.length >= targetPlan?.limit;
-
-                                return (
-                                    <div 
-                                        key={product.id}
-                                        onClick={() => !isDisabled && toggleProductSelection(product.id)}
-                                        className={`flex items-center gap-4 p-3 rounded-xl border transition-colors ${
-                                            isSelected ? 'bg-orange-50 border-orange-200' : 
-                                            isDisabled ? 'opacity-50 cursor-not-allowed bg-stone-50 border-stone-200' : 
-                                            'bg-white border-stone-200 hover:border-orange-300 cursor-pointer'
-                                        }`}
-                                    >
-                                        <div className="flex-shrink-0 flex items-center justify-center w-6 h-6">
-                                            <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? 'bg-orange-600 border-orange-600' : 'border-stone-300 bg-white'}`}>
-                                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="w-12 h-12 bg-stone-100 rounded overflow-hidden flex-shrink-0">
-                                            {product.cover_photo_path ? (
-                                                <img src={`/storage/${product.cover_photo_path}`} className="w-full h-full object-cover" alt="" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-xs text-stone-400">No Img</div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-stone-900 truncate">{product.name}</p>
-                                            <p className="text-xs text-stone-500">SKU: {product.sku}</p>
-                                        </div>
-                                        <div className="font-medium text-sm text-stone-900">
-                                            PHP {parseFloat(product.price).toFixed(2)}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {filteredProducts.length === 0 && (
-                                <p className="text-center text-stone-500 py-8 text-sm">No products found matching your search.</p>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-stone-200">
-                        <button
-                            onClick={closeDowngradeModal}
-                            className="px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-300 rounded-lg hover:bg-stone-50"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={openFinalDowngradeConfirmation}
-                            disabled={!canConfirmDowngrade}
-                            className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors ${
-                                canConfirmDowngrade
-                                    ? 'bg-orange-600 hover:bg-orange-700' 
-                                    : 'bg-stone-300 cursor-not-allowed'
-                            }`}
-                        >
-                            Continue
-                        </button>
-                    </div>
-                </div>
-            </Modal>
-
-            <Modal show={finalDowngradeModalOpen} onClose={returnToDowngradeModal} maxWidth="lg">
+            <Modal show={finalDowngradeModalOpen} onClose={closeFinalDowngradeModal} maxWidth="lg">
                 <div className="p-6">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
-                            <div className="mt-0.5 rounded-xl bg-amber-100 p-2 text-amber-700">
+                            <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
                                 <AlertCircle className="h-5 w-5" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-stone-900">
+                                <h2 className="text-base font-extrabold text-stone-900">
                                     Final downgrade warning
                                 </h2>
                                 <p className="mt-1 text-sm leading-6 text-stone-600">
@@ -442,33 +353,51 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                             </div>
                         </div>
                         <button
-                            onClick={returnToDowngradeModal}
-                            className="text-stone-400 hover:text-stone-600"
+                            onClick={closeFinalDowngradeModal}
+                            className="rounded-lg bg-stone-100 p-1.5 text-stone-400 transition-colors hover:bg-stone-200 hover:text-stone-600"
                         >
-                            <X className="h-5 w-5" />
+                            <X className="h-4 w-4" />
                         </button>
                     </div>
 
-                    <div className="mt-5 space-y-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                    <div className="mt-4 space-y-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
                         <div className="flex items-start gap-3">
-                            <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                            <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-orange-600" />
                             <p className="text-sm leading-6 text-stone-700">
                                 Your shop will move to the <strong>{formatPlanName(targetPlan?.value)}</strong> plan immediately after confirmation.
                             </p>
                         </div>
 
+                        {requiresAutomaticDrafting && (
+                            <div className="flex items-start gap-3">
+                                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-orange-600" />
+                                <p className="text-sm leading-6 text-stone-700">
+                                    This downgrade exceeds the <strong>{targetPlan?.limit}</strong>-product limit, so the system will keep your top-selling active products first.
+                                </p>
+                            </div>
+                        )}
+
                         {plannedDraftCount > 0 && (
                             <div className="flex items-start gap-3">
-                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-orange-600" />
                                 <p className="text-sm leading-6 text-stone-700">
-                                    <strong>{plannedDraftCount}</strong> active product{plannedDraftCount === 1 ? '' : 's'} will be set to Draft.
+                                    <strong>{plannedDraftCount}</strong> lower-priority active product{plannedDraftCount === 1 ? '' : 's'} will be moved to Draft automatically.
+                                </p>
+                            </div>
+                        )}
+
+                        {requiresAutomaticDrafting && (
+                            <div className="flex items-start gap-3">
+                                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-orange-600" />
+                                <p className="text-sm leading-6 text-stone-700">
+                                    If sales are tied or zero, older active listings are kept first.
                                 </p>
                             </div>
                         )}
 
                         {showsStandardDowngradeWarning && (
                             <div className="flex items-start gap-3">
-                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-orange-600" />
                                 <p className="text-sm leading-6 text-stone-700">
                                     Elite-only features will be suspended, and <strong>{linkedStaffCount}</strong> linked employee workspace account{linkedStaffCount === 1 ? '' : 's'} will be suspended until you upgrade again.
                                 </p>
@@ -477,7 +406,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
 
                         {!plannedDraftCount && !showsStandardDowngradeWarning && (
                             <div className="flex items-start gap-3">
-                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-orange-600" />
                                 <p className="text-sm leading-6 text-stone-700">
                                     This change lowers your plan benefits and product limit, but no active products need to be drafted right now.
                                 </p>
@@ -487,7 +416,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
 
                     <div className="mt-6 flex justify-end gap-3 border-t border-stone-200 pt-4">
                         <button
-                            onClick={returnToDowngradeModal}
+                            onClick={closeFinalDowngradeModal}
                             className="px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-300 rounded-lg hover:bg-stone-50"
                         >
                             Go back
@@ -506,6 +435,6 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                     </div>
                 </div>
             </Modal>
-        </AuthenticatedLayout>
+        </div>
     );
 }

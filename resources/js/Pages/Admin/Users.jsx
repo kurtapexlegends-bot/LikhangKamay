@@ -30,7 +30,7 @@ const staffPresetLabels = {
 
 const staffUserLevelLabels = {
     manager: 'Staff Manager',
-    standard: 'Standard Staff',
+    standard: 'Staff',
 };
 
 const getAutoExpandedRows = (accounts) =>
@@ -76,9 +76,8 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                             </div>
                         </div>
 
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-widest ${
-                            stateClasses[staffMember.account_state_tone] || stateClasses.neutral
-                        }`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-widest ${stateClasses[staffMember.account_state_tone] || stateClasses.neutral
+                            }`}>
                             {staffMember.account_state}
                         </span>
                     </div>
@@ -93,9 +92,8 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                         <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold tracking-wider text-stone-600">
                             {staffMember.employee_linked ? (staffMember.employee_name || 'Employee linked') : 'No employee record'}
                         </span>
-                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-bold tracking-wider ${
-                            staffMember.email_verified ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
-                        }`}>
+                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-bold tracking-wider ${staffMember.email_verified ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                            }`}>
                             {staffMember.email_verified ? 'Email verified' : 'Email pending'}
                         </span>
                     </div>
@@ -184,7 +182,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
             <div className="sm:sticky sm:top-20 z-30 mb-6 sm:mb-8 bg-white border-b border-stone-200">
                 <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        
+
                         {/* Tab Segment for Role Filters */}
                         <div className="flex w-full sm:w-auto items-center gap-6 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                             {roleTabs.map((role) => (
@@ -192,17 +190,16 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                     key={role}
                                     type="button"
                                     onClick={() => handleRoleFilter(role)}
-                                    className={`relative flex items-center gap-2 whitespace-nowrap py-3 text-sm font-bold transition-colors ${
-                                        filters.role === role
+                                    className={`relative flex items-center gap-2 whitespace-nowrap py-3 text-sm font-bold transition-colors ${filters.role === role
                                             ? 'text-stone-900'
                                             : 'text-stone-500 hover:text-stone-700'
-                                    }`}
+                                        }`}
                                 >
                                     {role === 'all' && 'All Users'}
                                     {role === 'artisan' && <><Store size={14} /> Artisans</>}
                                     {role === 'buyer' && <><Users size={14} /> Buyers</>}
                                     {role === 'super_admin' && <><Shield size={14} /> Admins</>}
-                                    
+
                                     {/* Active Tab Indicator (Underline) */}
                                     {filters.role === role && (
                                         <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full bg-clay-600 shadow-[0_-1px_4px_rgba(167,139,113,0.3)]"></div>
@@ -280,9 +277,8 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                 return (
                                     <React.Fragment key={user.id}>
                                         <tr
-                                            className={`group transition-colors ${
-                                                isExpandable ? 'cursor-pointer hover:bg-[#FDFBF9]' : 'hover:bg-stone-50/50'
-                                            } ${isExpanded ? 'bg-[#FDFBF9]' : ''}`}
+                                            className={`group transition-colors ${isExpandable ? 'cursor-pointer hover:bg-[#FDFBF9]' : 'hover:bg-stone-50/50'
+                                                } ${isExpanded ? 'bg-[#FDFBF9]' : ''}`}
                                             role={isExpandable ? 'button' : undefined}
                                             tabIndex={isExpandable ? 0 : undefined}
                                             aria-expanded={isExpandable ? isExpanded : undefined}
@@ -292,9 +288,8 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center gap-3">
                                                     {isExpandable ? (
-                                                        <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 transition-all ${
-                                                            isExpanded ? 'shadow-inner border-stone-300 text-stone-600 bg-stone-50' : 'group-hover:bg-stone-50 group-hover:border-stone-300'
-                                                        }`}>
+                                                        <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 transition-all ${isExpanded ? 'shadow-inner border-stone-300 text-stone-600 bg-stone-50' : 'group-hover:bg-stone-50 group-hover:border-stone-300'
+                                                            }`}>
                                                             <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                                                         </span>
                                                     ) : <div className="w-6 shrink-0"></div>}
@@ -338,9 +333,8 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                             </td>
 
                                             <td className="px-5 py-3 text-center">
-                                                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest ${
-                                                    roleBadgeClasses[user.role] || roleBadgeClasses.buyer
-                                                }`}>
+                                                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer
+                                                    }`}>
                                                     {user.role === 'artisan' && <Store size={10} />}
                                                     {user.role === 'super_admin' && <Shield size={10} />}
                                                     {user.role === 'buyer' && <Users size={10} />}
@@ -353,9 +347,8 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
 
                                             <td className="px-5 py-3 text-center">
                                                 <div className="flex flex-col items-center gap-1">
-                                                    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                                                        stateClasses[user.account_state_tone] || stateClasses.neutral
-                                                    }`}>
+                                                    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral
+                                                        }`}>
                                                         {user.account_state}
                                                     </span>
                                                     {user.role === 'buyer' && (
@@ -375,7 +368,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                             <tr className="bg-[#F8F6F4] relative">
                                                 <td colSpan={5} className="px-4 pb-4 pt-1 sm:px-6">
                                                     <div className="absolute left-[36px] top-0 bottom-4 w-px bg-[#E8D9CB] z-0 hidden sm:block"></div>
-                                                    
+
                                                     <div className="relative z-10 sm:ml-[42px] rounded-xl border border-[#E8D9CB] bg-[#FDFBF9] p-4 shadow-[0_1px_3px_rgba(122,80,55,0.05)] mt-1">
                                                         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-stone-100 pb-3">
                                                             <div>

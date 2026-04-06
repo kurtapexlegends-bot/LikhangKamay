@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Http\Controllers\Concerns\ValidatesThreeDModelUploads;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Supply;
@@ -17,6 +18,7 @@ use Inertia\Inertia;
 class ProductController extends Controller
 {
     use InteractsWithSellerContext;
+    use ValidatesThreeDModelUploads;
 
     private const MAX_THREE_D_STORAGE_BYTES = 524288000;
 
@@ -74,7 +76,7 @@ class ProductController extends Controller
             'status' => 'required|string',
             'cover_photo' => 'nullable|image|max:10240',
             'gallery.*' => 'nullable|image|max:10240',
-            'model_3d' => 'nullable|file|mimes:glb,gltf|max:51200',
+            'model_3d' => $this->threeDModelUploadRules(),
         ]);
 
         $seller = $this->sellerOwner();
@@ -177,7 +179,7 @@ class ProductController extends Controller
             'cover_photo' => 'nullable|image|max:10240',
             'gallery.*' => 'nullable|image|max:10240',
             'retained_gallery' => 'nullable|array',
-            'model_3d' => 'nullable|file|mimes:glb,gltf|max:51200',
+            'model_3d' => $this->threeDModelUploadRules(),
         ]);
 
         $seller = $this->sellerOwner();

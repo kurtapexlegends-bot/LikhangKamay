@@ -125,8 +125,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         glaze_type: 'Matte',
         firing_method: 'Electric Kiln',
         food_safe: true,
-        colors: [],
-        colorInput: '',
         height: '',
         width: '',
         weight: '',
@@ -249,7 +247,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             firing_method: 'Electric Kiln',
             status: 'Draft',
             lead_time: 3,
-            colors: [],
             retained_gallery: [],
             gallery: [],
             model_3d_path: null,
@@ -267,9 +264,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             ...product,
             category: categories.includes(product.category) ? product.category : defaultCategory,
             cost_price: product.cost_price || '',
-            colorInput: '',
             description: product.description || '',
-            colors: product.colors || [],
             retained_gallery: product.gallery_paths || [],
             cover_photo: null, 
             gallery: [],
@@ -336,26 +331,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         });
     };
 
-    const handleColorAdd = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault(); 
-            if (data.colorInput && data.colorInput.trim()) {
-                const newColor = data.colorInput.trim();
-                if (!data.colors.includes(newColor)) {
-                    setData({
-                        ...data,
-                        colors: [...data.colors, newColor],
-                        colorInput: '' 
-                    });
-                }
-            }
-        }
-    };
-
-    const removeColor = (colorToRemove) => {
-        setData('colors', data.colors.filter(c => c !== colorToRemove));
-    };
-
     useEffect(() => {
         if (!hasThreeDReady && data.status === 'Active') {
             setData('status', 'Draft');
@@ -393,7 +368,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 }
                 // Auto-switch to tab with error
                 const essentialsKeys = ['name', 'category', 'price', 'stock'];
-                const detailsKeys = ['clay_type', 'glaze_type', 'colors'];
+                const detailsKeys = ['clay_type', 'glaze_type'];
                 const mediaKeys = ['cover_photo', 'model_3d'];
 
                 if (essentialsKeys.some(k => err[k])) setActiveFormTab('Essentials');
@@ -913,27 +888,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                 <p className="text-xs text-gray-500">Safe for eating / Lead-free</p>
                                             </div>
                                         </label>
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 border-t border-gray-100">
-                                    <InputLabel value="Available Colors" />
-                                    <div className="mt-2 flex flex-wrap gap-2 p-3 border border-gray-200 rounded-xl bg-gray-50/50">
-                                        {data.colors.map((color, idx) => (
-                                            <span key={idx} className="flex items-center gap-1.5 bg-white text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 shadow-sm">
-                                                <div className="w-2 h-2 rounded-full bg-clay-400"></div>
-                                                {color}
-                                                <button type="button" onClick={() => removeColor(color)} className="text-gray-400 hover:text-red-500 ml-1"><X size={12}/></button>
-                                            </span>
-                                        ))}
-                                        <input 
-                                            type="text" 
-                                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm p-1 min-w-[150px] placeholder-gray-400" 
-                                            placeholder="Type color & press Enter..." 
-                                            value={data.colorInput} 
-                                            onChange={(e) => setData('colorInput', e.target.value)} 
-                                            onKeyDown={handleColorAdd}
-                                        />
                                     </div>
                                 </div>
 

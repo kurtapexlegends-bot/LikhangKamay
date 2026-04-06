@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\SponsorshipAnalyticsService;
 use App\Services\OrderFinanceService;
 use App\Services\OrderLogisticsService;
+use App\Services\CheckoutShippingService;
 use App\Services\PayMongoService;
 use App\Services\WalletService;
 use App\Mail\OrderPlaced;
@@ -67,8 +68,9 @@ class OrderController extends Controller
                     'total' => number_format($order->total_amount, 2),
                     'merchandise_subtotal' => (float) $order->merchandise_subtotal,
                     'convenience_fee_amount' => (float) $order->convenience_fee_amount,
-                    'platform_commission_amount' => (float) $order->platform_commission_amount,
-                    'seller_net_amount' => (float) $order->seller_net_amount,
+                    'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
+                    'platform_commission_amount' => $order->getResolvedPlatformCommissionAmount(),
+                    'seller_net_amount' => $order->getResolvedSellerNetAmount(),
                     'shipping_address' => $order->shipping_address,
                     'shipping_address_type' => $order->shipping_address_type,
                     'shipping_recipient_name' => $order->shipping_recipient_name,
@@ -239,6 +241,72 @@ class OrderController extends Controller
         ]);
     }
 
+    public function quoteShipping(Request $request, CheckoutShippingService $checkoutShippingService)
+    {
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|integer|exists:products,id',
+            'items.*.qty' => 'required|integer|min:1',
+            'shipping_method' => 'required|string|in:Delivery,Pick Up',
+            'selected_address_id' => 'nullable',
+            'shipping_address' => 'nullable|string',
+            'shipping_address_type' => 'nullable|string|in:home,office,other',
+            'shipping_street_address' => 'nullable|string|max:255',
+            'shipping_barangay' => 'nullable|string|max:255',
+            'shipping_city' => 'nullable|string|max:255',
+            'shipping_region' => 'nullable|string|max:255',
+            'shipping_postal_code' => 'nullable|string|max:20',
+        ]);
+
+        /** @var User $buyer */
+        $buyer = $request->user();
+
+        if ($request->shipping_method === 'Pick Up') {
+            return response()->json([
+                'total_shipping_fee' => 0,
+                'groups' => [],
+                'source' => 'pickup',
+            ]);
+        }
+
+        $shippingContext = $this->resolveCheckoutDeliveryContext($request, $buyer, false);
+        $groupedItems = $this->groupCheckoutItemsBySeller($request->input('items', []));
+
+        $groups = [];
+        $totalShippingFee = 0.0;
+
+        foreach ($groupedItems as $artisanId => $items) {
+            $seller = User::find($artisanId);
+
+            if (!$seller) {
+                continue;
+            }
+
+            $quote = $checkoutShippingService->estimateForSeller($seller, [
+                ...$shippingContext,
+                'shipping_method' => $request->shipping_method,
+            ]);
+
+            $shippingFee = round((float) ($quote['amount'] ?? 0), 2);
+            $totalShippingFee += $shippingFee;
+
+            $groups[] = [
+                'seller_id' => (int) $artisanId,
+                'shipping_fee_amount' => $shippingFee,
+                'currency' => $quote['currency'] ?? 'PHP',
+                'source' => $quote['source'] ?? 'fallback_flat',
+            ];
+        }
+
+        return response()->json([
+            'total_shipping_fee' => round($totalShippingFee, 2),
+            'groups' => $groups,
+            'source' => collect($groups)->contains(fn (array $group) => ($group['source'] ?? '') === 'lalamove_quote')
+                ? 'mixed'
+                : 'fallback',
+        ]);
+    }
+
     /**
      * SELLER: Update order status (Accept, Ship, Deliver, Reject, etc.)
      */
@@ -402,7 +470,7 @@ class OrderController extends Controller
     /**
      * SELLER: Approve return request
      */
-    public function approveReturn(Request $request, $id, OrderFinanceService $orderFinanceService)
+    public function approveReturn(Request $request, $id, OrderFinanceService $orderFinanceService, OrderLogisticsService $orderLogisticsService)
     {
         $order = Order::where('order_number', $id)
             ->where('artisan_id', $this->sellerOwnerId())
@@ -458,11 +526,12 @@ class OrderController extends Controller
             return back()->with('success', 'Return approved. Refund credited to the buyer wallet.');
         } else {
             $resolutionDescription = trim((string) $request->replacement_resolution_description);
+            $shouldAutoBookReplacement = false;
 
             try {
-                DB::transaction(function () use ($order, $resolutionDescription) {
+                DB::transaction(function () use ($order, $resolutionDescription, &$shouldAutoBookReplacement) {
                     $lockedOrder = Order::query()
-                        ->with(['items', 'user'])
+                        ->with(['items', 'user', 'delivery'])
                         ->lockForUpdate()
                         ->findOrFail($order->id);
 
@@ -485,6 +554,11 @@ class OrderController extends Controller
                         }
                     }
 
+                    if ($lockedOrder->shipping_method === 'Delivery' && $lockedOrder->delivery) {
+                        $lockedOrder->delivery()->delete();
+                        $lockedOrder->unsetRelation('delivery');
+                    }
+
                     $lockedOrder->update([
                         'status' => 'Accepted',
                         'accepted_at' => now(),
@@ -500,12 +574,28 @@ class OrderController extends Controller
                         'replacement_resolved_at' => null,
                     ]);
 
+                    $shouldAutoBookReplacement = $lockedOrder->shipping_method === 'Delivery';
+
                     if ($buyer) {
                         $buyer->notify(new ReplacementResolutionNotification($lockedOrder, $resolutionDescription));
                     }
                 });
 
-                return back()->with('success', 'Replacement approved. Buyer notified and order returned to the delivery flow.');
+                $message = 'Replacement approved. Buyer notified.';
+
+                if ($shouldAutoBookReplacement) {
+                    $order = $order->fresh(['delivery', 'user']);
+
+                    try {
+                        $orderLogisticsService->bookLalamoveDelivery($order, $this->sellerOwner());
+                        $message = 'Replacement approved. Buyer notified and the replacement exchange courier was booked.';
+                    } catch (\Throwable $e) {
+                        report($e);
+                        $message = 'Replacement approved. Buyer notified. Courier rebooking could not be created automatically. Use Create Lalamove Delivery to retry.';
+                    }
+                }
+
+                return back()->with('success', $message);
             } catch (\Exception $e) {
                 return back()->with('error', $e->getMessage());
             }
@@ -545,7 +635,13 @@ class OrderController extends Controller
     /**
      * BUYER: Place a new order
      */
-    public function store(Request $request, SponsorshipAnalyticsService $sponsorshipAnalytics, WalletService $walletService, OrderFinanceService $orderFinanceService)
+    public function store(
+        Request $request,
+        SponsorshipAnalyticsService $sponsorshipAnalytics,
+        WalletService $walletService,
+        OrderFinanceService $orderFinanceService,
+        CheckoutShippingService $checkoutShippingService
+    )
     {
         $request->validate([
             'items' => 'required|array|min:1',
@@ -571,109 +667,31 @@ class OrderController extends Controller
 
         /** @var User $buyer */
         $buyer = $request->user();
-        $selectedAddressId = $request->input('selected_address_id');
-        $selectedAddress = null;
-        $shippingAddressType = null;
-        $shippingRecipientName = null;
-        $shippingContactPhone = null;
-        $shippingStreetAddress = null;
-        $shippingBarangay = null;
-        $shippingCity = null;
-        $shippingRegion = null;
-        $shippingPostalCode = null;
+        $shippingContext = $request->shipping_method === 'Delivery'
+            ? $this->resolveCheckoutDeliveryContext($request, $buyer, true)
+            : [
+                'selected_address' => null,
+                'shipping_address' => 'Store Pick-up - Negotiate via Chat',
+                'shipping_address_type' => null,
+                'shipping_recipient_name' => null,
+                'shipping_contact_phone' => null,
+                'shipping_street_address' => null,
+                'shipping_barangay' => null,
+                'shipping_city' => null,
+                'shipping_region' => null,
+                'shipping_postal_code' => null,
+            ];
 
-        if ($request->shipping_method === 'Delivery') {
-            if ($selectedAddressId !== null && $selectedAddressId !== '' && $selectedAddressId !== 'new') {
-                if (!is_scalar($selectedAddressId) || !ctype_digit((string) $selectedAddressId)) {
-                    throw ValidationException::withMessages([
-                        'selected_address_id' => 'Select a valid saved address or choose a new delivery address.',
-                    ]);
-                }
-
-                $selectedAddress = $buyer->addresses()->find((int) $selectedAddressId);
-
-                if (!$selectedAddress) {
-                    throw ValidationException::withMessages([
-                        'selected_address_id' => 'Select a valid saved address or choose a new delivery address.',
-                    ]);
-                }
-
-                $shippingStreetAddress = StructuredAddress::clean($selectedAddress->street_address);
-                $shippingBarangay = StructuredAddress::clean($selectedAddress->barangay);
-                $shippingCity = StructuredAddress::clean($selectedAddress->city);
-                $shippingRegion = StructuredAddress::clean($selectedAddress->region);
-                $shippingPostalCode = StructuredAddress::clean($selectedAddress->postal_code);
-                $shippingAddress = $selectedAddress->full_address ?: StructuredAddress::formatPhilippineAddress([
-                    'street_address' => $shippingStreetAddress,
-                    'barangay' => $shippingBarangay,
-                    'city' => $shippingCity,
-                    'region' => $shippingRegion,
-                    'postal_code' => $shippingPostalCode,
-                ]);
-                $shippingAddressType = $selectedAddress->address_type ?: 'home';
-                $shippingRecipientName = $request->filled('recipient_name')
-                    ? $request->recipient_name
-                    : ($selectedAddress->recipient_name ?: $buyer->name);
-                $shippingContactPhone = $request->filled('phone_number')
-                    ? $request->phone_number
-                    : ($selectedAddress->phone_number ?: $buyer->phone_number);
-            } else {
-                $hasStructuredShippingInput = collect([
-                    $request->input('shipping_street_address'),
-                    $request->input('shipping_barangay'),
-                    $request->input('shipping_city'),
-                    $request->input('shipping_region'),
-                    $request->input('shipping_postal_code'),
-                ])->contains(fn ($value) => StructuredAddress::clean($value) !== null);
-
-                if ($hasStructuredShippingInput) {
-                    $request->validate([
-                        'shipping_street_address' => 'required|string|max:255',
-                        'shipping_barangay' => 'required|string|max:255',
-                        'shipping_city' => 'required|string|max:255',
-                        'shipping_region' => 'required|string|max:255',
-                        'shipping_postal_code' => 'nullable|string|max:20',
-                        'shipping_address_type' => 'required|string|in:home,office,other',
-                    ]);
-
-                    $shippingStreetAddress = StructuredAddress::clean($request->shipping_street_address);
-                    $shippingBarangay = StructuredAddress::clean($request->shipping_barangay);
-                    $shippingCity = StructuredAddress::clean($request->shipping_city);
-                    $shippingRegion = StructuredAddress::clean($request->shipping_region);
-                    $shippingPostalCode = StructuredAddress::clean($request->shipping_postal_code);
-                    $shippingAddress = StructuredAddress::formatPhilippineAddress([
-                        'street_address' => $shippingStreetAddress,
-                        'barangay' => $shippingBarangay,
-                        'city' => $shippingCity,
-                        'region' => $shippingRegion,
-                        'postal_code' => $shippingPostalCode,
-                    ]);
-                } else {
-                    $request->validate([
-                        'shipping_address' => 'required|string',
-                        'shipping_address_type' => 'required|string|in:home,office,other',
-                    ]);
-
-                    $shippingAddress = $request->shipping_address;
-                }
-
-                $shippingAddressType = $request->shipping_address_type;
-                $shippingRecipientName = $request->filled('recipient_name')
-                    ? $request->recipient_name
-                    : $buyer->name;
-                $shippingContactPhone = $request->filled('phone_number')
-                    ? $request->phone_number
-                    : $buyer->phone_number;
-            }
-
-            if (blank($shippingRecipientName) || blank($shippingContactPhone)) {
-                throw ValidationException::withMessages([
-                    'phone_number' => 'Recipient name and phone number are required for delivery bookings.',
-                ]);
-            }
-        } else {
-            $shippingAddress = 'Store Pick-up - Negotiate via Chat';
-        }
+        $selectedAddress = $shippingContext['selected_address'];
+        $shippingAddress = $shippingContext['shipping_address'];
+        $shippingAddressType = $shippingContext['shipping_address_type'];
+        $shippingRecipientName = $shippingContext['shipping_recipient_name'];
+        $shippingContactPhone = $shippingContext['shipping_contact_phone'];
+        $shippingStreetAddress = $shippingContext['shipping_street_address'];
+        $shippingBarangay = $shippingContext['shipping_barangay'];
+        $shippingCity = $shippingContext['shipping_city'];
+        $shippingRegion = $shippingContext['shipping_region'];
+        $shippingPostalCode = $shippingContext['shipping_postal_code'];
 
         // Force COD for Pick Up
         $paymentMethod = $request->shipping_method === 'Pick Up' ? 'COD' : $request->payment_method;
@@ -713,18 +731,7 @@ class OrderController extends Controller
         $supportsSponsorshipRequestId = Schema::hasColumn('order_items', 'sponsorship_request_id');
         $supportsSponsoredAtCheckout = Schema::hasColumn('order_items', 'sponsored_at_checkout');
 
-        $groupedItems = collect($request->items)
-            ->map(function (array $item) {
-                $product = Product::findOrFail($item['id']);
-
-                return [
-                    'id' => $product->id,
-                    'artisan_id' => $product->artisan_id ?? $product->user_id,
-                    'qty' => (int) $item['qty'],
-                    'variant' => $item['variant'] ?? null,
-                ];
-            })
-            ->groupBy('artisan_id');
+        $groupedItems = $this->groupCheckoutItemsBySeller($request->items);
 
         $financeBySeller = [];
         $grandTotal = 0.0;
@@ -739,7 +746,28 @@ class OrderController extends Controller
                 }
             }
 
-            $financeBySeller[(string) $artisanId] = $orderFinanceService->calculateAmounts($merchandiseSubtotal, $request->shipping_method);
+            $seller = User::find((int) $artisanId);
+            $shippingFee = 0.0;
+
+            if ($request->shipping_method === 'Delivery' && $seller) {
+                $shippingQuote = $checkoutShippingService->estimateForSeller($seller, [
+                    'shipping_method' => $request->shipping_method,
+                    'shipping_address' => $shippingAddress,
+                    'shipping_street_address' => $shippingStreetAddress,
+                    'shipping_barangay' => $shippingBarangay,
+                    'shipping_city' => $shippingCity,
+                    'shipping_region' => $shippingRegion,
+                    'shipping_postal_code' => $shippingPostalCode,
+                ]);
+
+                $shippingFee = (float) ($shippingQuote['amount'] ?? 0);
+            }
+
+            $financeBySeller[(string) $artisanId] = $orderFinanceService->calculateAmounts(
+                $merchandiseSubtotal,
+                $request->shipping_method,
+                $shippingFee
+            );
             $grandTotal += $financeBySeller[(string) $artisanId]['total_amount'];
         }
 
@@ -779,13 +807,14 @@ class OrderController extends Controller
                 $finance = $financeBySeller[(string) $artisanId];
                 $paymentStatus = $paymentMethod === 'Wallet' ? 'paid' : 'pending';
                 
-                $order = Order::create([
+                $order = Order::create(Order::filterSchemaCompatibleAttributes([
                     'order_number' => 'ORD-' . strtoupper(uniqid()),
                     'user_id' => Auth::id(),
                     'artisan_id' => $artisanId,
                     'customer_name' => Auth::user()->name,
                     'merchandise_subtotal' => $finance['merchandise_subtotal'],
                     'convenience_fee_amount' => $finance['convenience_fee_amount'],
+                    'shipping_fee_amount' => $finance['shipping_fee_amount'],
                     'platform_commission_amount' => $finance['platform_commission_amount'],
                     'seller_net_amount' => $finance['seller_net_amount'],
                     'total_amount' => $finance['total_amount'],
@@ -803,7 +832,7 @@ class OrderController extends Controller
                     'payment_method' => $paymentMethod,
                     'payment_status' => $paymentStatus,
                     'shipping_method' => $request->shipping_method,
-                ]);
+                ]));
 
                 foreach ($items as $item) {
                     // CRITICAL: Stock Deduction & Validation
@@ -959,8 +988,9 @@ class OrderController extends Controller
                     'shipping_contact_phone' => $order->shipping_contact_phone,
                     'merchandise_subtotal' => number_format((float) $order->merchandise_subtotal, 2),
                     'convenience_fee_amount' => number_format((float) $order->convenience_fee_amount, 2),
-                    'platform_commission_amount' => number_format((float) $order->platform_commission_amount, 2),
-                    'seller_net_amount' => number_format((float) $order->seller_net_amount, 2),
+                    'shipping_fee_amount' => number_format($order->getResolvedShippingFeeAmount(), 2),
+                    'platform_commission_amount' => number_format($order->getResolvedPlatformCommissionAmount(), 2),
+                    'seller_net_amount' => number_format($order->getResolvedSellerNetAmount(), 2),
                     'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null, // New
                     'seller_id' => $order->artisan_id,
                     'tracking_number' => $order->tracking_number,
@@ -1248,6 +1278,156 @@ class OrderController extends Controller
         return view('pdf.receipt', ['order' => $order]);
     }
 
+    /**
+     * @return \Illuminate\Support\Collection<int|string, \Illuminate\Support\Collection<int, array{id:int, artisan_id:int, qty:int, variant:?string}>>
+     */
+    private function groupCheckoutItemsBySeller(array $items)
+    {
+        return collect($items)
+            ->map(function (array $item) {
+                $product = Product::findOrFail($item['id']);
+
+                return [
+                    'id' => $product->id,
+                    'artisan_id' => $product->artisan_id ?? $product->user_id,
+                    'qty' => (int) $item['qty'],
+                    'variant' => $item['variant'] ?? null,
+                ];
+            })
+            ->groupBy('artisan_id');
+    }
+
+    /**
+     * @return array{
+     *     selected_address: mixed,
+     *     shipping_address: string,
+     *     shipping_address_type: ?string,
+     *     shipping_recipient_name: ?string,
+     *     shipping_contact_phone: ?string,
+     *     shipping_street_address: ?string,
+     *     shipping_barangay: ?string,
+     *     shipping_city: ?string,
+     *     shipping_region: ?string,
+     *     shipping_postal_code: ?string
+     * }
+     */
+    private function resolveCheckoutDeliveryContext(Request $request, User $buyer, bool $requireContactDetails): array
+    {
+        $selectedAddressId = $request->input('selected_address_id');
+        $selectedAddress = null;
+
+        $shippingAddressType = null;
+        $shippingRecipientName = null;
+        $shippingContactPhone = null;
+        $shippingStreetAddress = null;
+        $shippingBarangay = null;
+        $shippingCity = null;
+        $shippingRegion = null;
+        $shippingPostalCode = null;
+
+        if ($selectedAddressId !== null && $selectedAddressId !== '' && $selectedAddressId !== 'new') {
+            if (!is_scalar($selectedAddressId) || !ctype_digit((string) $selectedAddressId)) {
+                throw ValidationException::withMessages([
+                    'selected_address_id' => 'Select a valid saved address or choose a new delivery address.',
+                ]);
+            }
+
+            $selectedAddress = $buyer->addresses()->find((int) $selectedAddressId);
+
+            if (!$selectedAddress) {
+                throw ValidationException::withMessages([
+                    'selected_address_id' => 'Select a valid saved address or choose a new delivery address.',
+                ]);
+            }
+
+            $shippingStreetAddress = StructuredAddress::clean($selectedAddress->street_address);
+            $shippingBarangay = StructuredAddress::clean($selectedAddress->barangay);
+            $shippingCity = StructuredAddress::clean($selectedAddress->city);
+            $shippingRegion = StructuredAddress::clean($selectedAddress->region);
+            $shippingPostalCode = StructuredAddress::clean($selectedAddress->postal_code);
+            $shippingAddress = $selectedAddress->full_address ?: StructuredAddress::formatPhilippineAddress([
+                'street_address' => $shippingStreetAddress,
+                'barangay' => $shippingBarangay,
+                'city' => $shippingCity,
+                'region' => $shippingRegion,
+                'postal_code' => $shippingPostalCode,
+            ]);
+            $shippingAddressType = $selectedAddress->address_type ?: 'home';
+            $shippingRecipientName = $request->filled('recipient_name')
+                ? $request->input('recipient_name')
+                : ($selectedAddress->recipient_name ?: $buyer->name);
+            $shippingContactPhone = $request->filled('phone_number')
+                ? $request->input('phone_number')
+                : ($selectedAddress->phone_number ?: $buyer->phone_number);
+        } else {
+            $hasStructuredShippingInput = collect([
+                $request->input('shipping_street_address'),
+                $request->input('shipping_barangay'),
+                $request->input('shipping_city'),
+                $request->input('shipping_region'),
+                $request->input('shipping_postal_code'),
+            ])->contains(fn ($value) => StructuredAddress::clean($value) !== null);
+
+            if ($hasStructuredShippingInput) {
+                $request->validate([
+                    'shipping_street_address' => 'required|string|max:255',
+                    'shipping_barangay' => 'required|string|max:255',
+                    'shipping_city' => 'required|string|max:255',
+                    'shipping_region' => 'required|string|max:255',
+                    'shipping_postal_code' => 'nullable|string|max:20',
+                    'shipping_address_type' => 'required|string|in:home,office,other',
+                ]);
+
+                $shippingStreetAddress = StructuredAddress::clean($request->shipping_street_address);
+                $shippingBarangay = StructuredAddress::clean($request->shipping_barangay);
+                $shippingCity = StructuredAddress::clean($request->shipping_city);
+                $shippingRegion = StructuredAddress::clean($request->shipping_region);
+                $shippingPostalCode = StructuredAddress::clean($request->shipping_postal_code);
+                $shippingAddress = StructuredAddress::formatPhilippineAddress([
+                    'street_address' => $shippingStreetAddress,
+                    'barangay' => $shippingBarangay,
+                    'city' => $shippingCity,
+                    'region' => $shippingRegion,
+                    'postal_code' => $shippingPostalCode,
+                ]);
+            } else {
+                $request->validate([
+                    'shipping_address' => 'required|string',
+                    'shipping_address_type' => 'required|string|in:home,office,other',
+                ]);
+
+                $shippingAddress = (string) $request->shipping_address;
+            }
+
+            $shippingAddressType = $request->input('shipping_address_type');
+            $shippingRecipientName = $request->filled('recipient_name')
+                ? $request->input('recipient_name')
+                : $buyer->name;
+            $shippingContactPhone = $request->filled('phone_number')
+                ? $request->input('phone_number')
+                : $buyer->phone_number;
+        }
+
+        if ($requireContactDetails && (blank($shippingRecipientName) || blank($shippingContactPhone))) {
+            throw ValidationException::withMessages([
+                'phone_number' => 'Recipient name and phone number are required for delivery bookings.',
+            ]);
+        }
+
+        return [
+            'selected_address' => $selectedAddress,
+            'shipping_address' => (string) $shippingAddress,
+            'shipping_address_type' => $shippingAddressType,
+            'shipping_recipient_name' => $shippingRecipientName,
+            'shipping_contact_phone' => $shippingContactPhone,
+            'shipping_street_address' => $shippingStreetAddress,
+            'shipping_barangay' => $shippingBarangay,
+            'shipping_city' => $shippingCity,
+            'shipping_region' => $shippingRegion,
+            'shipping_postal_code' => $shippingPostalCode,
+        ];
+    }
+
     private function serializeDelivery(?OrderDelivery $delivery): ?array
     {
         if (!$delivery) {
@@ -1256,6 +1436,8 @@ class OrderController extends Controller
 
         $status = strtoupper((string) $delivery->status);
         $holdEndsAt = $delivery->terminal_failed_at?->copy()->addDay();
+        $flowType = (string) (data_get($delivery->order_payload, 'metadata.flowType') ?: 'standard_delivery');
+        $isReplacementExchange = $flowType === 'replacement_exchange';
 
         return [
             'provider' => $delivery->provider,
@@ -1272,6 +1454,19 @@ class OrderController extends Controller
             'pending_auto_cancel' => $delivery->terminal_failed_at !== null && $delivery->auto_cancelled_at === null,
             'cancel_hold_ends_at' => $holdEndsAt?->format('M d, Y h:i A'),
             'last_updated_at' => $delivery->last_webhook_received_at?->format('M d, Y h:i A') ?? $delivery->updated_at?->format('M d, Y h:i A'),
+            'flow_type' => $flowType,
+            'flow_label' => $isReplacementExchange ? 'Replacement Exchange' : 'Standard Delivery',
+            'flow_summary' => $isReplacementExchange
+                ? 'Courier will deliver the replacement item to the buyer, collect the rejected item, and return it to the seller.'
+                : 'Courier will move the order from the seller to the buyer.',
+            'route_legs' => $isReplacementExchange
+                ? [
+                    ['label' => 'Replacement delivery', 'from' => 'Seller', 'to' => 'Buyer'],
+                    ['label' => 'Rejected item return', 'from' => 'Buyer', 'to' => 'Seller'],
+                ]
+                : [
+                    ['label' => 'Delivery', 'from' => 'Seller', 'to' => 'Buyer'],
+                ],
         ];
     }
 

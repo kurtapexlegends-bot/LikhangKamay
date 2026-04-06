@@ -35,6 +35,10 @@ class OrderLogisticsService
             throw new \RuntimeException('Only accepted orders can be booked with Lalamove.');
         }
 
+        if ($this->isReplacementExchange($order)) {
+            return $this->bookReplacementExchange($order, $seller);
+        }
+
         if ($order->delivery?->external_order_id) {
             throw new \RuntimeException('This order already has a Lalamove delivery.');
         }
@@ -110,7 +114,7 @@ class OrderLogisticsService
             $recipientPayload['remarks'] = $shippingRemarks;
         }
 
-        $lalamoveOrder = $this->lalamoveService->createOrder([
+        $orderPayload = [
             'quotationId' => $quotationId,
             'isPODEnabled' => true,
             'sender' => [
@@ -124,59 +128,152 @@ class OrderLogisticsService
                 'orderId' => (string) $order->id,
                 'orderNumber' => $order->order_number,
                 'sellerId' => (string) $seller->id,
+                'flowType' => 'standard_delivery',
+            ],
+        ];
+        $lalamoveOrder = $this->lalamoveService->createOrder($orderPayload);
+        $persistedOrderPayload = array_replace_recursive($lalamoveOrder, [
+            'metadata' => $orderPayload['metadata'],
+        ]);
+
+        return $this->persistBookedDelivery(
+            $order,
+            $quotation,
+            $persistedOrderPayload,
+            $quotationId,
+            'Delivery booked',
+            'Your order is now booked with Lalamove and is waiting for courier movement.',
+        );
+    }
+
+    public function bookReplacementExchange(Order $order, User $seller): OrderDelivery
+    {
+        $seller->loadMissing('addresses');
+
+        if (!$this->isReplacementExchange($order)) {
+            throw new \RuntimeException('This order is not currently in a replacement exchange flow.');
+        }
+
+        $requirements = $this->bookingRequirements($order, $seller);
+        if (!empty($requirements)) {
+            throw new \RuntimeException(implode(' ', $requirements));
+        }
+
+        $pickupAddressCandidates = $seller->getCourierPickupAddressCandidates();
+        $preferredPickupAddress = trim((string) ($seller->getPreferredCourierPickupAddress() ?? ($pickupAddressCandidates[0] ?? '')));
+        $structuredDropoffAddress = StructuredAddress::formatPhilippineAddress([
+            'street_address' => $order->shipping_street_address,
+            'barangay' => $order->shipping_barangay,
+            'city' => $order->shipping_city,
+            'region' => $order->shipping_region,
+            'postal_code' => $order->shipping_postal_code,
+        ]);
+        $dropoffAddressCandidates = array_values(array_filter([
+            $structuredDropoffAddress,
+            trim((string) $order->shipping_address),
+        ]));
+        $preferredDropoffAddress = trim((string) ($structuredDropoffAddress !== '' ? $structuredDropoffAddress : ($dropoffAddressCandidates[0] ?? '')));
+        $dropoffGeocodeQuery = count($dropoffAddressCandidates) === 1
+            ? $dropoffAddressCandidates[0]
+            : $dropoffAddressCandidates;
+
+        $pickupCoordinates = $this->geocodingService->geocode($pickupAddressCandidates, 'seller pickup');
+        $dropoffCoordinates = $this->geocodingService->geocode($dropoffGeocodeQuery, 'buyer drop-off');
+        $pickupAddress = $this->resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupAddressCandidates);
+        $dropoffAddress = $this->resolveCourierStopAddress($preferredDropoffAddress, $dropoffCoordinates, $dropoffAddressCandidates);
+
+        if ($this->isSameCourierLocation($pickupAddress, $dropoffAddress, $pickupCoordinates, $dropoffCoordinates)) {
+            throw new \RuntimeException('Seller pickup and buyer drop-off cannot be the same location for courier booking.');
+        }
+
+        $quotation = $this->lalamoveService->createQuotation([
+            'serviceType' => (string) config('services.lalamove.service_type', 'MOTORCYCLE'),
+            'language' => 'en_PH',
+            'stops' => [
+                [
+                    'coordinates' => [
+                        'lat' => $pickupCoordinates['lat'],
+                        'lng' => $pickupCoordinates['lng'],
+                    ],
+                    'address' => $pickupAddress,
+                ],
+                [
+                    'coordinates' => [
+                        'lat' => $dropoffCoordinates['lat'],
+                        'lng' => $dropoffCoordinates['lng'],
+                    ],
+                    'address' => $dropoffAddress,
+                ],
+                [
+                    'coordinates' => [
+                        'lat' => $pickupCoordinates['lat'],
+                        'lng' => $pickupCoordinates['lng'],
+                    ],
+                    'address' => $pickupAddress,
+                ],
             ],
         ]);
 
-        return DB::transaction(function () use ($order, $quotation, $lalamoveOrder, $quotationId) {
-            /** @var Order $lockedOrder */
-            $lockedOrder = Order::query()->with('delivery')->lockForUpdate()->findOrFail($order->id);
+        $quotationId = (string) ($quotation['quotationId'] ?? '');
+        $quotationStops = $quotation['stops'] ?? [];
 
-            if ($lockedOrder->delivery?->external_order_id) {
-                return $lockedOrder->delivery;
-            }
+        if (
+            $quotationId === ''
+            || empty($quotationStops[0]['stopId'])
+            || empty($quotationStops[1]['stopId'])
+            || empty($quotationStops[2]['stopId'])
+        ) {
+            throw new \RuntimeException('Lalamove quotation did not return the expected replacement stop details.');
+        }
 
-            $delivery = $lockedOrder->delivery()->create([
-                'provider' => OrderDelivery::PROVIDER_LALAMOVE,
-                'status' => strtoupper((string) ($lalamoveOrder['status'] ?? 'ASSIGNING_DRIVER')),
-                'service_type' => (string) ($quotation['serviceType'] ?? config('services.lalamove.service_type', 'MOTORCYCLE')),
-                'quotation_id' => $quotationId,
-                'external_order_id' => (string) ($lalamoveOrder['orderId'] ?? ''),
-                'request_id' => (string) ($lalamoveOrder['orderId'] ?? ''),
-                'share_link' => $lalamoveOrder['shareLink'] ?? null,
-                'price_currency' => $lalamoveOrder['priceBreakdown']['currency'] ?? ($quotation['priceBreakdown']['currency'] ?? null),
-                'price_total' => isset($lalamoveOrder['priceBreakdown']['total'])
-                    ? (float) $lalamoveOrder['priceBreakdown']['total']
-                    : (isset($quotation['priceBreakdown']['total']) ? (float) $quotation['priceBreakdown']['total'] : null),
-                'price_breakdown' => $lalamoveOrder['priceBreakdown'] ?? ($quotation['priceBreakdown'] ?? null),
-                'quotation_payload' => $quotation,
-                'order_payload' => $lalamoveOrder,
-                'latest_payload' => $lalamoveOrder,
-                'is_pod_enabled' => true,
-            ]);
+        $replacementExchangeRemark = trim(implode(' ', array_filter([
+            'Deliver the replacement item and collect the rejected item from the buyer.',
+            trim((string) $order->shipping_notes),
+        ])));
 
-            $lockedOrder->update([
-                'status' => 'Shipped',
-                'shipped_at' => now(),
-                'tracking_number' => (string) ($lalamoveOrder['orderId'] ?? $quotationId),
-            ]);
+        $orderPayload = [
+            'quotationId' => $quotationId,
+            'isPODEnabled' => true,
+            'sender' => [
+                'stopId' => $quotationStops[0]['stopId'],
+                'name' => $seller->shop_name ?: $seller->name,
+                'phone' => $this->lalamoveService->normalizePhone((string) $seller->getPreferredCourierContactPhone()),
+            ],
+            'recipients' => [
+                [
+                    'stopId' => $quotationStops[1]['stopId'],
+                    'name' => (string) $order->shipping_recipient_name,
+                    'phone' => $this->lalamoveService->normalizePhone((string) $order->shipping_contact_phone),
+                    'remarks' => $replacementExchangeRemark,
+                ],
+                [
+                    'stopId' => $quotationStops[2]['stopId'],
+                    'name' => $seller->shop_name ?: $seller->name,
+                    'phone' => $this->lalamoveService->normalizePhone((string) $seller->getPreferredCourierContactPhone()),
+                    'remarks' => 'Return the rejected item collected from the buyer to the seller.',
+                ],
+            ],
+            'metadata' => [
+                'platform' => 'LikhangKamay',
+                'orderId' => (string) $order->id,
+                'orderNumber' => $order->order_number,
+                'sellerId' => (string) $seller->id,
+                'flowType' => 'replacement_exchange',
+            ],
+        ];
+        $lalamoveOrder = $this->lalamoveService->createOrder($orderPayload);
+        $persistedOrderPayload = array_replace_recursive($lalamoveOrder, [
+            'metadata' => $orderPayload['metadata'],
+        ]);
 
-            $lockedOrder->loadMissing(['user', 'delivery']);
-
-            if ($lockedOrder->user) {
-                $lockedOrder->user->notify(new OrderDeliveryUpdateNotification(
-                    $lockedOrder,
-                    'Delivery booked',
-                    'Your order is now booked with Lalamove and is waiting for courier movement.',
-                    route('my-orders.index')
-                ));
-            }
-
-            if ($lockedOrder->user?->email) {
-                Mail::to($lockedOrder->user->email)->queue(new OrderShipped($lockedOrder));
-            }
-
-            return $delivery;
-        });
+        return $this->persistBookedDelivery(
+            $order,
+            $quotation,
+            $persistedOrderPayload,
+            $quotationId,
+            'Replacement courier booked',
+            'Your replacement is now booked with Lalamove. The courier will deliver the replacement and bring the rejected item back to the seller.',
+        );
     }
 
     public function handleWebhook(array $payload, string $rawBody = ''): ?OrderDelivery
@@ -466,6 +563,7 @@ class OrderLogisticsService
     {
         $status = strtoupper((string) ($snapshot['status'] ?? $delivery->status ?? ''));
         $priceBreakdown = $snapshot['priceBreakdown'] ?? $delivery->price_breakdown;
+        $isReplacementExchange = $this->deliveryFlowType($delivery) === 'replacement_exchange';
 
         $delivery->fill([
             'status' => $status !== '' ? $status : $delivery->status,
@@ -493,8 +591,10 @@ class OrderLogisticsService
 
                 $order->user?->notify(new OrderDeliveryUpdateNotification(
                     $order,
-                    'Order delivered',
-                    'Lalamove marked your delivery as completed. Please confirm receipt once it arrives to you safely.',
+                    $isReplacementExchange ? 'Replacement delivered' : 'Order delivered',
+                    $isReplacementExchange
+                        ? 'Lalamove completed the replacement exchange. Please confirm receipt of the replacement item once it is safely with you.'
+                        : 'Lalamove marked your delivery as completed. Please confirm receipt once it arrives to you safely.',
                     route('my-orders.index')
                 ));
             }
@@ -662,5 +762,80 @@ class OrderLogisticsService
         }
 
         return $normalized;
+    }
+
+    private function persistBookedDelivery(
+        Order $order,
+        array $quotation,
+        array $lalamoveOrder,
+        string $quotationId,
+        string $notificationTitle,
+        string $notificationMessage
+    ): OrderDelivery {
+        return DB::transaction(function () use ($order, $quotation, $lalamoveOrder, $quotationId, $notificationTitle, $notificationMessage) {
+            /** @var Order $lockedOrder */
+            $lockedOrder = Order::query()->with('delivery')->lockForUpdate()->findOrFail($order->id);
+
+            if ($this->isReplacementExchange($lockedOrder)) {
+                $lockedOrder->delivery()->delete();
+                $lockedOrder->unsetRelation('delivery');
+            } elseif ($lockedOrder->delivery?->external_order_id) {
+                return $lockedOrder->delivery;
+            }
+
+            $delivery = $lockedOrder->delivery()->create([
+                'provider' => OrderDelivery::PROVIDER_LALAMOVE,
+                'status' => strtoupper((string) ($lalamoveOrder['status'] ?? 'ASSIGNING_DRIVER')),
+                'service_type' => (string) ($quotation['serviceType'] ?? config('services.lalamove.service_type', 'MOTORCYCLE')),
+                'quotation_id' => $quotationId,
+                'external_order_id' => (string) ($lalamoveOrder['orderId'] ?? ''),
+                'request_id' => (string) ($lalamoveOrder['orderId'] ?? ''),
+                'share_link' => $lalamoveOrder['shareLink'] ?? null,
+                'price_currency' => $lalamoveOrder['priceBreakdown']['currency'] ?? ($quotation['priceBreakdown']['currency'] ?? null),
+                'price_total' => isset($lalamoveOrder['priceBreakdown']['total'])
+                    ? (float) $lalamoveOrder['priceBreakdown']['total']
+                    : (isset($quotation['priceBreakdown']['total']) ? (float) $quotation['priceBreakdown']['total'] : null),
+                'price_breakdown' => $lalamoveOrder['priceBreakdown'] ?? ($quotation['priceBreakdown'] ?? null),
+                'quotation_payload' => $quotation,
+                'order_payload' => $lalamoveOrder,
+                'latest_payload' => $lalamoveOrder,
+                'is_pod_enabled' => true,
+            ]);
+
+            $lockedOrder->update([
+                'status' => 'Shipped',
+                'shipped_at' => now(),
+                'tracking_number' => (string) ($lalamoveOrder['orderId'] ?? $quotationId),
+            ]);
+
+            $lockedOrder->loadMissing(['user', 'delivery']);
+
+            if ($lockedOrder->user) {
+                $lockedOrder->user->notify(new OrderDeliveryUpdateNotification(
+                    $lockedOrder,
+                    $notificationTitle,
+                    $notificationMessage,
+                    route('my-orders.index')
+                ));
+            }
+
+            if ($lockedOrder->user?->email) {
+                Mail::to($lockedOrder->user->email)->queue(new OrderShipped($lockedOrder));
+            }
+
+            return $delivery;
+        });
+    }
+
+    private function isReplacementExchange(Order $order): bool
+    {
+        return $order->shipping_method === 'Delivery'
+            && $order->replacement_started_at !== null
+            && $order->replacement_resolved_at === null;
+    }
+
+    private function deliveryFlowType(OrderDelivery $delivery): string
+    {
+        return (string) (data_get($delivery->order_payload, 'metadata.flowType') ?: 'standard_delivery');
     }
 }

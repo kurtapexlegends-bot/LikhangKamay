@@ -19,6 +19,7 @@ class EnsureStaffAttendanceActive
     {
         /** @var \App\Models\User|null $user */
         $user = $request->user();
+        $routeName = $request->route()?->getName();
 
         if (
             !$user
@@ -29,29 +30,50 @@ class EnsureStaffAttendanceActive
             return $next($request);
         }
 
-        if (!$this->attendanceService->requiresResumePrompt($user)) {
+        if ($routeName === 'staff.dashboard') {
             return $next($request);
         }
 
-        if ($request->isMethod('GET')) {
-            $request->session()->put('staff.attendance.intended', $request->fullUrl());
+        if ($this->attendanceService->getOpenSession($user)) {
+            return $next($request);
         }
 
-        $resumeContext = $this->attendanceService->buildResumeContext($user);
-        $promptRoute = route('staff.attendance.resume-prompt');
+        if ($this->attendanceService->requiresResumePrompt($user)) {
+            if ($request->isMethod('GET')) {
+                $request->session()->put('staff.attendance.intended', $request->fullUrl());
+            }
+
+            $resumeContext = $this->attendanceService->buildResumeContext($user);
+            $promptRoute = route('staff.attendance.resume-prompt');
+
+            if ($request->header('X-Inertia')) {
+                return Inertia::location($promptRoute);
+            }
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'requires_resume' => true,
+                    'redirect_to' => $promptRoute,
+                    'resume_prompt' => $resumeContext,
+                ], 423);
+            }
+
+            return redirect()->to($promptRoute);
+        }
+
+        $dashboardRoute = route('staff.dashboard');
 
         if ($request->header('X-Inertia')) {
-            return Inertia::location($promptRoute);
+            return Inertia::location($dashboardRoute);
         }
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
-                'requires_resume' => true,
-                'redirect_to' => $promptRoute,
-                'resume_prompt' => $resumeContext,
+                'requires_clock_in' => true,
+                'redirect_to' => $dashboardRoute,
             ], 423);
         }
 
-        return redirect()->to($promptRoute);
+        return redirect()->to($dashboardRoute);
     }
 }

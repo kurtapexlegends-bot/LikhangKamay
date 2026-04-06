@@ -69,4 +69,11 @@ return [
         'notification_email' => env('ARTISAN_APPLICATION_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS')),
     ],
 
+    'checkout_shipping' => [
+        'fallback_flat_fee' => env('CHECKOUT_SHIPPING_FALLBACK_FLAT_FEE', 69),
+        'fallback_base_fee' => env('CHECKOUT_SHIPPING_FALLBACK_BASE_FEE', 69),
+        'fallback_included_km' => env('CHECKOUT_SHIPPING_FALLBACK_INCLUDED_KM', 3),
+        'fallback_per_km' => env('CHECKOUT_SHIPPING_FALLBACK_PER_KM', 10),
+    ],
+
 ];

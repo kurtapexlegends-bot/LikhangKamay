@@ -23,6 +23,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public const STAFF_USER_LEVEL_FLAG = '__staff_user_level';
     public const DEFAULT_STAFF_USER_LEVEL = 'standard';
     public const STAFF_MANAGER_USER_LEVEL = 'manager';
+    public const STAFF_ONLY_USER_LEVEL_ALIASES = ['staff', 'staff_only', 'standard_staff'];
 
     protected static ?bool $hasSplitNameColumns = null;
 
@@ -260,6 +261,10 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public static function normalizeStaffUserLevel(mixed $level): string
     {
+        if (in_array($level, self::STAFF_ONLY_USER_LEVEL_ALIASES, true)) {
+            return self::DEFAULT_STAFF_USER_LEVEL;
+        }
+
         return in_array($level, static::staffUserLevels(), true)
             ? $level
             : self::DEFAULT_STAFF_USER_LEVEL;

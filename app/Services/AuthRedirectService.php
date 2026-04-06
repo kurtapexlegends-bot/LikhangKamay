@@ -7,10 +7,6 @@ use Illuminate\Http\RedirectResponse;
 
 class AuthRedirectService
 {
-    public function __construct(
-        protected StaffAttendanceService $attendanceService
-    ) {
-    }
 
     public function redirectAfterLogin(User $user): RedirectResponse
     {
@@ -23,8 +19,6 @@ class AuthRedirectService
         }
 
         if ($user->isStaff()) {
-            $this->attendanceService->ensureClockedIn($user);
-
             if (!$user->hasVerifiedEmail()) {
                 return redirect()->route('verification.notice');
             }
@@ -33,11 +27,7 @@ class AuthRedirectService
                 return redirect()->route('staff.password.edit');
             }
 
-            $routeName = $user->getFirstAccessibleSellerRouteName();
-
-            return $routeName
-                ? redirect()->route($routeName)
-                : redirect()->route('staff.home');
+            return redirect()->route('staff.dashboard');
         }
 
         if (!$user->hasVerifiedEmail()) {
@@ -60,11 +50,7 @@ class AuthRedirectService
                 return route('staff.password.edit', absolute: false);
             }
 
-            $routeName = $user->getFirstAccessibleSellerRouteName();
-
-            return $routeName
-                ? route($routeName, absolute: false)
-                : route('staff.home', absolute: false);
+            return route('staff.dashboard', absolute: false);
         }
 
         if ($user->isArtisan()) {

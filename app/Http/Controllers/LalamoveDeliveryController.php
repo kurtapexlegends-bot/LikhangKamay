@@ -21,8 +21,13 @@ class LalamoveDeliveryController extends Controller
 
         try {
             $delivery = $orderLogisticsService->bookLalamoveDelivery($order, $this->sellerOwner());
+            $flowType = (string) (data_get($delivery->fresh()?->order_payload, 'metadata.flowType')
+                ?: data_get($delivery->order_payload, 'metadata.flowType')
+                ?: 'standard_delivery');
 
-            return back()->with('success', 'Lalamove delivery created successfully. Order is now in courier transit.');
+            return back()->with('success', $flowType === 'replacement_exchange'
+                ? 'Replacement exchange courier created successfully.'
+                : 'Lalamove delivery created successfully. Order is now in courier transit.');
         } catch (\Throwable $e) {
             report($e);
 

@@ -23,7 +23,7 @@ class StaffAttendanceFlowTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_staff_login_creates_an_attendance_session_automatically(): void
+    public function test_staff_login_lands_on_workspace_without_creating_an_attendance_session(): void
     {
         [$owner, $employee, $staff] = $this->createVerifiedStaffWithEmployee();
 
@@ -34,16 +34,7 @@ class StaffAttendanceFlowTest extends TestCase
 
         $response->assertRedirect(route('staff.dashboard', absolute: false));
         $this->assertAuthenticatedAs($staff);
-        $this->assertDatabaseHas('staff_attendance_sessions', [
-            'staff_user_id' => $staff->id,
-            'seller_owner_id' => $owner->id,
-            'employee_id' => $employee->id,
-            'close_mode' => null,
-        ]);
-        $this->assertNotNull(
-            StaffAttendanceSession::where('staff_user_id', $staff->id)->first()?->last_heartbeat_at
-        );
-        $this->assertSame(1, StaffAttendanceSession::where('staff_user_id', $staff->id)->count());
+        $this->assertSame(0, StaffAttendanceSession::where('staff_user_id', $staff->id)->count());
     }
 
     public function test_staff_login_does_not_create_a_duplicate_open_attendance_session(): void
@@ -74,7 +65,7 @@ class StaffAttendanceFlowTest extends TestCase
         );
     }
 
-    public function test_staff_logout_confirm_screen_shows_current_attendance_context(): void
+    public function test_staff_logout_confirm_screen_redirects_workspace_users_back_to_staff_dashboard(): void
     {
         [$owner, $employee, $staff] = $this->createVerifiedStaffWithEmployee();
 
@@ -89,15 +80,10 @@ class StaffAttendanceFlowTest extends TestCase
 
         $response = $this->actingAs($staff)->get(route('staff.logout.confirm'));
 
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Auth/StaffLogoutChoice')
-            ->where('attendance.has_open_session', true)
-            ->where('attendance.attendance_date', now(config('app.timezone'))->toDateString())
-        );
+        $response->assertRedirect(route('staff.dashboard'));
     }
 
-    public function test_staff_can_pause_time_and_next_login_creates_a_new_same_day_session(): void
+    public function test_staff_can_take_break_without_logging_out_and_resume_work_with_a_new_same_day_session(): void
     {
         [$owner, $employee, $staff] = $this->createVerifiedStaffWithEmployee();
 
@@ -107,24 +93,24 @@ class StaffAttendanceFlowTest extends TestCase
             'password' => 'password',
         ])->assertRedirect(route('staff.dashboard', absolute: false));
 
+        $this->actingAs($staff)->post(route('staff.attendance.resume'))
+            ->assertRedirect(route('staff.dashboard'));
+
         $openSession = StaffAttendanceSession::where('staff_user_id', $staff->id)->latest('clock_in_at')->firstOrFail();
 
         Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(10, 0));
-        $this->actingAs($staff)->post(route('staff.logout'), [
-            'action' => 'pause',
-        ])->assertRedirect('/');
+        $this->actingAs($staff)->post(route('staff.attendance.break'))
+            ->assertRedirect(route('staff.dashboard'));
 
-        $this->assertGuest();
+        $this->assertAuthenticatedAs($staff);
         $openSession->refresh();
         $this->assertSame('paused', $openSession->close_mode);
         $this->assertNotNull($openSession->clock_out_at);
         $this->assertSame(120, $openSession->worked_minutes);
 
         Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(11, 0));
-        $this->post('/login', [
-            'email' => $staff->email,
-            'password' => 'password',
-        ])->assertRedirect(route('staff.dashboard', absolute: false));
+        $this->actingAs($staff)->post(route('staff.attendance.resume'))
+            ->assertRedirect(route('staff.dashboard'));
 
         $this->assertSame(2, StaffAttendanceSession::where('staff_user_id', $staff->id)->count());
         $this->assertSame(
@@ -143,6 +129,50 @@ class StaffAttendanceFlowTest extends TestCase
         $this->assertSame(now(config('app.timezone'))->toDateString(), $newSession->attendance_date->toDateString());
     }
 
+    public function test_logout_context_uses_first_clock_in_and_total_active_time_for_the_day(): void
+    {
+        [$owner, $employee, $staff] = $this->createVerifiedStaffWithEmployee();
+
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(8, 0));
+        $firstClockIn = now(config('app.timezone'));
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'employee_id' => $employee->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => $firstClockIn,
+            'clock_out_at' => $firstClockIn->copy()->addHours(2),
+            'close_mode' => StaffAttendanceService::MODE_PAUSED,
+            'close_reason' => StaffAttendanceService::CLOSE_REASON_MANUAL_PAUSE,
+            'worked_minutes' => 120,
+        ]);
+
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(11, 0));
+        $secondClockIn = now(config('app.timezone'));
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'employee_id' => $employee->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => $secondClockIn,
+            'last_heartbeat_at' => $secondClockIn,
+            'worked_minutes' => 0,
+        ]);
+
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(12, 30));
+
+        $context = app(StaffAttendanceService::class)->buildLogoutContext($staff);
+
+        $this->assertTrue($context['has_open_session']);
+        $this->assertSame('clocked_in', $context['current_state']);
+        $this->assertSame($firstClockIn->toIso8601String(), $context['today_first_clock_in']);
+        $this->assertSame(210, $context['today_worked_minutes']);
+        $this->assertSame(120 * 60, $context['today_worked_seconds_base']);
+        $this->assertSame($secondClockIn->toIso8601String(), $context['active_session_started_at']);
+    }
+
     public function test_staff_can_clock_out_and_close_the_current_attendance_session(): void
     {
         [$owner, $employee, $staff] = $this->createVerifiedStaffWithEmployee();
@@ -152,6 +182,9 @@ class StaffAttendanceFlowTest extends TestCase
             'email' => $staff->email,
             'password' => 'password',
         ])->assertRedirect(route('staff.dashboard', absolute: false));
+
+        $this->actingAs($staff)->post(route('staff.attendance.resume'))
+            ->assertRedirect(route('staff.dashboard'));
 
         $openSession = StaffAttendanceSession::where('staff_user_id', $staff->id)->latest('clock_in_at')->firstOrFail();
 
@@ -249,7 +282,7 @@ class StaffAttendanceFlowTest extends TestCase
         $this->assertNull($freshSession->clock_out_at);
     }
 
-    public function test_timed_out_staff_is_redirected_to_resume_prompt_on_next_workspace_request(): void
+    public function test_timed_out_staff_is_redirected_to_resume_prompt_on_next_module_request(): void
     {
         [$owner, $employee, $staff] = $this->createVerifiedStaffWithEmployee();
 
@@ -267,7 +300,7 @@ class StaffAttendanceFlowTest extends TestCase
         ]);
 
         $this->actingAs($staff)
-            ->get(route('staff.dashboard'))
+            ->get(route('team-messages.index'))
             ->assertRedirect(route('staff.attendance.resume-prompt'));
     }
 

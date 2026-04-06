@@ -70,13 +70,6 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        /** @var \App\Models\User|null $user */
-        $user = $request->user();
-
-        if ($user?->isStaff() && $request->routeIs('logout')) {
-            return redirect()->route('staff.logout.confirm');
-        }
-
         Auth::guard('web')->logout();
 
         $request->session()->forget([

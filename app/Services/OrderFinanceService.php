@@ -20,19 +20,23 @@ class OrderFinanceService
     /**
      * @return array<string, float>
      */
-    public function calculateAmounts(float $merchandiseSubtotal, string $shippingMethod): array
+    public function calculateAmounts(float $merchandiseSubtotal, string $shippingMethod, float $shippingFee = 0): array
     {
         $normalizedSubtotal = $this->money($merchandiseSubtotal);
         $convenienceFee = $shippingMethod === 'Delivery'
             ? $this->money($normalizedSubtotal * self::CONVENIENCE_FEE_RATE)
             : 0.00;
+        $normalizedShippingFee = $shippingMethod === 'Delivery'
+            ? $this->money($shippingFee)
+            : 0.00;
         $platformCommission = $this->money($normalizedSubtotal * self::PLATFORM_COMMISSION_RATE);
         $sellerNet = $this->money($normalizedSubtotal - $platformCommission);
-        $grandTotal = $this->money($normalizedSubtotal + $convenienceFee);
+        $grandTotal = $this->money($normalizedSubtotal + $convenienceFee + $normalizedShippingFee);
 
         return [
             'merchandise_subtotal' => $normalizedSubtotal,
             'convenience_fee_amount' => $convenienceFee,
+            'shipping_fee_amount' => $normalizedShippingFee,
             'platform_commission_amount' => $platformCommission,
             'seller_net_amount' => $sellerNet,
             'total_amount' => $grandTotal,
@@ -41,6 +45,10 @@ class OrderFinanceService
 
     public function settleCompletedOrder(Order $order): void
     {
+        if (!Order::supportsWalletSettledAtColumn()) {
+            return;
+        }
+
         DB::transaction(function () use ($order) {
             $lockedOrder = Order::query()
                 ->with(['user', 'artisan'])
@@ -61,10 +69,12 @@ class OrderFinanceService
 
             $seller = $lockedOrder->artisan;
 
-            if ($seller && (float) $lockedOrder->seller_net_amount > 0) {
+            $sellerNetAmount = $lockedOrder->getResolvedSellerNetAmount();
+
+            if ($seller && $sellerNetAmount > 0) {
                 $this->walletService->credit(
                     $seller,
-                    (float) $lockedOrder->seller_net_amount,
+                    $sellerNetAmount,
                     'order_completed_seller_payout',
                     'Seller wallet payout for order ' . $lockedOrder->order_number,
                     $lockedOrder,
@@ -72,7 +82,7 @@ class OrderFinanceService
                 );
             }
 
-            $platformRevenue = $this->money((float) $lockedOrder->platform_commission_amount + (float) $lockedOrder->convenience_fee_amount);
+            $platformRevenue = $this->money($lockedOrder->getResolvedPlatformCommissionAmount() + (float) $lockedOrder->convenience_fee_amount);
             $platformWallet = $this->walletService->getPlatformWallet();
             if ($platformWallet && $platformRevenue > 0) {
                 $this->walletService->credit(
@@ -85,9 +95,9 @@ class OrderFinanceService
                 );
             }
 
-            $lockedOrder->update([
+            $lockedOrder->update(Order::filterSchemaCompatibleAttributes([
                 'wallet_settled_at' => now(),
-            ]);
+            ]));
         });
     }
 
@@ -99,6 +109,10 @@ class OrderFinanceService
 
     public function refundOrderToBuyerWallet(Order $order): void
     {
+        if (!Order::supportsRefundedToWalletAtColumn() || !Order::supportsWalletSettledAtColumn()) {
+            return;
+        }
+
         DB::transaction(function () use ($order) {
             $lockedOrder = Order::query()
                 ->with(['user', 'artisan'])
@@ -113,17 +127,19 @@ class OrderFinanceService
             $buyer = $lockedOrder->user;
             $sellerShortfall = 0.0;
 
-            if ($lockedOrder->wallet_settled_at !== null && $seller && (float) $lockedOrder->seller_net_amount > 0) {
+            $sellerNetAmount = $lockedOrder->getResolvedSellerNetAmount();
+
+            if ($lockedOrder->wallet_settled_at !== null && $seller && $sellerNetAmount > 0) {
                 $sellerWallet = Wallet::query()
                     ->lockForUpdate()
                     ->findOrFail($this->walletService->getOrCreateWallet($seller)->id);
 
                 $sellerReversalAmount = $this->money(min(
-                    (float) $lockedOrder->seller_net_amount,
+                    $sellerNetAmount,
                     max(0, (float) $sellerWallet->balance),
                 ));
 
-                $sellerShortfall = $this->money((float) $lockedOrder->seller_net_amount - $sellerReversalAmount);
+                $sellerShortfall = $this->money($sellerNetAmount - $sellerReversalAmount);
 
                 if ($sellerReversalAmount > 0) {
                     $this->walletService->debit(
@@ -140,7 +156,7 @@ class OrderFinanceService
                 }
             }
 
-            $platformRevenue = $this->money((float) $lockedOrder->platform_commission_amount + (float) $lockedOrder->convenience_fee_amount);
+            $platformRevenue = $this->money($lockedOrder->getResolvedPlatformCommissionAmount() + (float) $lockedOrder->convenience_fee_amount);
             $platformReversalAmount = $this->money($platformRevenue + $sellerShortfall);
             $platformWallet = $this->walletService->getPlatformWallet();
             if ($lockedOrder->wallet_settled_at !== null && $platformWallet && $platformReversalAmount > 0) {
@@ -175,9 +191,9 @@ class OrderFinanceService
                 );
             }
 
-            $lockedOrder->update([
+            $lockedOrder->update(Order::filterSchemaCompatibleAttributes([
                 'refunded_to_wallet_at' => now(),
-            ]);
+            ]));
         });
     }
 

@@ -94,7 +94,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                 <div className="grid gap-3 sm:grid-cols-2">
                     <ActionTile
                         icon={PauseCircle}
-                        title={processingAction === 'pause' ? 'Pausing' : 'Pause Activity'}
+                        title={processingAction === 'pause' ? 'Starting Break' : 'Take Break'}
                         description="Sign out temporarily. Retain session for next return."
                         isPrimary={false}
                         disabled={!!processingAction}

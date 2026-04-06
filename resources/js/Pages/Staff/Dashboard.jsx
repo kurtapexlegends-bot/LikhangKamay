@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
 import {
@@ -9,6 +9,7 @@ import {
     ClipboardList,
     MessageSquareText,
     PackageSearch,
+    PlayCircle,
     ShieldCheck,
     Users,
 } from 'lucide-react';
@@ -143,10 +144,12 @@ function ActionCard({ card, theme }) {
 
 export default function StaffDashboard({ auth, hub }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { sellerSidebar } = usePage().props;
+    const { sellerSidebar, attendance } = usePage().props;
 
     const theme = themeConfig[hub.theme] || themeConfig.sky;
     const BannerIcon = theme.icon;
+    const hasActiveSession = !!attendance?.has_open_session;
+    const isPaused = attendance?.current_state === 'paused';
 
     const emphasis = useMemo(() => {
         if (hub.variant === 'hr') return 'HR and payroll operations';
@@ -155,6 +158,10 @@ export default function StaffDashboard({ auth, hub }) {
 
         return 'orders, reviews, and internal team coordination';
     }, [hub.variant]);
+
+    const resumeWork = () => {
+        router.post(route('staff.attendance.resume'));
+    };
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-800">
@@ -201,103 +208,141 @@ export default function StaffDashboard({ auth, hub }) {
                             <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-md lg:min-w-[260px]">
                                 <div className="flex items-center gap-2">
                                     <span className="relative flex h-2 w-2">
-                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                      {hasActiveSession && (
+                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                      )}
+                                      <span className={`relative inline-flex rounded-full h-2 w-2 ${hasActiveSession ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
                                     </span>
                                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/60">
-                                        Active Privileges
+                                        {hasActiveSession ? 'Active Privileges' : 'Workspace Status'}
                                     </p>
                                 </div>
-                                <div className="mt-1 flex flex-wrap gap-2">
-                                    {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
-                                        <span
-                                            key={module}
-                                            className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
-                                        >
-                                            {module.replace(/_/g, ' ')}
-                                        </span>
-                                    ))}
-                                </div>
+                                {hasActiveSession ? (
+                                    <div className="mt-1 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
+                                            <span
+                                                key={module}
+                                                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
+                                            >
+                                                {module.replace(/_/g, ' ')}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="mt-2 text-sm leading-6 text-white/75">
+                                        {isPaused
+                                            ? 'You are currently on break. Resume work to reopen your assigned modules.'
+                                            : 'Clock in to open your assigned modules and start your workspace session.'}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </section>
 
-                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                        {hub.stats.map((stat) => (
-                            <StatCard key={stat.label} stat={stat} theme={theme} />
-                        ))}
-                    </section>
-
-                    <section className="grid gap-5 xl:grid-cols-[1.8fr,0.85fr]">
-                        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-                            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between border-b border-stone-100 pb-4 mb-5">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                                        Directory
-                                    </p>
-                                    <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">
-                                        Open your modules
-                                    </h2>
-                                </div>
-                                <p className="max-w-md text-sm font-medium leading-5 text-stone-500 sm:text-right">
-                                    Only spaces explicitly assigned to your role are available.
-                                </p>
-                            </div>
-
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                {hub.cards.map((card) => (
-                                    <ActionCard key={`${card.module}-${card.routeName}`} card={card} theme={theme} />
+                    {hasActiveSession ? (
+                        <>
+                            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                {hub.stats.map((stat) => (
+                                    <StatCard key={stat.label} stat={stat} theme={theme} />
                                 ))}
-                            </div>
-                        </div>
+                            </section>
 
-                        <div className="flex flex-col gap-4">
+                            <section className="grid gap-5 xl:grid-cols-[1.8fr,0.85fr] animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between border-b border-stone-100 pb-4 mb-5">
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                                                Directory
+                                            </p>
+                                            <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">
+                                                Open your modules
+                                            </h2>
+                                        </div>
+                                        <p className="max-w-md text-sm font-medium leading-5 text-stone-500 sm:text-right">
+                                            Only spaces explicitly assigned to your role are available.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-4 lg:grid-cols-2">
+                                        {hub.cards.map((card) => (
+                                            <ActionCard key={`${card.module}-${card.routeName}`} card={card} theme={theme} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4">
+                                    <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                                            Quick Notes
+                                        </p>
+                                        <h2 className="mt-1.5 text-xl font-bold tracking-tight text-gray-900 border-b border-stone-100 pb-3">
+                                            Keep workflows tight
+                                        </h2>
+
+                                        <div className="mt-4 space-y-3">
+                                            {hub.highlights.map((item) => (
+                                                <div key={item} className="flex gap-3 items-start group">
+                                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-clay-400 transition group-hover:bg-clay-600"></span>
+                                                    <p className="text-sm font-medium leading-relaxed text-stone-600">{item}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="relative overflow-hidden rounded-[2rem] bg-[#1a231f] border border-[#26332d] shadow-lg flex flex-col justify-between p-6">
+                                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                                            <MessageSquareText size={120} strokeWidth={1} className="text-emerald-400 -m-6 -mt-10 transform rotate-12" />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-400">
+                                                Team Messaging
+                                            </p>
+                                            <h3 className="mt-2 text-xl font-bold tracking-tight text-white">
+                                                Coordinate directly
+                                            </h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-emerald-100/70">
+                                                Use internal chats for staff synergy. Buyer order messages remain separated in the Inbox.
+                                            </p>
+                                        </div>
+                                        <Link
+                                            href={route(hub.teamMessagesRoute)}
+                                            className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500/20 hover:border-emerald-500/50"
+                                        >
+                                            Access Team Inbox
+                                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50">
+                                                <ArrowRight size={12} className="text-emerald-800" />
+                                            </div>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </section>
+                        </>
+                    ) : (
+                        <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                                    Quick Notes
+                                    Workspace Access
                                 </p>
-                                <h2 className="mt-1.5 text-xl font-bold tracking-tight text-gray-900 border-b border-stone-100 pb-3">
-                                    Keep workflows tight
+                                <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">
+                                    {isPaused ? 'You are currently on break.' : 'Clock in to start working.'}
                                 </h2>
+                                <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-500">
+                                    {isPaused
+                                        ? 'Your assigned modules stay hidden while you are on break. Resume work when you are ready to continue.'
+                                        : 'Only Workspace is available before attendance starts. Clock in to reveal your assigned modules and continue with your normal workflow.'}
+                                </p>
 
-                                <div className="mt-4 space-y-3">
-                                    {hub.highlights.map((item) => (
-                                        <div key={item} className="flex gap-3 items-start group">
-                                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-clay-400 transition group-hover:bg-clay-600"></span>
-                                            <p className="text-sm font-medium leading-relaxed text-stone-600">{item}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            {/* Premium Team Messaging Block */}
-                            <div className="relative overflow-hidden rounded-[2rem] bg-[#1a231f] border border-[#26332d] shadow-lg flex flex-col justify-between p-6">
-                                <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <MessageSquareText size={120} strokeWidth={1} className="text-emerald-400 -m-6 -mt-10 transform rotate-12" />
-                                </div>
-                                <div className="relative z-10">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-400">
-                                        Team Messaging
-                                    </p>
-                                    <h3 className="mt-2 text-xl font-bold tracking-tight text-white">
-                                        Coordinate directly
-                                    </h3>
-                                    <p className="mt-2 text-sm leading-relaxed text-emerald-100/70">
-                                        Use internal chats for staff synergy. Buyer order messages remain separated in the Inbox.
-                                    </p>
-                                </div>
-                                <Link
-                                    href={route(hub.teamMessagesRoute)}
-                                    className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500/20 hover:border-emerald-500/50"
+                                <button
+                                    type="button"
+                                    onClick={resumeWork}
+                                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-clay-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-clay-700"
                                 >
-                                    Access Team Inbox
-                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50">
-                                        <ArrowRight size={12} className="text-emerald-800" />
-                                    </div>
-                                </Link>
+                                    <PlayCircle size={16} />
+                                    {isPaused ? 'Resume Work' : 'Clock In'}
+                                </button>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+                    )}
                 </main>
             </div>
         </div>
