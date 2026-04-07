@@ -122,7 +122,7 @@ class LalamoveDeliveryFlowTest extends TestCase
         $this->assertSame('https://track.lalamove.test/llm_order_123', $delivery->share_link);
 
         Notification::assertSentTo($buyer, OrderDeliveryUpdateNotification::class);
-        Mail::assertQueued(\App\Mail\OrderShipped::class);
+        Mail::assertSent(\App\Mail\OrderShipped::class);
     }
 
     public function test_seller_can_create_a_two_way_lalamove_replacement_exchange_for_an_accepted_replacement_order(): void

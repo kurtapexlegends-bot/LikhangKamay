@@ -85,7 +85,7 @@ class ReturnRequestPersistenceTest extends TestCase
         $this->assertNotNull($order->return_proof_image);
         Storage::disk('public')->assertExists($order->return_proof_image);
 
-        Mail::assertQueued(ReturnRequested::class, function (ReturnRequested $mail) use ($order, $seller) {
+        Mail::assertSent(ReturnRequested::class, function (ReturnRequested $mail) use ($order, $seller) {
             return $mail->hasTo($seller->email)
                 && $mail->order->is($order);
         });

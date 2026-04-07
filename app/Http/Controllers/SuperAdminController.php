@@ -824,7 +824,13 @@ class SuperAdminController extends Controller
         // Send approval email
         try {
             if ($artisan->email) {
-                Mail::to($artisan->email)->queue(new ArtisanApproved($artisan));
+                $mailer = Mail::to($artisan->email);
+
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue(new ArtisanApproved($artisan));
+                } else {
+                    $mailer->send(new ArtisanApproved($artisan));
+                }
             }
         } catch (\Exception $e) {
             // Log error but continue
@@ -861,7 +867,13 @@ class SuperAdminController extends Controller
         // Send rejection email
         try {
             if ($artisan->email) {
-                Mail::to($artisan->email)->queue(new ArtisanRejected($artisan));
+                $mailer = Mail::to($artisan->email);
+
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue(new ArtisanRejected($artisan));
+                } else {
+                    $mailer->send(new ArtisanRejected($artisan));
+                }
             }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send rejection email: ' . $e->getMessage());

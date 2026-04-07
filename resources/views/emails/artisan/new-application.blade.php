@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <a href="{{ url('/admin/artisans/pending') }}" class="button">📋 Review Applications</a>
+        <a href="{{ route('admin.pending') }}" class="button">📋 Review Applications</a>
 
         <div class="footer">
             <p>LikhangKamay Admin Notification</p>

@@ -11,6 +11,7 @@ use App\Support\StructuredAddress;
 use App\Notifications\OrderDeliveryUpdateNotification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderShipped;
 
@@ -820,7 +821,12 @@ class OrderLogisticsService
             }
 
             if ($lockedOrder->user?->email) {
-                Mail::to($lockedOrder->user->email)->queue(new OrderShipped($lockedOrder));
+                $this->sendMailSilently(
+                    $lockedOrder->user->email,
+                    new OrderShipped($lockedOrder),
+                    'order_shipped_lalamove',
+                    ['order_id' => $lockedOrder->id, 'order_number' => $lockedOrder->order_number]
+                );
             }
 
             return $delivery;
@@ -837,5 +843,27 @@ class OrderLogisticsService
     private function deliveryFlowType(OrderDelivery $delivery): string
     {
         return (string) (data_get($delivery->order_payload, 'metadata.flowType') ?: 'standard_delivery');
+    }
+
+    private function sendMailSilently(string $recipient, OrderShipped $mailable, string $context, array $extraContext = []): void
+    {
+        try {
+            $mailer = Mail::to($recipient);
+
+            if (app()->environment('production') && config('queue.default') !== 'sync') {
+                $mailer->queue($mailable);
+            } else {
+                $mailer->send($mailable);
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            Log::error('Transactional mail send failed.', [
+                'context' => $context,
+                'recipient' => $recipient,
+                'message' => $exception->getMessage(),
+                ...$extraContext,
+            ]);
+        }
     }
 }

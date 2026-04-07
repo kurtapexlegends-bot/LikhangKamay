@@ -152,7 +152,13 @@ class ArtisanSetupController extends Controller
 
             if ($adminEmails->isNotEmpty()) {
                 try {
-                    Mail::to($adminEmails->all())->send(new NewArtisanApplication($user));
+                    $mailer = Mail::to($adminEmails->all());
+
+                    if (app()->environment('production') && config('queue.default') !== 'sync') {
+                        $mailer->queue(new NewArtisanApplication($user));
+                    } else {
+                        $mailer->send(new NewArtisanApplication($user));
+                    }
                 } catch (\Throwable $e) {
                     report($e);
 

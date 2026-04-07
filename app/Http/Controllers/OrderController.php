@@ -23,10 +23,12 @@ use App\Mail\RefundProcessed;
 use App\Notifications\ReplacementResolutionNotification;
 use App\Support\StructuredAddress;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -427,9 +429,19 @@ class OrderController extends Controller
 
         if ($buyer && $buyer->email) {
             if ($request->status === 'Accepted') {
-                Mail::to($buyer->email)->queue(new OrderAccepted($order));
+                $this->sendMailSilently(
+                    $buyer->email,
+                    new OrderAccepted($order),
+                    'order_accepted',
+                    ['order_id' => $order->id, 'order_number' => $order->order_number]
+                );
             } elseif ($request->status === 'Shipped') {
-                Mail::to($buyer->email)->queue(new OrderShipped($order));
+                $this->sendMailSilently(
+                    $buyer->email,
+                    new OrderShipped($order),
+                    'order_shipped',
+                    ['order_id' => $order->id, 'order_number' => $order->order_number]
+                );
             }
         }
 
@@ -517,7 +529,12 @@ class OrderController extends Controller
                 // Send refund email to buyer
                 $buyer = $order?->user;
                 if ($buyer && $buyer->email) {
-                    Mail::to($buyer->email)->queue(new RefundProcessed($order));
+                    $this->sendMailSilently(
+                        $buyer->email,
+                        new RefundProcessed($order),
+                        'refund_processed',
+                        ['order_id' => $order->id, 'order_number' => $order->order_number]
+                    );
                 }
             } catch (\Throwable $e) {
                 report($e);
@@ -904,8 +921,13 @@ class OrderController extends Controller
                 // Send email notification to seller
                 $seller = User::find($artisanId);
                 if ($seller && $seller->email) {
-                    $order->load('items'); 
-                    Mail::to($seller->email)->queue(new OrderPlaced($order));
+                    $order->load('items');
+                    $this->sendMailSilently(
+                        $seller->email,
+                        new OrderPlaced($order),
+                        'order_placed',
+                        ['order_id' => $order->id, 'order_number' => $order->order_number]
+                    );
                     $seller->notify(new \App\Notifications\NewOrderNotification($order));
                 }
             }
@@ -1096,7 +1118,12 @@ class OrderController extends Controller
         $order->load('items');
         $buyer = Auth::user();
         if ($buyer && $buyer->email) {
-            Mail::to($buyer->email)->queue(new OrderDelivered($order));
+            $this->sendMailSilently(
+                $buyer->email,
+                new OrderDelivered($order),
+                'order_delivered',
+                ['order_id' => $order->id, 'order_number' => $order->order_number]
+            );
         }
 
         $successMessage = $order->replacement_started_at !== null && $order->replacement_resolved_at !== null
@@ -1187,7 +1214,12 @@ class OrderController extends Controller
         $order->load('items');
         $seller = User::find($order->artisan_id);
         if ($seller && $seller->email) {
-            Mail::to($seller->email)->queue(new ReturnRequested($order));
+            $this->sendMailSilently(
+                $seller->email,
+                new ReturnRequested($order),
+                'return_requested',
+                ['order_id' => $order->id, 'order_number' => $order->order_number]
+            );
         }
 
         return redirect()->back()->with('success', 'Return request submitted. Please chat with the seller to negotiate.');
@@ -1520,5 +1552,27 @@ class OrderController extends Controller
         }
 
         return $requirements;
+    }
+
+    private function sendMailSilently(string $recipient, Mailable $mailable, string $context, array $extraContext = []): void
+    {
+        try {
+            $mailer = Mail::to($recipient);
+
+            if (app()->environment('production') && config('queue.default') !== 'sync') {
+                $mailer->queue($mailable);
+            } else {
+                $mailer->send($mailable);
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            Log::error('Transactional mail send failed.', [
+                'context' => $context,
+                'recipient' => $recipient,
+                'message' => $exception->getMessage(),
+                ...$extraContext,
+            ]);
+        }
     }
 }
