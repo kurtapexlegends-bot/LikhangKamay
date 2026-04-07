@@ -13,6 +13,16 @@ class ThreeDModelUploadValidationTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function fakeValidGltf(string $filename): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent($filename, json_encode([
+            'asset' => ['version' => '2.0'],
+            'scene' => 0,
+            'scenes' => [['nodes' => []]],
+            'nodes' => [],
+        ], JSON_THROW_ON_ERROR));
+    }
+
     public function test_product_store_accepts_glb_file_with_generic_mime_type(): void
     {
         Storage::fake('public');
@@ -65,7 +75,7 @@ class ThreeDModelUploadValidationTest extends TestCase
             'cost_price' => 0,
             'stock' => 5,
             'status' => 'Active',
-            'model_3d' => UploadedFile::fake()->create('replacement-model.gltf', 100, 'application/json'),
+            'model_3d' => $this->fakeValidGltf('replacement-model.gltf'),
         ]);
 
         $response->assertRedirect();
@@ -98,7 +108,7 @@ class ThreeDModelUploadValidationTest extends TestCase
 
         $response = $this->actingAs($seller)->post(route('3d.upload'), [
             'product_id' => $product->id,
-            'model' => UploadedFile::fake()->create('manager-model.gltf', 100, 'application/json'),
+            'model' => $this->fakeValidGltf('manager-model.gltf'),
         ]);
 
         $response->assertRedirect();

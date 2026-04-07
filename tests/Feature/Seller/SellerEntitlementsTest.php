@@ -4,6 +4,7 @@ namespace Tests\Feature\Seller;
 
 use App\Models\Employee;
 use App\Models\Payroll;
+use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use App\Services\SellerEntitlementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -266,11 +267,25 @@ class SellerEntitlementsTest extends TestCase
 
     private function createCompletedStaff(User $owner, string $presetKey = 'custom', array $permissions = [], string $userLevel = 'standard'): User
     {
-        return User::factory()->staff($owner)->create([
+        $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => $presetKey,
-            'staff_module_permissions' => User::withStaffUserLevelFlag($permissions, $userLevel),
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(
+                User::withStaffUserLevelFlag($permissions, $userLevel),
+                true
+            ),
         ]);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        return $staff;
     }
 }

@@ -303,6 +303,9 @@ export default function PendingArtisans({ artisans }) {
 
                         <div className="bg-white px-5 sm:px-6 py-4 border-t border-stone-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sticky bottom-0 z-20">
                              <div className="space-y-0.5">
+                                <p className="text-[10px] font-medium text-stone-400">
+                                    Approve once submitted documents previewed and reviewed as needed.
+                                </p>
                                 {approvalError && (
                                     <p className="text-[10px] font-semibold text-red-600">{approvalError}</p>
                                 )}

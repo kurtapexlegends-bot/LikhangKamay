@@ -3,6 +3,7 @@
 namespace Tests\Feature\Staff;
 
 use App\Models\TeamMessage;
+use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -14,10 +15,20 @@ class Phase4AuditRegressionTest extends TestCase
 
     public function test_team_inbox_hard_scopes_messages_to_the_actor_seller_organization(): void
     {
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+        ]);
+        $owner->modules_enabled = [
+            'hr' => true,
+            'accounting' => false,
+            'procurement' => false,
+        ];
+        $owner->save();
         $staff = $this->createStaff($owner, 'hr');
 
-        $otherOwner = User::factory()->artisanApproved()->create();
+        $otherOwner = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+        ]);
 
         TeamMessage::create([
             'seller_owner_id' => $owner->id,
@@ -57,11 +68,22 @@ class Phase4AuditRegressionTest extends TestCase
 
     private function createStaff(User $owner, string $presetKey, array $permissions = []): User
     {
-        return User::factory()->staff($owner)->create([
+        $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => $presetKey,
-            'staff_module_permissions' => $permissions,
+            'staff_module_permissions' => User::withWorkspaceAccessFlag($permissions, true),
         ]);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        return $staff;
     }
 }

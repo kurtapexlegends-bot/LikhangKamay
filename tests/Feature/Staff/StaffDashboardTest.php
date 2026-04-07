@@ -4,6 +4,7 @@ namespace Tests\Feature\Staff;
 
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -110,7 +111,7 @@ class StaffDashboardTest extends TestCase
 
     public function test_custom_staff_hub_only_surfaces_granted_modules_plus_team_inbox(): void
     {
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = $this->createPremiumOwner();
         $staff = $this->createStaff($owner, 'custom', [
             'products' => true,
             'analytics' => true,
@@ -152,11 +153,22 @@ class StaffDashboardTest extends TestCase
 
     private function createStaff(User $owner, string $presetKey, array $permissions = []): User
     {
-        return User::factory()->staff($owner)->create([
+        $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => $presetKey,
-            'staff_module_permissions' => $permissions,
+            'staff_module_permissions' => User::withWorkspaceAccessFlag($permissions, true),
         ]);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        return $staff;
     }
 }

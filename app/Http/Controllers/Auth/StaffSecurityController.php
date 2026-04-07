@@ -61,8 +61,9 @@ class StaffSecurityController extends Controller
     public function confirmLogout(Request $request, StaffAttendanceService $attendanceService): Response|RedirectResponse
     {
         $user = $this->getStaffUser($request);
+        $fromGenericLogout = (bool) $request->session()->pull('staff.logout.intent', false);
 
-        if ($user->canAccessSellerWorkspace()) {
+        if ($user->canAccessSellerWorkspace() && !$fromGenericLogout) {
             return redirect()->route('staff.dashboard');
         }
 

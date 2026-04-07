@@ -76,7 +76,7 @@ class AccountingTransparencyTest extends TestCase
         $owner = $this->createSellerOwner();
         $requester = $this->createStaff($owner, 'hr', [
             'hr' => true,
-        ]);
+        ], User::STAFF_ACCESS_PERMISSION_UPDATE);
         $this->clockInStaff($requester);
         $accountingStaff = $this->createStaff($owner, 'accounting', [
             'accounting' => true,
@@ -293,13 +293,21 @@ class AccountingTransparencyTest extends TestCase
         return $owner;
     }
 
-    private function createStaff(User $owner, string $presetKey, array $permissions): User
+    private function createStaff(
+        User $owner,
+        string $presetKey,
+        array $permissions,
+        string $accessLevel = User::STAFF_ACCESS_PERMISSION_READ_ONLY
+    ): User
     {
         return User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => $presetKey,
-            'staff_module_permissions' => User::withWorkspaceAccessFlag($permissions, true),
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(
+                User::withStaffAccessPermissionLevelFlag($permissions, $accessLevel),
+                true
+            ),
         ]);
     }
 

@@ -51,16 +51,17 @@ class WalletCheckoutTest extends TestCase
         $this->assertSame('home', $order->shipping_address_type);
         $this->assertSame(1200.0, (float) $order->merchandise_subtotal);
         $this->assertSame(36.0, (float) $order->convenience_fee_amount);
-        $this->assertSame(1236.0, (float) $order->total_amount);
+        $this->assertSame(69.0, (float) $order->shipping_fee_amount);
+        $this->assertSame(1305.0, (float) $order->total_amount);
 
         $buyer->refresh();
-        $this->assertSame(3764.0, (float) $buyer->wallet->balance);
+        $this->assertSame(3695.0, (float) $buyer->wallet->balance);
         $this->assertDatabaseHas('wallet_transactions', [
             'wallet_id' => $buyer->wallet->id,
             'order_id' => $order->id,
             'direction' => 'debit',
             'category' => 'checkout_wallet_payment',
-            'amount' => 1236.00,
+            'amount' => 1305.00,
         ]);
     }
 

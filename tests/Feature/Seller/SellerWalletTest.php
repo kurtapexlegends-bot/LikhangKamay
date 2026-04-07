@@ -3,6 +3,7 @@
 namespace Tests\Feature\Seller;
 
 use App\Models\SellerWalletWithdrawalRequest;
+use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -73,6 +74,14 @@ class SellerWalletTest extends TestCase
             'email_verified_at' => now(),
             'staff_role_preset_key' => 'accounting',
             'staff_module_permissions' => User::withWorkspaceAccessFlag(['accounting' => true, 'wallet' => true], true),
+        ]);
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $seller->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
         ]);
 
         app(WalletService::class)->credit($seller, 500, 'seed_seller_wallet', 'Seed seller wallet');

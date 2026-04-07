@@ -62,7 +62,7 @@ class AuthenticatedSessionController extends Controller
                 : StaffAttendanceService::MODE_CLOCKED_OUT
         );
 
-        return $this->destroy($request);
+        return $this->performLogout($request);
     }
 
     /**
@@ -70,12 +70,31 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        /** @var \App\Models\User|null $user */
+        $user = $request->user();
+
+        if (
+            $user?->isStaff()
+            && $user->canAccessSellerWorkspace()
+            && $request->route()?->getName() !== 'staff.logout.direct'
+        ) {
+            $request->session()->put('staff.logout.intent', true);
+
+            return redirect()->route('staff.logout.confirm');
+        }
+
+        return $this->performLogout($request);
+    }
+
+    private function performLogout(Request $request): RedirectResponse
+    {
         Auth::guard('web')->logout();
 
         $request->session()->forget([
             'social_auth',
             'social_auth_role',
             'social_auth_remember',
+            'staff.logout.intent',
         ]);
 
         $request->session()->invalidate();

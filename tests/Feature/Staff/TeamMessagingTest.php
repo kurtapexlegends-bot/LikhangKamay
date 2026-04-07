@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Staff;
 
+use App\Models\Message;
+use App\Models\Order;
 use App\Models\TeamMessage;
 use App\Models\User;
+use App\Models\StaffAttendanceSession;
 use App\Notifications\NewTeamMessageNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -20,7 +23,7 @@ class TeamMessagingTest extends TestCase
     {
         Notification::fake();
 
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = $this->createPremiumOwner();
         $staff = $this->createStaff($owner, 'hr');
 
         $this->actingAs($owner)
@@ -51,7 +54,7 @@ class TeamMessagingTest extends TestCase
 
     public function test_staff_can_message_other_staff_in_same_seller_organization(): void
     {
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = $this->createPremiumOwner();
         $hrStaff = $this->createStaff($owner, 'hr');
         $accountingStaff = $this->createStaff($owner, 'accounting');
 
@@ -74,7 +77,7 @@ class TeamMessagingTest extends TestCase
     {
         Storage::fake('public');
 
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = $this->createPremiumOwner();
         $staff = $this->createStaff($owner, 'hr');
 
         $this->actingAs($owner)
@@ -94,8 +97,8 @@ class TeamMessagingTest extends TestCase
 
     public function test_cross_shop_team_messages_are_blocked(): void
     {
-        $firstOwner = User::factory()->artisanApproved()->create();
-        $secondOwner = User::factory()->artisanApproved()->create();
+        $firstOwner = $this->createPremiumOwner();
+        $secondOwner = $this->createPremiumOwner();
         $firstStaff = $this->createStaff($firstOwner, 'hr');
         $secondStaff = $this->createStaff($secondOwner, 'hr');
 
@@ -115,7 +118,7 @@ class TeamMessagingTest extends TestCase
 
     public function test_team_inbox_renders_for_staff_and_marks_messages_seen(): void
     {
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = $this->createPremiumOwner();
         $staff = $this->createStaff($owner, 'custom', []);
         $message = TeamMessage::create([
             'seller_owner_id' => $owner->id,
@@ -140,28 +143,90 @@ class TeamMessagingTest extends TestCase
         $this->assertTrue($message->fresh()->is_read);
     }
 
-    public function test_staff_cannot_access_buyer_seller_chat_and_buyers_cannot_access_team_inbox(): void
+    public function test_staff_with_messages_access_can_open_the_seller_chat_workspace(): void
     {
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = $this->createPremiumOwner();
+        $staff = $this->createStaff($owner, 'customer_support');
+        $buyer = User::factory()->create();
+
+        Order::create([
+            'order_number' => 'ORD-TEAMMSG-001',
+            'user_id' => $buyer->id,
+            'artisan_id' => $owner->id,
+            'customer_name' => $buyer->name,
+            'shipping_address' => 'Buyer Address',
+            'shipping_method' => 'Delivery',
+            'payment_method' => 'COD',
+            'payment_status' => 'pending',
+            'total_amount' => 100,
+            'status' => 'Pending',
+        ]);
+
+        Message::create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $buyer->id,
+            'message' => 'Hello from the shop.',
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('chat.index', ['user_id' => $buyer->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Seller/Chat')
+                ->where('currentChatUser.id', $buyer->id)
+                ->where('activeMessages.0.text', 'Hello from the shop.')
+            );
+    }
+
+    public function test_staff_cannot_access_buyer_chat_and_buyers_cannot_access_team_inbox(): void
+    {
+        $owner = $this->createPremiumOwner();
         $staff = $this->createStaff($owner, 'customer_support');
         $buyer = User::factory()->create();
 
         $this->actingAs($staff)
-            ->get(route('chat.index'))
-            ->assertForbidden();
+            ->get(route('buyer.chat'))
+            ->assertRedirect(route('staff.home', absolute: false));
 
         $this->actingAs($buyer)
             ->get(route('team-messages.index'))
             ->assertForbidden();
     }
 
+    private function createPremiumOwner(): User
+    {
+        $owner = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+        ]);
+
+        $owner->modules_enabled = [
+            'hr' => true,
+            'accounting' => true,
+            'procurement' => true,
+        ];
+        $owner->save();
+
+        return $owner;
+    }
+
     private function createStaff(User $owner, string $presetKey, array $permissions = []): User
     {
-        return User::factory()->staff($owner)->create([
+        $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => $presetKey,
-            'staff_module_permissions' => $permissions,
+            'staff_module_permissions' => User::withWorkspaceAccessFlag($permissions, true),
         ]);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        return $staff;
     }
 }

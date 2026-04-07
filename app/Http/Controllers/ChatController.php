@@ -31,7 +31,8 @@ class ChatController extends Controller
     public function store(Request $request)
     {
         $actor = $request->user();
-        $this->authorizeChatActor($actor);
+        $sellerPerspective = $this->isSellerWorkspaceChatActor($actor);
+        $this->authorizeChatActor($actor, $sellerPerspective);
 
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
@@ -44,7 +45,7 @@ class ChatController extends Controller
         }
 
         $receiver = User::findOrFail($request->integer('receiver_id'));
-        $this->authorizeSharedConversationCounterpart($actor, $receiver);
+        $this->authorizeConversationCounterpart($actor, $receiver, $sellerPerspective);
 
         $attachmentPath = null;
         $attachmentType = null;
@@ -56,8 +57,10 @@ class ChatController extends Controller
             $attachmentType = str_starts_with($mimeType, 'image/') ? 'image' : 'document';
         }
 
+        $senderId = $this->resolveConversationUserId($actor, $sellerPerspective);
+
         $msg = Message::create([
-            'sender_id' => Auth::id(),
+            'sender_id' => $senderId,
             'receiver_id' => $request->receiver_id,
             'message' => $request->message ?? '',
             'attachment_path' => $attachmentPath,
@@ -65,7 +68,8 @@ class ChatController extends Controller
         ]);
 
         // Notify Receiver
-        $senderName = Auth::user()->shop_name ?: Auth::user()->name;
+        $senderIdentity = $sellerPerspective ? $this->sellerOwner() : $actor;
+        $senderName = $senderIdentity->shop_name ?: $senderIdentity->name;
         $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
 
         return redirect()->back();
@@ -74,17 +78,20 @@ class ChatController extends Controller
     public function markAsSeen(Request $request) 
     {
         $actor = $request->user();
-        $this->authorizeChatActor($actor);
+        $sellerPerspective = $this->isSellerWorkspaceChatActor($actor);
+        $this->authorizeChatActor($actor, $sellerPerspective);
 
         $request->validate([
             'sender_id' => 'required|exists:users,id'
         ]);
 
         $sender = User::findOrFail($request->integer('sender_id'));
-        $this->authorizeSharedConversationCounterpart($actor, $sender);
+        $this->authorizeConversationCounterpart($actor, $sender, $sellerPerspective);
+
+        $conversationUserId = $this->resolveConversationUserId($actor, $sellerPerspective);
 
         Message::where('sender_id', $request->sender_id)
-            ->where('receiver_id', Auth::id())
+            ->where('receiver_id', $conversationUserId)
             ->update(['is_read' => true]);
 
         return response()->json(['success' => true]);
@@ -94,16 +101,17 @@ class ChatController extends Controller
     public function signalTyping(Request $request)
     {
         $actor = $request->user();
-        $this->authorizeChatActor($actor);
+        $sellerPerspective = $this->isSellerWorkspaceChatActor($actor);
+        $this->authorizeChatActor($actor, $sellerPerspective);
 
         $request->validate([
             'receiver_id' => 'required|exists:users,id'
         ]);
 
-        $userId = Auth::id();
+        $userId = $this->resolveConversationUserId($actor, $sellerPerspective);
         $receiverId = $request->receiver_id;
         $receiver = User::findOrFail((int) $receiverId);
-        $this->authorizeSharedConversationCounterpart($actor, $receiver);
+        $this->authorizeConversationCounterpart($actor, $receiver, $sellerPerspective);
 
         // Store typing status in cache for 4 seconds
         Cache::put("typing-{$userId}-to-{$receiverId}", true, 4);
@@ -117,7 +125,7 @@ class ChatController extends Controller
         $actor = $request->user();
         $this->authorizeChatActor($actor, $sellerPerspective);
 
-        $userId = Auth::id();
+        $userId = $this->resolveConversationUserId($actor, $sellerPerspective);
         $activeChatId = (int) $request->query('user_id');
 
         // A. GET CONVERSATION LIST
@@ -322,15 +330,18 @@ class ChatController extends Controller
     private function authorizeChatActor(?User $actor, bool $sellerPerspective = false): void
     {
         abort_unless($actor, 403, 'Authentication required.');
-        abort_if($actor->isAdmin() || $actor->isStaff(), 403, 'Unauthorized chat access.');
 
         if ($sellerPerspective) {
             abort_unless(
-                $actor->isArtisan() && $actor->canAccessSellerModule('messages'),
+                $this->isSellerWorkspaceChatActor($actor),
                 403,
                 'Unauthorized seller chat access.'
             );
+
+            return;
         }
+
+        abort_if($actor->isAdmin() || $actor->isStaff(), 403, 'Unauthorized chat access.');
     }
 
     private function authorizeConversationCounterpart(User $actor, User $counterpart, bool $sellerPerspective): void
@@ -365,12 +376,14 @@ class ChatController extends Controller
         }
 
         if ($sellerPerspective) {
-            if (!$actor->isArtisan() || !$actor->canAccessSellerModule('messages')) {
+            if (!$this->isSellerWorkspaceChatActor($actor)) {
                 return false;
             }
 
+            $sellerUserId = $this->resolveConversationUserId($actor, true);
+
             return $this->hasOrderRelationship($this->sellerOwnerId(), $counterpart->id)
-                || $this->hasExistingConversation($actor->id, $counterpart->id);
+                || $this->hasExistingConversation($sellerUserId, $counterpart->id);
         }
 
         if (!$counterpart->isArtisan()) {
@@ -379,6 +392,24 @@ class ChatController extends Controller
 
         return $this->hasOrderRelationship($counterpart->id, $actor->id)
             || $this->hasExistingConversation($actor->id, $counterpart->id);
+    }
+
+    private function isSellerWorkspaceChatActor(?User $actor): bool
+    {
+        if (!$actor || !$actor->canAccessSellerModule('messages')) {
+            return false;
+        }
+
+        if ($actor->isArtisan()) {
+            return $actor->canAccessSellerOwnerRoutes();
+        }
+
+        return $actor->isStaff() && $actor->canAccessSellerWorkspace();
+    }
+
+    private function resolveConversationUserId(User $actor, bool $sellerPerspective): int
+    {
+        return $sellerPerspective ? $this->sellerOwnerId() : $actor->id;
     }
 
     private function hasExistingConversation(int $firstUserId, int $secondUserId): bool

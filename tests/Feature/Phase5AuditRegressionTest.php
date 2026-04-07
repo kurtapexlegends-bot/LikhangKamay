@@ -106,7 +106,15 @@ class Phase5AuditRegressionTest extends TestCase
      */
     private function createVerifiedStaffWithEmployee(): array
     {
-        $owner = User::factory()->artisanApproved()->create();
+        $owner = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+        ]);
+        $owner->modules_enabled = [
+            'hr' => true,
+            'accounting' => false,
+            'procurement' => false,
+        ];
+        $owner->save();
         $employee = Employee::create([
             'user_id' => $owner->id,
             'name' => 'Audit Staff',

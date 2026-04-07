@@ -130,11 +130,12 @@ class StaffAccountSecurityTest extends TestCase
     {
         $owner = User::factory()->artisanApproved()->create([
             'shop_name' => 'Clay House',
+            'premium_tier' => 'premium',
         ]);
         $staff = User::factory()->staff($owner)->create([
             'must_change_password' => false,
             'staff_role_preset_key' => 'custom',
-            'staff_module_permissions' => [],
+            'staff_module_permissions' => User::withWorkspaceAccessFlag([], true),
         ]);
 
         $response = $this->actingAs($staff)->get('/dashboard');
