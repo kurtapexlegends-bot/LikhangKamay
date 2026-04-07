@@ -219,12 +219,18 @@ export default function Cart({ cart }) {
                                                             />
                                                         </div>
                                                         <div className="min-w-0 flex-1">
-                                                            <Link 
-                                                                href={route('product.show', item.slug || item.id)} 
-                                                                className="text-sm font-medium text-gray-900 hover:text-clay-600 transition line-clamp-2"
-                                                            >
-                                                                {item.name}
-                                                            </Link>
+                                                            {item.slug ? (
+                                                                <Link
+                                                                    href={route('product.show', item.slug)}
+                                                                    className="text-sm font-medium text-gray-900 hover:text-clay-600 transition line-clamp-2"
+                                                                >
+                                                                    {item.name}
+                                                                </Link>
+                                                            ) : (
+                                                                <span className="text-sm font-medium text-gray-500 line-clamp-2">
+                                                                    {item.name}
+                                                                </span>
+                                                            )}
                                                             <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
                                                             <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
                                                             <button 

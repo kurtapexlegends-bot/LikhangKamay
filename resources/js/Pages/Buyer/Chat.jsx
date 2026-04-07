@@ -30,6 +30,9 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     const imageInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
     const lastTypingSignal = useRef(0);
+    const currentChatUserShopHref = currentChatUser?.shop_slug
+        ? route('shop.seller', currentChatUser.shop_slug)
+        : null;
     const currentChatUserAddress = formatStructuredAddress({
         street_address: currentChatUser?.street_address,
         barangay: currentChatUser?.barangay,
@@ -603,13 +606,20 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                     <p className="text-sm text-gray-500 mb-4">{currentChatUser.email}</p>
                                     
                                     <div className="flex gap-2 w-full">
-                                        <Link
-                                            href={route('shop.seller', currentChatUser.shop_slug || currentChatUser.id)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition shadow-sm"
-                                        >
-                                            <ShoppingBag size={16} className="text-clay-500" />
-                                            View Shop
-                                        </Link>
+                                        {currentChatUserShopHref ? (
+                                            <Link
+                                                href={currentChatUserShopHref}
+                                                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition shadow-sm"
+                                            >
+                                                <ShoppingBag size={16} className="text-clay-500" />
+                                                View Shop
+                                            </Link>
+                                        ) : (
+                                            <span className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-50 border border-gray-200 text-gray-400 rounded-xl text-sm font-semibold cursor-not-allowed shadow-sm">
+                                                <ShoppingBag size={16} className="text-gray-300" />
+                                                Shop Unavailable
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 

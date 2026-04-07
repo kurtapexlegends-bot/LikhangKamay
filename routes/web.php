@@ -149,7 +149,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         
         Route::get('/3d-manager', [ThreeDManagerController::class, 'index'])->middleware('seller.module:3d')->name('3d.index');
         Route::post('/3d-manager/upload', [ThreeDManagerController::class, 'upload'])->middleware('seller.module:3d')->name('3d.upload');
-        Route::delete('/3d-manager/{product}', [ThreeDManagerController::class, 'destroy'])->middleware('seller.module:3d')->name('3d.destroy');
+        Route::delete('/3d-manager/{product:id}', [ThreeDManagerController::class, 'destroy'])->middleware('seller.module:3d')->name('3d.destroy');
 
         Route::get('/seller-wallet', [SellerWalletController::class, 'index'])->middleware('seller.module:wallet')->name('seller.wallet.index');
         Route::post('/seller-wallet/withdrawals', [SellerWalletController::class, 'storeWithdrawalRequest'])->middleware('seller.module:wallet')->name('seller.wallet.withdrawals.store');
