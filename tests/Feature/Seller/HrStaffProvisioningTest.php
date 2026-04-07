@@ -196,7 +196,7 @@ class HrStaffProvisioningTest extends TestCase
         Notification::fake();
 
         $owner = $this->createOwnerWithHrAccess();
-        $staff = User::factory()->staff($owner)->create([
+        $staff = $this->createClockedInStaff($owner, [
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => 'hr',
@@ -220,6 +220,27 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertForbidden();
         $this->assertDatabaseMissing('users', ['email' => 'blocked.user@gmail.com']);
         Notification::assertNothingSent();
+    }
+
+    public function test_hr_staff_with_read_only_access_cannot_create_employee_records(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+        $staff = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => ['hr' => true],
+        ]);
+
+        $response = $this->actingAs($staff)->post(route('hr.store'), [
+            'name' => 'Read Only Attempt',
+            'role' => 'Assistant',
+            'salary' => 12000,
+            'create_login_account' => false,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('employees', ['name' => 'Read Only Attempt']);
     }
 
     public function test_staff_manager_with_hr_access_can_create_login_accounts(): void
@@ -342,7 +363,7 @@ class HrStaffProvisioningTest extends TestCase
     public function test_hr_staff_cannot_delete_employees_with_linked_login_accounts(): void
     {
         $owner = $this->createOwnerWithHrAccess();
-        $staff = User::factory()->staff($owner)->create([
+        $staff = $this->createClockedInStaff($owner, [
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => 'hr',
@@ -662,14 +683,51 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'overview'));
     }
 
-    public function test_hr_staff_can_update_employee_record_without_affecting_permissions(): void
+    public function test_hr_staff_with_read_only_access_cannot_update_employee_records(): void
     {
         $owner = $this->createOwnerWithHrAccess();
-        $staff = User::factory()->staff($owner)->create([
+        $staff = $this->createClockedInStaff($owner, [
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => 'hr',
             'staff_module_permissions' => ['hr' => true],
+        ]);
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Editable Employee',
+            'role' => 'Assistant',
+            'salary' => 15000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->patch(route('hr.update', $employee->id), [
+            'name' => 'Edited By HR',
+            'role' => 'Payroll Assistant',
+            'salary' => 16250,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('employees', [
+            'id' => $employee->id,
+            'name' => 'Editable Employee',
+            'role' => 'Assistant',
+            'salary' => 15000,
+        ]);
+    }
+
+    public function test_hr_staff_with_update_access_can_update_employee_record_without_affecting_permissions(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+        $staff = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(
+                ['hr' => true],
+                User::STAFF_ACCESS_PERMISSION_UPDATE
+            ),
         ]);
 
         $employee = Employee::create([
@@ -699,7 +757,7 @@ class HrStaffProvisioningTest extends TestCase
     public function test_hr_staff_cannot_suspend_existing_login_access_via_update(): void
     {
         $owner = $this->createOwnerWithHrAccess();
-        $staff = User::factory()->staff($owner)->create([
+        $staff = $this->createClockedInStaff($owner, [
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => 'hr',
@@ -729,16 +787,95 @@ class HrStaffProvisioningTest extends TestCase
             'create_login_account' => false,
         ]);
 
-        $response->assertRedirect();
+        $response->assertForbidden();
         $this->assertDatabaseHas('employees', [
             'id' => $employee->id,
-            'name' => 'Protected Login Updated',
-            'salary' => 17200,
+            'name' => 'Protected Login',
+            'salary' => 17000,
         ]);
         $this->assertDatabaseHas('users', [
             'id' => $linkedLogin->id,
         ]);
         $this->assertTrue($linkedLogin->fresh()->isWorkspaceAccessEnabled());
+    }
+
+    public function test_hr_staff_with_read_only_access_cannot_delete_employees_without_linked_login_accounts(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+        $staff = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => ['hr' => true],
+        ]);
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Read Only Protected Employee',
+            'role' => 'Assistant',
+            'salary' => 15000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->delete(route('hr.destroy', $employee->id));
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('employees', ['id' => $employee->id]);
+    }
+
+    public function test_hr_staff_with_read_only_access_cannot_update_payroll_settings(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+        $staff = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => ['hr' => true],
+        ]);
+
+        $response = $this->actingAs($staff)->post(route('hr.settings'), [
+            'overtime_rate' => 99,
+            'payroll_working_days' => 26,
+        ]);
+
+        $response->assertForbidden();
+        $owner->refresh();
+        $this->assertNotSame(99.0, (float) $owner->overtime_rate);
+        $this->assertNotSame(26, (int) $owner->payroll_working_days);
+    }
+
+    public function test_hr_staff_with_read_only_access_cannot_generate_payroll(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+        $staff = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => ['hr' => true],
+        ]);
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Payroll Protected Employee',
+            'role' => 'Assistant',
+            'salary' => 15000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->post(route('hr.generate'), [
+            'month' => 'April 2026',
+            'items' => [[
+                'employee_id' => $employee->id,
+                'absences_days' => 0,
+                'undertime_hours' => 0,
+                'overtime_hours' => 0,
+            ]],
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('payrolls', 0);
     }
 
     public function test_existing_employee_records_without_login_still_render_safely(): void
@@ -763,6 +900,7 @@ class HrStaffProvisioningTest extends TestCase
                 ->where('staff.0.name', 'Legacy Employee')
                 ->where('staff.0.has_login_account', false)
                 ->where('staff.0.login_account', null)
+                ->where('staffProvisioning.canEditHrRecords', true)
                 ->where('staffProvisioning.canManageStaffAccounts', true)
         );
     }
@@ -925,6 +1063,7 @@ class HrStaffProvisioningTest extends TestCase
                 ->where('staff.0.name', 'Legacy Employee')
                 ->where('staff.0.has_login_account', false)
                 ->where('staff.0.login_account', null)
+                ->where('staffProvisioning.canEditHrRecords', true)
                 ->where('staffProvisioning.canManageStaffAccounts', false)
                 ->where('staffProvisioning.requiresStaffSchemaUpdate', true)
         );
@@ -944,5 +1083,24 @@ class HrStaffProvisioningTest extends TestCase
         $owner->save();
 
         return $owner;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function createClockedInStaff(User $owner, array $attributes = []): User
+    {
+        $staff = User::factory()->staff($owner)->create($attributes);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        return $staff;
     }
 }

@@ -6,8 +6,9 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     
     // Check both premium_tier (from User model) and subscription_plan (if passed explicitly)
     const plan = user.premium_tier || user.subscription_plan || 'free';
-    const isPremium = plan === 'premium' && user.role !== 'super_admin';
-    const isElite = plan === 'super_premium' && user.role !== 'super_admin';
+    const isSellerOwner = user.role === 'artisan';
+    const isPremium = isSellerOwner && plan === 'premium';
+    const isElite = isSellerOwner && plan === 'super_premium';
     const avatarBaseSrc = user.avatar
         ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`)
         : null;
@@ -28,7 +29,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
                     <Sparkles size={14} strokeWidth={2.5} className="fill-violet-400" />
                 </div>
             )}
-            <div className={`${className} rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-bold uppercase overflow-hidden ring-2 ring-offset-2 ${isElite ? 'ring-violet-500' : isPremium ? 'ring-amber-500' : 'ring-stone-200'} shrink-0`}>
+            <div className={`${className} rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-bold uppercase overflow-hidden ${isElite || isPremium ? 'ring-2 ring-offset-2' : ''} ${isElite ? 'ring-violet-500' : isPremium ? 'ring-amber-500' : ''} shrink-0`}>
                 {avatarSrc ? (
                     <img 
                         src={avatarSrc}

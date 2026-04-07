@@ -592,6 +592,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
     const { addToast } = useToast();
+    const canEditHrRecords = staffProvisioning.canEditHrRecords ?? true;
     const canManageStaffAccounts = !!staffProvisioning.canManageStaffAccounts;
     const canCreateStaffAccounts = !!staffProvisioning.canCreateStaffAccounts;
     const canDeleteStaffAccounts = !!staffProvisioning.canDeleteStaffAccounts;
@@ -607,6 +608,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         acc[preset.key] = preset.label;
         return acc;
     }, {});
+    const showReadOnlyToast = () => addToast('Read-only HR access can only view records.', 'error');
 
     const buildModuleSelection = (presetKey) => {
         const preset = rolePresets.find((item) => item.key === presetKey) || rolePresets.find((item) => item.key === 'custom');
@@ -627,6 +629,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     const submitSettings = (e) => {
         e.preventDefault();
+
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
         postSettings(route('hr.settings'), {
             onSuccess: () => {
                 setIsSettingsOpen(false);
@@ -700,6 +708,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     const submit = (e) => {
         e.preventDefault();
+
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
         const isProvisioningLogin = data.create_login_account;
 
         post(route('hr.store'), {
@@ -780,6 +794,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const openEditModal = (employee) => {
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
         const hasLoginAccount = !!employee.has_login_account;
         const workspaceAccessEnabled = employee.login_account?.workspace_access_enabled !== false;
         const presetKey = employee.login_account?.role_preset_key || initialPresetKey;
@@ -815,6 +834,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const submitEdit = (e) => {
         e.preventDefault();
 
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
         if (!editingEmployee) {
             return;
         }
@@ -832,6 +856,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const deleteEmployee = (id) => {
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
         setConfirmModal({ isOpen: true, type: 'employee', id });
     };
 
@@ -870,6 +899,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     });
 
     const openPayrollModal = () => {
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
         // Initialize items with active staff
         const initialItems = staff.map(emp => ({
             employee_id: emp.id,
@@ -895,6 +929,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     const submitPayroll = (e) => {
         e.preventDefault();
+
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
         
         const selectedItems = payrollData.items.filter(i => i.isSelected);
         if (selectedItems.length === 0) {
@@ -933,10 +972,20 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const deletePayroll = (id) => {
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
         setConfirmModal({ isOpen: true, type: 'payroll', id });
     };
 
     const confirmDeleteAction = () => {
+        if (!canEditHrRecords) {
+            closeConfirmModal();
+            return;
+        }
+
         if (!confirmModal.id) {
             return;
         }
@@ -1003,25 +1052,34 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-6">
                         {/* Actions */}
                         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-                            <button 
-                                onClick={() => setIsSettingsOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-200 transition transform active:scale-95"
-                                title="Payroll Settings"
-                            >
-                                <SettingsIcon size={16} />
-                            </button>
-                            <button 
-                                onClick={openPayrollModal}
-                                className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
-                            >
-                                <Banknote size={16} /> Generate Payroll
-                            </button>
-                            <button 
-                                onClick={() => setIsModalOpen(true)} 
-                                className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
-                            >
-                                <UserPlus size={16} /> Add Employee
-                            </button>
+                            {canEditHrRecords ? (
+                                <>
+                                    <button 
+                                        onClick={() => setIsSettingsOpen(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-200 transition transform active:scale-95"
+                                        title="Payroll Settings"
+                                    >
+                                        <SettingsIcon size={16} />
+                                    </button>
+                                    <button 
+                                        onClick={openPayrollModal}
+                                        className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
+                                    >
+                                        <Banknote size={16} /> Generate Payroll
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsModalOpen(true)} 
+                                        className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
+                                    >
+                                        <UserPlus size={16} /> Add Employee
+                                    </button>
+                                </>
+                            ) : (
+                                <span className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-500">
+                                    <EyeOff size={14} />
+                                    View Only
+                                </span>
+                            )}
                             <NotificationDropdown />
                         </div>
 
@@ -1220,30 +1278,34 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     </button>
                                                 </td>
                                                 <td className="px-5 py-3.5 pr-6 text-right align-middle">
-                                                    <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                        <button
-                                                            onClick={() => openEditModal(emp)}
-                                                            className="p-1.5 text-stone-500 hover:text-clay-600 bg-white border border-stone-200 shadow-sm hover:bg-[#FCF7F2] hover:border-[#E7D8C9] rounded-lg transition"
-                                                            title="Update Data"
-                                                            type="button"
-                                                        >
-                                                            <Pencil size={14} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => deleteEmployee(emp.id)}
-                                                            disabled={emp.has_login_account && !canDeleteStaffAccounts}
-                                                            className={`p-1.5 rounded-lg border shadow-sm transition ${
-                                                                emp.has_login_account && !canDeleteStaffAccounts
-                                                                    ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300'
-                                                                    : 'bg-white border-stone-200 text-stone-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
-                                                            }`}
-                                                            title={emp.has_login_account && !canDeleteStaffAccounts
-                                                                ? 'Only the shop owner or a user with the proper staff account access level can remove employees with login access'
-                                                                : 'Remove Employee'}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
+                                                    {canEditHrRecords ? (
+                                                        <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                            <button
+                                                                onClick={() => openEditModal(emp)}
+                                                                className="p-1.5 text-stone-500 hover:text-clay-600 bg-white border border-stone-200 shadow-sm hover:bg-[#FCF7F2] hover:border-[#E7D8C9] rounded-lg transition"
+                                                                title="Update Data"
+                                                                type="button"
+                                                            >
+                                                                <Pencil size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteEmployee(emp.id)}
+                                                                disabled={emp.has_login_account && !canDeleteStaffAccounts}
+                                                                className={`p-1.5 rounded-lg border shadow-sm transition ${
+                                                                    emp.has_login_account && !canDeleteStaffAccounts
+                                                                        ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300'
+                                                                        : 'bg-white border-stone-200 text-stone-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+                                                                }`}
+                                                                title={emp.has_login_account && !canDeleteStaffAccounts
+                                                                    ? 'Only the shop owner or a user with the proper staff account access level can remove employees with login access'
+                                                                    : 'Remove Employee'}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-[11px] font-medium text-stone-400">View only</span>
+                                                    )}
                                                 </td>
                                             </tr>
                                         )})
@@ -1255,8 +1317,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                         <Users size={32} className="text-clay-300" />
                                                     </div>
                                                     <h3 className="text-lg font-bold text-gray-900 mb-1">No Staff Found</h3>
-                                                    <p className="text-sm text-stone-500 mb-6">Start by adding your first employee to the directory.</p>
-                                                    <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-clay-600 text-white font-bold rounded-xl shadow-lg shadow-clay-200 hover:bg-clay-700 transition">Create New Record</button>
+                                                    <p className="text-sm text-stone-500 mb-6">
+                                                        {canEditHrRecords
+                                                            ? 'Start by adding your first employee to the directory.'
+                                                            : 'Read-only HR access can view records only.'}
+                                                    </p>
+                                                    {canEditHrRecords && (
+                                                        <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-clay-600 text-white font-bold rounded-xl shadow-lg shadow-clay-200 hover:bg-clay-700 transition">Create New Record</button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1317,7 +1385,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">
-                                                    {['Pending', 'Rejected'].includes(payroll.status) ? (
+                                                    {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) ? (
                                                         <button 
                                                             onClick={() => deletePayroll(payroll.id)} 
                                                             className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition"
@@ -1597,7 +1665,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         <button type="button" onClick={closeAddModal} className="px-5 py-2.5 text-[13px] font-bold text-stone-600 hover:text-stone-900 transition">
                             Cancel Setup
                         </button>
-                        <button type="submit" disabled={processing} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
+                        <button type="submit" disabled={processing || !canEditHrRecords} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
                             {data.create_login_account ? 'Register & Provision' : 'Register Employee'}
                         </button>
                     </div>
@@ -1895,7 +1963,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         <button type="button" onClick={closeEditModal} className="px-5 py-2.5 text-[13px] font-bold text-stone-600 hover:text-stone-900 transition">
                             Cancel
                         </button>
-                        <button type="submit" disabled={editProcessing} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
+                        <button type="submit" disabled={editProcessing || !canEditHrRecords} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
                             Update Record
                         </button>
                     </div>
@@ -2008,7 +2076,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                     <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
                         <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={payrollProcessing || payrollData.items.filter(i => i.isSelected).length === 0} className="disabled:opacity-50 px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
+                        <button type="submit" disabled={payrollProcessing || payrollData.items.filter(i => i.isSelected).length === 0 || !canEditHrRecords} className="disabled:opacity-50 px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
                             Request Pay
                         </button>
                     </div>
@@ -2048,7 +2116,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                     <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
                         <button type="button" onClick={() => setIsSettingsOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={settingsProcessing} className="px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
+                        <button type="submit" disabled={settingsProcessing || !canEditHrRecords} className="px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
                             Save Settings
                         </button>
                     </div>

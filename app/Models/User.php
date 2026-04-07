@@ -124,7 +124,15 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new \App\Notifications\VerifyEmailNotification);
+        $notification = new \App\Notifications\VerifyEmailNotification;
+
+        if (app()->environment('production') && config('queue.default') !== 'sync') {
+            $this->notify($notification);
+
+            return;
+        }
+
+        $this->notifyNow($notification);
     }
 
     /**
@@ -391,6 +399,17 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             self::DEFAULT_STAFF_USER_LEVEL,
             self::STAFF_MANAGER_USER_LEVEL,
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function staffUserLevelValidationValues(): array
+    {
+        return array_values(array_unique([
+            ...static::staffUserLevels(),
+            ...self::STAFF_ONLY_USER_LEVEL_ALIASES,
+        ]));
     }
 
     public function hasCompletedStaffSecurityGate(): bool

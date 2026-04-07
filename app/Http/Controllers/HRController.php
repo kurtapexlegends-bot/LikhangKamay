@@ -141,6 +141,7 @@ class HRController extends Controller
                 'attendance_month_label' => $this->attendanceMonthLabel(),
             ],
             'staffProvisioning' => [
+                'canEditHrRecords' => $this->canEditHrRecords($actor),
                 'canManageStaffAccounts' => $actor->canUpdateStaffAccounts() && $this->supportsStaffProvisioningSchema(),
                 'canCreateStaffAccounts' => $actor->canCreateStaffAccounts() && $this->supportsStaffProvisioningSchema(),
                 'canDeleteStaffAccounts' => $actor->canDeleteStaffAccounts() && $this->supportsStaffProvisioningSchema(),
@@ -158,7 +159,7 @@ class HRController extends Controller
 
     public function store(Request $request, SellerEntitlementService $entitlementService)
     {
-        $actor = $this->sellerActor();
+        $actor = $this->requireEditableHrActor();
 
         $request->merge([
             'name' => trim((string) $request->input('name')),
@@ -195,7 +196,7 @@ class HRController extends Controller
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
                 'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
                 'manage_staff_accounts' => ['nullable', 'boolean'],
-                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevels())],
+                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevelValidationValues())],
                 'module_overrides' => ['nullable', 'array'],
                 'module_overrides.*' => ['boolean'],
             ]);
@@ -275,7 +276,7 @@ class HRController extends Controller
 
     public function destroy($id)
     {
-        $actor = $this->sellerActor();
+        $actor = $this->requireEditableHrActor();
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -305,7 +306,7 @@ class HRController extends Controller
 
     public function update(Request $request, $id, SellerEntitlementService $entitlementService)
     {
-        $actor = $this->sellerActor();
+        $actor = $this->requireEditableHrActor();
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -355,7 +356,7 @@ class HRController extends Controller
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
                 'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
                 'manage_staff_accounts' => ['nullable', 'boolean'],
-                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevels())],
+                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevelValidationValues())],
                 'module_overrides' => ['nullable', 'array'],
                 'module_overrides.*' => ['boolean'],
             ]);
@@ -501,6 +502,8 @@ class HRController extends Controller
 
     public function updateSettings(Request $request)
     {
+        $this->requireEditableHrActor();
+
         $request->validate([
             'overtime_rate' => 'required|numeric|min:0',
             'payroll_working_days' => 'required|integer|min:1|max:31',
@@ -516,6 +519,8 @@ class HRController extends Controller
 
     public function generatePayroll(Request $request)
     {
+        $this->requireEditableHrActor();
+
         $validated = $request->validate([
             'month' => 'required|string',
             'items' => 'required|array',
@@ -702,6 +707,24 @@ class HRController extends Controller
     private function resolveManageStaffAccountsPermission(array $validated): bool
     {
         return $this->resolveStaffAccessPermissionLevel($validated) !== User::STAFF_ACCESS_PERMISSION_READ_ONLY;
+    }
+
+    private function canEditHrRecords(User $actor): bool
+    {
+        return $actor->isSellerOwner() || $actor->canUpdateStaffAccounts();
+    }
+
+    private function requireEditableHrActor(): User
+    {
+        $actor = $this->sellerActor();
+
+        abort_unless(
+            $this->canEditHrRecords($actor),
+            403,
+            'Read-only HR access can only view records.'
+        );
+
+        return $actor;
     }
 
     private function buildEmployeeUpdateSuccessMessage(
