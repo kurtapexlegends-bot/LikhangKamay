@@ -391,7 +391,6 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             '3d',
             'orders',
             'messages',
-            'team_messages',
             'reviews',
             'shop_settings',
         ];

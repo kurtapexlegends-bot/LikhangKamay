@@ -5,6 +5,7 @@ namespace Tests\Feature\Seller;
 use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\User;
+use App\Services\SellerEntitlementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -183,23 +184,38 @@ class SellerEntitlementsTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_all_workspace_enabled_staff_always_get_team_inbox_access(): void
+    public function test_standard_staff_does_not_get_team_inbox_access(): void
     {
         $owner = User::factory()->artisanApproved()->create();
         $staff = $this->createCompletedStaff($owner, 'custom');
+        $entitlements = app(SellerEntitlementService::class)->getEntitlementsFor($staff);
 
-        $response = $this->actingAs($staff)->get(route('team-messages.index'));
+        $this->assertNotNull($entitlements);
+        $this->assertNotContains('team_messages', $entitlements['visibleModules']);
+    }
 
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/TeamMessages')
-            ->where('sellerSidebar.actorType', 'staff')
-            ->where('sellerSidebar.visibleModules', function ($modules) {
-                $modules = $modules instanceof Collection ? $modules->all() : $modules;
+    public function test_premium_staff_still_get_team_inbox_access(): void
+    {
+        $owner = $this->createPremiumOwner();
+        $staff = $this->createCompletedStaff($owner, 'custom');
+        $entitlements = app(SellerEntitlementService::class)->getEntitlementsFor($staff);
 
-                return in_array('team_messages', $modules, true);
-            })
-        );
+        $this->assertNotNull($entitlements);
+        $this->assertContains('team_messages', $entitlements['visibleModules']);
+    }
+
+    public function test_team_inbox_is_hidden_for_standard_owners_but_visible_for_premium_owners(): void
+    {
+        $standardOwner = User::factory()->artisanApproved()->create();
+        $premiumOwner = $this->createPremiumOwner();
+
+        $standardEntitlements = app(SellerEntitlementService::class)->getEntitlementsFor($standardOwner);
+        $premiumEntitlements = app(SellerEntitlementService::class)->getEntitlementsFor($premiumOwner);
+
+        $this->assertNotNull($standardEntitlements);
+        $this->assertNotNull($premiumEntitlements);
+        $this->assertNotContains('team_messages', $standardEntitlements['visibleModules']);
+        $this->assertContains('team_messages', $premiumEntitlements['visibleModules']);
     }
 
     public function test_suspended_staff_keeps_the_linked_account_but_loses_workspace_access(): void

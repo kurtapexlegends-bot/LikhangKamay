@@ -25,6 +25,8 @@ class ProductController extends Controller
     use ValidatesThreeDModelUploads;
 
     private const MAX_THREE_D_STORAGE_BYTES = 524288000;
+    private const MIN_ACTIVE_GALLERY_IMAGES = 3;
+    private const MAX_GALLERY_IMAGES = 5;
 
     const VALID_CATEGORIES = [
         'Tableware',
@@ -79,15 +81,21 @@ class ProductController extends Controller
             'lead_time' => 'nullable|integer',
             'status' => 'required|string',
             'cover_photo' => 'nullable|image|max:10240',
+            'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
             'gallery.*' => 'nullable|image|max:10240',
             'model_3d' => $this->threeDModelUploadRules(),
             ...$this->threeDModelAssetRules(),
         ]);
 
         $seller = $this->sellerOwner();
-        $requestedStatus = $this->normalizeStatusForThreeDRequirement(
-            $validated['status'],
+        $activationReadiness = $this->evaluateActivationReadiness(
+            $request->hasFile('cover_photo'),
+            count($request->file('gallery', [])),
             $request->hasFile('model_3d')
+        );
+        $requestedStatus = $this->normalizeStatusForActivationRequirements(
+            $validated['status'],
+            $activationReadiness['canBeActive']
         );
 
         if ($requestedStatus === 'Active' && !$seller->canAddMoreProducts()) {
@@ -164,7 +172,7 @@ class ProductController extends Controller
         });
 
         return redirect()->back()->with('success', $requestedStatus === 'Draft' && $validated['status'] === 'Active'
-            ? 'Product saved as Draft. Upload a 3D model before listing it as Active.'
+            ? $this->draftActivationRequirementMessage($activationReadiness['missing'])
             : 'Product created successfully!');
     }
 
@@ -185,6 +193,7 @@ class ProductController extends Controller
             'status' => 'required|string',
             'category' => ['required', 'string', Rule::in(self::VALID_CATEGORIES)],
             'cover_photo' => 'nullable|image|max:10240',
+            'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
             'gallery.*' => 'nullable|image|max:10240',
             'retained_gallery' => 'nullable|array',
             'model_3d' => $this->threeDModelUploadRules(),
@@ -193,9 +202,15 @@ class ProductController extends Controller
 
         $seller = $this->sellerOwner();
         $existingModelPath = $product->model_3d_path;
-        $requestedStatus = $this->normalizeStatusForThreeDRequirement(
-            $validated['status'],
+        $retainedGallery = $request->input('retained_gallery', []);
+        $activationReadiness = $this->evaluateActivationReadiness(
+            $request->hasFile('cover_photo') || filled($product->cover_photo_path),
+            count($retainedGallery) + count($request->file('gallery', [])),
             $request->hasFile('model_3d') || filled($product->model_3d_path)
+        );
+        $requestedStatus = $this->normalizeStatusForActivationRequirements(
+            $validated['status'],
+            $activationReadiness['canBeActive']
         );
 
         if ($requestedStatus === 'Active' && $product->status !== 'Active' && !$seller->canAddMoreProducts()) {
@@ -227,7 +242,6 @@ class ProductController extends Controller
             $product->model_3d_path = $this->storeThreeDModelBundle($request);
         }
 
-        $retainedGallery = $request->input('retained_gallery', []);
         $oldGallery = $product->gallery_paths ?? [];
         $deletedGallery = array_diff($oldGallery, $retainedGallery);
         foreach ($deletedGallery as $deletedPath) {
@@ -287,7 +301,7 @@ class ProductController extends Controller
         $supply->save();
 
         return redirect()->back()->with('success', $requestedStatus === 'Draft' && $validated['status'] === 'Active'
-            ? 'Product saved as Draft. Upload a 3D model before listing it as Active.'
+            ? $this->draftActivationRequirementMessage($activationReadiness['missing'])
             : 'Product updated successfully!');
     }
 
@@ -303,11 +317,16 @@ class ProductController extends Controller
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
         $seller = $this->sellerOwner();
+        $activationReadiness = $this->evaluateActivationReadiness(
+            filled($product->cover_photo_path),
+            count($product->gallery_paths ?? []),
+            filled($product->model_3d_path)
+        );
 
-        if (!$product->model_3d_path) {
+        if (!$activationReadiness['canBeActive']) {
             $product->update(['status' => 'Draft']);
 
-            return back()->with('error', 'Products need a 3D model before they can be listed as Active. It remains in Draft.');
+            return back()->with('error', $this->activationBlockedMessage($activationReadiness['missing']));
         }
 
         if (!$seller->canAddMoreProducts()) {
@@ -328,8 +347,15 @@ class ProductController extends Controller
 
         $amount = $validated['amount'];
         $product->increment('stock', $amount);
+        $activationReadiness = $this->evaluateActivationReadiness(
+            filled($product->cover_photo_path),
+            count($product->gallery_paths ?? []),
+            filled($product->model_3d_path)
+        );
         $product->update([
-            'status' => $product->model_3d_path ? 'Active' : 'Draft',
+            'status' => $product->status === 'Archived'
+                ? 'Archived'
+                : ($activationReadiness['canBeActive'] ? 'Active' : 'Draft'),
         ]);
 
         if ($product->track_as_supply && $product->supply) {
@@ -339,13 +365,82 @@ class ProductController extends Controller
         return redirect()->back()->with('success', 'Product stock updated.');
     }
 
-    private function normalizeStatusForThreeDRequirement(string $requestedStatus, bool $hasThreeDModel): string
+    private function normalizeStatusForActivationRequirements(string $requestedStatus, bool $canBeActive): string
     {
-        if ($requestedStatus === 'Active' && !$hasThreeDModel) {
+        if ($requestedStatus === 'Active' && !$canBeActive) {
             return 'Draft';
         }
 
         return $requestedStatus;
+    }
+
+    /**
+     * @return array{canBeActive: bool, missing: array<int, string>}
+     */
+    private function evaluateActivationReadiness(bool $hasCoverPhoto, int $galleryImageCount, bool $hasThreeDModel): array
+    {
+        $missing = [];
+
+        if (!$hasCoverPhoto) {
+            $missing[] = 'a cover image';
+        }
+
+        if (
+            $galleryImageCount < self::MIN_ACTIVE_GALLERY_IMAGES
+            || $galleryImageCount > self::MAX_GALLERY_IMAGES
+        ) {
+            $missing[] = '3 to 5 gallery images';
+        }
+
+        if (!$hasThreeDModel) {
+            $missing[] = 'a 3D model';
+        }
+
+        return [
+            'canBeActive' => empty($missing),
+            'missing' => $missing,
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $missingRequirements
+     */
+    private function draftActivationRequirementMessage(array $missingRequirements): string
+    {
+        return 'Product saved as Draft. Add ' . $this->humanizeRequirementList($missingRequirements) . ' before listing it as Active.';
+    }
+
+    /**
+     * @param  array<int, string>  $missingRequirements
+     */
+    private function activationBlockedMessage(array $missingRequirements): string
+    {
+        return 'This product needs ' . $this->humanizeRequirementList($missingRequirements) . ' before it can be listed as Active. It remains in Draft.';
+    }
+
+    /**
+     * @param  array<int, string>  $requirements
+     */
+    private function humanizeRequirementList(array $requirements): string
+    {
+        $requirements = array_values(array_unique($requirements));
+        $count = count($requirements);
+
+        if ($count === 0) {
+            return 'the required media';
+        }
+
+        if ($count === 1) {
+            return $requirements[0];
+        }
+
+        if ($count === 2) {
+            return $requirements[0] . ' and ' . $requirements[1];
+        }
+
+        $lastRequirement = array_pop($requirements);
+
+        return implode(', ', $requirements) . ', and ' . $lastRequirement;
     }
 
     private function resizeAndSave($file, $path)

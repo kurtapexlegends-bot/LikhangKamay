@@ -286,10 +286,6 @@ class StaffDashboardController extends Controller
                     return false;
                 }
 
-                if ($key === 'team_messages') {
-                    return true;
-                }
-
                 return $hasModule($catalog[$key]['module']);
             })
             ->map(fn (string $key) => $catalog[$key])

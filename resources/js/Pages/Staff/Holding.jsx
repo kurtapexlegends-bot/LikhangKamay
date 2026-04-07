@@ -16,6 +16,7 @@ const formatRolePreset = (value) => {
 export default function Holding({ staffAccount, sellerOwner }) {
     const workspaceAccessEnabled = staffAccount?.workspace_access_enabled !== false;
     const planSuspended = !!staffAccount?.plan_workspace_suspended;
+    const accountSuspended = !workspaceAccessEnabled && !planSuspended;
 
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(196,143,103,0.14),_transparent_38%),linear-gradient(180deg,#fcfaf7_0%,#f4efe7_100%)] px-4 py-10 font-sans text-stone-800 sm:px-6">
@@ -30,17 +31,19 @@ export default function Holding({ staffAccount, sellerOwner }) {
                                     <ShieldCheck size={24} />
                                 </div>
                                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/70">
-                                    {workspaceAccessEnabled ? 'Staff Workspace Status' : planSuspended ? 'Seller Plan Suspension' : 'Seller Access Suspended'}
+                                    {workspaceAccessEnabled ? 'Workspace Status' : planSuspended ? 'Seller Plan Suspension' : accountSuspended ? 'Workspace Account Suspended' : 'Workspace Status'}
                                 </p>
                                 <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight sm:text-4xl">
-                                    {workspaceAccessEnabled ? 'Workspace access needs a route.' : planSuspended ? 'Workspace access is paused by the current seller plan.' : 'Workspace access is paused.'}
+                                    {workspaceAccessEnabled ? 'Workspace access needs a route.' : planSuspended ? 'Workspace access is paused by the current seller plan.' : accountSuspended ? 'Your workspace account is suspended.' : 'Workspace access is paused.'}
                                 </h1>
                                 <p className="mt-3 max-w-lg text-sm leading-6 text-stone-100/90">
                                     {workspaceAccessEnabled
-                                        ? 'This page is now only used when a staff account signs in without an active seller workspace route. Once a seller context and workspace access are both available, the account should land in the role-specific staff hub instead.'
+                                        ? 'This page is now only used when a workspace account signs in without an active seller workspace route. Once a seller context and workspace access are both available, the account should land in the correct role-specific hub instead.'
                                         : planSuspended
-                                            ? 'This staff account still exists, but the seller recently downgraded plans and staff workspace access is paused until the shop upgrades again.'
-                                            : 'This staff account still exists, but the shop owner has temporarily suspended seller workspace access. Contact the shop owner when access should be restored.'}
+                                            ? 'This workspace account still exists, but the seller recently downgraded plans and workspace access is paused until the shop upgrades again.'
+                                            : accountSuspended
+                                                ? 'The shop owner has suspended this workspace account. Contact the shop owner if you believe access should be restored.'
+                                                : 'Workspace access is currently unavailable.'}
                                 </p>
                             </div>
 
@@ -60,7 +63,7 @@ export default function Holding({ staffAccount, sellerOwner }) {
                                 <UserRoundCog size={20} />
                             </div>
                             <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">
-                                Staff Account
+                                Workspace Account
                             </p>
                             <h2 className="mt-2 text-lg font-bold text-stone-900">{staffAccount.name}</h2>
                             <p className="mt-1 text-sm text-stone-500">{staffAccount.email}</p>
@@ -70,7 +73,7 @@ export default function Holding({ staffAccount, sellerOwner }) {
                                 </div>
                                 {!workspaceAccessEnabled && (
                                     <div className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-                                        {planSuspended ? 'Plan Suspended' : 'Access Suspended'}
+                                        {planSuspended ? 'Plan Suspended' : 'Workspace Suspended'}
                                     </div>
                                 )}
                             </div>
@@ -101,7 +104,7 @@ export default function Holding({ staffAccount, sellerOwner }) {
                                     ? 'Security setup is complete, but the workspace still needs a valid seller route before staff modules can open safely.'
                                     : planSuspended
                                         ? 'This account can still sign in, but seller workspace routes stay blocked until the shop upgrades to restore staff access.'
-                                        : 'This account can sign in, but seller workspace routes stay blocked until the shop owner restores access.'}
+                                        : 'This account can sign in, but seller workspace routes stay blocked while the suspension is in effect.'}
                             </p>
                             <Link
                                 href={route('home')}

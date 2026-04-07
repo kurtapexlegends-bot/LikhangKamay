@@ -14,7 +14,9 @@ class SellerEntitlementService
      */
     protected function alwaysVisibleWorkspaceModulesFor(User $user): array
     {
-        if ($user->isSellerOwner() || $user->isStaff()) {
+        $seller = $user->getEffectiveSeller();
+
+        if (($user->isSellerOwner() || $user->isStaff()) && $seller?->isPremiumTier()) {
             return ['team_messages'];
         }
 
