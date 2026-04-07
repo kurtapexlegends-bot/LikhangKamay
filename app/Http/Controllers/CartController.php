@@ -71,8 +71,9 @@ class CartController extends Controller
                 ->values()
                 ->all();
 
-            $liveProducts = Product::whereIn('id', $productIds)
-                ->get(['id', 'price', 'sku', 'slug'])
+            $liveProducts = Product::with('user:id,name,shop_name,city')
+                ->whereIn('id', $productIds)
+                ->get(['id', 'user_id', 'price', 'sku', 'slug'])
                 ->keyBy('id');
             
             $updatedCart = false;
@@ -95,6 +96,24 @@ class CartController extends Controller
 
                 if (($item['slug'] ?? null) !== $liveProduct->slug) {
                     $item['slug'] = $liveProduct->slug;
+                    $updatedCart = true;
+                }
+
+                $shopName = $liveProduct->user?->shop_name ?? $liveProduct->user?->name ?? 'Shop';
+                $location = $liveProduct->user?->city ?? 'Cavite';
+
+                if (($item['seller'] ?? null) !== $shopName) {
+                    $item['seller'] = $shopName;
+                    $updatedCart = true;
+                }
+
+                if (($item['shop_name'] ?? null) !== $shopName) {
+                    $item['shop_name'] = $shopName;
+                    $updatedCart = true;
+                }
+
+                if (($item['location'] ?? null) !== $location) {
+                    $item['location'] = $location;
                     $updatedCart = true;
                 }
             }
@@ -147,7 +166,7 @@ class CartController extends Controller
                 'price' => $product->price,
                 'qty' => $requestedQty,
                 'img' => $product->img,
-                'seller' => $product->user->name ?? 'Artisan',
+                'seller' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
                 'shop_name' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
                 'location' => $product->user->city ?? 'Cavite'
             ];
@@ -240,7 +259,7 @@ class CartController extends Controller
                     'price' => $product->price,
                     'qty' => 1, // Start with 1
                     'img' => $product->img, 
-                    'seller' => $product->user->name ?? 'Artisan',
+                    'seller' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
                     'shop_name' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
                     'location' => $product->user->city ?? 'Cavite'
                 ];

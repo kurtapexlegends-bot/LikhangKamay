@@ -27,10 +27,17 @@ class ShopController extends Controller
 
         // Search Filter (Weighted)
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim((string) $request->search);
+            $likeSearch = "%{$search}%";
+
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($sellerQuery) use ($search) {
+                        $sellerQuery->where('shop_name', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%")
+                            ->orWhere('shop_slug', 'like', "%{$search}%");
+                    })
                     // If product is sponsored and has valid dates, it should match the "sponsored" keyword
                     ->orWhere(function($sq) use ($search) {
                         if (strtolower($search) === 'sponsored') {
@@ -40,15 +47,26 @@ class ShopController extends Controller
                     });
             });
 
-            // Weighted Ordering: Sponsored > Name match > Category match > Description match
+            // Weighted Ordering: Sponsored > Product name > Seller/shop name > Category > Description
             $query->orderByRaw("
                 CASE 
                     WHEN is_sponsored = 1 AND sponsored_until >= NOW() THEN 1
                     WHEN name LIKE ? THEN 2
-                    WHEN category LIKE ? THEN 3
-                    ELSE 4 
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM users
+                        WHERE users.id = products.user_id
+                          AND (
+                              users.shop_name LIKE ?
+                              OR users.name LIKE ?
+                              OR users.shop_slug LIKE ?
+                          )
+                    ) THEN 3
+                    WHEN category LIKE ? THEN 4
+                    WHEN description LIKE ? THEN 5
+                    ELSE 6 
                 END
-            ", ["%{$search}%", "%{$search}%"]);
+            ", [$likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch]);
         }
 
         // Price Range Filter

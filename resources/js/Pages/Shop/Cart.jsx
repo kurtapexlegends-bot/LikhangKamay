@@ -34,7 +34,7 @@ export default function Cart({ cart }) {
 
     // Group items by seller
     const groupedBySeller = cartItems.reduce((acc, item) => {
-        const seller = item.seller || 'Unknown Seller';
+        const seller = item.shop_name || item.seller || 'Unknown Seller';
         if (!acc[seller]) acc[seller] = [];
         acc[seller].push(item);
         return acc;

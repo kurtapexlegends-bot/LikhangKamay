@@ -669,7 +669,12 @@ export default function MyOrders({ auth, orders }) {
                                 
                                 {/* Order Header */}
                                 <div className="px-4 py-3 bg-[#FDFBF9] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-stone-100">
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex items-center gap-1.5 text-stone-600">
+                                            <Store size={12} />
+                                            <span className="text-[11px] font-bold">{order.seller_name || 'Shop'}</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Order Ref</span>
                                             <h3 className="font-bold tracking-tight text-stone-900 text-[13px]">#{order.order_number || order.id}</h3>
@@ -679,6 +684,7 @@ export default function MyOrders({ auth, orders }) {
                                             <Clock size={12} />
                                             <span className="text-[11px] font-medium">{order.date}</span>
                                         </div>
+                                    </div>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <PaymentStatusBadge status={order.payment_status} method={order.payment_method} />
@@ -910,6 +916,14 @@ export default function MyOrders({ auth, orders }) {
                                             <div className="flex items-center justify-between gap-4 sm:justify-start">
                                                 <span className="min-w-[120px]">Fee (3%)</span>
                                                 <span className="font-bold text-stone-800 text-right whitespace-nowrap shrink-0">PHP {order.convenience_fee_amount}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-4 sm:justify-start">
+                                                <span className="min-w-[120px]">Shipping Fee</span>
+                                                <span className="font-bold text-stone-800 text-right whitespace-nowrap shrink-0">
+                                                    {order.shipping_method === 'Pick Up'
+                                                        ? 'Free'
+                                                        : `PHP ${order.shipping_fee_amount}`}
+                                                </span>
                                             </div>
                                             <div className="flex items-center justify-between gap-4 pt-1.5 mt-1.5 border-t border-stone-200/60 sm:justify-start">
                                                 <span className="min-w-[120px] font-bold text-stone-900 text-[13px]">Total</span>

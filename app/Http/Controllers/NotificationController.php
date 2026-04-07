@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\NotificationPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,20 +17,9 @@ class NotificationController extends Controller
         $user = Auth::user();
         
         return response()->json([
-            'notifications' => $user->notifications()->take(20)->get()->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'type' => $notification->data['type'] ?? 'general',
-                    'title' => $notification->data['title'] ?? 'Notification',
-                    'message' => $notification->data['message'] ?? '',
-                    'reason' => $notification->data['reason'] ?? null,
-                    'request_type' => $notification->data['request_type'] ?? null,
-                    'request_id' => $notification->data['request_id'] ?? null,
-                    'url' => $notification->data['url'] ?? null,
-                    'read_at' => $notification->read_at,
-                    'created_at' => $notification->created_at->diffForHumans(),
-                ];
-            }),
+            'notifications' => $user->notifications()->take(20)->get()->map(
+                fn ($notification) => NotificationPresenter::present($notification, $user)
+            ),
             'unread_count' => $user->unreadNotifications()->count(),
         ]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\NotificationPresenter;
 use App\Services\SellerEntitlementService;
 use App\Services\StaffAttendanceService;
 use Illuminate\Http\Request;
@@ -31,20 +32,7 @@ class HandleInertiaRequests extends Middleware
             $notifications = $request->user()->notifications()
                 ->take(10)
                 ->get()
-                ->map(function ($notification) {
-                    return [
-                        'id' => $notification->id,
-                        'type' => $notification->data['type'] ?? 'general',
-                        'title' => $notification->data['title'] ?? 'Notification',
-                        'message' => $notification->data['message'] ?? '',
-                        'reason' => $notification->data['reason'] ?? null,
-                        'request_type' => $notification->data['request_type'] ?? null,
-                        'request_id' => $notification->data['request_id'] ?? null,
-                        'url' => $notification->data['url'] ?? null,
-                        'read_at' => $notification->read_at,
-                        'created_at' => $notification->created_at->diffForHumans(),
-                    ];
-                });
+                ->map(fn ($notification) => NotificationPresenter::present($notification, $request->user()));
             $unreadNotificationCount = $request->user()->unreadNotifications()->count();
         }
 

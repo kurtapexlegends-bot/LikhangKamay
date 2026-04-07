@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\StructuredAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
@@ -128,11 +129,30 @@ class ArtisanSetupController extends Controller
                     $admin->notify(new NewArtisanApplicationNotification($user));
                 });
 
-            $adminEmail = config('services.artisan_applications.notification_email');
+            $adminEmails = collect([
+                config('services.artisan_applications.notification_email'),
+            ])
+                ->flatMap(function ($value) {
+                    if (!filled($value)) {
+                        return [];
+                    }
 
-            if (filled($adminEmail)) {
+                    return preg_split('/[,;]+/', (string) $value) ?: [];
+                })
+                ->merge(
+                    UserModel::query()
+                        ->where('role', 'super_admin')
+                        ->whereNotNull('email')
+                        ->pluck('email')
+                )
+                ->map(fn ($email) => strtolower(trim((string) $email)))
+                ->filter(fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL))
+                ->unique()
+                ->values();
+
+            if ($adminEmails->isNotEmpty()) {
                 try {
-                    Mail::to($adminEmail)->send(new NewArtisanApplication($user));
+                    Mail::to($adminEmails->all())->send(new NewArtisanApplication($user));
                 } catch (\Throwable $e) {
                     report($e);
 
@@ -140,6 +160,17 @@ class ArtisanSetupController extends Controller
                         ->route('artisan.pending')
                         ->with('warning', 'Application submitted, but the admin notification email could not be sent.');
                 }
+            }
+
+            if ($adminEmails->isEmpty()) {
+                Log::warning('Artisan application submitted without an email recipient.', [
+                    'artisan_user_id' => $user->id,
+                    'shop_name' => $user->shop_name,
+                ]);
+
+                return redirect()
+                    ->route('artisan.pending')
+                    ->with('warning', 'Application submitted, but no admin email recipient is configured.');
             }
 
             return redirect()->route('artisan.pending');

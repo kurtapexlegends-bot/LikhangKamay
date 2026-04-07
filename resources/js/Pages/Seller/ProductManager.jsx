@@ -136,6 +136,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         cover_photo: null,
         gallery: [],
         model_3d: null,
+        model_3d_assets: [],
+        model_3d_asset_paths: [],
         model_3d_path: null,
     });
 
@@ -249,6 +251,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             lead_time: 3,
             retained_gallery: [],
             gallery: [],
+            model_3d: null,
+            model_3d_assets: [],
+            model_3d_asset_paths: [],
             model_3d_path: null,
             track_as_supply: false,
         });
@@ -269,6 +274,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             cover_photo: null, 
             gallery: [],
             model_3d: null,
+            model_3d_assets: [],
+            model_3d_asset_paths: [],
             status: product.model_3d_path || product.status !== 'Active' ? product.status : 'Draft',
             track_as_supply: product.track_as_supply || false,
         });
@@ -301,9 +308,33 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 revokeBlobUrl(previews.cover);
             }
             setPreviews(prev => ({ ...prev, cover: file ? URL.createObjectURL(file) : null }));
+        } else if (field === 'model_3d') {
+            setData('model_3d', file);
+            setData('model_3d_assets', []);
+            setData('model_3d_asset_paths', []);
         } else {
             setData(field, file);
         }
+    };
+
+    const handleModelAssetFolderChange = (event) => {
+        const selectedFiles = Array.from(event.target.files || []);
+        const mainModelName = data.model_3d?.name || '';
+        const normalizedFiles = selectedFiles
+            .filter((file) => file.name !== mainModelName)
+            .map((file) => ({
+                file,
+                relativePath: (
+                    file.webkitRelativePath
+                        ? file.webkitRelativePath.split(/[\\/]/).filter(Boolean).join('/')
+                        : file.name
+                ) || file.name,
+            }))
+            .filter(({ relativePath }) => Boolean(relativePath));
+
+        setData('model_3d_assets', normalizedFiles.map(({ file }) => file));
+        setData('model_3d_asset_paths', normalizedFiles.map(({ relativePath }) => relativePath));
+        event.target.value = '';
     };
 
     const handleRemoveGalleryImage = (indexToRemove) => {
@@ -1003,7 +1034,17 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                             <p className="text-[10px] text-green-600">New file selected</p>
                                                         </div>
                                                     </div>
-                                                    <button type="button" onClick={() => setData('model_3d', null)} className="text-green-600 hover:text-green-800"><X size={16}/></button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setData('model_3d', null);
+                                                            setData('model_3d_assets', []);
+                                                            setData('model_3d_asset_paths', []);
+                                                        }}
+                                                        className="text-green-600 hover:text-green-800"
+                                                    >
+                                                        <X size={16}/>
+                                                    </button>
                                                 </div>
                                             ) : (
                                                 // Case 2: Existing Model (Edit Mode)
@@ -1032,6 +1073,35 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                         <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
                                                     </label>
                                                 )
+                                            )}
+                                            {data.model_3d?.name?.toLowerCase().endsWith('.gltf') && (
+                                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-xs font-bold text-amber-800">GLTF companion files</p>
+                                                            <p className="mt-1 text-[11px] text-amber-700">
+                                                                Upload the matching asset folder too if this file uses external <code>.bin</code> or textures.
+                                                            </p>
+                                                        </div>
+                                                        <label className="cursor-pointer rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition">
+                                                            Upload Asset Folder
+                                                            <input
+                                                                type="file"
+                                                                className="hidden"
+                                                                multiple
+                                                                webkitdirectory=""
+                                                                directory=""
+                                                                onChange={handleModelAssetFolderChange}
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    <p className="mt-2 text-[11px] font-medium text-amber-800">
+                                                        {data.model_3d_assets?.length
+                                                            ? `${data.model_3d_assets.length} companion file${data.model_3d_assets.length > 1 ? 's' : ''} ready for upload.`
+                                                            : 'Skip this only if the .gltf is fully embedded.'}
+                                                    </p>
+                                                    <InputError message={errors.model_3d_assets} className="mt-2" />
+                                                </div>
                                             )}
                                             <External3DToolLink />
                                             <InputError message={errors.model_3d} className="mt-2" />

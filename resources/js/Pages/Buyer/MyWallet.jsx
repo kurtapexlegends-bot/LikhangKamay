@@ -64,7 +64,7 @@ export default function MyWallet({ wallet }) {
                                 <div className="inline-flex items-center justify-center rounded-xl bg-white/10 p-2 text-stone-200 shadow-sm backdrop-blur-md ring-1 ring-white/20">
                                     <Wallet size={20} strokeWidth={2.5} />
                                 </div>
-                                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Artisan Wallet</h1>
+                                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">My Wallet</h1>
                             </div>
 
                             <div className="mt-8">
@@ -76,7 +76,7 @@ export default function MyWallet({ wallet }) {
                                     </h2>
                                 </div>
                                 <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-stone-400">
-                                    Your central fund for artisan refunds and seamless delivery checkouts. Balance updates occur immediately upon verification.
+                                    Use your wallet for top ups, refunds, and eligible order payments. Balance updates after each verified transaction.
                                 </p>
                             </div>
 

@@ -5,6 +5,7 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use App\Models\Message;
+use App\Models\User;
 
 class NewMessageNotification extends Notification
 {
@@ -39,13 +40,17 @@ class NewMessageNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $chatRoute = $notifiable instanceof User && $notifiable->isBuyer()
+            ? 'buyer.chat'
+            : 'chat.index';
+
         return [
             'type' => 'new_message',
             'title' => 'New Message',
             'message' => "{$this->senderName} sent you a message.",
             'sender_id' => $this->message->sender_id,
             'sender_name' => $this->senderName,
-            'url' => route('chat.index', ['user_id' => $this->message->sender_id]),
+            'url' => route($chatRoute, ['user_id' => $this->message->sender_id]),
         ];
     }
 }

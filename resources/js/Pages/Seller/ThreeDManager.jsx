@@ -55,6 +55,8 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
 
     const { data, setData, processing, reset, errors } = useForm({
         model: null,
+        model_assets: [],
+        model_asset_paths: [],
         product_id: '',
     });
 
@@ -112,6 +114,10 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
         const formData = new FormData();
         formData.append('model', data.model);
         formData.append('product_id', data.product_id);
+        (data.model_assets || []).forEach((file, index) => {
+            formData.append('model_assets[]', file);
+            formData.append('model_asset_paths[]', data.model_asset_paths?.[index] || file.name);
+        });
 
         router.post(route('3d.upload'), formData, {
             onSuccess: () => {
@@ -157,14 +163,35 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
         revokeBlobUrl(previewUrl);
         setFileError('');
         setData('model', file);
+        setData('model_assets', []);
+        setData('model_asset_paths', []);
         setPreviewUrl(URL.createObjectURL(file));
     };
 
     const clearSelectedFile = () => {
         revokeBlobUrl(previewUrl);
         setData('model', null);
+        setData('model_assets', []);
+        setData('model_asset_paths', []);
         setPreviewUrl(null);
         setFileError('');
+    };
+
+    const handleAssetFolderSelect = (files) => {
+        const normalizedFiles = Array.from(files || [])
+            .filter((file) => file.name !== data.model?.name)
+            .map((file) => ({
+                file,
+                relativePath: (
+                    file.webkitRelativePath
+                        ? file.webkitRelativePath.split(/[\\/]/).filter(Boolean).join('/')
+                        : file.name
+                ) || file.name,
+            }))
+            .filter(({ relativePath }) => Boolean(relativePath));
+
+        setData('model_assets', normalizedFiles.map(({ file }) => file));
+        setData('model_asset_paths', normalizedFiles.map(({ relativePath }) => relativePath));
     };
 
     const handleDelete = (productId) => {
@@ -420,14 +447,25 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                 {data.model ? (
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative">
-                                            <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
-                                                <Suspense fallback={null}>
-                                                    <Stage environment="city" intensity={0.5}>
-                                                        {previewUrl ? <GLTFModel url={previewUrl} scale={1.08} /> : null}
-                                                    </Stage>
-                                                </Suspense>
-                                                <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
-                                            </Canvas>
+                                            {data.model.name.toLowerCase().endsWith('.glb') ? (
+                                                <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
+                                                    <Suspense fallback={null}>
+                                                        <Stage environment="city" intensity={0.5}>
+                                                            {previewUrl ? <GLTFModel url={previewUrl} scale={1.08} /> : null}
+                                                        </Stage>
+                                                    </Suspense>
+                                                    <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
+                                                </Canvas>
+                                            ) : (
+                                                <div className="flex h-full items-center justify-center px-4 text-center">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-gray-700">GLTF preview after upload</p>
+                                                        <p className="mt-1 text-[11px] text-gray-500">
+                                                            Companion <code>.bin</code> and texture files are loaded from the uploaded asset folder.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
@@ -438,11 +476,13 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                             >
                                                 <X size={14} />
                                             </button>
-                                            <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
-                                                <span className="inline-flex items-center gap-1.5 bg-black/50 text-white px-2 py-1 rounded-full text-[10px] font-medium">
-                                                    <Rotate3d size={11} /> Drag to rotate
-                                                </span>
-                                            </div>
+                                            {data.model.name.toLowerCase().endsWith('.glb') && (
+                                                <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+                                                    <span className="inline-flex items-center gap-1.5 bg-black/50 text-white px-2 py-1 rounded-full text-[10px] font-medium">
+                                                        <Rotate3d size={11} /> Drag to rotate
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="text-center">
@@ -463,6 +503,35 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                 )}
                             </div>
                             {(errors.model || fileError) && <p className="text-xs text-red-500 mt-1">{errors.model || fileError}</p>}
+                            {data.model?.name?.toLowerCase().endsWith('.gltf') && (
+                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-bold text-amber-800">GLTF companion files</p>
+                                            <p className="mt-1 text-[11px] text-amber-700">
+                                                Upload the asset folder too if this model references external <code>.bin</code> or textures.
+                                            </p>
+                                        </div>
+                                        <label className="cursor-pointer rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition">
+                                            Upload Asset Folder
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                multiple
+                                                webkitdirectory=""
+                                                directory=""
+                                                onChange={(e) => handleAssetFolderSelect(e.target.files)}
+                                            />
+                                        </label>
+                                    </div>
+                                    <p className="mt-2 text-[11px] font-medium text-amber-800">
+                                        {data.model_assets?.length
+                                            ? `${data.model_assets.length} companion file${data.model_assets.length > 1 ? 's' : ''} ready for upload.`
+                                            : 'Skip this only if the .gltf is fully embedded.'}
+                                    </p>
+                                    {errors.model_assets && <p className="mt-2 text-xs text-red-500">{errors.model_assets}</p>}
+                                </div>
+                            )}
                             <External3DToolLink />
                         </div>
 
@@ -531,5 +600,3 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
         </div>
     );
 }
-
-

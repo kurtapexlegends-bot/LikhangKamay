@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Http\Controllers\Concerns\HandlesThreeDModelBundles;
 use App\Http\Controllers\Concerns\ValidatesThreeDModelUploads;
+use App\Models\Message;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Supply;
+use App\Models\User;
 use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +21,7 @@ use Inertia\Inertia;
 class ProductController extends Controller
 {
     use InteractsWithSellerContext;
+    use HandlesThreeDModelBundles;
     use ValidatesThreeDModelUploads;
 
     private const MAX_THREE_D_STORAGE_BYTES = 524288000;
@@ -77,6 +81,7 @@ class ProductController extends Controller
             'cover_photo' => 'nullable|image|max:10240',
             'gallery.*' => 'nullable|image|max:10240',
             'model_3d' => $this->threeDModelUploadRules(),
+            ...$this->threeDModelAssetRules(),
         ]);
 
         $seller = $this->sellerOwner();
@@ -96,13 +101,16 @@ class ProductController extends Controller
 
         $modelPath = null;
         if ($request->hasFile('model_3d')) {
-            if (!$this->canStoreThreeDModel($seller->id, $request->file('model_3d')->getSize())) {
+            $this->validateThreeDModelBundle($request);
+            $incomingModelBytes = $this->getThreeDModelUploadSizeBytes($request);
+
+            if (!$this->canStoreThreeDModel($seller->id, $incomingModelBytes)) {
                 return back()
                     ->withErrors(['model_3d' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.'])
                     ->withInput();
             }
 
-            $modelPath = $request->file('model_3d')->store('products/models', 'public');
+            $modelPath = $this->storeThreeDModelBundle($request);
         }
 
         $galleryPaths = [];
@@ -180,6 +188,7 @@ class ProductController extends Controller
             'gallery.*' => 'nullable|image|max:10240',
             'retained_gallery' => 'nullable|array',
             'model_3d' => $this->threeDModelUploadRules(),
+            ...$this->threeDModelAssetRules(),
         ]);
 
         $seller = $this->sellerOwner();
@@ -193,10 +202,15 @@ class ProductController extends Controller
             return back()->withErrors(['limit' => 'You have reached your active products limit. Please upgrade your plan to activate more products.']);
         }
 
-        if ($request->hasFile('model_3d') && !$this->canStoreThreeDModel($seller->id, $request->file('model_3d')->getSize(), $existingModelPath)) {
-            return back()
-                ->withErrors(['model_3d' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.'])
-                ->withInput();
+        if ($request->hasFile('model_3d')) {
+            $this->validateThreeDModelBundle($request);
+            $incomingModelBytes = $this->getThreeDModelUploadSizeBytes($request);
+
+            if (!$this->canStoreThreeDModel($seller->id, $incomingModelBytes, $existingModelPath)) {
+                return back()
+                    ->withErrors(['model_3d' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.'])
+                    ->withInput();
+            }
         }
 
         if ($request->hasFile('cover_photo')) {
@@ -208,9 +222,9 @@ class ProductController extends Controller
 
         if ($request->hasFile('model_3d')) {
             if ($product->model_3d_path) {
-                Storage::disk('public')->delete($product->model_3d_path);
+                $this->deleteStoredThreeDModel($product->model_3d_path);
             }
-            $product->model_3d_path = $request->file('model_3d')->store('products/models', 'public');
+            $product->model_3d_path = $this->storeThreeDModelBundle($request);
         }
 
         $retainedGallery = $request->input('retained_gallery', []);
@@ -398,12 +412,14 @@ class ProductController extends Controller
                 })
                 ->exists()
             : false;
+        $product->viewer_can_chat_seller = $this->viewerCanChatSeller($viewer, $product->user);
 
         $sellerLocation = $product->user->city
             ? $product->user->city . ', PH'
             : 'Philippines';
 
         $product->seller = [
+            'id' => $product->user->id,
             'name' => $product->user->name ?? 'Artisan',
             'shop_name' => $product->user->shop_name ?? null,
             'slug' => $product->user->shop_slug,
@@ -483,13 +499,35 @@ class ProductController extends Controller
 
     private function getStoredFileSizeBytes(?string $path): int
     {
-        if (!$path) {
-            return 0;
+        return $this->getStoredThreeDModelSizeBytes($path);
+    }
+
+    private function viewerCanChatSeller(?User $viewer, ?User $seller): bool
+    {
+        if (
+            !$viewer
+            || !$seller
+            || $viewer->id === $seller->id
+            || !$viewer->isBuyer()
+            || !$seller->isArtisan()
+        ) {
+            return false;
         }
 
-        $fullPath = storage_path('app/public/' . $path);
-
-        return file_exists($fullPath) ? filesize($fullPath) : 0;
+        return Order::query()
+            ->where('artisan_id', $seller->id)
+            ->where('user_id', $viewer->id)
+            ->exists()
+            || Message::query()
+                ->where(function ($query) use ($viewer, $seller) {
+                    $query->where('sender_id', $viewer->id)
+                        ->where('receiver_id', $seller->id);
+                })
+                ->orWhere(function ($query) use ($viewer, $seller) {
+                    $query->where('sender_id', $seller->id)
+                        ->where('receiver_id', $viewer->id);
+                })
+                ->exists();
     }
 
     private function supplyLookupAttributes(Product $product, int $sellerId): array

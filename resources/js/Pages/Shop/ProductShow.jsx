@@ -5,7 +5,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
     Heart, ChevronRight, Check, Pin,
-    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2
+    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2
 } from 'lucide-react';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 
@@ -127,6 +127,32 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 quantity: quantity
             }
         });
+    };
+
+    const handleChatSeller = () => {
+        const sellerId = product?.seller?.id;
+
+        if (!sellerId) {
+            addToast('Seller chat is unavailable right now.', 'error');
+            return;
+        }
+
+        if (!auth?.user) {
+            router.visit(route('login'));
+            return;
+        }
+
+        if (product?.viewer_can_chat_seller) {
+            router.visit(route('buyer.chat', { user_id: sellerId }));
+            return;
+        }
+
+        if (auth.user.role && auth.user.role !== 'buyer') {
+            addToast('This chat is only available from a buyer account.', 'info');
+            return;
+        }
+
+        addToast('You can chat this seller after your first order with them.', 'info');
     };
 
     return (
@@ -422,7 +448,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 w-full mt-3">
-                            <button className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={handleChatSeller}
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1.5"
+                            >
                                 <MessageCircle size={14} />
                                 Chat
                             </button>

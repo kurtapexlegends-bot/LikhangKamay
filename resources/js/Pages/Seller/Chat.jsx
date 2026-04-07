@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
@@ -14,6 +14,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import MediaViewer from '@/Components/Chat/MediaViewer';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
+import { formatChatClock, formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
 
 export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,6 +25,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const [activeMedia, setActiveMedia] = useState(null);
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
+    const [timeNow, setTimeNow] = useState(Date.now());
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -63,6 +65,14 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     useEffect(() => {
         return () => revokeAttachmentPreview();
     }, [attachmentPreview]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimeNow(Date.now());
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     // --- REAL-TIME POLLING ---
     useEffect(() => {
@@ -193,13 +203,12 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             id: msg.id
         }));
 
-    // Group messages by date
-    const groupedMessages = activeMessages.reduce((groups, msg) => {
-        const date = msg.date || 'Today';
+    const groupedMessages = useMemo(() => activeMessages.reduce((groups, msg) => {
+        const date = formatChatDateLabel(msg.created_at, timeNow);
         if (!groups[date]) groups[date] = [];
         groups[date].push(msg);
         return groups;
-    }, {});
+    }, {}), [activeMessages, timeNow]);
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
@@ -317,7 +326,9 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                 }`}>
                                                     {contact.name}
                                                 </h4>
-                                                <span className="text-[9px] text-gray-400 font-medium shrink-0 ml-2">{contact.time}</span>
+                                                <span className="text-[9px] text-gray-400 font-medium shrink-0 ml-2">
+                                                    {formatChatRelative(contact.last_message_at, timeNow, { compact: true }) || contact.time}
+                                                </span>
                                             </div>
                                             <p className={`text-[10px] truncate ${contact.unread > 0 ? 'font-bold text-gray-800' : 'text-gray-500'}`}>
                                                 {contact.lastMsg}
@@ -365,7 +376,9 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                 <span className={`w-1 h-1 rounded-full ${
                                                     currentChatUser.is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-300'
                                                 }`} />
-                                                {currentChatUser.is_online ? 'Online now' : `Last seen ${currentChatUser.last_seen || 'recently'}`}
+                                                {currentChatUser.is_online
+                                                    ? 'Online now'
+                                                    : `Last seen ${formatChatRelative(currentChatUser.last_seen_at_iso, timeNow) || currentChatUser.last_seen || 'recently'}`}
                                             </p>
                                         </div>
                                     </div>
@@ -460,7 +473,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                                     msg.sender === 'me' ? 'justify-end text-gray-400' : 'text-gray-400'
                                                                 }`}>
                                                                     <Clock size={10} />
-                                                                    <span>{msg.time}</span>
+                                                                    <span>{formatChatClock(msg.created_at) || msg.time}</span>
                                                                     {msg.sender === 'me' && (
                                                                         msg.is_read ? (
                                                                             <CheckCheck size={14} className="text-clay-500" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 // Dropdown is internal to BuyerNavbar now
@@ -13,6 +13,7 @@ import OrderContextCard from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
 import MediaViewer from '@/Components/Chat/MediaViewer';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
+import { formatChatClock, formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
 
 export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
+    const [timeNow, setTimeNow] = useState(Date.now());
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -61,6 +63,14 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     useEffect(() => {
         return () => revokeAttachmentPreview();
     }, [attachmentPreview]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimeNow(Date.now());
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     // --- POLLING & SCROLLING ---
     useEffect(() => {
@@ -173,13 +183,12 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
             id: msg.id
         }));
 
-    // Group messages by date
-    const groupedMessages = activeMessages.reduce((groups, msg) => {
-        const date = msg.date || 'Today';
+    const groupedMessages = useMemo(() => activeMessages.reduce((groups, msg) => {
+        const date = formatChatDateLabel(msg.created_at, timeNow);
         if (!groups[date]) groups[date] = [];
         groups[date].push(msg);
         return groups;
-    }, {});
+    }, {}), [activeMessages, timeNow]);
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
@@ -246,7 +255,9 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                                 }`}>
                                                     {contact.name}
                                                 </h4>
-                                                <span className="text-[10px] text-gray-400 font-medium shrink-0 ml-2">{contact.time}</span>
+                                                <span className="text-[10px] text-gray-400 font-medium shrink-0 ml-2">
+                                                    {formatChatRelative(contact.last_message_at, timeNow, { compact: true }) || contact.time}
+                                                </span>
                                             </div>
                                             <p className={`text-xs truncate ${contact.unread > 0 ? 'font-bold text-gray-800' : 'text-gray-500'}`}>
                                                 {contact.lastMsg}
@@ -288,7 +299,9 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                             <p className="text-[10px] text-gray-500 font-medium">
                                                 {currentChatUser.is_online ? (
                                                     <span className="text-green-600 font-bold">Online</span>
-                                                ) : currentChatUser.last_seen}
+                                                ) : (
+                                                    formatChatRelative(currentChatUser.last_seen_at_iso, timeNow) || currentChatUser.last_seen
+                                                )}
                                             </p>
                                         </div>
                                     </div>
@@ -379,7 +392,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                                                     msg.sender === 'me' ? 'justify-end text-gray-400' : 'text-gray-400'
                                                                 }`}>
                                                                     <Clock size={10} />
-                                                                    <span>{msg.time}</span>
+                                                                    <span>{formatChatClock(msg.created_at) || msg.time}</span>
                                                                     {msg.sender === 'me' && (
                                                                         msg.is_read ? (
                                                                             <CheckCheck size={14} className="text-clay-500" />

@@ -165,6 +165,7 @@ class ChatController extends Controller
                 'role' => $user->role,
                 'shop_name' => $user->shop_name,
                 'lastMsg' => $lastMsg ? $lastMsg->message : 'Start chatting',
+                'last_message_at' => $lastMsg?->created_at?->toIso8601String(),
                 'time' => $lastMsg ? $lastMsg->created_at->shortAbsoluteDiffForHumans() : '',
                 'unread' => $unreadCounts[$user->id] ?? 0,
                 'is_online' => Cache::has('user-is-online-' . $user->id),
@@ -186,6 +187,7 @@ class ChatController extends Controller
             // Add online status to active user
             if ($activeUser) {
                 $activeUser->is_online = Cache::has('user-is-online-' . $activeUser->id);
+                $activeUser->last_seen_at_iso = $activeUser->last_seen_at?->toIso8601String();
                 $activeUser->last_seen = $activeUser->last_seen_at 
                     ? $activeUser->last_seen_at->diffForHumans() 
                     : 'Offline';
@@ -206,6 +208,7 @@ class ChatController extends Controller
                     'attachment_path' => $m->attachment_path,
                     'attachment_type' => $m->attachment_type,
                     'sender' => $m->sender_id === $userId ? 'me' : 'other',
+                    'created_at' => $m->created_at?->toIso8601String(),
                     'time' => $m->created_at->format('g:i A'),
                     'is_read' => $m->is_read
                 ];

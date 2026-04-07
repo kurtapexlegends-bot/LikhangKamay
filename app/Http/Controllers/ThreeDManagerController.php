@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Http\Controllers\Concerns\HandlesThreeDModelBundles;
 use App\Http\Controllers\Concerns\ValidatesThreeDModelUploads;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use Inertia\Inertia;
 class ThreeDManagerController extends Controller
 {
     use InteractsWithSellerContext;
+    use HandlesThreeDModelBundles;
     use ValidatesThreeDModelUploads;
 
     private const MAX_STORAGE_BYTES = 524288000;
@@ -69,13 +71,15 @@ class ThreeDManagerController extends Controller
     {
         $request->validate([
             'model' => $this->threeDModelUploadRules(required: true),
+            ...$this->threeDModelAssetRules('model_assets', 'model_asset_paths'),
             'product_id' => 'required|exists:products,id',
         ]);
 
         $product = Product::where('id', $request->product_id)
             ->where('user_id', $this->sellerOwnerId())
             ->firstOrFail();
-        $incomingBytes = $request->file('model')->getSize();
+        $this->validateThreeDModelBundle($request, 'model', 'model_assets', 'model_asset_paths');
+        $incomingBytes = $this->getThreeDModelUploadSizeBytes($request, 'model', 'model_assets');
         $existingBytes = $this->getFileSizeBytes($product->model_3d_path);
         $currentUsage = Product::where('user_id', $this->sellerOwnerId())
             ->whereNotNull('model_3d_path')
@@ -89,10 +93,10 @@ class ThreeDManagerController extends Controller
         }
 
         if ($product->model_3d_path) {
-            Storage::disk('public')->delete($product->model_3d_path);
+            $this->deleteStoredThreeDModel($product->model_3d_path);
         }
 
-        $path = $request->file('model')->store('models-3d', 'public');
+        $path = $this->storeThreeDModelBundle($request, 'model', 'model_assets', 'model_asset_paths');
         $product->update(['model_3d_path' => $path]);
 
         return back()->with('success', '3D model uploaded successfully!');
@@ -104,7 +108,7 @@ class ThreeDManagerController extends Controller
         $wasActive = $product->status === 'Active';
 
         if ($product->model_3d_path) {
-            Storage::disk('public')->delete($product->model_3d_path);
+            $this->deleteStoredThreeDModel($product->model_3d_path);
             $product->update([
                 'model_3d_path' => null,
                 'status' => $wasActive ? 'Draft' : $product->status,
@@ -125,13 +129,7 @@ class ThreeDManagerController extends Controller
 
     private function getFileSizeBytes($path)
     {
-        if (!$path) {
-            return 0;
-        }
-
-        $fullPath = storage_path('app/public/' . $path);
-
-        return file_exists($fullPath) ? filesize($fullPath) : 0;
+        return $this->getStoredThreeDModelSizeBytes($path);
     }
 
     private function formatBytes($bytes)

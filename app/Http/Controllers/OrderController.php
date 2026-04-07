@@ -944,7 +944,7 @@ class OrderController extends Controller
         $this->reconcilePendingOnlinePaymentsForUser(Auth::user(), $payMongoService);
 
         $ordersQuery = Order::where('user_id', $userId)
-            ->with(['items', 'user', 'delivery'])
+            ->with(['items', 'user', 'artisan:id,name,shop_name', 'delivery'])
             ->latest();
 
         $initialOrders = (clone $ordersQuery)->get();
@@ -993,6 +993,7 @@ class OrderController extends Controller
                     'seller_net_amount' => number_format($order->getResolvedSellerNetAmount(), 2),
                     'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null, // New
                     'seller_id' => $order->artisan_id,
+                    'seller_name' => $order->artisan?->shop_name ?? $order->artisan?->name ?? 'Shop',
                     'tracking_number' => $order->tracking_number,
                     'shipping_notes' => $order->shipping_notes,
                     'delivery' => $this->serializeDelivery($order->delivery),

@@ -66,7 +66,7 @@ return [
     ],
 
     'artisan_applications' => [
-        'notification_email' => env('ARTISAN_APPLICATION_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS')),
+        'notification_email' => env('ARTISAN_APPLICATION_NOTIFICATION_EMAIL'),
     ],
 
     'checkout_shipping' => [
