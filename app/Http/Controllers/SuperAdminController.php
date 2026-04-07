@@ -623,6 +623,8 @@ class SuperAdminController extends Controller
             'employee_linked' => $staffMember->employee !== null,
             'staff_role_preset_key' => $staffMember->staff_role_preset_key ?: 'custom',
             'staff_user_level' => $staffMember->getStaffUserLevel(),
+            'can_manage_staff_accounts' => $staffMember->hasStaffManagementPermission(),
+            'staff_access_permission_level' => $staffMember->getStaffAccessPermissionLevel(),
             'requires_password_change' => $staffMember->requiresStaffPasswordChange(),
             'created_at' => $staffMember->created_at->format('M d, Y'),
         ];

@@ -39,10 +39,12 @@ class HRController extends Controller
                 'id',
                 'name',
                 'email',
+                'role',
                 'avatar',
                 'updated_at',
                 'email_verified_at',
                 'employee_id',
+                'staff_plan_suspended_at',
                 $supportsMustChangePassword ? 'must_change_password' : null,
                 $supportsRolePresetKey ? 'staff_role_preset_key' : null,
                 $supportsStaffModulePermissions ? 'staff_module_permissions' : null,
@@ -96,6 +98,8 @@ class HRController extends Controller
                             ? (bool) $loginAccount->must_change_password
                             : false,
                         'user_level' => $loginAccount->getStaffUserLevel(),
+                        'can_manage_staff_accounts' => $loginAccount->hasStaffManagementPermission(),
+                        'staff_access_permission_level' => $loginAccount->getStaffAccessPermissionLevel(),
                         'role_preset_key' => $supportsRolePresetKey
                             ? ($loginAccount->staff_role_preset_key ?: 'custom')
                             : 'custom',
@@ -137,9 +141,10 @@ class HRController extends Controller
                 'attendance_month_label' => $this->attendanceMonthLabel(),
             ],
             'staffProvisioning' => [
-                'canManageStaffAccounts' => $actor->canManageStaffAccounts() && $this->supportsStaffProvisioningSchema(),
+                'canManageStaffAccounts' => $actor->canUpdateStaffAccounts() && $this->supportsStaffProvisioningSchema(),
+                'canCreateStaffAccounts' => $actor->canCreateStaffAccounts() && $this->supportsStaffProvisioningSchema(),
+                'canDeleteStaffAccounts' => $actor->canDeleteStaffAccounts() && $this->supportsStaffProvisioningSchema(),
                 'rolePresets' => $this->rolePresetOptions($entitlementService),
-                'userLevels' => $this->userLevelOptions(),
                 'availableModules' => $this->moduleOptions($entitlementService),
                 'requiresStaffSchemaUpdate' => !$this->supportsStaffProvisioningSchema(),
             ],
@@ -182,13 +187,15 @@ class HRController extends Controller
                     ->withInput();
             }
 
-            abort_unless($actor->canManageStaffAccounts(), 403, 'Only the shop owner or a staff manager can create staff login accounts.');
+            abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with full staff account access can create staff login accounts.');
 
             $rules = array_merge($rules, [
                 'email' => ['required', 'string', 'email', 'max:255', 'regex:/^[A-Z0-9._%+-]+@gmail\.com$/i', 'unique:users,email'],
                 'default_password' => ['required', 'string', Password::defaults()],
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
-                'staff_user_level' => ['required', 'string', Rule::in(User::staffUserLevels())],
+                'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
+                'manage_staff_accounts' => ['nullable', 'boolean'],
+                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevels())],
                 'module_overrides' => ['nullable', 'array'],
                 'module_overrides.*' => ['boolean'],
             ]);
@@ -222,7 +229,15 @@ class HRController extends Controller
                 })
                 ->all();
             $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, true);
-            $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
+            $staffAccessPermissionLevel = $this->resolveStaffAccessPermissionLevel($validated);
+            $modulePermissions = User::withStaffAccessPermissionLevelFlag(
+                $modulePermissions,
+                $staffAccessPermissionLevel
+            );
+            $modulePermissions = User::withManageStaffAccountsFlag(
+                $modulePermissions,
+                $staffAccessPermissionLevel !== User::STAFF_ACCESS_PERMISSION_READ_ONLY
+            );
 
             $staffAccount = User::create([
                 'name' => $employee->name,
@@ -273,8 +288,8 @@ class HRController extends Controller
         $employee = $employeeQuery->firstOrFail();
         $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
 
-        if ($linkedLogin && !$actor->canManageStaffAccounts()) {
-            abort(403, 'Only the shop owner or a staff manager can remove staff login accounts.');
+        if ($linkedLogin && !$actor->canDeleteStaffAccounts()) {
+            abort(403, 'Only the shop owner or a user with full staff account access can remove staff login accounts.');
         }
 
         DB::transaction(function () use ($employee, $linkedLogin) {
@@ -302,7 +317,7 @@ class HRController extends Controller
 
         $employee = $employeeQuery->firstOrFail();
         $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
-        $canManageLoginSettings = $actor->canManageStaffAccounts() && $this->supportsStaffProvisioningSchema();
+        $canManageLoginSettings = $actor->canUpdateStaffAccounts() && $this->supportsStaffProvisioningSchema();
         $wantsLoginAccount = $linkedLogin
             ? ($canManageLoginSettings ? $request->boolean('create_login_account', $linkedLogin->isWorkspaceAccessEnabled()) : $linkedLogin->isWorkspaceAccessEnabled())
             : $request->boolean('create_login_account');
@@ -338,7 +353,9 @@ class HRController extends Controller
                 ],
                 'default_password' => [$linkedLogin ? 'nullable' : 'required', 'string', Password::defaults()],
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
-                'staff_user_level' => ['required', 'string', Rule::in(User::staffUserLevels())],
+                'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
+                'manage_staff_accounts' => ['nullable', 'boolean'],
+                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevels())],
                 'module_overrides' => ['nullable', 'array'],
                 'module_overrides.*' => ['boolean'],
             ]);
@@ -399,7 +416,15 @@ class HRController extends Controller
                 })
                 ->all();
             $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, $wantsLoginAccount);
-            $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
+            $staffAccessPermissionLevel = $this->resolveStaffAccessPermissionLevel($validated);
+            $modulePermissions = User::withStaffAccessPermissionLevelFlag(
+                $modulePermissions,
+                $staffAccessPermissionLevel
+            );
+            $modulePermissions = User::withManageStaffAccountsFlag(
+                $modulePermissions,
+                $staffAccessPermissionLevel !== User::STAFF_ACCESS_PERMISSION_READ_ONLY
+            );
 
             if ($linkedLogin) {
                 $previousWorkspaceAccess = $linkedLogin->isWorkspaceAccessEnabled();
@@ -601,7 +626,7 @@ class HRController extends Controller
             'hr' => ['label' => 'HR', 'description' => 'HR records, payroll, and employee management.'],
             'accounting' => ['label' => 'Accounting', 'description' => 'Funds, payroll approval, and finance visibility.'],
             'procurement' => ['label' => 'Procurement', 'description' => 'Inventory and stock request coordination.'],
-            'customer_support' => ['label' => 'Customer Support', 'description' => 'Orders and customer review handling.'],
+            'customer_support' => ['label' => 'Customer Support', 'description' => 'Orders, buyer messages, and customer review handling.'],
             'custom' => ['label' => 'Custom', 'description' => 'Start blank and choose modules manually.'],
         ];
 
@@ -626,6 +651,7 @@ class HRController extends Controller
             'analytics' => ['label' => 'Analytics', 'description' => 'Sales and product performance reports.'],
             '3d' => ['label' => '3D Manager', 'description' => '3D asset uploads and management.'],
             'orders' => ['label' => 'Orders', 'description' => 'Order processing and status updates.'],
+            'messages' => ['label' => 'Messages', 'description' => 'Buyer inbox and seller order conversations.'],
             'reviews' => ['label' => 'Reviews', 'description' => 'Customer review replies and moderation.'],
             'shop_settings' => ['label' => 'Shop Settings', 'description' => 'Seller storefront profile settings.'],
             'hr' => ['label' => 'HR', 'description' => 'Employees, payroll, and HR records.'],
@@ -656,23 +682,26 @@ class HRController extends Controller
             && Schema::hasColumn('users', 'employee_id');
     }
 
-    /**
-     * @return array<int, array<string, string>>
-     */
-    private function userLevelOptions(): array
+    private function resolveStaffAccessPermissionLevel(array $validated): string
     {
-        return [
-            [
-                'key' => User::DEFAULT_STAFF_USER_LEVEL,
-                'label' => 'Standard Staff',
-                'description' => 'Can use the modules you grant, but cannot manage other staff logins or permissions.',
-            ],
-            [
-                'key' => User::STAFF_MANAGER_USER_LEVEL,
-                'label' => 'Staff Manager',
-                'description' => 'Can manage employee logins and staff permissions inside HR when HR access is enabled.',
-            ],
-        ];
+        if (array_key_exists('staff_access_permission_level', $validated)) {
+            return User::normalizeStaffAccessPermissionLevel($validated['staff_access_permission_level']);
+        }
+
+        if (array_key_exists('manage_staff_accounts', $validated)) {
+            return (bool) $validated['manage_staff_accounts']
+                ? User::STAFF_ACCESS_PERMISSION_FULL
+                : User::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        }
+
+        return User::normalizeStaffUserLevel($validated['staff_user_level'] ?? null) === User::STAFF_MANAGER_USER_LEVEL
+            ? User::STAFF_ACCESS_PERMISSION_FULL
+            : User::STAFF_ACCESS_PERMISSION_READ_ONLY;
+    }
+
+    private function resolveManageStaffAccountsPermission(array $validated): bool
+    {
+        return $this->resolveStaffAccessPermissionLevel($validated) !== User::STAFF_ACCESS_PERMISSION_READ_ONLY;
     }
 
     private function buildEmployeeUpdateSuccessMessage(

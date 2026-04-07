@@ -3,6 +3,7 @@
 namespace Tests\Feature\Seller;
 
 use App\Models\Employee;
+use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -92,6 +93,80 @@ class HrStaffProvisioningTest extends TestCase
         $loginResponse->assertRedirect(route('verification.notice', absolute: false));
     }
 
+    public function test_owner_can_grant_staff_access_management_permission_without_using_legacy_user_level(): void
+    {
+        Notification::fake();
+
+        $owner = $this->createOwnerWithHrAccess();
+
+        $response = $this->actingAs($owner)->post(route('hr.store'), [
+            'name' => 'Nina Torres',
+            'role' => 'HR Officer',
+            'salary' => 21000,
+            'create_login_account' => true,
+            'email' => 'nina.torres@gmail.com',
+            'default_password' => 'password',
+            'manage_staff_accounts' => true,
+            'staff_role_preset_key' => 'hr',
+            'module_overrides' => [
+                'hr' => true,
+                'overview' => true,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+
+        $staff = User::where('email', 'nina.torres@gmail.com')->first();
+
+        $this->assertNotNull($staff);
+        $this->assertTrue($staff->hasStaffManagementPermission());
+        $this->assertTrue($staff->canManageStaffAccounts());
+        $this->assertTrue((bool) data_get($staff->staff_module_permissions, User::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG));
+
+        Notification::assertSentTo($staff, VerifyEmailNotification::class);
+    }
+
+    public function test_owner_can_assign_update_access_permission_level_without_granting_full_staff_account_control(): void
+    {
+        Notification::fake();
+
+        $owner = $this->createOwnerWithHrAccess();
+
+        $response = $this->actingAs($owner)->post(route('hr.store'), [
+            'name' => 'Paolo Cruz',
+            'role' => 'HR Coordinator',
+            'salary' => 19800,
+            'create_login_account' => true,
+            'email' => 'paolo.cruz@gmail.com',
+            'default_password' => 'password',
+            'staff_access_permission_level' => User::STAFF_ACCESS_PERMISSION_UPDATE,
+            'staff_role_preset_key' => 'hr',
+            'module_overrides' => [
+                'hr' => true,
+                'overview' => true,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+
+        $staff = User::where('email', 'paolo.cruz@gmail.com')->first();
+
+        $this->assertNotNull($staff);
+        $this->assertSame(User::STAFF_ACCESS_PERMISSION_UPDATE, $staff->getStaffAccessPermissionLevel());
+        $this->assertTrue($staff->hasStaffManagementPermission());
+        $this->assertTrue($staff->canManageStaffAccounts());
+        $this->assertFalse($staff->canCreateStaffAccounts());
+        $this->assertFalse($staff->canDeleteStaffAccounts());
+        $this->assertSame(
+            User::STAFF_ACCESS_PERMISSION_UPDATE,
+            data_get($staff->staff_module_permissions, User::STAFF_ACCESS_PERMISSION_LEVEL_FLAG)
+        );
+
+        Notification::assertSentTo($staff, VerifyEmailNotification::class);
+    }
+
     public function test_staff_login_creation_requires_gmail_address(): void
     {
         $owner = $this->createOwnerWithHrAccess();
@@ -158,6 +233,14 @@ class HrStaffProvisioningTest extends TestCase
             'staff_role_preset_key' => 'hr',
             'staff_module_permissions' => User::withStaffUserLevelFlag(['hr' => true], 'manager'),
         ]);
+        StaffAttendanceSession::create([
+            'staff_user_id' => $manager->id,
+            'seller_owner_id' => $owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
 
         $response = $this->actingAs($manager)->post(route('hr.store'), [
             'name' => 'Managed User',
@@ -183,6 +266,47 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertSame('standard', $staff->getStaffUserLevel());
         $this->assertSame('customer_support', $staff->staff_role_preset_key);
         Notification::assertSentTo($staff, VerifyEmailNotification::class);
+    }
+
+    public function test_staff_with_update_access_cannot_create_new_login_accounts(): void
+    {
+        Notification::fake();
+
+        $owner = $this->createOwnerWithHrAccess();
+        $staff = User::factory()->staff($owner)->create([
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(['hr' => true], User::STAFF_ACCESS_PERMISSION_UPDATE),
+        ]);
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        $response = $this->actingAs($staff)->post(route('hr.store'), [
+            'name' => 'Limited User',
+            'role' => 'Assistant',
+            'salary' => 13800,
+            'create_login_account' => true,
+            'email' => 'limited.user@gmail.com',
+            'default_password' => 'password',
+            'staff_access_permission_level' => User::STAFF_ACCESS_PERMISSION_READ_ONLY,
+            'staff_role_preset_key' => 'customer_support',
+            'module_overrides' => [
+                'orders' => true,
+                'messages' => true,
+                'reviews' => true,
+            ],
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('users', ['email' => 'limited.user@gmail.com']);
+        Notification::assertNothingSent();
     }
 
     public function test_owner_can_submit_staff_only_alias_and_it_normalizes_to_standard_level(): void
@@ -643,6 +767,31 @@ class HrStaffProvisioningTest extends TestCase
         );
     }
 
+    public function test_hr_staff_provisioning_exposes_messages_module_access_and_customer_support_default(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $response = $this->actingAs($owner)->get(route('hr.index'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (Assert $page) => $page
+                ->component('Seller/HR')
+                ->has('staffProvisioning.availableModules', fn (Assert $modules) => $modules
+                    ->where('6.key', 'messages')
+                    ->where('6.label', 'Messages')
+                    ->etc()
+                )
+                ->has('staffProvisioning.rolePresets', fn (Assert $presets) => $presets
+                    ->where('3.key', 'customer_support')
+                    ->where('3.modules.0', 'orders')
+                    ->where('3.modules.1', 'messages')
+                    ->where('3.modules.2', 'reviews')
+                    ->etc()
+                )
+        );
+    }
+
     public function test_hr_directory_includes_linked_login_avatar_data_for_synced_employee_display(): void
     {
         $owner = $this->createOwnerWithHrAccess();
@@ -702,6 +851,36 @@ class HrStaffProvisioningTest extends TestCase
             fn(Assert $page) => $page
                 ->component('Seller/HR')
                 ->where('staff.0.login_account.user_level', 'standard')
+        );
+    }
+
+    public function test_hr_directory_includes_saved_staff_access_permission_level_for_linked_login_accounts(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Permission Level Staff',
+            'role' => 'Assistant',
+            'salary' => 15000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        User::factory()->staff($owner)->create([
+            'employee_id' => $employee->id,
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(['orders' => true], User::STAFF_ACCESS_PERMISSION_UPDATE),
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('hr.index'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (Assert $page) => $page
+                ->component('Seller/HR')
+                ->where('staff.0.login_account.staff_access_permission_level', User::STAFF_ACCESS_PERMISSION_UPDATE)
         );
     }
 

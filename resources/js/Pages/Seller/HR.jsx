@@ -18,13 +18,26 @@ const FALLBACK_ROLE_PRESETS = [
     { key: 'hr', label: 'HR', description: 'HR records, payroll, and employee management.', modules: ['hr'] },
     { key: 'accounting', label: 'Accounting', description: 'Funds, payroll approval, and finance visibility.', modules: ['accounting'] },
     { key: 'procurement', label: 'Procurement', description: 'Inventory and stock request coordination.', modules: ['procurement', 'stock_requests'] },
-    { key: 'customer_support', label: 'Customer Support', description: 'Orders and customer review handling.', modules: ['orders', 'reviews'] },
+    { key: 'customer_support', label: 'Customer Support', description: 'Orders, buyer messages, and customer review handling.', modules: ['orders', 'messages', 'reviews'] },
     { key: 'custom', label: 'Custom', description: 'Start blank and choose modules manually.', modules: [] },
 ];
 
-const FALLBACK_USER_LEVELS = [
-    { key: 'standard', label: 'Standard Staff', description: 'Can use granted modules, but cannot manage other staff accounts.' },
-    { key: 'manager', label: 'Staff Manager', description: 'Can manage employee logins and staff permissions inside HR when HR access is granted.' },
+const STAFF_PERMISSION_LEVELS = [
+    {
+        key: 'read_only',
+        label: 'Read Only',
+        description: 'Can view the assigned seller workspace modules without changing staff login access.',
+    },
+    {
+        key: 'update_access',
+        label: 'Update Access',
+        description: 'Can update existing staff login access, roles, permissions, and module settings. Requires HR module access too.',
+    },
+    {
+        key: 'full_access',
+        label: 'Full Access',
+        description: 'Can create, update, suspend, restore, and remove staff login accounts. Requires HR module access too.',
+    },
 ];
 
 const FALLBACK_MODULES = [
@@ -33,6 +46,7 @@ const FALLBACK_MODULES = [
     { key: 'analytics', label: 'Analytics', description: 'Sales and product performance reports.' },
     { key: '3d', label: '3D Manager', description: '3D asset uploads and management.' },
     { key: 'orders', label: 'Orders', description: 'Order processing and status updates.' },
+    { key: 'messages', label: 'Messages', description: 'Buyer inbox and seller order conversations.' },
     { key: 'reviews', label: 'Reviews', description: 'Customer review replies and moderation.' },
     { key: 'shop_settings', label: 'Shop Settings', description: 'Seller storefront profile settings.' },
     { key: 'hr', label: 'HR', description: 'Employees, payroll, and HR records.' },
@@ -41,14 +55,16 @@ const FALLBACK_MODULES = [
     { key: 'stock_requests', label: 'Stock Requests', description: 'Restock request tracking.' },
 ];
 
-const STAFF_USER_LEVEL_LABELS = {
-    standard: 'Standard Staff',
-    manager: 'Staff Manager',
+const STAFF_ACCESS_BADGE_STYLES = {
+    read_only: 'bg-stone-50 text-stone-600 border-stone-200',
+    update_access: 'bg-amber-50 text-amber-700 border-amber-200',
+    full_access: 'bg-emerald-50 text-emerald-700 border-emerald-200',
 };
 
-const STAFF_USER_LEVEL_BADGE_STYLES = {
-    manager: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    standard: 'bg-stone-50 text-stone-600 border-stone-200',
+const STAFF_ACCESS_LEVEL_LABELS = {
+    read_only: 'Read Only',
+    update_access: 'Update Access',
+    full_access: 'Full Access',
 };
 
 const DEFAULT_EMPLOYEE_ROLE = 'Potter';
@@ -157,6 +173,53 @@ const getAttendanceStatus = (attendance) => {
         label: 'No Attendance',
         className: 'border-stone-200 bg-stone-100 text-stone-600',
         note: 'No sessions yet',
+    };
+};
+
+const getEmployeeDirectoryStatus = (employee, attendanceStatus) => {
+    const normalizedStatus = String(employee?.status || '').trim().toLowerCase();
+
+    if (normalizedStatus && normalizedStatus !== 'active') {
+        if (normalizedStatus === 'pending') {
+            return {
+                label: 'Pending',
+                className: 'border-amber-200 bg-amber-50 text-amber-700',
+                dotClassName: 'bg-amber-500',
+            };
+        }
+
+        if (normalizedStatus === 'inactive' || normalizedStatus === 'suspended') {
+            return {
+                label: employee.status,
+                className: 'border-red-200 bg-red-50 text-red-700',
+                dotClassName: 'bg-red-500',
+            };
+        }
+
+        return {
+            label: employee.status,
+            className: 'border-stone-200 bg-stone-100 text-stone-700',
+            dotClassName: 'bg-stone-400',
+        };
+    }
+
+    if (employee?.attendance?.has_attendance_source) {
+        return {
+            label: attendanceStatus.label,
+            className: attendanceStatus.className,
+            dotClassName:
+                attendanceStatus.label === 'Clocked In'
+                    ? 'bg-emerald-500 animate-pulse'
+                    : attendanceStatus.label === 'Paused'
+                        ? 'bg-amber-500'
+                        : 'bg-stone-400',
+        };
+    }
+
+    return {
+        label: 'Active',
+        className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        dotClassName: 'bg-emerald-500',
     };
 };
 
@@ -278,7 +341,7 @@ function RolePresetCard({ preset, isSelected, radioName, onSelect }) {
     );
 }
 
-function StaffUserLevelCard({ level, isSelected, radioName, onSelect }) {
+function StaffPermissionLevelCard({ option, isSelected, radioName, onSelect }) {
     return (
         <label
             className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${
@@ -297,10 +360,10 @@ function StaffUserLevelCard({ level, isSelected, radioName, onSelect }) {
                 />
                 <div className="min-w-0 flex-1">
                     <div className={`text-[13px] font-bold leading-tight ${isSelected ? 'text-clay-900' : 'text-stone-700'}`}>
-                        {level.label}
+                        {option.label}
                     </div>
                     <p className={`mt-1 text-[11px] leading-relaxed ${isSelected ? 'text-clay-800/80' : 'text-stone-500'}`}>
-                        {level.description}
+                        {option.description}
                     </p>
                 </div>
             </div>
@@ -530,13 +593,15 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
     const { addToast } = useToast();
     const canManageStaffAccounts = !!staffProvisioning.canManageStaffAccounts;
+    const canCreateStaffAccounts = !!staffProvisioning.canCreateStaffAccounts;
+    const canDeleteStaffAccounts = !!staffProvisioning.canDeleteStaffAccounts;
     const requiresStaffSchemaUpdate = !!staffProvisioning.requiresStaffSchemaUpdate;
-    const canProvisionStaffAccounts = canManageStaffAccounts && !requiresStaffSchemaUpdate;
+    const canUpdateStaffAccounts = canManageStaffAccounts && !requiresStaffSchemaUpdate;
+    const canProvisionStaffAccounts = canCreateStaffAccounts && !requiresStaffSchemaUpdate;
     const rolePresets = staffProvisioning.rolePresets?.length ? staffProvisioning.rolePresets : FALLBACK_ROLE_PRESETS;
-    const userLevels = staffProvisioning.userLevels?.length ? staffProvisioning.userLevels : FALLBACK_USER_LEVELS;
+    const permissionLevels = STAFF_PERMISSION_LEVELS;
     const availableModules = staffProvisioning.availableModules?.length ? staffProvisioning.availableModules : FALLBACK_MODULES;
     const initialPresetKey = rolePresets[0]?.key || 'hr';
-    const initialUserLevel = userLevels[0]?.key || 'standard';
     const [manualEmployeeRole, setManualEmployeeRole] = useState(DEFAULT_EMPLOYEE_ROLE);
     const presetLabelByKey = rolePresets.reduce((acc, preset) => {
         acc[preset.key] = preset.label;
@@ -579,7 +644,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         email: '',
         default_password: '',
         staff_role_preset_key: initialPresetKey,
-        staff_user_level: initialUserLevel,
+        staff_access_permission_level: 'read_only',
         module_overrides: buildModuleSelection(initialPresetKey),
     });
 
@@ -644,7 +709,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 reset();
                 handleProvisionToggle(false);
                 handlePresetChange(initialPresetKey);
-                setData('staff_user_level', initialUserLevel);
+                setData('staff_access_permission_level', 'read_only');
                 addToast(
                     getFlashSuccessMessage(
                         page,
@@ -672,7 +737,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         email: '',
         default_password: '',
         staff_role_preset_key: initialPresetKey,
-        staff_user_level: initialUserLevel,
+        staff_access_permission_level: 'read_only',
         module_overrides: buildModuleSelection(initialPresetKey),
     });
 
@@ -733,7 +798,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             email: employee.login_account?.email || '',
             default_password: '',
             staff_role_preset_key: presetKey,
-            staff_user_level: employee.login_account?.user_level || initialUserLevel,
+            staff_access_permission_level: employee.login_account?.staff_access_permission_level || 'read_only',
             module_overrides: moduleOverrides,
         });
         setIsEditModalOpen(true);
@@ -772,8 +837,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     const editHasLinkedLogin = !!editingEmployee?.has_login_account;
     const editLinkedLoginIsSuspended = editingEmployee?.login_account?.workspace_access_enabled === false;
-    const showLinkedLoginUpdateFields = canProvisionStaffAccounts && (editHasLinkedLogin || editData.create_login_account);
-    const isSuspendingLinkedLogin = editHasLinkedLogin && canProvisionStaffAccounts && !editData.create_login_account;
+    const showLinkedLoginUpdateFields = canUpdateStaffAccounts && (editHasLinkedLogin || editData.create_login_account);
+    const isSuspendingLinkedLogin = editHasLinkedLogin && canUpdateStaffAccounts && !editData.create_login_account;
 
     // Filter Logic for the Table
     const filteredStaff = staff.filter(emp => 
@@ -1051,6 +1116,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         filteredStaff.map((emp) => {
                                             const loginAccessStatus = getLoginAccessStatus(emp.login_account);
                                             const attendanceStatus = getAttendanceStatus(emp.attendance);
+                                            const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
 
                                             return (
                                             <tr key={emp.id} className="group hover:bg-[#FCF7F2]/50 transition duration-150">
@@ -1078,8 +1144,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                 </td>
                                                 <td className="px-5 py-3.5 font-bold text-gray-900 text-sm">{formatPeso(emp.salary)}</td>
                                                 <td className="px-5 py-3.5">
-                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
+                                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${directoryStatus.className}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${directoryStatus.dotClassName}`}></span>
+                                                        {directoryStatus.label}
                                                     </span>
                                                 </td>
                                                 <td className="px-5 py-3.5">
@@ -1110,9 +1177,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                                       {presetLabelByKey[emp.login_account?.role_preset_key] || 'Custom'}
                                                                   </span>
                                                                   <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase border ${
-                                                                      STAFF_USER_LEVEL_BADGE_STYLES[emp.login_account?.user_level] || STAFF_USER_LEVEL_BADGE_STYLES.standard
+                                                                      STAFF_ACCESS_BADGE_STYLES[emp.login_account?.staff_access_permission_level || 'read_only']
                                                                   }`}>
-                                                                      {STAFF_USER_LEVEL_LABELS[emp.login_account?.user_level] || 'Standard Staff'}
+                                                                      {STAFF_ACCESS_LEVEL_LABELS[emp.login_account?.staff_access_permission_level || 'read_only']}
                                                                   </span>
                                                              </div>
                                                              <span className="text-[11px] text-stone-500 truncate" title={emp.login_account?.email}>{emp.login_account?.email}</span>
@@ -1164,14 +1231,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                         </button>
                                                         <button
                                                             onClick={() => deleteEmployee(emp.id)}
-                                                            disabled={emp.has_login_account && !canManageStaffAccounts}
+                                                            disabled={emp.has_login_account && !canDeleteStaffAccounts}
                                                             className={`p-1.5 rounded-lg border shadow-sm transition ${
-                                                                emp.has_login_account && !canManageStaffAccounts
+                                                                emp.has_login_account && !canDeleteStaffAccounts
                                                                     ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300'
                                                                     : 'bg-white border-stone-200 text-stone-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
                                                             }`}
-                                                            title={emp.has_login_account && !canManageStaffAccounts
-                                                                ? 'Only the shop owner or a staff manager can remove employees with login access'
+                                                            title={emp.has_login_account && !canDeleteStaffAccounts
+                                                                ? 'Only the shop owner or a user with the proper staff account access level can remove employees with login access'
                                                                 : 'Remove Employee'}
                                                         >
                                                             <Trash2 size={14} />
@@ -1357,9 +1424,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             </div>
                         )}
 
-                        {!requiresStaffSchemaUpdate && !canManageStaffAccounts && (
+                        {!requiresStaffSchemaUpdate && !canCreateStaffAccounts && (
                             <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
-                                Only the shop owner or a staff manager can provision staff login accounts.
+                                Only the shop owner or a user with full staff account access can create new seller login accounts.
                             </div>
                         )}
 
@@ -1413,19 +1480,21 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 </>
                             )}
 
-                            <div>
-                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
-                                <select
-                                    className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
-                                    value={data.role}
-                                    onChange={e => handleManualRoleChange(e.target.value)}
-                                >
-                                    {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
-                                        <option key={roleOption}>{roleOption}</option>
-                                    ))}
-                                </select>
-                                {errors.role && <p className="mt-1 text-xs text-red-500 font-medium">{errors.role}</p>}
-                            </div>
+                            {!data.create_login_account && (
+                                <div>
+                                    <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
+                                    <select
+                                        className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                        value={data.role}
+                                        onChange={e => handleManualRoleChange(e.target.value)}
+                                    >
+                                        {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
+                                            <option key={roleOption}>{roleOption}</option>
+                                        ))}
+                                    </select>
+                                    {errors.role && <p className="mt-1 text-xs text-red-500 font-medium">{errors.role}</p>}
+                                </div>
+                            )}
 
                             <div>
                                 <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Monthly Salary (PHP)</label>
@@ -1447,7 +1516,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Set their staff level first, then choose the closest base template.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose the closest base template, then turn on any extra authority this login needs.</p>
                                         </div>
                                         <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
                                             {presetLabelByKey[data.staff_role_preset_key] || 'Custom'}
@@ -1456,22 +1525,22 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-5">
                                         <div className="mb-2 flex items-center justify-between gap-3">
                                             <div>
-                                                <h4 className="text-[13px] font-bold text-stone-900">User Level Permission</h4>
-                                                <p className="mt-0.5 text-[12px] text-stone-500">Controls whether this staff login can manage other employee logins.</p>
+                                                <h4 className="text-[13px] font-bold text-stone-900">User Permission Level</h4>
+                                                <p className="mt-0.5 text-[12px] text-stone-500">Set the access level first, then choose the exact modules below.</p>
                                             </div>
                                         </div>
                                         <div className="grid gap-2.5 md:grid-cols-2">
-                                            {userLevels.map((level) => (
-                                                <StaffUserLevelCard
-                                                    key={level.key}
-                                                    level={level}
-                                                    radioName="staff_user_level"
-                                                    isSelected={data.staff_user_level === level.key}
-                                                    onSelect={() => setData('staff_user_level', level.key)}
+                                            {permissionLevels.map((option) => (
+                                                <StaffPermissionLevelCard
+                                                    key={option.key}
+                                                    option={option}
+                                                    radioName="staff_permission_level"
+                                                    isSelected={data.staff_access_permission_level === option.key}
+                                                    onSelect={() => setData('staff_access_permission_level', option.key)}
                                                 />
                                             ))}
                                         </div>
-                                        {errors.staff_user_level && <p className="mt-1 text-xs text-red-500 font-medium">{errors.staff_user_level}</p>}
+                                        {errors.staff_access_permission_level && <p className="mt-1 text-xs text-red-500 font-medium">{errors.staff_access_permission_level}</p>}
                                     </div>
                                     <div className="grid gap-2.5 md:grid-cols-2">
                                         {rolePresets.map((preset) => (
@@ -1596,7 +1665,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             </div>
 
                             <label className={`relative inline-flex shrink-0 items-center ${
-                                canProvisionStaffAccounts
+                                canUpdateStaffAccounts
                                     ? 'cursor-pointer'
                                     : 'cursor-not-allowed opacity-60'
                             }`}>
@@ -1604,7 +1673,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     type="checkbox"
                                     className="peer sr-only"
                                     checked={editData.create_login_account}
-                                    disabled={!canProvisionStaffAccounts}
+                                    disabled={!canUpdateStaffAccounts}
                                     onChange={(e) => handleEditProvisionToggle(e.target.checked)}
                                 />
                                 <div className="h-6 w-11 rounded-full bg-stone-200 border border-stone-300 transition-colors peer-checked:bg-clay-700 peer-checked:border-clay-700 peer-focus:ring-2 peer-focus:ring-clay-500 peer-focus:ring-offset-2" />
@@ -1618,13 +1687,13 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             </div>
                         )}
 
-                        {!requiresStaffSchemaUpdate && !canManageStaffAccounts && (
+                        {!requiresStaffSchemaUpdate && !canUpdateStaffAccounts && (
                             <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
-                                Only the shop owner or a staff manager can update seller login access, user levels, role presets, and module permissions.
+                                Only the shop owner or a user with update or full staff account access can update seller login access, role presets, permissions, and module access.
                             </div>
                         )}
 
-                        {editHasLinkedLogin && canProvisionStaffAccounts && (
+                        {editHasLinkedLogin && canUpdateStaffAccounts && (
                             <div className="rounded-xl border border-clay-200 bg-clay-50/50 px-4 py-3 text-[13px] font-medium text-stone-600 shadow-sm">
                                 This employee already has a linked seller login. You can update the linked email, reset the password, adjust access below, or suspend workspace access while keeping the account ready for restoration later.
                             </div>
@@ -1646,7 +1715,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             </div>
                         )}
 
-                        {editLinkedLoginIsSuspended && editData.create_login_account && canProvisionStaffAccounts && (
+                        {editLinkedLoginIsSuspended && editData.create_login_account && canUpdateStaffAccounts && (
                             <div className="rounded-xl border border-emerald-200 bg-[#F2FAF6] px-5 py-4 text-[13px] text-emerald-800 shadow-sm">
                                 <div className="flex items-center gap-2.5">
                                     <span className="rounded-md bg-emerald-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
@@ -1712,19 +1781,21 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 </>
                             )}
 
-                            <div>
-                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
-                                <select
-                                    className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
-                                    value={editData.role}
-                                    onChange={(e) => handleEditManualRoleChange(e.target.value)}
-                                >
-                                    {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
-                                        <option key={roleOption}>{roleOption}</option>
-                                    ))}
-                                </select>
-                                {editErrors.role && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.role}</p>}
-                            </div>
+                            {!showLinkedLoginUpdateFields && (
+                                <div>
+                                    <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
+                                    <select
+                                        className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                        value={editData.role}
+                                        onChange={(e) => handleEditManualRoleChange(e.target.value)}
+                                    >
+                                        {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
+                                            <option key={roleOption}>{roleOption}</option>
+                                        ))}
+                                    </select>
+                                    {editErrors.role && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.role}</p>}
+                                </div>
+                            )}
 
                             <div>
                                 <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Monthly Salary (PHP)</label>
@@ -1745,7 +1816,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Set their staff level first, then choose the closest base template.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose the closest base template, then adjust authority only where needed.</p>
                                         </div>
                                         <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
                                             {presetLabelByKey[editData.staff_role_preset_key] || 'Custom'}
@@ -1754,22 +1825,22 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-5">
                                         <div className="mb-2 flex items-center justify-between gap-3">
                                             <div>
-                                                <h4 className="text-[13px] font-bold text-stone-900">User Level Permission</h4>
-                                                <p className="mt-0.5 text-[12px] text-stone-500">Controls whether this staff login can manage other employee logins.</p>
+                                                <h4 className="text-[13px] font-bold text-stone-900">User Permission Level</h4>
+                                                <p className="mt-0.5 text-[12px] text-stone-500">Set the access level first, then choose the exact modules below.</p>
                                             </div>
                                         </div>
                                         <div className="grid gap-2.5 md:grid-cols-2">
-                                            {userLevels.map((level) => (
-                                                <StaffUserLevelCard
-                                                    key={level.key}
-                                                    level={level}
-                                                    radioName="edit_staff_user_level"
-                                                    isSelected={editData.staff_user_level === level.key}
-                                                    onSelect={() => setEditData('staff_user_level', level.key)}
+                                            {permissionLevels.map((option) => (
+                                                <StaffPermissionLevelCard
+                                                    key={option.key}
+                                                    option={option}
+                                                    radioName="edit_staff_permission_level"
+                                                    isSelected={editData.staff_access_permission_level === option.key}
+                                                    onSelect={() => setEditData('staff_access_permission_level', option.key)}
                                                 />
                                             ))}
                                         </div>
-                                        {editErrors.staff_user_level && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.staff_user_level}</p>}
+                                        {editErrors.staff_access_permission_level && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.staff_access_permission_level}</p>}
                                     </div>
                                     <div className="grid gap-2.5 md:grid-cols-2">
                                         {rolePresets.map((preset) => (

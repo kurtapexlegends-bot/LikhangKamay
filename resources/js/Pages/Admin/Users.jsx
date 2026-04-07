@@ -28,9 +28,16 @@ const staffPresetLabels = {
     procurement: 'Procurement',
 };
 
-const staffUserLevelLabels = {
-    manager: 'Staff Manager',
-    standard: 'Staff',
+const staffAccessLevelLabels = {
+    read_only: 'Read Only',
+    update_access: 'Update Access',
+    full_access: 'Full Access',
+};
+
+const staffAccessLevelClasses = {
+    read_only: 'bg-stone-100 text-stone-600 border-stone-200',
+    update_access: 'bg-amber-50 text-amber-700 border-amber-100',
+    full_access: 'bg-emerald-50 text-emerald-700 border-emerald-100',
 };
 
 const getAutoExpandedRows = (accounts) =>
@@ -51,8 +58,6 @@ const formatStaffPreset = (presetKey) => {
 
     return staffPresetLabels[presetKey] || presetKey.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
-
-const formatStaffUserLevel = (userLevel) => staffUserLevelLabels[userLevel] || 'Standard Staff';
 
 function StaffMemberList({ staffMembers, emptyMessage }) {
     if (!staffMembers.length) {
@@ -86,8 +91,10 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                         <span className="inline-flex items-center rounded-md bg-[#F2EAE1] border border-[#E8D9CB] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#7A5037]">
                             {formatStaffPreset(staffMember.staff_role_preset_key)}
                         </span>
-                        <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold tracking-wider text-stone-600">
-                            {formatStaffUserLevel(staffMember.staff_user_level)}
+                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-bold tracking-wider ${
+                            staffAccessLevelClasses[staffMember.staff_access_permission_level || 'read_only']
+                        }`}>
+                            {staffAccessLevelLabels[staffMember.staff_access_permission_level || 'read_only']}
                         </span>
                         <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold tracking-wider text-stone-600">
                             {staffMember.employee_linked ? (staffMember.employee_name || 'Employee linked') : 'No employee record'}

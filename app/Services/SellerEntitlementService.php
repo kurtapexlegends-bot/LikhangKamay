@@ -37,6 +37,7 @@ class SellerEntitlementService
             'analytics',
             '3d',
             'orders',
+            'messages',
             'reviews',
             'shop_settings',
             'hr',
@@ -57,7 +58,7 @@ class SellerEntitlementService
             'hr' => ['hr'],
             'accounting' => ['accounting', 'wallet'],
             'procurement' => ['procurement', 'stock_requests'],
-            'customer_support' => ['orders', 'reviews'],
+            'customer_support' => ['orders', 'messages', 'reviews'],
             'custom' => [],
         ];
     }

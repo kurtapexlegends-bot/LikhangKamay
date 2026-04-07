@@ -21,9 +21,14 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public const STAFF_WORKSPACE_ACCESS_FLAG = '__workspace_access_enabled';
     public const STAFF_USER_LEVEL_FLAG = '__staff_user_level';
+    public const STAFF_MANAGE_STAFF_ACCOUNTS_FLAG = '__manage_staff_accounts';
+    public const STAFF_ACCESS_PERMISSION_LEVEL_FLAG = '__staff_access_permission_level';
     public const DEFAULT_STAFF_USER_LEVEL = 'standard';
     public const STAFF_MANAGER_USER_LEVEL = 'manager';
     public const STAFF_ONLY_USER_LEVEL_ALIASES = ['staff', 'staff_only', 'standard_staff'];
+    public const STAFF_ACCESS_PERMISSION_READ_ONLY = 'read_only';
+    public const STAFF_ACCESS_PERMISSION_UPDATE = 'update_access';
+    public const STAFF_ACCESS_PERMISSION_FULL = 'full_access';
 
     protected static ?bool $hasSplitNameColumns = null;
 
@@ -192,6 +197,10 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             return self::STAFF_MANAGER_USER_LEVEL;
         }
 
+        if ($this->hasStaffManagementPermission()) {
+            return self::STAFF_MANAGER_USER_LEVEL;
+        }
+
         $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
 
         return static::normalizeStaffUserLevel($permissions[self::STAFF_USER_LEVEL_FLAG] ?? null);
@@ -256,7 +265,110 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public static function stripStaffControlFlags(?array $permissions): array
     {
-        return static::stripStaffUserLevelFlag(static::stripWorkspaceAccessFlag($permissions));
+        return static::stripManageStaffAccountsFlag(
+            static::stripStaffAccessPermissionLevelFlag(
+                static::stripStaffUserLevelFlag(static::stripWorkspaceAccessFlag($permissions))
+            )
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function withManageStaffAccountsFlag(?array $permissions, bool $enabled): array
+    {
+        $normalized = static::stripManageStaffAccountsFlag($permissions);
+        $normalized[self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG] = $enabled;
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function stripManageStaffAccountsFlag(?array $permissions): array
+    {
+        $normalized = is_array($permissions) ? $permissions : [];
+        unset($normalized[self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG]);
+
+        return $normalized;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function staffAccessPermissionLevels(): array
+    {
+        return [
+            self::STAFF_ACCESS_PERMISSION_READ_ONLY,
+            self::STAFF_ACCESS_PERMISSION_UPDATE,
+            self::STAFF_ACCESS_PERMISSION_FULL,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function withStaffAccessPermissionLevelFlag(?array $permissions, ?string $level): array
+    {
+        $normalized = static::stripStaffAccessPermissionLevelFlag($permissions);
+        $normalized[self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG] = static::normalizeStaffAccessPermissionLevel($level);
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $permissions
+     * @return array<string, mixed>
+     */
+    public static function stripStaffAccessPermissionLevelFlag(?array $permissions): array
+    {
+        $normalized = is_array($permissions) ? $permissions : [];
+        unset($normalized[self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG]);
+
+        return $normalized;
+    }
+
+    public static function normalizeStaffAccessPermissionLevel(mixed $level): string
+    {
+        return in_array($level, self::staffAccessPermissionLevels(), true)
+            ? $level
+            : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+    }
+
+    public function getStaffAccessPermissionLevel(): string
+    {
+        if ($this->isSellerOwner()) {
+            return self::STAFF_ACCESS_PERMISSION_FULL;
+        }
+
+        if (!$this->isStaff()) {
+            return self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        }
+
+        $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
+
+        if (array_key_exists(self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG, $permissions)) {
+            return static::normalizeStaffAccessPermissionLevel($permissions[self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG]);
+        }
+
+        if (array_key_exists(self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG, $permissions)) {
+            return (bool) $permissions[self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG]
+                ? self::STAFF_ACCESS_PERMISSION_FULL
+                : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        }
+
+        return static::normalizeStaffUserLevel($permissions[self::STAFF_USER_LEVEL_FLAG] ?? null) === self::STAFF_MANAGER_USER_LEVEL
+            ? self::STAFF_ACCESS_PERMISSION_FULL
+            : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+    }
+
+    public function hasStaffManagementPermission(): bool
+    {
+        return $this->getStaffAccessPermissionLevel() !== self::STAFF_ACCESS_PERMISSION_READ_ONLY;
     }
 
     public static function normalizeStaffUserLevel(mixed $level): string
@@ -485,15 +597,34 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public function canManageStaffAccounts(): bool
     {
+        return $this->canUpdateStaffAccounts();
+    }
+
+    public function canUpdateStaffAccounts(): bool
+    {
         if ($this->isSellerOwner()) {
             return true;
         }
 
-        if (!$this->isStaffManager() || !$this->isWorkspaceAccessEnabled()) {
+        if (!$this->isWorkspaceAccessEnabled() || !$this->hasStaffManagementPermission()) {
             return false;
         }
 
         return in_array('hr', app(SellerEntitlementService::class)->getGrantedStaffModules($this), true);
+    }
+
+    public function canCreateStaffAccounts(): bool
+    {
+        if (!$this->canUpdateStaffAccounts()) {
+            return false;
+        }
+
+        return $this->getStaffAccessPermissionLevel() === self::STAFF_ACCESS_PERMISSION_FULL;
+    }
+
+    public function canDeleteStaffAccounts(): bool
+    {
+        return $this->canCreateStaffAccounts();
     }
 
     /**
