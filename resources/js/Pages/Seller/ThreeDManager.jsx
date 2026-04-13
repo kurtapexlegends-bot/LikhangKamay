@@ -1,7 +1,6 @@
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Canvas } from '@react-three/fiber';
-import SellerSidebar from '@/Components/SellerSidebar';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
@@ -11,6 +10,8 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import External3DToolLink from '@/Components/External3DToolLink';
 import GLTFModel from '@/Components/GLTFModel';
+import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeDModelBoundary';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import {
     UploadCloud, Cuboid, Rotate3d, Trash2, Search,
     ChevronDown, User, LogOut, X, Check, Menu, Package, AlertTriangle,
@@ -46,7 +47,7 @@ const revokeBlobUrl = (url) => {
 export default function ThreeDManager({ auth, models = [], products = [], storage = { percent: 0, used: '0MB', max: '500MB' } }) {
     const [selectedModelId, setSelectedModelId] = useState(models[0]?.id ?? null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [dragActive, setDragActive] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -199,14 +200,11 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <>
             <Head title="3D Asset Manager" />
-            <SellerSidebar active="3d" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 <header className="h-[72px] bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-40">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-clay-600">
                             <Menu size={20} />
                         </button>
                         <div>
@@ -282,18 +280,30 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         )}
 
                         <div className="flex-1 w-full h-full cursor-grab active:cursor-grabbing">
-                            <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
-                                <Suspense fallback={<Loader />}>
-                                    <Stage environment="city" intensity={0.5}>
-                                        {selectedModel?.url ? (
-                                            <GLTFModel url={selectedModel.url} scale={1.0} />
-                                        ) : (
-                                            <DemoPottery scale={0.65} />
-                                        )}
-                                    </Stage>
-                                    <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
-                                </Suspense>
-                            </Canvas>
+                            <ThreeDModelBoundary
+                                resetKey={selectedModel?.url || 'empty'}
+                                fallback={({ onRetry }) => (
+                                    <ThreeDModelUnavailable
+                                        title="Saved 3D asset unavailable"
+                                        description="This model is missing files or could not be loaded from storage."
+                                        onRetry={onRetry}
+                                        className="h-full"
+                                    />
+                                )}
+                            >
+                                <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
+                                    <Suspense fallback={<Loader />}>
+                                        <Stage environment="city" intensity={0.5}>
+                                            {selectedModel?.url ? (
+                                                <GLTFModel url={selectedModel.url} scale={1.0} />
+                                            ) : (
+                                                <DemoPottery scale={0.65} />
+                                            )}
+                                        </Stage>
+                                        <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
+                                    </Suspense>
+                                </Canvas>
+                            </ThreeDModelBoundary>
                         </div>
 
                         <div className="absolute bottom-3 left-0 right-0 text-center pointer-events-none">
@@ -388,7 +398,6 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         </div>
                     </div>
                 </main>
-            </div>
 
             <Modal show={showUploadModal} onClose={closeUploadModal} maxWidth="md">
                 <div className="p-6">
@@ -448,14 +457,26 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative">
                                             {data.model.name.toLowerCase().endsWith('.glb') ? (
-                                                <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
-                                                    <Suspense fallback={null}>
-                                                        <Stage environment="city" intensity={0.5}>
-                                                            {previewUrl ? <GLTFModel url={previewUrl} scale={1.08} /> : null}
-                                                        </Stage>
-                                                    </Suspense>
-                                                    <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
-                                                </Canvas>
+                                                <ThreeDModelBoundary
+                                                    resetKey={previewUrl || 'preview'}
+                                                    fallback={() => (
+                                                        <ThreeDModelUnavailable
+                                                            compact
+                                                            title="Preview unavailable"
+                                                            description="This file could not be previewed locally."
+                                                            className="h-full"
+                                                        />
+                                                    )}
+                                                >
+                                                    <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 50 }}>
+                                                        <Suspense fallback={null}>
+                                                            <Stage environment="city" intensity={0.5}>
+                                                                {previewUrl ? <GLTFModel url={previewUrl} scale={1.08} /> : null}
+                                                            </Stage>
+                                                        </Suspense>
+                                                        <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
+                                                    </Canvas>
+                                                </ThreeDModelBoundary>
                                             ) : (
                                                 <div className="flex h-full items-center justify-center px-4 text-center">
                                                     <div>
@@ -597,6 +618,8 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                     </div>
                 </div>
             </Modal>
-        </div>
+        </>
     );
 }
+
+ThreeDManager.layout = (page) => <SellerWorkspaceLayout active="3d">{page}</SellerWorkspaceLayout>;

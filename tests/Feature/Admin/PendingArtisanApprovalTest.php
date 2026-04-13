@@ -19,6 +19,23 @@ class PendingArtisanApprovalTest extends TestCase
         $artisan = $this->createPendingArtisanWithDocuments();
 
         $this->actingAs($admin)
+            ->post(route('admin.artisan.documents.viewed', $artisan->id), [
+                'document' => 'business_permit',
+            ]);
+        $this->actingAs($admin)
+            ->post(route('admin.artisan.documents.viewed', $artisan->id), [
+                'document' => 'dti_registration',
+            ]);
+        $this->actingAs($admin)
+            ->post(route('admin.artisan.documents.viewed', $artisan->id), [
+                'document' => 'valid_id',
+            ]);
+        $this->actingAs($admin)
+            ->post(route('admin.artisan.documents.viewed', $artisan->id), [
+                'document' => 'tin_id',
+            ]);
+
+        $this->actingAs($admin)
             ->post(route('admin.artisan.approve', $artisan->id))
             ->assertSessionHasNoErrors()
             ->assertSessionHas('success', 'Artisan approved successfully!');
@@ -28,6 +45,27 @@ class PendingArtisanApprovalTest extends TestCase
         $this->assertSame('approved', $artisan->artisan_status);
         $this->assertNotNull($artisan->approved_at);
         $this->assertSame($admin->id, $artisan->approved_by);
+    }
+
+    public function test_super_admin_must_preview_all_submitted_documents_before_approving(): void
+    {
+        Mail::fake();
+
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = $this->createPendingArtisanWithDocuments();
+
+        $this->actingAs($admin)
+            ->post(route('admin.artisan.documents.viewed', $artisan->id), [
+                'document' => 'business_permit',
+            ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.artisan.approve', $artisan->id))
+            ->assertSessionHasErrors([
+                'documents' => 'Preview all submitted documents before approving this application.',
+            ]);
+
+        $this->assertSame('pending', $artisan->fresh()->artisan_status);
     }
 
     public function test_super_admin_can_mark_submitted_documents_as_viewed_during_review(): void

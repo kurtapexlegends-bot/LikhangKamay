@@ -771,6 +771,8 @@ class SuperAdminController extends Controller
             ->orderBy('setup_completed_at', 'asc')
             ->get()
             ->map(function($user) {
+                $submittedDocumentKeys = $this->getSubmittedArtisanDocumentKeys($user);
+                $viewedDocumentKeys = $this->getViewedArtisanDocumentKeys($user);
                 $address = StructuredAddress::formatPhilippineAddress([
                     'street_address' => $user->street_address,
                     'barangay' => $user->barangay,
@@ -791,7 +793,11 @@ class SuperAdminController extends Controller
                     'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
                     'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
                     'tin_id' => $user->tin_id ? asset('storage/' . $user->tin_id) : null,
-                    'viewed_document_keys' => $this->getViewedArtisanDocumentKeys($user),
+                    'viewed_document_keys' => $viewedDocumentKeys,
+                    'submitted_document_count' => count($submittedDocumentKeys),
+                    'viewed_document_count' => count($viewedDocumentKeys),
+                    'documents_ready_for_approval' => count($submittedDocumentKeys) > 0
+                        && count($submittedDocumentKeys) === count($viewedDocumentKeys),
                     'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
                 ];
             });
@@ -807,6 +813,14 @@ class SuperAdminController extends Controller
     public function approveArtisan($id)
     {
         $artisan = $this->findPendingArtisanOrFail($id);
+        $submittedDocumentKeys = $this->getSubmittedArtisanDocumentKeys($artisan);
+        $viewedDocumentKeys = $this->getViewedArtisanDocumentKeys($artisan);
+
+        if (count($submittedDocumentKeys) === 0 || count($submittedDocumentKeys) !== count($viewedDocumentKeys)) {
+            throw ValidationException::withMessages([
+                'documents' => 'Preview all submitted documents before approving this application.',
+            ]);
+        }
 
         ArtisanStatusLog::create([
             'user_id' => $artisan->id,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
 use App\Models\OrderDelivery;
+use App\Models\OrderDeliveryEvent;
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\User;
@@ -48,7 +49,7 @@ class OrderController extends Controller
         $seller?->loadMissing('addresses');
 
         $ordersQuery = Order::where('artisan_id', $sellerId)
-            ->with(['items', 'user', 'delivery']) // Load items and buyer info
+            ->with(['items', 'user', 'delivery.events']) // Load items, buyer info, and courier events
             ->orderBy('created_at', 'desc');
 
         $initialOrders = (clone $ordersQuery)->get();
@@ -84,6 +85,7 @@ class OrderController extends Controller
                     'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
                     'cancellation_reason' => $order->cancellation_reason,
                     'delivery' => $this->serializeDelivery($order->delivery),
+                    'timeline' => $this->buildOrderTimeline($order),
                     'can_book_lalamove' => $order->status === 'Accepted'
                         && $order->shipping_method === 'Delivery'
                         && $order->delivery?->external_order_id === null,
@@ -351,10 +353,16 @@ class OrderController extends Controller
 
         $updateData = ['status' => $request->status];
 
-        // Ensure Proof of Delivery is present BEFORE any database writes or side effects if the new status requires it.
-        if (in_array($request->status, ['Shipped', 'Ready for Pickup', 'Delivered'])) {
-            if (!$request->hasFile('proof_of_delivery') && !$order->proof_of_delivery) {
-                 return back()->with('error', 'Proof of Delivery (Image) is required to mark as ' . $request->status);
+        // Ensure proof is present before any database writes or side effects when the next status requires it.
+        if ($this->statusRequiresProofImage($order, $request->status)) {
+            $hasExistingProof = filled($order->proof_of_delivery);
+            $requiresFreshProof = $this->statusRequiresFreshProofImage($order, $request->status);
+
+            if (
+                !$request->hasFile('proof_of_delivery')
+                && (!$hasExistingProof || $requiresFreshProof)
+            ) {
+                return back()->with('error', $this->proofRequirementMessage($order, $request->status));
             }
         }
 
@@ -451,6 +459,29 @@ class OrderController extends Controller
     private function isAllowedSellerStatusTransition(Order $order, string $nextStatus): bool
     {
         return in_array($nextStatus, $this->allowedSellerNextStatuses($order), true);
+    }
+
+    private function statusRequiresProofImage(Order $order, string $nextStatus): bool
+    {
+        return in_array($nextStatus, ['Shipped', 'Ready for Pickup', 'Delivered'], true)
+            && !$order->delivery?->external_order_id;
+    }
+
+    private function statusRequiresFreshProofImage(Order $order, string $nextStatus): bool
+    {
+        return $nextStatus === 'Delivered' && $order->shipping_method === 'Delivery';
+    }
+
+    private function proofRequirementMessage(Order $order, string $nextStatus): string
+    {
+        return match ($nextStatus) {
+            'Ready for Pickup' => 'A pickup readiness photo is required before the order can be marked as ready for pickup.',
+            'Shipped' => 'A shipment proof photo is required before the order can be marked as shipped.',
+            'Delivered' => $order->shipping_method === 'Delivery'
+                ? 'A final delivery proof photo is required before the order can be marked as delivered.'
+                : 'A proof image is required before the order can be marked as delivered.',
+            default => 'A proof image is required for this status update.',
+        };
     }
 
     /**
@@ -1501,6 +1532,140 @@ class OrderController extends Controller
                     ['label' => 'Delivery', 'from' => 'Seller', 'to' => 'Buyer'],
                 ],
         ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildOrderTimeline(Order $order): array
+    {
+        $entries = collect();
+
+        $pushEntry = function (
+            string $key,
+            ?\Carbon\CarbonInterface $timestamp,
+            string $label,
+            ?string $description = null,
+            string $source = 'order'
+        ) use (&$entries): void {
+            if (!$timestamp) {
+                return;
+            }
+
+            $entries->push([
+                'key' => $key,
+                'label' => $label,
+                'description' => $description,
+                'source' => $source,
+                'timestamp' => $timestamp->toIso8601String(),
+            ]);
+        };
+
+        $pushEntry('order_placed', $order->created_at, 'Order placed', 'Buyer submitted the order.');
+        $pushEntry('order_accepted', $order->accepted_at, 'Order accepted', 'Seller confirmed the order.');
+
+        if ($order->shipping_method === 'Pick Up') {
+            $pushEntry(
+                'pickup_ready',
+                $order->shipped_at,
+                'Ready for pickup',
+                'Seller marked the order as ready for buyer pickup.'
+            );
+            $pushEntry(
+                'pickup_completed',
+                $order->delivered_at,
+                'Picked up',
+                'Seller marked the order as picked up by the buyer.'
+            );
+        } else {
+            $pushEntry(
+                'order_shipped',
+                $order->shipped_at,
+                'Order shipped',
+                $order->tracking_number
+                    ? 'Tracking number: ' . $order->tracking_number
+                    : 'Seller marked the order as shipped.'
+            );
+            $pushEntry(
+                'order_delivered',
+                $order->delivered_at,
+                'Marked as delivered',
+                'Seller or courier marked the order as delivered.'
+            );
+        }
+
+        $pushEntry('buyer_confirmed', $order->received_at, 'Buyer confirmed receipt', 'Buyer marked the order as received.');
+        $pushEntry('order_cancelled', $order->cancelled_at, 'Order cancelled', $order->cancellation_reason ? 'Reason: ' . $order->cancellation_reason : null);
+        $pushEntry('replacement_started', $order->replacement_started_at, 'Replacement started', $order->replacement_resolution_description ?: 'Seller approved a replacement workflow.');
+        $pushEntry('replacement_resolved', $order->replacement_resolved_at, 'Replacement resolved', 'Buyer confirmed receipt of the replacement item.');
+
+        if ($order->relationLoaded('delivery') && $order->delivery) {
+            $order->delivery->loadMissing('events');
+
+            $order->delivery->events
+                ->sortByDesc('created_at')
+                ->each(function (OrderDeliveryEvent $event) use (&$entries) {
+                    $entries->push([
+                        'key' => 'delivery_event_' . $event->id,
+                        'label' => $this->deliveryEventLabel($event),
+                        'description' => $this->deliveryEventDescription($event),
+                        'source' => 'courier',
+                        'timestamp' => optional($event->created_at)?->toIso8601String(),
+                    ]);
+                });
+        }
+
+        $currentStatusTimestamp = $order->updated_at;
+        if ($currentStatusTimestamp) {
+            $entries->push([
+                'key' => 'current_status',
+                'label' => 'Current status: ' . $order->status,
+                'description' => null,
+                'source' => 'status',
+                'timestamp' => $currentStatusTimestamp->toIso8601String(),
+            ]);
+        }
+
+        return $entries
+            ->filter(fn (array $entry) => !empty($entry['timestamp']))
+            ->sortByDesc('timestamp')
+            ->unique(fn (array $entry) => $entry['key'])
+            ->values()
+            ->take(8)
+            ->all();
+    }
+
+    private function deliveryEventLabel(OrderDeliveryEvent $event): string
+    {
+        $eventType = strtoupper((string) $event->event_type);
+        $payloadStatus = strtoupper((string) (data_get($event->payload, 'data.status') ?? ''));
+
+        return match (true) {
+            $eventType === 'DRIVER_ASSIGNED' => 'Courier assigned',
+            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'COMPLETED' => 'Courier completed delivery',
+            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'PICKED_UP' => 'Courier picked up parcel',
+            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'ON_GOING' => 'Courier started trip',
+            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'CANCELED' => 'Courier cancelled booking',
+            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'REJECTED' => 'Courier rejected booking',
+            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'EXPIRED' => 'Courier booking expired',
+            $eventType === 'POLL_SYNC' => 'Courier status synced',
+            default => str_replace('_', ' ', ucfirst(strtolower($eventType ?: 'delivery update'))),
+        };
+    }
+
+    private function deliveryEventDescription(OrderDeliveryEvent $event): ?string
+    {
+        $payloadStatus = strtoupper((string) (data_get($event->payload, 'data.status') ?? ''));
+
+        if ($payloadStatus !== '') {
+            return 'Lalamove status: ' . str_replace('_', ' ', ucfirst(strtolower($payloadStatus)));
+        }
+
+        if ($event->external_order_id) {
+            return 'Courier order ID: ' . $event->external_order_id;
+        }
+
+        return null;
     }
 
     private function lalamoveBookingRequirements(Order $order, User $seller): array

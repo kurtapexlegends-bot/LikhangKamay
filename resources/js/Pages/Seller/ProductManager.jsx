@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
-import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
@@ -13,6 +12,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import CompactPagination from '@/Components/CompactPagination';
 import External3DToolLink from '@/Components/External3DToolLink';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import { 
     Package, Search, AlertCircle, Cuboid, 
     TrendingUp, X, Tag, Image as ImageIcon,
@@ -75,9 +75,10 @@ const STANDARD_PRODUCT_CATEGORIES = [
 ];
 
 export default function ProductManager({ auth, products: dbProducts = [], categories: serverCategories = [], subscription }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [products, setProducts] = useState(dbProducts);
     useEffect(() => { setProducts(dbProducts); }, [dbProducts]);
+    const [selectedProductIds, setSelectedProductIds] = useState([]);
 
     const categories = useMemo(() => (
         Array.isArray(serverCategories) && serverCategories.length > 0
@@ -115,7 +116,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const [activeFormTab, setActiveFormTab] = useState('Essentials');
 
     // --- FORM SETUP ---
-    const { data, setData, post, processing, errors, reset, clearErrors, hasErrors } = useForm({
+    const { data, setData, post, processing, progress, errors, reset, clearErrors, hasErrors } = useForm({
         id: null,
         sku: '',
         name: '',
@@ -150,6 +151,35 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     const [previews, setPreviews] = useState({ cover: null, gallery: [] });
     const hasThreeDReady = Boolean(data.model_3d || data.model_3d_path);
+    const activationReadiness = useMemo(() => {
+        const galleryImageCount = previews.gallery.length;
+        const items = [
+            {
+                key: 'cover',
+                label: 'Cover image',
+                detail: 'Required main product photo',
+                complete: Boolean(previews.cover),
+            },
+            {
+                key: 'gallery',
+                label: 'Gallery images',
+                detail: `${galleryImageCount}/3-5 selected`,
+                complete: galleryImageCount >= 3 && galleryImageCount <= 5,
+            },
+            {
+                key: 'model',
+                label: '3D model',
+                detail: hasThreeDReady ? '3D file ready' : 'Upload .glb or .gltf',
+                complete: hasThreeDReady,
+            },
+        ];
+
+        return {
+            canActivate: items.every((item) => item.complete),
+            items,
+            missingLabels: items.filter((item) => !item.complete).map((item) => item.label.toLowerCase()),
+        };
+    }, [previews.cover, previews.gallery.length, hasThreeDReady]);
 
     const revokeBlobUrl = (url) => {
         if (typeof url === 'string' && url.startsWith('blob:')) {
@@ -217,6 +247,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         const startIndex = (currentPage - 1) * itemsPerPage;
         return processedProducts.slice(startIndex, startIndex + itemsPerPage);
     }, [currentPage, processedProducts]);
+    const visibleProductIds = useMemo(() => paginatedProducts.map((product) => product.id), [paginatedProducts]);
+    const allVisibleSelected = visibleProductIds.length > 0 && visibleProductIds.every((id) => selectedProductIds.includes(id));
 
     useEffect(() => {
         setCurrentPage(1);
@@ -227,6 +259,11 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             setCurrentPage(totalPages);
         }
     }, [currentPage, totalPages]);
+
+    useEffect(() => {
+        const validIds = new Set(products.map((product) => product.id));
+        setSelectedProductIds((current) => current.filter((id) => validIds.has(id)));
+    }, [products]);
 
     // --- HANDLERS ---
     const generateSKU = () => 'LK-' + Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
@@ -363,10 +400,10 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     };
 
     useEffect(() => {
-        if (!hasThreeDReady && data.status === 'Active') {
+        if (!activationReadiness.canActivate && data.status === 'Active') {
             setData('status', 'Draft');
         }
-    }, [data.status, hasThreeDReady]);
+    }, [data.status, activationReadiness.canActivate]);
 
     useEffect(() => {
         return () => cleanupPreviews();
@@ -375,6 +412,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     // --- SUBMIT LOGIC ---
     const submitProduct = (e) => {
         e.preventDefault();
+
+        if (data.status === 'Active' && !activationReadiness.canActivate) {
+            setActiveFormTab('Media');
+            addToast(`Active products require ${activationReadiness.missingLabels.join(', ')}.`, 'error');
+            return;
+        }
         
         // Frontend Limit Check
         const isAddingNewActive = !data.id && data.status === 'Active';
@@ -414,6 +457,16 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         } else {
             post(route('products.store'), options);
         }
+    };
+
+    const handleStatusChange = (nextStatus) => {
+        if (nextStatus === 'Active' && !activationReadiness.canActivate) {
+            setActiveFormTab('Media');
+            addToast(`Add ${activationReadiness.missingLabels.join(', ')} before listing this product as Active.`, 'info');
+            return;
+        }
+
+        setData('status', nextStatus);
     };
 
     const confirmRestock = () => { 
@@ -457,6 +510,39 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         setDeductModalOpen(true);
     };
 
+    const toggleProductSelection = (productId) => {
+        setSelectedProductIds((current) => (
+            current.includes(productId)
+                ? current.filter((id) => id !== productId)
+                : [...current, productId]
+        ));
+    };
+
+    const toggleVisibleSelection = () => {
+        setSelectedProductIds((current) => {
+            if (allVisibleSelected) {
+                return current.filter((id) => !visibleProductIds.includes(id));
+            }
+
+            return Array.from(new Set([...current, ...visibleProductIds]));
+        });
+    };
+
+    const runBulkStatusUpdate = (status) => {
+        if (!selectedProductIds.length) {
+            addToast('Select at least one product first.', 'info');
+            return;
+        }
+
+        router.post(route('products.bulk-status'), {
+            ids: selectedProductIds,
+            status,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => setSelectedProductIds([]),
+        });
+    };
+
     const handleDeduct = (e) => {
         e.preventDefault();
         deductForm.post(route('products.deduct', selectedProduct.id), {
@@ -472,17 +558,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <>
             <Head title="Product Manager" />
-            
-            <SellerSidebar active="products" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 
                 {/* --- HEADER (UPDATED TO CLASSIC STYLE) --- */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
                     <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
@@ -564,11 +646,38 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             </div>
                         </div>
 
+                        {selectedProductIds.length > 0 && (
+                            <div className="flex flex-col gap-3 border-b border-gray-100 bg-[#FCF7F2] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-2">
+                                    <span className="inline-flex rounded-full bg-clay-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-clay-700">
+                                        {selectedProductIds.length} selected
+                                    </span>
+                                    <button onClick={() => setSelectedProductIds([])} className="text-[11px] font-bold text-stone-500 hover:text-stone-700">
+                                        Clear
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => runBulkStatusUpdate('Active')} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white hover:bg-emerald-700">
+                                        <CheckCircle size={13} /> Activate
+                                    </button>
+                                    <button onClick={() => runBulkStatusUpdate('Draft')} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700 hover:bg-amber-100">
+                                        <RotateCcw size={13} /> Save as Draft
+                                    </button>
+                                    <button onClick={() => runBulkStatusUpdate('Archived')} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-50">
+                                        <Archive size={13} /> Archive
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* --- DESKTOP TABLE --- */}
                         <div className="overflow-x-auto hidden md:block">
                             <table className="w-full min-w-[900px] text-left">
                                 <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>
+                                        <th className="px-5 py-4 w-12">
+                                            <Checkbox checked={allVisibleSelected} onChange={toggleVisibleSelection} />
+                                        </th>
                                         <SortableHeader label="Product" sortKey="name" currentSort={sortConfig} onSort={requestSort} />
                                         <SortableHeader label="Price" sortKey="price" currentSort={sortConfig} onSort={requestSort} />
                                         <SortableHeader label="Stock" sortKey="stock" currentSort={sortConfig} onSort={requestSort} />
@@ -582,6 +691,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     {paginatedProducts.length > 0 ? (
                                         paginatedProducts.map((product) => (
                                             <tr key={product.id} className="hover:bg-gray-50/50 transition">
+                                                <td className="px-5 py-3 align-top">
+                                                    <Checkbox checked={selectedProductIds.includes(product.id)} onChange={() => toggleProductSelection(product.id)} />
+                                                </td>
                                                 <td className="px-5 py-3">
                                                     <div className="flex items-center gap-3">
                                                         <img src={product.img || '/images/no-image.png'} alt={product.name} className="w-10 h-10 rounded-lg object-cover bg-gray-100 border border-gray-200" />
@@ -626,7 +738,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-12 text-center text-gray-400">
+                                            <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
                                                 <div className="flex flex-col items-center">
                                                     <Package size={48} className="mb-3 opacity-50" />
                                                     <p>No products found.</p>
@@ -644,6 +756,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                              {paginatedProducts.length > 0 ? (
                                 paginatedProducts.map((product) => (
                                     <div key={product.id} className="p-4 flex gap-4">
+                                        <div className="pt-1">
+                                            <Checkbox checked={selectedProductIds.includes(product.id)} onChange={() => toggleProductSelection(product.id)} />
+                                        </div>
                                         <img src={product.img || '/images/no-image.png'} alt={product.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0" />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-start">
@@ -694,7 +809,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         />
                     </div>
                 </main>
-            </div>
 
             {/* --- DEDUCTION MODAL (Phase 1) --- */}
             <Modal show={deductModalOpen} onClose={() => setDeductModalOpen(false)} maxWidth="sm">
@@ -825,17 +939,24 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         <select 
                                             className="w-full mt-1 border-gray-300 rounded-xl focus:border-clay-500 focus:ring-clay-500 shadow-sm" 
                                             value={data.status} 
-                                            onChange={(e) => setData('status', e.target.value)}
+                                            onChange={(e) => handleStatusChange(e.target.value)}
                                         >
-                                            <option value="Active" disabled={!hasThreeDReady}>Active</option>
+                                            <option value="Active" disabled={!activationReadiness.canActivate}>Active</option>
                                             <option value="Draft">Draft</option>
                                             <option value="Archived">Archived</option>
                                         </select>
-                                        <p className={`mt-2 text-[11px] ${hasThreeDReady ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                            {hasThreeDReady
-                                                ? '3D model ready. You can list this product as Active.'
-                                                : 'Active listings require a 3D model. Products without one stay in Draft.'}
-                                        </p>
+                                        <div className={`mt-2 rounded-xl border px-3 py-2 ${activationReadiness.canActivate ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+                                            <p className={`text-[11px] font-bold ${activationReadiness.canActivate ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                                {activationReadiness.canActivate
+                                                    ? 'Ready for Active listing'
+                                                    : `Still needed for Active: ${activationReadiness.missingLabels.join(', ')}`}
+                                            </p>
+                                            <p className={`mt-1 text-[10px] ${activationReadiness.canActivate ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                {activationReadiness.canActivate
+                                                    ? 'This product meets the media requirements for activation.'
+                                                    : 'Incomplete products stay in Draft until the required media is uploaded.'}
+                                            </p>
+                                        </div>
                                     </div>
 
                                     <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
@@ -936,6 +1057,45 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         {/* TAB 3: MEDIA */}
                         {activeFormTab === 'Media' && (
                             <div className="space-y-6 animate-fadeIn">
+                                <div className={`rounded-2xl border px-4 py-4 ${activationReadiness.canActivate ? 'border-emerald-200 bg-emerald-50/70' : 'border-amber-200 bg-amber-50/80'}`}>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p className={`text-xs font-bold uppercase tracking-wider ${activationReadiness.canActivate ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                                Activation Checklist
+                                            </p>
+                                            <p className={`mt-1 text-sm font-bold ${activationReadiness.canActivate ? 'text-emerald-900' : 'text-amber-900'}`}>
+                                                {activationReadiness.canActivate
+                                                    ? 'This product is ready to be listed as Active.'
+                                                    : 'Complete the media requirements before listing this product as Active.'}
+                                            </p>
+                                        </div>
+                                        <div className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${activationReadiness.canActivate ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            {activationReadiness.canActivate ? 'Ready' : 'Draft only'}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                                        {activationReadiness.items.map((item) => (
+                                            <div
+                                                key={item.key}
+                                                className={`rounded-xl border px-3 py-3 ${item.complete ? 'border-emerald-200 bg-white/80' : 'border-amber-200 bg-white/70'}`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {item.complete ? (
+                                                        <CheckCircle size={16} className="text-emerald-600" />
+                                                    ) : (
+                                                        <AlertCircle size={16} className="text-amber-600" />
+                                                    )}
+                                                    <p className="text-sm font-bold text-gray-900">{item.label}</p>
+                                                </div>
+                                                <p className={`mt-1 text-[11px] ${item.complete ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                                    {item.complete ? 'Ready' : item.detail}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6 flex gap-3">
                                     <ImageIcon className="text-blue-500 shrink-0" size={20} />
                                     <p className="text-xs text-blue-700 leading-relaxed">
@@ -1116,7 +1276,20 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-100">
                         <button type="button" onClick={closeProductModal} className="text-gray-400 hover:text-gray-600 font-bold text-sm px-2">Cancel</button>
                         
-                        <div className="flex gap-3">
+                        <div className="flex items-center gap-3">
+                            {activeFormTab === 'Media' && processing && progress && (
+                                <div className="hidden min-w-[180px] items-center gap-2 sm:flex">
+                                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-clay-100">
+                                        <div
+                                            className="h-full rounded-full bg-clay-600 transition-all"
+                                            style={{ width: `${progress.percentage ?? 0}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-[11px] font-bold text-clay-700">
+                                        {progress.percentage ?? 0}%
+                                    </span>
+                                </div>
+                            )}
                             {activeFormTab !== 'Essentials' && (
                                 <button 
                                     type="button" 
@@ -1129,7 +1302,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             
                             {activeFormTab === 'Media' ? (
                                 <PrimaryButton type="submit" className="px-8 py-2.5 rounded-xl shadow-lg shadow-clay-500/20" disabled={processing}>
-                                    {processing ? 'Saving...' : (data.id ? 'Save Changes' : 'Publish Product')}
+                                    {processing
+                                        ? (progress ? `Uploading ${progress.percentage ?? 0}%` : 'Saving...')
+                                        : (data.id ? 'Save Changes' : 'Publish Product')}
                                 </PrimaryButton>
                             ) : (
                                 <button 
@@ -1210,6 +1385,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 </div>
             </Modal>
 
-        </div>
+        </>
     );
 }
+
+ProductManager.layout = (page) => <SellerWorkspaceLayout active="products">{page}</SellerWorkspaceLayout>;

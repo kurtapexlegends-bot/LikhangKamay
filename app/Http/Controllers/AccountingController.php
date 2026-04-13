@@ -242,6 +242,12 @@ class AccountingController extends Controller
             'amount' => $amount,
             'quantity' => (int) $request->quantity,
             'requester' => $this->serializeRequester($requester),
+            'activity' => $this->buildActivitySummary(
+                $request->status,
+                $request->created_at?->toIso8601String(),
+                null,
+                $request->updated_at?->toIso8601String()
+            ),
             'supply' => [
                 'id' => $supply?->id,
                 'name' => $supply?->name,
@@ -276,10 +282,17 @@ class AccountingController extends Controller
             'status' => $payroll->status,
             'created_at' => $payroll->created_at?->toIso8601String(),
             'updated_at' => $payroll->updated_at?->toIso8601String(),
+            'submitted_at' => $payroll->submitted_at?->toIso8601String(),
             'rejection_reason' => $payroll->rejection_reason,
             'employee_count' => (int) $payroll->employee_count,
             'amount' => $amount,
             'requester' => $this->serializeRequester($requester),
+            'activity' => $this->buildActivitySummary(
+                $payroll->status,
+                $payroll->created_at?->toIso8601String(),
+                $payroll->submitted_at?->toIso8601String(),
+                $payroll->updated_at?->toIso8601String()
+            ),
             'fund_snapshot' => [
                 'available_balance' => $currentBalance,
                 'remaining_balance' => $currentBalance - $amount,
@@ -320,6 +333,18 @@ class AccountingController extends Controller
             'id' => $requester->id,
             'name' => $requester->name,
             'role' => $requester->role,
+        ];
+    }
+
+    private function buildActivitySummary(?string $status, ?string $createdAt, ?string $submittedAt, ?string $updatedAt): array
+    {
+        $normalizedStatus = strtolower((string) $status);
+        $isResolved = in_array($normalizedStatus, ['paid', 'completed', 'accounting_approved', 'ordered', 'received', 'partially_received', 'rejected'], true);
+
+        return [
+            'requested_at' => $createdAt,
+            'submitted_at' => $submittedAt,
+            'last_reviewed_at' => $isResolved ? $updatedAt : null,
         ];
     }
 }

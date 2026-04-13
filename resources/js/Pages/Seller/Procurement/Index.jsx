@@ -10,6 +10,7 @@ import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { 
     Package, AlertTriangle, TrendingUp, Plus, Search, ChevronDown, 
     User, LogOut, Building2, Edit2, Trash2, RefreshCw, Box, Menu, 
@@ -347,14 +348,13 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     ) : (
                                         <tr>
                                             <td colSpan="7" className="px-6 py-20 text-center">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                                                        <Package size={32} className="text-gray-300" />
-                                                    </div>
-                                                    <h3 className="text-lg font-bold text-gray-900 mb-1">No Supplies Found</h3>
-                                                    <p className="text-sm text-gray-500 mb-6">Start by adding your first inventory item.</p>
-                                                    <button onClick={() => setShowAddModal(true)} className="text-clay-600 font-bold hover:underline text-sm">Add New Supply</button>
-                                                </div>
+                                                <WorkspaceEmptyState
+                                                    icon={Package}
+                                                    title="No supplies found"
+                                                    description="Start by adding inventory items so Procurement can track stock levels, restocks, and accounting requests."
+                                                    actionLabel="Add New Supply"
+                                                    onAction={() => setShowAddModal(true)}
+                                                />
                                             </td>
                                         </tr>
                                     )}
@@ -588,4 +588,3 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         </div>
     );
 }
-

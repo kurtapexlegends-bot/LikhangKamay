@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import GLTFModel from './GLTFModel';
 import { Loader2, Box, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { ThreeDModelBoundary, ThreeDModelUnavailable } from './ThreeDModelBoundary';
 
 /**
  * ProductViewer3D Component
@@ -73,28 +74,43 @@ export default function ProductViewer3D({
                 </div>
             )}
 
-            <Canvas
-                shadows
-                dpr={[1, 2]}
-                camera={{ position: [0, 0, 4], fov: 50 }}
-                className="cursor-grab active:cursor-grabbing"
+            <ThreeDModelBoundary
+                resetKey={modelUrl}
+                fallback={({ onRetry }) => (
+                    <div className="h-full bg-gradient-to-b from-gray-50 to-white">
+                        <ThreeDModelUnavailable
+                            compact={compact}
+                            title={`${productName} 3D view is unavailable`}
+                            description="The saved 3D asset is incomplete or temporarily inaccessible."
+                            onRetry={onRetry}
+                            className="h-full"
+                        />
+                    </div>
+                )}
             >
-                <Suspense fallback={<Loader />}>
-                    <Stage environment="city" intensity={0.5}>
-                        {modelUrl ? (
-                            <GLTFModel url={modelUrl} scale={zoom} />
-                        ) : (
-                            <PlaceholderModel />
-                        )}
-                    </Stage>
-                </Suspense>
-                <OrbitControls
-                    autoRotate={autoRotate}
-                    autoRotateSpeed={2}
-                    enableZoom={true}
-                    enablePan={false}
-                />
-            </Canvas>
+                <Canvas
+                    shadows
+                    dpr={[1, 2]}
+                    camera={{ position: [0, 0, 4], fov: 50 }}
+                    className="cursor-grab active:cursor-grabbing"
+                >
+                    <Suspense fallback={<Loader />}>
+                        <Stage environment="city" intensity={0.5}>
+                            {modelUrl ? (
+                                <GLTFModel url={modelUrl} scale={zoom} />
+                            ) : (
+                                <PlaceholderModel />
+                            )}
+                        </Stage>
+                    </Suspense>
+                    <OrbitControls
+                        autoRotate={autoRotate}
+                        autoRotateSpeed={2}
+                        enableZoom={true}
+                        enablePan={false}
+                    />
+                </Canvas>
+            </ThreeDModelBoundary>
 
             {!compact && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white/90 via-white/50 to-transparent p-4 pt-8">

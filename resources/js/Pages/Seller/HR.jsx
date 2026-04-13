@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import Modal from '@/Components/Modal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { 
     Users, UserPlus, Trash2, ChevronDown, User, LogOut,
     Briefcase, Building2, Search, Menu, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3,
@@ -13,6 +13,7 @@ import {
 import { useToast } from '@/Components/ToastContext';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 const FALLBACK_ROLE_PRESETS = [
     { key: 'hr', label: 'HR', description: 'HR records, payroll, and employee management.', modules: ['hr'] },
@@ -27,16 +28,34 @@ const STAFF_PERMISSION_LEVELS = [
         key: 'read_only',
         label: 'Read Only',
         description: 'Can view the assigned seller workspace modules without changing staff login access.',
+        capabilities: {
+            view: true,
+            editHr: false,
+            editExistingLogin: false,
+            createRemoveLogins: false,
+        },
     },
     {
         key: 'update_access',
         label: 'Update Access',
         description: 'Can update existing staff login access, roles, permissions, and module settings. Requires HR module access too.',
+        capabilities: {
+            view: true,
+            editHr: true,
+            editExistingLogin: true,
+            createRemoveLogins: false,
+        },
     },
     {
         key: 'full_access',
         label: 'Full Access',
         description: 'Can create, update, suspend, restore, and remove staff login accounts. Requires HR module access too.',
+        capabilities: {
+            view: true,
+            editHr: true,
+            editExistingLogin: true,
+            createRemoveLogins: true,
+        },
     },
 ];
 
@@ -65,6 +84,14 @@ const STAFF_ACCESS_LEVEL_LABELS = {
     read_only: 'Read Only',
     update_access: 'Update Access',
     full_access: 'Full Access',
+};
+
+const STAFF_ACCESS_EVENT_LABELS = {
+    login_created: 'Login Created',
+    login_updated: 'Access Updated',
+    login_suspended: 'Access Suspended',
+    login_restored: 'Access Restored',
+    login_removed: 'Login Removed',
 };
 
 const DEFAULT_EMPLOYEE_ROLE = 'Potter';
@@ -273,6 +300,35 @@ const formatWorkedHoursLabel = (minutes) => {
     return `${hours}h ${remainingMinutes}m`;
 };
 
+const formatRelativeAuditTime = (value) => {
+    if (!value) {
+        return 'Just now';
+    }
+
+    const seconds = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 1000));
+
+    if (seconds < 60) {
+        return 'Just now';
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) {
+        return `${minutes}m ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+        return `${hours}h ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) {
+        return `${days}d ago`;
+    }
+
+    return formatShortDate(value);
+};
+
 const formatWorkedHoursSummary = (attendance) => {
     const days = Number(attendance?.days_worked || 0);
     const dayLabel = days === 1 ? 'day' : 'days';
@@ -368,6 +424,66 @@ function StaffPermissionLevelCard({ option, isSelected, radioName, onSelect }) {
                 </div>
             </div>
         </label>
+    );
+}
+
+function StaffPermissionCapabilitySummary({ selectedLevel, hrModuleEnabled }) {
+    const selectedOption = STAFF_PERMISSION_LEVELS.find((option) => option.key === selectedLevel) || STAFF_PERMISSION_LEVELS[0];
+    const capabilityRows = [
+        { key: 'view', label: 'View HR records and assigned modules' },
+        { key: 'editHr', label: 'Edit employee records and payroll inputs' },
+        { key: 'editExistingLogin', label: 'Update existing seller portal login access' },
+        { key: 'createRemoveLogins', label: 'Create, suspend, restore, or remove seller portal logins' },
+    ];
+
+    return (
+        <div className="rounded-xl border border-stone-200 bg-stone-50/70 px-3.5 py-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                    <h5 className="text-[12px] font-bold text-stone-900">Effective Access Summary</h5>
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-stone-500">
+                        This is what <span className="font-bold text-stone-700">{selectedOption.label}</span> can actually do in the system.
+                    </p>
+                </div>
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STAFF_ACCESS_BADGE_STYLES[selectedOption.key] || STAFF_ACCESS_BADGE_STYLES.read_only}`}>
+                    {selectedOption.label}
+                </span>
+            </div>
+
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+                {capabilityRows.map((row) => {
+                    const allowed = !!selectedOption.capabilities?.[row.key];
+
+                    return (
+                        <div
+                            key={row.key}
+                            className={`rounded-lg border px-3 py-2 text-[11px] ${
+                                allowed
+                                    ? 'border-emerald-200 bg-white text-stone-700'
+                                    : 'border-stone-200 bg-white/70 text-stone-500'
+                            }`}
+                        >
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="font-medium leading-snug">{row.label}</span>
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                    allowed
+                                        ? 'bg-emerald-50 text-emerald-700'
+                                        : 'bg-stone-100 text-stone-500'
+                                }`}>
+                                    {allowed ? 'Allowed' : 'Blocked'}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {!hrModuleEnabled && selectedLevel !== 'read_only' && (
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800">
+                    <span className="font-bold">HR module required:</span> update and full staff access only take effect for staff-account management when the HR module is enabled below.
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -580,11 +696,11 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
     );
 }
 
-export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {} }) {
+export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddPassword, setShowAddPassword] = useState(false);
     const [showEditPassword, setShowEditPassword] = useState(false);
@@ -609,6 +725,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         return acc;
     }, {});
     const showReadOnlyToast = () => addToast('Read-only HR access can only view records.', 'error');
+    const accessAuditEntries = useMemo(() => staffAccessAudits.slice(0, 6), [staffAccessAudits]);
 
     const buildModuleSelection = (presetKey) => {
         const preset = rolePresets.find((item) => item.key === presetKey) || rolePresets.find((item) => item.key === 'custom');
@@ -699,6 +816,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         setData('module_overrides', buildModuleSelection(presetKey));
     };
 
+    const createHrModuleEnabled = !!data.module_overrides?.hr;
+
     const toggleModuleOverride = (moduleKey) => {
         setData('module_overrides', {
             ...data.module_overrides,
@@ -785,6 +904,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         }
         setEditData('module_overrides', buildModuleSelection(presetKey));
     };
+
+    const editHrModuleEnabled = !!editData.module_overrides?.hr;
 
     const toggleEditModuleOverride = (moduleKey) => {
         setEditData('module_overrides', {
@@ -1022,19 +1143,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <>
             <Head title="HR Management" />
-            
-            {/* SIDEBAR */}
-            <SellerSidebar active="hr" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             {/* MAIN CONTENT */}
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
-                
                 {/* --- HEADER (Standardized) --- */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40">
                     <div className="flex items-center gap-3 min-w-0">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div>
@@ -1137,6 +1253,60 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
                     </div>
 
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="border-b border-stone-100 px-5 py-4">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Access Control</p>
+                                    <h3 className="mt-1 text-base font-bold text-stone-900">Staff access activity</h3>
+                                    <p className="mt-1 text-[13px] text-stone-500">
+                                        Read Only only views. Update Access edits records and existing login access. Full Access also creates or removes seller portal logins.
+                                    </p>
+                                </div>
+                                <span className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-600">
+                                    Recent seller portal access changes
+                                </span>
+                            </div>
+                        </div>
+                        <div className="divide-y divide-stone-100">
+                            {accessAuditEntries.length > 0 ? (
+                                accessAuditEntries.map((audit) => (
+                                    <div key={audit.id} className="flex flex-col gap-2 px-5 py-4 md:flex-row md:items-start md:justify-between">
+                                        <div className="min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-stone-600">
+                                                    {STAFF_ACCESS_EVENT_LABELS[audit.event] || 'Access Update'}
+                                                </span>
+                                                {audit.staff_user?.name && (
+                                                    <span className="text-[11px] font-bold text-stone-700">
+                                                        {audit.staff_user.name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="mt-1 text-sm font-semibold text-stone-900">{audit.summary}</p>
+                                            {audit.details?.changes?.length > 0 && (
+                                                <p className="mt-1 text-[12px] text-stone-500">
+                                                    {audit.details.changes.join(' • ')}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="text-[11px] font-medium text-stone-400 md:text-right">
+                                            <div>{audit.actor?.name || 'System'}</div>
+                                            <div>{formatRelativeAuditTime(audit.created_at)}</div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <WorkspaceEmptyState
+                                    compact
+                                    icon={SettingsIcon}
+                                    title="No access changes yet"
+                                    description="Staff login creation, permission updates, suspensions, and restorations will appear here once portal access starts changing."
+                                />
+                            )}
+                        </div>
+                    </div>
+
                     {/* EMPLOYEE LIST TABLE */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
                         
@@ -1157,7 +1327,118 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
 
                         {/* Table Body */}
-                        <div className="overflow-x-auto flex-1">
+                        <div className="flex-1 md:hidden">
+                            {filteredStaff.length > 0 ? (
+                                <div className="divide-y divide-gray-100">
+                                    {filteredStaff.map((emp) => {
+                                        const loginAccessStatus = getLoginAccessStatus(emp.login_account);
+                                        const attendanceStatus = getAttendanceStatus(emp.attendance);
+                                        const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
+
+                                        return (
+                                            <div key={emp.id} className="p-4 space-y-3">
+                                                <div className="flex items-start gap-3">
+                                                    {emp.has_login_account ? (
+                                                        <UserAvatar
+                                                            user={{
+                                                                ...emp.login_account,
+                                                                name: emp.login_account?.name || emp.name,
+                                                                role: 'staff',
+                                                            }}
+                                                            className="w-10 h-10 text-xs shadow-sm ring-1 ring-stone-900/5 cursor-pointer"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 font-bold border border-stone-200 text-xs shadow-sm">
+                                                            {emp.name.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-gray-900">{emp.name}</p>
+                                                        <p className="text-xs text-stone-500 font-medium">{emp.role}</p>
+                                                        <p className="mt-1 text-xs font-bold text-gray-800">{formatPeso(emp.salary)}</p>
+                                                    </div>
+                                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${directoryStatus.className}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${directoryStatus.dotClassName}`}></span>
+                                                        {directoryStatus.label}
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Login Access</p>
+                                                        {emp.has_login_account ? (
+                                                            <div className="mt-1 space-y-1">
+                                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                                    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase ${
+                                                                        emp.login_account?.workspace_access_enabled === false
+                                                                            ? 'border-red-200 bg-red-50 text-red-700'
+                                                                            : emp.login_account?.is_verified
+                                                                                ? emp.login_account?.must_change_password
+                                                                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                                                                    : 'border-[#E7D8C9] bg-[#FCF7F2] text-clay-700'
+                                                                                : 'border-stone-200 bg-stone-100 text-stone-600'
+                                                                    }`}>
+                                                                        {loginAccessStatus}
+                                                                    </span>
+                                                                    {emp.login_account?.role_preset && (
+                                                                        <span className="inline-flex items-center rounded-full border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-stone-600">
+                                                                            {humanizePreset(emp.login_account.role_preset)}
+                                                                        </span>
+                                                                    )}
+                                                                    {emp.login_account?.staff_access_permission_level && (
+                                                                        <span className="inline-flex items-center rounded-full border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-stone-600">
+                                                                            {formatPermissionLevel(emp.login_account.staff_access_permission_level)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-[11px] text-stone-500 break-all">{emp.login_account?.email}</p>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="mt-1 text-[11px] text-stone-500">No seller portal login linked.</p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Attendance</p>
+                                                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                                                            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${attendanceStatus.className}`}>
+                                                                <span className={`h-1.5 w-1.5 rounded-full ${attendanceStatus.dotClassName}`}></span>
+                                                                {attendanceStatus.label}
+                                                            </span>
+                                                            {emp.attendance?.summary && (
+                                                                <span className="text-[11px] text-stone-500">{emp.attendance.summary}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-end gap-2 pt-1">
+                                                    <button onClick={() => openEditEmployeeModal(emp)} className="inline-flex items-center justify-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-50">
+                                                        <Pencil size={13} />
+                                                    </button>
+                                                    <button onClick={() => deleteEmployee(emp.id)} className="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-100">
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="p-4">
+                                    <WorkspaceEmptyState
+                                        icon={Users}
+                                        title="No employees found"
+                                        description={searchTerm ? 'Try a different search term or clear the filter.' : 'Add your first employee to start managing staff records and portal access.'}
+                                        actionLabel={!searchTerm ? 'Add Employee' : 'Clear Search'}
+                                        onAction={!searchTerm ? () => setIsAddModalOpen(true) : () => setSearchTerm('')}
+                                        compact
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="hidden overflow-x-auto flex-1 md:block">
                             <table className="w-full min-w-[860px] text-left">
                                 <thead className="bg-stone-50/50 text-[10px] font-bold text-stone-500 uppercase tracking-widest border-b border-gray-100">
                                     <tr>
@@ -1312,20 +1593,15 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     ) : (
                                         <tr>
                                             <td colSpan="6" className="px-6 py-20 text-center">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <div className="w-16 h-16 bg-[#FCF7F2] rounded-full flex items-center justify-center mb-4 border border-[#E7D8C9]">
-                                                        <Users size={32} className="text-clay-300" />
-                                                    </div>
-                                                    <h3 className="text-lg font-bold text-gray-900 mb-1">No Staff Found</h3>
-                                                    <p className="text-sm text-stone-500 mb-6">
-                                                        {canEditHrRecords
-                                                            ? 'Start by adding your first employee to the directory.'
-                                                            : 'Read-only HR access can view records only.'}
-                                                    </p>
-                                                    {canEditHrRecords && (
-                                                        <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-clay-600 text-white font-bold rounded-xl shadow-lg shadow-clay-200 hover:bg-clay-700 transition">Create New Record</button>
-                                                    )}
-                                                </div>
+                                                <WorkspaceEmptyState
+                                                    icon={Users}
+                                                    title="No staff found"
+                                                    description={canEditHrRecords
+                                                        ? 'Start by adding your first employee to the directory, then link seller portal access only when needed.'
+                                                        : 'Read-only HR access can view records only. No employee entries are available yet.'}
+                                                    actionLabel={canEditHrRecords ? 'Create New Record' : null}
+                                                    onAction={canEditHrRecords ? () => setIsModalOpen(true) : undefined}
+                                                />
                                             </td>
                                         </tr>
                                     )}
@@ -1339,7 +1615,70 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
                             <h3 className="font-bold text-gray-900 text-base">Payroll Requests History</h3>
                         </div>
-                        <div className="overflow-x-auto flex-1">
+                        <div className="flex-1 md:hidden">
+                            {payrolls.data && payrolls.data.length > 0 ? (
+                                <div className="divide-y divide-gray-100">
+                                    {payrolls.data.map((payroll) => (
+                                        <div key={payroll.id} className="p-4 space-y-3">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-gray-900">{formatShortDate(payroll.created_at)}</p>
+                                                    <p className="mt-0.5 text-xs text-gray-500">{payroll.month}</p>
+                                                    <p className="mt-1 text-[11px] text-gray-400">
+                                                        Requested by <span className="font-bold text-gray-600">{payroll.requester?.name || 'Seller owner'}</span>
+                                                    </p>
+                                                </div>
+                                                <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${
+                                                    payroll.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' :
+                                                    payroll.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                                    'bg-[#F8EEE6] text-clay-700'
+                                                }`}>
+                                                    {payroll.status}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2 text-[11px]">
+                                                <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2">
+                                                    <p className="text-gray-400">Employees</p>
+                                                    <p className="mt-0.5 font-bold text-gray-800">{payroll.employee_count}</p>
+                                                </div>
+                                                <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2">
+                                                    <p className="text-gray-400">Total Amount</p>
+                                                    <p className="mt-0.5 font-bold text-gray-800">{formatPeso(payroll.total_amount)}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2 text-[11px] text-stone-500">
+                                                {payroll.submitted_at && (
+                                                    <p>Submitted to Accounting: <span className="font-medium text-stone-700">{formatShortDate(payroll.submitted_at)}</span></p>
+                                                )}
+                                                {payroll.status !== 'Pending' && (
+                                                    <p className="mt-1">Last review: <span className="font-medium text-stone-700">{formatShortDate(payroll.updated_at)}</span></p>
+                                                )}
+                                                <p className="mt-1">
+                                                    Reason: <span className={payroll.rejection_reason ? 'font-medium text-red-600' : 'font-medium text-stone-400'}>{payroll.rejection_reason || '—'}</span>
+                                                </p>
+                                            </div>
+
+                                            <div className="flex justify-end">
+                                                {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) ? (
+                                                    <button 
+                                                        onClick={() => deletePayroll(payroll.id)} 
+                                                        className="inline-flex items-center justify-center rounded-xl bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-100 transition"
+                                                    >
+                                                        Delete Request
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-xs italic text-gray-400">Locked</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
+
+                        <div className="hidden overflow-x-auto flex-1 md:block">
                             <table className="w-full min-w-[860px] text-left">
                                 <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>
@@ -1360,6 +1699,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     <div className="mt-1 text-xs text-gray-500">{payroll.month}</div>
                                                     <div className="mt-1 text-xs text-gray-400">
                                                         Requested by <span className="font-bold text-gray-600">{payroll.requester?.name || 'Seller owner'}</span>
+                                                    </div>
+                                                    <div className="mt-1 space-y-0.5 text-[11px] text-gray-400">
+                                                        {payroll.submitted_at && (
+                                                            <div>Submitted to Accounting: <span className="font-medium text-gray-500">{formatShortDate(payroll.submitted_at)}</span></div>
+                                                        )}
+                                                        {payroll.status !== 'Pending' && (
+                                                            <div>Last review: <span className="font-medium text-gray-500">{formatShortDate(payroll.updated_at)}</span></div>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-center font-bold text-gray-600">
@@ -1400,8 +1747,17 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-10 text-center text-gray-500 text-sm">
-                                                No payroll requests generated yet.
+                                            <td colSpan="6" className="px-6 py-10 text-center">
+                                                <WorkspaceEmptyState
+                                                    compact
+                                                    icon={Banknote}
+                                                    title="No payroll requests yet"
+                                                    description={canEditHrRecords
+                                                        ? 'Generate payroll after attendance and salary details are ready for the selected month.'
+                                                        : 'Payroll history will appear here once HR submits requests to Accounting.'}
+                                                    actionLabel={canEditHrRecords ? 'Generate Payroll' : null}
+                                                    onAction={canEditHrRecords ? () => setIsPayrollModalOpen(true) : undefined}
+                                                />
                                             </td>
                                         </tr>
                                     )}
@@ -1436,7 +1792,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         )}
                     </div>
                 </main>
-            </div>
 
             <AttendanceCalendarModal
                 employee={attendanceModalEmployee}
@@ -1584,7 +1939,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose the closest base template, then turn on any extra authority this login needs.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose the staff template first, then set exactly how much this login can change.</p>
                                         </div>
                                         <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
                                             {presetLabelByKey[data.staff_role_preset_key] || 'Custom'}
@@ -1594,7 +1949,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         <div className="mb-2 flex items-center justify-between gap-3">
                                             <div>
                                                 <h4 className="text-[13px] font-bold text-stone-900">User Permission Level</h4>
-                                                <p className="mt-0.5 text-[12px] text-stone-500">Set the access level first, then choose the exact modules below.</p>
+                                                <p className="mt-0.5 text-[12px] text-stone-500">Read Only only views. Update Access edits records and existing login access. Full Access also creates or removes seller portal logins.</p>
                                             </div>
                                         </div>
                                         <div className="grid gap-2.5 md:grid-cols-2">
@@ -1607,6 +1962,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     onSelect={() => setData('staff_access_permission_level', option.key)}
                                                 />
                                             ))}
+                                        </div>
+                                        <div className="mt-3">
+                                            <StaffPermissionCapabilitySummary
+                                                selectedLevel={data.staff_access_permission_level}
+                                                hrModuleEnabled={createHrModuleEnabled}
+                                            />
                                         </div>
                                         {errors.staff_access_permission_level && <p className="mt-1 text-xs text-red-500 font-medium">{errors.staff_access_permission_level}</p>}
                                     </div>
@@ -1628,7 +1989,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">Module Access Details</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Fine-tune the individual areas this template unlocks.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Turn on only the seller workspace areas this login should actually use.</p>
                                         </div>
                                     </div>
                                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
@@ -1884,7 +2245,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose the closest base template, then adjust authority only where needed.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Keep the template aligned to the employee role, then set exactly how much this login can change.</p>
                                         </div>
                                         <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
                                             {presetLabelByKey[editData.staff_role_preset_key] || 'Custom'}
@@ -1894,7 +2255,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         <div className="mb-2 flex items-center justify-between gap-3">
                                             <div>
                                                 <h4 className="text-[13px] font-bold text-stone-900">User Permission Level</h4>
-                                                <p className="mt-0.5 text-[12px] text-stone-500">Set the access level first, then choose the exact modules below.</p>
+                                                <p className="mt-0.5 text-[12px] text-stone-500">Read Only only views. Update Access edits records and existing login access. Full Access also creates or removes seller portal logins.</p>
                                             </div>
                                         </div>
                                         <div className="grid gap-2.5 md:grid-cols-2">
@@ -1907,6 +2268,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     onSelect={() => setEditData('staff_access_permission_level', option.key)}
                                                 />
                                             ))}
+                                        </div>
+                                        <div className="mt-3">
+                                            <StaffPermissionCapabilitySummary
+                                                selectedLevel={editData.staff_access_permission_level}
+                                                hrModuleEnabled={editHrModuleEnabled}
+                                            />
                                         </div>
                                         {editErrors.staff_access_permission_level && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.staff_access_permission_level}</p>}
                                     </div>
@@ -1928,7 +2295,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">Module Access Details</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Fine-tune the individual areas this template unlocks.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Turn on only the seller workspace areas this login should actually use.</p>
                                         </div>
                                     </div>
                                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
@@ -2136,6 +2503,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 confirmText={confirmModal.type === 'employee' ? 'Remove' : 'Delete'}
                 confirmColor="bg-red-600 hover:bg-red-700"
             />
-        </div>
+        </>
     );
 }
+
+HR.layout = (page) => <SellerWorkspaceLayout active="hr">{page}</SellerWorkspaceLayout>;

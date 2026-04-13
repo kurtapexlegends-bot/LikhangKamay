@@ -261,6 +261,106 @@ class SubscriptionTierEnforcementTest extends TestCase
         ]);
     }
 
+    public function test_subscription_page_reconciles_a_paid_pending_upgrade_without_return_url(): void
+    {
+        Http::fake([
+            'https://api.paymongo.com/v1/checkout_sessions/*' => Http::response([
+                'data' => [
+                    'id' => 'cs_sub_reconcile_paid',
+                    'attributes' => [
+                        'reference_number' => 'SUB-RECONCILE123',
+                        'payment_status' => 'paid',
+                        'status' => 'completed',
+                    ],
+                    'included' => [
+                        [
+                            'type' => 'payment',
+                            'attributes' => [
+                                'status' => 'paid',
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $seller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'free',
+        ]);
+
+        $transaction = SubscriptionTransaction::create([
+            'user_id' => $seller->id,
+            'from_plan' => 'free',
+            'to_plan' => 'premium',
+            'amount' => 199,
+            'currency' => 'PHP',
+            'status' => SubscriptionTransaction::STATUS_PENDING,
+            'reference_number' => 'SUB-RECONCILE123',
+            'paymongo_session_id' => 'cs_sub_reconcile_paid',
+        ]);
+
+        $response = $this->actingAs($seller)->get(route('seller.subscription'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Subscription')
+            ->where('currentPlan', 'premium')
+            ->where('pendingUpgrade', null)
+        );
+
+        $this->assertSame('premium', $seller->fresh()->premium_tier);
+        $this->assertDatabaseHas('subscription_transactions', [
+            'id' => $transaction->id,
+            'status' => SubscriptionTransaction::STATUS_PAID,
+        ]);
+    }
+
+    public function test_subscription_page_marks_expired_pending_upgrade_as_failed(): void
+    {
+        Http::fake([
+            'https://api.paymongo.com/v1/checkout_sessions/*' => Http::response([
+                'data' => [
+                    'id' => 'cs_sub_reconcile_expired',
+                    'attributes' => [
+                        'reference_number' => 'SUB-EXPIRED123',
+                        'payment_status' => 'unpaid',
+                        'status' => 'expired',
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $seller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'free',
+        ]);
+
+        $transaction = SubscriptionTransaction::create([
+            'user_id' => $seller->id,
+            'from_plan' => 'free',
+            'to_plan' => 'premium',
+            'amount' => 199,
+            'currency' => 'PHP',
+            'status' => SubscriptionTransaction::STATUS_PENDING,
+            'reference_number' => 'SUB-EXPIRED123',
+            'paymongo_session_id' => 'cs_sub_reconcile_expired',
+        ]);
+
+        $response = $this->actingAs($seller)->get(route('seller.subscription'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Subscription')
+            ->where('currentPlan', 'free')
+            ->where('pendingUpgrade', null)
+        );
+
+        $this->assertSame('free', $seller->fresh()->premium_tier);
+        $this->assertDatabaseHas('subscription_transactions', [
+            'id' => $transaction->id,
+            'status' => SubscriptionTransaction::STATUS_FAILED,
+        ]);
+    }
+
     public function test_elite_to_standard_downgrade_suspends_linked_staff_and_elite_only_features(): void
     {
         $seller = User::factory()->artisanApproved()->create([

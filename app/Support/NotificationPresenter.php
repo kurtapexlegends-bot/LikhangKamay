@@ -24,6 +24,7 @@ class NotificationPresenter
             'request_id' => $data['request_id'] ?? null,
             'url' => self::resolveUrl($data, $user),
             'read_at' => $notification->read_at,
+            'created_at_raw' => $notification->created_at?->toIso8601String(),
             'created_at' => $notification->created_at?->diffForHumans(),
         ];
     }

@@ -428,6 +428,202 @@ const buyerCourierTrackingState = (order) => {
     return base;
 };
 
+const formatTimelineStamp = (value) => {
+    if (!value) return null;
+
+    try {
+        return new Intl.DateTimeFormat('en-PH', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        }).format(new Date(value));
+    } catch {
+        return value;
+    }
+};
+
+const buyerProofLabel = (order) => {
+    if (!order?.proof_of_delivery) return null;
+
+    if (order.shipping_method === 'Pick Up') {
+        return ['Delivered', 'Completed'].includes(order.status)
+            ? 'View Pickup Handover Proof'
+            : 'View Proof of Readiness';
+    }
+
+    return ['Delivered', 'Completed'].includes(order.status)
+        ? 'View Delivery Proof'
+        : 'View Shipment Proof';
+};
+
+const buyerDeliverySummary = (order) => {
+    const latestEvent = order?.timeline?.[0] ?? null;
+    const latestEventTime = latestEvent?.timestamp ? formatTimelineStamp(latestEvent.timestamp) : null;
+
+    if (order.shipping_method === 'Pick Up') {
+        if (order.status === 'Ready for Pickup') {
+            return {
+                tone: 'border-indigo-100 bg-indigo-50',
+                title: 'Ready for pickup',
+                detail: 'Your order is packed and ready. Coordinate the pickup time with the seller.',
+                latestEvent,
+                latestEventTime,
+            };
+        }
+
+        if (['Delivered', 'Completed'].includes(order.status)) {
+            return {
+                tone: 'border-emerald-100 bg-emerald-50',
+                title: order.status === 'Completed' ? 'Pickup completed' : 'Picked up',
+                detail: order.status === 'Completed'
+                    ? 'You already confirmed receipt of this pickup order.'
+                    : 'The seller marked the order as picked up. Confirm receipt once everything is complete.',
+                latestEvent,
+                latestEventTime,
+            };
+        }
+
+        return {
+            tone: 'border-orange-100 bg-orange-50',
+            title: 'Pickup preparation',
+            detail: 'The seller will notify you once the order is ready for pickup.',
+            latestEvent,
+            latestEventTime,
+        };
+    }
+
+    if (order.delivery?.provider === 'lalamove') {
+        const courierState = buyerCourierTrackingState(order);
+
+        return {
+            tone: 'border-sky-100 bg-sky-50',
+            title: courierState.label,
+            detail: courierState.detail,
+            latestEvent,
+            latestEventTime,
+        };
+    }
+
+    if (order.status === 'Accepted') {
+        return {
+            tone: 'border-blue-100 bg-blue-50',
+            title: 'Preparing for shipment',
+            detail: 'The seller accepted the order and will upload shipment proof before marking it as shipped.',
+            latestEvent,
+            latestEventTime,
+        };
+    }
+
+    if (order.status === 'Shipped') {
+        return {
+            tone: 'border-indigo-100 bg-indigo-50',
+            title: 'Shipment in progress',
+            detail: 'The seller marked the parcel as shipped. Check the shipment proof and tracking details if provided.',
+            latestEvent,
+            latestEventTime,
+        };
+    }
+
+    if (order.status === 'Delivered') {
+        return {
+            tone: 'border-teal-100 bg-teal-50',
+            title: 'Marked as delivered',
+            detail: 'Review the delivery proof, then confirm receipt once the order is safely with you.',
+            latestEvent,
+            latestEventTime,
+        };
+    }
+
+    if (order.status === 'Completed') {
+        return {
+            tone: 'border-green-100 bg-green-50',
+            title: 'Order completed',
+            detail: 'You already confirmed receipt of this order.',
+            latestEvent,
+            latestEventTime,
+        };
+    }
+
+    return {
+        tone: 'border-stone-100 bg-stone-50',
+        title: 'Order update pending',
+        detail: 'The seller will update the delivery status as the order moves forward.',
+        latestEvent,
+        latestEventTime,
+    };
+};
+
+const buyerIssueSummary = (order) => {
+    if (order.status === 'Refund/Return') {
+        return {
+            tone: 'border-orange-200 bg-orange-50',
+            badgeTone: 'border-orange-200 bg-white text-orange-700',
+            icon: RotateCcw,
+            title: 'Return under review',
+            detail: 'Your request is waiting for the seller. Use chat to agree on a refund or replacement.',
+            timestampLabel: null,
+            timestampValue: null,
+            infoLabel: 'Reason',
+            infoValue: order.return_reason || 'No reason provided.',
+            proofHref: order.return_proof_image,
+            proofLabel: 'View Return Proof',
+        };
+    }
+
+    if (order.replacement_in_progress) {
+        return {
+            tone: 'border-teal-200 bg-teal-50',
+            badgeTone: 'border-teal-200 bg-white text-teal-700',
+            icon: PackageCheck,
+            title: 'Replacement approved',
+            detail: order.delivery?.flow_type === 'replacement_exchange'
+                ? 'Courier will deliver the replacement to you and return the rejected item to the seller.'
+                : 'The seller approved a replacement. Wait for the replacement item, then confirm receipt once it arrives.',
+            timestampLabel: 'Approved',
+            timestampValue: order.replacement_started_at,
+            infoLabel: 'Resolution',
+            infoValue: order.replacement_resolution_description || null,
+            proofHref: null,
+            proofLabel: null,
+        };
+    }
+
+    if (order.replacement_resolved_at) {
+        return {
+            tone: 'border-emerald-200 bg-emerald-50',
+            badgeTone: 'border-emerald-200 bg-white text-emerald-700',
+            icon: CheckCircle,
+            title: 'Replacement completed',
+            detail: 'You already confirmed receipt of the replacement item and the issue has been resolved.',
+            timestampLabel: 'Confirmed',
+            timestampValue: order.replacement_resolved_at,
+            infoLabel: 'Resolution',
+            infoValue: order.replacement_resolution_description || null,
+            proofHref: null,
+            proofLabel: null,
+        };
+    }
+
+    if (order.status === 'Refunded' || order.payment_status === 'refunded') {
+        return {
+            tone: 'border-purple-200 bg-purple-50',
+            badgeTone: 'border-purple-200 bg-white text-purple-700',
+            icon: Wallet,
+            title: 'Refund completed',
+            detail: 'The seller approved your return and the refund has already been processed for this order.',
+            timestampLabel: null,
+            timestampValue: null,
+            infoLabel: null,
+            infoValue: null,
+            proofHref: order.return_proof_image,
+            proofLabel: order.return_proof_image ? 'View Return Proof' : null,
+        };
+    }
+
+    return null;
+};
+
 export default function MyOrders({ auth, orders }) {
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
@@ -664,7 +860,11 @@ export default function MyOrders({ auth, orders }) {
                 {/* --- ORDER LIST --- */}
                 <div className="space-y-6">
                     {filteredOrders.length > 0 ? (
-                        filteredOrders.map(order => (
+                        filteredOrders.map((order) => {
+                            const deliverySummary = buyerDeliverySummary(order);
+                            const issueSummary = buyerIssueSummary(order);
+
+                            return (
                             <div key={order.id} className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.05)] transition-all duration-300">
                                 
                                 {/* Order Header */}
@@ -708,13 +908,32 @@ export default function MyOrders({ auth, orders }) {
                                                 <p className="text-[10px] text-gray-500">Coordinate pickup time with seller via chat.</p>
                                                 {order.proof_of_delivery && (
                                                     <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-600 underline hover:text-orange-800 flex items-center gap-1 mt-0.5">
-                                                        <PackageCheck size={11} /> View Proof of Readiness
+                                                        <PackageCheck size={11} /> {buyerProofLabel(order)}
                                                     </a>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-1.5">
+                                            <div className={`rounded-xl border px-3 py-2 ${deliverySummary.tone}`}>
+                                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="text-[12px] font-bold text-stone-900">{deliverySummary.title}</p>
+                                                        <p className="text-[10px] leading-snug text-stone-600">{deliverySummary.detail}</p>
+                                                    </div>
+                                                    {deliverySummary.latestEventTime && (
+                                                        <span className="rounded-full border border-white/80 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-stone-500">
+                                                            {deliverySummary.latestEventTime}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {deliverySummary.latestEvent && (
+                                                    <p className="mt-1 text-[9px] font-medium text-stone-500">
+                                                        Latest update: {deliverySummary.latestEvent.label}
+                                                    </p>
+                                                )}
+                                            </div>
+
                                             {/* Address row */}
                                             <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
                                                 <div className="flex items-start gap-2">
@@ -746,9 +965,14 @@ export default function MyOrders({ auth, orders }) {
                                                                     Tracker: {order.tracking_number}
                                                                 </span>
                                                             )}
+                                                            {order.shipping_notes && (
+                                                                <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-blue-200 text-blue-600 font-medium">
+                                                                    Note: {order.shipping_notes}
+                                                                </span>
+                                                            )}
                                                             {order.proof_of_delivery && (
                                                                 <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 underline hover:text-blue-800 flex items-center gap-1">
-                                                                    <PackageCheck size={9} /> View Proof
+                                                                    <PackageCheck size={9} /> {buyerProofLabel(order)}
                                                                 </a>
                                                             )}
                                                         </div>
@@ -822,41 +1046,39 @@ export default function MyOrders({ auth, orders }) {
                                         </div>
                                     )}
 
-                                    {/* Replacement in Progress */}
-                                    {order.replacement_in_progress && (
-                                        <div className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-1.5">
-                                                    <PackageCheck size={13} className="text-teal-600 shrink-0" />
-                                                    <p className="text-[12px] font-bold text-teal-800">Replacement in Progress</p>
+                                    {issueSummary && (
+                                        <div className={`rounded-xl border px-3 py-2.5 ${issueSummary.tone}`}>
+                                            <div className="flex flex-wrap items-start justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <issueSummary.icon size={13} className="shrink-0 text-current" />
+                                                        <p className="text-[12px] font-bold text-stone-900">{issueSummary.title}</p>
+                                                    </div>
+                                                    <p className="mt-1 text-[10px] leading-snug text-stone-600">{issueSummary.detail}</p>
                                                 </div>
-                                                {order.replacement_started_at && (
-                                                    <span className="text-[9px] text-teal-600 font-medium whitespace-nowrap">{order.replacement_started_at}</span>
+                                                {issueSummary.timestampValue && (
+                                                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold ${issueSummary.badgeTone}`}>
+                                                        {issueSummary.timestampLabel}: {issueSummary.timestampValue}
+                                                    </span>
                                                 )}
                                             </div>
-                                            {order.replacement_resolution_description && (
-                                                <div className="mt-1.5 rounded border border-teal-100 bg-white/70 px-2 py-1 text-[9px] text-teal-900 whitespace-pre-wrap">
-                                                    <span className="font-bold">Resolution: </span>{order.replacement_resolution_description}
+
+                                            {issueSummary.infoValue && (
+                                                <div className="mt-2 rounded-lg border border-white/80 bg-white/75 px-2.5 py-2 text-[10px] text-stone-700 whitespace-pre-wrap leading-snug">
+                                                    <span className="font-bold">{issueSummary.infoLabel}: </span>{issueSummary.infoValue}
                                                 </div>
                                             )}
-                                            <p className="mt-1 text-[9px] text-teal-700 leading-snug">
-                                                {order.delivery?.flow_type === 'replacement_exchange'
-                                                    ? 'Courier will deliver the replacement to you and return the rejected item to the seller.'
-                                                    : 'Replacement must be delivered and confirmed before the issue is resolved.'}
-                                            </p>
-                                        </div>
-                                    )}
 
-                                    {/* Replacement Resolved */}
-                                    {order.replacement_resolved_at && (
-                                        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
-                                            <CheckCircle size={13} className="text-emerald-600 shrink-0" />
-                                            <div className="min-w-0">
-                                                <p className="text-[12px] font-bold text-emerald-800">Replacement Resolved</p>
-                                                <p className="text-[10px] text-emerald-700">Confirmed on {order.replacement_resolved_at}.
-                                                    {order.replacement_resolution_description && <span> · {order.replacement_resolution_description}</span>}
-                                                </p>
-                                            </div>
+                                            {issueSummary.proofHref && (
+                                                <a
+                                                    href={issueSummary.proofHref}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-2 inline-flex items-center gap-1 rounded-full border border-white/80 bg-white/80 px-2 py-1 text-[9px] font-bold text-stone-700 hover:bg-white"
+                                                >
+                                                    <PackageCheck size={10} /> {issueSummary.proofLabel}
+                                                </a>
+                                            )}
                                         </div>
                                     )}
 
@@ -1042,7 +1264,8 @@ export default function MyOrders({ auth, orders }) {
                                     </div>
                                 </div>
                             </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="py-24 text-center bg-white rounded-2xl border border-stone-100 shadow-sm">
                             <div className="w-20 h-20 bg-[#FCFAF7] border border-stone-200/60 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">

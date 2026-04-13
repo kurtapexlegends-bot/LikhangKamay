@@ -3,6 +3,7 @@
 namespace Tests\Feature\Seller;
 
 use App\Models\Employee;
+use App\Models\StaffAccessAudit;
 use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
@@ -75,6 +76,7 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertSame($owner->id, $staff->seller_owner_id);
         $this->assertSame($owner->id, $staff->created_by_user_id);
         $this->assertSame('standard', $staff->getStaffUserLevel());
+        $this->assertSame(User::STAFF_ACCESS_PERMISSION_READ_ONLY, $staff->getStaffAccessPermissionLevel());
         $this->assertSame('accounting', $staff->staff_role_preset_key);
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'accounting'));
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'overview'));
@@ -83,6 +85,13 @@ class HrStaffProvisioningTest extends TestCase
 
         $this->post('/logout');
         Notification::assertSentTo($staff, VerifyEmailNotification::class);
+        $this->assertDatabaseHas('staff_access_audits', [
+            'seller_owner_id' => $owner->id,
+            'actor_user_id' => $owner->id,
+            'staff_user_id' => $staff->id,
+            'employee_id' => $employee->id,
+            'event' => 'login_created',
+        ]);
 
         $loginResponse = $this->post('/login', [
             'email' => 'jose.reyes@gmail.com',
@@ -165,6 +174,65 @@ class HrStaffProvisioningTest extends TestCase
         );
 
         Notification::assertSentTo($staff, VerifyEmailNotification::class);
+    }
+
+    public function test_update_access_can_update_existing_linked_login_without_gaining_create_or_delete_control(): void
+    {
+        Notification::fake();
+
+        $owner = $this->createOwnerWithHrAccess();
+        $manager = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(['hr' => true, 'overview' => true], User::STAFF_ACCESS_PERMISSION_UPDATE),
+        ]);
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Editable Staff',
+            'role' => 'Assistant',
+            'salary' => 14500,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        $linkedLogin = User::factory()->staff($owner)->create([
+            'employee_id' => $employee->id,
+            'name' => 'Editable Staff',
+            'email' => 'editable.staff@gmail.com',
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(['orders' => true], User::STAFF_ACCESS_PERMISSION_READ_ONLY),
+        ]);
+
+        $response = $this->actingAs($manager)->patch(route('hr.update', $employee->id), [
+            'name' => 'Editable Staff Updated',
+            'role' => 'Assistant',
+            'salary' => 15000,
+            'create_login_account' => true,
+            'email' => 'editable.updated@gmail.com',
+            'staff_access_permission_level' => User::STAFF_ACCESS_PERMISSION_UPDATE,
+            'staff_role_preset_key' => 'hr',
+            'module_overrides' => [
+                'hr' => true,
+                'overview' => true,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $linkedLogin->refresh();
+
+        $this->assertSame('editable.updated@gmail.com', $linkedLogin->email);
+        $this->assertSame(User::STAFF_ACCESS_PERMISSION_UPDATE, $linkedLogin->getStaffAccessPermissionLevel());
+        $this->assertDatabaseHas('staff_access_audits', [
+            'seller_owner_id' => $owner->id,
+            'actor_user_id' => $manager->id,
+            'staff_user_id' => $linkedLogin->id,
+            'employee_id' => $employee->id,
+            'event' => 'login_updated',
+        ]);
     }
 
     public function test_staff_login_creation_requires_gmail_address(): void
@@ -915,6 +983,9 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertInertia(
             fn (Assert $page) => $page
                 ->component('Seller/HR')
+                ->where('staffProvisioning.canEditHrRecords', true)
+                ->where('staffProvisioning.canCreateStaffAccounts', true)
+                ->where('staffProvisioning.canDeleteStaffAccounts', true)
                 ->has('staffProvisioning.availableModules', fn (Assert $modules) => $modules
                     ->where('6.key', 'messages')
                     ->where('6.label', 'Messages')
@@ -1012,12 +1083,24 @@ class HrStaffProvisioningTest extends TestCase
             'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(['orders' => true], User::STAFF_ACCESS_PERMISSION_UPDATE),
         ]);
 
+        StaffAccessAudit::create([
+            'seller_owner_id' => $owner->id,
+            'actor_user_id' => $owner->id,
+            'staff_user_id' => User::where('employee_id', $employee->id)->value('id'),
+            'employee_id' => $employee->id,
+            'event' => 'login_created',
+            'summary' => 'Owner created seller portal access.',
+            'details' => ['changes' => ['Created seller portal login']],
+        ]);
+
         $response = $this->actingAs($owner)->get(route('hr.index'));
 
         $response->assertOk();
         $response->assertInertia(
             fn (Assert $page) => $page
                 ->component('Seller/HR')
+                ->has('staffAccessAudits', 1)
+                ->where('staffAccessAudits.0.event', 'login_created')
                 ->where('staff.0.login_account.staff_access_permission_level', User::STAFF_ACCESS_PERMISSION_UPDATE)
         );
     }

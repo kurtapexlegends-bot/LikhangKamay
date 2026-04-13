@@ -85,6 +85,7 @@ class EnsureStaffSecurityGate
         'supplies.',
         'stock-requests.',
         'accounting.',
+        'audit-log.',
     ];
 
     public function handle(Request $request, Closure $next): Response

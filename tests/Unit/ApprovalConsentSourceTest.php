@@ -6,16 +6,16 @@ use Tests\TestCase;
 
 class ApprovalConsentSourceTest extends TestCase
 {
-    public function test_pending_artisan_review_source_tracks_document_previews_without_forcing_them_before_approval(): void
+    public function test_pending_artisan_review_source_tracks_document_previews_and_requires_them_before_approval(): void
     {
         $source = file_get_contents(base_path('resources/js/Pages/Admin/PendingArtisans.jsx'));
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString("route('admin.artisan.documents.viewed', viewingArtisan.id)", $source);
-        $this->assertStringContainsString('disabled={processing}', $source);
+        $this->assertStringContainsString('disabled={processing || !allSubmittedDocumentsViewed}', $source);
         $this->assertStringContainsString('submitted documents previewed', $source);
-        $this->assertStringNotContainsString('disabled={processing || !canApproveCurrentArtisan}', $source);
-        $this->assertStringNotContainsString('Open every submitted document preview to enable approval.', $source);
+        $this->assertStringContainsString('Preview All Documents First', $source);
+        $this->assertStringContainsString('Preview all submitted files first', $source);
         $this->assertStringNotContainsString('setApprovingArtisan', $source);
     }
 

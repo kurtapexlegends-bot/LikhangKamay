@@ -31,6 +31,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\TeamMessageController;
 use App\Http\Controllers\SellerWalletController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
 use App\Models\Product;
@@ -142,6 +143,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->middleware('seller.module:products')->name('products.index');
         Route::post('/products', [ProductController::class, 'store'])->middleware('seller.module:products')->name('products.store');
         Route::post('/products/{id}/update', [ProductController::class, 'update'])->middleware('seller.module:products')->name('products.update'); 
+        Route::post('/products/bulk-status', [ProductController::class, 'bulkUpdateStatus'])->middleware('seller.module:products')->name('products.bulk-status');
         Route::post('/products/{id}/archive', [ProductController::class, 'archive'])->middleware('seller.module:products')->name('products.archive');
         Route::post('/products/{id}/activate', [ProductController::class, 'activate'])->middleware('seller.module:products')->name('products.activate'); // New
         Route::post('/products/{id}/restock', [ProductController::class, 'restock'])->middleware('seller.module:products')->name('products.restock');
@@ -153,6 +155,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         Route::get('/seller-wallet', [SellerWalletController::class, 'index'])->middleware('seller.module:wallet')->name('seller.wallet.index');
         Route::post('/seller-wallet/withdrawals', [SellerWalletController::class, 'storeWithdrawalRequest'])->middleware('seller.module:wallet')->name('seller.wallet.withdrawals.store');
+        Route::get('/audit-log', [AuditLogController::class, 'index'])->middleware('artisan')->name('audit-log.index');
 
         // SHOP SETTINGS
         Route::get('/shop-settings', [ShopController::class, 'settings'])->middleware('seller.module:shop_settings')->name('shop.settings');
@@ -194,6 +197,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::delete('/hr/employees/{id}', [HRController::class, 'destroy'])->middleware('seller.module:hr')->name('hr.destroy');
         Route::post('/hr/generate', [HRController::class, 'generatePayroll'])->middleware('seller.module:hr')->name('hr.generate');
         Route::post('/hr/settings', [HRController::class, 'updateSettings'])->middleware('seller.module:hr')->name('hr.settings');
+        Route::get('/hr/payroll/{payroll}', [HRController::class, 'showPayroll'])->middleware('seller.module:hr')->name('hr.payroll.show');
         Route::delete('/hr/payroll/{id}', [HRController::class, 'destroyPayroll'])->middleware('seller.module:hr')->name('hr.payroll.destroy');
 
 

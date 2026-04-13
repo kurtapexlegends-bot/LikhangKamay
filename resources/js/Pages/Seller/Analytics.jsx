@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import {
     Package,
     ShoppingBag,
@@ -84,7 +85,7 @@ export default function Analytics({
     sponsorshipAnalyticsAvailability,
 }) {
     const { sellerSubscription } = usePage().props;
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [chartFilter, setChartFilter] = useState('Monthly');
     const [sponsorshipFilter, setSponsorshipFilter] = useState('Daily');
     const [catFilter, setCatFilter] = useState(filters.category);
@@ -103,14 +104,11 @@ export default function Analytics({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <>
             <Head title="Shop Analytics" />
-            <SellerSidebar active="analytics" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
                     <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
@@ -224,8 +222,15 @@ export default function Analytics({
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 ) : (
-                                    <div className="h-full flex items-center justify-center text-gray-400">
-                                        No revenue data available for this period.
+                                    <div className="h-full">
+                                        <WorkspaceEmptyState
+                                            compact
+                                            icon={DollarSign}
+                                            title="No revenue data yet"
+                                            description="Completed orders for this filter will appear here once your shop starts converting sales."
+                                            actionLabel="View Orders"
+                                            actionHref={route('orders.index')}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -263,9 +268,15 @@ export default function Analytics({
                                         />
                                     </PieChart>
                                 ) : (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-2">
-                                        <Package size={32} className="text-gray-300" />
-                                        <span className="text-sm font-medium">No sales data yet</span>
+                                    <div className="absolute inset-0">
+                                        <WorkspaceEmptyState
+                                            compact
+                                            icon={Package}
+                                            title="No category sales yet"
+                                            description="Category performance becomes available after your first completed orders."
+                                            actionLabel="Manage Products"
+                                            actionHref={route('products.index')}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -371,11 +382,15 @@ export default function Analytics({
                                                     </AreaChart>
                                                 </ResponsiveContainer>
                                             ) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-6">
-                                                    <p className="text-sm font-bold text-stone-700">No sponsorship activity yet</p>
-                                                    <p className="mt-2 max-w-sm text-xs leading-relaxed text-stone-500">
-                                                        This section only reflects real impressions, clicks, and completed sponsored orders. Once activity is recorded, the chart will appear here.
-                                                    </p>
+                                                <div className="h-full rounded-2xl border border-dashed border-stone-200 bg-stone-50">
+                                                    <WorkspaceEmptyState
+                                                        compact
+                                                        icon={BarChart3}
+                                                        title="No sponsorship activity yet"
+                                                        description="This section only reflects real impressions, clicks, and completed sponsored orders after a campaign starts generating activity."
+                                                        actionLabel="Open Sponsorships"
+                                                        actionHref={route('seller.sponsorships')}
+                                                    />
                                                 </div>
                                             )}
                                         </div>
@@ -440,7 +455,14 @@ export default function Analytics({
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-gray-400 text-center py-4">No product sales yet.</p>
+                                    <WorkspaceEmptyState
+                                        compact
+                                        icon={ShoppingBag}
+                                        title="No product sales yet"
+                                        description="Top products will appear here after completed orders start coming in."
+                                        actionLabel="Manage Products"
+                                        actionHref={route('products.index')}
+                                    />
                                 )}
                             </div>
                         </div>
@@ -488,9 +510,8 @@ export default function Analytics({
                         </div>
                     </div>
                 </main>
-            </div>
-        </div>
+        </>
     );
 }
 
-
+Analytics.layout = (page) => <SellerWorkspaceLayout active="analytics">{page}</SellerWorkspaceLayout>;

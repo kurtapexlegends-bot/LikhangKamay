@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -43,8 +44,67 @@ class ProductController extends Controller
         $seller = $this->sellerOwner();
 
         $products = Product::where('user_id', $seller->id)
+            ->select([
+                'id',
+                'sku',
+                'name',
+                'description',
+                'category',
+                'status',
+                'clay_type',
+                'glaze_type',
+                'firing_method',
+                'food_safe',
+                'colors',
+                'height',
+                'width',
+                'weight',
+                'price',
+                'cost_price',
+                'stock',
+                'lead_time',
+                'sold',
+                'cover_photo_path',
+                'gallery_paths',
+                'model_3d_path',
+                'track_as_supply',
+                'created_at',
+                'updated_at',
+            ])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function (Product $product) {
+                return [
+                    'id' => $product->id,
+                    'sku' => $product->sku,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'category' => $product->category,
+                    'status' => $product->status,
+                    'clay_type' => $product->clay_type,
+                    'glaze_type' => $product->glaze_type,
+                    'firing_method' => $product->firing_method,
+                    'food_safe' => (bool) $product->food_safe,
+                    'colors' => $product->colors ?? [],
+                    'height' => $product->height,
+                    'width' => $product->width,
+                    'weight' => $product->weight,
+                    'price' => $product->price,
+                    'cost_price' => $product->cost_price,
+                    'stock' => $product->stock,
+                    'lead_time' => $product->lead_time,
+                    'sold' => $product->sold,
+                    'cover_photo_path' => $product->cover_photo_path,
+                    'gallery_paths' => $product->gallery_paths ?? [],
+                    'model_3d_path' => $product->model_3d_path,
+                    'track_as_supply' => (bool) $product->track_as_supply,
+                    'img' => $product->cover_photo_path
+                        ? '/storage/' . $product->cover_photo_path
+                        : '/images/placeholder.svg',
+                    'has3D' => filled($product->model_3d_path),
+                ];
+            })
+            ->values();
 
         return Inertia::render('Seller/ProductManager', [
             'products' => $products,
@@ -313,6 +373,108 @@ class ProductController extends Controller
         return redirect()->back()->with('success', 'Product archived.');
     }
 
+    public function bulkUpdateStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+            'status' => ['required', Rule::in(['Active', 'Draft', 'Archived'])],
+        ]);
+
+        $seller = $this->sellerOwner();
+        $selectedIds = collect($validated['ids'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $products = Product::query()
+            ->where('user_id', $seller->id)
+            ->whereIn('id', $selectedIds)
+            ->get();
+
+        if ($products->isEmpty()) {
+            return back()->with('error', 'No matching products were found for the selected bulk action.');
+        }
+
+        $targetStatus = $validated['status'];
+
+        if ($targetStatus === 'Archived') {
+            Product::query()
+                ->where('user_id', $seller->id)
+                ->whereIn('id', $products->pluck('id'))
+                ->update(['status' => 'Archived']);
+
+            return back()->with('success', $this->bulkStatusMessage($products->count(), 'archived'));
+        }
+
+        if ($targetStatus === 'Draft') {
+            Product::query()
+                ->where('user_id', $seller->id)
+                ->whereIn('id', $products->pluck('id'))
+                ->update(['status' => 'Draft']);
+
+            return back()->with('success', $this->bulkStatusMessage($products->count(), 'saved as Draft'));
+        }
+
+        $remainingActivationSlots = max(0, $seller->getActiveProductLimit() - $seller->products()->where('status', 'Active')->count());
+        $activated = 0;
+        $draftedForMissingMedia = 0;
+        $skippedForLimit = 0;
+
+        foreach ($selectedIds as $selectedId) {
+            $product = $products->firstWhere('id', $selectedId);
+
+            if (!$product) {
+                continue;
+            }
+
+            if ($product->status === 'Active') {
+                continue;
+            }
+
+            $activationReadiness = $this->evaluateActivationReadiness(
+                filled($product->cover_photo_path),
+                count($product->gallery_paths ?? []),
+                filled($product->model_3d_path)
+            );
+
+            if (!$activationReadiness['canBeActive']) {
+                $product->update(['status' => 'Draft']);
+                $draftedForMissingMedia++;
+                continue;
+            }
+
+            if ($remainingActivationSlots <= 0) {
+                $skippedForLimit++;
+                continue;
+            }
+
+            $product->update(['status' => 'Active']);
+            $remainingActivationSlots--;
+            $activated++;
+        }
+
+        if ($activated === 0 && $draftedForMissingMedia === 0) {
+            return back()->with('error', 'No selected products were activated. Your active product limit has already been reached.');
+        }
+
+        $parts = [];
+
+        if ($activated > 0) {
+            $parts[] = $this->bulkStatusMessage($activated, 'activated');
+        }
+
+        if ($draftedForMissingMedia > 0) {
+            $parts[] = $this->bulkStatusMessage($draftedForMissingMedia, 'kept in Draft because required media is incomplete');
+        }
+
+        if ($skippedForLimit > 0) {
+            $parts[] = $this->bulkStatusMessage($skippedForLimit, 'skipped because your active product limit is already full');
+        }
+
+        return back()->with('success', implode(' ', $parts));
+    }
+
     public function activate($id)
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
@@ -410,6 +572,11 @@ class ProductController extends Controller
         return 'Product saved as Draft. Add ' . $this->humanizeRequirementList($missingRequirements) . ' before listing it as Active.';
     }
 
+    private function bulkStatusMessage(int $count, string $action): string
+    {
+        return $count . ' product' . ($count === 1 ? ' was ' : 's were ') . $action . '.';
+    }
+
     /**
      * @param  array<int, string>  $missingRequirements
      */
@@ -458,6 +625,12 @@ class ProductController extends Controller
         $height = imagesy($sourceImage);
         $maxDim = 1200;
 
+        if ($width <= $maxDim && $height <= $maxDim) {
+            imagedestroy($sourceImage);
+
+            return $file->store($path, 'public');
+        }
+
         if ($width > $maxDim || $height > $maxDim) {
             $ratio = $width / $height;
             if ($width > $height) {
@@ -479,6 +652,7 @@ class ProductController extends Controller
         $filename = pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
         $fullPath = $path . '/' . $filename;
         Storage::disk('public')->put($fullPath, $imageData);
+        imagedestroy($sourceImage);
 
         return $fullPath;
     }
@@ -523,25 +697,7 @@ class ProductController extends Controller
             'premium_tier' => $product->user->premium_tier,
         ];
 
-        $relatedProducts = Product::where('category', $product->category)
-            ->where('id', '!=', $product->id)
-            ->where('status', 'Active')
-            ->with('user')
-            ->inRandomOrder()
-            ->take(4)
-            ->get()
-            ->map(function ($relatedProduct) {
-                return [
-                    'id' => $relatedProduct->id,
-                    'name' => $relatedProduct->name,
-                    'slug' => $relatedProduct->slug,
-                    'price' => $relatedProduct->price,
-                    'image' => $relatedProduct->img,
-                    'rating' => $relatedProduct->rating,
-                    'sold' => $relatedProduct->sold,
-                    'location' => $relatedProduct->user->city ?? 'PH',
-                ];
-            });
+        $relatedProducts = $this->buildRelatedProducts($product);
 
         return Inertia::render('Shop/ProductShow', [
             'product' => $product,
@@ -590,6 +746,82 @@ class ProductController extends Controller
         }
 
         return ($currentUsage + $incomingBytes) <= self::MAX_THREE_D_STORAGE_BYTES;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private function buildRelatedProducts(Product $product): Collection
+    {
+        $preferredMatches = Product::query()
+            ->where('status', 'Active')
+            ->where('id', '!=', $product->id)
+            ->where('category', $product->category)
+            ->with('user')
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->orderByRaw("
+                CASE
+                    WHEN user_id = ? THEN 1
+                    WHEN clay_type IS NOT NULL AND clay_type = ? THEN 2
+                    WHEN glaze_type IS NOT NULL AND glaze_type = ? THEN 3
+                    WHEN firing_method IS NOT NULL AND firing_method = ? THEN 4
+                    ELSE 5
+                END
+            ", [
+                $product->user_id,
+                $product->clay_type,
+                $product->glaze_type,
+                $product->firing_method,
+            ])
+            ->orderByDesc('sold')
+            ->orderByDesc('reviews_avg_rating')
+            ->orderByDesc('reviews_count')
+            ->latest()
+            ->take(4)
+            ->get();
+
+        $fallbackProducts = collect();
+
+        if ($preferredMatches->count() < 4) {
+            $fallbackProducts = Product::query()
+                ->where('status', 'Active')
+                ->where('id', '!=', $product->id)
+                ->whereNotIn('id', $preferredMatches->pluck('id'))
+                ->with('user')
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
+                ->orderByRaw("
+                    CASE
+                        WHEN category = ? THEN 1
+                        WHEN user_id = ? THEN 2
+                        ELSE 3
+                    END
+                ", [$product->category, $product->user_id])
+                ->orderByDesc('sold')
+                ->orderByDesc('reviews_avg_rating')
+                ->orderByDesc('reviews_count')
+                ->latest()
+                ->take(4 - $preferredMatches->count())
+                ->get();
+        }
+
+        return $preferredMatches
+            ->concat($fallbackProducts)
+            ->take(4)
+            ->map(function (Product $relatedProduct) {
+                return [
+                    'id' => $relatedProduct->id,
+                    'name' => $relatedProduct->name,
+                    'slug' => $relatedProduct->slug,
+                    'price' => $relatedProduct->price,
+                    'image' => $relatedProduct->img,
+                    'rating' => (float) ($relatedProduct->reviews_avg_rating ?? $relatedProduct->rating ?? 0),
+                    'sold' => $relatedProduct->sold,
+                    'location' => $relatedProduct->user->city ?? 'PH',
+                ];
+            })
+            ->values();
     }
 
     private function getStoredFileSizeBytes(?string $path): int

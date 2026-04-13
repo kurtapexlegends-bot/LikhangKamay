@@ -34,6 +34,13 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [deletingReview, setDeletingReview] = useState(false);
     const [reviewPhotoPreviewUrls, setReviewPhotoPreviewUrls] = useState([]);
+    const chatRequirementMessage = !auth?.user
+        ? 'Log in with a buyer account. Buyer chat opens after your first order with this shop.'
+        : auth.user.role && auth.user.role !== 'buyer'
+            ? 'Marketplace chat is only available for buyer accounts.'
+            : product?.viewer_can_chat_seller
+                ? 'You already have an order with this shop, so chat is available.'
+                : 'Buyer chat opens after your first order with this shop.';
 
     // Build gallery
     const gallery = [
@@ -451,16 +458,25 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <button
                                 type="button"
                                 onClick={handleChatSeller}
-                                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1.5"
+                                className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                                    product?.viewer_can_chat_seller
+                                        ? 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                                        : 'border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                }`}
                             >
                                 <MessageCircle size={14} />
-                                Chat
+                                {product?.viewer_can_chat_seller ? 'Chat' : 'Chat Policy'}
                             </button>
                             <Link href={route('shop.seller', product.seller?.slug || '#')} className="flex-1 px-3 py-2 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition flex items-center justify-center gap-1.5">
                                 <Store size={14} />
                                 View Shop
                             </Link>
                         </div>
+                        <p className={`mt-2 text-[11px] leading-snug ${
+                            product?.viewer_can_chat_seller ? 'text-emerald-600' : 'text-stone-500'
+                        }`}>
+                            {chatRequirementMessage}
+                        </p>
                     </div>
 
                     {/* Description (Right Col - 2/3 width) */}

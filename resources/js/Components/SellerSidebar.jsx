@@ -17,7 +17,7 @@ const resolveActiveGroup = (active) => {
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['settings'].includes(active)) return 'appearance';
     if (['sponsorships'].includes(active)) return 'marketing';
-    if (['hr', 'accounting', 'procurement', 'stock-requests'].includes(active)) return 'advanced';
+    if (['hr', 'accounting', 'procurement', 'stock-requests', 'audit-log'].includes(active)) return 'advanced';
 
     return null;
 };
@@ -162,7 +162,11 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const hasCrm = (!isStaffActor || hasActiveAttendanceSession) && ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
     const hasAppearance = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('shop_settings');
     const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('sponsorships');
-    const hasAdvanced = (!isStaffActor || hasActiveAttendanceSession) && ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName));
+    const canViewAuditLog = !isStaffActor && user?.role === 'artisan';
+    const hasAdvanced = (!isStaffActor || hasActiveAttendanceSession) && (
+        ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName))
+        || canViewAuditLog
+    );
     const activeModuleCount = [modules.hr, modules.accounting, modules.procurement].filter(Boolean).length;
 
     return (
@@ -440,6 +444,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 )}
                                 {visibleModulesSet.has('accounting') && (
                                     <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose}>Accounting</NavItem>
+                                )}
+                                {canViewAuditLog && (
+                                    <NavItem href={route('audit-log.index')} icon={ClipboardList} active={active === 'audit-log'} onClick={onClose}>Audit Log</NavItem>
                                 )}
                                 {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                     <div className="space-y-0.5">
@@ -860,8 +867,9 @@ const ModuleToggle = ({ label, description, enabled, onToggle, icon: Icon, color
 const NavItem = ({ href, icon: Icon, active, children, compact, onClick }) => (
     <Link 
         href={href} 
+        preserveScroll
         onClick={onClick}
-        className={`flex items-center gap-3 px-4 ${compact ? 'py-2' : 'py-2.5'} rounded-lg text-xs font-bold transition-all duration-200 ${active ? 'bg-clay-600 text-white shadow-md shadow-clay-200' : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}`}
+        className={`group flex items-center gap-3 px-4 ${compact ? 'py-2' : 'py-2.5'} rounded-lg text-xs font-bold transition-all duration-200 ${active ? 'bg-clay-600 text-white shadow-md shadow-clay-200' : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}`}
     >
         <Icon size={compact ? 16 : 18} strokeWidth={2.5} className={active ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'} />
         {children}

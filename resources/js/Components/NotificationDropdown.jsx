@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import { formatChatRelative } from '@/lib/chatTime';
 
 export default function NotificationDropdown() {
     const { notifications = [], unreadNotificationCount = 0 } = usePage().props;
@@ -9,6 +10,7 @@ export default function NotificationDropdown() {
     const [activeMenu, setActiveMenu] = useState(null);
     const [confirmClearOpen, setConfirmClearOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [relativeNow, setRelativeNow] = useState(() => Date.now());
     const dropdownRef = useRef(null);
 
     // Close dropdown when clicking outside
@@ -22,6 +24,42 @@ export default function NotificationDropdown() {
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const tick = window.setInterval(() => {
+            setRelativeNow(Date.now());
+        }, 30000);
+
+        return () => window.clearInterval(tick);
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const refreshNotifications = () => {
+            if (cancelled || document.visibilityState !== 'visible') {
+                return;
+            }
+
+            router.reload({
+                only: ['notifications', 'unreadNotificationCount'],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        };
+
+        refreshNotifications();
+        const interval = window.setInterval(refreshNotifications, 45000);
+        const handleVisibilityChange = () => refreshNotifications();
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            cancelled = true;
+            window.clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, []);
 
     const getIcon = (type) => {
@@ -58,7 +96,11 @@ export default function NotificationDropdown() {
             preserveScroll: true,
             onSuccess: () => {
                 if (shouldNavigate && url) {
-                    router.visit(url);
+                    setIsOpen(false);
+                    setActiveMenu(null);
+                    router.visit(url, {
+                        preserveScroll: true,
+                    });
                 }
             },
         });
@@ -165,7 +207,9 @@ export default function NotificationDropdown() {
                                                 {notification.message}
                                             </p>
                                             <p className="text-[10px] text-gray-400 mt-1">
-                                                {notification.created_at}
+                                                {notification.created_at_raw
+                                                    ? formatChatRelative(notification.created_at_raw, relativeNow)
+                                                    : notification.created_at}
                                             </p>
                                         </div>
                                         {!notification.read_at && (

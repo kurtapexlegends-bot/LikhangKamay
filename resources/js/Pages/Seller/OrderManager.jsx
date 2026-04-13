@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import { 
     Package, ShoppingBag, Search, Filter, Truck, CheckCircle2, 
     Clock, XCircle, Printer, AlertCircle, MessageCircle, X, 
@@ -62,6 +62,8 @@ const StatusBadge = ({ status }) => {
         'Delivered': { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200', icon: MapPin },
         'Completed': { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200', icon: CheckCircle2 },
         'Refund/Return': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200', icon: RotateCcw },
+        'Refunded': { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200', icon: Wallet },
+        'Replaced': { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200', icon: PackageCheck },
         'Rejected': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', icon: XCircle },
         'Cancelled': { bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200', icon: XCircle },
     };
@@ -188,10 +190,179 @@ const sellerCourierTrackingState = (order) => {
     return base;
 };
 
+const formatTimelineStamp = (value) => {
+    if (!value) return 'No timestamp';
+
+    try {
+        return new Intl.DateTimeFormat('en-PH', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        }).format(new Date(value));
+    } catch {
+        return value;
+    }
+};
+
+const timelineSourceTone = (source) => {
+    if (source === 'courier') {
+        return 'border-sky-200 bg-sky-50 text-sky-700';
+    }
+
+    if (source === 'status') {
+        return 'border-stone-200 bg-stone-100 text-stone-600';
+    }
+
+    return 'border-clay-200 bg-clay-50 text-clay-700';
+};
+
+const sellerProofLabel = (order) => {
+    if (!order?.proof_of_delivery) return null;
+
+    if (order.shipping_method === 'Pick Up') {
+        return ['Delivered', 'Completed'].includes(order.status)
+            ? 'Pickup Handover Proof'
+            : 'Pickup Readiness Proof';
+    }
+
+    return ['Delivered', 'Completed'].includes(order.status)
+        ? 'Delivery Proof'
+        : 'Shipment Proof';
+};
+
+const sellerDeliverySummary = (order) => {
+    if (order.shipping_method === 'Pick Up') {
+        if (order.status === 'Accepted') {
+            return {
+                tone: 'border-orange-200 bg-orange-50 text-orange-700',
+                title: 'Prepare for pickup',
+                detail: 'Upload a readiness photo before the buyer is notified for pickup.',
+            };
+        }
+
+        if (order.status === 'Ready for Pickup') {
+            return {
+                tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+                title: 'Waiting for buyer pickup',
+                detail: 'Mark the order as picked up once the handover is complete.',
+            };
+        }
+
+        return null;
+    }
+
+    if (isLalamoveManagedOrder(order)) {
+        const courierState = sellerCourierTrackingState(order);
+
+        return {
+            tone: courierState.tone,
+            title: `Lalamove: ${courierState.label}`,
+            detail: courierState.detail,
+        };
+    }
+
+    if (order.status === 'Accepted') {
+        return {
+            tone: 'border-blue-200 bg-blue-50 text-blue-700',
+            title: 'Choose a delivery path',
+            detail: 'Manual shipping needs shipment proof. Lalamove will handle courier status updates automatically.',
+        };
+    }
+
+    if (order.status === 'Shipped') {
+        return {
+            tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+            title: 'Manual shipment in progress',
+            detail: 'Keep the shipment proof visible to the buyer, then upload final delivery proof when the parcel arrives.',
+        };
+    }
+
+    if (order.status === 'Delivered') {
+        return {
+            tone: 'border-teal-200 bg-teal-50 text-teal-700',
+            title: 'Delivered, waiting for buyer confirmation',
+            detail: 'The buyer can now confirm receipt. Keep delivery proof available in case of disputes.',
+        };
+    }
+
+    return null;
+};
+
+const sellerIssueSummary = (order) => {
+    if (order.status === 'Refund/Return') {
+        return {
+            tone: 'border-orange-200 bg-orange-50',
+            badgeTone: 'border-orange-200 bg-white text-orange-700',
+            icon: RotateCcw,
+            title: 'Return pending decision',
+            detail: 'Review the buyer proof, coordinate in chat if needed, then refund, replace, or reject the request.',
+            timestampLabel: null,
+            timestampValue: null,
+            infoLabel: 'Reason',
+            infoValue: order.return_reason || 'No reason provided.',
+            proofHref: order.return_proof_image,
+            proofLabel: 'View Buyer Proof',
+        };
+    }
+
+    if (order.replacement_in_progress) {
+        return {
+            tone: 'border-teal-200 bg-teal-50',
+            badgeTone: 'border-teal-200 bg-white text-teal-700',
+            icon: PackageCheck,
+            title: 'Replacement approved',
+            detail: order.delivery?.flow_type === 'replacement_exchange'
+                ? 'Courier is handling the exchange. Wait for buyer confirmation before treating the case as closed.'
+                : 'Keep the replacement moving and wait for the buyer to confirm receipt to close the issue.',
+            timestampLabel: 'Approved',
+            timestampValue: order.replacement_started_at,
+            infoLabel: 'Resolution',
+            infoValue: order.replacement_resolution_description || null,
+            proofHref: null,
+            proofLabel: null,
+        };
+    }
+
+    if (order.replacement_resolved_at || order.status === 'Replaced') {
+        return {
+            tone: 'border-emerald-200 bg-emerald-50',
+            badgeTone: 'border-emerald-200 bg-white text-emerald-700',
+            icon: CheckCircle2,
+            title: 'Replacement completed',
+            detail: 'The buyer already confirmed receipt of the replacement item and the issue is resolved.',
+            timestampLabel: 'Resolved',
+            timestampValue: order.replacement_resolved_at,
+            infoLabel: 'Resolution',
+            infoValue: order.replacement_resolution_description || null,
+            proofHref: null,
+            proofLabel: null,
+        };
+    }
+
+    if (order.status === 'Refunded' || order.payment_status === 'refunded') {
+        return {
+            tone: 'border-purple-200 bg-purple-50',
+            badgeTone: 'border-purple-200 bg-white text-purple-700',
+            icon: Wallet,
+            title: 'Refund completed',
+            detail: 'The refund is already processed for this order. The return case is closed unless a new issue is opened.',
+            timestampLabel: null,
+            timestampValue: null,
+            infoLabel: null,
+            infoValue: null,
+            proofHref: order.return_proof_image,
+            proofLabel: order.return_proof_image ? 'View Buyer Proof' : null,
+        };
+    }
+
+    return null;
+};
+
 // --- MAIN COMPONENT ---
 export default function OrderManager({ auth, orders = [] }) {
     const { addToast } = useToast();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -217,6 +388,18 @@ export default function OrderManager({ auth, orders = [] }) {
     const [shippingModal, setShippingModal] = useState({
         isOpen: false,
         orderId: null,
+        status: 'Shipped',
+        mode: 'ship',
+        title: 'Mark as Shipped',
+        description: 'Add tracking info for the buyer',
+        confirmLabel: 'Confirm Shipment',
+        proofLabel: 'Shipment Proof',
+        proofHint: 'Upload a photo of the packed parcel or courier handoff.',
+        noteLabel: 'Shipping Notes',
+        notePlaceholder: 'e.g. Driver contact: 0917-XXX-XXXX',
+        proofRequired: true,
+        allowTracking: true,
+        existingProofUrl: null,
         trackingNumber: '',
         shippingNotes: '',
         proofOfDelivery: null,
@@ -373,16 +556,73 @@ export default function OrderManager({ auth, orders = [] }) {
         });
     };
 
-    const openShippingModal = (order) => {
+    const openShippingModal = (order, mode = 'ship') => {
         revokeShippingPreview();
+
+        const modalConfig = (() => {
+            if (mode === 'pickup-ready') {
+                return {
+                    mode,
+                    status: 'Ready for Pickup',
+                    title: 'Ready for Pickup',
+                    description: 'Notify the buyer that the item is prepared for pickup.',
+                    confirmLabel: 'Confirm Ready',
+                    proofLabel: 'Pickup Readiness Photo',
+                    proofHint: 'Upload a photo showing the packaged item is ready for pickup.',
+                    noteLabel: 'Pickup Instructions',
+                    notePlaceholder: 'e.g. Meet at lobby, look for blue shirt',
+                    proofRequired: true,
+                    allowTracking: false,
+                };
+            }
+
+            if (mode === 'deliver') {
+                return {
+                    mode,
+                    status: 'Delivered',
+                    title: order.shipping_method === 'Pick Up' ? 'Mark as Picked Up' : 'Mark as Delivered',
+                    description: order.shipping_method === 'Pick Up'
+                        ? 'Confirm the buyer has already picked up the order.'
+                        : 'Confirm the parcel has reached the buyer and attach final proof.',
+                    confirmLabel: order.shipping_method === 'Pick Up' ? 'Confirm Pickup' : 'Confirm Delivery',
+                    proofLabel: order.shipping_method === 'Pick Up' ? 'Pickup Handover Photo' : 'Final Delivery Proof',
+                    proofHint: order.shipping_method === 'Pick Up'
+                        ? 'Upload a new handover photo if you want to replace the existing pickup proof.'
+                        : 'Upload a photo showing the order has been successfully delivered to the buyer.',
+                    noteLabel: order.shipping_method === 'Pick Up' ? 'Pickup Notes' : 'Delivery Notes',
+                    notePlaceholder: order.shipping_method === 'Pick Up'
+                        ? 'e.g. Buyer received at store counter'
+                        : 'e.g. Delivered to guard/reception with buyer approval',
+                    proofRequired: order.shipping_method === 'Delivery',
+                    allowTracking: false,
+                };
+            }
+
+            return {
+                mode,
+                status: 'Shipped',
+                title: 'Mark as Shipped',
+                description: 'Add tracking info and shipment proof for the buyer.',
+                confirmLabel: 'Confirm Shipment',
+                proofLabel: 'Shipment Proof',
+                proofHint: 'Upload a photo of the packed parcel or courier handoff.',
+                noteLabel: 'Shipping Notes',
+                notePlaceholder: 'e.g. Driver contact: 0917-XXX-XXXX',
+                proofRequired: true,
+                allowTracking: true,
+            };
+        })();
+
         setShippingModal({
             isOpen: true,
             orderId: order.id,
-            trackingNumber: '',
-            shippingNotes: '',
+            trackingNumber: modalConfig.allowTracking ? (order.tracking_number || '') : '',
+            shippingNotes: order.shipping_notes || '',
             proofOfDelivery: null,
             previewUrl: null,
-            isPickup: order.shipping_method === 'Pick Up'
+            isPickup: order.shipping_method === 'Pick Up',
+            existingProofUrl: order.proof_of_delivery || null,
+            ...modalConfig,
         });
     };
 
@@ -393,6 +633,7 @@ export default function OrderManager({ auth, orders = [] }) {
             isOpen: false,
             proofOfDelivery: null,
             previewUrl: null,
+            existingProofUrl: null,
         }));
     };
 
@@ -422,10 +663,11 @@ export default function OrderManager({ auth, orders = [] }) {
 
     const submitShipping = () => {
         const formData = new FormData();
-        const status = shippingModal.isPickup ? 'Ready for Pickup' : 'Shipped';
         
-        formData.append('status', status);
-        if (shippingModal.trackingNumber) formData.append('tracking_number', shippingModal.trackingNumber);
+        formData.append('status', shippingModal.status);
+        if (shippingModal.allowTracking && shippingModal.trackingNumber) {
+            formData.append('tracking_number', shippingModal.trackingNumber);
+        }
         if (shippingModal.shippingNotes) formData.append('shipping_notes', shippingModal.shippingNotes);
         if (shippingModal.proofOfDelivery) formData.append('proof_of_delivery', shippingModal.proofOfDelivery);
 
@@ -487,17 +729,13 @@ export default function OrderManager({ auth, orders = [] }) {
     const urgentCount = getCount('Pending') + getCount('Refund/Return');
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <>
             <Head title="Order Manager" />
-            
-            <SellerSidebar active="orders" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 
                 {/* --- HEADER --- */}
                 <header className="bg-white/90 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40 shadow-sm">
                     <div className="flex items-center gap-3 min-w-0">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div>
@@ -644,7 +882,10 @@ export default function OrderManager({ auth, orders = [] }) {
                         {/* Order List */}
                         <div className="divide-y divide-gray-100">
                             {paginatedOrders.length > 0 ? (
-                                paginatedOrders.map((order) => (
+                                paginatedOrders.map((order) => {
+                                    const issueSummary = sellerIssueSummary(order);
+
+                                    return (
                                     <div key={order.id} className="px-3.5 py-3 sm:px-4 sm:py-3.5 hover:bg-gray-50/50 transition-all group">
                                         
                                         {/* Order Header */}
@@ -695,7 +936,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition group/proof"
                                                 >
                                                     <PackageCheck size={12} className="text-gray-400 group-hover/proof:text-gray-600" />
-                                                    Proof
+                                                    {sellerProofLabel(order)}
                                                 </a>
                                             )}
                                             {order.shipping_address && (
@@ -750,6 +991,13 @@ export default function OrderManager({ auth, orders = [] }) {
                                                 
                                                 {/* Status-specific Actions */}
                                                 <div className="space-y-2">
+                                                    {sellerDeliverySummary(order) && (
+                                                        <div className={`rounded-lg border px-2.5 py-2 text-left ${sellerDeliverySummary(order).tone}`}>
+                                                            <p className="text-[11px] font-bold">{sellerDeliverySummary(order).title}</p>
+                                                            <p className="mt-0.5 text-[9px] leading-snug opacity-90">{sellerDeliverySummary(order).detail}</p>
+                                                        </div>
+                                                    )}
+
                                                     {order.delivery && (
                                                         <div className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-left">
                                                             {/* Header row: label + track link */}
@@ -819,29 +1067,67 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         </div>
                                                     )}
 
-                                                    {order.replacement_in_progress && (
-                                                        <div className="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-2 text-left">
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <PackageCheck size={13} className="text-teal-600 shrink-0" />
-                                                                    <p className="text-[11px] font-bold text-teal-800">Replacement in Progress</p>
+                                                    {order.timeline?.length > 0 && (
+                                                        <div className="rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-left">
+                                                            <div className="mb-2 flex items-center justify-between gap-2">
+                                                                <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-stone-400">Recent Activity</p>
+                                                                <span className="text-[9px] font-bold text-stone-400">{order.timeline.length} events</span>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                {order.timeline.slice(0, 4).map((entry) => (
+                                                                    <div key={entry.key} className="flex items-start gap-2">
+                                                                        <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-clay-500" />
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                                                <p className="text-[10px] font-bold text-stone-800">{entry.label}</p>
+                                                                                <span className={`rounded-full border px-1.5 py-0 text-[8px] font-bold uppercase tracking-wide ${timelineSourceTone(entry.source)}`}>
+                                                                                    {entry.source}
+                                                                                </span>
+                                                                            </div>
+                                                                            {entry.description && (
+                                                                                <p className="mt-0.5 text-[9px] leading-snug text-stone-500">{entry.description}</p>
+                                                                            )}
+                                                                            <p className="mt-0.5 text-[9px] font-medium text-stone-400">{formatTimelineStamp(entry.timestamp)}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {issueSummary && (
+                                                        <div className={`rounded-lg border px-2.5 py-2 text-left ${issueSummary.tone}`}>
+                                                            <div className="flex flex-wrap items-start justify-between gap-2">
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <issueSummary.icon size={13} className="shrink-0 text-current" />
+                                                                        <p className="text-[11px] font-bold text-stone-900">{issueSummary.title}</p>
+                                                                    </div>
+                                                                    <p className="mt-1 text-[9px] leading-snug text-stone-600">{issueSummary.detail}</p>
                                                                 </div>
-                                                                {order.replacement_started_at && (
-                                                                    <span className="text-[9px] text-teal-600 font-medium whitespace-nowrap">{order.replacement_started_at}</span>
+                                                                {issueSummary.timestampValue && (
+                                                                    <span className={`rounded-full border px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide ${issueSummary.badgeTone}`}>
+                                                                        {issueSummary.timestampLabel}: {issueSummary.timestampValue}
+                                                                    </span>
                                                                 )}
                                                             </div>
 
-                                                            {order.replacement_resolution_description && (
-                                                                <div className="mt-1.5 rounded border border-teal-100 bg-white/70 px-2 py-1 text-[9px] text-teal-900 whitespace-pre-wrap">
-                                                                    <span className="font-bold">Resolution: </span>{order.replacement_resolution_description}
+                                                            {issueSummary.infoValue && (
+                                                                <div className="mt-1.5 rounded border border-white/80 bg-white/75 px-2 py-1 text-[9px] text-stone-700 whitespace-pre-wrap leading-snug">
+                                                                    <span className="font-bold">{issueSummary.infoLabel}: </span>{issueSummary.infoValue}
                                                                 </div>
                                                             )}
 
-                                                            <p className="mt-1 text-[9px] text-teal-700 leading-snug">
-                                                                {order.delivery?.flow_type === 'replacement_exchange'
-                                                                    ? 'Courier is handling a two-way exchange: replacement → buyer, rejected item → seller.'
-                                                                    : 'Approved. Book the courier run to close after buyer confirms receipt.'}
-                                                            </p>
+                                                            {issueSummary.proofHref && (
+                                                                <a
+                                                                    href={issueSummary.proofHref}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-white/80 bg-white/80 px-2 py-1 text-[9px] font-bold text-stone-700 hover:bg-white"
+                                                                >
+                                                                    <CameraIcon size={10} /> {issueSummary.proofLabel}
+                                                                </a>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -887,13 +1173,19 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                 </div>
                                                             ) : order.shipping_method === 'Pick Up' ? (
                                                                 <button 
-                                                                    onClick={() => openShippingModal(order)} 
+                                                                    onClick={() => openShippingModal(order, 'pickup-ready')} 
                                                                     className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5 hover:bg-orange-600"
                                                                 >
                                                                     <PackageCheck size={18} /> Mark as Ready for Pickup
                                                                 </button>
                                                             ) : (
                                                                 <div className="space-y-2.5">
+                                                                    <button
+                                                                        onClick={() => openShippingModal(order, 'ship')}
+                                                                        className="w-full flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-100"
+                                                                    >
+                                                                        <PackageCheck size={18} /> Mark as Shipped
+                                                                    </button>
                                                                     <button
                                                                         onClick={() => createLalamoveDelivery(order.id)}
                                                                         disabled={!order.lalamove_booking_ready || bookingOrderId === order.id}
@@ -907,7 +1199,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                         ) : (
                                                                             <>
                                                                                 <Truck size={18} />
-                                                                                Create Lalamove Delivery
+                                                                                Use Lalamove Delivery
                                                                             </>
                                                                         )}
                                                                     </button>
@@ -930,14 +1222,29 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     )}
 
                                                     {(order.status === 'Shipped' || order.status === 'Ready for Pickup') && (
-                                                        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
-                                                            <Truck size={13} className="text-blue-400 shrink-0" />
-                                                            <div className="min-w-0">
-                                                                <p className="text-[11px] font-bold text-blue-700">
-                                                                    {order.status === 'Ready for Pickup' ? 'Ready for Pickup' : 'Shipment in Progress'}
-                                                                </p>
-                                                                <p className="text-[9px] text-blue-500">Waiting for buyer receipt</p>
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
+                                                                <Truck size={13} className="text-blue-400 shrink-0" />
+                                                                <div className="min-w-0">
+                                                                    <p className="text-[11px] font-bold text-blue-700">
+                                                                        {order.status === 'Ready for Pickup' ? 'Ready for Pickup' : 'Shipment in Progress'}
+                                                                    </p>
+                                                                    <p className="text-[9px] text-blue-500">
+                                                                        {order.status === 'Ready for Pickup'
+                                                                            ? 'Mark it as picked up once the buyer receives it.'
+                                                                            : 'Mark it as delivered once the buyer has the parcel.'}
+                                                                    </p>
+                                                                </div>
                                                             </div>
+                                                            {!isLalamoveManagedOrder(order) && (
+                                                                <button
+                                                                    onClick={() => openShippingModal(order, 'deliver')}
+                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-200 transition-all hover:-translate-y-0.5 hover:bg-teal-700"
+                                                                >
+                                                                    <MapPin size={18} />
+                                                                    {order.status === 'Ready for Pickup' ? 'Mark as Picked Up' : 'Mark as Delivered'}
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -979,37 +1286,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         </div>
                                                     )}
 
-                                                    {order.replacement_resolved_at && (
-                                                        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2">
-                                                            <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                                                            <div className="min-w-0">
-                                                                <p className="text-[11px] font-bold text-emerald-700">Replacement Resolved</p>
-                                                                <p className="text-[9px] text-emerald-600">Buyer confirmed on {order.replacement_resolved_at}.</p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
                                                     {order.status === 'Refund/Return' && (
                                                         <>
-                                                            <div className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-2">
-                                                                <div className="flex items-center gap-1.5 mb-1.5">
-                                                                    <RotateCcw size={12} className="text-orange-600 shrink-0" />
-                                                                    <p className="text-[11px] font-bold text-orange-700">Return Requested</p>
-                                                                </div>
-                                                                <div className="text-[10px] text-orange-900 bg-white/60 px-2 py-1 rounded border border-orange-100 whitespace-pre-wrap leading-snug">
-                                                                    <span className="font-bold">Reason: </span>{order.return_reason || 'No reason provided.'}
-                                                                </div>
-                                                                {order.return_proof_image && (
-                                                                    <a
-                                                                        href={order.return_proof_image}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-orange-600 hover:text-orange-800 transition"
-                                                                    >
-                                                                        <CameraIcon size={11} /> View Proof
-                                                                    </a>
-                                                                )}
-                                                            </div>
                                                             {canAccessMessages && (
                                                                 <button
                                                                     onClick={() => openChat(order.user_id)}
@@ -1066,7 +1344,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                             </div>
                                         </div>
                                     </div>
-                                ))
+                                );
+                                })
                             ) : (
                                 <div className="py-20 text-center">
                                     <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -1119,7 +1398,6 @@ export default function OrderManager({ auth, orders = [] }) {
                         )}
                     </div>
                 </main>
-            </div>
 
             {/* --- CONFIRMATION MODAL --- */}
             <Modal show={confirmModal.isOpen} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} maxWidth="sm">
@@ -1150,21 +1428,31 @@ export default function OrderManager({ auth, orders = [] }) {
             <Modal show={shippingModal.isOpen} onClose={closeShippingModal} maxWidth="md">
                 <div className="p-6">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${shippingModal.isPickup ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
-                            {shippingModal.isPickup ? <PackageCheck size={24} /> : <Truck size={24} />}
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                            shippingModal.status === 'Delivered'
+                                ? 'bg-teal-100 text-teal-600'
+                                : shippingModal.isPickup
+                                    ? 'bg-orange-100 text-orange-600'
+                                    : 'bg-blue-100 text-blue-600'
+                        }`}>
+                            {shippingModal.status === 'Delivered'
+                                ? <MapPin size={24} />
+                                : shippingModal.isPickup
+                                    ? <PackageCheck size={24} />
+                                    : <Truck size={24} />}
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-gray-900">
-                                {shippingModal.isPickup ? 'Ready for Pickup' : 'Mark as Shipped'}
+                                {shippingModal.title}
                             </h2>
                             <p className="text-xs text-gray-500">
-                                {shippingModal.isPickup ? 'Notify buyer that item is ready' : 'Add tracking info for the buyer'}
+                                {shippingModal.description}
                             </p>
                         </div>
                     </div>
                     
                     <div className="space-y-5">
-                        {!shippingModal.isPickup && (
+                        {shippingModal.allowTracking && (
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">
                                     <Hash size={14} className="inline mr-1" />
@@ -1180,11 +1468,9 @@ export default function OrderManager({ auth, orders = [] }) {
                             </div>
                         )}
                         
-                        {/* Proof of Delivery / Handover - ONLY for Shipping */}
-                        {!shippingModal.isPickup && (
-                            <div>
+                        <div>
                                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                                    Proof of Delivery <span className="text-red-500">*</span>
+                                    {shippingModal.proofLabel} {shippingModal.proofRequired && <span className="text-red-500">*</span>}
                                 </label>
                                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50 transition relative overflow-hidden group">
                                     <input 
@@ -1208,21 +1494,36 @@ export default function OrderManager({ auth, orders = [] }) {
                                     ) : (
                                         <div className="text-gray-400">
                                             <CameraIcon className="mx-auto mb-2" size={24} />
-                                            <p className="text-xs">Click to upload photo of item/package</p>
+                                            <p className="text-xs">{shippingModal.proofHint}</p>
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        )}
+                                {shippingModal.existingProofUrl && (
+                                    <p className="mt-2 text-[11px] text-gray-500">
+                                        Existing proof is already attached.
+                                        <a
+                                            href={shippingModal.existingProofUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ml-1 font-bold text-clay-600 underline hover:text-clay-700"
+                                        >
+                                            View current proof
+                                        </a>
+                                        {shippingModal.proofRequired
+                                            ? <span className="block text-[10px] text-gray-400 mt-1">Upload a new photo to replace it for this next step.</span>
+                                            : null}
+                                    </p>
+                                )}
+                        </div>
 
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">
-                                {shippingModal.isPickup ? 'Pickup Instructions' : 'Shipping Notes'} <span className="text-gray-400 font-normal">(Optional)</span>
+                                {shippingModal.noteLabel} <span className="text-gray-400 font-normal">(Optional)</span>
                             </label>
                             <textarea 
                                 value={shippingModal.shippingNotes}
                                 onChange={(e) => setShippingModal({ ...shippingModal, shippingNotes: e.target.value })}
-                                placeholder={shippingModal.isPickup ? "e.g. Meet at lobby, look for blue shirt" : "e.g. Driver contact: 0917-XXX-XXXX"}
+                                placeholder={shippingModal.notePlaceholder}
                                 rows={3}
                                 className="w-full border-gray-200 rounded-xl focus:border-clay-500 focus:ring-clay-200 shadow-sm text-sm"
                             />
@@ -1238,10 +1539,16 @@ export default function OrderManager({ auth, orders = [] }) {
                         </button>
                         <button 
                             onClick={submitShipping}
-                            disabled={!shippingModal.isPickup && !shippingModal.proofOfDelivery}
-                            className={`px-6 py-2.5 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 ${shippingModal.isPickup ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'}`}
+                            disabled={shippingModal.proofRequired && !shippingModal.proofOfDelivery}
+                            className={`px-6 py-2.5 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 ${
+                                shippingModal.status === 'Delivered'
+                                    ? 'bg-teal-600 hover:bg-teal-700 shadow-teal-200'
+                                    : shippingModal.isPickup
+                                        ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200'
+                                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                            }`}
                         >
-                            <CheckCircle2 size={16} /> Confirm {shippingModal.isPickup ? 'Ready' : 'Shipment'}
+                            <CheckCircle2 size={16} /> {shippingModal.confirmLabel}
                         </button>
                     </div>
                 </div>
@@ -1301,6 +1608,8 @@ export default function OrderManager({ auth, orders = [] }) {
                     </div>
                 </div>
             </Modal>
-        </div>
+        </>
     );
 }
+
+OrderManager.layout = (page) => <SellerWorkspaceLayout active="orders">{page}</SellerWorkspaceLayout>;

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import Modal from '@/Components/Modal';
 import NotificationDropdown from '@/Components/NotificationDropdown';
@@ -8,6 +7,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import { ArrowDownLeft, ArrowUpRight, Banknote, ChevronDown, Landmark, LogOut, Menu, Plus, RefreshCcw, User } from 'lucide-react';
 
 const formatMoney = (value) => Number(value || 0).toLocaleString(undefined, {
@@ -21,10 +21,16 @@ const withdrawalTone = {
     rejected: 'bg-red-50 text-red-700',
 };
 
+const withdrawalStatusCopy = {
+    pending: 'Waiting for platform review',
+    approved: 'Approved for release',
+    rejected: 'Rejected by platform reviewer',
+};
+
 export default function Wallet({ auth, wallet, walletOwner, canRequestWithdrawal = false }) {
     const { flash = {} } = usePage().props;
     const { addToast } = useToast();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         amount: '1000',
@@ -51,14 +57,11 @@ export default function Wallet({ auth, wallet, walletOwner, canRequestWithdrawal
     useFlashToast(flash, addToast);
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <>
             <Head title="Seller Wallet" />
-            <SellerSidebar active="wallet" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56">
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
                     <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
@@ -193,35 +196,64 @@ export default function Wallet({ auth, wallet, walletOwner, canRequestWithdrawal
 
                         <section className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
                             <div className="border-b border-stone-100 px-6 py-5">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Requests</p>
-                                <h2 className="mt-1 text-[19px] font-bold tracking-tight text-stone-900">Recent Withdrawals</h2>
-                                <p className="mt-1 text-[13px] font-medium text-stone-500">Track pending, approved, and rejected payout requests.</p>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Payouts</p>
+                                <h2 className="mt-1 text-[19px] font-bold tracking-tight text-stone-900">Payout History</h2>
+                                <p className="mt-1 text-[13px] font-medium text-stone-500">Track pending, approved, and rejected withdrawal requests with review timing and notes.</p>
                             </div>
 
                             {withdrawals.length ? (
                                 <div className="divide-y divide-stone-100">
                                     {withdrawals.map((request) => (
                                         <div key={request.id} className="p-5">
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-[14px] font-bold tracking-tight text-stone-900">PHP {formatMoney(request.amount)}</p>
-                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${withdrawalTone[request.status] || withdrawalTone.pending}`}>
-                                                    {request.status}
-                                                </span>
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="text-[14px] font-bold tracking-tight text-stone-900">PHP {formatMoney(request.amount)}</p>
+                                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${withdrawalTone[request.status] || withdrawalTone.pending}`}>
+                                                            {request.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-1 text-[12px] font-medium text-stone-500">{withdrawalStatusCopy[request.status] || withdrawalStatusCopy.pending}</p>
+                                                </div>
+                                                <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-right">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Requested</p>
+                                                    <p className="mt-1 text-[12px] font-bold text-stone-700">{request.created_at}</p>
+                                                </div>
                                             </div>
-                                            <p className="mt-2 text-[12px] font-medium text-stone-500">{request.created_at}</p>
-                                            {request.note && <p className="mt-3 text-[12px] leading-relaxed text-stone-600">{request.note}</p>}
-                                            {request.rejection_reason && <p className="mt-2 text-[12px] leading-relaxed text-red-700">Rejection reason: {request.rejection_reason}</p>}
-                                            {request.reviewed_at && !request.rejection_reason && <p className="mt-2 text-[12px] font-medium text-stone-500">Reviewed {request.reviewed_at}</p>}
+
+                                            <div className="mt-3 grid gap-2 text-[12px] md:grid-cols-2">
+                                                <div className="rounded-xl border border-stone-100 bg-stone-50/70 px-3 py-2">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Platform Review</p>
+                                                    <p className="mt-1 font-medium text-stone-600">
+                                                        {request.reviewed_at ? `Reviewed ${request.reviewed_at}` : 'Not reviewed yet'}
+                                                    </p>
+                                                </div>
+                                                <div className="rounded-xl border border-stone-100 bg-stone-50/70 px-3 py-2">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Seller Note</p>
+                                                    <p className="mt-1 leading-relaxed text-stone-600">{request.note || 'No payout note provided.'}</p>
+                                                </div>
+                                            </div>
+
+                                            {request.rejection_reason ? (
+                                                <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-red-500">Rejection Reason</p>
+                                                    <p className="mt-1 text-[12px] leading-relaxed text-red-700">{request.rejection_reason}</p>
+                                                </div>
+                                            ) : request.reviewed_at ? (
+                                                <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">Release Status</p>
+                                                    <p className="mt-1 text-[12px] font-medium text-emerald-700">Approved and reviewed on {request.reviewed_at}.</p>
+                                                </div>
+                                            ) : null}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <EmptyState icon={Landmark} title="No withdrawal requests yet" description="Submit a withdrawal request when you want to pull from your settled online earnings balance." />
+                                <EmptyState icon={Landmark} title="No payout requests yet" description="Submit a withdrawal request when you want to pull from your settled online earnings balance." />
                             )}
                         </section>
                     </div>
                 </main>
-            </div>
 
             <Modal show={canRequestWithdrawal && showWithdrawModal} onClose={closeWithdrawModal} maxWidth="md">
                 <form onSubmit={submitWithdrawal} className="flex flex-col bg-[#FDFBF9]">
@@ -260,9 +292,11 @@ export default function Wallet({ auth, wallet, walletOwner, canRequestWithdrawal
                     </div>
                 </form>
             </Modal>
-        </div>
+        </>
     );
 }
+
+Wallet.layout = (page) => <SellerWorkspaceLayout active="wallet">{page}</SellerWorkspaceLayout>;
 
 function WalletStatCard({ label, value, icon: Icon, tone }) {
     return (
