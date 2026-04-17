@@ -7,8 +7,8 @@ use App\Models\User;
 class SellerEntitlementService
 {
     /**
-     * Workspace modules that should always stay available once the actor can enter
-     * the seller workspace.
+     * Workspace capabilities that should always stay available once the actor can
+     * enter the seller workspace.
      *
      * @return array<int, string>
      */
@@ -24,7 +24,7 @@ class SellerEntitlementService
     }
 
     /**
-     * Modules that are safe to expose to staff.
+     * Capabilities that are safe to expose to staff.
      *
      * @return array<int, string>
      */
@@ -32,7 +32,6 @@ class SellerEntitlementService
     {
         return [
             'overview',
-            'wallet',
             'products',
             'analytics',
             '3d',
@@ -48,7 +47,7 @@ class SellerEntitlementService
     }
 
     /**
-     * Role preset defaults for seller-owned staff accounts.
+     * Capability preset defaults for seller-owned staff accounts.
      *
      * @return array<string, array<int, string>>
      */
@@ -56,7 +55,7 @@ class SellerEntitlementService
     {
         return [
             'hr' => ['hr'],
-            'accounting' => ['accounting', 'wallet'],
+            'accounting' => ['accounting'],
             'procurement' => ['procurement', 'stock_requests'],
             'customer_support' => ['orders', 'messages', 'reviews'],
             'custom' => [],
@@ -105,6 +104,9 @@ class SellerEntitlementService
         $defaultRouteName = $user->isStaff()
             ? 'staff.dashboard'
             : $this->getFirstAccessibleRouteNameFromModules($visibleModules);
+        $canEditModules = collect($visibleModules)
+            ->mapWithKeys(fn (string $module) => [$module => $user->isSellerOwner() || $user->canEditSellerModule($module)])
+            ->all();
 
         return [
             'sellerOwnerId' => $seller->id,
@@ -112,6 +114,7 @@ class SellerEntitlementService
             'tierKey' => $this->normalizeTierKey($seller->premium_tier),
             'tierLabel' => $seller->getSellerTierLabel(),
             'visibleModules' => $visibleModules,
+            'canEditModules' => $canEditModules,
             'toggleableModules' => $canManageModuleSettings ? $ownerEntitlements['toggleableModules'] : [],
             'enabledToggleableModules' => $canManageModuleSettings ? $ownerEntitlements['enabledToggleableModules'] : [],
             'showGear' => $canManageModuleSettings,
@@ -216,11 +219,16 @@ class SellerEntitlementService
             }
         }
 
-        return $granted
+        $grantedModules = $granted
             ->filter()
             ->keys()
             ->values()
             ->all();
+
+        return array_values(array_unique([
+            ...$grantedModules,
+            ...$this->alwaysVisibleWorkspaceModulesFor($staff),
+        ]));
     }
 
     /**
@@ -281,7 +289,7 @@ class SellerEntitlementService
 
         return collect($storedPermissions)
             ->filter(fn ($value, $module) => is_string($module))
-            ->mapWithKeys(fn ($value, $module) => [$module => (bool) $value])
+            ->mapWithKeys(fn ($value, $module) => [$module => User::normalizeStaffModuleAccessLevel($value) !== null])
             ->all();
     }
 
@@ -317,7 +325,6 @@ class SellerEntitlementService
     {
         return [
             'overview',
-            'wallet',
             'orders',
             'products',
             'analytics',
@@ -341,7 +348,6 @@ class SellerEntitlementService
     {
         return [
             'overview' => 'dashboard',
-            'wallet' => 'seller.wallet.index',
             'orders' => 'orders.index',
             'products' => 'products.index',
             'analytics' => 'analytics.index',

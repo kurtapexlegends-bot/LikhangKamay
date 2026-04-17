@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import SellerHeader from '@/Components/SellerHeader';
 import {
     Package,
     ShoppingBag,
@@ -12,10 +10,6 @@ import {
     DollarSign,
     CreditCard,
     PieChart as PieIcon,
-    ChevronDown,
-    User,
-    LogOut,
-    Menu,
     Star,
     TrendingUp,
     TrendingDown,
@@ -33,8 +27,6 @@ import {
     Pie,
     Cell,
 } from 'recharts';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
     const isPositive = growth >= 0;
@@ -106,67 +98,30 @@ export default function Analytics({
     return (
         <>
             <Head title="Shop Analytics" />
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
-                            <Menu size={24} />
-                        </button>
-                        <div className="min-w-0">
-                            <h1 className="text-xl font-bold text-gray-900">Analytics</h1>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Financial performance & insights</p>
-                        </div>
+            <SellerHeader
+                title="Analytics"
+                subtitle="Revenue, orders, and category performance in one view."
+                auth={auth}
+                onMenuClick={openSidebar}
+                actions={sellerSubscription?.canExportAnalytics ? (
+                    <a
+                        href={route('analytics.export')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 shadow-sm transition hover:bg-stone-50"
+                    >
+                        <Download size={16} />
+                        <span>Download Report</span>
+                    </a>
+                ) : (
+                    <div className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-500 shadow-sm">
+                        <DollarSign size={15} />
+                        <span>Premium Export</span>
                     </div>
+                )}
+            />
 
-                    <div className="flex w-auto shrink-0 items-center gap-2 sm:gap-6">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            {sellerSubscription?.canExportAnalytics ? (
-                                <a
-                                    href={route('analytics.export')}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 text-gray-600 transition shadow-sm"
-                                >
-                                    <Download size={16} />
-                                    <span>Download Report</span>
-                                </a>
-                            ) : (
-                                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-stone-100 border border-stone-200 rounded-xl text-[11px] font-bold text-stone-500 shadow-sm">
-                                    <DollarSign size={15} />
-                                    <span>Premium Export</span>
-                                </div>
-                            )}
-
-                            <NotificationDropdown />
-                        </div>
-
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
-                                        <LogOut size={16} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
-
-                <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
+                <main className="mx-auto flex-1 w-full max-w-[1400px] p-4 sm:p-6 overflow-y-auto space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                         <MetricCard title="Total Revenue" value={formatPeso(metrics.total_revenue)} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-blue-100" text="text-blue-600" />
                         <MetricCard title="Gross Profit" value={formatPeso(metrics.gross_profit)} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-green-100" text="text-green-600" />
@@ -182,7 +137,7 @@ export default function Analytics({
                         </select>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="min-w-0 lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">Revenue Analytics</h3>
@@ -201,7 +156,7 @@ export default function Analytics({
                                 </div>
                             </div>
 
-                            <div className="h-80 w-full">
+                            <div className="h-80 min-h-[320px] w-full min-w-0">
                                 {currentChartData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                         <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -236,7 +191,7 @@ export default function Analytics({
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                        <div className="min-w-0 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                             <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center mb-4">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">Sales by Category</h3>
@@ -343,7 +298,7 @@ export default function Analytics({
                                     </div>
 
                                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                                        <div className="xl:col-span-2 h-80">
+                                        <div className="min-w-0 xl:col-span-2 h-80 min-h-[320px]">
                                             {sponsorshipHasActivity ? (
                                                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                                     <AreaChart data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

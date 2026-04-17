@@ -144,7 +144,8 @@ export default function NotificationDropdown() {
             {/* Bell Button */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-400 hover:text-clay-600 transition-colors rounded-full hover:bg-gray-100"
+                aria-label={isOpen ? 'Close notifications' : 'Open notifications'}
+                className="relative rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-clay-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
             >
                 <Bell size={20} />
                 {unreadNotificationCount > 0 && (
@@ -156,15 +157,15 @@ export default function NotificationDropdown() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-stone-200 bg-white animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Header */}
-                    <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50 px-4 py-4">
                         <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
                         <div className="flex items-center gap-3">
                             {unreadNotificationCount > 0 && (
                                 <button 
                                     onClick={handleMarkAllAsRead}
-                                    className="text-xs text-clay-600 hover:text-clay-700 font-medium flex items-center gap-1"
+                                    className="flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-clay-600 transition-colors hover:text-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
                                     title="Mark all as read"
                                 >
                                     <Check size={12} /> Read All
@@ -173,7 +174,7 @@ export default function NotificationDropdown() {
                             {notifications.length > 0 && (
                                 <button 
                                     onClick={handleClearAll}
-                                    className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+                                    className="flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-red-500 transition-colors hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
                                     title="Delete all notifications"
                                 >
                                     <Trash2 size={12} /> Clear All
@@ -188,7 +189,7 @@ export default function NotificationDropdown() {
                             notifications.map((notification) => (
                                 <div 
                                     key={notification.id}
-                                    className={`relative group p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
+                                    className={`relative group border-b border-stone-100 p-4 transition-colors hover:bg-stone-50/70 ${
                                         !notification.read_at ? 'bg-clay-50/30' : ''
                                     }`}
                                 >
@@ -196,7 +197,7 @@ export default function NotificationDropdown() {
                                         onClick={() => handleMarkAsRead(notification.id, notification.url, true)}
                                         className="flex items-start gap-3 cursor-pointer"
                                     >
-                                        <div className="p-2 rounded-lg bg-gray-100 shrink-0">
+                                        <div className="shrink-0 rounded-lg bg-stone-100 p-2">
                                             {getIcon(notification.type)}
                                         </div>
                                         <div className="flex-1 min-w-0 pr-6">
@@ -223,24 +224,25 @@ export default function NotificationDropdown() {
                                             e.stopPropagation();
                                             setActiveMenu(activeMenu === notification.id ? null : notification.id);
                                         }}
-                                        className="absolute top-3 right-2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        aria-label="Open notification actions"
+                                        className="absolute top-3 right-2 rounded-full p-1 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-stone-200 hover:text-gray-600 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
                                     >
                                         <MoreHorizontal size={16} />
                                     </button>
 
                                     {/* Menu Dropdown */}
                                     {activeMenu === notification.id && (
-                                        <div className="absolute top-8 right-2 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1 animate-in fade-in zoom-in-95 duration-100">
+                                        <div className="absolute top-8 right-2 z-10 w-32 rounded-lg border border-stone-200 bg-white py-1 animate-in fade-in zoom-in-95 duration-100">
                                             <button
                                                 onClick={(e) => notification.read_at ? handleMarkAsUnread(e, notification.id) : handleMarkAsRead(notification.id, null, false)}
-                                                className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20"
                                             >
                                                 {notification.read_at ? <Mail size={12} /> : <MailOpen size={12} />}
                                                 {notification.read_at ? 'Mark Unread' : 'Mark Read'}
                                             </button>
                                             <button
                                                 onClick={(e) => handleDelete(e, notification.id)}
-                                                className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
                                             >
                                                 <Trash2 size={12} /> Delete
                                             </button>
@@ -258,10 +260,10 @@ export default function NotificationDropdown() {
 
                     {/* Footer */}
                     {notifications.length > 0 && (
-                        <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
+                        <div className="border-t border-stone-100 bg-stone-50 p-3 text-center">
                             <button 
                                 onClick={() => setIsOpen(false)}
-                                className="text-xs text-gray-500 hover:text-gray-700"
+                                className="rounded px-1 py-0.5 text-xs text-gray-500 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20"
                             >
                                 Close
                             </button>
@@ -279,7 +281,7 @@ export default function NotificationDropdown() {
                 icon={Trash2}
                 iconBg="bg-red-100 text-red-600"
                 confirmText="Yes, Clear All"
-                confirmColor="bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200"
+                confirmColor="bg-red-600 hover:bg-red-700"
                 processing={processing}
             />
         </div>

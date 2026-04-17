@@ -4,11 +4,11 @@ import {
     CheckCircle2,
     ChevronDown,
     Clock3,
+    CreditCard,
     MapPin,
     Package,
     ShoppingBag,
     Truck,
-    Wallet,
     XCircle,
 } from 'lucide-react';
 
@@ -257,7 +257,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                                             <div>
                                                 <p className="text-xs font-semibold text-gray-500">Payment</p>
                                                 <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-900">
-                                                    <Wallet size={14} className="text-clay-500" />
+                                                    <CreditCard size={14} className="text-clay-500" />
                                                     {order.paymentMethod}
                                                 </div>
                                             </div>

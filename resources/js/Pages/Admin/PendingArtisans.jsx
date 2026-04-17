@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
 import {
     Clock, Eye, CheckCircle, XCircle, 
-    FileText, Phone, MapPin, AlertTriangle, X, Download
+    FileText, Phone, MapPin, AlertTriangle, X, Download, LoaderCircle
 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useToast } from '@/Components/ToastContext';
@@ -23,6 +25,8 @@ const buildViewedDocumentMap = (artisanRows) =>
 
 export default function PendingArtisans({ artisans }) {
     const { addToast } = useToast();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [reviewFilter, setReviewFilter] = useState('all');
     const [viewingArtisan, setViewingArtisan] = useState(null);
     const [viewingDoc, setViewingDoc] = useState(null);
     const [rejectingArtisan, setRejectingArtisan] = useState(null);
@@ -77,6 +81,30 @@ export default function PendingArtisans({ artisans }) {
         () => (viewingArtisan ? getArtisanDocuments(viewingArtisan) : []),
         [viewingArtisan, viewedDocumentsByArtisan],
     );
+    const filteredArtisans = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+
+        return artisans.filter((artisan) => {
+            if (reviewFilter === 'ready' && !artisan.documents_ready_for_approval) {
+                return false;
+            }
+
+            if (reviewFilter === 'needs_preview' && artisan.documents_ready_for_approval) {
+                return false;
+            }
+
+            if (!query) {
+                return true;
+            }
+
+            return [
+                artisan.shop_name,
+                artisan.name,
+                artisan.phone_number,
+                artisan.address,
+            ].some((value) => String(value || '').toLowerCase().includes(query));
+        });
+    }, [artisans, reviewFilter, searchQuery]);
     const viewedDocumentsCount = viewingArtisan ? (viewedDocumentsByArtisan[viewingArtisan.id] ?? []).length : 0;
     const submittedDocumentsCount = viewingArtisan?.submitted_document_count ?? currentDocuments.filter((doc) => !!doc.url).length;
     const allSubmittedDocumentsViewed = submittedDocumentsCount > 0 && viewedDocumentsCount >= submittedDocumentsCount;
@@ -136,20 +164,76 @@ export default function PendingArtisans({ artisans }) {
         <AdminLayout title="Pending Artisans">
 
             {artisans.length === 0 ? (
-                <div className="bg-[#FDFBF9] rounded-3xl shadow-sm border border-stone-200/60 p-8 sm:p-16 text-center mt-6">
-                    <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner border border-emerald-100/50">
+                <div className="mt-6 rounded-3xl border border-stone-200 bg-white p-8 text-center sm:p-16">
+                    <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50">
                         <CheckCircle size={32} className="text-emerald-500" />
                     </div>
                     <h3 className="text-xl font-bold tracking-tight text-stone-900 mb-2">Queue is Empty</h3>
-                    <p className="text-stone-500 text-[13px] max-w-sm mx-auto">There are no pending artisan applications at the moment. Great job keeping the queue clean!</p>
-                    <Link href={route('admin.dashboard')} className="inline-block mt-6 px-6 py-2.5 bg-stone-900 text-white rounded-xl text-[13px] font-bold hover:bg-stone-800 transition shadow-md shadow-stone-200 hover:-translate-y-0.5">
+                    <p className="mx-auto max-w-sm text-[13px] text-stone-500">There are no pending artisan applications at the moment.</p>
+                    <Link href={route('admin.dashboard')} className="mt-6 inline-block rounded-xl bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white transition hover:bg-stone-800">
                         Return to Dashboard
                     </Link>
                 </div>
             ) : (
-                <div className="mt-6 bg-[#FDFBF9] rounded-2xl shadow-[0_2px_4px_rgba(0,0,0,0.02)] border border-stone-200/60 overflow-hidden">
+                <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+                    <div className="flex flex-col gap-3 border-b border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setReviewFilter('all')}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    reviewFilter === 'all'
+                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                All queue
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setReviewFilter('ready')}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    reviewFilter === 'ready'
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                Ready to approve
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setReviewFilter('needs_preview')}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    reviewFilter === 'needs_preview'
+                                        ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                Needs preview
+                            </button>
+                        </div>
+                        <div className="relative w-full sm:w-72">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(event) => setSearchQuery(event.target.value)}
+                                placeholder="Search shop, owner, phone, or location"
+                                className="w-full rounded-full border border-stone-200 bg-white py-2 pl-3 pr-9 text-sm font-medium text-stone-900 placeholder-stone-400 transition-all focus:border-clay-300 focus:ring-2 focus:ring-clay-500/20"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-stone-400 transition-colors hover:text-stone-600"
+                                    aria-label="Clear artisan search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
                     {/* Header Row */}
-                    <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-stone-50 border-b border-stone-100/80 text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                    <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2.5 bg-stone-50 border-b border-stone-100/80 text-[11px] font-bold uppercase tracking-wider text-stone-500">
                         <div className="col-span-4">Artisan Shop</div>
                         <div className="col-span-3">Contact & Location</div>
                         <div className="col-span-2">Review Progress</div>
@@ -157,10 +241,20 @@ export default function PendingArtisans({ artisans }) {
                         <div className="col-span-1 text-right">Action</div>
                     </div>
                     <div className="divide-y divide-stone-100/80">
-                        {artisans.map(artisan => (
-                            <div key={artisan.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center px-4 sm:px-6 py-4 hover:bg-stone-50/50 transition">
+                        {filteredArtisans.length === 0 && (
+                            <div className="px-6 py-10 text-center">
+                                <WorkspaceEmptyState
+                                    compact
+                                    icon={FileText}
+                                    title="No matching applications"
+                                    description="Try another search or switch the queue filter."
+                                />
+                            </div>
+                        )}
+                        {filteredArtisans.map(artisan => (
+                            <div key={artisan.id} className="grid grid-cols-1 gap-4 px-4 py-3.5 transition hover:bg-stone-50/40 sm:px-6 md:grid-cols-12 md:items-center">
                                 <div className="col-span-4 flex items-center gap-3.5">
-                                    <div className="w-10 h-10 bg-clay-50 border border-clay-100 text-clay-700 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden shadow-sm">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-clay-100 bg-clay-50 text-sm font-bold text-clay-700">
                                         {artisan.avatar ? (
                                             <img 
                                                 src={artisan.avatar.startsWith('http') ? artisan.avatar : `/storage/${artisan.avatar}`} 
@@ -172,13 +266,15 @@ export default function PendingArtisans({ artisans }) {
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="font-bold text-[13px] text-stone-900 truncate">{artisan.shop_name}</h3>
+                                        <h3 className="font-semibold text-[13px] text-stone-900 truncate">{artisan.shop_name}</h3>
                                         <p className="text-stone-500 text-[12px] truncate">{artisan.name}</p>
-                                        <p className="text-[10px] font-medium text-stone-400 mt-0.5">Submitted {artisan.submitted_at}</p>
+                                        <p className="text-[10px] text-stone-400 mt-0.5">Submitted {artisan.submitted_at}</p>
                                     </div>
                                 </div>
 
-                                <div className="col-span-3 flex flex-col gap-1.5 text-[11px] text-stone-500">
+                                <div className="col-span-3 rounded-xl border border-stone-100 bg-stone-50/60 p-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
+                                    <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400 md:hidden">Contact</p>
+                                    <div className="flex flex-col gap-1.5 text-[11px] text-stone-500">
                                     <div className="flex items-center gap-1.5 truncate">
                                         <div className="w-4 h-4 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-400 shrink-0"><Phone size={9} /></div>
                                         <span className="truncate font-medium">{artisan.phone_number}</span>
@@ -188,10 +284,11 @@ export default function PendingArtisans({ artisans }) {
                                         <span className="truncate">{artisan.address}</span>
                                     </div>
                                 </div>
+                                </div>
 
                                 <div className="col-span-2">
-                                    <div className="rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-                                        <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-wider">
+                                    <div className="rounded-xl border border-stone-200 bg-stone-50/70 px-3 py-2">
+                                        <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider">
                                             <span className="text-stone-500">Documents</span>
                                             <span className={artisan.documents_ready_for_approval ? 'text-emerald-700' : 'text-amber-700'}>
                                                 {artisan.viewed_document_count}/{artisan.submitted_document_count}
@@ -199,7 +296,7 @@ export default function PendingArtisans({ artisans }) {
                                         </div>
                                         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
                                             <div
-                                                className={`h-full rounded-full transition-all ${artisan.documents_ready_for_approval ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                                                className={`h-full rounded-full transition-[width] ${artisan.documents_ready_for_approval ? 'bg-emerald-500' : 'bg-amber-400'}`}
                                                 style={{
                                                     width: `${artisan.submitted_document_count > 0
                                                         ? Math.min(100, (artisan.viewed_document_count / artisan.submitted_document_count) * 100)
@@ -207,7 +304,7 @@ export default function PendingArtisans({ artisans }) {
                                                 }}
                                             />
                                         </div>
-                                        <p className="mt-2 text-[10px] font-medium text-stone-500">
+                                        <p className="mt-2 text-[10px] text-stone-500">
                                             {artisan.documents_ready_for_approval
                                                 ? 'Ready for approval'
                                                 : 'Preview all submitted files first'}
@@ -217,22 +314,22 @@ export default function PendingArtisans({ artisans }) {
 
                                 <div className="col-span-2 flex justify-start md:justify-center">
                                     <div className="flex flex-col gap-1">
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200/50 px-2.5 py-1 rounded-md">
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-md">
                                             <Clock size={10} /> Pending
                                         </span>
                                         {artisan.documents_ready_for_approval && (
-                                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-md">
+                                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
                                                 <CheckCircle size={9} /> Review Complete
                                             </span>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="col-span-1 flex justify-start md:justify-end mt-1 md:mt-0">
+                                <div className="col-span-1 mt-1 flex justify-start md:mt-0 md:justify-end">
                                     <button
                                         onClick={() => openReviewModal(artisan)}
-                                        className="inline-flex px-3.5 py-1.5 bg-white border border-stone-200 text-stone-700 rounded-lg text-[11px] font-bold hover:bg-stone-50 hover:border-clay-300 transition items-center gap-1.5 shadow-sm"
-                                    >
+                                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 transition hover:border-clay-300 hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 md:w-auto md:rounded-lg md:py-1.5"
+                                      >
                                         <Eye size={12} className="text-clay-500" /> Review
                                     </button>
                                 </div>
@@ -246,9 +343,9 @@ export default function PendingArtisans({ artisans }) {
             <Modal show={!!viewingArtisan} onClose={() => !viewingDoc && setViewingArtisan(null)} maxWidth="2xl">
                 {viewingArtisan && (
                     <div className="p-0 overflow-hidden bg-[#FDFBF9]">
-                        <div className="bg-white px-5 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+                        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-stone-100 bg-white px-5 py-4 sm:px-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-clay-50 border border-clay-100 text-clay-700 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-clay-100 bg-clay-50 text-sm font-bold text-clay-700">
                                     {viewingArtisan.shop_name?.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
@@ -276,7 +373,7 @@ export default function PendingArtisans({ artisans }) {
                                     <div 
                                         key={doc.key}
                                         onClick={() => openDocumentPreview(doc)}
-                                        className={`bg-white border border-stone-200 rounded-xl p-4 transition-all group relative overflow-hidden ${doc.url ? 'hover:border-clay-300 hover:shadow-md cursor-pointer' : 'opacity-60 bg-stone-50/50'}`}
+                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-3.5 transition ${doc.url ? 'cursor-pointer bg-white hover:border-clay-300 hover:bg-stone-50/60' : 'bg-stone-50/50 opacity-60'}`}
                                     >
                                         
                                         <div className="flex items-center justify-between mb-3 relative z-10">
@@ -311,7 +408,7 @@ export default function PendingArtisans({ artisans }) {
                                         </div>
                                         
                                         {doc.url ? (
-                                            <div className="block w-full aspect-video bg-stone-100 rounded-lg overflow-hidden border border-stone-200 group-hover:ring-2 group-hover:ring-clay-100 transition-all relative shadow-inner">
+                                            <div className="relative block aspect-video w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-100 transition group-hover:ring-1 group-hover:ring-clay-100">
                                                 {doc.url.endsWith('.pdf') ? (
                                                     <div className="w-full h-full flex flex-col items-center justify-center bg-[#FDFBF9] text-stone-400 gap-1.5">
                                                         <FileText size={32} className="text-clay-200" />
@@ -319,9 +416,9 @@ export default function PendingArtisans({ artisans }) {
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <img src={doc.url} alt={doc.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 backdrop-blur-[1px]">
-                                                            <span className="bg-white/90 text-stone-900 px-3 py-1.5 rounded-full text-[10px] font-bold shadow-sm transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-1.5">
+                                                        <img src={doc.url} alt={doc.label} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/5 group-hover:opacity-100">
+                                                            <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-bold text-stone-900 transition">
                                                                 <Eye size={12} /> Preview
                                                             </span>
                                                         </div>
@@ -329,7 +426,7 @@ export default function PendingArtisans({ artisans }) {
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="w-full aspect-video bg-stone-50 rounded-lg border focus-within:ring-2 border-dashed border-stone-200 flex flex-col items-center justify-center text-stone-400 gap-1.5 shadow-inner">
+                                            <div className="flex aspect-video w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-200 bg-stone-50 text-stone-400">
                                                 <XCircle size={24} className="text-stone-300" />
                                                 <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Not Uploaded</span>
                                             </div>
@@ -339,7 +436,7 @@ export default function PendingArtisans({ artisans }) {
                             </div>
                         </div>
 
-                        <div className="bg-white px-5 sm:px-6 py-4 border-t border-stone-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sticky bottom-0 z-20">
+                        <div className="sticky bottom-0 z-20 flex flex-col gap-3 border-t border-stone-100 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                             <div className="space-y-0.5">
                                 <p className="text-[10px] font-medium text-stone-400">
                                     Approve once all submitted documents are previewed and reviewed as needed.
@@ -352,21 +449,29 @@ export default function PendingArtisans({ artisans }) {
                                 )}
                              </div>
                              <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
+                                {processing && (
+                                    <WorkspaceLoadingState
+                                        label="Saving review"
+                                        detail="Updating application status"
+                                    />
+                                )}
                                 <button
                                     onClick={() => {
                                         setApprovalError('');
                                         setRejectingArtisan(viewingArtisan);
                                     }}
-                                    className="px-4 py-2 bg-white text-stone-600 border border-stone-200 rounded-lg font-bold hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition text-[12px] flex items-center justify-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                                    disabled={processing}
+                                      className="flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-4 py-2 text-[12px] font-bold text-stone-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
                                 >
                                     <XCircle size={14} /> Reject
                                 </button>
                                 <button
                                     onClick={confirmApprove}
                                     disabled={processing || !allSubmittedDocumentsViewed}
-                                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition shadow-sm shadow-emerald-200/50 text-[12px] flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 disabled:shadow-none"
+                                      className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-[12px] font-bold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500"
                                 >
-                                    <CheckCircle size={14} /> {processing ? 'Approving...' : !allSubmittedDocumentsViewed ? 'Preview All Documents First' : 'Approve Application'}
+                                    {processing ? <LoaderCircle size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                                    {processing ? 'Approving...' : !allSubmittedDocumentsViewed ? 'Preview All Documents First' : 'Approve Application'}
                                 </button>
                              </div>
                         </div>
@@ -404,14 +509,14 @@ export default function PendingArtisans({ artisans }) {
                             {viewingDoc.url.endsWith('.pdf') ? (
                                 <iframe 
                                     src={viewingDoc.url} 
-                                    className="w-full h-full rounded-lg shadow-2xl bg-white"
+                                    className="h-full w-full rounded-lg bg-white"
                                     title={viewingDoc.label}
                                 />
                             ) : (
                                 <img 
                                     src={viewingDoc.url} 
                                     alt={viewingDoc.label} 
-                                    className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                                    className="max-h-full max-w-full rounded-lg object-contain"
                                 />
                             )}
                         </div>
@@ -433,7 +538,7 @@ export default function PendingArtisans({ artisans }) {
                                     <p className="text-stone-500 text-[11px]">Specify a reason for <span className="font-bold text-stone-700">{rejectingArtisan.shop_name}</span></p>
                                 </div>
                             </div>
-                            <button onClick={() => setRejectingArtisan(null)} className="p-1 px-1.5 bg-white border border-stone-200 rounded hover:bg-stone-50 transition text-stone-400">
+                            <button onClick={() => setRejectingArtisan(null)} className="rounded border border-stone-200 bg-white p-1 px-1.5 text-stone-400 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30">
                                 <X size={14} />
                             </button>
                         </div>
@@ -444,7 +549,7 @@ export default function PendingArtisans({ artisans }) {
                                 value={rejectReason}
                                 onChange={(e) => setRejectReason(e.target.value)}
                                 placeholder="E.g., The uploaded business permit belongs to a different entity. Please upload..."
-                                className="w-full h-28 bg-white border border-stone-200 rounded-xl p-3 focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none text-[13px] shadow-inner"
+                                className="h-28 w-full resize-none rounded-xl border border-stone-200 bg-white p-3 text-[13px] focus:border-red-400 focus:ring-2 focus:ring-red-500/20"
                             />
                             <div className="flex justify-between items-center px-1">
                                 <p className="text-[10px] text-stone-400">This will be shared with the artisan.</p>
@@ -455,18 +560,27 @@ export default function PendingArtisans({ artisans }) {
                         </div>
 
                         <div className="flex justify-end gap-2 mt-5">
+                            {processing && (
+                                <WorkspaceLoadingState
+                                    label="Submitting rejection"
+                                    detail="Sending reason to applicant"
+                                    className="mr-auto"
+                                />
+                            )}
                             <button
                                 onClick={() => setRejectingArtisan(null)}
-                                className="px-4 py-2 bg-white border border-stone-200 text-stone-600 rounded-lg text-[12px] font-bold hover:bg-stone-50 transition shadow-sm"
+                                disabled={processing}
+                                  className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-[12px] font-bold text-stone-600 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={rejectArtisan}
                                 disabled={processing || rejectReason.length < 10}
-                                className="px-5 py-2 bg-red-600 text-white rounded-lg text-[12px] font-bold hover:bg-red-700 transition shadow-sm shadow-red-200/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                  className="flex items-center gap-1.5 rounded-lg bg-red-600 px-5 py-2 text-[12px] font-bold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <XCircle size={14} /> {processing ? 'Rejecting...' : 'Confirm'}
+                                {processing ? <LoaderCircle size={14} className="animate-spin" /> : <XCircle size={14} />}
+                                {processing ? 'Rejecting...' : 'Confirm'}
                             </button>
                         </div>
                     </div>

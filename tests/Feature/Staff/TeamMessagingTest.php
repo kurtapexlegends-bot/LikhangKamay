@@ -178,6 +178,56 @@ class TeamMessagingTest extends TestCase
             );
     }
 
+    public function test_read_only_messages_staff_can_view_seller_chat_but_cannot_send_messages(): void
+    {
+        $owner = $this->createPremiumOwner();
+        $staff = $this->createStaff($owner, 'custom', [
+            'messages' => User::STAFF_ACCESS_PERMISSION_READ_ONLY,
+        ]);
+        $buyer = User::factory()->create();
+
+        Order::create([
+            'order_number' => 'ORD-READONLY-MSG-001',
+            'user_id' => $buyer->id,
+            'artisan_id' => $owner->id,
+            'customer_name' => $buyer->name,
+            'shipping_address' => 'Buyer Address',
+            'shipping_method' => 'Delivery',
+            'payment_method' => 'COD',
+            'payment_status' => 'pending',
+            'total_amount' => 100,
+            'status' => 'Pending',
+        ]);
+
+        Message::create([
+            'sender_id' => $owner->id,
+            'receiver_id' => $buyer->id,
+            'message' => 'Hello from the shop.',
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('chat.index', ['user_id' => $buyer->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Seller/Chat')
+                ->where('currentChatUser.id', $buyer->id)
+                ->where('activeMessages.0.text', 'Hello from the shop.')
+                ->where('sellerSidebar.canEditModules.messages', false)
+            );
+
+        $this->actingAs($staff)
+            ->post(route('chat.store'), [
+                'receiver_id' => $buyer->id,
+                'message' => 'This should be blocked for read-only staff.',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('messages', [
+            'receiver_id' => $buyer->id,
+            'message' => 'This should be blocked for read-only staff.',
+        ]);
+    }
+
     public function test_staff_cannot_access_buyer_chat_and_buyers_cannot_access_team_inbox(): void
     {
         $owner = $this->createPremiumOwner();

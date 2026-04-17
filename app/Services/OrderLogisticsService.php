@@ -407,17 +407,13 @@ class OrderLogisticsService
                 'cancelled_at' => now(),
                 'cancellation_reason' => 'return_to_sender_failed_delivery',
             ];
-            $shouldRefundToWallet = $order->payment_method !== 'COD' && $order->payment_status === 'paid';
+            $shouldMarkRefunded = $order->payment_method !== 'COD' && $order->payment_status === 'paid';
 
-            if ($shouldRefundToWallet) {
+            if ($shouldMarkRefunded) {
                 $updateData['payment_status'] = 'refunded';
             }
 
             $order->update($updateData);
-
-            if ($shouldRefundToWallet) {
-                $this->orderFinanceService->refundOrderToBuyerWallet($order);
-            }
 
             $lockedDelivery->update([
                 'auto_cancelled_at' => now(),

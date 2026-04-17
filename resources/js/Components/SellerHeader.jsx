@@ -8,14 +8,14 @@ import { Menu, ChevronDown, User, LogOut, Building2 } from 'lucide-react';
 
 /**
  * Reusable Seller Header Component
- * 
+ *
  * @param {Object} props
- * @param {string} props.title - Page title
- * @param {string} props.subtitle - Page subtitle (optional)
- * @param {Object} props.auth - Auth object containing user
- * @param {Function} props.onMenuClick - Mobile menu toggle callback
+ * @param {string} props.title
+ * @param {string} props.subtitle
+ * @param {Object} props.auth
+ * @param {Function} props.onMenuClick
  */
-export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge }) {
+export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge, actions = null }) {
     return (
         <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40">
             <div className="flex min-w-0 items-center gap-3">
@@ -44,6 +44,12 @@ export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge
 
                         
             <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-6">
+                {actions && (
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-none sm:gap-3">
+                        {actions}
+                    </div>
+                )}
+
                 <div className="flex items-center gap-3">
                     <NotificationDropdown />
                 </div>

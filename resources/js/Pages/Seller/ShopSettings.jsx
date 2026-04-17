@@ -1,18 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import { useToast } from '@/Components/ToastContext';
 import {
     Camera, Save, Star, Package, MapPin, Calendar,
     Filter, CheckCircle, Pencil, AlertCircle
 } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 
 export default function ShopSettings({ auth, user, stats }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const bannerInputRef = useRef(null);
+    const { openSidebar } = useSellerWorkspaceShell();
     const { addToast } = useToast();
+    const { canEdit: canEditShopSettings, isReadOnly: isShopSettingsReadOnly } = useSellerModuleAccess('shop_settings');
 
     const [bannerPreview, setBannerPreview] = useState(
         user?.banner_image
@@ -43,6 +46,7 @@ export default function ShopSettings({ auth, user, stats }) {
     }, [avatarPreview, bannerPreview]);
 
     const handleAvatarChange = (e) => {
+        if (!canEditShopSettings) return;
         const file = e.target.files[0];
         if (file) {
             setData('avatar', file);
@@ -52,6 +56,7 @@ export default function ShopSettings({ auth, user, stats }) {
     };
 
     const handleBannerChange = (e) => {
+        if (!canEditShopSettings) return;
         const file = e.target.files[0];
         if (file) {
             setData('banner_image', file);
@@ -62,6 +67,7 @@ export default function ShopSettings({ auth, user, stats }) {
 
     const submit = (e) => {
         e.preventDefault();
+        if (!canEditShopSettings) return;
         post(route('shop.settings.update'), { 
             preserveScroll: true,
             onSuccess: () => {
@@ -81,27 +87,27 @@ export default function ShopSettings({ auth, user, stats }) {
     const bioLength = data.bio?.length || 0;
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <>
             <Head title="Shop Settings - Artisan Dashboard" />
-            <SellerSidebar active="settings" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <SellerHeader
+                title="Shop Settings"
+                subtitle="Edit your shop directly - what you see is what buyers see"
+                auth={auth}
+                onMenuClick={openSidebar}
+            />
 
-            <div className="flex-1 flex flex-col min-h-screen overflow-hidden lg:ml-56">
-                <SellerHeader
-                    title="Shop Settings"
-                    subtitle="Edit your shop directly - what you see is what buyers see"
-                    auth={auth}
-                    onMenuClick={() => setSidebarOpen(true)}
-                />
-
-                <form onSubmit={submit} className="flex-1 overflow-y-auto">
-                    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+            <form onSubmit={submit} className="flex-1">
+                <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+                        {isShopSettingsReadOnly && (
+                            <ReadOnlyCapabilityNotice label="Shop settings are read only for your account. Profile updates and media changes are disabled." />
+                        )}
 
                         {/* Success Banner - Removed in favor of Toast */}
                         
                         {/* EDIT HINT */}
                         <div className="flex items-center gap-2 mb-4 text-xs text-stone-400 font-medium">
                             <Pencil className="w-3.5 h-3.5" />
-                            Click the banner, name or bio to edit. This is exactly how buyers see your shop.
+                            Click the banner, avatar, or bio to edit this buyer-facing view.
                         </div>
 
                         {/* ── SELLER PROFILE CARD (mirrors SellerProfile.jsx exactly) ── */}
@@ -110,7 +116,7 @@ export default function ShopSettings({ auth, user, stats }) {
                             {/* ── Banner (editable) ── */}
                             <div
                                 className="h-36 md:h-48 relative overflow-hidden bg-stone-100 group cursor-pointer"
-                                onClick={() => bannerInputRef.current?.click()}
+                                onClick={() => canEditShopSettings && bannerInputRef.current?.click()}
                             >
                                 {bannerPreview ? (
                                     <img 
@@ -155,7 +161,7 @@ export default function ShopSettings({ auth, user, stats }) {
                                 <div 
                                     className="w-24 h-24 min-w-[6rem] min-h-[6rem] aspect-square rounded-full border-4 border-white bg-white shadow-lg flex items-center justify-center overflow-hidden flex-none self-start relative z-20 group cursor-pointer"
                                     style={{ width: '6rem', height: '6rem' }}
-                                    onClick={() => avatarInputRef.current?.click()}
+                                onClick={() => canEditShopSettings && avatarInputRef.current?.click()}
                                 >
                                     {avatarPreview ? (
                                         <img 
@@ -208,6 +214,7 @@ export default function ShopSettings({ auth, user, stats }) {
                                         <div className="relative group/bio max-w-xl">
                                             <textarea
                                                 value={data.bio}
+                                                disabled={!canEditShopSettings}
                                                 onChange={(e) => setData('bio', e.target.value)}
                                                 placeholder="Write your artisan story - buyers love knowing the person behind the craft..."
                                                 maxLength={500}
@@ -315,44 +322,44 @@ export default function ShopSettings({ auth, user, stats }) {
                             </div>
                         )}
 
-                    </div>
+                </div>
 
-                    {/* ── Floating Save Bar ── */}
-                    <div className="sticky bottom-0 z-30 bg-white/80 backdrop-blur-xl border-t border-stone-100 shadow-lg">
-                        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
-                            <p className="text-xs text-stone-400 hidden sm:block">
-                                {errors.banner_image && (
-                                    <span className="text-red-500 flex items-center gap-1">
-                                        <AlertCircle className="w-3.5 h-3.5" /> {errors.banner_image}
-                                    </span>
-                                )}
-                                {!errors.banner_image && 'Edits are not saved until you click Save Changes.'}
-                            </p>
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="ml-auto flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white rounded-xl text-sm font-bold transition-colors shadow-sm shadow-orange-200 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {processing ? (
-                                    <>
-                                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                        </svg>
-                                        Saving...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="w-4 h-4" />
-                                        Save Changes
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                {/* ── Floating Save Bar ── */}
+                <div className="sticky bottom-0 z-30 border-t border-stone-100 bg-white/80 shadow-lg backdrop-blur-xl">
+                    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
+                        <p className="text-xs text-stone-400 hidden sm:block">
+                            {errors.banner_image && (
+                                <span className="text-red-500 flex items-center gap-1">
+                                    <AlertCircle className="w-3.5 h-3.5" /> {errors.banner_image}
+                                </span>
+                            )}
+                            {!errors.banner_image && 'Changes stay local until you save.'}
+                        </p>
+                        <button
+                            type="submit"
+                            disabled={processing || !canEditShopSettings}
+                            className="ml-auto flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-orange-700 active:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            {processing ? (
+                                <>
+                                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                    </svg>
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4" />
+                                    Save Changes
+                                </>
+                            )}
+                        </button>
                     </div>
-
-                </form>
-            </div>
-        </div>
+                </div>
+            </form>
+        </>
     );
 }
+
+ShopSettings.layout = (page) => <SellerWorkspaceLayout active="settings">{page}</SellerWorkspaceLayout>;

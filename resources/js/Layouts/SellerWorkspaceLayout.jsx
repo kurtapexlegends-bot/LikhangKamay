@@ -18,7 +18,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
 
     return (
         <SellerWorkspaceShellContext.Provider value={shell}>
-            <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+            <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800">
                 <SellerSidebar
                     active={active}
                     user={sidebarUser ?? auth?.user}
@@ -26,7 +26,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     onClose={() => setSidebarOpen(false)}
                 />
 
-                <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
+                <div scroll-region="true" className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:ml-56">
                     {children}
                 </div>
             </div>

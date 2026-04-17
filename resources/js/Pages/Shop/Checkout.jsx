@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, Info, MapPin, MessageCircle, Package, Pencil, Save, ShieldCheck, Store, Trash2, Truck, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, Info, MapPin, MessageCircle, Package, Pencil, Save, ShieldCheck, Store, Trash2, Truck } from 'lucide-react';
 import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -23,7 +23,7 @@ const resolveAddressDisplay = (address) => address?.full_address || formatStruct
     postal_code: address?.postal_code,
 });
 
-export default function Checkout({ auth, wallet, pricing }) {
+export default function Checkout({ auth, pricing }) {
     const { flash, items: incomingItems = [] } = usePage().props;
     const { addToast } = useToast();
     const convenienceFeeRate = pricing?.convenience_fee_rate ?? 0.03;
@@ -31,11 +31,13 @@ export default function Checkout({ auth, wallet, pricing }) {
     const [selectedAddressId, setSelectedAddressId] = useState(defaultAddress?.id || 'new');
     const [editingAddressId, setEditingAddressId] = useState(null);
     const [deleteAddressTarget, setDeleteAddressTarget] = useState(null);
+    const [quoteRetryNonce, setQuoteRetryNonce] = useState(0);
     const [shippingQuote, setShippingQuote] = useState({
         status: 'idle',
         totalShippingFee: 0,
         groups: {},
     });
+    const quoteRequestRef = useRef(0);
     useFlashToast(flash, addToast);
 
     const grouped = useMemo(() => incomingItems.reduce((groups, item) => {
@@ -108,6 +110,8 @@ export default function Checkout({ auth, wallet, pricing }) {
             return undefined;
         }
 
+        const requestId = quoteRequestRef.current + 1;
+        quoteRequestRef.current = requestId;
         const timeoutId = window.setTimeout(async () => {
             setShippingQuote((current) => ({ ...current, status: 'loading' }));
 
@@ -134,12 +138,20 @@ export default function Checkout({ auth, wallet, pricing }) {
                     return map;
                 }, {});
 
+                if (quoteRequestRef.current !== requestId) {
+                    return;
+                }
+
                 setShippingQuote({
                     status: 'ready',
                     totalShippingFee: Number(response.data.total_shipping_fee || 0),
                     groups: groupsBySellerId,
                 });
             } catch {
+                if (quoteRequestRef.current !== requestId) {
+                    return;
+                }
+
                 setShippingQuote({
                     status: 'error',
                     totalShippingFee: 0,
@@ -160,6 +172,7 @@ export default function Checkout({ auth, wallet, pricing }) {
         data.shipping_region,
         data.shipping_street_address,
         incomingItems,
+        quoteRetryNonce,
         selectedAddressId,
     ]);
 
@@ -198,6 +211,8 @@ export default function Checkout({ auth, wallet, pricing }) {
         ? peso(0)
         : shippingQuote.status === 'ready'
             ? peso(summary.shippingFeeTotal)
+            : shippingQuote.status === 'error'
+                ? 'Unavailable'
             : 'Calculating...';
 
     const showAggregateBreakdown = totalSellers > 1;
@@ -240,8 +255,6 @@ export default function Checkout({ auth, wallet, pricing }) {
             }
         }
     }, [auth.user.addresses, selectedAddressId]);
-    const walletBalance = Number(wallet?.balance || 0);
-    const walletEligible = data.shipping_method === 'Delivery' && walletBalance >= summary.grandTotal;
     const needsDeliveryContactDetails = data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim());
 
     const chooseSavedAddress = (address) => {
@@ -373,14 +386,29 @@ export default function Checkout({ auth, wallet, pricing }) {
     };
 
     const submitDisabled = processing
-        || (data.shipping_method === 'Delivery' && !activeShippingAddress.trim())
-        || (data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready')
-        || (data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim()))
-        || (data.payment_method === 'Wallet' && !walletEligible)
-        || (data.save_address && isNewAddress && (!data.recipient_name.trim() || !data.phone_number.trim()));
+          || (data.shipping_method === 'Delivery' && !activeShippingAddress.trim())
+          || (data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready')
+          || (data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim()))
+          || (data.save_address && isNewAddress && (!data.recipient_name.trim() || !data.phone_number.trim()));
+
+    const submitCheckout = (event) => {
+        event.preventDefault();
+
+        if (submitDisabled) {
+            if (data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready') {
+                addToast('Wait for the delivery quote before placing the order.', 'info');
+            }
+
+            return;
+        }
+
+        post(route('checkout.store'), {
+            preserveScroll: true,
+        });
+    };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] px-4 py-6 font-sans text-gray-800 sm:px-6 sm:py-12 lg:px-8">
+        <div className="min-h-screen bg-[#FDFBF9] px-4 py-6 pb-32 font-sans text-gray-800 sm:px-6 sm:py-12 sm:pb-12 lg:px-8">
             <Head title="Checkout" />
             <div className="mx-auto max-w-6xl">
                 <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
@@ -390,7 +418,7 @@ export default function Checkout({ auth, wallet, pricing }) {
                     </button>
                     <div className="flex items-center gap-2 text-gray-400">
                         <ShieldCheck size={16} className="text-emerald-500" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">End-to-End Encrypted</span>
+                        <span className="text-[11px] font-bold">Secure session</span>
                     </div>
                 </div>
 
@@ -403,7 +431,7 @@ export default function Checkout({ auth, wallet, pricing }) {
 
                 <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-7">
                     <div className="space-y-4 lg:col-span-2">
-                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                             <div className="mb-3 flex items-center gap-3 text-clay-700"><Truck size={18} /><h2 className="text-base font-bold">Shipping Method</h2></div>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.shipping_method === 'Delivery' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600' : 'border-gray-200 hover:border-clay-300'}`}>
@@ -418,11 +446,11 @@ export default function Checkout({ auth, wallet, pricing }) {
                         </div>
 
                         {data.shipping_method === 'Delivery' ? (
-                            <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                                 <div className="mb-3 flex items-center gap-3 text-clay-700"><MapPin size={18} /><h2 className="text-base font-bold">Shipping Address</h2></div>
                                 {!!auth.user.addresses?.length && (
-                                    <div className="mb-4 grid gap-3 sm:grid-cols-2">
-                                        {auth.user.addresses.map((address) => (
+                                        <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                                            {auth.user.addresses.map((address) => (
                                             <div
                                                 key={address.id}
                                                 onClick={() => chooseSavedAddress(address)}
@@ -451,7 +479,7 @@ export default function Checkout({ auth, wallet, pricing }) {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
+                                                    <div className="flex flex-wrap items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
                                                         {!address.is_default && (
                                                             <button
                                                                 type="button"
@@ -496,7 +524,7 @@ export default function Checkout({ auth, wallet, pricing }) {
                                     <div className="space-y-3.5">
                                         <div>
                                             <p className="mb-2 text-sm font-bold text-gray-800">Address Type</p>
-                                            <div className="grid grid-cols-3 gap-2.5">
+                                            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                                                 {TYPES.map((type) => (
                                                     <button key={type.value} type="button" onClick={() => setData((current) => ({ ...current, shipping_address_type: type.value }))} className={`rounded-xl border px-3 py-2.5 text-sm font-bold ${data.shipping_address_type === type.value ? 'border-clay-600 bg-clay-50 text-clay-700' : 'border-gray-200 text-gray-500 hover:border-clay-300'}`}>{type.label}</button>
                                                 ))}
@@ -536,18 +564,18 @@ export default function Checkout({ auth, wallet, pricing }) {
                                             required
                                             previewLabel="Delivery Address"
                                         />
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                                             <button
                                                 type="button"
                                                 onClick={saveAddress}
-                                                className="rounded-xl bg-clay-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-clay-700"
+                                                className="w-full rounded-xl bg-clay-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-clay-700 sm:w-auto"
                                             >
                                                 Save Address
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={cancelAddressForm}
-                                                className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                                                className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-gray-500 transition hover:bg-stone-50 hover:text-gray-700 sm:w-auto sm:border-0 sm:px-0 sm:py-0"
                                             >
                                                 Cancel
                                             </button>
@@ -591,18 +619,18 @@ export default function Checkout({ auth, wallet, pricing }) {
                             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
                                 <div className="flex items-start gap-3.5">
                                     <div className="rounded-full bg-blue-100 p-2.5 text-blue-600"><Store size={20} /></div>
-                                    <div><h3 className="text-base font-bold text-blue-900">Store Pick Up Selected</h3><p className="mt-1 text-sm text-blue-800">No address needed. Coordinate pick-up in chat.</p><div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">No Convenience Fee</span><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">COD Only</span></div></div>
+                                    <div><h3 className="text-base font-bold text-blue-900">Store Pick Up Selected</h3><p className="mt-1 text-sm text-blue-800">No address needed. Coordinate pickup in chat.</p><div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">No Convenience Fee</span><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">COD Only</span></div></div>
                                 </div>
                             </div>
                         )}
 
-                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                             <div className="mb-3 flex items-center gap-3 text-clay-700"><Truck size={18} /><h2 className="text-base font-bold">Delivery Notes</h2><span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Optional</span></div>
                             <textarea rows="2" className="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500" placeholder="e.g. Gate code, landmark, available time, or handoff instructions" value={data.shipping_notes} onChange={(event) => setData('shipping_notes', event.target.value)} />
                             <p className="mt-2 flex items-center gap-1 text-xs text-gray-400"><Info size={12} />Shared with the seller and courier if this order is booked through Lalamove.</p>
                         </div>
 
-                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                             <div className="mb-3 flex items-center gap-3 text-clay-700"><CreditCard size={18} /><h2 className="text-base font-bold">Payment Method</h2></div>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                 <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.payment_method === 'COD' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600' : 'border-gray-200 hover:border-clay-300'}`}>
@@ -613,17 +641,13 @@ export default function Checkout({ auth, wallet, pricing }) {
                                     <input type="radio" name="payment" value="GCash" checked={data.payment_method === 'GCash'} onChange={(event) => setData('payment_method', event.target.value)} disabled={data.shipping_method === 'Pick Up'} className="text-blue-600 focus:ring-blue-500 disabled:opacity-50" />
                                     <div><p className="font-bold text-gray-900">GCash</p><p className="text-xs text-gray-500">{data.shipping_method === 'Pick Up' ? 'Not available for pickup' : 'Pay online after order placement'}</p></div>
                                 </label>
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.shipping_method === 'Pick Up' || !walletEligible ? 'cursor-not-allowed border-gray-100 bg-gray-50 opacity-60' : data.payment_method === 'Wallet' ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' : 'border-gray-200 hover:border-emerald-300'}`}>
-                                    <input type="radio" name="payment" value="Wallet" checked={data.payment_method === 'Wallet'} onChange={(event) => setData('payment_method', event.target.value)} disabled={data.shipping_method === 'Pick Up' || !walletEligible} className="text-emerald-600 focus:ring-emerald-500 disabled:opacity-50" />
-                                    <div><p className="font-bold text-gray-900">Wallet</p><p className="text-xs text-gray-500">{data.shipping_method === 'Pick Up' ? 'Wallet disabled for pickup' : walletEligible ? `Available balance: ${peso(walletBalance)}` : `Need ${peso(summary.grandTotal)} total`}</p></div>
-                                </label>
                             </div>
                             {errors.payment_method && <p className="mt-2 text-sm text-red-500">{errors.payment_method}</p>}
                         </div>
                     </div>
 
                     <div className="lg:col-span-1">
-                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_20px_45px_rgba(34,24,16,0.07)] lg:sticky lg:top-24 sm:p-5">
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm lg:sticky lg:top-24 sm:p-5">
                             <h3 className="mb-4 text-base font-bold text-gray-900">Order Summary</h3>
                             <div className="mb-5 max-h-80 space-y-5 overflow-y-auto pr-1.5">
                                 {summary.groups.map((group) => (
@@ -661,20 +685,56 @@ export default function Checkout({ auth, wallet, pricing }) {
                                         <div className="flex justify-between"><span>Shipping Fee</span><span className={data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready' ? 'text-xs italic text-gray-400' : ''}>{shippingFeeSummaryValue}</span></div>
                                     </>
                                 )}
-                                {totalSellers > 1 && <div className="flex justify-between text-xs text-blue-600"><span className="flex items-center gap-1"><Package size={12} />Orders Created</span><span className="font-bold">{totalSellers} separate orders</span></div>}
+                                {totalSellers > 1 && <div className="flex justify-between text-xs text-blue-600"><span className="flex items-center gap-1"><Package size={12} />Order Split</span><span className="font-bold">{totalSellers} separate orders</span></div>}
                                 <div className="mt-2 flex justify-between border-t border-dashed border-gray-200 pt-2 text-lg font-bold text-gray-900"><span>Total Due Now</span><span>{peso(summary.grandTotal)}</span></div>
                                 <p className="text-center text-[10px] text-gray-400">
                                     {data.shipping_method === 'Pick Up'
                                         ? 'Pickup orders have no shipping charge.'
                                         : shippingQuote.status === 'ready'
                                             ? 'Shipping fee is already included in the total due now.'
-                                            : 'Waiting for the delivery quote before enabling checkout.'}
+                                            : shippingQuote.status === 'error'
+                                                ? 'Delivery quote failed. Retry after checking the address details.'
+                                                : 'Waiting for the delivery quote before enabling checkout.'}
                                 </p>
+                                {data.shipping_method === 'Delivery' && shippingQuote.status === 'error' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuoteRetryNonce((current) => current + 1)}
+                                        className="mt-2 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-600 transition-colors hover:bg-stone-50"
+                                    >
+                                        Retry Quote
+                                    </button>
+                                )}
                             </div>
-                            <button onClick={(event) => { event.preventDefault(); post(route('checkout.store')); }} disabled={submitDisabled} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"><ShieldCheck size={18} />{processing ? 'Processing...' : totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</button>
-                            <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400"><MessageCircle size={12} />Message seller{totalSellers > 1 ? 's' : ''} after ordering</p>
+                            <button onClick={submitCheckout} disabled={submitDisabled} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"><ShieldCheck size={18} />{processing ? 'Processing...' : totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</button>
+                            <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400"><MessageCircle size={12} />Chat opens after ordering</p>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 px-4 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+                <div className="mx-auto flex max-w-6xl items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Total Due</p>
+                        <p className="text-sm font-bold text-gray-900">{peso(summary.grandTotal)}</p>
+                        <p className="text-[11px] text-stone-500">
+                            {processing
+                                ? 'Submitting order...'
+                                : submitDisabled && data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready'
+                                    ? 'Delivery quote still needed'
+                                    : totalSellers > 1
+                                        ? `${totalSellers} split orders`
+                                        : 'Ready to place'}
+                        </p>
+                    </div>
+                    <button
+                        onClick={submitCheckout}
+                        disabled={submitDisabled}
+                        className="flex h-11 flex-[1.2] items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <ShieldCheck size={16} />
+                        {processing ? 'Processing...' : 'Place Order'}
+                    </button>
                 </div>
             </div>
             <ConfirmationModal

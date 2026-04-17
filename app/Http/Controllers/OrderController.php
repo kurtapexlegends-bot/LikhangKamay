@@ -8,13 +8,13 @@ use App\Models\OrderDelivery;
 use App\Models\OrderDeliveryEvent;
 use App\Models\Order;
 use App\Models\Review;
+use App\Models\SellerActivityLog;
 use App\Models\User;
 use App\Services\SponsorshipAnalyticsService;
 use App\Services\OrderFinanceService;
 use App\Services\OrderLogisticsService;
 use App\Services\CheckoutShippingService;
 use App\Services\PayMongoService;
-use App\Services\WalletService;
 use App\Mail\OrderPlaced;
 use App\Mail\OrderAccepted;
 use App\Mail\OrderShipped;
@@ -160,7 +160,7 @@ class OrderController extends Controller
     /**
      * BUYER: Checkout page - prepare order
      */
-    public function create(Request $request, WalletService $walletService)
+    public function create(Request $request)
     {
         $items = [];
 
@@ -230,17 +230,13 @@ class OrderController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        
         return Inertia::render('Shop/Checkout', [
             'items' => $items,
-            'wallet' => $walletService->buildSnapshotForUser($user, 6),
             'pricing' => [
                 'convenience_fee_rate' => OrderFinanceService::CONVENIENCE_FEE_RATE,
             ],
             'auth' => [
-                'user' => $user->load('addresses'),
+                'user' => Auth::user()->load('addresses'),
             ]
         ]);
     }
@@ -320,6 +316,9 @@ class OrderController extends Controller
             ->where('artisan_id', $this->sellerOwnerId())
             ->with('delivery')
             ->firstOrFail();
+        $previousStatus = $order->status;
+        $previousPaymentStatus = $order->payment_status;
+        $previousTrackingNumber = $order->tracking_number;
 
         $request->validate([
             'status' => 'required|string|in:Accepted,Rejected,Shipped,Ready for Pickup,Delivered,Completed,Cancelled',
@@ -426,6 +425,33 @@ class OrderController extends Controller
 
         $order->update($updateData);
         $order->refresh();
+
+        $this->recordOrderAuditEvent(
+            $order,
+            $request->user(),
+            eventType: 'order_status_changed',
+            severity: in_array($request->status, ['Rejected', 'Cancelled'], true) ? 'warning' : 'info',
+            title: 'Order Status Updated',
+            summary: "{$order->order_number} moved from {$previousStatus} to {$order->status}.",
+            status: strtolower((string) $order->status),
+            details: [
+                'before' => [
+                    'status' => $previousStatus,
+                    'payment_status' => $previousPaymentStatus,
+                    'tracking_number' => $previousTrackingNumber,
+                ],
+                'after' => [
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'tracking_number' => $order->tracking_number,
+                ],
+                'lines' => array_values(array_filter([
+                    $request->tracking_number ? "Tracking number: {$request->tracking_number}" : null,
+                    $request->shipping_notes ? 'Shipping notes were updated.' : null,
+                    $request->hasFile('proof_of_delivery') ? 'Uploaded a new proof image.' : null,
+                ])),
+            ],
+        );
 
         if ($request->status === 'Completed') {
             $orderFinanceService->settleCompletedOrder($order);
@@ -542,19 +568,38 @@ class OrderController extends Controller
                         'payment_status' => 'refunded',
                     ]);
 
-                    $orderFinanceService->refundOrderToBuyerWallet($lockedOrder);
                 });
             } catch (\Throwable $e) {
                 report($e);
 
                 $message = $e->getMessage() === 'This return request is no longer pending.'
                     ? $e->getMessage()
-                    : 'Refund could not be completed. No wallet changes were applied.';
+                    : 'Refund could not be completed right now.';
 
                 return back()->with('error', $message);
             }
 
             $order = $order->fresh(['user']);
+
+            $this->recordOrderAuditEvent(
+                $order,
+                $request->user(),
+                eventType: 'return_refunded',
+                severity: 'warning',
+                title: 'Return Refunded',
+                summary: "{$order->order_number} was approved for refund.",
+                status: 'refunded',
+                details: [
+                    'before' => [
+                        'status' => 'Refund/Return',
+                    ],
+                    'after' => [
+                        'status' => $order->status,
+                        'payment_status' => $order->payment_status,
+                    ],
+                    'lines' => ['Seller approved the buyer return request for refund.'],
+                ],
+            );
 
             try {
                 // Send refund email to buyer
@@ -571,7 +616,7 @@ class OrderController extends Controller
                 report($e);
             }
 
-            return back()->with('success', 'Return approved. Refund credited to the buyer wallet.');
+            return back()->with('success', 'Return approved and marked as refunded.');
         } else {
             $resolutionDescription = trim((string) $request->replacement_resolution_description);
             $shouldAutoBookReplacement = false;
@@ -643,6 +688,30 @@ class OrderController extends Controller
                     }
                 }
 
+                $order = $order->fresh(['user']);
+                $this->recordOrderAuditEvent(
+                    $order,
+                    $request->user(),
+                    eventType: 'replacement_approved',
+                    severity: 'info',
+                    title: 'Replacement Approved',
+                    summary: "{$order->order_number} entered the replacement workflow.",
+                    status: strtolower((string) $order->status),
+                    details: [
+                        'before' => [
+                            'status' => 'Refund/Return',
+                        ],
+                        'after' => [
+                            'status' => $order->status,
+                            'replacement_started_at' => optional($order->replacement_started_at)?->toIso8601String(),
+                        ],
+                        'lines' => array_values(array_filter([
+                            $resolutionDescription !== '' ? "Resolution: {$resolutionDescription}" : null,
+                            $shouldAutoBookReplacement ? 'Replacement courier booking was attempted automatically.' : null,
+                        ])),
+                    ],
+                );
+
                 return back()->with('success', $message);
             } catch (\Exception $e) {
                 return back()->with('error', $e->getMessage());
@@ -667,7 +736,7 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Only cash on delivery orders can be marked paid manually.');
         }
 
-        if (in_array($order->status, ['Refunded', 'Cancelled', 'Rejected'], true) || $order->wallet_settled_at !== null) {
+        if (in_array($order->status, ['Refunded', 'Cancelled', 'Rejected'], true)) {
             return redirect()->back()->with('error', 'Payment status can no longer be changed for this order.');
         }
 
@@ -676,6 +745,25 @@ class OrderController extends Controller
         }
 
         $order->update(['payment_status' => $request->payment_status]);
+
+        $this->recordOrderAuditEvent(
+            $order->fresh(),
+            $request->user(),
+            eventType: 'payment_status_updated',
+            severity: 'info',
+            title: 'Order Payment Updated',
+            summary: "{$order->order_number} was manually marked as paid.",
+            status: strtolower((string) $request->payment_status),
+            details: [
+                'before' => [
+                    'payment_status' => $order->getOriginal('payment_status'),
+                ],
+                'after' => [
+                    'payment_status' => $request->payment_status,
+                ],
+                'lines' => ['Manual COD payment confirmation was applied.'],
+            ],
+        );
 
         return redirect()->back()->with('success', 'Payment status updated.');
     }
@@ -686,7 +774,6 @@ class OrderController extends Controller
     public function store(
         Request $request,
         SponsorshipAnalyticsService $sponsorshipAnalytics,
-        WalletService $walletService,
         OrderFinanceService $orderFinanceService,
         CheckoutShippingService $checkoutShippingService
     )
@@ -707,7 +794,7 @@ class OrderController extends Controller
             'shipping_postal_code' => 'nullable|string|max:20',
             'recipient_name' => 'nullable|string|max:100',
             'phone_number' => 'nullable|string|max:20',
-            'payment_method' => 'required|string|in:COD,GCash,Wallet',
+            'payment_method' => 'required|string|in:COD,GCash',
             'total' => 'required|numeric',
             'shipping_notes' => 'nullable|string',
             'save_address' => 'nullable|boolean',
@@ -743,12 +830,6 @@ class OrderController extends Controller
 
         // Force COD for Pick Up
         $paymentMethod = $request->shipping_method === 'Pick Up' ? 'COD' : $request->payment_method;
-
-        if ($paymentMethod === 'Wallet' && $request->shipping_method !== 'Delivery') {
-            throw ValidationException::withMessages([
-                'payment_method' => 'Wallet payment is available for delivery orders only.',
-            ]);
-        }
 
         // Save address if requested (Only for Delivery + New Address)
         if ($request->boolean('save_address') && $request->shipping_method === 'Delivery' && $selectedAddress === null) {
@@ -819,16 +900,6 @@ class OrderController extends Controller
             $grandTotal += $financeBySeller[(string) $artisanId]['total_amount'];
         }
 
-        if ($paymentMethod === 'Wallet') {
-            $buyerWalletBalance = (float) $walletService->buildSnapshotForUser($buyer, 1)['balance'];
-
-            if ($buyerWalletBalance < round($grandTotal, 2)) {
-                throw ValidationException::withMessages([
-                    'payment_method' => 'Insufficient wallet balance to pay for this order.',
-                ]);
-            }
-        }
-
         // Wrap in transaction to ensure stock is deducted only if order succeeds
         DB::transaction(function () use (
             $request,
@@ -845,7 +916,6 @@ class OrderController extends Controller
             $shippingPostalCode,
             $paymentMethod,
             $financeBySeller,
-            $walletService,
             $sponsorshipAnalytics,
             $supportsWasSponsored,
             $supportsSponsorshipRequestId,
@@ -853,7 +923,7 @@ class OrderController extends Controller
         ) {
             foreach ($groupedItems as $artisanId => $items) {
                 $finance = $financeBySeller[(string) $artisanId];
-                $paymentStatus = $paymentMethod === 'Wallet' ? 'paid' : 'pending';
+                $paymentStatus = 'pending';
                 
                 $order = Order::create(Order::filterSchemaCompatibleAttributes([
                     'order_number' => 'ORD-' . strtoupper(uniqid()),
@@ -935,20 +1005,6 @@ class OrderController extends Controller
 
                     $order->items()->create($orderItemData);
                 }
-
-                if ($paymentMethod === 'Wallet') {
-                    $seller = User::find($artisanId);
-
-                    $walletService->debit(
-                        $buyer,
-                        (float) $finance['total_amount'],
-                        'checkout_wallet_payment',
-                        'Wallet payment for order ' . $order->order_number,
-                        $order,
-                        $seller,
-                    );
-                }
-
                 // Send email notification to seller
                 $seller = User::find($artisanId);
                 if ($seller && $seller->email) {
@@ -990,7 +1046,7 @@ class OrderController extends Controller
     /**
      * BUYER: View my orders
      */
-    public function myOrders(WalletService $walletService, PayMongoService $payMongoService, OrderLogisticsService $orderLogisticsService)
+    public function myOrders(PayMongoService $payMongoService, OrderLogisticsService $orderLogisticsService)
     {
         $userId = Auth::id();
 
@@ -1100,16 +1156,6 @@ class OrderController extends Controller
     }
 
     /**
-     * BUYER: View wallet
-     */
-    public function myWallet(WalletService $walletService)
-    {
-        return Inertia::render('Buyer/MyWallet', [
-            'wallet' => $walletService->buildSnapshotForUser(Auth::user(), 12),
-        ]);
-    }
-
-    /**
      * BUYER: Confirm order received - triggers 1-day warranty window
      */
     public function buyerReceiveOrder($id, OrderFinanceService $orderFinanceService)
@@ -1122,7 +1168,7 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'You can confirm receipt only after the order is marked as delivered.');
         }
 
-        if ($order->payment_method !== 'COD' && $order->payment_method !== 'Wallet' && $order->payment_status !== 'paid') {
+        if ($order->payment_method !== 'COD' && $order->payment_status !== 'paid') {
             return redirect()->back()->with('error', 'Cannot confirm receipt until payment is completed.');
         }
 
@@ -1136,7 +1182,7 @@ class OrderController extends Controller
             $updateData['replacement_resolved_at'] = now();
         }
 
-        // Only auto-mark as paid if it's COD. E-wallet orders must be verified by PayMongo.
+        // Only auto-mark as paid if it's COD. Online payments must be verified by PayMongo.
         if ($order->payment_method === 'COD') {
             $updateData['payment_status'] = 'paid';
         }
@@ -1240,6 +1286,30 @@ class OrderController extends Controller
         }
 
         $order->update($updateData);
+        $order->refresh();
+
+        $this->recordOrderAuditEvent(
+            $order,
+            $request->user(),
+            eventType: 'return_requested',
+            severity: 'warning',
+            title: 'Buyer Requested Return',
+            summary: "{$order->order_number} was moved to return review.",
+            status: 'refund_return',
+            details: [
+                'before' => [
+                    'status' => 'Completed',
+                ],
+                'after' => [
+                    'status' => $order->status,
+                    'return_reason' => $order->return_reason,
+                ],
+                'lines' => array_values(array_filter([
+                    $order->return_reason ? "Reason: {$order->return_reason}" : null,
+                    $request->hasFile('return_proof_image') ? 'Buyer submitted return proof image.' : null,
+                ])),
+            ],
+        );
 
         // Send return notification to seller
         $order->load('items');
@@ -1717,6 +1787,41 @@ class OrderController extends Controller
         }
 
         return $requirements;
+    }
+
+    /**
+     * @param  array<string, mixed>  $details
+     */
+    private function recordOrderAuditEvent(
+        Order $order,
+        ?User $actor,
+        string $eventType,
+        string $severity,
+        string $title,
+        string $summary,
+        string $status,
+        array $details = [],
+    ): void {
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $order->artisan_id,
+            'actor_user_id' => $actor?->id,
+            'actor_type' => SellerActivityLog::resolveActorType($actor, 'system'),
+            'category' => 'operations',
+            'module' => 'orders',
+            'event_type' => $eventType,
+            'severity' => $severity,
+            'status' => $status,
+            'title' => $title,
+            'summary' => $summary,
+            'subject_type' => Order::class,
+            'subject_id' => $order->id,
+            'subject_label' => $order->order_number,
+            'reference' => $order->customer_name,
+            'amount_label' => 'PHP ' . number_format((float) $order->total_amount, 2),
+            'details' => $details,
+            'target_url' => route('orders.index', ['highlight_order' => $order->order_number]),
+            'target_label' => 'Open Orders',
+        ]);
     }
 
     private function sendMailSilently(string $recipient, Mailable $mailable, string $context, array $extraContext = []): void

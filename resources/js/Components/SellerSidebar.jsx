@@ -13,7 +13,7 @@ const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
 const resolveActiveGroup = (active) => {
     if (['staff-dashboard'].includes(active)) return 'workspace';
-    if (['overview', 'wallet', 'products', 'analytics', '3d'].includes(active)) return 'core';
+    if (['overview', 'products', 'analytics', '3d'].includes(active)) return 'core';
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['settings'].includes(active)) return 'appearance';
     if (['sponsorships'].includes(active)) return 'marketing';
@@ -74,10 +74,10 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         return {
             tierLabel: isElite ? 'Elite' : isPremium ? 'Premium' : 'Standard',
             visibleModules: isElite
-                ? ['overview', 'wallet', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'hr', 'accounting', 'procurement', 'stock_requests']
+                ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'hr', 'accounting', 'procurement', 'stock_requests']
                 : isPremium
-                    ? ['overview', 'wallet', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests']
-                    : ['overview', 'wallet', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
+                    ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests']
+                    : ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
             toggleableModules: isElite || isPremium ? ['hr', 'accounting', 'procurement'] : [],
             enabledToggleableModules: isElite ? ['hr', 'accounting', 'procurement'] : ['procurement'],
             showGear: user?.role === 'artisan' && (isElite || isPremium),
@@ -157,8 +157,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     };
 
     const hasCore = (!isStaffActor || hasActiveAttendanceSession) && (isStaffActor
-        ? ['wallet', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
-        : ['overview', 'wallet', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName)));
+        ? ['products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
+        : ['overview', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName)));
     const hasCrm = (!isStaffActor || hasActiveAttendanceSession) && ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
     const hasAppearance = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('shop_settings');
     const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('sponsorships');
@@ -175,13 +175,13 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
             {mobileOpen && (
                 <div 
-                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity"
+                    className="fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity"
                     onClick={onClose}
                 />
             )}
 
             <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-clay-100 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="px-5 py-3 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
+                <div className="relative flex shrink-0 items-center justify-between border-b border-gray-50 bg-white px-5 py-3">
                     <div className="flex items-center gap-2.5">
                         <img 
                             src="/images/logo.png" 
@@ -191,20 +191,21 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                         <span className="font-serif text-lg font-bold text-gray-900 tracking-tight">LikhangKamay</span>
                     </div>
 
-                    <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-gray-600">
+                    <button onClick={onClose} aria-label="Close sidebar" className="lg:hidden rounded-lg p-1 text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30">
                         <X size={20} />
                     </button>
 
                     {showGear && (
                         <div className="hidden lg:block ml-auto relative">
-                            <button 
-                                onClick={() => {
-                                    setShowModulePanel(!showModulePanel);
-                                    if (showGearHint) dismissGearHint();
-                                }}
-                                className={`p-1.5 rounded-lg transition-all relative ${showModulePanel ? 'bg-clay-600 text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-clay-600'} ${showGearHint ? 'animate-pulse' : ''}`}
-                                title="Customize Modules"
-                            >
+                                <button 
+                                    onClick={() => {
+                                        setShowModulePanel(!showModulePanel);
+                                        if (showGearHint) dismissGearHint();
+                                    }}
+                                    aria-label={showModulePanel ? 'Hide module settings' : 'Show module settings'}
+                                    className={`relative rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${showModulePanel ? 'bg-clay-600 text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-clay-600'}`}
+                                    title="Enable Capabilities"
+                                >
                                 <Settings size={14} />
                                 {activeModuleCount > 0 && !showModulePanel && (
                                     <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-clay-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
@@ -214,10 +215,11 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             </button>
 
                             {showGearHint && (
-                                <div className="absolute top-8 right-0 w-44 p-2 rounded-lg bg-gray-900 text-white text-[10px] font-medium shadow-lg animate-in fade-in slide-in-from-top-1 duration-200 z-[80]">
-                                    Use this gear to enable extra modules.
+                                <div className="absolute right-0 top-8 z-[80] w-44 rounded-lg bg-gray-900 p-2 text-[10px] font-medium text-white">
+                                    Use this gear to enable extra capabilities.
                                     <button
                                         onClick={dismissGearHint}
+                                        aria-label="Dismiss module settings hint"
                                         className="block mt-1.5 text-[9px] text-gray-300 hover:text-white"
                                     >
                                         Dismiss
@@ -235,15 +237,15 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             onClick={() => setShowModulePanel(false)}
                         />
                         
-                        <div className="absolute top-16 left-2 right-2 lg:top-4 lg:left-full lg:right-auto lg:ml-4 lg:w-72 z-[70] bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 animate-in fade-in slide-in-from-left-2 duration-200">
+                        <div className="absolute left-2 right-2 top-16 z-[70] rounded-2xl border border-gray-100 bg-white p-5 lg:left-full lg:right-auto lg:top-4 lg:ml-4 lg:w-72">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900">Customize Modules</h3>
-                                    <p className="text-[10px] text-gray-400 font-medium">Toggle features for your shop.</p>
+                                    <h3 className="text-sm font-bold text-gray-900">Enable Capabilities</h3>
+                                    <p className="text-[10px] text-gray-400 font-medium">Turn additional capabilities on for your shop.</p>
                                 </div>
                                 <button 
                                     onClick={() => setShowModulePanel(false)}
-                                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
                                 >
                                     <X size={14} />
                                 </button>
@@ -251,8 +253,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             
                             <div className="space-y-2">
                                 <ModuleToggle 
-                                    label="HR & Payroll" 
-                                    description={isElite ? "Always enabled in Elite." : "Manage employees, attendance, and payslips."}
+                                    label="People & Payroll" 
+                                    description={isElite ? "Always enabled in Elite." : "Manage employees, payroll prep, and workspace access."}
                                     icon={Users}
                                     enabled={modules.hr} 
                                     onToggle={() => toggleModule('hr')} 
@@ -260,8 +262,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                     color="bg-purple-100 text-purple-600"
                                 />
                                 <ModuleToggle 
-                                    label="Accounting" 
-                                    description={isElite ? "Always enabled in Elite." : "Track revenue, expenses, and fund requests."}
+                                    label="Finance Approvals" 
+                                    description={isElite ? "Always enabled in Elite." : "Review funds, payroll requests, and finance records."}
                                     icon={Banknote}
                                     enabled={modules.accounting} 
                                     onToggle={() => toggleModule('accounting')} 
@@ -269,8 +271,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                     color="bg-blue-100 text-blue-600"
                                 />
                                 <ModuleToggle 
-                                    label="Procurement" 
-                                    description={isElite ? "Always enabled in Elite." : "Required for inventory and stock requests."}
+                                    label="Inventory Operations" 
+                                    description={isElite ? "Always enabled in Elite." : "Required for inventory tracking and restock requests."}
                                     icon={Warehouse}
                                     enabled={modules.procurement} 
                                     onToggle={() => toggleModule('procurement')}
@@ -279,7 +281,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 />
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-gray-50">
+                            <div className="mt-4 border-t border-gray-50 pt-3">
                                 <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-1">
                                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Changes save automatically
                                 </p>
@@ -290,7 +292,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
                 {showPlanPanel && (
                     <>
-                        <div className="px-5 py-3 border-b flex-shrink-0 border-gray-50 bg-stone-50/30">
+                        <div className="border-b border-gray-50 bg-stone-50/30 px-5 py-3 flex-shrink-0">
                             <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
                                 <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
                                     {isElite ? (
@@ -313,7 +315,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                         </div>
                                         <div className="w-full h-1.5 bg-stone-200/80 rounded-full overflow-hidden">
                                             <div 
-                                                className={`h-full rounded-full transition-all duration-500 ${
+                                                className={`h-full rounded-full transition-[width] duration-500 ${
                                                     sellerSubscription.activeCount >= sellerSubscription.limit 
                                                         ? 'bg-red-500' 
                                                         : isElite 
@@ -346,7 +348,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     </>
                 )}
 
-                <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                <nav scroll-region="true" className="flex-1 overflow-y-auto px-3 py-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isStaffActor && (
                         <CategoryGroup
                             title="Workspace"
@@ -358,7 +360,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     )}
 
                     {hasCore && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div>
                             <CategoryGroup
                                 title="Core Operations"
                                 open={expandedGroups.core}
@@ -366,9 +368,6 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             >
                                 {!isStaffActor && visibleModulesSet.has('overview') && (
                                     <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose}>Overview</NavItem>
-                                )}
-                                {visibleModulesSet.has('wallet') && (
-                                    <NavItem href={route('seller.wallet.index')} icon={Banknote} active={active === 'wallet'} onClick={onClose}>Wallet</NavItem>
                                 )}
                                 {visibleModulesSet.has('products') && (
                                     <NavItem href={route('products.index')} icon={Package} active={active === 'products'} onClick={onClose}>Products</NavItem>
@@ -384,9 +383,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     )}
 
                     {hasCrm && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div>
                             <CategoryGroup
-                                title="CRM"
+                                title="Sales & Support"
                                 open={expandedGroups.crm}
                                 onToggle={() => toggleGroup('crm')}
                             >
@@ -407,7 +406,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     )}
 
                     {hasAppearance && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div>
                             <CategoryGroup
                                 title="Shop Appearance"
                                 open={expandedGroups.appearance}
@@ -421,7 +420,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     )}
 
                     {hasMarketing && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div>
                             <CategoryGroup
                                 title="Marketing"
                                 open={expandedGroups.marketing}
@@ -433,17 +432,17 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     )}
 
                     {hasAdvanced && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div>
                             <CategoryGroup
-                                title="Advanced Modules"
+                                title="Business Capabilities"
                                 open={expandedGroups.advanced}
                                 onToggle={() => toggleGroup('advanced')}
                             >
                                 {visibleModulesSet.has('hr') && (
-                                    <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose}>HR</NavItem>
+                                    <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose}>People & Payroll</NavItem>
                                 )}
                                 {visibleModulesSet.has('accounting') && (
-                                    <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose}>Accounting</NavItem>
+                                    <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose}>Finance</NavItem>
                                 )}
                                 {canViewAuditLog && (
                                     <NavItem href={route('audit-log.index')} icon={ClipboardList} active={active === 'audit-log'} onClick={onClose}>Audit Log</NavItem>
@@ -451,14 +450,14 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                     <div className="space-y-0.5">
                                         <p className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                            <ClipboardList size={11} /> Procurement
+                                            <ClipboardList size={11} /> Inventory Operations
                                         </p>
                                         <div className="pl-2 space-y-0.5">
                                             {visibleModulesSet.has('procurement') && (
                                                 <NavItem href={route('procurement.index')} icon={Warehouse} active={active === 'procurement'} compact onClick={onClose}>Inventory</NavItem>
                                             )}
                                             {visibleModulesSet.has('stock_requests') && (
-                                                <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose}>Stock Requests</NavItem>
+                                                <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose}>Restock Requests</NavItem>
                                             )}
                                         </div>
                                     </div>
@@ -598,7 +597,7 @@ const StaffAttendanceDock = ({ attendance }) => {
     return (
         <div ref={containerRef} className="relative">
             {open && (hasOpenSession || isPaused) && (
-                <div className="absolute inset-x-0 bottom-[calc(100%+0.6rem)] rounded-2xl border border-clay-100 bg-white p-2 shadow-[0_20px_45px_-28px_rgba(120,79,46,0.38)]">
+                <div className="absolute inset-x-0 bottom-[calc(100%+0.6rem)] rounded-2xl border border-clay-100 bg-white p-2">
                     <div className={`rounded-xl border px-3 py-2.5 ${hasOpenSession ? 'border-emerald-100 bg-emerald-50/70' : 'border-amber-100 bg-amber-50/70'}`}>
                         <p className={`text-[10px] font-bold uppercase tracking-[0.18em] ${hasOpenSession ? 'text-emerald-700' : 'text-amber-700'}`}>
                             {hasOpenSession ? 'Clocked In' : 'On Break'}
@@ -608,7 +607,7 @@ const StaffAttendanceDock = ({ attendance }) => {
                                 {hasOpenSession ? 'Active session' : 'Break in progress'}
                             </span>
                         </div>
-                        <div className="mt-2 grid gap-1.5 rounded-xl border border-white/70 bg-white/80 px-2.5 py-2">
+                        <div className="mt-2 grid gap-1.5 rounded-xl border border-white/70 bg-white px-2.5 py-2">
                             {firstClockInLabel && (
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-[11px] font-medium text-stone-500">
@@ -685,7 +684,7 @@ const StaffAttendanceDock = ({ attendance }) => {
                 type="button"
                 onClick={handlePrimaryClick}
                 disabled={!!processingAction}
-                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left transition-all ${
+                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left transition-colors ${
                     hasOpenSession
                         ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50'
                         : 'border-clay-200 bg-[#FCF7F2] hover:bg-clay-50'
@@ -708,7 +707,7 @@ const StaffAttendanceDock = ({ attendance }) => {
                     </span>
                 </div>
 
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 shadow-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400">
                     {(hasOpenSession || isPaused) ? (
                         <ChevronUp
                             size={14}
@@ -824,7 +823,7 @@ const CategoryGroup = ({ title, open, onToggle, children }) => (
         <button
             type="button"
             onClick={onToggle}
-            className="w-full px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between hover:text-gray-500 transition-colors"
+            className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-colors hover:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
         >
             <span>{title}</span>
             <ChevronRight
@@ -841,9 +840,10 @@ const CategoryGroup = ({ title, open, onToggle, children }) => (
 );
 
 const ModuleToggle = ({ label, description, enabled, onToggle, icon: Icon, color, locked = false }) => (
-    <div 
+    <button
         onClick={locked ? undefined : onToggle}
-        className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-200 border ${enabled ? 'bg-clay-50 border-clay-100' : 'bg-white border-transparent'} ${locked ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+        className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${enabled ? 'border-clay-100 bg-clay-50' : 'border-transparent bg-white'} ${locked ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:bg-gray-50'}`}
+        type="button"
     >
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${enabled ? color : 'bg-gray-100 text-gray-400'}`}>
             {Icon && <Icon size={16} />}
@@ -861,15 +861,16 @@ const ModuleToggle = ({ label, description, enabled, onToggle, icon: Icon, color
             </div>
             <p className="text-[10px] text-gray-400 leading-tight pr-2">{description}</p>
         </div>
-    </div>
+    </button>
 );
 
 const NavItem = ({ href, icon: Icon, active, children, compact, onClick }) => (
     <Link 
         href={href} 
         preserveScroll
+        preserveState
         onClick={onClick}
-        className={`group flex items-center gap-3 px-4 ${compact ? 'py-2' : 'py-2.5'} rounded-lg text-xs font-bold transition-all duration-200 ${active ? 'bg-clay-600 text-white shadow-md shadow-clay-200' : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}`}
+        className={`group flex items-center gap-3 rounded-lg px-4 ${compact ? 'py-2' : 'py-2.5'} text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${active ? 'bg-clay-600 text-white' : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}`}
     >
         <Icon size={compact ? 16 : 18} strokeWidth={2.5} className={active ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'} />
         {children}

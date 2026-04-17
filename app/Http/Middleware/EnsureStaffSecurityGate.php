@@ -76,7 +76,6 @@ class EnsureStaffSecurityGate
         'orders.',
         'analytics.',
         'products.',
-        'seller.wallet.',
         '3d.',
         'shop.settings',
         'reviews.',

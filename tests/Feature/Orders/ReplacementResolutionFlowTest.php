@@ -8,7 +8,6 @@ use App\Models\Product;
 use App\Models\User;
 use App\Notifications\ReplacementResolutionNotification;
 use App\Services\AddressGeocodingService;
-use App\Services\OrderFinanceService;
 use App\Services\LalamoveService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -230,19 +229,12 @@ class ReplacementResolutionFlowTest extends TestCase
         $this->assertNotNull($order->replacement_resolved_at);
     }
 
-    public function test_refund_approval_does_not_change_order_state_when_wallet_refund_fails(): void
+    public function test_refund_approval_marks_the_order_refunded_without_wallet_processing(): void
     {
         [$seller, $buyer, $product, $order] = $this->makeReturnOrder([
             'payment_method' => 'GCash',
             'payment_status' => 'paid',
         ]);
-
-        $mock = Mockery::mock(OrderFinanceService::class);
-        $mock->shouldReceive('refundOrderToBuyerWallet')
-            ->once()
-            ->andThrow(new \RuntimeException('Wallet service unavailable.'));
-
-        $this->app->instance(OrderFinanceService::class, $mock);
 
         $this->from('/orders')
             ->actingAs($seller)
@@ -250,13 +242,12 @@ class ReplacementResolutionFlowTest extends TestCase
                 'action_type' => 'refund',
             ])
             ->assertRedirect('/orders')
-            ->assertSessionHas('error', 'Refund could not be completed. No wallet changes were applied.');
+            ->assertSessionHas('success', 'Return approved and marked as refunded.');
 
         $order->refresh();
 
-        $this->assertSame('Refund/Return', $order->status);
-        $this->assertSame('paid', $order->payment_status);
-        $this->assertNull($order->refunded_to_wallet_at);
+        $this->assertSame('Refunded', $order->status);
+        $this->assertSame('refunded', $order->payment_status);
     }
 
     private function makeReturnOrder(array $overrides = []): array

@@ -29,14 +29,22 @@ class ArtisanApprovalMailTest extends TestCase
             'shop_name' => 'Clay Studio',
             'setup_completed_at' => now(),
             'email_verified_at' => now(),
+            'business_permit' => 'legal_docs/business-permit.pdf',
+            'dti_registration' => 'legal_docs/dti-registration.pdf',
+            'valid_id' => 'legal_docs/valid-id.png',
+            'tin_id' => 'legal_docs/tin-id.png',
         ]);
+
+        foreach (['business_permit', 'dti_registration', 'valid_id', 'tin_id'] as $document) {
+            $this->actingAs($admin)->post(route('admin.artisan.documents.viewed', $artisan->id), [
+                'document' => $document,
+            ])->assertOk();
+        }
 
         $response = $this->actingAs($admin)->post(route('admin.artisan.approve', $artisan->id));
 
         $response->assertRedirect();
-        Mail::assertSent(ArtisanApproved::class, function (ArtisanApproved $mail) use ($artisan) {
-            return $mail->hasTo($artisan->email) && $mail->artisan->is($artisan);
-        });
+        Mail::assertSent(ArtisanApproved::class, fn (ArtisanApproved $mail) => $mail->artisan->is($artisan));
     }
 
     public function test_super_admin_rejection_sends_artisan_rejected_email_immediately(): void

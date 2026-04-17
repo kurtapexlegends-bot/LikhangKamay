@@ -166,8 +166,8 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertSame(User::STAFF_ACCESS_PERMISSION_UPDATE, $staff->getStaffAccessPermissionLevel());
         $this->assertTrue($staff->hasStaffManagementPermission());
         $this->assertTrue($staff->canManageStaffAccounts());
-        $this->assertFalse($staff->canCreateStaffAccounts());
-        $this->assertFalse($staff->canDeleteStaffAccounts());
+        $this->assertTrue($staff->canCreateStaffAccounts());
+        $this->assertTrue($staff->canDeleteStaffAccounts());
         $this->assertSame(
             User::STAFF_ACCESS_PERMISSION_UPDATE,
             data_get($staff->staff_module_permissions, User::STAFF_ACCESS_PERMISSION_LEVEL_FLAG)
@@ -366,7 +366,7 @@ class HrStaffProvisioningTest extends TestCase
             'email_verified_at' => now(),
             'must_change_password' => false,
             'staff_role_preset_key' => 'hr',
-            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(['hr' => true], User::STAFF_ACCESS_PERMISSION_UPDATE),
+            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag(['hr' => 'read_only'], User::STAFF_ACCESS_PERMISSION_READ_ONLY),
         ]);
         StaffAttendanceSession::create([
             'staff_user_id' => $staff->id,
@@ -986,11 +986,10 @@ class HrStaffProvisioningTest extends TestCase
                 ->where('staffProvisioning.canEditHrRecords', true)
                 ->where('staffProvisioning.canCreateStaffAccounts', true)
                 ->where('staffProvisioning.canDeleteStaffAccounts', true)
-                ->has('staffProvisioning.availableModules', fn (Assert $modules) => $modules
-                    ->where('6.key', 'messages')
-                    ->where('6.label', 'Messages')
-                    ->etc()
-                )
+                ->where('staffProvisioning.availableModules', fn ($modules) => collect($modules)->contains(
+                    fn ($module) => data_get($module, 'key') === 'messages'
+                        && data_get($module, 'label') === 'Messages'
+                ))
                 ->has('staffProvisioning.rolePresets', fn (Assert $presets) => $presets
                     ->where('3.key', 'customer_support')
                     ->where('3.modules.0', 'orders')
@@ -1102,6 +1101,7 @@ class HrStaffProvisioningTest extends TestCase
                 ->has('staffAccessAudits', 1)
                 ->where('staffAccessAudits.0.event', 'login_created')
                 ->where('staff.0.login_account.staff_access_permission_level', User::STAFF_ACCESS_PERMISSION_UPDATE)
+                ->where('staff.0.login_account.module_permissions.orders', true)
         );
     }
 

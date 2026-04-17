@@ -7,29 +7,28 @@ import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import Checkbox from '@/Components/Checkbox';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import CompactPagination from '@/Components/CompactPagination';
 import External3DToolLink from '@/Components/External3DToolLink';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import SellerHeader from '@/Components/SellerHeader';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { 
     Package, Search, AlertCircle, Cuboid, 
     TrendingUp, X, Tag, Image as ImageIcon,
     AlertTriangle, ChevronUp, ChevronDown,
-    User, LogOut, Menu, MoreVertical, RotateCcw,
+    MoreVertical, RotateCcw,
     Check, CheckCircle, Plus, Edit3, RefreshCw, Archive, Crown
 } from 'lucide-react';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 
 const KPICard = ({ title, value, icon: Icon, color, bg }) => (
-    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between">
+    <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-300">
         <div>
-            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">{title}</p>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-stone-400">{title}</p>
             <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{value}</h3>
         </div>
-        <div className={`w-10 h-10 ${bg} ${color} rounded-xl flex items-center justify-center`}>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${color}`}>
             <Icon size={20} />
         </div>
     </div>
@@ -74,8 +73,13 @@ const STANDARD_PRODUCT_CATEGORIES = [
     'Artisan Sets',
 ];
 
+const modalFieldClass = 'w-full mt-1 rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500';
+const modalTextareaClass = `${modalFieldClass} min-h-[110px]`;
+const modalCloseButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-gray-300 hover:text-gray-700';
+
 export default function ProductManager({ auth, products: dbProducts = [], categories: serverCategories = [], subscription }) {
     const { openSidebar } = useSellerWorkspaceShell();
+    const { canEdit: canEditProducts, isReadOnly: isProductsReadOnly } = useSellerModuleAccess('products');
     const [products, setProducts] = useState(dbProducts);
     useEffect(() => { setProducts(dbProducts); }, [dbProducts]);
     const [selectedProductIds, setSelectedProductIds] = useState([]);
@@ -89,6 +93,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [quickFilter, setQuickFilter] = useState('all');
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -219,6 +224,26 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             );
         }
 
+        if (quickFilter !== 'all') {
+            result = result.filter((product) => {
+                const galleryCount = Array.isArray(product.gallery_paths) ? product.gallery_paths.length : 0;
+                const isReady = Boolean(product.cover_photo_path)
+                    && galleryCount >= 3
+                    && galleryCount <= 5
+                    && Boolean(product.model_3d_path);
+
+                if (quickFilter === 'needs_readiness') {
+                    return product.status !== 'Active' && !isReady;
+                }
+
+                if (quickFilter === 'ready_drafts') {
+                    return product.status !== 'Active' && isReady;
+                }
+
+                return true;
+            });
+        }
+
         // 2. Sort
         if (sortConfig.key) {
             result.sort((a, b) => {
@@ -239,7 +264,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             });
         }
         return result;
-    }, [products, activeTab, searchQuery, sortConfig]);
+    }, [products, activeTab, searchQuery, quickFilter, sortConfig]);
 
     const itemsPerPage = 8;
     const totalPages = Math.max(1, Math.ceil(processedProducts.length / itemsPerPage));
@@ -249,10 +274,23 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     }, [currentPage, processedProducts]);
     const visibleProductIds = useMemo(() => paginatedProducts.map((product) => product.id), [paginatedProducts]);
     const allVisibleSelected = visibleProductIds.length > 0 && visibleProductIds.every((id) => selectedProductIds.includes(id));
+    const remainingActivationSlots = Math.max(0, Number(subscription?.limit || 0) - Number(subscription?.activeCount || 0));
+    const incompleteDraftCount = useMemo(() => (
+        products.filter((product) => {
+            if (product.status === 'Active') {
+                return false;
+            }
+
+            const galleryCount = Array.isArray(product.gallery_paths) ? product.gallery_paths.length : 0;
+
+            return !product.cover_photo_path || galleryCount < 3 || galleryCount > 5 || !product.model_3d_path;
+        }).length
+    ), [products]);
+    const lowStockCount = useMemo(() => products.filter((product) => product.stock < 10 && product.status !== 'Archived').length, [products]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [activeTab, searchQuery, sortConfig]);
+    }, [activeTab, searchQuery, quickFilter, sortConfig]);
 
     useEffect(() => {
         if (currentPage > totalPages) {
@@ -269,6 +307,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const generateSKU = () => 'LK-' + Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 
     const openAddModal = () => {
+        if (!canEditProducts) return;
         cleanupPreviews();
         setSelectedProduct(null);
         reset(); 
@@ -298,6 +337,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     };
 
     const openEditModal = (product) => {
+        if (!canEditProducts) return;
         cleanupPreviews();
         setSelectedProduct(product);
         clearErrors();
@@ -412,6 +452,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     // --- SUBMIT LOGIC ---
     const submitProduct = (e) => {
         e.preventDefault();
+        if (!canEditProducts) return;
 
         if (data.status === 'Active' && !activationReadiness.canActivate) {
             setActiveFormTab('Media');
@@ -470,6 +511,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     };
 
     const confirmRestock = () => { 
+        if (!canEditProducts) return;
         if (restockAmount > 0) {
             router.post(route('products.restock', selectedProduct.id), { amount: restockAmount }, { 
                 onSuccess: () => {
@@ -480,6 +522,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     };
     
     const confirmArchive = () => { 
+        if (!canEditProducts) return;
         if (selectedProduct.status === 'Archived') {
             if (subscription?.activeCount >= subscription?.limit) {
                 setArchiveModalOpen(false);
@@ -500,11 +543,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         }
     };
     
-    const openRestockModal = (p) => { setSelectedProduct(p); setRestockAmount(''); setRestockModalOpen(true); };
-    const openArchiveModal = (p) => { setSelectedProduct(p); setArchiveModalOpen(true); };
+    const openRestockModal = (p) => { if (!canEditProducts) return; setSelectedProduct(p); setRestockAmount(''); setRestockModalOpen(true); };
+    const openArchiveModal = (p) => { if (!canEditProducts) return; setSelectedProduct(p); setArchiveModalOpen(true); };
     
     // Phase 1: Open Deduct Modal
     const openDeductModal = (p) => {
+        if (!canEditProducts) return;
         setSelectedProduct(p);
         deductForm.reset();
         setDeductModalOpen(true);
@@ -528,7 +572,23 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         });
     };
 
+    const applyQuickFilter = (filterKey, nextTab = activeTab) => {
+        setQuickFilter(filterKey);
+        setActiveTab(nextTab);
+        setSearchQuery('');
+        setCurrentPage(1);
+    };
+
+    const selectVisibleProducts = () => {
+        if (!visibleProductIds.length) {
+            return;
+        }
+
+        setSelectedProductIds((current) => Array.from(new Set([...current, ...visibleProductIds])));
+    };
+
     const runBulkStatusUpdate = (status) => {
+        if (!canEditProducts) return;
         if (!selectedProductIds.length) {
             addToast('Select at least one product first.', 'info');
             return;
@@ -545,6 +605,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     const handleDeduct = (e) => {
         e.preventDefault();
+        if (!canEditProducts) return;
         deductForm.post(route('products.deduct', selectedProduct.id), {
             onSuccess: () => {
                 setDeductModalOpen(false);
@@ -560,74 +621,92 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     return (
         <>
             <Head title="Product Manager" />
-                
-                {/* --- HEADER (UPDATED TO CLASSIC STYLE) --- */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
-                            <Menu size={24} />
-                        </button>
-                        <div className="min-w-0">
-                            <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Products</h1>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage your inventory</p>
-                        </div>
-                    </div>
+            <SellerHeader
+                title="Products"
+                subtitle="Manage inventory, publishing readiness, and catalog actions."
+                auth={auth}
+                onMenuClick={openSidebar}
+                actions={(
+                    <button
+                        onClick={openAddModal}
+                        disabled={!canEditProducts}
+                        className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <Plus size={16} />
+                        <span className="hidden sm:inline">Add Product</span>
+                    </button>
+                )}
+            />
 
-                                        
-                    <div className="flex items-center gap-2 sm:gap-6">
-                        {/* 1. Actions */}
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <button 
-                                onClick={openAddModal} 
-                                className="flex items-center gap-2 bg-clay-600 hover:bg-clay-700 text-white px-3 sm:px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-clay-500/20 transition-all hover:scale-105 active:scale-95"
-                            >
-                                <Plus size={16} /><span className="hidden sm:inline">Add Product</span>
-                            </button>
+                <main className="mx-auto flex-1 w-full max-w-[1400px] overflow-y-auto p-4 sm:p-6 space-y-6">
+                    {isProductsReadOnly && (
+                        <ReadOnlyCapabilityNotice label="Products is read only for your account. Add, edit, stock, and bulk actions are disabled." />
+                    )}
 
-                            <NotificationDropdown />
-                        </div>
-
-                        {/* Divider */}
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-
-                        {/* 2. Profile Dropdown */}
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="hidden lg:block">
-                                                <WorkspaceAccountSummary user={auth.user} />
-                                            </div>
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
-                                        <LogOut size={16} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
-
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                     {/* METRICS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3">
                         <KPICard title="Total Products" value={products.length} icon={Package} color="text-blue-600" bg="bg-blue-50" />
                         <KPICard title="Total Sold Units" value={products.reduce((acc, curr) => acc + (parseInt(curr.sold) || 0), 0)} icon={TrendingUp} color="text-green-600" bg="bg-green-50" />
                         <KPICard title="Low Stock Alerts" value={products.filter(p => p.stock < 10).length} icon={AlertCircle} color="text-red-600" bg="bg-red-50" />
                     </div>
 
+                    {(incompleteDraftCount > 0 || remainingActivationSlots === 0 || lowStockCount > 0) && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3">
+                            {incompleteDraftCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('needs_readiness', 'Draft')}
+                                    className={`inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'needs_readiness'
+                                            ? 'border-amber-300 bg-amber-50 text-amber-800'
+                                            : 'border-amber-200 text-amber-700 hover:bg-amber-50'
+                                    }`}
+                                >
+                                    <AlertCircle size={13} />
+                                    {incompleteDraftCount} {incompleteDraftCount === 1 ? 'draft needs media' : 'drafts need media'}
+                                </button>
+                            )}
+                            {remainingActivationSlots === 0 ? (
+                                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-bold text-red-700">
+                                    <Archive size={13} />
+                                    Active product limit reached
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-bold text-emerald-700">
+                                    <CheckCircle size={13} />
+                                    {remainingActivationSlots} activation {remainingActivationSlots === 1 ? 'slot' : 'slots'} left
+                                </span>
+                            )}
+                            {lowStockCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('all', 'Low Stock')}
+                                    className={`inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        activeTab === 'Low Stock' && quickFilter === 'all'
+                                            ? 'border-stone-300 bg-stone-100 text-stone-700'
+                                            : 'border-stone-200 text-stone-600 hover:bg-stone-100'
+                                    }`}
+                                >
+                                    <AlertTriangle size={13} />
+                                    {lowStockCount} low-stock {lowStockCount === 1 ? 'item' : 'items'}
+                                </button>
+                            )}
+                            {quickFilter !== 'all' && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('all', 'All')}
+                                    className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-100"
+                                >
+                                    <X size={12} />
+                                    Clear quick view
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                     {/* TABLE AREA */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col min-h-[500px]">
-                        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="flex flex-col gap-4 border-b border-gray-100 p-4 sm:flex-row sm:justify-between">
                             <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg w-full overflow-x-auto sm:w-fit">
                                 {['All', 'Active', 'Draft', 'Archived', 'Low Stock'].map((tab) => (
                                     <button
@@ -641,9 +720,55 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             </div>
                             <div className="relative flex-1 sm:w-64">
                                 <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
-                                <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-6 py-2 bg-gray-50 border-none rounded-lg text-xs focus:ring-2 focus:ring-clay-500/20 w-full" />
-                                {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"><X size={12} /></button>}
+                                <input type="text" placeholder="Search product, category, or SKU" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-lg border-none bg-gray-50 py-2 pl-9 pr-6 text-xs focus:ring-2 focus:ring-clay-500/20" />
+                                {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-2.5 rounded text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"><X size={12} /></button>}
                             </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3">
+                            <button
+                                type="button"
+                                onClick={() => applyQuickFilter('all', activeTab)}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    quickFilter === 'all'
+                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                All visible
+                            </button>
+                            {incompleteDraftCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('needs_readiness', 'Draft')}
+                                    className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'needs_readiness'
+                                            ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                            : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                    }`}
+                                >
+                                    Needs media
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => applyQuickFilter('ready_drafts', 'Draft')}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    quickFilter === 'ready_drafts'
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                Ready drafts
+                            </button>
+                            {visibleProductIds.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={selectVisibleProducts}
+                                    className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-500 transition-colors hover:bg-stone-50"
+                                >
+                                    Select page
+                                </button>
+                            )}
                         </div>
 
                         {selectedProductIds.length > 0 && (
@@ -652,18 +777,18 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     <span className="inline-flex rounded-full bg-clay-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-clay-700">
                                         {selectedProductIds.length} selected
                                     </span>
-                                    <button onClick={() => setSelectedProductIds([])} className="text-[11px] font-bold text-stone-500 hover:text-stone-700">
+                                    <button onClick={() => setSelectedProductIds([])} className="rounded px-1 py-0.5 text-[11px] font-bold text-stone-500 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20">
                                         Clear
                                     </button>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <button onClick={() => runBulkStatusUpdate('Active')} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white hover:bg-emerald-700">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Active')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                                         <CheckCircle size={13} /> Activate
                                     </button>
-                                    <button onClick={() => runBulkStatusUpdate('Draft')} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700 hover:bg-amber-100">
+                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Draft')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                                         <RotateCcw size={13} /> Save as Draft
                                     </button>
-                                    <button onClick={() => runBulkStatusUpdate('Archived')} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-50">
+                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Archived')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                                         <Archive size={13} /> Archive
                                     </button>
                                 </div>
@@ -724,13 +849,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                 </td>
                                                 <td className="px-5 py-3 text-right">
                                                     <div className="flex justify-end gap-1.5">
-                                                        <button onClick={() => openRestockModal(product)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition" title="Restock"><RefreshCw size={14} /></button>
-                                                        <button onClick={() => openDeductModal(product)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-md transition" title="Manual Deduct"><TrendingUp size={14} className="rotate-180" /></button>
-                                                        <button onClick={() => openEditModal(product)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition" title="Edit"><Edit3 size={14} /></button>
+                                                        <button disabled={!canEditProducts} onClick={() => openRestockModal(product)} className="rounded-md p-1.5 text-green-600 transition-colors hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Restock' : 'Read only'}><RefreshCw size={14} /></button>
+                                                        <button disabled={!canEditProducts} onClick={() => openDeductModal(product)} className="rounded-md p-1.5 text-orange-600 transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Manual Deduct' : 'Read only'}><TrendingUp size={14} className="rotate-180" /></button>
+                                                        <button disabled={!canEditProducts} onClick={() => openEditModal(product)} className="rounded-md p-1.5 text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Edit' : 'Read only'}><Edit3 size={14} /></button>
                                                         {product.status === 'Archived' ? (
-                                                            <button onClick={() => openArchiveModal(product)} className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-md transition" title="Unarchive"><RotateCcw size={14} /></button>
+                                                            <button disabled={!canEditProducts} onClick={() => openArchiveModal(product)} className="rounded-md p-1.5 text-amber-500 transition-colors hover:bg-amber-50 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Unarchive' : 'Read only'}><RotateCcw size={14} /></button>
                                                         ) : (
-                                                            <button onClick={() => openArchiveModal(product)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Archive"><Archive size={14} /></button>
+                                                            <button disabled={!canEditProducts} onClick={() => openArchiveModal(product)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Archive' : 'Read only'}><Archive size={14} /></button>
                                                         )}
                                                     </div>
                                                 </td>
@@ -738,12 +863,15 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
-                                                <div className="flex flex-col items-center">
-                                                    <Package size={48} className="mb-3 opacity-50" />
-                                                    <p>No products found.</p>
-                                                    <button onClick={openAddModal} className="mt-2 text-clay-600 font-bold hover:underline">Create your first product</button>
-                                                </div>
+                                            <td colSpan="7" className="px-6 py-12 text-center">
+                                                <WorkspaceEmptyState
+                                                    compact
+                                                    icon={Package}
+                                                    title="No products found"
+                                                    description="Create your first product or adjust the current filters."
+                                                    actionLabel="Create Product"
+                                                    onAction={openAddModal}
+                                                />
                                             </td>
                                         </tr>
                                     )}
@@ -752,49 +880,64 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         </div>
 
                         {/* --- MOBILE CARD VIEW --- */}
-                        <div className="md:hidden divide-y divide-gray-100">
+                        <div className="space-y-3 p-3 md:hidden">
                              {paginatedProducts.length > 0 ? (
                                 paginatedProducts.map((product) => (
-                                    <div key={product.id} className="p-4 flex gap-4">
+                                    <div key={product.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+                                        <div className="flex gap-4">
                                         <div className="pt-1">
                                             <Checkbox checked={selectedProductIds.includes(product.id)} onChange={() => toggleProductSelection(product.id)} />
                                         </div>
-                                        <img src={product.img || '/images/no-image.png'} alt={product.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0" />
+                                        <img src={product.img || '/images/no-image.png'} alt={product.name} className="h-20 w-20 shrink-0 rounded-lg border border-gray-200 bg-gray-100 object-cover" />
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h3 className="font-bold text-gray-900 text-sm truncate pr-2">{product.name}</h3>
-                                                    <p className="text-[10px] text-gray-400 font-mono tracking-wide">{product.sku}</p>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <h3 className="truncate pr-2 text-sm font-bold text-gray-900">{product.name}</h3>
+                                                    <p className="text-[10px] font-mono tracking-wide text-gray-400">{product.sku}</p>
                                                 </div>
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.status === 'Active' ? 'bg-green-50 text-green-700 border-green-100' : product.status === 'Archived' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
+                                                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${product.status === 'Active' ? 'bg-green-50 text-green-700 border-green-100' : product.status === 'Archived' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
                                                     {product.status}
                                                 </span>
                                             </div>
                                             
-                                            <div className="flex items-center justify-between mt-3">
-                                                <div className="flex items-baseline gap-2">
-                                                    <span className="font-bold text-gray-900">₱{product.price}</span>
-                                                    <span className="text-xs text-gray-500">Sold: {product.sold}</span>
+                                            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                                                <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
+                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Price</p>
+                                                    <p className="mt-1 font-bold text-stone-900">PHP {product.price}</p>
                                                 </div>
-                                                
-                                                <div className="flex items-center gap-1">
-                                                     <div className="text-xs text-gray-500 mr-2">Stock: {product.stock}</div>
-                                                     <button onClick={() => openEditModal(product)} className="p-1.5 text-blue-600 bg-blue-50 rounded-lg"><Edit3 size={14} /></button>
+                                                <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
+                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Stock</p>
+                                                    <p className="mt-1 font-bold text-stone-900">{product.stock}</p>
                                                 </div>
                                             </div>
-                                            
-                                            {product.stock < 10 && (
-                                                <div className="flex items-center gap-1 mt-2 text-red-600 text-[10px] font-bold">
-                                                    <AlertCircle size={10} /> Low Stock
-                                                </div>
-                                            )}
+
+                                            <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                                                <span>Sold: {product.sold}</span>
+                                                {product.stock < 10 && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600">
+                                                        <AlertCircle size={10} /> Low Stock
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        </div>
+                                        <div className="mt-3 flex flex-col gap-2">
+                                            <button disabled={!canEditProducts} onClick={() => openEditModal(product)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-bold text-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                                <Edit3 size={14} /> Edit Product
+                                            </button>
                                         </div>
                                     </div>
                                 ))
                              ) : (
-                                <div className="py-12 text-center text-gray-400">
-                                    <Package size={40} className="mb-2 opacity-50 mx-auto" />
-                                    <p className="text-sm">No products found.</p>
+                                <div className="px-4 py-8">
+                                    <WorkspaceEmptyState
+                                        compact
+                                        icon={Package}
+                                        title="No products found"
+                                        description="Create your first product or adjust the current filters."
+                                        actionLabel="Create Product"
+                                        onAction={openAddModal}
+                                    />
                                 </div>
                              )}
                         </div>
@@ -812,7 +955,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
             {/* --- DEDUCTION MODAL (Phase 1) --- */}
             <Modal show={deductModalOpen} onClose={() => setDeductModalOpen(false)} maxWidth="sm">
-                <form onSubmit={handleDeduct} className="p-5 sm:p-6">
+                <form onSubmit={handleDeduct} className="flex max-h-[85vh] flex-col">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-gray-900">Update Stock (Deduct)</h2>
                         <button type="button" onClick={() => setDeductModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -822,7 +965,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         Manually remove items from inventory (e.g., physical store sales, breakage).
                     </p>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
                         <div>
                             <InputLabel value="Quantity to Remove" />
                             <TextInput 
@@ -840,7 +983,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         <div>
                             <InputLabel value="Reason" />
                             <select 
-                                className="w-full mt-1 border-gray-300 rounded-xl shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                className={modalFieldClass}
                                 value={deductForm.data.reason}
                                 onChange={e => deductForm.setData('reason', e.target.value)}
                             >
@@ -853,9 +996,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         </div>
                     </div>
 
-                    <div className="mt-6 flex justify-end gap-3">
-                        <button type="button" onClick={() => setDeductModalOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition">Cancel</button>
-                        <PrimaryButton disabled={deductForm.processing} className="bg-orange-600 hover:bg-orange-700">
+                    <div className="flex justify-end gap-3 border-t border-gray-100 px-5 py-4 sm:px-6">
+                        <button type="button" onClick={() => setDeductModalOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button>
+                        <PrimaryButton disabled={!canEditProducts || deductForm.processing} className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50">
                             Confirm Deduction
                         </PrimaryButton>
                     </div>
@@ -864,20 +1007,22 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
             {/* --- ADD/EDIT MODAL --- */}
             <Modal show={productModalOpen} onClose={closeProductModal} maxWidth="2xl">
-                <form onSubmit={submitProduct} className="p-5 sm:p-6 max-h-[82dvh] sm:max-h-[85vh] overflow-y-auto">
-                    
-                    {/* --- TABBED FORM HEADER --- */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-100 pb-4">
-                        <div>
-                            <h2 className="text-2xl font-serif font-bold text-gray-900">{data.id ? 'Edit Product' : 'New Product'}</h2>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">SKU:</span>
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 font-mono text-xs rounded border border-gray-200">{data.sku}</span>
+                <form onSubmit={submitProduct} className="flex max-h-[85vh] flex-col">
+                    <div className="shrink-0 border-b border-gray-100 px-5 py-5 sm:px-6">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-serif font-bold text-gray-900">{data.id ? 'Edit Product' : 'New Product'}</h2>
+                                <div className="mt-1 flex items-center gap-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400">SKU:</span>
+                                    <span className="rounded border border-gray-200 bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-600">{data.sku}</span>
+                                </div>
                             </div>
+                            <button type="button" onClick={closeProductModal} className={modalCloseButtonClass}>
+                                <X size={18} />
+                            </button>
                         </div>
-                        
-                        {/* Tabs */}
-                        <div className="flex p-1 bg-gray-100 rounded-xl">
+
+                        <div className="mt-4 flex rounded-xl bg-gray-100 p-1">
                             {['Essentials', 'Details', 'Media'].map((tab) => (
                                 <button
                                     key={tab}
@@ -891,7 +1036,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         </div>
                     </div>
 
-                    <div className="min-h-[400px]">
+                    <div className="min-h-[400px] flex-1 overflow-y-auto px-5 py-5 sm:px-6">
                         {/* TAB 1: ESSENTIALS */}
                         {activeFormTab === 'Essentials' && (
                             <div className="space-y-6 animate-fadeIn">
@@ -899,7 +1044,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     <div className="md:col-span-2">
                                         <InputLabel value="Product Name *" />
                                         <TextInput 
-                                            className="w-full mt-1 font-bold text-lg" 
+                                            className={`${modalFieldClass} text-lg font-bold`} 
                                             value={data.name} 
                                             onChange={(e) => setData('name', e.target.value)} 
                                             placeholder="e.g. Handcrafted Stoneware Vase"
@@ -911,7 +1056,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     <div className="md:col-span-2">
                                         <InputLabel value="Description" />
                                         <textarea 
-                                            className="w-full mt-1 border-gray-300 rounded-xl focus:border-clay-500 focus:ring-clay-500 shadow-sm text-sm" 
+                                            className={modalTextareaClass}
                                             rows="4" 
                                             value={data.description} 
                                             onChange={(e) => setData('description', e.target.value)} 
@@ -922,7 +1067,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     <div>
                                         <InputLabel value="Category *" />
                                         <select 
-                                            className="w-full mt-1 border-gray-300 rounded-xl focus:border-clay-500 focus:ring-clay-500 shadow-sm" 
+                                            className={modalFieldClass}
                                             value={data.category} 
                                             onChange={(e) => setData('category', e.target.value)}
                                         >
@@ -937,7 +1082,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     <div>
                                         <InputLabel value="Status" />
                                         <select 
-                                            className="w-full mt-1 border-gray-300 rounded-xl focus:border-clay-500 focus:ring-clay-500 shadow-sm" 
+                                            className={modalFieldClass}
                                             value={data.status} 
                                             onChange={(e) => handleStatusChange(e.target.value)}
                                         >
@@ -953,8 +1098,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                             </p>
                                             <p className={`mt-1 text-[10px] ${activationReadiness.canActivate ? 'text-emerald-600' : 'text-amber-600'}`}>
                                                 {activationReadiness.canActivate
-                                                    ? 'This product meets the media requirements for activation.'
-                                                    : 'Incomplete products stay in Draft until the required media is uploaded.'}
+                                                    ? 'Activation requirements are complete.'
+                                                    : 'Active stays locked until the required media is uploaded.'}
                                             </p>
                                         </div>
                                     </div>
@@ -966,7 +1111,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
                                         </div>
 
-                                        <div className="grid grid-cols-3 gap-5">
+                                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                                             <div>
                                                 <InputLabel value="Price (₱) *" />
                                                 <div className="relative mt-1">
@@ -986,13 +1131,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₱</span>
                                                     <TextInput 
                                                         type="number" 
-                                                        className="w-full pl-7 bg-gray-50 border-gray-200" 
+                                                        className={`${modalFieldClass} border-gray-200 bg-gray-50 pl-7`} 
                                                         value={data.cost_price} 
                                                         onChange={(e) => setData('cost_price', e.target.value)} 
                                                         placeholder="0.00"
                                                     />
                                                 </div>
-                                                <p className="text-[10px] text-gray-400 mt-1">Private. For profit calculation.</p>
+                                                <p className="mt-1 text-[10px] text-gray-400">Internal use only.</p>
                                             </div>
                                             <div>
                                                 <InputLabel value="Stock *" />
@@ -1015,19 +1160,19 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <InputLabel value="Clay Type" />
-                                        <select className="w-full mt-1 border-gray-300 rounded-xl shadow-sm text-sm" value={data.clay_type} onChange={(e) => setData('clay_type', e.target.value)}>
+                                        <select className={modalFieldClass} value={data.clay_type} onChange={(e) => setData('clay_type', e.target.value)}>
                                             {['Earthenware', 'Stoneware', 'Porcelain'].map(o => <option key={o} value={o}>{o}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <InputLabel value="Firing Method" />
-                                        <select className="w-full mt-1 border-gray-300 rounded-xl shadow-sm text-sm" value={data.firing_method} onChange={(e) => setData('firing_method', e.target.value)}>
+                                        <select className={modalFieldClass} value={data.firing_method} onChange={(e) => setData('firing_method', e.target.value)}>
                                             {['Electric Kiln', 'Wood-fired', 'Gas Kiln', 'Raku'].map(o => <option key={o} value={o}>{o}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <InputLabel value="Glaze Type" />
-                                        <select className="w-full mt-1 border-gray-300 rounded-xl shadow-sm text-sm" value={data.glaze_type} onChange={(e) => setData('glaze_type', e.target.value)}>
+                                        <select className={modalFieldClass} value={data.glaze_type} onChange={(e) => setData('glaze_type', e.target.value)}>
                                             {['Matte', 'Glossy', 'Satin', 'Crackle', 'Unglazes'].map(o => <option key={o} value={o}>{o}</option>)}
                                         </select>
                                     </div>
@@ -1045,7 +1190,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
                                 <div className="pt-4 border-t border-gray-100">
                                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Dimensions</h3>
-                                    <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                         <div><InputLabel value="Height (cm)" /><TextInput type="number" className="w-full mt-1" value={data.height} onChange={(e) => setData('height', e.target.value)} /></div>
                                         <div><InputLabel value="Width (cm)" /><TextInput type="number" className="w-full mt-1" value={data.width} onChange={(e) => setData('width', e.target.value)} /></div>
                                         <div><InputLabel value="Weight (g)" /><TextInput type="number" className="w-full mt-1" value={data.weight} onChange={(e) => setData('weight', e.target.value)} /></div>
@@ -1096,10 +1241,10 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     </div>
                                 </div>
 
-                                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6 flex gap-3">
+                                <div className="mb-6 flex gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
                                     <ImageIcon className="text-blue-500 shrink-0" size={20} />
                                     <p className="text-xs text-blue-700 leading-relaxed">
-                                        High-quality photos significantly increase sales. We recommend using natural lighting and a neutral background.
+                                        Use clear, well-lit photos with a simple background.
                                     </p>
                                 </div>
 
@@ -1153,7 +1298,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                 </span>
                                             </div>
                                             
-                                            <div className="grid grid-cols-3 gap-2">
+                                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                                 {previews.gallery.map((preview, idx) => (
                                                     <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
                                                         <img src={preview} className="w-full h-full object-cover" />
@@ -1191,7 +1336,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                         <div className="p-2 bg-white rounded-lg text-green-600 shadow-sm"><Check size={16} /></div>
                                                         <div>
                                                             <p className="text-sm font-bold text-green-800 truncate max-w-[150px]">{data.model_3d.name}</p>
-                                                            <p className="text-[10px] text-green-600">New file selected</p>
+                                                            <p className="text-[10px] text-green-600">Ready to upload</p>
                                                         </div>
                                                     </div>
                                                     <button
@@ -1213,8 +1358,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                         <div className="flex items-center gap-3">
                                                             <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm"><Cuboid size={16} /></div>
                                                             <div>
-                                                                <p className="text-sm font-bold text-blue-800">Current Model Active</p>
-                                                                <p className="text-[10px] text-blue-600">You can keep this or upload a new one.</p>
+                                                                <p className="text-sm font-bold text-blue-800">Current Model</p>
+                                                                <p className="text-[10px] text-blue-600">Keep it or replace it with a new file.</p>
                                                             </div>
                                                         </div>
                                                         <label className="cursor-pointer text-xs font-bold text-blue-600 hover:underline">
@@ -1240,7 +1385,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                         <div>
                                                             <p className="text-xs font-bold text-amber-800">GLTF companion files</p>
                                                             <p className="mt-1 text-[11px] text-amber-700">
-                                                                Upload the matching asset folder too if this file uses external <code>.bin</code> or textures.
+                                                                Upload the matching asset folder too if this file uses external <code>.bin</code> files or textures.
                                                             </p>
                                                         </div>
                                                         <label className="cursor-pointer rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition">
@@ -1273,12 +1418,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     </div>
 
                     {/* FOOTER ACTIONS */}
-                    <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-100">
-                        <button type="button" onClick={closeProductModal} className="text-gray-400 hover:text-gray-600 font-bold text-sm px-2">Cancel</button>
-                        
-                        <div className="flex items-center gap-3">
-                            {activeFormTab === 'Media' && processing && progress && (
-                                <div className="hidden min-w-[180px] items-center gap-2 sm:flex">
+                    <div className="flex shrink-0 flex-col gap-3 border-t border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                          <button type="button" onClick={closeProductModal} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button>
+                          
+                          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+                              {activeFormTab === 'Media' && processing && progress && (
+                                  <div className="hidden min-w-[180px] items-center gap-2 sm:flex">
                                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-clay-100">
                                         <div
                                             className="h-full rounded-full bg-clay-600 transition-all"
@@ -1301,7 +1446,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             )}
                             
                             {activeFormTab === 'Media' ? (
-                                <PrimaryButton type="submit" className="px-8 py-2.5 rounded-xl shadow-lg shadow-clay-500/20" disabled={processing}>
+                                <PrimaryButton type="submit" className="px-8 py-2.5 rounded-xl" disabled={!canEditProducts || processing}>
                                     {processing
                                         ? (progress ? `Uploading ${progress.percentage ?? 0}%` : 'Saving...')
                                         : (data.id ? 'Save Changes' : 'Publish Product')}
@@ -1310,7 +1455,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                 <button 
                                     type="button" 
                                     onClick={() => setActiveFormTab(activeFormTab === 'Essentials' ? 'Details' : 'Media')}
-                                    className="px-6 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-500/20"
+                                    className="px-6 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition"
                                 >
                                     Next Step
                                 </button>
@@ -1323,9 +1468,17 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             {/* RESTOCK & ARCHIVE MODALS */}
             <Modal show={restockModalOpen} onClose={() => setRestockModalOpen(false)} maxWidth="sm">
                 <div className="p-5 sm:p-6">
-                    <h2 className="text-lg font-bold text-gray-900 mb-4">Restock {selectedProduct?.name}</h2>
-                    <div className="mb-6"><InputLabel value="Quantity to Add" /><TextInput type="number" className="w-full mt-1" value={restockAmount} onChange={(e) => setRestockAmount(e.target.value)} autoFocus /></div>
-                    <div className="flex justify-end gap-3"><button onClick={() => setRestockModalOpen(false)} className="text-gray-500 font-bold text-sm">Cancel</button><PrimaryButton onClick={confirmRestock}>Confirm</PrimaryButton></div>
+                    <div className="mb-5 flex items-start justify-between gap-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900">Restock {selectedProduct?.name}</h2>
+                            <p className="mt-1 text-[13px] text-gray-500">Add new inventory to the current stock count.</p>
+                        </div>
+                        <button type="button" onClick={() => setRestockModalOpen(false)} className={modalCloseButtonClass}>
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <div className="mb-6"><InputLabel value="Quantity to Add" /><TextInput disabled={!canEditProducts} type="number" className="w-full mt-1" value={restockAmount} onChange={(e) => setRestockAmount(e.target.value)} autoFocus /></div>
+                    <div className="flex justify-end gap-3 border-t border-gray-100 pt-4"><button onClick={() => setRestockModalOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button><PrimaryButton disabled={!canEditProducts} onClick={confirmRestock}>Confirm</PrimaryButton></div>
                 </div>
             </Modal>
             <Modal show={archiveModalOpen} onClose={() => setArchiveModalOpen(false)} maxWidth="sm">
@@ -1341,11 +1494,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             ? 'This will make the product visible in your dashboard again.' 
                             : 'This will hide the product from your shop. You can unarchive it later.'}
                     </p>
-                    <div className="flex justify-center gap-3">
-                        <button onClick={() => setArchiveModalOpen(false)} className="px-4 py-2 border rounded-lg text-sm font-bold">Cancel</button>
-                        <button 
-                            onClick={confirmArchive} 
-                            className={`px-4 py-2 text-white rounded-lg text-sm font-bold ${selectedProduct?.status === 'Archived' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-red-600 hover:bg-red-700'}`}
+                    <div className="flex justify-center gap-3 border-t border-gray-100 pt-4">
+                        <button onClick={() => setArchiveModalOpen(false)} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-600 transition hover:bg-gray-50">Cancel</button>
+                        <button
+                            onClick={confirmArchive}
+                            disabled={!canEditProducts}
+                            className={`rounded-xl px-4 py-2.5 text-sm font-bold text-white ${selectedProduct?.status === 'Archived' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-red-600 hover:bg-red-700'}`}
                         >
                             {selectedProduct?.status === 'Archived' ? 'Yes, Unarchive' : 'Yes, Archive'}
                         </button>

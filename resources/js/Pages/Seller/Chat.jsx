@@ -13,6 +13,8 @@ import OrderContextCard, { SellerOrderActionBar } from '@/Components/Chat/OrderC
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import MediaViewer from '@/Components/Chat/MediaViewer';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatClock, formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
 
@@ -32,6 +34,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const imageInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
     const lastTypingSignal = useRef(0);
+    const { canEdit: canEditMessages, isReadOnly: isMessagesReadOnly } = useSellerModuleAccess('messages');
     const currentChatUserAddress = formatStructuredAddress({
         street_address: currentChatUser?.street_address,
         barangay: currentChatUser?.barangay,
@@ -123,7 +126,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     }, [currentChatUser]);
 
     const signalTyping = () => {
-        if (!currentChatUser) return;
+        if (!currentChatUser || isMessagesReadOnly) return;
         const now = Date.now();
         // Throttle typing signals to once every 2 seconds
         if (now - lastTypingSignal.current > 2000) {
@@ -134,6 +137,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
     const handleSendMessage = (e) => {
         e.preventDefault();
+        if (isMessagesReadOnly) return;
         if (!data.message.trim() && !data.attachment) return;
         post(route('chat.store'), {
             onSuccess: () => {
@@ -162,6 +166,11 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     };
 
     const handleFileChange = (e) => {
+        if (isMessagesReadOnly) {
+            e.target.value = '';
+            return;
+        }
+
         const file = e.target.files[0];
         if (file) {
             revokeAttachmentPreview();
@@ -186,6 +195,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     };
 
     const onEmojiClick = (emojiObject) => {
+        if (isMessagesReadOnly) return;
         setData('message', data.message + emojiObject.emoji);
         inputRef.current?.focus();
     };
@@ -524,7 +534,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                     />
 
                                     {/* Emoji Picker Popover */}
-                                    {showEmojiPicker && (
+                                    {showEmojiPicker && !isMessagesReadOnly && (
                                         <div ref={emojiPickerRef} className="absolute bottom-full right-3 sm:right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
                                             <EmojiPicker 
                                                 onEmojiClick={onEmojiClick}
@@ -565,13 +575,24 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                         </div>
                                     )}
 
-                                    <form onSubmit={handleSendMessage} className="flex items-end gap-2 sm:gap-3 w-full">
+                                    <form onSubmit={handleSendMessage} className="flex w-full flex-col gap-3">
+                                        {isMessagesReadOnly && (
+                                            <div className="w-full">
+                                                <ReadOnlyCapabilityNotice label="Messages is read only for your account." />
+                                            </div>
+                                        )}
+                                        <div className="flex items-end gap-2 sm:gap-3 w-full">
                                         <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all overflow-hidden shadow-sm">
                                             <div className="flex items-center gap-0.5 px-1">
                                                 <button 
                                                     type="button" 
                                                     onClick={() => imageInputRef.current?.click()}
-                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-white rounded-xl transition-all duration-200"
+                                                    disabled={isMessagesReadOnly}
+                                                    className={`p-2 rounded-xl transition-all duration-200 ${
+                                                        isMessagesReadOnly
+                                                            ? 'cursor-not-allowed text-gray-300'
+                                                            : 'text-gray-400 hover:bg-white hover:text-clay-600'
+                                                    }`}
                                                     title="Attach Image"
                                                 >
                                                     <ImageIcon size={20} />
@@ -579,7 +600,12 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                 <button 
                                                     type="button" 
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-white rounded-xl transition-all duration-200"
+                                                    disabled={isMessagesReadOnly}
+                                                    className={`p-2 rounded-xl transition-all duration-200 ${
+                                                        isMessagesReadOnly
+                                                            ? 'cursor-not-allowed text-gray-300'
+                                                            : 'text-gray-400 hover:bg-white hover:text-clay-600'
+                                                    }`}
                                                     title="Attach Document"
                                                 >
                                                     <Paperclip size={20} />
@@ -596,7 +622,8 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                                                     signalTyping();
                                                 }}
-                                                placeholder="Type your message here..." 
+                                                placeholder={isMessagesReadOnly ? 'Read-only access for this capability.' : 'Type your message here...'} 
+                                                disabled={isMessagesReadOnly}
                                                 className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[120px] custom-scrollbar leading-relaxed"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -610,8 +637,15 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                             
                                             <button 
                                                 type="button" 
-                                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                className={`p-2 mx-1 rounded-xl transition-all shrink-0 ${showEmojiPicker ? 'text-clay-600 bg-white shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-white hover:shadow-sm'}`}
+                                                onClick={() => !isMessagesReadOnly && setShowEmojiPicker(!showEmojiPicker)}
+                                                disabled={isMessagesReadOnly}
+                                                className={`p-2 mx-1 rounded-xl transition-all shrink-0 ${
+                                                    isMessagesReadOnly
+                                                        ? 'cursor-not-allowed text-gray-300'
+                                                        : showEmojiPicker
+                                                            ? 'bg-white text-clay-600 shadow-sm'
+                                                            : 'text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm'
+                                                }`}
                                                 title="Insert Emoji"
                                             >
                                                 <Smile size={20} />
@@ -619,11 +653,12 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                         </div>
                                         <button 
                                             type="submit" 
-                                            disabled={processing || (!data.message.trim() && !data.attachment)}
-                                            className="h-12 w-12 bg-clay-600 text-white rounded-2xl flex items-center justify-center hover:bg-clay-700 hover:shadow-lg transition-all disabled:opacity-50 disabled:hover:shadow-none shrink-0"
+                                            disabled={isMessagesReadOnly || processing || (!data.message.trim() && !data.attachment)}
+                                            className="h-12 w-12 rounded-2xl flex items-center justify-center transition-all shrink-0 disabled:opacity-50 disabled:hover:shadow-none disabled:cursor-not-allowed bg-clay-600 text-white hover:bg-clay-700 hover:shadow-lg"
                                         >
                                             <Send size={20} className="ml-1" />
                                         </button>
+                                        </div>
                                     </form>
 
                                     {/* Hidden File Inputs */}

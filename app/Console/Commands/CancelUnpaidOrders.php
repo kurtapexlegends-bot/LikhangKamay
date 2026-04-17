@@ -7,13 +7,13 @@ use Illuminate\Console\Command;
 class CancelUnpaidOrders extends Command
 {
     protected $signature = 'orders:cancel-unpaid';
-    protected $description = 'Cancel unpaid E-Wallet orders older than 24 hours';
+    protected $description = 'Cancel unpaid online orders older than 24 hours';
 
     public function handle()
     {
         $this->info('Checking for unpaid orders...');
 
-        // Find orders using E-Wallet/Card that are Pending and older than 24 hours
+        // Find non-COD orders that are still pending and older than 24 hours.
         $orders = \App\Models\Order::where('status', 'Pending')
             ->where('payment_status', 'pending')
             ->where('payment_method', '!=', 'COD') // Only affects non-COD

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
@@ -11,11 +10,12 @@ import {
 import { useToast } from '@/Components/ToastContext';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 export default function Sponsorships({ auth, creditsAvailable, activeProducts, requests }) {
     const { addToast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
 
     const { data, setData, post, processing, reset } = useForm({
         product_id: '',
@@ -59,14 +59,13 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
             <Head title="Product Sponsorships - Seller Dashboard" />
-            <SellerSidebar active="sponsorships" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
 
                 {/* --- STANDARDIZED HEADER --- */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
                     <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
@@ -216,7 +215,50 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                         </div>
 
                         {filteredRequests.length > 0 ? (
-                            <div className="overflow-x-auto">
+                            <>
+                            <div className="space-y-3 p-4 sm:hidden">
+                                {filteredRequests.map((req) => (
+                                    <div key={req.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <div className="w-11 h-11 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
+                                                    {req.product?.cover_photo_path ? (
+                                                        <img
+                                                            src={`/storage/${req.product.cover_photo_path}`}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                        />
+                                                    ) : (
+                                                        <Package size={16} className="text-gray-300" />
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-bold text-gray-900">{req.product?.name || 'Unknown Product'}</p>
+                                                    <p className="mt-1 text-[11px] font-medium text-gray-500">
+                                                        Requested {new Date(req.created_at).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0">{getStatusBadge(req.status)}</div>
+                                        </div>
+
+                                        <div className="mt-3 rounded-xl bg-gray-50 px-3 py-2.5">
+                                            {req.status === 'rejected' && req.rejection_reason ? (
+                                                <>
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">Rejection reason</p>
+                                                    <p className="mt-1 text-xs leading-5 text-gray-600">{req.rejection_reason}</p>
+                                                </>
+                                            ) : req.status === 'approved' ? (
+                                                <p className="text-xs font-medium text-emerald-600">Approved for a 7-day sponsored run.</p>
+                                            ) : (
+                                                <p className="text-xs font-medium text-gray-500">Awaiting admin review.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="hidden overflow-x-auto sm:block">
                                 <table className="w-full min-w-[760px] text-left border-collapse">
                                     <thead>
                                         <tr className="bg-gray-50/80 border-b border-gray-100">
@@ -273,6 +315,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                     </tbody>
                                 </table>
                             </div>
+                            </>
                         ) : (
                             <div className="p-12 text-center flex flex-col items-center">
                                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
@@ -291,3 +334,5 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
         </div>
     );
 }
+
+Sponsorships.layout = (page) => <SellerWorkspaceLayout active="sponsorships">{page}</SellerWorkspaceLayout>;

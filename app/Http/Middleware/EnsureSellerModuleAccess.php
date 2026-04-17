@@ -25,9 +25,17 @@ class EnsureSellerModuleAccess
         }
 
         foreach ($modules as $module) {
-            if ($user->canAccessSellerModule($module)) {
+            if (!$user->canAccessSellerModule($module)) {
+                continue;
+            }
+
+            if ($request->isMethodSafe() || $user->canEditSellerModule($module)) {
                 return $next($request);
             }
+        }
+
+        if (!$request->isMethodSafe()) {
+            abort(403, 'This capability is read-only for your account.');
         }
 
         abort(403, 'Your current plan does not include this module.');

@@ -14,15 +14,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use App\Models\SponsorshipRequest;
-use App\Models\SellerWalletWithdrawalRequest;
 use App\Mail\ArtisanApproved;
 use App\Mail\ArtisanRejected;
 use App\Models\ArtisanStatusLog;
 use App\Models\UserTierLog;
-use App\Services\WalletService;
 use App\Support\StructuredAddress;
 use Barryvdh\DomPDF\Facade\Pdf;
-use RuntimeException;
 
 class SuperAdminController extends Controller
 {
@@ -182,7 +179,7 @@ class SuperAdminController extends Controller
     /**
      * Monetization Dashboard
      */
-    public function monetization(WalletService $walletService)
+    public function monetization()
     {
         // Pricing constants based on system logic
         $premiumPrice = 199;
@@ -304,32 +301,6 @@ class SuperAdminController extends Controller
                 ];
             });
 
-        $pendingWalletWithdrawals = SellerWalletWithdrawalRequest::query()
-            ->with(['user:id,name,shop_name,avatar', 'reviewedBy:id,name'])
-            ->latest()
-            ->limit(10)
-            ->get()
-            ->map(function (SellerWalletWithdrawalRequest $request) {
-                return [
-                    'id' => $request->id,
-                    'amount' => (float) $request->amount,
-                    'currency' => $request->currency,
-                    'status' => $request->status,
-                    'note' => $request->note,
-                    'rejection_reason' => $request->rejection_reason,
-                    'created_at' => $request->created_at?->format('M d, Y h:i A'),
-                    'reviewed_at' => $request->reviewed_at?->format('M d, Y h:i A'),
-                    'user' => [
-                        'id' => $request->user?->id,
-                        'name' => $request->user?->name,
-                        'shop_name' => $request->user?->shop_name,
-                        'avatar' => $request->user?->avatar,
-                    ],
-                    'reviewed_by_name' => $request->reviewedBy?->name,
-                ];
-            })
-            ->values();
-
         return Inertia::render('Admin/Monetization', [
             'metrics' => [
                 'mrr' => $mrrMetric,
@@ -344,120 +315,7 @@ class SuperAdminController extends Controller
             ],
             'recentSubscribers' => $recentSubscribers,
             'recentSponsorships' => $recentSponsorships,
-            'pendingWalletWithdrawals' => $pendingWalletWithdrawals,
-            'platformWallet' => $walletService->buildPlatformSnapshot(8),
         ]);
-    }
-
-    public function approveSellerWalletWithdrawal(Request $request, SellerWalletWithdrawalRequest $withdrawalRequest)
-    {
-        $result = DB::transaction(function () use ($request, $withdrawalRequest) {
-            $lockedRequest = SellerWalletWithdrawalRequest::query()
-                ->lockForUpdate()
-                ->findOrFail($withdrawalRequest->id);
-
-            if ($lockedRequest->status !== SellerWalletWithdrawalRequest::STATUS_PENDING) {
-                return false;
-            }
-
-            $lockedRequest->update([
-                'status' => SellerWalletWithdrawalRequest::STATUS_APPROVED,
-                'reviewed_by_user_id' => $request->user()->id,
-                'reviewed_at' => now(),
-                'rejection_reason' => null,
-            ]);
-
-            return true;
-        });
-
-        if (!$result) {
-            return redirect()->back()->with('error', 'Withdrawal request is no longer pending.');
-        }
-
-        return redirect()->back()->with('success', 'Seller withdrawal request approved.');
-    }
-
-    public function rejectSellerWalletWithdrawal(Request $request, SellerWalletWithdrawalRequest $withdrawalRequest, WalletService $walletService)
-    {
-        $validated = $request->validate([
-            'rejection_reason' => ['required', 'string', 'max:255'],
-        ]);
-
-        $result = DB::transaction(function () use ($request, $withdrawalRequest, $walletService, $validated) {
-            $lockedRequest = SellerWalletWithdrawalRequest::query()
-                ->with('wallet')
-                ->lockForUpdate()
-                ->findOrFail($withdrawalRequest->id);
-
-            if ($lockedRequest->status !== SellerWalletWithdrawalRequest::STATUS_PENDING) {
-                return false;
-            }
-
-            $walletService->credit(
-                $lockedRequest->wallet,
-                (float) $lockedRequest->amount,
-                'seller_wallet_withdrawal_reversal',
-                'Seller withdrawal request rejected',
-                metadata: [
-                    'withdrawal_request_id' => $lockedRequest->id,
-                    'reviewed_by_user_id' => $request->user()->id,
-                    'rejection_reason' => $validated['rejection_reason'],
-                ],
-            );
-
-            $lockedRequest->update([
-                'status' => SellerWalletWithdrawalRequest::STATUS_REJECTED,
-                'reviewed_by_user_id' => $request->user()->id,
-                'reviewed_at' => now(),
-                'rejection_reason' => $validated['rejection_reason'],
-            ]);
-
-            return true;
-        });
-
-        if (!$result) {
-            return redirect()->back()->with('error', 'Withdrawal request is no longer pending.');
-        }
-
-        return redirect()->back()->with('success', 'Seller withdrawal request rejected and funds returned.');
-    }
-
-    public function withdrawPlatformWallet(Request $request, WalletService $walletService)
-    {
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'note' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $platformWallet = $walletService->getPlatformWallet();
-
-        if (!$platformWallet) {
-            return redirect()->back()->with('error', 'Platform wallet is not available.');
-        }
-
-        $admin = $request->user();
-        $amount = round((float) $validated['amount'], 2);
-        $note = trim((string) ($validated['note'] ?? ''));
-
-        try {
-            $walletService->debit(
-                $platformWallet,
-                $amount,
-                'platform_withdrawal',
-                $note !== ''
-                    ? 'Platform wallet withdrawal: ' . $note
-                    : 'Platform wallet withdrawal',
-                metadata: [
-                    'withdrawn_by_user_id' => $admin?->id,
-                    'withdrawn_by_name' => $admin?->name,
-                    'note' => $note !== '' ? $note : null,
-                ],
-            );
-        } catch (RuntimeException $exception) {
-            return redirect()->back()->with('error', $exception->getMessage());
-        }
-
-        return redirect()->back()->with('success', 'Platform wallet withdrawal recorded successfully.');
     }
 
     /**
@@ -625,6 +483,7 @@ class SuperAdminController extends Controller
             'staff_user_level' => $staffMember->getStaffUserLevel(),
             'can_manage_staff_accounts' => $staffMember->hasStaffManagementPermission(),
             'staff_access_permission_level' => $staffMember->getStaffAccessPermissionLevel(),
+            'module_permissions' => User::stripStaffControlFlags((array) $staffMember->staff_module_permissions),
             'requires_password_change' => $staffMember->requiresStaffPasswordChange(),
             'created_at' => $staffMember->created_at->format('M d, Y'),
         ];

@@ -4,8 +4,11 @@ import SellerHeader from '@/Components/SellerHeader';
 import Modal from '@/Components/Modal';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
-import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Eye, FileText, History, Pencil, Users } from 'lucide-react';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Eye, FileText, History, LoaderCircle, Pencil, Users, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 
@@ -37,10 +40,13 @@ const reviewLabel = (status) => {
     return 'Pending Review';
 };
 
+const modalCloseButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-gray-300 hover:text-gray-700';
+
 export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], finances }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { flash } = usePage().props;
     const { addToast } = useToast();
+    const { canEdit: canEditAccounting, isReadOnly: isAccountingReadOnly } = useSellerModuleAccess('accounting');
     const [activeTab, setActiveTab] = useState('pending');
     const [showBaseFundsModal, setShowBaseFundsModal] = useState(false);
     const [baseFundsValue, setBaseFundsValue] = useState(finances.baseFunds || 0);
@@ -48,6 +54,8 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
     const [rejectReason, setRejectReason] = useState('');
     const [pendingPage, setPendingPage] = useState(1);
     const [historyPage, setHistoryPage] = useState(1);
+    const [baseFundsProcessing, setBaseFundsProcessing] = useState(false);
+    const [reviewProcessing, setReviewProcessing] = useState(null);
 
     const allPending = useMemo(() => (
         [...pendingRequests, ...pendingPayrolls]
@@ -102,30 +110,37 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
     };
 
     const handleApprove = () => {
-        if (!reviewModal.item) return;
+        if (!reviewModal.item || !canEditAccounting) return;
 
         router.post(route(reviewModal.item.type === 'payroll' ? 'accounting.approvePayroll' : 'accounting.approve', reviewModal.item.id), {}, {
+            onStart: () => setReviewProcessing('approve'),
             onSuccess: closeReviewModal,
+            onFinish: () => setReviewProcessing(null),
         });
     };
 
     const handleReject = () => {
-        if (!reviewModal.item || !rejectReason.trim()) return;
+        if (!reviewModal.item || !rejectReason.trim() || !canEditAccounting) return;
 
         router.post(route(reviewModal.item.type === 'payroll' ? 'accounting.rejectPayroll' : 'accounting.reject', reviewModal.item.id), {
             reason: rejectReason.trim(),
         }, {
+            onStart: () => setReviewProcessing('reject'),
             onSuccess: closeReviewModal,
+            onFinish: () => setReviewProcessing(null),
         });
     };
 
     const handleUpdateBaseFunds = (event) => {
         event.preventDefault();
+        if (!canEditAccounting) return;
 
         router.post(route('accounting.update-funds'), {
             base_funds: baseFundsValue,
         }, {
+            onStart: () => setBaseFundsProcessing(true),
             onSuccess: () => setShowBaseFundsModal(false),
+            onFinish: () => setBaseFundsProcessing(false),
         });
     };
 
@@ -135,109 +150,139 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
     return (
         <>
-            <Head title="Accounting - Fund Release" />
-                <SellerHeader title="Accounting" subtitle="Fund Release & Treasury" auth={auth} onMenuClick={openSidebar} badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }} />
+            <Head title="Finance & Approvals" />
+            <SellerHeader title="Finance" subtitle="Business funds, payroll review, and inventory approvals" auth={auth} onMenuClick={openSidebar} badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }} />
 
-                <main className="p-4 sm:p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-300">
-                            <div className="flex justify-between items-start mb-3 relative z-10">
-                                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100"><Banknote size={20} /></div>
-                                <span className="text-[9px] uppercase font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100">Total Revenue</span>
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-0.5 relative z-10">{formatShortMoney(finances.revenue)}</h3>
-                            <p className="text-[10px] text-gray-400 font-medium relative z-10">Realized from Completed Orders</p>
-                            <Banknote size={70} className="absolute -right-4 -bottom-4 text-emerald-500/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
-                        </div>
+            <main className="mx-auto w-full max-w-[1400px] p-4 sm:p-6 space-y-6">
+                {isAccountingReadOnly && (
+                    <ReadOnlyCapabilityNotice label="Finance review is read only for your account. Approval and fund actions are disabled." />
+                )}
 
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-300">
-                            <div className="flex justify-between items-start mb-3 relative z-10">
-                                <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100"><ClipboardList size={20} /></div>
-                                <span className="text-[9px] uppercase font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-full border border-rose-100">Total Expenses</span>
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-0.5 relative z-10">{formatShortMoney(finances.expenses)}</h3>
-                            <p className="text-[10px] text-gray-400 font-medium relative z-10">Stock Purchases & Payroll</p>
-                            <ClipboardList size={70} className="absolute -right-4 -bottom-4 text-rose-500/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
-                        </div>
+                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-amber-700">
+                        <AlertCircle size={13} />
+                        Pending requests stay here until reviewed
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                        <CheckCircle size={13} />
+                        Approved releases post to the finance ledger
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-stone-600">
+                        <History size={13} />
+                        Rejections keep the reviewer note
+                    </span>
+                </div>
 
-                        <div className="bg-gray-900 p-5 rounded-2xl shadow-xl relative overflow-hidden group hover:shadow-2xl transition duration-300">
-                            <div className="flex justify-between items-start mb-3 relative z-10">
-                                <div className="p-2.5 bg-white/10 text-white rounded-xl border border-white/10 backdrop-blur-sm"><Building2 size={20} /></div>
-                                <button onClick={() => setShowBaseFundsModal(true)} className="flex items-center gap-1.5 text-[9px] uppercase font-bold text-emerald-300 bg-emerald-900/30 px-2.5 py-1.5 rounded-full border border-emerald-500/30 backdrop-blur-sm hover:bg-emerald-800/50 transition cursor-pointer">
-                                    <Pencil size={10} /> Edit Base Funds
-                                </button>
-                            </div>
-                            <h3 className="text-3xl font-bold text-white mb-0.5 relative z-10 tracking-tight">{formatShortMoney(finances.balance)}</h3>
-                            <p className="text-[10px] text-gray-400 font-medium relative z-10 mt-1">Base: {formatShortMoney(finances.baseFunds || 0)} + Revenue - Expenses</p>
-                            <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
-                            <Building2 size={80} className="absolute -right-4 -bottom-4 text-white/5 rotate-12 group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                        <div className="mb-3 flex items-start justify-between">
+                            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-2.5 text-emerald-600"><Banknote size={20} /></div>
+                            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-600">Revenue</span>
                         </div>
+                        <h3 className="mb-0.5 text-2xl font-bold text-gray-900">{formatShortMoney(finances.revenue)}</h3>
+                        <p className="text-[10px] text-gray-400">Realized from completed orders</p>
                     </div>
 
-                    <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                        <button onClick={() => setActiveTab('pending')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'pending' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
-                            <AlertCircle size={16} /> Pending Approvals
-                            {allPending.length > 0 && <span className="bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full text-[10px]">{allPending.length}</span>}
-                        </button>
-                        <button onClick={() => setActiveTab('history')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'history' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
-                            <History size={16} /> Transaction Ledger
-                        </button>
+                    <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                        <div className="mb-3 flex items-start justify-between">
+                            <div className="rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-rose-600"><ClipboardList size={20} /></div>
+                            <span className="rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase text-rose-600">Expenses</span>
+                        </div>
+                        <h3 className="mb-0.5 text-2xl font-bold text-gray-900">{formatShortMoney(finances.expenses)}</h3>
+                        <p className="text-[10px] text-gray-400">Stock purchases and payroll</p>
                     </div>
 
-                    {activeTab === 'pending' && (
-                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                            <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                                <div className="flex items-center gap-3">
-                                    <AlertCircle className="text-gray-400" size={18} />
-                                    <h3 className="font-bold text-gray-900 text-sm">Action Needed</h3>
-                                </div>
-                            </div>
+                    <div className="rounded-2xl border border-stone-900 bg-stone-900 p-5">
+                        <div className="mb-3 flex items-start justify-between">
+                            <div className="rounded-xl border border-white/10 bg-white/10 p-2.5 text-white"><Building2 size={20} /></div>
+                            <button
+                                onClick={() => setShowBaseFundsModal(true)}
+                                disabled={!canEditAccounting}
+                                className={`flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-900/30 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-300 transition ${canEditAccounting ? 'cursor-pointer hover:bg-emerald-800/50' : 'cursor-not-allowed opacity-50'}`}
+                                title={canEditAccounting ? 'Edit Base Funds' : 'Read only'}
+                            >
+                                <Pencil size={10} /> Edit Base Funds
+                            </button>
+                        </div>
+                        <h3 className="mb-0.5 text-3xl font-bold tracking-tight text-white">{formatShortMoney(finances.balance)}</h3>
+                        <p className="mt-1 text-[10px] text-gray-400">Base: {formatShortMoney(finances.baseFunds || 0)} + Revenue - Expenses</p>
+                    </div>
+                </div>
 
-                            <div className="divide-y divide-gray-50">
-                                {paginatedPending.length > 0 ? paginatedPending.map((item) => (
-                                    <div key={`${item.type}-${item.id}`} className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-gray-50/50 transition">
-                                        <div className="flex items-start gap-3">
-                                            <div className={`p-2.5 bg-white border border-gray-100 rounded-xl shadow-sm ${item.type === 'payroll' ? 'text-indigo-600' : 'text-clay-600'}`}>
-                                                {item.type === 'payroll' ? <Users size={20} /> : <FileText size={20} />}
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-sm text-gray-900">{item.type === 'payroll' ? `Payroll for ${item.month}` : item.supply?.name}</h4>
-                                                <p className="text-[11px] text-gray-500 mt-0.5">{item.type === 'payroll' ? `Employees: ${item.employee_count}` : `Quantity: ${item.quantity} ${item.supply?.unit || ''}`}</p>
-                                                <p className="text-[11px] text-gray-500 mt-1">Requested by <span className="font-bold text-gray-700">{item.requester?.name || 'Seller owner'}</span><span className="text-gray-400"> | {formatRole(item.requester?.role)}</span></p>
-                                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                    <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full border ${typeTone(item.type)}`}>{item.type === 'payroll' ? 'HR Payroll' : 'Inventory'}</span>
-                                                    <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1"><ClipboardList size={10} /> #{item.id}</span>
-                                                    <span className="text-[10px] font-bold text-gray-400">{formatDate(item.created_at)}</span>
-                                                    {item.activity?.submitted_at && (
-                                                        <span className="text-[10px] font-bold text-gray-400">Submitted {formatDate(item.activity.submitted_at)}</span>
-                                                    )}
-                                                </div>
-                                            </div>
+                <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                    <button onClick={() => setActiveTab('pending')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'pending' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
+                        <AlertCircle size={16} /> Pending Approvals
+                        {allPending.length > 0 && <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-600">{allPending.length}</span>}
+                    </button>
+                    <button onClick={() => setActiveTab('history')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'history' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
+                        <History size={16} /> Transaction Ledger
+                    </button>
+                </div>
+
+                {activeTab === 'pending' && (
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
+                        <div className="flex items-center justify-between border-b border-stone-100 bg-[#FDFBF9] px-6 py-4">
+                            <div className="flex items-center gap-3">
+                                <AlertCircle className="text-stone-400" size={18} strokeWidth={2.5} />
+                                <h3 className="text-sm font-bold tracking-tight text-stone-900">Pending Review</h3>
+                            </div>
+                        </div>
+
+                        <div className="divide-y divide-stone-100">
+                            {paginatedPending.length > 0 ? paginatedPending.map((item) => (
+                                <div key={`${item.type}-${item.id}`} className="group px-6 py-4 transition-colors hover:bg-stone-50/50 lg:flex lg:items-center lg:justify-between lg:gap-4">
+                                    <div className="flex items-start gap-4">
+                                        <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 ${item.type === 'payroll' ? 'border-stone-200 bg-stone-50 text-stone-500' : 'border-clay-200 bg-[#FCF7F2] text-clay-600'}`}>
+                                            {item.type === 'payroll' ? <Users size={18} strokeWidth={2.5} /> : <FileText size={18} strokeWidth={2.5} />}
                                         </div>
-
-                                        <div className="flex items-center gap-4 self-end lg:self-auto">
-                                            <div className="text-right">
-                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Amount Due</p>
-                                                <p className="text-xl font-bold text-gray-900">{formatShortMoney(item.amount)}</p>
+                                        <div className="min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                            <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${typeTone(item.type)}`}>{item.type === 'payroll' ? 'People & Payroll' : 'Inventory'}</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                                                    #{item.id} &bull; {formatDate(item.created_at)}
+                                                </span>
                                             </div>
-                                            <button onClick={() => openReviewModal(item, 'pending')} className="inline-flex items-center gap-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-bold uppercase tracking-wide rounded-lg hover:bg-gray-800 transition shadow-sm active:scale-95">
-                                                <Eye size={14} /> Review
-                                            </button>
+                                            
+                                            <h4 className="mt-1.5 text-[14px] font-bold leading-tight text-stone-900">{item.type === 'payroll' ? `Payroll for ${item.month}` : item.supply?.name}</h4>
+                                            
+                                            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-stone-500">
+                                                <span>Requested by <strong className="font-bold text-stone-700">{item.requester?.name || 'Seller owner'}</strong> <span className="text-stone-400 ml-1">({formatRole(item.requester?.role)})</span></span>
+                                                <span className="h-1 w-1 rounded-full bg-stone-300" />
+                                                <span>{item.type === 'payroll' ? `${item.employee_count} Employees` : `${item.quantity} ${item.supply?.unit || ''}`}</span>
+                                                {item.activity?.submitted_at && (
+                                                    <>
+                                                        <span className="h-1 w-1 rounded-full bg-stone-300" />
+                                                        <span>Submitted {formatDate(item.activity.submitted_at)}</span>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                )) : (
-                                    <WorkspaceEmptyState
-                                        icon={CheckCircle}
-                                        title="No pending approvals"
-                                        description="Payroll and procurement requests that still need Accounting review will appear here."
-                                        actionLabel="Review Inventory"
-                                        actionHref={route('procurement.index')}
-                                        secondaryActionLabel="Open HR"
-                                        secondaryActionHref={route('hr.index')}
-                                    />
-                                )}
-                            </div>
 
+                                    <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:flex-row sm:items-center sm:justify-end lg:self-auto min-w-[200px]">
+                                        <div className="text-left sm:text-right">
+                                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Amount Due</p>
+                                            <p className="text-lg font-bold tracking-tight text-stone-900">{formatShortMoney(item.amount)}</p>
+                                        </div>
+                                        <button onClick={() => openReviewModal(item, 'pending')} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-clay-700 sm:w-auto">
+                                            <Eye size={14} strokeWidth={2.5} /> Review
+                                        </button>
+                                    </div>
+                                </div>
+                            )) : (
+                                <WorkspaceEmptyState
+                                    icon={CheckCircle}
+                                    title="No pending approvals"
+                                    description="Payroll and inventory requests that still need finance review will appear here."
+                                    actionLabel="Review Inventory"
+                                    actionHref={route('procurement.index')}
+                                    secondaryActionLabel="Open HR"
+                                    secondaryActionHref={route('hr.index')}
+                                />
+                            )}
+                        </div>
+
+                        <div className="border-t border-stone-100 bg-[#FDFBF9]">
                             <CompactPagination
                                 currentPage={pendingPage}
                                 totalPages={totalPendingPages}
@@ -247,81 +292,78 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                 onPageChange={setPendingPage}
                             />
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {activeTab === 'history' && (
-                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                            <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                                <div className="flex items-center gap-3">
-                                    <History className="text-gray-400" size={16} />
-                                    <h3 className="font-bold text-gray-900 text-sm">Transaction Ledger</h3>
-                                </div>
+                {activeTab === 'history' && (
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
+                        <div className="border-b border-stone-100 bg-[#FDFBF9] px-6 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <History className="text-stone-400" size={18} strokeWidth={2.5} />
+                                <h3 className="text-sm font-bold tracking-tight text-stone-900">Transaction Ledger</h3>
                             </div>
-                            <div className="divide-y divide-gray-50">
-                                {paginatedHistory.length > 0 ? paginatedHistory.map((item) => {
-                                    const isApproved = ['paid', 'completed', 'accounting_approved', 'ordered', 'received', 'partially_received'].includes(String(item.status).toLowerCase());
+                        </div>
+                        <div className="divide-y divide-stone-100">
+                            {paginatedHistory.length > 0 ? paginatedHistory.map((item) => {
+                                const isApproved = ['paid', 'completed', 'accounting_approved', 'ordered', 'received', 'partially_received'].includes(String(item.status).toLowerCase());
 
-                                    return (
-                                        <div key={`${item.type}-${item.id}`} className="px-5 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 text-xs hover:bg-gray-50/50 transition duration-150">
-                                            <div className="flex items-start gap-4">
-                                                <div className={`p-2 rounded-lg bg-gray-50 border border-gray-100 ${item.type === 'payroll' ? 'text-indigo-500' : 'text-clay-500'}`}>
-                                                    {item.type === 'payroll' ? <Users size={16} /> : <FileText size={16} />}
-                                                </div>
-                                                <div>
-                                                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                                                        <span className="font-bold text-gray-900 text-sm">{item.type === 'payroll' ? `Payroll for ${item.month}` : item.supply?.name}</span>
-                                                        <span className={`text-[8px] uppercase font-bold px-2 py-0.5 rounded-full border ${typeTone(item.type)}`}>{item.type === 'payroll' ? 'HR' : 'Procurement'}</span>
-                                                    </div>
-                                                    <div className="flex flex-wrap items-center gap-2 text-gray-500 text-[10px]">
-                                                        <span>Requested {formatDate(item.activity?.requested_at || item.created_at)}</span>
-                                                        {item.activity?.submitted_at && (
-                                                            <>
-                                                                <span>|</span>
-                                                                <span>Submitted {formatDate(item.activity.submitted_at)}</span>
-                                                            </>
-                                                        )}
-                                                        {item.activity?.last_reviewed_at && (
-                                                            <>
-                                                                <span>|</span>
-                                                                <span>{reviewLabel(item.status)} {formatDate(item.activity.last_reviewed_at)}</span>
-                                                            </>
-                                                        )}
-                                                        {!item.activity?.last_reviewed_at && item.updated_at && item.updated_at !== item.created_at && (
-                                                            <>
-                                                                <span>|</span>
-                                                                <span>Updated {formatDate(item.updated_at)}</span>
-                                                            </>
-                                                        )}
-                                                        <span>|</span>
-                                                        <span>{item.type === 'payroll' ? `${item.employee_count} Employees` : `${item.quantity} ${item.supply?.unit || ''}`}</span>
-                                                        <span>|</span>
-                                                        <span>Requester: {item.requester?.name || 'Seller owner'}</span>
-                                                    </div>
-                                                    {item.rejection_reason && <p className="mt-1 text-[11px] text-red-600">Reason: {item.rejection_reason}</p>}
-                                                </div>
+                                return (
+                                    <div key={`${item.type}-${item.id}`} className="group px-6 py-4 transition-colors hover:bg-stone-50/50 lg:flex lg:items-center lg:justify-between lg:gap-4">
+                                        <div className="flex items-start gap-4">
+                                            <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 ${item.type === 'payroll' ? 'border-stone-200 bg-stone-50 text-stone-500' : 'border-clay-200 bg-[#FCF7F2] text-clay-600'}`}>
+                                                {item.type === 'payroll' ? <Users size={18} strokeWidth={2.5} /> : <FileText size={18} strokeWidth={2.5} />}
                                             </div>
-
-                                            <div className="flex items-center gap-4 self-end lg:self-auto">
-                                                <div className="text-right">
-                                                    <span className="font-bold text-gray-900 block text-sm">{isApproved ? '- ' : ''}{formatShortMoney(item.amount)}</span>
-                                                    <span className={`mt-1 inline-flex text-[9px] px-2.5 py-1 rounded-full font-bold uppercase border ${statusTone(item.status)}`}>{String(item.status).replace(/_/g, ' ')}</span>
+                                            <div className="min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${typeTone(item.type)}`}>{item.type === 'payroll' ? 'Finance Review' : 'Inventory Ops'}</span>
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                                                        #{item.id} &bull; {formatDate(item.activity?.requested_at || item.created_at)}
+                                                    </span>
+                                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${statusTone(item.status)}`}>
+                                                        {String(item.status).replace(/_/g, ' ')}
+                                                    </span>
                                                 </div>
-                                                <button onClick={() => openReviewModal(item, 'history')} className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold uppercase tracking-wide rounded-lg hover:bg-gray-50 transition">
-                                                    <Eye size={14} /> View
-                                                </button>
+                                                
+                                                <h4 className="mt-1.5 text-[14px] font-bold leading-tight text-stone-900">{item.type === 'payroll' ? `Payroll for ${item.month}` : item.supply?.name}</h4>
+                                                
+                                                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-stone-500">
+                                                    <span>Requested by <strong className="font-bold text-stone-700">{item.requester?.name || 'Seller owner'}</strong></span>
+                                                    <span className="h-1 w-1 rounded-full bg-stone-300" />
+                                                    <span>{item.type === 'payroll' ? `${item.employee_count} Employees` : `${item.quantity} ${item.supply?.unit || ''}`}</span>
+                                                    {item.activity?.last_reviewed_at && (
+                                                        <>
+                                                            <span className="h-1 w-1 rounded-full bg-stone-300" />
+                                                            <span>{reviewLabel(item.status)} {formatDate(item.activity.last_reviewed_at)}</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                
+                                                                                                {item.rejection_reason && <p className="mt-2 text-[11px] font-medium text-red-600">Note: {item.rejection_reason}</p>}
                                             </div>
                                         </div>
-                                    );
-                                }) : (
-                                    <WorkspaceEmptyState
-                                        compact
-                                        icon={History}
-                                        title="No transaction history yet"
-                                        description="Approved or rejected payroll and procurement releases will be recorded in this ledger."
-                                    />
-                                )}
-                            </div>
 
+                                        <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:flex-row sm:items-center sm:justify-end lg:self-auto min-w-[200px]">
+                                            <div className="text-left sm:text-right">
+                                                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Action Amount</p>
+                                                <p className="text-lg font-bold tracking-tight text-stone-900">{isApproved ? '- ' : ''}{formatShortMoney(item.amount)}</p>
+                                            </div>
+                                            <button onClick={() => openReviewModal(item, 'history')} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-stone-700 shadow-sm transition hover:bg-stone-50 hover:text-stone-900 sm:w-auto">
+                                                <Eye size={14} strokeWidth={2.5} /> View
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            }) : (
+                                <WorkspaceEmptyState
+                                    compact
+                                    icon={History}
+                                    title="No transaction history yet"
+                                    description="Approved or rejected payroll and inventory releases will be recorded in this ledger."
+                                />
+                            )}
+                        </div>
+
+                        <div className="border-t border-stone-100 bg-[#FDFBF9]">
                             <CompactPagination
                                 currentPage={historyPage}
                                 totalPages={totalHistoryPages}
@@ -331,59 +373,94 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                 onPageChange={setHistoryPage}
                             />
                         </div>
-                    )}
-                </main>
+                    </div>
+                )}
+            </main>
 
             <Modal show={showBaseFundsModal} onClose={() => setShowBaseFundsModal(false)} maxWidth="sm">
-                <form onSubmit={handleUpdateBaseFunds} className="p-6">
-                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4 border border-emerald-100 shadow-sm"><Building2 size={24} /></div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">Edit Starting Balance</h2>
-                    <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                        Input your initial business capital. Your total Available Funds will be calculated as:
-                        <br />
-                        <span className="font-bold text-gray-800 bg-gray-50 px-2 py-1 rounded inline-block mt-2 border border-gray-100">Base Funds + Revenue - Expenses</span>
-                    </p>
-
-                    <div className="mb-6 relative">
-                        <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-2 block">Base Funds Amount (PHP)</label>
-                        <input type="number" min="0" step="any" value={baseFundsValue} onChange={(event) => setBaseFundsValue(event.target.value)} className="w-full px-4 py-3 border-gray-300 rounded-xl text-gray-900 font-bold focus:border-emerald-500 focus:ring-emerald-500 shadow-sm transition" required />
+                <form onSubmit={handleUpdateBaseFunds} className="flex max-h-[85vh] flex-col">
+                    <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-emerald-600"><Building2 size={24} /></div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Edit Starting Balance</h2>
+                                <p className="mt-1 text-[13px] leading-relaxed text-gray-500">
+                                    Set the initial business capital used in the finance balance.
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" disabled={baseFundsProcessing} onClick={() => setShowBaseFundsModal(false)} className={`${modalCloseButtonClass} disabled:cursor-not-allowed disabled:opacity-50`}>
+                            <X size={18} />
+                        </button>
                     </div>
 
-                    <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
-                        <button type="button" onClick={() => setShowBaseFundsModal(false)} className="px-5 py-2.5 text-gray-500 text-sm font-bold hover:bg-gray-50 rounded-xl transition">Cancel</button>
-                        <button type="submit" className="px-6 py-2.5 bg-gray-900 text-white text-sm rounded-xl font-bold hover:bg-gray-800 transition shadow-sm active:scale-95">Save Balance</button>
+                    <div className="overflow-y-auto px-6 py-6">
+                        <p className="mb-6 text-xs leading-relaxed text-gray-500">
+                            Available Funds will be calculated as:
+                            <br />
+                            <span className="mt-2 inline-block rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1 text-[12px] font-bold text-gray-800">Base Funds + Revenue - Expenses</span>
+                        </p>
+
+                        <div className="mb-6 relative">
+                            <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-2 block">Base Funds Amount (PHP)</label>
+                            <input type="number" min="0" step="any" value={baseFundsValue} onChange={(event) => setBaseFundsValue(event.target.value)} className="w-full rounded-xl border-gray-300 px-4 py-3 font-bold text-gray-900 transition focus:border-emerald-500 focus:ring-emerald-500" required />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 px-6 py-4">
+                        {baseFundsProcessing && (
+                            <WorkspaceLoadingState
+                                label="Saving balance"
+                                detail="Updating accounting base funds"
+                                className="mr-auto"
+                            />
+                        )}
+                        <button type="button" disabled={baseFundsProcessing} onClick={() => setShowBaseFundsModal(false)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
+                        <button type="submit" disabled={baseFundsProcessing} className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60">
+                            {baseFundsProcessing && <LoaderCircle size={15} className="animate-spin" />}
+                            {baseFundsProcessing ? 'Saving...' : 'Save Balance'}
+                        </button>
                     </div>
                 </form>
             </Modal>
 
             <Modal show={reviewModal.open} onClose={closeReviewModal} afterLeave={resetReviewModal} maxWidth={isPayroll ? '5xl' : '2xl'}>
-                <div className="p-3.5">
-                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-start gap-3">
-                            <div className={`mt-0.5 rounded-2xl border p-2 ${isPayroll ? 'border-indigo-100 bg-indigo-50 text-indigo-700' : 'border-emerald-100 bg-emerald-50 text-emerald-700'}`}>
-                                {isPayroll ? <Users size={18} /> : <FileText size={18} />}
+                <div className="flex max-h-[85vh] flex-col">
+                    <div className="flex flex-col gap-2.5 border-b border-stone-100 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6 bg-[#FDFBF9]">
+                        <div className="flex items-start gap-4">
+                            <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${isPayroll ? 'border-stone-200 bg-stone-50 text-stone-500' : 'border-clay-200 bg-[#FCF7F2] text-clay-600'}`}>
+                                {isPayroll ? <Users size={18} strokeWidth={2.5} /> : <FileText size={18} strokeWidth={2.5} />}
                             </div>
-                            <div>
+                            <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <h2 className="text-[15px] font-bold text-gray-900 sm:text-base">{isPayroll ? `Payroll Review - ${selectedItem?.month || ''}` : `Stock Request Review - #${selectedItem?.id || ''}`}</h2>
-                                    {selectedItem?.status && <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase ${statusTone(selectedItem.status)}`}>{String(selectedItem.status).replace(/_/g, ' ')}</span>}
+                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${isPayroll ? 'bg-stone-100 text-stone-700 border-stone-200' : 'bg-[#FCF7F2] text-clay-700 border-[#E7D8C9]'}`}>{isPayroll ? 'Payroll Review' : 'Inventory Review'}</span>
+                                    {selectedItem?.status && <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${statusTone(selectedItem.status)}`}>{String(selectedItem.status).replace(/_/g, ' ')}</span>}
                                 </div>
-                                <p className="mt-0.5 text-[11px] text-gray-500 sm:text-xs">{isPendingReview ? 'Review the breakdown before approving or rejecting this request.' : 'Review the stored breakdown and any rejection reason for this action.'}</p>
+                                <h2 className="mt-1.5 text-[15px] font-bold leading-tight text-stone-900 sm:text-base">{isPayroll ? `Payroll Review for ${selectedItem?.month || ''}` : `Stock Request #${selectedItem?.id || ''}`}</h2>
+                                <p className="mt-1 text-[11px] font-medium text-stone-500 sm:text-[12px]">{isPendingReview ? 'Review the breakdown before approving or rejecting.' : 'Review the stored breakdown and any rejection reason.'}</p>
                             </div>
                         </div>
                         {isPayroll && (
-                            <div className="rounded-2xl border border-gray-100 bg-gray-50 px-3 py-2 text-right">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Requested Amount</p>
-                                <p className="mt-1 text-lg font-bold text-gray-900">{formatMoney(selectedItem?.amount)}</p>
+                            <div className="rounded-[1.25rem] border border-[#E7D8C9] bg-[#FCF7F2] px-4 py-2.5 text-right">
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-clay-500">Requested Amount</p>
+                                <p className="mt-0.5 text-xl font-bold tracking-tight text-clay-900">{formatMoney(selectedItem?.amount)}</p>
                             </div>
                         )}
+                        <button type="button" disabled={!!reviewProcessing} onClick={closeReviewModal} className={`${modalCloseButtonClass} sm:self-start disabled:cursor-not-allowed disabled:opacity-50`}>
+                            <X size={18} strokeWidth={2.5} />
+                        </button>
                     </div>
 
                     {selectedItem && (
-                        <div className="mt-3.5 space-y-3">
+                        <div className="mt-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6 align-stretch">
+                            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 px-4 py-3 text-[11px] font-medium leading-relaxed text-stone-600">
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Review flow</p>
+                                <p className="mt-1">{isPendingReview ? 'Approve to release it into the finance ledger, or reject it with a reason that the requester can review later.' : 'This record is already part of the stored finance trail, including the final review result.'}</p>
+                            </div>
+
                             {!isPayroll && (
-                                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                                    <div className="grid divide-y divide-gray-100 md:grid-cols-2 md:divide-x md:divide-y-0">
+                                <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white shadow-sm">
+                                    <div className="grid divide-y divide-stone-100 md:grid-cols-2 md:divide-x md:divide-y-0">
                                         <AuditSheet
                                             title="Request & Supply"
                                             rows={[
@@ -391,8 +468,8 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                                     label: 'Requester',
                                                     value: (
                                                         <div className="text-right">
-                                                            <div className="font-bold text-gray-900">{selectedItem.requester?.name || 'Seller owner'}</div>
-                                                            <div className="text-[11px] text-gray-500">{formatRole(selectedItem.requester?.role)}</div>
+                                                            <div className="font-bold text-stone-900 text-[13px]">{selectedItem.requester?.name || 'Seller owner'}</div>
+                                                            <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-0.5">{formatRole(selectedItem.requester?.role)}</div>
                                                         </div>
                                                     ),
                                                 },
@@ -414,16 +491,16 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                                     label: 'Funds',
                                                     value: (
                                                         <div className="text-right">
-                                                            <div className="font-bold text-gray-900">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</div>
-                                                            <div className={`text-[11px] font-semibold ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                                                                After release: {formatMoney(selectedItem.fund_snapshot?.remaining_balance)}
+                                                            <div className="font-bold text-stone-900 text-[13px]">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</div>
+                                                            <div className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                                New: {formatMoney(selectedItem.fund_snapshot?.remaining_balance)}
                                                             </div>
                                                         </div>
                                                     ),
                                                 },
                                                 {
                                                     label: 'Stock',
-                                                    value: `Current ${selectedItem.supply?.current_stock ?? 'N/A'} | Min ${selectedItem.supply?.min_stock ?? 'N/A'} | Max ${selectedItem.supply?.max_stock ?? 'N/A'}`,
+                                                    value: `Cur ${selectedItem.supply?.current_stock ?? 'N/A'} | Min ${selectedItem.supply?.min_stock ?? 'N/A'}`,
                                                 },
                                                 { label: 'Capacity', value: selectedItem.supply?.available_capacity },
                                             ]}
@@ -434,166 +511,113 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
                             {isPayroll && (
                                 <>
-                                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                                        <div className="rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm">
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Requester</p>
-                                            <div className="mt-2.5 space-y-1">
-                                                <p className="text-base font-bold text-gray-900">{selectedItem.requester?.name || 'Seller owner'}</p>
-                                                <p className="text-sm text-gray-500">{formatRole(selectedItem.requester?.role)}</p>
-                                                <p className="text-xs text-gray-400">Submitted on {formatDate(selectedItem.created_at)}</p>
+                                    <div className="grid gap-4 lg:grid-cols-2">
+                                        <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition">
+                                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Requester File</p>
+                                            <div className="mt-3">
+                                                <p className="text-[15px] font-bold text-stone-900">{selectedItem.requester?.name || 'Seller owner'}</p>
+                                                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mt-1">{formatRole(selectedItem.requester?.role)}</p>
+                                                <p className="text-[11px] font-medium text-stone-400 mt-2">Submitted {formatDate(selectedItem.created_at)}</p>
                                             </div>
                                         </div>
 
-                                        <div className="rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm">
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Fund Snapshot</p>
-                                            <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                                                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
-                                                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">Available Balance</p>
-                                                    <p className="mt-1 text-base font-bold text-gray-900">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</p>
+                                        <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Treasury Check</p>
+                                            <div className="mt-3 grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Current Balance</p>
+                                                    <p className="mt-0.5 text-lg font-bold tracking-tight text-stone-900">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</p>
                                                 </div>
-                                                <div className={`rounded-xl border px-3 py-2.5 ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'border-red-100 bg-red-50' : 'border-emerald-100 bg-emerald-50'}`}>
-                                                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">After Release</p>
-                                                    <p className={`mt-1 text-base font-bold ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatMoney(selectedItem.fund_snapshot?.remaining_balance)}</p>
+                                                <div className="border-l border-stone-100 pl-3">
+                                                    <p className={`text-[9px] font-bold uppercase tracking-widest ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-500' : 'text-emerald-500'}`}>After Release</p>
+                                                    <p className={`mt-0.5 text-lg font-bold tracking-tight ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatMoney(selectedItem.fund_snapshot?.remaining_balance)}</p>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Approval Activity</p>
-                                            <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                                <DetailTile label="Requested" value={formatDateTime(selectedItem.activity?.requested_at || selectedItem.created_at)} />
-                                                <DetailTile label="Submitted to Accounting" value={selectedItem.activity?.submitted_at ? formatDateTime(selectedItem.activity.submitted_at) : 'Not separately submitted'} />
-                                                <DetailTile label="Last Review" value={selectedItem.activity?.last_reviewed_at ? formatDateTime(selectedItem.activity.last_reviewed_at) : 'Pending review'} />
-                                            </div>
+                                    <div className="rounded-[1.5rem] border border-stone-200 bg-white shadow-sm overflow-hidden">
+                                        <div className="px-5 py-4 border-b border-stone-100 bg-[#FDFBF9]">
+                                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Detailed Ledger</p>
+                                            <p className="mt-1 text-[11px] font-medium text-stone-500">Employee specific deductions and runtime pay</p>
                                         </div>
 
-                                        <div className="grid gap-3 md:grid-cols-3">
-                                            <DetailTile label="Payroll Month" value={selectedItem.month} />
-                                            <DetailTile label="Employee Count" value={selectedItem.employee_count} />
-                                            <DetailTile label="Total Payroll Amount" value={formatMoney(selectedItem.amount)} />
+                                        <div className="flex gap-4 px-5 py-4 border-b border-stone-100 bg-stone-50 overflow-x-auto text-[11px]">
+                                            <span className="font-medium text-stone-500"><strong className="font-bold text-stone-900 mr-1.5">{selectedItem.employee_count}</strong>Employees</span>
+                                            <span className="font-medium text-stone-500"><strong className="font-bold text-stone-900 mr-1.5">{formatMoney(selectedItem.amount)}</strong>Total Disbursed</span>
+                                            {selectedItem.activity?.last_reviewed_at && <span className="font-medium text-stone-500 ml-auto whitespace-nowrap">Reviewed {formatDateTime(selectedItem.activity.last_reviewed_at)}</span>}
                                         </div>
 
-                                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                            <div>
-                                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Per-Employee Breakdown</p>
-                                                <p className="mt-1 text-sm text-gray-500">Detailed salary, attendance, and net-pay view before accounting action.</p>
-                                            </div>
-
-                                            <div className="mt-4 space-y-3 md:hidden">
-                                                {selectedItem.line_items?.map((line) => (
-                                                    <div key={line.id} className="rounded-2xl border border-gray-100 bg-stone-50/70 p-3">
-                                                        <div className="flex items-start justify-between gap-3">
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-bold text-gray-900">{line.employee_name}</p>
-                                                                <p className="mt-0.5 text-[11px] text-gray-500">Base Salary: {formatMoney(line.base_salary)}</p>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Net Pay</p>
-                                                                <p className="text-sm font-bold text-gray-900">{formatMoney(line.net_pay)}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-                                                            <div className="rounded-xl border border-gray-100 bg-white px-2.5 py-2">
-                                                                <p className="text-gray-400">Days Worked</p>
-                                                                <p className="mt-0.5 font-bold text-gray-800">{line.days_worked}</p>
-                                                            </div>
-                                                            <div className="rounded-xl border border-gray-100 bg-white px-2.5 py-2">
-                                                                <p className="text-gray-400">Absences</p>
-                                                                <p className="mt-0.5 font-bold text-gray-800">{line.absences_days}</p>
-                                                            </div>
-                                                            <div className="rounded-xl border border-gray-100 bg-white px-2.5 py-2">
-                                                                <p className="text-gray-400">Undertime</p>
-                                                                <p className="mt-0.5 font-bold text-gray-800">{line.undertime_hours}</p>
-                                                            </div>
-                                                            <div className="rounded-xl border border-gray-100 bg-white px-2.5 py-2">
-                                                                <p className="text-gray-400">Overtime</p>
-                                                                <p className="mt-0.5 font-bold text-gray-800">{line.overtime_hours}</p>
-                                                            </div>
-                                                            <div className="rounded-xl border border-gray-100 bg-white px-2.5 py-2">
-                                                                <p className="text-gray-400">Absence Deduction</p>
-                                                                <p className="mt-0.5 font-bold text-red-600">{formatMoney(line.absence_deduction)}</p>
-                                                            </div>
-                                                            <div className="rounded-xl border border-gray-100 bg-white px-2.5 py-2">
-                                                                <p className="text-gray-400">Undertime Deduction</p>
-                                                                <p className="mt-0.5 font-bold text-red-600">{formatMoney(line.undertime_deduction)}</p>
-                                                            </div>
-                                                            <div className="col-span-2 rounded-xl border border-emerald-100 bg-emerald-50 px-2.5 py-2">
-                                                                <p className="text-emerald-600">Overtime Pay</p>
-                                                                <p className="mt-0.5 font-bold text-emerald-700">{formatMoney(line.overtime_pay)}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            <div className="mt-4 hidden overflow-x-auto md:block">
-                                                <table className="w-full min-w-[980px] text-left">
-                                                    <thead>
-                                                        <tr className="border-b border-gray-100 text-[10px] uppercase tracking-[0.18em] text-gray-400">
-                                                            <th className="py-3 pr-4 font-bold">Employee</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Base Salary</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Days Worked</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Absences</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Absence Deduction</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Undertime</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Undertime Deduction</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Overtime</th>
-                                                            <th className="py-3 pr-4 font-bold text-right">Overtime Pay</th>
-                                                            <th className="py-3 font-bold text-right">Net Pay</th>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[980px] text-left">
+                                                <thead>
+                                                    <tr className="border-b border-stone-100 text-[9px] font-bold uppercase tracking-widest text-stone-400">
+                                                        <th className="px-5 py-3.5">Employee</th>
+                                                        <th className="px-3 py-3.5 text-right">Base Salary</th>
+                                                        <th className="px-3 py-3.5 text-right">Work Days</th>
+                                                        <th className="px-3 py-3.5 text-right text-red-500">Abs/Und</th>
+                                                        <th className="px-3 py-3.5 text-right text-emerald-500">Overtime</th>
+                                                        <th className="px-5 py-3.5 text-right">Net Release</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-stone-100">
+                                                    {selectedItem.line_items?.map((line) => (
+                                                        <tr key={line.id} className="text-[12px] font-medium text-stone-600 transition-colors hover:bg-stone-50">
+                                                            <td className="px-5 py-3 font-bold text-stone-900">{line.employee_name}</td>
+                                                            <td className="px-3 py-3 text-right">{formatMoney(line.base_salary)}</td>
+                                                            <td className="px-3 py-3 text-right">{line.days_worked}</td>
+                                                            <td className="px-3 py-3 text-right text-red-600">-{formatMoney(Number(line.absence_deduction) + Number(line.undertime_deduction))}</td>
+                                                            <td className="px-3 py-3 text-right text-emerald-600">+{formatMoney(line.overtime_pay)}</td>
+                                                            <td className="px-5 py-3 text-right text-[13px] font-bold tracking-tight text-stone-900">{formatMoney(line.net_pay)}</td>
                                                         </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-gray-50">
-                                                        {selectedItem.line_items?.map((line) => (
-                                                            <tr key={line.id} className="text-sm text-gray-700">
-                                                                <td className="py-3 pr-4 font-bold text-gray-900">{line.employee_name}</td>
-                                                                <td className="py-3 pr-4 text-right">{formatMoney(line.base_salary)}</td>
-                                                                <td className="py-3 pr-4 text-right">{line.days_worked}</td>
-                                                                <td className="py-3 pr-4 text-right">{line.absences_days}</td>
-                                                                <td className="py-3 pr-4 text-right text-red-600">{formatMoney(line.absence_deduction)}</td>
-                                                                <td className="py-3 pr-4 text-right">{line.undertime_hours}</td>
-                                                                <td className="py-3 pr-4 text-right text-red-600">{formatMoney(line.undertime_deduction)}</td>
-                                                                <td className="py-3 pr-4 text-right">{line.overtime_hours}</td>
-                                                                <td className="py-3 pr-4 text-right text-emerald-700">{formatMoney(line.overtime_pay)}</td>
-                                                                <td className="py-3 text-right font-bold text-gray-900">{formatMoney(line.net_pay)}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </>
                             )}
 
                             {selectedItem.rejection_reason && (
-                                <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-4">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-500">Stored Rejection Reason</p>
-                                    <p className="mt-2 text-sm font-medium text-red-700">{selectedItem.rejection_reason}</p>
+                                <div className="rounded-[1.25rem] border border-red-200/60 bg-red-50 px-5 py-4">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-red-500">Stored Rejection Reason</p>
+                                    <p className="mt-1 text-[13px] font-bold text-red-800">{selectedItem.rejection_reason}</p>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    <div className="mt-3.5 border-t border-gray-100 pt-3">
+                    <div className="border-t border-stone-100 px-5 py-4 sm:px-6 bg-[#FDFBF9]">
                         {isPendingReview ? (
                             <div className="space-y-4">
-                                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Rejection Reason</label>
-                                    <textarea className="mt-3 w-full rounded-xl border-gray-300 text-sm focus:border-red-500 focus:ring-red-500 shadow-sm transition resize-none" rows={4} placeholder="State the exact accounting reason if you reject this request." value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} />
-                                    <p className="mt-2 text-xs text-gray-500">A rejection reason is required before Accounting can reject this request, and the requester will see this exact reason.</p>
+                                <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+                                    <label className="text-[9px] font-bold uppercase tracking-widest text-stone-500">Rejection Reason</label>
+                                    <textarea disabled={!canEditAccounting} className="mt-3 w-full resize-none rounded-xl border-stone-300 text-[13px] font-medium transition focus:border-red-500 focus:ring-red-500 shadow-sm disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500" rows={3} placeholder="State the exact finance reason if you reject this release..." value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} />
+                                    <p className="mt-2 text-[10px] font-medium text-stone-500 uppercase tracking-wide">A specific internal note is required before rejecting a financial release.</p>
                                 </div>
 
-                                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                                    <button type="button" onClick={closeReviewModal} className="px-4 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition">Close</button>
-                                    <button type="button" onClick={handleReject} disabled={!rejectReason.trim()} className={`px-4 py-2.5 text-sm font-bold rounded-xl transition shadow-sm ${rejectReason.trim() ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-100 text-red-300 cursor-not-allowed'}`}>Reject With Reason</button>
-                                    <button type="button" onClick={handleApprove} className="px-4 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition shadow-sm">{isPayroll ? 'Approve Payroll Release' : 'Approve Fund Release'}</button>
+                                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                    {reviewProcessing && (
+                                        <WorkspaceLoadingState
+                                            label={reviewProcessing === 'approve' ? 'Approving request' : 'Rejecting request'}
+                                            detail="Updating accounting review safely"
+                                            className="sm:mr-auto"
+                                        />
+                                    )}
+                                    <button type="button" disabled={!!reviewProcessing} onClick={closeReviewModal} className="rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-50">Close</button>
+                                    <button type="button" onClick={handleReject} disabled={!canEditAccounting || !rejectReason.trim() || !!reviewProcessing} className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition shadow-sm ${canEditAccounting && rejectReason.trim() && !reviewProcessing ? 'bg-red-600 text-white hover:bg-red-700' : 'cursor-not-allowed border border-stone-200 bg-stone-100 text-stone-400'}`}>
+                                        {reviewProcessing === 'reject' && <LoaderCircle size={15} className="animate-spin" />}
+                                        {reviewProcessing === 'reject' ? 'Rejecting...' : 'Reject Request'}
+                                    </button>
+                                    <button type="button" onClick={handleApprove} disabled={!canEditAccounting || !!reviewProcessing} className="inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-60">
+                                        {reviewProcessing === 'approve' && <LoaderCircle size={15} className="animate-spin" />}
+                                        {reviewProcessing === 'approve' ? 'Approving...' : (isPayroll ? 'Approve & Release' : 'Approve Amount')}
+                                    </button>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex justify-end">
-                                <button type="button" onClick={closeReviewModal} className="px-4 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition shadow-sm">Close</button>
+                                <button type="button" disabled={!!reviewProcessing} onClick={closeReviewModal} className="rounded-xl bg-stone-900 border border-transparent px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-60">Close Verification</button>
                             </div>
                         )}
                     </div>
@@ -607,22 +631,22 @@ FundRelease.layout = (page) => <SellerWorkspaceLayout active="accounting">{page}
 
 function DetailTile({ label, value }) {
     return (
-        <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">{label}</p>
-            <p className="mt-1 text-sm font-bold text-gray-900">{value ?? 'N/A'}</p>
+        <div className="rounded-[1.25rem] border border-stone-200 bg-white shadow-sm px-4 py-3">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">{label}</p>
+            <p className="mt-1 text-[13px] font-bold text-stone-900">{value ?? 'N/A'}</p>
         </div>
     );
 }
 
 function AuditSheet({ title, rows }) {
     return (
-        <div className="px-3.5 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">{title}</p>
-            <div className="mt-2.5 divide-y divide-gray-100">
+        <div className="px-4 py-3.5">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">{title}</p>
+            <div className="mt-3 divide-y divide-stone-100">
                 {rows.map(({ label, value }) => (
-                    <div key={label} className="flex items-start justify-between gap-3 py-2 first:pt-0 last:pb-0">
-                        <span className="text-[11px] font-medium text-gray-500">{label}</span>
-                        <span className="max-w-[65%] text-right text-sm font-bold text-gray-900">{value ?? 'N/A'}</span>
+                    <div key={label} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mt-0.5">{label}</span>
+                        <span className="max-w-[70%] text-right text-[13px] font-medium text-stone-900">{value ?? 'N/A'}</span>
                     </div>
                 ))}
             </div>

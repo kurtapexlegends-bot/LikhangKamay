@@ -1,9 +1,9 @@
 ﻿import React, { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
 import { AlertCircle, ArrowRight, CheckCircle2, ChevronRight, Clock3, Crown, Package, ShieldCheck, Sparkles, X, Users, XCircle } from 'lucide-react';
 import Modal from '@/Components/Modal';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 const PLAN_CONFIG = [
     {
@@ -87,9 +87,9 @@ const PLAN_CONFIG = [
 ];
 
 export default function Subscription({ auth, currentPlan, activeProductsCount, limit, activeProducts, linkedStaffCount = 0, pendingUpgrade = null, recentTransactions = [] }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [targetPlan, setTargetPlan] = useState(null);
+    const { openSidebar } = useSellerWorkspaceShell();
 
     const { post, processing, reset } = useForm({
         plan: '',
@@ -201,18 +201,41 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
             <Head title="Subscription Plan" />
-            <SellerSidebar active="subscription" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="flex min-h-screen flex-col lg:ml-56">
+            <div className="flex min-h-screen flex-col">
                 <SellerHeader
                     title="Subscription Plan"
                     subtitle="Manage product capacity, workspace access, and plan upgrades."
                     auth={auth}
-                    onMenuClick={() => setSidebarOpen(true)}
+                    onMenuClick={openSidebar}
                 />
 
                 <main className="mx-auto w-full max-w-[1120px] px-4 py-5 sm:px-6 lg:px-7">
                     <div className="space-y-5">
+                        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-bold text-stone-600">
+                                <ShieldCheck size={13} />
+                                Current plan: {currentPlanMeta.name}
+                            </span>
+                            {pendingUpgrade ? (
+                                <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+                                    <Clock3 size={13} />
+                                    Payment pending until PayMongo confirms it
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
+                                    <CheckCircle2 size={13} />
+                                    Plan changes apply after paid upgrades or confirmed downgrades
+                                </span>
+                            )}
+                            {activeProductsCount > limit && (
+                                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[11px] font-bold text-red-700">
+                                    <AlertCircle size={13} />
+                                    Some products must return to draft under the current limit
+                                </span>
+                            )}
+                        </div>
+
                         <section className="mx-auto max-w-[1020px] overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.32)]">
                             <div className="h-1 bg-gradient-to-r from-[#FFA426] via-[#FF8A1C] to-[#8B5CF6]" />
 
@@ -544,3 +567,5 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         </div>
     );
 }
+
+Subscription.layout = (page) => <SellerWorkspaceLayout active="subscription">{page}</SellerWorkspaceLayout>;

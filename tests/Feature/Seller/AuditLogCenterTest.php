@@ -4,14 +4,13 @@ namespace Tests\Feature\Seller;
 
 use App\Models\Employee;
 use App\Models\Payroll;
-use App\Models\SellerWalletWithdrawalRequest;
+use App\Models\SellerActivityLog;
 use App\Models\StaffAttendanceSession;
 use App\Models\StaffAccessAudit;
 use App\Models\StockRequest;
 use App\Models\SubscriptionTransaction;
 use App\Models\Supply;
 use App\Models\User;
-use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -54,19 +53,6 @@ class AuditLogCenterTest extends TestCase
             ],
             'created_at' => now()->subMinutes(4),
             'updated_at' => now()->subMinutes(4),
-        ]);
-
-        $wallet = app(WalletService::class)->getOrCreateWallet($seller);
-
-        SellerWalletWithdrawalRequest::create([
-            'user_id' => $seller->id,
-            'wallet_id' => $wallet->id,
-            'amount' => 1250,
-            'currency' => 'PHP',
-            'status' => SellerWalletWithdrawalRequest::STATUS_PENDING,
-            'note' => 'Weekly payout',
-            'created_at' => now()->subMinutes(3),
-            'updated_at' => now()->subMinutes(3),
         ]);
 
         Payroll::create([
@@ -116,14 +102,46 @@ class AuditLogCenterTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        SellerActivityLog::create([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => $seller->id,
+            'actor_type' => 'owner',
+            'category' => 'operations',
+            'module' => 'products',
+            'event_type' => 'product_created',
+            'severity' => 'success',
+            'status' => 'active',
+            'title' => 'Product Created',
+            'summary' => 'Sand Vase was added to the catalog.',
+            'subject_type' => \App\Models\Product::class,
+            'subject_id' => 99,
+            'subject_label' => 'Sand Vase',
+            'reference' => 'SKU-TEST-001',
+            'amount_label' => 'PHP 499.00',
+            'details' => [
+                'before' => null,
+                'after' => [
+                    'status' => 'Active',
+                ],
+                'lines' => [
+                    'Saved with requested status',
+                ],
+            ],
+            'target_url' => route('products.index'),
+            'target_label' => 'Open Products',
+            'occurred_at' => now()->subSeconds(30),
+        ]);
+
         $response = $this->actingAs($seller)
             ->get(route('audit-log.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Seller/AuditLog')
+                ->where('auditLog.summary.operations_events', 1)
                 ->where('auditLog.summary.staff_events', 1)
-                ->where('auditLog.summary.finance_events', 3)
+                ->where('auditLog.summary.finance_events', 2)
                 ->where('auditLog.summary.billing_events', 1)
+                ->has('auditLog.summary.coverage', 5)
                 ->has('auditLog.entries', 5)
             );
 
@@ -131,7 +149,8 @@ class AuditLogCenterTest extends TestCase
 
         $this->assertSame([
             'billing' => 1,
-            'finance' => 3,
+            'finance' => 2,
+            'operations' => 1,
             'staff' => 1,
         ], $entries->groupBy('category')->map->count()->sortKeys()->all());
     }

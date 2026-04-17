@@ -8,13 +8,16 @@ import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import SellerHeader from '@/Components/SellerHeader';
 import External3DToolLink from '@/Components/External3DToolLink';
 import GLTFModel from '@/Components/GLTFModel';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeDModelBoundary';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import {
     UploadCloud, Cuboid, Rotate3d, Trash2, Search,
-    ChevronDown, User, LogOut, X, Check, Menu, Package, AlertTriangle,
+    X, Check, Package, AlertTriangle,
 } from 'lucide-react';
 
 function Loader() {
@@ -53,6 +56,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
     const [previewUrl, setPreviewUrl] = useState(null);
     const [fileError, setFileError] = useState('');
     const [deleteCandidate, setDeleteCandidate] = useState(null);
+    const { canEdit: canEditThreeD, isReadOnly: isThreeDReadOnly } = useSellerModuleAccess('3d');
 
     const { data, setData, processing, reset, errors } = useForm({
         model: null,
@@ -111,6 +115,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
 
     const handleUpload = (e) => {
         e.preventDefault();
+        if (!canEditThreeD) return;
 
         const formData = new FormData();
         formData.append('model', data.model);
@@ -149,6 +154,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
     };
 
     const handleFileSelect = (file) => {
+        if (!canEditThreeD) return;
         if (!file) {
             return;
         }
@@ -179,6 +185,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
     };
 
     const handleAssetFolderSelect = (files) => {
+        if (!canEditThreeD) return;
         const normalizedFiles = Array.from(files || [])
             .filter((file) => file.name !== data.model?.name)
             .map((file) => ({
@@ -196,66 +203,35 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
     };
 
     const handleDelete = (productId) => {
+        if (!canEditThreeD) return;
         setDeleteCandidate(productId);
     };
 
     return (
         <>
             <Head title="3D Asset Manager" />
-                <header className="h-[72px] bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-40">
-                    <div className="flex items-center gap-3">
-                        <button onClick={openSidebar} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-clay-600">
-                            <Menu size={20} />
-                        </button>
-                        <div>
-                            <h1 className="text-lg font-bold text-gray-900">3D Asset Manager</h1>
-                            <p className="text-[10px] text-gray-500 font-medium mt-0.5 hidden sm:block">Manage your digital twins &amp; AR assets</p>
-                        </div>
-                    </div>
+            <SellerHeader
+                title="3D Asset Manager"
+                subtitle="Manage your digital twins and AR assets"
+                auth={auth}
+                onMenuClick={openSidebar}
+                actions={(
+                    <button
+                        onClick={() => canEditThreeD && setShowUploadModal(true)}
+                        disabled={!canEditThreeD}
+                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-clay-700 shadow-sm transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <UploadCloud size={15} />
+                        Upload Model
+                    </button>
+                )}
+            />
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setShowUploadModal(true)}
-                                className="flex items-center gap-2 px-3 py-1.5 border border-clay-200 bg-white text-clay-700 rounded-lg text-[10px] font-bold shadow-sm hover:bg-clay-50 transition transform active:scale-95 uppercase tracking-wide"
-                            >
-                                <UploadCloud size={14} /> Upload Model
-                            </button>
-                            <NotificationDropdown />
-                        </div>
-
-                        <div className="h-8 w-px bg-gray-200"></div>
-
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 p-1 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary
-                                                user={auth.user}
-                                                nameClassName="text-xs font-bold text-gray-900 leading-none"
-                                                labelClassName="text-[9px] text-gray-500 mt-0.5"
-                                            />
-                                            <UserAvatar user={auth.user} className="w-8 h-8 border border-clay-200" />
-                                            <ChevronDown size={14} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2 text-xs">
-                                        <User size={14} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700 text-xs">
-                                        <LogOut size={14} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
-
-                <main className="flex-1 p-5 overflow-hidden flex flex-col lg:flex-row gap-5 h-[calc(100vh-72px)]">
+                <main className="flex-1 p-5 overflow-hidden flex flex-col gap-4">
+                    {isThreeDReadOnly && (
+                        <ReadOnlyCapabilityNotice label="3D assets are read only for your account. Upload and delete actions are disabled." />
+                    )}
+                    <div className="flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
                     <div className="flex-1 bg-gradient-to-b from-gray-50 to-gray-100 rounded-3xl border border-gray-200 relative overflow-hidden shadow-inner flex flex-col group">
                         {selectedModel ? (
                             <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-gray-200 text-xs font-bold text-gray-600 flex items-center gap-2 shadow-sm">
@@ -272,7 +248,8 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                             <button
                                 type="button"
                                 onClick={() => handleDelete(selectedModel.id)}
-                                className="absolute top-4 right-4 z-10 p-2 bg-white/90 backdrop-blur border border-gray-200 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-500 transition shadow-sm"
+                                disabled={!canEditThreeD}
+                                className="absolute top-4 right-4 z-10 p-2 bg-white/90 backdrop-blur border border-gray-200 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-500 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                 title="Delete Asset"
                             >
                                 <Trash2 size={18} />
@@ -387,8 +364,9 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                             Upload .glb or .gltf files to showcase your products in 3D
                                         </p>
                                         <button
-                                            onClick={() => setShowUploadModal(true)}
-                                            className="mt-4 px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-clay-200 hover:bg-clay-700 transition"
+                                            onClick={() => canEditThreeD && setShowUploadModal(true)}
+                                            disabled={!canEditThreeD}
+                                            className="mt-4 px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-clay-200 hover:bg-clay-700 transition disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             Upload Asset
                                         </button>
@@ -396,6 +374,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                 )}
                             </div>
                         </div>
+                    </div>
                     </div>
                 </main>
 
@@ -416,6 +395,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                             <label className="block text-xs font-bold text-gray-700 mb-1.5">Select Product</label>
                             <select
                                 value={data.product_id}
+                                disabled={!canEditThreeD}
                                 onChange={(e) => setData('product_id', e.target.value)}
                                 className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-clay-100 focus:border-clay-300"
                                 required
@@ -450,6 +430,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                     type="file"
                                     id="model-file-input"
                                     accept=".glb,.gltf"
+                                    disabled={!canEditThreeD}
                                     onChange={(e) => handleFileSelect(e.target.files[0])}
                                     className="hidden"
                                 />
@@ -512,7 +493,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                         </div>
                                     </div>
                                 ) : (
-                                    <label htmlFor="model-file-input" className="cursor-pointer block py-4">
+                                    <label htmlFor={canEditThreeD ? 'model-file-input' : undefined} className={`block py-4 ${canEditThreeD ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors ${dragActive ? 'bg-clay-200 text-clay-700' : 'bg-gray-50 text-gray-400'}`}>
                                             <UploadCloud size={24} />
                                         </div>
@@ -533,7 +514,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                                 Upload the asset folder too if this model references external <code>.bin</code> or textures.
                                             </p>
                                         </div>
-                                        <label className="cursor-pointer rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition">
+                                        <label className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition ${canEditThreeD ? 'cursor-pointer border-amber-300 bg-white text-amber-700 hover:bg-amber-100' : 'cursor-not-allowed border-stone-200 bg-stone-100 text-stone-500'}`}>
                                             Upload Asset Folder
                                             <input
                                                 type="file"
@@ -541,6 +522,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                                 multiple
                                                 webkitdirectory=""
                                                 directory=""
+                                                disabled={!canEditThreeD}
                                                 onChange={(e) => handleAssetFolderSelect(e.target.files)}
                                             />
                                         </label>
@@ -566,7 +548,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                             </button>
                             <button
                                 type="submit"
-                                disabled={processing || !data.model || !data.product_id}
+                                disabled={processing || !data.model || !data.product_id || !canEditThreeD}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {processing ? (
@@ -605,13 +587,15 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         <button
                             type="button"
                             onClick={() => {
+                                if (!canEditThreeD) return;
                                 router.delete(route('3d.destroy', deleteCandidate), {
                                     onSuccess: () => {
                                         setDeleteCandidate(null);
                                     },
                                 });
                             }}
-                            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 transition"
+                            disabled={!canEditThreeD}
+                            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Remove
                         </button>

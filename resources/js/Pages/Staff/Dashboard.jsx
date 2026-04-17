@@ -16,48 +16,48 @@ import {
 
 const themeConfig = {
     clay: {
-        banner: 'bg-stone-900 border border-stone-800 shadow-xl shadow-stone-900/20',
+        banner: 'bg-stone-900 border border-stone-800',
         bannerIconRing: 'bg-clay-500/20 text-clay-400 ring-1 ring-clay-500/30',
         bannerEyebrow: 'text-clay-400',
         bannerTitle: 'text-white',
         bannerSubtitle: 'text-stone-400',
-        cardGlow: 'group-hover:border-clay-200 group-hover:shadow-[0_8px_30px_rgb(205,180,150,0.12)]',
+        cardGlow: 'group-hover:border-clay-200',
         statBorder: 'border-clay-100',
         statValue: 'text-clay-700',
         statBar: 'bg-clay-500',
         icon: Users,
     },
     emerald: {
-        banner: 'bg-[#15231c] border border-[#1e3328] shadow-xl shadow-emerald-900/10',
+        banner: 'bg-[#15231c] border border-[#1e3328]',
         bannerIconRing: 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30',
         bannerEyebrow: 'text-emerald-400',
         bannerTitle: 'text-white',
         bannerSubtitle: 'text-emerald-100/50',
-        cardGlow: 'group-hover:border-emerald-200 group-hover:shadow-[0_8px_30px_rgba(16,185,129,0.1)]',
+        cardGlow: 'group-hover:border-emerald-200',
         statBorder: 'border-emerald-100',
         statValue: 'text-emerald-700',
         statBar: 'bg-emerald-500',
         icon: Calculator,
     },
     amber: {
-        banner: 'bg-[#2a1c12] border border-[#3f2716] shadow-xl shadow-amber-900/10',
+        banner: 'bg-[#2a1c12] border border-[#3f2716]',
         bannerIconRing: 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30',
         bannerEyebrow: 'text-amber-500',
         bannerTitle: 'text-white',
         bannerSubtitle: 'text-amber-100/50',
-        cardGlow: 'group-hover:border-amber-200 group-hover:shadow-[0_8px_30px_rgba(245,158,11,0.1)]',
+        cardGlow: 'group-hover:border-amber-200',
         statBorder: 'border-amber-100',
         statValue: 'text-amber-700',
         statBar: 'bg-amber-500',
         icon: PackageSearch,
     },
     sky: {
-        banner: 'bg-[#111e29] border border-[#1a2d3d] shadow-xl shadow-sky-900/10',
+        banner: 'bg-[#111e29] border border-[#1a2d3d]',
         bannerIconRing: 'bg-sky-500/20 text-sky-400 ring-1 ring-sky-500/30',
         bannerEyebrow: 'text-sky-400',
         bannerTitle: 'text-white',
         bannerSubtitle: 'text-sky-100/50',
-        cardGlow: 'group-hover:border-sky-200 group-hover:shadow-[0_8px_30px_rgba(14,165,233,0.1)]',
+        cardGlow: 'group-hover:border-sky-200',
         statBorder: 'border-sky-100',
         statValue: 'text-sky-700',
         statBar: 'bg-sky-500',
@@ -91,7 +91,7 @@ const cardIconMap = {
 
 function StatCard({ stat, theme }) {
     return (
-        <div className={`rounded-[1.25rem] border bg-white px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${theme.statBorder}`}>
+        <div className={`rounded-[1.25rem] border bg-white px-5 py-4 transition hover:border-stone-300 ${theme.statBorder}`}>
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
                 {stat.label}
             </p>
@@ -112,10 +112,10 @@ function ActionCard({ card, theme }) {
             className={`group flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 transition duration-300 ${theme.cardGlow}`}
         >
             <div className="flex items-start justify-between gap-3">
-                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-stone-100 bg-stone-50 text-stone-600 transition duration-300 group-hover:scale-110 shadow-sm`}>
+                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-stone-100 bg-stone-50 text-stone-600 transition duration-300`}>
                     <Icon size={18} strokeWidth={2.5} />
                 </div>
-                <div className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] shadow-sm ${tone}`}>
+                <div className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] ${tone}`}>
                     {card.metricLabel}
                 </div>
             </div>
@@ -185,10 +185,7 @@ export default function StaffDashboard({ auth, hub }) {
 
                 <main className="flex-1 space-y-5 px-4 py-6 sm:px-6 lg:px-8">
                     {/* Bespoke Dark Theme Banner */}
-                    <section className={`overflow-hidden rounded-[2rem] ${theme.banner} p-6 sm:p-8 relative`}>
-                        {/* Subtle background texture overlay */}
-                        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-                        
+                    <section className={`relative overflow-hidden rounded-[2rem] ${theme.banner} p-6 sm:p-8`}>
                         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                             <div className="max-w-2xl">
                                 <div className={`inline-flex h-12 w-12 items-center justify-center rounded-[1rem] ${theme.bannerIconRing}`}>
@@ -222,7 +219,7 @@ export default function StaffDashboard({ auth, hub }) {
                                         {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
                                             <span
                                                 key={module}
-                                                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
+                                                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
                                             >
                                                 {module.replace(/_/g, ' ')}
                                             </span>
@@ -248,7 +245,7 @@ export default function StaffDashboard({ auth, hub }) {
                             </section>
 
                             <section className="grid gap-5 xl:grid-cols-[1.8fr,0.85fr] animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                                <div className="rounded-[2rem] border border-stone-200 bg-white p-6">
                                     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between border-b border-stone-100 pb-4 mb-5">
                                         <div>
                                             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
@@ -271,7 +268,7 @@ export default function StaffDashboard({ auth, hub }) {
                                 </div>
 
                                 <div className="flex flex-col gap-4">
-                                    <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                                    <div className="rounded-[2rem] border border-stone-200 bg-white p-6">
                                         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
                                             Quick Notes
                                         </p>
@@ -289,10 +286,7 @@ export default function StaffDashboard({ auth, hub }) {
                                         </div>
                                     </div>
 
-                                    <div className="relative overflow-hidden rounded-[2rem] bg-[#1a231f] border border-[#26332d] shadow-lg flex flex-col justify-between p-6">
-                                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                                            <MessageSquareText size={120} strokeWidth={1} className="text-emerald-400 -m-6 -mt-10 transform rotate-12" />
-                                        </div>
+                                    <div className="flex flex-col justify-between rounded-[2rem] border border-[#26332d] bg-[#1a231f] p-6">
                                         <div className="relative z-10">
                                             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-400">
                                                 Team Messaging
@@ -306,7 +300,7 @@ export default function StaffDashboard({ auth, hub }) {
                                         </div>
                                         <Link
                                             href={route(hub.teamMessagesRoute)}
-                                            className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500/20 hover:border-emerald-500/50"
+                                            className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-white transition hover:border-emerald-500/50 hover:bg-emerald-500/20"
                                         >
                                             Access Team Inbox
                                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50">
@@ -319,7 +313,7 @@ export default function StaffDashboard({ auth, hub }) {
                         </>
                     ) : (
                         <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                            <div className="rounded-[2rem] border border-stone-200 bg-white p-6">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
                                     Workspace Access
                                 </p>
@@ -335,7 +329,7 @@ export default function StaffDashboard({ auth, hub }) {
                                 <button
                                     type="button"
                                     onClick={resumeWork}
-                                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-clay-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-clay-700"
+                                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-clay-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-clay-700"
                                 >
                                     <PlayCircle size={16} />
                                     {isPaused ? 'Resume Work' : 'Clock In'}

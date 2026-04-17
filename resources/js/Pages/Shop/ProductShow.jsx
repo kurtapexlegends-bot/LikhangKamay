@@ -2,6 +2,7 @@ import React, { lazy, useEffect, useState, Suspense } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import UserAvatar from '@/Components/UserAvatar';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
     Heart, ChevronRight, Check, Pin,
@@ -34,13 +35,14 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [deletingReview, setDeletingReview] = useState(false);
     const [reviewPhotoPreviewUrls, setReviewPhotoPreviewUrls] = useState([]);
-    const chatRequirementMessage = !auth?.user
-        ? 'Log in with a buyer account. Buyer chat opens after your first order with this shop.'
+    const chatRequirementMessage = !auth?.
+    user
+        ? 'Log in as a buyer first.'
         : auth.user.role && auth.user.role !== 'buyer'
-            ? 'Marketplace chat is only available for buyer accounts.'
+            ? 'Buyer accounts only.'
             : product?.viewer_can_chat_seller
-                ? 'You already have an order with this shop, so chat is available.'
-                : 'Buyer chat opens after your first order with this shop.';
+                ? 'Chat available'
+                : 'Chat opens after your first order.';
 
     // Build gallery
     const gallery = [
@@ -166,7 +168,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
         <ShopLayout>
             <Head title={product.name} />
 
-            <div className="max-w-6xl mx-auto px-4 py-4">
+            <div className="max-w-6xl mx-auto px-3 py-3 pb-28 sm:px-4 sm:py-4 sm:pb-4">
                 
                 {/* Breadcrumb - Compact */}
                 <nav className="flex flex-wrap items-center gap-1.5 text-xs text-gray-400 mb-4">
@@ -182,11 +184,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 </nav>
 
                 {/* Main Content Card */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm sm:rounded-2xl">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
                         
                         {/* ========== LEFT: IMAGE GALLERY ========== */}
-                        <div className="lg:col-span-5 p-4 border-r border-gray-100">
+                        <div className="p-3.5 sm:p-4 lg:col-span-5 lg:border-r lg:border-gray-100">
                             
                             {/* Main Image */}
                             <div className="relative aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3">
@@ -236,7 +238,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             </div>
 
                             {/* Thumbnails */}
-                            <div className="flex gap-2 overflow-x-auto pb-1">
+                            <div className="flex gap-2 overflow-x-auto px-0.5 pb-1.5">
                                 {gallery.map((img, index) => (
                                     <button
                                         key={index}
@@ -275,6 +277,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <div className="flex items-center justify-end mt-4 pt-4 border-t border-gray-100">
                                 <button
                                     onClick={() => setIsWishlisted(!isWishlisted)}
+                                    aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition ${
                                         isWishlisted ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-400 hover:text-red-500'
                                     }`}
@@ -286,7 +289,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         </div>
 
                         {/* ========== RIGHT: PRODUCT INFO ========== */}
-                        <div className="lg:col-span-7 p-4 sm:p-5">
+                        <div className="p-3.5 sm:p-5 lg:col-span-7">
                             
                             {/* Title */}
                             <h1 className="text-xl font-bold text-gray-900 leading-tight mb-1.5">
@@ -304,7 +307,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                     </div>
                                 </div>
                                 <span className="text-gray-300">|</span>
-                                <span className="text-gray-500 font-medium">{product.reviews_count || 0} Ratings</span>
+                                <span className="text-gray-500 font-medium">{product.reviews_count || 0} Reviews</span>
                                 {product.sold > 0 && (
                                     <>
                                         <span className="text-gray-300">|</span>
@@ -324,31 +327,31 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <div className="space-y-2 mb-4 text-xs">
                                 {product.clay_type && (
                                     <div className="flex">
-                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Material</span>
+                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Material</span>
                                         <span className="text-gray-700 font-medium">{product.clay_type}</span>
                                     </div>
                                 )}
                                 {product.glaze_type && (
                                     <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Finish</span>
+                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Finish</span>
                                         <span className="text-gray-700 font-medium">{product.glaze_type}</span>
                                     </div>
                                 )}
                                 {(product.height > 0 || product.width > 0) && (
                                     <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Dimensions</span>
+                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Dimensions</span>
                                         <span className="text-gray-700 font-medium">{product.height || 0}"H x {product.width || 0}"W</span>
                                     </div>
                                 )}
                                 {product.firing_method && (
                                     <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Firing</span>
+                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Firing</span>
                                         <span className="text-gray-700 font-medium">{product.firing_method}</span>
                                     </div>
                                 )}
                                 {product.food_safe && (
                                     <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-bold flex-shrink-0 uppercase tracking-wide pt-0.5">Food Safe</span>
+                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Food Safe</span>
                                         <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-full text-[10px]">
                                             <Check size={10} /> Yes
                                         </span>
@@ -357,38 +360,42 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             </div>
 
                             {/* Quantity */}
-                            <div className="flex flex-col items-start gap-2 mb-5 sm:flex-row sm:items-center sm:gap-3">
+                            <div className="mb-5 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
                                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wide w-full sm:w-24 flex-shrink-0">Quantity</span>
-                                <div className="flex flex-wrap items-center gap-y-2">
-                                    <button
-                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="w-8 h-8 border border-gray-200 rounded-l-lg flex items-center justify-center hover:bg-gray-50 transition"
-                                    >
-                                        <Minus size={14} />
-                                    </button>
-                                    <span className="w-10 h-8 border-t border-b border-gray-200 flex items-center justify-center text-xs font-bold text-gray-900">
-                                        {quantity}
-                                    </span>
-                                    <button
-                                        onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
-                                        className="w-8 h-8 border border-gray-200 rounded-r-lg flex items-center justify-center hover:bg-gray-50 transition"
-                                    >
-                                        <Plus size={14} />
-                                    </button>
-                                    <span className="ml-3 text-[11px] font-medium text-gray-500">{product.stock || 0} pieces available</span>
+                                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                                    <div className="flex items-center">
+                                        <button
+                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                            aria-label="Decrease quantity"
+                                            className="flex h-9 w-9 items-center justify-center rounded-l-lg border border-gray-200 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8"
+                                        >
+                                            <Minus size={14} />
+                                        </button>
+                                        <span className="flex h-9 w-12 items-center justify-center border-y border-gray-200 text-sm font-bold text-gray-900 sm:h-8 sm:w-10 sm:text-xs">
+                                            {quantity}
+                                        </span>
+                                        <button
+                                            onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
+                                            aria-label="Increase quantity"
+                                            className="flex h-9 w-9 items-center justify-center rounded-r-lg border border-gray-200 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8"
+                                        >
+                                            <Plus size={14} />
+                                        </button>
+                                    </div>
+                                    <span className="text-[11px] font-medium text-gray-500 sm:ml-3">{product.stock || 0} in stock</span>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                            <div className="mb-6 hidden gap-3 sm:flex sm:flex-row">
                                 <button
                                     onClick={addToCart}
                                     disabled={product.stock === 0 || isAddingToCart}
-                                    className={`flex-1 h-10 border-2 border-clay-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition transform active:scale-95 ${
+                                    className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border-2 border-clay-600 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
                                         addedToCart
                                             ? 'bg-emerald-500 border-emerald-500 text-white'
                                             : 'bg-white text-clay-600 hover:bg-clay-50'
-                                    } disabled:opacity-50`}
+                                    } disabled:cursor-not-allowed disabled:opacity-50`}
                                 >
                                     {isAddingToCart ? (
                                         <Loader2 size={16} className="animate-spin" />
@@ -401,7 +408,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 <button
                                     onClick={handleBuyNow}
                                     disabled={product.stock === 0}
-                                    className="flex-1 h-10 bg-clay-600 text-white rounded-lg text-sm font-bold hover:bg-clay-700 shadow-sm shadow-clay-200 transition transform active:scale-95 disabled:opacity-50"
+                                    className="h-10 flex-1 rounded-lg bg-clay-600 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Buy Now
                                 </button>
@@ -412,22 +419,22 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
                                     <Package size={16} className="text-clay-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <span className="block text-gray-900 font-bold text-[11px] uppercase mb-0.5">Fragile Item Handling</span>
-                                        <span className="text-gray-600 text-[11px]">Extra care packaging for safe delivery</span>
+                                        <span className="block text-gray-900 font-semibold text-[11px] uppercase mb-0.5">Handled With Care</span>
+                                        <span className="text-gray-600 text-[11px]">Packed carefully for safer delivery.</span>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
                                     <Clock size={16} className="text-clay-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <span className="block text-gray-900 font-bold text-[11px] uppercase mb-0.5">Lead Time</span>
+                                        <span className="block text-gray-900 font-semibold text-[11px] uppercase mb-0.5">Lead Time</span>
                                         <span className="text-gray-600 text-[11px]">{product.lead_time || 3}-{(product.lead_time || 3) + 2} business days</span>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
                                     <Award size={16} className="text-clay-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <span className="block text-gray-900 font-bold text-[11px] uppercase mb-0.5">Authenticity Guaranteed</span>
-                                        <span className="text-gray-600 text-[11px]">100% handmade piece</span>
+                                        <span className="block text-gray-900 font-semibold text-[11px] uppercase mb-0.5">Handmade Piece</span>
+                                        <span className="text-gray-600 text-[11px]">Made by a verified artisan shop.</span>
                                     </div>
                                 </div>
                             </div>
@@ -436,15 +443,15 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 </div>
 
                 {/* ========== SELLER CARD & DESCRIPTION IN ONE ROW ========== */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-4">
+                <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
                     
                     {/* Seller Card (Left Col) */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between h-full">
+                    <div className="flex h-full flex-col justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
                         <div>
                             <div className="flex items-center gap-3 mb-4">
                                 <UserAvatar user={product.seller} className="w-12 h-12 text-xl" />
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-gray-900 text-base truncate flex items-center gap-1.5">
+                                    <h3 className="font-semibold text-gray-900 text-base truncate flex items-center gap-1.5">
                                         {product.seller?.shop_name || product.seller?.name || 'Artisan'}
                                     </h3>
                                     <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
@@ -458,7 +465,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <button
                                 type="button"
                                 onClick={handleChatSeller}
-                                className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                                aria-label={product?.viewer_can_chat_seller ? 'Open seller chat' : 'View seller chat policy'}
+                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
                                     product?.viewer_can_chat_seller
                                         ? 'border border-gray-200 text-gray-700 hover:bg-gray-50'
                                         : 'border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
@@ -467,22 +475,24 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 <MessageCircle size={14} />
                                 {product?.viewer_can_chat_seller ? 'Chat' : 'Chat Policy'}
                             </button>
-                            <Link href={route('shop.seller', product.seller?.slug || '#')} className="flex-1 px-3 py-2 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition flex items-center justify-center gap-1.5">
+                            <Link href={route('shop.seller', product.seller?.slug || '#')} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-clay-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30">
                                 <Store size={14} />
                                 View Shop
                             </Link>
                         </div>
-                        <p className={`mt-2 text-[11px] leading-snug ${
-                            product?.viewer_can_chat_seller ? 'text-emerald-600' : 'text-stone-500'
+                        <span className={`mt-2 inline-flex w-fit rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                            product?.viewer_can_chat_seller
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                : 'border-stone-200 bg-stone-50 text-stone-500'
                         }`}>
-                            {chatRequirementMessage}
-                        </p>
+                            {product?.viewer_can_chat_seller ? 'Chat available now.' : chatRequirementMessage}
+                        </span>
                     </div>
 
                     {/* Description (Right Col - 2/3 width) */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm lg:col-span-2">
                         <h2 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
-                            Product Description
+                            About This Piece
                         </h2>
                         <div className="prose prose-xs text-xs max-w-none text-gray-600 leading-relaxed">
                             <p className="whitespace-pre-line">
@@ -493,7 +503,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 </div>
 
                 {/* ========== REVIEWS ========== */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mt-4 p-5">
+                <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span>Product Ratings ({product.reviews?.length || 0})</span>
                         <div className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg">
@@ -502,7 +512,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         </div>
                     </h2>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
                         
                         {/* Reviews List */}
                         <div className="lg:col-span-2 space-y-4">
@@ -550,6 +560,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                                     src={`/storage/${photo}`} 
                                                                     alt="Review Attachment" 
                                                                     className="w-full h-full object-cover"
+                                                                    onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/no-image.png'; }}
                                                                     onClick={() => window.open(`/storage/${photo}`, '_blank')}
                                                                 />
                                                             </div>
@@ -577,9 +588,13 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-8">
-                                    <Star size={32} className="text-gray-200 mx-auto mb-2" />
-                                    <p className="text-sm text-gray-400">No reviews yet</p>
+                                <div className="py-6">
+                                    <WorkspaceEmptyState
+                                        compact
+                                        icon={Star}
+                                        title="No reviews yet"
+                                        description="Customer feedback will appear here after completed purchases."
+                                    />
                                 </div>
                             )}
                         </div>
@@ -665,6 +680,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                                     src={photo}
                                                                     alt="Current review"
                                                                     className="w-full h-full object-cover"
+                                                                    onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/no-image.png'; }}
                                                                 />
                                                             </div>
                                                         ))}
@@ -680,6 +696,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                     <button
                                                         type="button"
                                                         onClick={handleDeleteReview}
+                                                        aria-label="Delete your review"
                                                         disabled={deletingReview || processing}
                                                         className="inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-red-200 bg-red-50 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                                                     >
@@ -723,40 +740,40 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             {/* ========== RELATED PRODUCTS ========== */}
             {relatedProducts.length > 0 && (
                 <div className="max-w-6xl mx-auto px-4 py-6 mb-8">
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="w-1 h-5 bg-clay-600 rounded-full"></span>
+                    <h2 className="text-xl font-bold tracking-tight text-stone-900 sm:text-2xl mb-4 flex flex-col items-center gap-2 text-center">
+                        <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-clay-500">Related Pieces</span>
                         You Might Also Like
                     </h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
                         {relatedProducts.map((related) => (
                             <Link 
                                 href={route('product.show', related.slug)} 
                                 key={related.id} 
-                                className="bg-white rounded-xl border border-gray-100 hover:border-clay-200 hover:shadow-lg transition-all duration-300 group overflow-hidden"
+                                className="group flex flex-col overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-clay-300 hover:shadow-md"
                             >
-                                <div className="aspect-square relative overflow-hidden bg-stone-100">
+                                <div className="aspect-square relative overflow-hidden bg-[#FDFBF9]">
                                     <img 
                                         src={related.image ? (related.image.startsWith('http') || related.image.startsWith('/storage') ? related.image : `/storage/${related.image}`) : '/images/no-image.png'} 
                                         alt={related.name}
-                                        className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                                        className="absolute inset-0 block h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                                         onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                     />
                                     {hasRating(related.rating) && (
-                                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
+                                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur shadow-sm text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 border border-stone-100">
                                             {formatRating(related.rating)} <Star size={10} className="fill-amber-400 text-amber-400" />
                                         </div>
                                     )}
                                 </div>
-                                <div className="p-3">
-                                    <h3 className="text-sm font-medium text-gray-800 line-clamp-1 group-hover:text-clay-600 transition">
+                                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between border-t border-stone-100/50">
+                                    <h3 className="text-[13px] font-medium text-stone-800 line-clamp-2 leading-snug group-hover:text-clay-700 transition">
                                         {related.name}
                                     </h3>
-                                    <div className="flex items-center justify-between mt-2">
-                                        <span className="text-clay-700 font-bold text-sm">
+                                    <div className="flex flex-wrap items-center justify-between gap-1 mt-3 pt-3 border-t border-stone-100/60">
+                                        <span className="text-clay-800 font-bold text-sm sm:text-[15px]">
                                             PHP {Number(related.price).toLocaleString()}
                                         </span>
                                         {related.sold > 0 && (
-                                            <span className="text-[10px] text-gray-400">{related.sold} sold</span>
+                                            <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 bg-stone-50 px-1.5 py-0.5 rounded">{related.sold} sold</span>
                                         )}
                                     </div>
                                 </div>
@@ -765,6 +782,37 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     </div>
                 </div>
             )}
+                <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 px-3 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+                    <div className="mx-auto flex max-w-6xl items-center gap-2.5">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Price</p>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-sm font-bold text-clay-700">
+                                    PHP {Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                </span>
+                                <span className="text-[11px] font-medium text-stone-500">Qty {quantity}</span>
+                            </div>
+                        </div>
+                        <button
+                            onClick={addToCart}
+                            disabled={product.stock === 0 || isAddingToCart}
+                            className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 px-4 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                                addedToCart
+                                    ? 'border-emerald-500 bg-emerald-500 text-white'
+                                    : 'border-clay-600 bg-white text-clay-600'
+                            } disabled:cursor-not-allowed disabled:opacity-50`}
+                        >
+                            {isAddingToCart ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={15} />}
+                        </button>
+                        <button
+                            onClick={handleBuyNow}
+                            disabled={product.stock === 0}
+                            className="flex h-11 flex-[1.4] items-center justify-center rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Buy Now
+                        </button>
+                    </div>
+                </div>
         </ShopLayout>
     );
 }

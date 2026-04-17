@@ -78,7 +78,7 @@ class StockRequestController extends Controller
             ));
         });
 
-        return redirect()->route('stock-requests.index')->with('success', 'Stock request created. Waiting for Finance approval.');
+        return redirect()->route('stock-requests.index')->with('success', 'Stock request created. Waiting for Accounting approval.');
     }
 
     /**

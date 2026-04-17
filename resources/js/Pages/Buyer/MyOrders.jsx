@@ -8,7 +8,7 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import { 
     Package, Truck, CheckCircle, Clock, RotateCcw, XCircle,
     MessageCircle, Search, ShoppingBag, ChevronDown, AlertTriangle, 
-    MapPin, Hash, Star, PackageCheck, AlertCircle, Wallet, CreditCard, Printer, Store, UploadCloud, ExternalLink
+    MapPin, Hash, Star, PackageCheck, AlertCircle, CreditCard, Printer, Store, UploadCloud, ExternalLink
 } from 'lucide-react';
 
 // --- RETURN REQUEST MODAL COMPONENT ---
@@ -112,11 +112,11 @@ const ReturnRequestModal = ({ isOpen, onClose, order }) => {
                         {errors.return_proof_image && <p className="text-red-500 text-xs mt-1">{errors.return_proof_image}</p>}
                     </div>
 
-                    <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+                    <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition"
+                            className="rounded-xl border border-gray-200 bg-white px-4 py-2 font-bold text-gray-700 transition hover:bg-gray-50"
                             disabled={processing}
                         >
                             Cancel
@@ -124,7 +124,7 @@ const ReturnRequestModal = ({ isOpen, onClose, order }) => {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="px-6 py-2 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-orange-200 disabled:opacity-50 flex items-center gap-2"
+                            className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-2 font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:opacity-50"
                         >
                             {processing ? 'Submitting...' : 'Submit Request'}
                         </button>
@@ -330,7 +330,7 @@ const PaymentStatusBadge = ({ status, method }) => {
     
     return (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${bg} ${text} ${border}`}>
-            <Wallet size={10} />
+            <CreditCard size={10} />
             {label} - {method || 'COD'}
         </span>
     );
@@ -609,7 +609,7 @@ const buyerIssueSummary = (order) => {
         return {
             tone: 'border-purple-200 bg-purple-50',
             badgeTone: 'border-purple-200 bg-white text-purple-700',
-            icon: Wallet,
+            icon: CreditCard,
             title: 'Refund completed',
             detail: 'The seller approved your return and the refund has already been processed for this order.',
             timestampLabel: null,
@@ -795,9 +795,9 @@ export default function MyOrders({ auth, orders }) {
                     </div>
                 )}
                 {flash?.error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2">
+                    <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-100 bg-red-50/80 px-3.5 py-3 text-red-700">
                         <AlertCircle size={16} />
-                        <span className="text-[13px] font-bold">{flash.error}</span>
+                        <span className="text-[13px] font-semibold">{flash.error}</span>
                     </div>
                 )}
                 
@@ -805,19 +805,12 @@ export default function MyOrders({ auth, orders }) {
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="text-xl font-bold tracking-tight text-stone-900">My Purchases</h1>
-                        <p className="mt-0.5 text-xs text-stone-500">Track your orders and manage returns.</p>
+                        <p className="mt-0.5 text-xs text-stone-500">Track orders, delivery, and returns.</p>
                     </div>
-                    <Link
-                        href={route('my-wallet.index')}
-                        className="inline-flex items-center gap-1.5 self-start rounded-lg border border-stone-200 bg-white px-3 py-2 text-[12px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
-                    >
-                        <Wallet size={14} strokeWidth={2.5} />
-                        My Wallet
-                    </Link>
                 </div>
 
                 {/* --- TABS --- */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
+                <div className="mb-4 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                     <div className="flex overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                         {tabs.map(tab => {
                             const count = getTabCount(tab.id);
@@ -825,7 +818,7 @@ export default function MyOrders({ auth, orders }) {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex-1 min-w-[92px] sm:min-w-[100px] py-4 px-3 text-xs sm:text-sm font-bold text-center border-b-2 transition-all flex items-center justify-center gap-2 ${
+                                    className={`flex min-w-[88px] flex-1 items-center justify-center gap-2 border-b-2 px-3 py-4 text-center text-xs font-bold transition-all sm:min-w-[100px] sm:text-sm ${
                                         activeTab === tab.id 
                                         ? 'border-clay-600 text-clay-700 bg-clay-50/50' 
                                         : 'border-transparent text-gray-500 hover:text-clay-600 hover:bg-gray-50'
@@ -853,7 +846,7 @@ export default function MyOrders({ auth, orders }) {
                         placeholder="Search by Order ID or Product Name..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-lg text-[12px] font-medium placeholder:text-stone-400 focus:ring-2 focus:ring-clay-200 focus:border-clay-500 shadow-sm transition-all"
+                        className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-9 pr-3 text-[12px] font-medium placeholder:text-stone-400 shadow-sm transition-all focus:border-clay-500 focus:ring-2 focus:ring-clay-200"
                     />
                 </div>
 
@@ -865,7 +858,7 @@ export default function MyOrders({ auth, orders }) {
                             const issueSummary = buyerIssueSummary(order);
 
                             return (
-                            <div key={order.id} className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.05)] transition-all duration-300">
+                            <div key={order.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-colors hover:border-stone-300">
                                 
                                 {/* Order Header */}
                                 <div className="px-4 py-3 bg-[#FDFBF9] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-stone-100">
@@ -983,7 +976,7 @@ export default function MyOrders({ auth, orders }) {
                                             {/* Courier tracking card */}
                                             {order.delivery && (
                                                 <div className="rounded-lg border border-gray-200 bg-white/80 px-2.5 py-2">
-                                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                    <div className="mb-1.5 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
                                                         <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-gray-400">Courier</p>
                                                         {order.delivery.share_link && (
                                                             <a
@@ -1127,40 +1120,40 @@ export default function MyOrders({ auth, orders }) {
 
 
                                 {/* Order Footer */}
-                                <div className="px-4 py-3 bg-[#FDFBF9] border-t border-stone-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div className="flex flex-col gap-4 border-t border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="w-full sm:w-auto">
                                         <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Order Breakdown</p>
-                                        <div className="space-y-1 text-[12px] text-stone-500">
-                                            <div className="flex items-center justify-between gap-4 sm:justify-start">
+                                        <div className="space-y-1 text-[12px] text-stone-500 sm:space-y-1">
+                                            <div className="flex items-center justify-between gap-4 rounded-lg bg-white/70 px-2.5 py-2 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:justify-start">
                                                 <span className="min-w-[120px]">Subtotal</span>
-                                                <span className="font-bold text-stone-800 text-right whitespace-nowrap shrink-0">PHP {order.merchandise_subtotal}</span>
+                                                <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">PHP {order.merchandise_subtotal}</span>
                                             </div>
-                                            <div className="flex items-center justify-between gap-4 sm:justify-start">
+                                            <div className="flex items-center justify-between gap-4 rounded-lg bg-white/70 px-2.5 py-2 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:justify-start">
                                                 <span className="min-w-[120px]">Fee (3%)</span>
-                                                <span className="font-bold text-stone-800 text-right whitespace-nowrap shrink-0">PHP {order.convenience_fee_amount}</span>
+                                                <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">PHP {order.convenience_fee_amount}</span>
                                             </div>
-                                            <div className="flex items-center justify-between gap-4 sm:justify-start">
+                                            <div className="flex items-center justify-between gap-4 rounded-lg bg-white/70 px-2.5 py-2 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:justify-start">
                                                 <span className="min-w-[120px]">Shipping Fee</span>
-                                                <span className="font-bold text-stone-800 text-right whitespace-nowrap shrink-0">
+                                                <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">
                                                     {order.shipping_method === 'Pick Up'
                                                         ? 'Free'
                                                         : `PHP ${order.shipping_fee_amount}`}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center justify-between gap-4 pt-1.5 mt-1.5 border-t border-stone-200/60 sm:justify-start">
+                                            <div className="mt-1.5 flex items-center justify-between gap-4 rounded-lg border-t border-stone-200/60 bg-white px-2.5 py-2 pt-2.5 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:pt-1.5 sm:justify-start">
                                                 <span className="min-w-[120px] font-bold text-stone-900 text-[13px]">Total</span>
-                                                <span className="text-[15px] font-black tracking-tight text-[#c8764b] text-right whitespace-nowrap shrink-0">PHP {order.total}</span>
+                                                <span className="shrink-0 whitespace-nowrap text-right text-[15px] font-black tracking-tight text-[#c8764b]">PHP {order.total}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex w-full flex-wrap gap-2 justify-start sm:justify-end">
+                                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                                         
                                         {/* Download Receipt */}
                                         <a 
                                             href={`/my-orders/${order.id}/receipt`}
                                             target="_blank"
-                                            className="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-200 bg-white rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] font-bold text-gray-600 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
                                         >
                                             <Printer size={14} /> Receipt
                                         </a>

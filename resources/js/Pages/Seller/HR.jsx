@@ -2,60 +2,34 @@ import React, { useMemo, useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import SellerHeader from '@/Components/SellerHeader';
+import UserAvatar from '@/Components/UserAvatar';
 import { 
-    Users, UserPlus, Trash2, ChevronDown, User, LogOut,
-    Briefcase, Building2, Search, Menu, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3,
+    Users, UserPlus, Trash2,
+    Briefcase, Search, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3, AlertCircle,
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 const FALLBACK_ROLE_PRESETS = [
-    { key: 'hr', label: 'HR', description: 'HR records, payroll, and employee management.', modules: ['hr'] },
-    { key: 'accounting', label: 'Accounting', description: 'Funds, payroll approval, and finance visibility.', modules: ['accounting'] },
-    { key: 'procurement', label: 'Procurement', description: 'Inventory and stock request coordination.', modules: ['procurement', 'stock_requests'] },
-    { key: 'customer_support', label: 'Customer Support', description: 'Orders, buyer messages, and customer review handling.', modules: ['orders', 'messages', 'reviews'] },
-    { key: 'custom', label: 'Custom', description: 'Start blank and choose modules manually.', modules: [] },
+    { key: 'hr', label: 'People & Payroll', description: 'Employee records, payroll prep, and workspace access coordination.', modules: ['hr'] },
+    { key: 'accounting', label: 'Finance Review', description: 'Business funds, payroll approval, and finance visibility.', modules: ['accounting'] },
+    { key: 'procurement', label: 'Inventory & Restocking', description: 'Supply tracking, stock requests, and purchasing coordination.', modules: ['procurement', 'stock_requests'] },
+    { key: 'customer_support', label: 'Customer Care', description: 'Orders, buyer messages, and customer review handling.', modules: ['orders', 'messages', 'reviews'] },
+    { key: 'custom', label: 'Custom Capability Mix', description: 'Start blank and choose the exact capabilities manually.', modules: [] },
 ];
 
-const STAFF_PERMISSION_LEVELS = [
+const MODULE_PERMISSION_LEVELS = [
     {
         key: 'read_only',
         label: 'Read Only',
-        description: 'Can view the assigned seller workspace modules without changing staff login access.',
-        capabilities: {
-            view: true,
-            editHr: false,
-            editExistingLogin: false,
-            createRemoveLogins: false,
-        },
+        description: 'Can open this capability and view its records.',
     },
     {
-        key: 'update_access',
-        label: 'Update Access',
-        description: 'Can update existing staff login access, roles, permissions, and module settings. Requires HR module access too.',
-        capabilities: {
-            view: true,
-            editHr: true,
-            editExistingLogin: true,
-            createRemoveLogins: false,
-        },
-    },
-    {
-        key: 'full_access',
-        label: 'Full Access',
-        description: 'Can create, update, suspend, restore, and remove staff login accounts. Requires HR module access too.',
-        capabilities: {
-            view: true,
-            editHr: true,
-            editExistingLogin: true,
-            createRemoveLogins: true,
-        },
+        key: 'can_edit',
+        label: 'Can Edit',
+        description: 'Can create, update, and act inside this capability.',
     },
 ];
 
@@ -66,25 +40,14 @@ const FALLBACK_MODULES = [
     { key: '3d', label: '3D Manager', description: '3D asset uploads and management.' },
     { key: 'orders', label: 'Orders', description: 'Order processing and status updates.' },
     { key: 'messages', label: 'Messages', description: 'Buyer inbox and seller order conversations.' },
+    { key: 'team_messages', label: 'Team Inbox', description: 'Internal seller workspace conversations.' },
     { key: 'reviews', label: 'Reviews', description: 'Customer review replies and moderation.' },
     { key: 'shop_settings', label: 'Shop Settings', description: 'Seller storefront profile settings.' },
-    { key: 'hr', label: 'HR', description: 'Employees, payroll, and HR records.' },
-    { key: 'accounting', label: 'Accounting', description: 'Finance approvals and payroll visibility.' },
-    { key: 'procurement', label: 'Procurement', description: 'Inventory and purchasing workflows.' },
-    { key: 'stock_requests', label: 'Stock Requests', description: 'Restock request tracking.' },
+    { key: 'hr', label: 'People & Payroll', description: 'Employee records, payroll prep, and workspace access management.' },
+    { key: 'accounting', label: 'Finance Approvals', description: 'Finance review, fund visibility, and payroll approval.' },
+    { key: 'procurement', label: 'Inventory Operations', description: 'Inventory tracking, supply management, and purchasing workflows.' },
+    { key: 'stock_requests', label: 'Restock Requests', description: 'Restock request tracking.' },
 ];
-
-const STAFF_ACCESS_BADGE_STYLES = {
-    read_only: 'bg-stone-50 text-stone-600 border-stone-200',
-    update_access: 'bg-amber-50 text-amber-700 border-amber-200',
-    full_access: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-};
-
-const STAFF_ACCESS_LEVEL_LABELS = {
-    read_only: 'Read Only',
-    update_access: 'Update Access',
-    full_access: 'Full Access',
-};
 
 const STAFF_ACCESS_EVENT_LABELS = {
     login_created: 'Login Created',
@@ -92,6 +55,41 @@ const STAFF_ACCESS_EVENT_LABELS = {
     login_suspended: 'Access Suspended',
     login_restored: 'Access Restored',
     login_removed: 'Login Removed',
+};
+
+const normalizeModulePermissionLevel = (value) => {
+    if (value === 'can_edit' || value === 'update_access' || value === 'full_access' || value === true) {
+        return 'can_edit';
+    }
+
+    if (value === 'read_only') {
+        return 'read_only';
+    }
+
+    return null;
+};
+
+const summarizeModulePermissions = (modulePermissions = {}) => {
+    const values = Object.values(modulePermissions)
+        .map((value) => normalizeModulePermissionLevel(value))
+        .filter(Boolean);
+
+    const readOnlyCount = values.filter((value) => value === 'read_only').length;
+    const canEditCount = values.filter((value) => value === 'can_edit').length;
+
+    return {
+        readOnlyCount,
+        canEditCount,
+        enabledCount: readOnlyCount + canEditCount,
+    };
+};
+
+const humanizePreset = (value) => {
+    if (!value) return 'Custom';
+
+    return String(value)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 const DEFAULT_EMPLOYEE_ROLE = 'Potter';
@@ -121,11 +119,17 @@ const formatShortDate = (value) => value
       }).format(new Date(value))
     : '—';
 
+const modalFieldClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 placeholder-stone-400 shadow-none transition focus:border-clay-500 focus:ring-clay-500';
+const modalFieldWithIconClass = `${modalFieldClass} pr-11`;
+const modalSelectClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 shadow-none transition focus:border-clay-500 focus:ring-clay-500';
+const modalCloseButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 text-stone-400 transition hover:border-stone-300 hover:text-stone-700';
+
 const getLoginAccessStatus = (loginAccount) => {
     if (!loginAccount) {
         return {
             label: 'No Login',
             className: 'border-stone-200 bg-stone-100 text-stone-600',
+            dotClassName: 'bg-stone-400',
         };
     }
 
@@ -133,6 +137,7 @@ const getLoginAccessStatus = (loginAccount) => {
         return {
             label: 'Plan Suspended',
             className: 'border-amber-200 bg-amber-50 text-amber-700',
+            dotClassName: 'bg-amber-500',
         };
     }
 
@@ -140,6 +145,7 @@ const getLoginAccessStatus = (loginAccount) => {
         return {
             label: 'Suspended',
             className: 'border-red-200 bg-red-50 text-red-700',
+            dotClassName: 'bg-red-500',
         };
     }
 
@@ -148,18 +154,21 @@ const getLoginAccessStatus = (loginAccount) => {
             return {
                 label: 'Password Reset',
                 className: 'border-amber-200 bg-amber-50 text-amber-700',
+                dotClassName: 'bg-amber-500',
             };
         }
 
         return {
             label: 'Active',
             className: 'border-[#E7D8C9] bg-[#FCF7F2] text-clay-700',
+            dotClassName: 'bg-clay-500',
         };
     }
 
     return {
         label: 'Pending',
         className: 'border-stone-200 bg-stone-100 text-stone-700',
+        dotClassName: 'bg-stone-400',
     };
 };
 
@@ -168,6 +177,7 @@ const getAttendanceStatus = (attendance) => {
         return {
             label: 'Manual',
             className: 'border-stone-200 bg-stone-100 text-stone-600',
+            dotClassName: 'bg-stone-400',
             note: 'No linked staff login',
         };
     }
@@ -176,6 +186,7 @@ const getAttendanceStatus = (attendance) => {
         return {
             label: 'Clocked In',
             className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+            dotClassName: 'bg-emerald-500 animate-pulse',
             note: 'Session active now',
         };
     }
@@ -184,6 +195,7 @@ const getAttendanceStatus = (attendance) => {
         return {
             label: 'Paused',
             className: 'border-amber-200 bg-amber-50 text-amber-700',
+            dotClassName: 'bg-amber-500',
             note: 'Will resume on next login',
         };
     }
@@ -192,6 +204,7 @@ const getAttendanceStatus = (attendance) => {
         return {
             label: 'Clocked Out',
             className: 'border-stone-200 bg-stone-100 text-stone-700',
+            dotClassName: 'bg-stone-400',
             note: 'Last session closed',
         };
     }
@@ -199,6 +212,7 @@ const getAttendanceStatus = (attendance) => {
     return {
         label: 'No Attendance',
         className: 'border-stone-200 bg-stone-100 text-stone-600',
+        dotClassName: 'bg-stone-400',
         note: 'No sessions yet',
     };
 };
@@ -300,6 +314,10 @@ const formatWorkedHoursLabel = (minutes) => {
     return `${hours}h ${remainingMinutes}m`;
 };
 
+const sanitizeLegacyPlaceholder = (value) => value === 'â€”' ? '-' : value;
+const formatShortDateSafe = (value) => sanitizeLegacyPlaceholder(formatShortDate(value));
+const formatAttendanceDateLabelSafe = (value) => sanitizeLegacyPlaceholder(formatAttendanceDateLabel(value));
+
 const formatRelativeAuditTime = (value) => {
     if (!value) {
         return 'Just now';
@@ -326,7 +344,7 @@ const formatRelativeAuditTime = (value) => {
         return `${days}d ago`;
     }
 
-    return formatShortDate(value);
+    return formatShortDateSafe(value);
 };
 
 const formatWorkedHoursSummary = (attendance) => {
@@ -365,124 +383,140 @@ function RolePresetCard({ preset, isSelected, radioName, onSelect }) {
 
     return (
         <label
-            className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${
+            className={`relative cursor-pointer rounded-[1.25rem] border p-4 transition-all duration-300 ${
                 isSelected
-                    ? 'border-clay-700 bg-clay-50/50 shadow-sm ring-1 ring-clay-700/10'
-                    : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50'
+                    ? 'border-[#E7D8C9] bg-[#FCF7F2]/50 shadow-md ring-1 ring-clay-700/5 -translate-y-0.5'
+                    : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50 hover:shadow-sm'
             }`}
         >
-            <div className="flex items-start gap-2.5">
-                <input
-                    type="radio"
-                    name={radioName}
-                    className="mt-0.5 h-3.5 w-3.5 border-stone-300 text-clay-700 focus:ring-clay-700"
-                    checked={isSelected}
-                    onChange={onSelect}
-                />
+            <div className="flex items-start gap-3">
+                <div className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                    isSelected ? 'border-clay-500 bg-clay-500' : 'border-stone-300 bg-white'
+                }`}>
+                    {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                </div>
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                        <span className={`min-w-0 text-[13px] font-bold leading-tight ${isSelected ? 'text-clay-900' : 'text-stone-700'}`}>
+                    <div className="flex items-center justify-between gap-2 border-b border-stone-100/50 pb-2.5 mb-2.5">
+                        <span className={`text-[14px] font-bold tracking-tight ${isSelected ? 'text-clay-900' : 'text-stone-800'}`}>
                             {preset.label}
                         </span>
                         {moduleCount > 0 && (
-                            <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${isSelected ? 'bg-clay-200 text-clay-800' : 'bg-stone-100 text-stone-500'}`}>
+                            <span className={`inline-flex shrink-0 items-center justify-center rounded-lg px-2 py-1 text-[9px] font-bold uppercase tracking-widest transition-colors ${isSelected ? 'bg-clay-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
                                 {moduleCount} mods
                             </span>
                         )}
                     </div>
-                    <p className={`mt-1 text-[11px] leading-relaxed ${isSelected ? 'text-clay-800/80' : 'text-stone-500'}`}>{preset.description}</p>
+                    <p className={`text-[12px] font-medium leading-relaxed ${isSelected ? 'text-clay-800/80' : 'text-stone-500'}`}>{preset.description}</p>
                 </div>
             </div>
+            
+            <input
+                type="radio"
+                name={radioName}
+                className="sr-only"
+                checked={isSelected}
+                onChange={onSelect}
+            />
         </label>
     );
 }
 
-function StaffPermissionLevelCard({ option, isSelected, radioName, onSelect }) {
+function ModuleAccessLevelCard({ module, value, onChange }) {
+    const isOff = !value;
+    
     return (
-        <label
-            className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${
-                isSelected
-                    ? 'border-clay-700 bg-clay-50/50 shadow-sm ring-1 ring-clay-700/10'
-                    : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50'
-            }`}
-        >
-            <div className="flex items-start gap-2.5">
-                <input
-                    type="radio"
-                    name={radioName}
-                    className="mt-0.5 h-3.5 w-3.5 border-stone-300 text-clay-700 focus:ring-clay-700"
-                    checked={isSelected}
-                    onChange={onSelect}
-                />
-                <div className="min-w-0 flex-1">
-                    <div className={`text-[13px] font-bold leading-tight ${isSelected ? 'text-clay-900' : 'text-stone-700'}`}>
-                        {option.label}
-                    </div>
-                    <p className={`mt-1 text-[11px] leading-relaxed ${isSelected ? 'text-clay-800/80' : 'text-stone-500'}`}>
-                        {option.description}
-                    </p>
+        <div className={`relative flex flex-col justify-between rounded-[1.25rem] border p-4 transition-all duration-300 ${
+            isOff
+                ? 'border-stone-200 bg-stone-50/30 opacity-90'
+                : value === 'can_edit'
+                    ? 'border-[#E7D8C9] bg-white shadow-sm'
+                    : 'border-stone-200 bg-white shadow-sm'
+        }`}>
+            <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                    <span className={`text-[14px] font-bold tracking-tight ${isOff ? 'text-stone-600' : 'text-stone-900'}`}>
+                        {module.label}
+                    </span>
+                    {!isOff && (
+                        <span className={`h-2.5 w-2.5 rounded-full border border-white shadow-sm ${value === 'can_edit' ? 'bg-clay-500' : 'bg-emerald-400'}`} />
+                    )}
                 </div>
+                <p className="mt-1 text-[11px] font-medium leading-relaxed text-stone-500">
+                    {module.description}
+                </p>
             </div>
-        </label>
-    );
-}
-
-function StaffPermissionCapabilitySummary({ selectedLevel, hrModuleEnabled }) {
-    const selectedOption = STAFF_PERMISSION_LEVELS.find((option) => option.key === selectedLevel) || STAFF_PERMISSION_LEVELS[0];
-    const capabilityRows = [
-        { key: 'view', label: 'View HR records and assigned modules' },
-        { key: 'editHr', label: 'Edit employee records and payroll inputs' },
-        { key: 'editExistingLogin', label: 'Update existing seller portal login access' },
-        { key: 'createRemoveLogins', label: 'Create, suspend, restore, or remove seller portal logins' },
-    ];
-
-    return (
-        <div className="rounded-xl border border-stone-200 bg-stone-50/70 px-3.5 py-3">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                    <h5 className="text-[12px] font-bold text-stone-900">Effective Access Summary</h5>
-                    <p className="mt-0.5 text-[11px] leading-relaxed text-stone-500">
-                        This is what <span className="font-bold text-stone-700">{selectedOption.label}</span> can actually do in the system.
-                    </p>
-                </div>
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STAFF_ACCESS_BADGE_STYLES[selectedOption.key] || STAFF_ACCESS_BADGE_STYLES.read_only}`}>
-                    {selectedOption.label}
-                </span>
-            </div>
-
-            <div className="mt-3 grid gap-2 md:grid-cols-2">
-                {capabilityRows.map((row) => {
-                    const allowed = !!selectedOption.capabilities?.[row.key];
-
+            
+            <div className="mt-5 flex w-full p-1 bg-stone-100/80 rounded-xl border border-stone-200/60">
+                <button
+                    type="button"
+                    onClick={() => onChange(null)}
+                    className={`flex-1 rounded-lg py-1.5 text-[9px] xl:text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        isOff
+                            ? 'bg-white text-stone-800 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-stone-900/5 cursor-default'
+                            : 'text-stone-500 hover:text-stone-800'
+                    }`}
+                >
+                    Off
+                </button>
+                {MODULE_PERMISSION_LEVELS.map((option) => {
+                    const isSelected = value === option.key;
                     return (
-                        <div
-                            key={row.key}
-                            className={`rounded-lg border px-3 py-2 text-[11px] ${
-                                allowed
-                                    ? 'border-emerald-200 bg-white text-stone-700'
-                                    : 'border-stone-200 bg-white/70 text-stone-500'
+                        <button
+                            key={option.key}
+                            type="button"
+                            onClick={() => onChange(option.key)}
+                            className={`flex-1 rounded-lg py-1.5 text-[9px] xl:text-[10px] font-bold uppercase tracking-widest transition-all ${
+                                isSelected
+                                    ? option.key === 'can_edit'
+                                        ? 'bg-[#FCF7F2] text-clay-700 shadow-[0_1px_2px_rgba(180,120,90,0.1)] ring-1 ring-clay-700/10 cursor-default'
+                                        : 'bg-emerald-50 text-emerald-700 shadow-[0_1px_2px_rgba(16,185,129,0.1)] ring-1 ring-emerald-700/10 cursor-default'
+                                    : 'text-stone-500 hover:text-stone-800'
                             }`}
                         >
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="font-medium leading-snug">{row.label}</span>
-                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                    allowed
-                                        ? 'bg-emerald-50 text-emerald-700'
-                                        : 'bg-stone-100 text-stone-500'
-                                }`}>
-                                    {allowed ? 'Allowed' : 'Blocked'}
-                                </span>
-                            </div>
-                        </div>
+                            {option.label}
+                        </button>
                     );
                 })}
             </div>
+        </div>
+    );
+}
 
-            {!hrModuleEnabled && selectedLevel !== 'read_only' && (
-                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800">
-                    <span className="font-bold">HR module required:</span> update and full staff access only take effect for staff-account management when the HR module is enabled below.
+function ModulePermissionSummary({ moduleOverrides = {}, availableModules = [] }) {
+    const activeLevels = availableModules
+        .map((module) => normalizeModulePermissionLevel(moduleOverrides?.[module.key]))
+        .filter(Boolean);
+    const readOnlyCount = activeLevels.filter((level) => level === 'read_only').length;
+    const canEditCount = activeLevels.filter((level) => level === 'can_edit').length;
+    const totalEnabled = readOnlyCount + canEditCount;
+
+    return (
+        <div className="rounded-[1.25rem] border border-stone-200 bg-[#FDFBF9] p-5 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div className="min-w-0">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Access Overview</p>
+                    <h5 className="mt-0.5 text-lg font-bold tracking-tight text-stone-900">Capability Control Center</h5>
+                    <p className="mt-1 text-[12px] font-medium leading-tight text-stone-500 max-w-lg">
+                        Set capability visibility manually to <strong className="font-bold text-stone-700">View Only</strong> or <strong className="font-bold text-stone-700">Provide Edit Actions</strong>.
+                    </p>
                 </div>
-            )}
+                
+                <div className="shrink-0 flex items-center justify-end gap-2">
+                    <div className="flex flex-col items-end gap-2">
+                        <span className="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-600 shadow-sm">
+                            <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-stone-300" />
+                            {totalEnabled} App Modules Active
+                        </span>
+                        
+                        {(readOnlyCount > 0 || canEditCount > 0) && (
+                            <div className="flex gap-1.5">
+                                {readOnlyCount > 0 && <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-700 border border-emerald-100">{readOnlyCount} View Levels</span>}
+                                {canEditCount > 0 && <span className="rounded-lg bg-[#FCF7F2] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-700 border border-[#E7D8C9]">{canEditCount} Edit Levels</span>}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -495,7 +529,7 @@ function AttendanceSummaryCard({ attendance, attendanceStatus, monthLabel, onOpe
             type="button"
             onClick={canOpen ? onOpenCalendar : undefined}
             disabled={!canOpen}
-            className={`w-full min-w-[190px] rounded-2xl border px-3 py-2 text-left transition ${
+            className={`w-full min-w-0 rounded-2xl border px-3 py-2 text-left transition sm:min-w-[190px] ${
                 canOpen
                     ? 'border-stone-200 bg-white hover:border-clay-200 hover:bg-[#FCF7F2]'
                     : 'border-stone-200 bg-white'
@@ -657,7 +691,7 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
                             <div className="p-3">
                                 <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">Selected</p>
                                 <h3 className="mt-1 text-sm font-bold tracking-tight text-gray-900">
-                                    {selectedDay ? formatAttendanceDateLabel(selectedDay.date) : 'Choose a date'}
+                                    {selectedDay ? formatAttendanceDateLabelSafe(selectedDay.date) : 'Choose a date'}
                                 </h3>
 
                                 <div className="mt-2.5 bg-stone-50 rounded-lg p-2 flex items-center gap-2.5 border border-stone-100">
@@ -684,7 +718,7 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
                                 <div className="flex items-center justify-between mt-0.5">
                                     <p className="text-xs font-bold text-gray-900">{bestLoggedDay?.worked_hours_label || '0h'}</p>
                                     <p className="text-[10px] text-stone-400">
-                                        {bestLoggedDay ? formatAttendanceDateLabel(bestLoggedDay.date) : 'No attendance yet'}
+                                        {bestLoggedDay ? formatAttendanceDateLabelSafe(bestLoggedDay.date) : 'No attendance yet'}
                                     </p>
                                 </div>
                             </div>
@@ -716,7 +750,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const canUpdateStaffAccounts = canManageStaffAccounts && !requiresStaffSchemaUpdate;
     const canProvisionStaffAccounts = canCreateStaffAccounts && !requiresStaffSchemaUpdate;
     const rolePresets = staffProvisioning.rolePresets?.length ? staffProvisioning.rolePresets : FALLBACK_ROLE_PRESETS;
-    const permissionLevels = STAFF_PERMISSION_LEVELS;
     const availableModules = staffProvisioning.availableModules?.length ? staffProvisioning.availableModules : FALLBACK_MODULES;
     const initialPresetKey = rolePresets[0]?.key || 'hr';
     const [manualEmployeeRole, setManualEmployeeRole] = useState(DEFAULT_EMPLOYEE_ROLE);
@@ -724,15 +757,45 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         acc[preset.key] = preset.label;
         return acc;
     }, {});
-    const showReadOnlyToast = () => addToast('Read-only HR access can only view records.', 'error');
+    const showReadOnlyToast = () => addToast('Read-only people access can only view records.', 'error');
     const accessAuditEntries = useMemo(() => staffAccessAudits.slice(0, 6), [staffAccessAudits]);
+    const pendingPayrollCount = useMemo(() => (
+        Array.isArray(payrolls?.data) ? payrolls.data.filter((payroll) => payroll.status === 'Pending').length : 0
+    ), [payrolls]);
+    const hrAccessSummary = useMemo(() => {
+        if (!canEditHrRecords) {
+            return {
+                tone: 'border-stone-200 bg-stone-50 text-stone-600',
+                label: 'View only access',
+            };
+        }
+
+        if (canProvisionStaffAccounts) {
+            return {
+                tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                label: 'Editable people access',
+            };
+        }
+
+        if (canUpdateStaffAccounts) {
+            return {
+                tone: 'border-amber-200 bg-amber-50 text-amber-700',
+                label: 'Editable people access',
+            };
+        }
+
+        return {
+            tone: 'border-stone-200 bg-stone-50 text-stone-600',
+            label: 'Records only',
+        };
+    }, [canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts]);
 
     const buildModuleSelection = (presetKey) => {
         const preset = rolePresets.find((item) => item.key === presetKey) || rolePresets.find((item) => item.key === 'custom');
         const presetModules = new Set(preset?.modules || []);
 
         return availableModules.reduce((acc, module) => {
-            acc[module.key] = presetModules.has(module.key);
+            acc[module.key] = presetModules.has(module.key) ? 'can_edit' : null;
             return acc;
         }, {});
     };
@@ -769,7 +832,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         email: '',
         default_password: '',
         staff_role_preset_key: initialPresetKey,
-        staff_access_permission_level: 'read_only',
         module_overrides: buildModuleSelection(initialPresetKey),
     });
 
@@ -787,9 +849,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
         return availableModules.reduce((acc, module) => {
             const explicitValue = loginAccount?.module_permissions?.[module.key];
-            acc[module.key] = typeof explicitValue === 'boolean'
-                ? explicitValue
-                : !!defaultSelection[module.key];
+            acc[module.key] = normalizeModulePermissionLevel(explicitValue) ?? defaultSelection[module.key] ?? null;
             return acc;
         }, {});
     };
@@ -816,12 +876,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         setData('module_overrides', buildModuleSelection(presetKey));
     };
 
-    const createHrModuleEnabled = !!data.module_overrides?.hr;
-
-    const toggleModuleOverride = (moduleKey) => {
+    const updateModuleOverride = (moduleKey, level) => {
         setData('module_overrides', {
             ...data.module_overrides,
-            [moduleKey]: !data.module_overrides?.[moduleKey],
+            [moduleKey]: level,
         });
     };
 
@@ -842,7 +900,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 reset();
                 handleProvisionToggle(false);
                 handlePresetChange(initialPresetKey);
-                setData('staff_access_permission_level', 'read_only');
                 addToast(
                     getFlashSuccessMessage(
                         page,
@@ -870,7 +927,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         email: '',
         default_password: '',
         staff_role_preset_key: initialPresetKey,
-        staff_access_permission_level: 'read_only',
         module_overrides: buildModuleSelection(initialPresetKey),
     });
 
@@ -905,12 +961,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         setEditData('module_overrides', buildModuleSelection(presetKey));
     };
 
-    const editHrModuleEnabled = !!editData.module_overrides?.hr;
-
-    const toggleEditModuleOverride = (moduleKey) => {
+    const updateEditModuleOverride = (moduleKey, level) => {
         setEditData('module_overrides', {
             ...editData.module_overrides,
-            [moduleKey]: !editData.module_overrides?.[moduleKey],
+            [moduleKey]: level,
         });
     };
 
@@ -938,7 +992,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             email: employee.login_account?.email || '',
             default_password: '',
             staff_role_preset_key: presetKey,
-            staff_access_permission_level: employee.login_account?.staff_access_permission_level || 'read_only',
             module_overrides: moduleOverrides,
         });
         setIsEditModalOpen(true);
@@ -1144,127 +1197,103 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     return (
         <>
-            <Head title="HR Management" />
-
-            {/* MAIN CONTENT */}
-                {/* --- HEADER (Standardized) --- */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
-                            <Menu size={24} />
+            <Head title="People & Payroll" />
+            <SellerHeader
+                title="People & Payroll"
+                subtitle="Manage employees, payroll, and workspace access."
+                auth={auth}
+                onMenuClick={openSidebar}
+                badge={{ label: 'Enterprise', iconColor: 'text-clay-400' }}
+                actions={canEditHrRecords ? (
+                    <>
+                        <button
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-stone-100 px-4 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-200"
+                            title="Payroll Settings"
+                        >
+                            <SettingsIcon size={16} />
                         </button>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-xl font-bold text-gray-900">Human Resources</h1>
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
-                                    <Building2 size={10} className="text-clay-400" /> Enterprise
-                                </span>
-                            </div>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage payroll records and seller staff access</p>
-                        </div>
-                    </div>
+                        <button
+                            onClick={openPayrollModal}
+                            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50"
+                        >
+                            <Banknote size={16} /> Generate Payroll
+                        </button>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700"
+                        >
+                            <UserPlus size={16} /> Add Employee
+                        </button>
+                    </>
+                ) : (
+                    <span className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-500">
+                        <EyeOff size={14} />
+                        View Only
+                    </span>
+                )}
+            />
 
-                                        
-                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-6">
-                        {/* Actions */}
-                        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-                            {canEditHrRecords ? (
-                                <>
-                                    <button 
-                                        onClick={() => setIsSettingsOpen(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-200 transition transform active:scale-95"
-                                        title="Payroll Settings"
-                                    >
-                                        <SettingsIcon size={16} />
-                                    </button>
-                                    <button 
-                                        onClick={openPayrollModal}
-                                        className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
-                                    >
-                                        <Banknote size={16} /> Generate Payroll
-                                    </button>
-                                    <button 
-                                        onClick={() => setIsModalOpen(true)} 
-                                        className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
-                                    >
-                                        <UserPlus size={16} /> Add Employee
-                                    </button>
-                                </>
-                            ) : (
-                                <span className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-500">
-                                    <EyeOff size={14} />
-                                    View Only
-                                </span>
-                            )}
-                            <NotificationDropdown />
-                        </div>
-
-                        {/* Divider */}
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-
-                        {/* Profile Dropdown (Fixed Layout) */}
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
-                                        <LogOut size={16} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
-
-                <main className="p-4 sm:p-6 space-y-6">
+                <main className="mx-auto w-full max-w-[1400px] p-4 sm:p-6 space-y-6">
 
 
                     {/* KPI CARDS */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2">
+                        <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
                             <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Active Staff</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Total Active Staff</p>
                                 <h3 className="text-2xl font-bold text-gray-900 mt-1">{staff.length}</h3>
                             </div>
-                            <div className="w-10 h-10 bg-[#F8EEE6] text-clay-600 rounded-xl flex items-center justify-center">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F8EEE6] text-clay-600">
                                 <Users size={20} />
                             </div>
                         </div>
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
                             <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Est. Monthly Payroll</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Est. Monthly Payroll</p>
                                 <h3 className="text-2xl font-bold text-gray-900 mt-1">{formatPeso(staff.reduce((acc, curr) => acc + Number(curr.salary), 0))}</h3>
                             </div>
-                            <div className="w-10 h-10 bg-stone-100 text-stone-700 rounded-xl flex items-center justify-center">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
                                 <Briefcase size={20} />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="border-b border-stone-100 px-5 py-4">
+                    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3">
+                        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold ${hrAccessSummary.tone}`}>
+                            <Eye size={13} />
+                            {hrAccessSummary.label}
+                        </span>
+                        {requiresStaffSchemaUpdate && (
+                            <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-bold text-red-700">
+                                <AlertCircle size={13} />
+                                Staff login schema update needed
+                            </span>
+                        )}
+                        {pendingPayrollCount > 0 && (
+                            <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold text-amber-700">
+                                <Banknote size={13} />
+                                {pendingPayrollCount} awaiting Accounting
+                            </span>
+                        )}
+                        {!canDeleteStaffAccounts && canEditHrRecords && (
+                            <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-600">
+                                <Trash2 size={13} />
+                                Login-linked records cannot be removed here
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
+                        <div className="border-b border-stone-100 px-6 py-4 bg-[#FDFBF9]">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">Access Control</p>
-                                    <h3 className="mt-1 text-base font-bold text-stone-900">Staff access activity</h3>
-                                    <p className="mt-1 text-[13px] text-stone-500">
-                                        Read Only only views. Update Access edits records and existing login access. Full Access also creates or removes seller portal logins.
-                                    </p>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Access Control</p>
+                                    <h3 className="mt-1 text-sm font-bold tracking-tight text-stone-900">Staff access activity</h3>
+                                    <p className="mt-1 text-[11px] font-medium text-stone-500">Track who changed staff login access and when.</p>
                                 </div>
-                                <span className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-600">
-                                    Recent seller portal access changes
+                                <span className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-stone-600 shadow-sm">
+                                    Recent Admin Activity
                                 </span>
                             </div>
                         </div>
@@ -1283,7 +1312,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="mt-1 text-sm font-semibold text-stone-900">{audit.summary}</p>
+                                            <p className="mt-1 text-sm font-medium text-stone-900">{audit.summary}</p>
                                             {audit.details?.changes?.length > 0 && (
                                                 <p className="mt-1 text-[12px] text-stone-500">
                                                     {audit.details.changes.join(' • ')}
@@ -1308,21 +1337,21 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
 
                     {/* EMPLOYEE LIST TABLE */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col min-h-[400px]">
                         
                         {/* Table Header / Toolbar */}
-                        <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/30">
-                            <h3 className="font-bold text-gray-900 text-base">Employee Directory</h3>
+                        <div className="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#FDFBF9]">
+                            <h3 className="text-sm font-bold tracking-tight text-stone-900">Employee Directory</h3>
                             <div className="relative w-full sm:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} strokeWidth={2.5} />
                                 <input 
                                     type="text" 
                                     placeholder="Search name or role..." 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
+                                    className="w-full pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-[11px] font-medium focus:ring-clay-500 focus:border-clay-500 transition-shadow shadow-sm"
                                 />
-                                {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X size={12} /></button>}
+                                {searchTerm && <button onClick={() => setSearchTerm('')} aria-label="Clear employee search" className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"><X size={12} strokeWidth={2.5} /></button>}
                             </div>
                         </div>
 
@@ -1334,6 +1363,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         const loginAccessStatus = getLoginAccessStatus(emp.login_account);
                                         const attendanceStatus = getAttendanceStatus(emp.attendance);
                                         const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
+                                        const modulePermissionSummary = summarizeModulePermissions(emp.login_account?.module_permissions || {});
 
                                         return (
                                             <div key={emp.id} className="p-4 space-y-3">
@@ -1353,9 +1383,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                         </div>
                                                     )}
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="text-sm font-bold text-gray-900">{emp.name}</p>
+                                                        <p className="text-sm font-semibold text-gray-900">{emp.name}</p>
                                                         <p className="text-xs text-stone-500 font-medium">{emp.role}</p>
-                                                        <p className="mt-1 text-xs font-bold text-gray-800">{formatPeso(emp.salary)}</p>
+                                                        <p className="mt-1 text-xs font-semibold text-gray-800">{formatPeso(emp.salary)}</p>
                                                     </div>
                                                     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${directoryStatus.className}`}>
                                                         <span className={`w-1.5 h-1.5 rounded-full ${directoryStatus.dotClassName}`}></span>
@@ -1369,25 +1399,18 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                         {emp.has_login_account ? (
                                                             <div className="mt-1 space-y-1">
                                                                 <div className="flex flex-wrap items-center gap-1.5">
-                                                                    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase ${
-                                                                        emp.login_account?.workspace_access_enabled === false
-                                                                            ? 'border-red-200 bg-red-50 text-red-700'
-                                                                            : emp.login_account?.is_verified
-                                                                                ? emp.login_account?.must_change_password
-                                                                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                                                                    : 'border-[#E7D8C9] bg-[#FCF7F2] text-clay-700'
-                                                                                : 'border-stone-200 bg-stone-100 text-stone-600'
-                                                                    }`}>
-                                                                        {loginAccessStatus}
+                                                                    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase ${loginAccessStatus.className}`}>
+                                                                        <span className={`h-1.5 w-1.5 rounded-full ${loginAccessStatus.dotClassName}`}></span>
+                                                                        {loginAccessStatus.label}
                                                                     </span>
                                                                     {emp.login_account?.role_preset && (
                                                                         <span className="inline-flex items-center rounded-full border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-stone-600">
                                                                             {humanizePreset(emp.login_account.role_preset)}
                                                                         </span>
                                                                     )}
-                                                                    {emp.login_account?.staff_access_permission_level && (
+                                                                    {modulePermissionSummary.enabledCount > 0 && (
                                                                         <span className="inline-flex items-center rounded-full border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-stone-600">
-                                                                            {formatPermissionLevel(emp.login_account.staff_access_permission_level)}
+                                                                            {modulePermissionSummary.canEditCount} edit / {modulePermissionSummary.readOnlyCount} view
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -1412,12 +1435,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex justify-end gap-2 pt-1">
-                                                    <button onClick={() => openEditEmployeeModal(emp)} className="inline-flex items-center justify-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-50">
+                                                <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:justify-end">
+                                                    <button disabled={!canEditHrRecords} onClick={() => openEditModal(emp)} aria-label={`Edit ${emp.name}`} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                                                         <Pencil size={13} />
+                                                        Edit
                                                     </button>
-                                                    <button onClick={() => deleteEmployee(emp.id)} className="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-100">
+                                                    <button disabled={!canEditHrRecords} onClick={() => deleteEmployee(emp.id)} aria-label={`Delete ${emp.name}`} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                                                         <Trash2 size={13} />
+                                                        Delete
                                                     </button>
                                                 </div>
                                             </div>
@@ -1430,8 +1455,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         icon={Users}
                                         title="No employees found"
                                         description={searchTerm ? 'Try a different search term or clear the filter.' : 'Add your first employee to start managing staff records and portal access.'}
-                                        actionLabel={!searchTerm ? 'Add Employee' : 'Clear Search'}
-                                        onAction={!searchTerm ? () => setIsAddModalOpen(true) : () => setSearchTerm('')}
+                                        actionLabel={!searchTerm ? (canEditHrRecords ? 'Add Employee' : 'Read Only') : 'Clear Search'}
+                                        onAction={!searchTerm ? (canEditHrRecords ? () => setIsModalOpen(true) : undefined) : () => setSearchTerm('')}
                                         compact
                                     />
                                 </div>
@@ -1439,23 +1464,24 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
 
                         <div className="hidden overflow-x-auto flex-1 md:block">
-                            <table className="w-full min-w-[860px] text-left">
-                                <thead className="bg-stone-50/50 text-[10px] font-bold text-stone-500 uppercase tracking-widest border-b border-gray-100">
+                            <table className="w-full min-w-[980px] text-left">
+                                <thead className="bg-[#FDFBF9] text-[9px] font-bold text-stone-400 uppercase tracking-widest border-b border-stone-100">
                                     <tr>
-                                        <th className="px-5 py-3">Employee</th>
-                                        <th className="px-5 py-3">Monthly Salary</th>
-                                        <th className="px-5 py-3">Status</th>
-                                        <th className="px-5 py-3">Login Access</th>
-                                        <th className="px-5 py-3">Attendance</th>
-                                        <th className="px-5 py-3 pr-6 text-right">Actions</th>
+                                        <th className="px-6 py-3.5">Employee</th>
+                                        <th className="px-5 py-3.5">Monthly Salary</th>
+                                        <th className="px-5 py-3.5">Status</th>
+                                        <th className="px-5 py-3.5">Login Access</th>
+                                        <th className="px-5 py-3.5">Attendance</th>
+                                        <th className="px-6 py-3.5 pr-6 text-right w-24">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50 bg-white">
+                                <tbody className="divide-y divide-stone-100 bg-white">
                                     {filteredStaff.length > 0 ? (
                                         filteredStaff.map((emp) => {
                                             const loginAccessStatus = getLoginAccessStatus(emp.login_account);
                                             const attendanceStatus = getAttendanceStatus(emp.attendance);
                                             const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
+                                            const modulePermissionSummary = summarizeModulePermissions(emp.login_account?.module_permissions || {});
 
                                             return (
                                             <tr key={emp.id} className="group hover:bg-[#FCF7F2]/50 transition duration-150">
@@ -1515,11 +1541,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                                   <span className="rounded-full bg-stone-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-stone-500 uppercase border border-stone-200">
                                                                       {presetLabelByKey[emp.login_account?.role_preset_key] || 'Custom'}
                                                                   </span>
-                                                                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase border ${
-                                                                      STAFF_ACCESS_BADGE_STYLES[emp.login_account?.staff_access_permission_level || 'read_only']
-                                                                  }`}>
-                                                                      {STAFF_ACCESS_LEVEL_LABELS[emp.login_account?.staff_access_permission_level || 'read_only']}
-                                                                  </span>
+                                                                  {modulePermissionSummary.enabledCount > 0 && (
+                                                                      <span className="rounded-full border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase text-stone-600">
+                                                                          {modulePermissionSummary.canEditCount} edit / {modulePermissionSummary.readOnlyCount} view
+                                                                      </span>
+                                                                  )}
                                                              </div>
                                                              <span className="text-[11px] text-stone-500 truncate" title={emp.login_account?.email}>{emp.login_account?.email}</span>
                                                         </div>
@@ -1563,6 +1589,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                         <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                             <button
                                                                 onClick={() => openEditModal(emp)}
+                                                                aria-label={`Update ${emp.name}`}
                                                                 className="p-1.5 text-stone-500 hover:text-clay-600 bg-white border border-stone-200 shadow-sm hover:bg-[#FCF7F2] hover:border-[#E7D8C9] rounded-lg transition"
                                                                 title="Update Data"
                                                                 type="button"
@@ -1572,6 +1599,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                             <button
                                                                 onClick={() => deleteEmployee(emp.id)}
                                                                 disabled={emp.has_login_account && !canDeleteStaffAccounts}
+                                                                aria-label={emp.has_login_account && !canDeleteStaffAccounts ? `Cannot remove ${emp.name}` : `Remove ${emp.name}`}
                                                                 className={`p-1.5 rounded-lg border shadow-sm transition ${
                                                                     emp.has_login_account && !canDeleteStaffAccounts
                                                                         ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300'
@@ -1598,7 +1626,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     title="No staff found"
                                                     description={canEditHrRecords
                                                         ? 'Start by adding your first employee to the directory, then link seller portal access only when needed.'
-                                                        : 'Read-only HR access can view records only. No employee entries are available yet.'}
+                                                        : 'Read-only people access can view records only. No employee entries are available yet.'}
                                                     actionLabel={canEditHrRecords ? 'Create New Record' : null}
                                                     onAction={canEditHrRecords ? () => setIsModalOpen(true) : undefined}
                                                 />
@@ -1611,9 +1639,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
 
                     {/* PAYROLL HISTORY TABLE */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col mt-8">
-                        <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-                            <h3 className="font-bold text-gray-900 text-base">Payroll Requests History</h3>
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col mt-8">
+                        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between bg-[#FDFBF9]">
+                            <h3 className="text-sm font-bold tracking-tight text-stone-900">Payroll Requests History</h3>
                         </div>
                         <div className="flex-1 md:hidden">
                             {payrolls.data && payrolls.data.length > 0 ? (
@@ -1622,7 +1650,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         <div key={payroll.id} className="p-4 space-y-3">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-bold text-gray-900">{formatShortDate(payroll.created_at)}</p>
+                                                    <p className="text-sm font-bold text-gray-900">{formatShortDateSafe(payroll.created_at)}</p>
                                                     <p className="mt-0.5 text-xs text-gray-500">{payroll.month}</p>
                                                     <p className="mt-1 text-[11px] text-gray-400">
                                                         Requested by <span className="font-bold text-gray-600">{payroll.requester?.name || 'Seller owner'}</span>
@@ -1650,10 +1678,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                                             <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2 text-[11px] text-stone-500">
                                                 {payroll.submitted_at && (
-                                                    <p>Submitted to Accounting: <span className="font-medium text-stone-700">{formatShortDate(payroll.submitted_at)}</span></p>
+                                                    <p>Submitted to Accounting: <span className="font-medium text-stone-700">{formatShortDateSafe(payroll.submitted_at)}</span></p>
                                                 )}
                                                 {payroll.status !== 'Pending' && (
-                                                    <p className="mt-1">Last review: <span className="font-medium text-stone-700">{formatShortDate(payroll.updated_at)}</span></p>
+                                                    <p className="mt-1">Last review: <span className="font-medium text-stone-700">{formatShortDateSafe(payroll.updated_at)}</span></p>
                                                 )}
                                                 <p className="mt-1">
                                                     Reason: <span className={payroll.rejection_reason ? 'font-medium text-red-600' : 'font-medium text-stone-400'}>{payroll.rejection_reason || '—'}</span>
@@ -1680,32 +1708,32 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                         <div className="hidden overflow-x-auto flex-1 md:block">
                             <table className="w-full min-w-[860px] text-left">
-                                <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                <thead className="bg-[#FDFBF9] text-[9px] font-bold text-stone-400 uppercase tracking-widest border-b border-stone-100">
                                     <tr>
-                                        <th className="px-5 py-3">Date</th>
-                                        <th className="px-5 py-3 text-center">Employees</th>
-                                        <th className="px-5 py-3 text-right">Total Amount</th>
-                                        <th className="px-5 py-3 text-center">Status</th>
-                                        <th className="px-5 py-3">Reason</th>
-                                        <th className="px-5 py-3 text-right">Actions</th>
+                                        <th className="px-6 py-3.5">Date</th>
+                                        <th className="px-5 py-3.5 text-center">Employees</th>
+                                        <th className="px-5 py-3.5 text-right">Total Amount</th>
+                                        <th className="px-5 py-3.5 text-center">Status</th>
+                                        <th className="px-5 py-3.5">Reason</th>
+                                        <th className="px-6 py-3.5 text-right w-32">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-stone-100">
                                     {payrolls.data && payrolls.data.length > 0 ? (
                                         payrolls.data.map((payroll) => (
                                             <tr key={payroll.id} className="hover:bg-gray-50/50 transition duration-150 relative">
                                                 <td className="px-5 py-4">
-                                                    <div className="font-bold text-gray-900 text-sm">{formatShortDate(payroll.created_at)}</div>
+                                                    <div className="font-bold text-gray-900 text-sm">{formatShortDateSafe(payroll.created_at)}</div>
                                                     <div className="mt-1 text-xs text-gray-500">{payroll.month}</div>
                                                     <div className="mt-1 text-xs text-gray-400">
                                                         Requested by <span className="font-bold text-gray-600">{payroll.requester?.name || 'Seller owner'}</span>
                                                     </div>
                                                     <div className="mt-1 space-y-0.5 text-[11px] text-gray-400">
                                                         {payroll.submitted_at && (
-                                                            <div>Submitted to Accounting: <span className="font-medium text-gray-500">{formatShortDate(payroll.submitted_at)}</span></div>
+                                                            <div>Submitted to Accounting: <span className="font-medium text-gray-500">{formatShortDateSafe(payroll.submitted_at)}</span></div>
                                                         )}
                                                         {payroll.status !== 'Pending' && (
-                                                            <div>Last review: <span className="font-medium text-gray-500">{formatShortDate(payroll.updated_at)}</span></div>
+                                                            <div>Last review: <span className="font-medium text-gray-500">{formatShortDateSafe(payroll.updated_at)}</span></div>
                                                         )}
                                                     </div>
                                                 </td>
@@ -1754,7 +1782,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     title="No payroll requests yet"
                                                     description={canEditHrRecords
                                                         ? 'Generate payroll after attendance and salary details are ready for the selected month.'
-                                                        : 'Payroll history will appear here once HR submits requests to Accounting.'}
+                                                        : 'Payroll history will appear here once People & Payroll submits requests for finance review.'}
                                                     actionLabel={canEditHrRecords ? 'Generate Payroll' : null}
                                                     onAction={canEditHrRecords ? () => setIsPayrollModalOpen(true) : undefined}
                                                 />
@@ -1803,29 +1831,34 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             {/* ADD EMPLOYEE MODAL */}
             <Modal show={isModalOpen} onClose={closeAddModal} maxWidth="2xl">
                 <form onSubmit={submit} className="flex flex-col max-h-[85vh]">
-                    <div className="shrink-0 flex justify-between items-center px-6 py-5 border-b border-stone-100 bg-white">
-                        <div>
-                            <h2 className="text-[19px] font-bold text-stone-900 tracking-tight">Add New Staff</h2>
-                            <p className="text-[13px] text-stone-500 mt-0.5 font-medium">
-                                Create an employee record and provision workspace access.
-                            </p>
+                    <div className="shrink-0 flex justify-between items-start px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
+                        <div className="flex items-start gap-4">
+                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-500">
+                                <UserPlus size={18} strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-bold text-stone-900 tracking-tight">Add New Staff</h2>
+                                <p className="text-[11px] text-stone-500 mt-0.5 font-medium">
+                                    Create the employee record and add seller access only if needed.
+                                </p>
+                            </div>
                         </div>
-                        <button type="button" onClick={closeAddModal} className="text-stone-400 hover:text-stone-600 transition"><X size={20} /></button>
+                        <button type="button" onClick={closeAddModal} aria-label="Close add employee modal" className="text-stone-400 hover:text-stone-600 transition"><X size={20} strokeWidth={2.5} /></button>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#FDFBF9]">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/60 pb-5">
                             <div className="min-w-0">
-                                <label className="flex items-center gap-2 text-sm font-bold text-stone-900">
+                                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-500">
                                     Enable Seller Portal Login
-                                    <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
-                                        data.create_login_account ? 'bg-clay-600 text-white shadow-sm' : 'bg-stone-200 text-stone-600'
+                                    <span className={`inline-flex items-center justify-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
+                                        data.create_login_account ? 'bg-clay-600 text-white border-clay-700 shadow-sm' : 'bg-stone-100 text-stone-500 border-stone-200'
                                     }`}>
                                         {data.create_login_account ? 'Active' : 'Disabled'}
                                     </span>
                                 </label>
                                 <p className="mt-1 text-[13px] leading-snug text-stone-500">
-                                    Turn this on if they need to log in to the dashboard. Usually not required for floor staff.
+                                    Turn this on only if they need seller workspace access.
                                 </p>
                             </div>
                             <label className={`relative inline-flex shrink-0 items-center ${canProvisionStaffAccounts ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
@@ -1842,23 +1875,23 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
 
                         {requiresStaffSchemaUpdate && (
-                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800">
                                 Database migration required before login provisioning is available.
                             </div>
                         )}
 
                         {!requiresStaffSchemaUpdate && !canCreateStaffAccounts && (
-                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
-                                Only the shop owner or a user with full staff account access can create new seller login accounts.
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800">
+                                Only the shop owner or a user with editable People &amp; Payroll access can create seller login accounts.
                             </div>
                         )}
 
                         <div className="grid gap-5 md:grid-cols-2">
                             <div className="md:col-span-2">
-                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Legal Full Name</label>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Legal Full Name</label>
                                 <input
                                     type="text"
-                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    className={modalFieldClass}
                                     placeholder="e.g. Maria Clara"
                                     value={data.name}
                                     onChange={e => setData('name', e.target.value)}
@@ -1870,10 +1903,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             {data.create_login_account && canProvisionStaffAccounts && (
                                 <>
                                     <div>
-                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Email Address</label>
+                                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Email Address</label>
                                         <input
                                             type="email"
-                                            className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                            className={modalFieldClass}
                                             placeholder="maria@likhangkamay.com"
                                             value={data.email}
                                             onChange={(e) => setData('email', e.target.value)}
@@ -1881,11 +1914,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                         {errors.email && <p className="mt-1 text-xs text-red-500 font-medium">{errors.email}</p>}
                                     </div>
                                     <div>
-                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Initial Credential</label>
+                                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Initial Credential</label>
                                         <div className="relative">
                                             <input
                                                 type={showAddPassword ? 'text' : 'password'}
-                                                className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5 pr-11"
+                                                className={modalFieldWithIconClass}
                                                 placeholder="Temp password"
                                                 value={data.default_password}
                                                 onChange={(e) => setData('default_password', e.target.value)}
@@ -1893,6 +1926,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                             <button
                                                 type="button"
                                                 onClick={() => setShowAddPassword((value) => !value)}
+                                                aria-label={showAddPassword ? 'Hide password' : 'Show password'}
                                                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-stone-700"
                                             >
                                                 {showAddPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -1905,9 +1939,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                             {!data.create_login_account && (
                                 <div>
-                                    <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
+                                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Job Title</label>
                                     <select
-                                        className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                        className={modalSelectClass}
                                         value={data.role}
                                         onChange={e => handleManualRoleChange(e.target.value)}
                                     >
@@ -1920,10 +1954,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             )}
 
                             <div>
-                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Monthly Salary (PHP)</label>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Monthly Salary (PHP)</label>
                                 <input
                                     type="number"
-                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    className={modalFieldClass}
                                     placeholder="0"
                                     value={data.salary}
                                     onChange={e => setData('salary', e.target.value)}
@@ -1939,37 +1973,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose the staff template first, then set exactly how much this login can change.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Pick the capability template first, then set access per capability.</p>
                                         </div>
-                                        <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
+                                        <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800">
                                             {presetLabelByKey[data.staff_role_preset_key] || 'Custom'}
                                         </span>
-                                    </div>
-                                    <div className="mb-5">
-                                        <div className="mb-2 flex items-center justify-between gap-3">
-                                            <div>
-                                                <h4 className="text-[13px] font-bold text-stone-900">User Permission Level</h4>
-                                                <p className="mt-0.5 text-[12px] text-stone-500">Read Only only views. Update Access edits records and existing login access. Full Access also creates or removes seller portal logins.</p>
-                                            </div>
-                                        </div>
-                                        <div className="grid gap-2.5 md:grid-cols-2">
-                                            {permissionLevels.map((option) => (
-                                                <StaffPermissionLevelCard
-                                                    key={option.key}
-                                                    option={option}
-                                                    radioName="staff_permission_level"
-                                                    isSelected={data.staff_access_permission_level === option.key}
-                                                    onSelect={() => setData('staff_access_permission_level', option.key)}
-                                                />
-                                            ))}
-                                        </div>
-                                        <div className="mt-3">
-                                            <StaffPermissionCapabilitySummary
-                                                selectedLevel={data.staff_access_permission_level}
-                                                hrModuleEnabled={createHrModuleEnabled}
-                                            />
-                                        </div>
-                                        {errors.staff_access_permission_level && <p className="mt-1 text-xs text-red-500 font-medium">{errors.staff_access_permission_level}</p>}
                                     </div>
                                     <div className="grid gap-2.5 md:grid-cols-2">
                                         {rolePresets.map((preset) => (
@@ -1988,32 +1996,21 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 <div className="border-t border-stone-200/60 pt-5">
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
-                                            <h3 className="text-sm font-bold text-stone-900">Module Access Details</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Turn on only the seller workspace areas this login should actually use.</p>
+                                            <h3 className="text-sm font-bold text-stone-900">Capability Access Levels</h3>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose whether each seller workspace capability is off, read only, or editable.</p>
                                         </div>
+                                    </div>
+                                    <div className="mb-3">
+                                        <ModulePermissionSummary moduleOverrides={data.module_overrides} availableModules={availableModules} />
                                     </div>
                                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                                         {availableModules.map((module) => (
-                                            <label
+                                            <ModuleAccessLevelCard
                                                 key={module.key}
-                                                className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${
-                                                    data.module_overrides?.[module.key]
-                                                        ? 'border-stone-300 bg-white shadow-sm'
-                                                        : 'border-stone-200/50 bg-stone-50/30 hover:border-stone-200 opacity-80'
-                                                }`}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    className="mt-0.5 h-3.5 w-3.5 rounded border-stone-300 text-clay-700 focus:ring-clay-700"
-                                                    checked={!!data.module_overrides?.[module.key]}
-                                                    onChange={() => toggleModuleOverride(module.key)}
-                                                />
-                                                <div className="min-w-0">
-                                                    <div className={`text-[12px] font-bold leading-tight ${data.module_overrides?.[module.key] ? 'text-stone-900' : 'text-stone-500'}`}>
-                                                        {module.label}
-                                                    </div>
-                                                </div>
-                                            </label>
+                                                module={module}
+                                                value={data.module_overrides?.[module.key] ?? null}
+                                                onChange={(level) => updateModuleOverride(module.key, level)}
+                                            />
                                         ))}
                                     </div>
                                     {errors.module_overrides && <p className="mt-1 text-xs text-red-500 font-medium">{errors.module_overrides}</p>}
@@ -2024,10 +2021,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                     <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-stone-100 bg-[#FCF7F2]/50">
                         <button type="button" onClick={closeAddModal} className="px-5 py-2.5 text-[13px] font-bold text-stone-600 hover:text-stone-900 transition">
-                            Cancel Setup
+                            Cancel
                         </button>
-                        <button type="submit" disabled={processing || !canEditHrRecords} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
-                            {data.create_login_account ? 'Register & Provision' : 'Register Employee'}
+                        <button type="submit" disabled={processing || !canEditHrRecords} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
+                            {data.create_login_account ? 'Save & Create Login' : 'Save Employee'}
                         </button>
                     </div>
                 </form>
@@ -2035,37 +2032,42 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
             <Modal show={isEditModalOpen} onClose={closeEditModal} maxWidth="2xl">
                 <form onSubmit={submitEdit} className="flex flex-col max-h-[85vh]">
-                    <div className="shrink-0 flex items-center justify-between px-6 py-5 border-b border-stone-100 bg-white">
-                        <div>
-                            <div className="flex flex-wrap items-center gap-2.5">
-                                <h2 className="text-[19px] font-bold text-stone-900 tracking-tight">Update Employee</h2>
-                                <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
-                                    editHasLinkedLogin
-                                        ? editLinkedLoginIsSuspended
-                                            ? 'border border-red-200 bg-red-50 text-red-700'
-                                            : 'border border-clay-200 bg-clay-50 text-clay-800'
-                                        : 'border border-stone-200 bg-stone-50 text-stone-600'
-                                }`}>
-                                    <span className={`h-1.5 w-1.5 rounded-full ${
+                    <div className="shrink-0 flex items-start justify-between px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
+                        <div className="flex items-start gap-4">
+                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-500">
+                                <Pencil size={18} strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2.5">
+                                    <h2 className="text-base font-bold text-stone-900 tracking-tight">Update Employee</h2>
+                                    <span className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
                                         editHasLinkedLogin
                                             ? editLinkedLoginIsSuspended
-                                                ? 'bg-red-500'
-                                                : 'bg-clay-600'
-                                            : 'bg-stone-400'
-                                    }`}></span>
-                                    {editHasLinkedLogin
-                                        ? editLinkedLoginIsSuspended
-                                            ? 'Suspended'
-                                            : 'Active Login'
-                                        : 'No Login'}
-                                </span>
+                                                ? 'border-red-200 bg-red-50 text-red-700'
+                                                : 'border-clay-200 bg-[#FCF7F2] text-clay-800'
+                                            : 'border-stone-200 bg-stone-50 text-stone-600'
+                                    }`}>
+                                        <span className={`h-1.5 w-1.5 rounded-full ${
+                                            editHasLinkedLogin
+                                                ? editLinkedLoginIsSuspended
+                                                    ? 'bg-red-500'
+                                                    : 'bg-clay-600'
+                                                : 'bg-stone-400'
+                                        }`}></span>
+                                        {editHasLinkedLogin
+                                            ? editLinkedLoginIsSuspended
+                                                ? 'Suspended'
+                                                : 'Active Login'
+                                            : 'No Login'}
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-[11px] font-medium text-stone-500">
+                                    Update the employee record and linked workspace access.
+                                </p>
                             </div>
-                            <p className="mt-1 text-[13px] font-medium text-stone-500">
-                                Update the employee record and linked workspace access.
-                            </p>
                         </div>
-                        <button type="button" onClick={closeEditModal} className="text-stone-400 hover:text-stone-600 transition">
-                            <X size={20} />
+                        <button type="button" onClick={closeEditModal} aria-label="Close edit employee modal" className="text-stone-400 hover:text-stone-600 transition">
+                            <X size={20} strokeWidth={2.5} />
                         </button>
                     </div>
 
@@ -2111,60 +2113,60 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
 
                         {requiresStaffSchemaUpdate && (
-                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800">
                                 Database migration required before login access can be updated here.
                             </div>
                         )}
 
                         {!requiresStaffSchemaUpdate && !canUpdateStaffAccounts && (
-                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
-                                Only the shop owner or a user with update or full staff account access can update seller login access, role presets, permissions, and module access.
+                            <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-sm font-medium text-amber-800">
+                                Only the shop owner or a user with editable People &amp; Payroll access can change seller login access.
                             </div>
                         )}
 
                         {editHasLinkedLogin && canUpdateStaffAccounts && (
-                            <div className="rounded-xl border border-clay-200 bg-clay-50/50 px-4 py-3 text-[13px] font-medium text-stone-600 shadow-sm">
+                            <div className="rounded-xl border border-clay-200 bg-clay-50/50 px-4 py-3 text-[13px] font-medium text-stone-600">
                                 This employee already has a linked seller login. You can update the linked email, reset the password, adjust access below, or suspend workspace access while keeping the account ready for restoration later.
                             </div>
                         )}
 
                         {isSuspendingLinkedLogin && (
-                            <div className="rounded-xl border border-red-200 bg-[#FCF3F3] px-5 py-4 text-[13px] text-red-800 shadow-sm">
+                            <div className="rounded-xl border border-red-200 bg-[#FCF3F3] px-5 py-4 text-[13px] text-red-800">
                                 <div className="flex items-center gap-2.5">
-                                    <span className="rounded-md bg-red-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+                                    <span className="rounded-md bg-red-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
                                         Access Suspension
                                     </span>
                                     <span className="font-bold text-red-900 tracking-tight">Seller workspace access will be suspended.</span>
                                 </div>
                                 <div className="mt-3 space-y-1.5 leading-relaxed font-medium">
-                                    <p>• The employee record will stay in HR and payroll history.</p>
-                                    <p>• The linked seller login account, email, and role setup will be preserved.</p>
-                                    <p>• All seller workspace module access will stay blocked until you restore access here.</p>
+                                    <p>- The employee record stays in HR and payroll history.</p>
+                                    <p>- The linked seller login, email, and role setup stay in place.</p>
+                                    <p>- Seller workspace access stays blocked until you restore it here.</p>
                                 </div>
                             </div>
                         )}
 
                         {editLinkedLoginIsSuspended && editData.create_login_account && canUpdateStaffAccounts && (
-                            <div className="rounded-xl border border-emerald-200 bg-[#F2FAF6] px-5 py-4 text-[13px] text-emerald-800 shadow-sm">
+                            <div className="rounded-xl border border-emerald-200 bg-[#F2FAF6] px-5 py-4 text-[13px] text-emerald-800">
                                 <div className="flex items-center gap-2.5">
-                                    <span className="rounded-md bg-emerald-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+                                    <span className="rounded-md bg-emerald-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
                                         Access Restore
                                     </span>
                                     <span className="font-bold text-emerald-900 tracking-tight">Seller workspace access will be restored.</span>
                                 </div>
                                 <div className="mt-3 space-y-1.5 leading-relaxed font-medium">
-                                    <p>• The existing linked login account will be reused.</p>
-                                    <p>• Saved role preset and module settings can be updated before the account is reactivated.</p>
+                                    <p>- The existing linked login account will be reused.</p>
+                                    <p>- Saved role preset and module settings can still be updated before reactivation.</p>
                                 </div>
                             </div>
                         )}
 
                         <div className="grid gap-5 md:grid-cols-2">
                             <div className="md:col-span-2">
-                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Legal Full Name</label>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Legal Full Name</label>
                                 <input
                                     type="text"
-                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    className={modalFieldClass}
                                     value={editData.name}
                                     onChange={(e) => setEditData('name', e.target.value)}
                                     required
@@ -2175,10 +2177,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             {showLinkedLoginUpdateFields && (
                                 <>
                                     <div>
-                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Email Address</label>
+                                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Email Address</label>
                                         <input
                                             type="email"
-                                            className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                            className={modalFieldClass}
                                             value={editData.email}
                                             onChange={(e) => setEditData('email', e.target.value)}
                                         />
@@ -2186,13 +2188,13 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     </div>
 
                                     <div>
-                                        <label className="mb-1.5 block text-[13px] font-bold text-stone-800">
+                                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">
                                             {editingEmployee?.has_login_account ? 'Reset Password (Optional)' : 'Initial Password'}
                                         </label>
                                         <div className="relative">
                                             <input
                                                 type={showEditPassword ? 'text' : 'password'}
-                                                className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5 pr-11"
+                                                className={modalFieldWithIconClass}
                                                 placeholder={editingEmployee?.has_login_account ? 'Leave blank to keep password' : 'Set temp password'}
                                                 value={editData.default_password}
                                                 onChange={(e) => setEditData('default_password', e.target.value)}
@@ -2200,6 +2202,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                             <button
                                                 type="button"
                                                 onClick={() => setShowEditPassword((value) => !value)}
+                                                aria-label={showEditPassword ? 'Hide password' : 'Show password'}
                                                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-stone-700"
                                             >
                                                 {showEditPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -2212,9 +2215,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                             {!showLinkedLoginUpdateFields && (
                                 <div>
-                                    <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Job Title</label>
+                                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Job Title</label>
                                     <select
-                                        className="w-full rounded-xl border-stone-200 bg-white text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                        className={modalSelectClass}
                                         value={editData.role}
                                         onChange={(e) => handleEditManualRoleChange(e.target.value)}
                                     >
@@ -2227,10 +2230,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             )}
 
                             <div>
-                                <label className="mb-1.5 block text-[13px] font-bold text-stone-800">Monthly Salary (PHP)</label>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Monthly Salary (PHP)</label>
                                 <input
                                     type="number"
-                                    className="w-full rounded-xl border-stone-200 bg-white placeholder-stone-400 text-sm shadow-sm transition focus:border-clay-500 focus:ring-clay-500 py-2.5 px-3.5"
+                                    className={modalFieldClass}
                                     value={editData.salary}
                                     onChange={(e) => setEditData('salary', e.target.value)}
                                     required
@@ -2245,37 +2248,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-sm font-bold text-stone-900">System Permissions</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Keep the template aligned to the employee role, then set exactly how much this login can change.</p>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Keep the capability template aligned, then set access per capability.</p>
                                         </div>
-                                        <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800 shadow-sm">
+                                        <span className="rounded-md border border-clay-200 bg-clay-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-800">
                                             {presetLabelByKey[editData.staff_role_preset_key] || 'Custom'}
                                         </span>
-                                    </div>
-                                    <div className="mb-5">
-                                        <div className="mb-2 flex items-center justify-between gap-3">
-                                            <div>
-                                                <h4 className="text-[13px] font-bold text-stone-900">User Permission Level</h4>
-                                                <p className="mt-0.5 text-[12px] text-stone-500">Read Only only views. Update Access edits records and existing login access. Full Access also creates or removes seller portal logins.</p>
-                                            </div>
-                                        </div>
-                                        <div className="grid gap-2.5 md:grid-cols-2">
-                                            {permissionLevels.map((option) => (
-                                                <StaffPermissionLevelCard
-                                                    key={option.key}
-                                                    option={option}
-                                                    radioName="edit_staff_permission_level"
-                                                    isSelected={editData.staff_access_permission_level === option.key}
-                                                    onSelect={() => setEditData('staff_access_permission_level', option.key)}
-                                                />
-                                            ))}
-                                        </div>
-                                        <div className="mt-3">
-                                            <StaffPermissionCapabilitySummary
-                                                selectedLevel={editData.staff_access_permission_level}
-                                                hrModuleEnabled={editHrModuleEnabled}
-                                            />
-                                        </div>
-                                        {editErrors.staff_access_permission_level && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.staff_access_permission_level}</p>}
                                     </div>
                                     <div className="grid gap-2.5 md:grid-cols-2">
                                         {rolePresets.map((preset) => (
@@ -2294,30 +2271,21 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 <div className="border-t border-stone-200/60 pt-5">
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
-                                            <h3 className="text-sm font-bold text-stone-900">Module Access Details</h3>
-                                            <p className="mt-0.5 text-[13px] text-stone-500">Turn on only the seller workspace areas this login should actually use.</p>
+                                            <h3 className="text-sm font-bold text-stone-900">Capability Access Levels</h3>
+                                            <p className="mt-0.5 text-[13px] text-stone-500">Choose whether each seller workspace capability is off, read only, or editable.</p>
                                         </div>
+                                    </div>
+                                    <div className="mb-3">
+                                        <ModulePermissionSummary moduleOverrides={editData.module_overrides} availableModules={availableModules} />
                                     </div>
                                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                                         {availableModules.map((module) => (
-                                            <label
+                                            <ModuleAccessLevelCard
                                                 key={module.key}
-                                                className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${
-                                                    editData.module_overrides?.[module.key]
-                                                        ? 'border-stone-300 bg-white shadow-sm'
-                                                        : 'border-stone-200/50 bg-stone-50/30 hover:border-stone-200 opacity-80'
-                                                }`}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    className="mt-0.5 h-3.5 w-3.5 rounded border-stone-300 text-clay-700 focus:ring-clay-700"
-                                                    checked={!!editData.module_overrides?.[module.key]}
-                                                    onChange={() => toggleEditModuleOverride(module.key)}
-                                                />
-                                                <div className="min-w-0">
-                                                    <div className={`text-[12px] font-bold leading-tight ${editData.module_overrides?.[module.key] ? 'text-stone-900' : 'text-stone-500'}`}>{module.label}</div>
-                                                </div>
-                                            </label>
+                                                module={module}
+                                                value={editData.module_overrides?.[module.key] ?? null}
+                                                onChange={(level) => updateEditModuleOverride(module.key, level)}
+                                            />
                                         ))}
                                     </div>
                                     {editErrors.module_overrides && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.module_overrides}</p>}
@@ -2330,91 +2298,187 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         <button type="button" onClick={closeEditModal} className="px-5 py-2.5 text-[13px] font-bold text-stone-600 hover:text-stone-900 transition">
                             Cancel
                         </button>
-                        <button type="submit" disabled={editProcessing || !canEditHrRecords} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold shadow-sm shadow-clay-900/10 hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
-                            Update Record
+                        <button type="submit" disabled={editProcessing || !canEditHrRecords} className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold hover:bg-clay-800 transition disabled:opacity-70 disabled:cursor-not-allowed">
+                            Save Changes
                         </button>
                     </div>
                 </form>
             </Modal>
             {/* PAYROLL MODAL (NEW) */}
             <Modal show={isPayrollModalOpen} onClose={() => setIsPayrollModalOpen(false)} maxWidth="5xl">
-                <form onSubmit={submitPayroll} className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-900">Generate Payroll</h2>
-                            <p className="text-sm text-gray-500">Period: {payrollData.month} (Standard {sellerSettings.payroll_working_days || 22} Days/Month) - Fixed OT Rate: {formatPrecisePeso(sellerSettings.overtime_rate || 50)}/hr</p>
+                <form onSubmit={submitPayroll} className="flex max-h-[85vh] flex-col">
+                    <div className="shrink-0 flex items-start justify-between px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
+                        <div className="flex items-start gap-4">
+                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-500">
+                                <Banknote size={18} strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-bold text-stone-900 tracking-tight">Generate Payroll</h2>
+                                <p className="mt-1 text-[11px] font-medium text-stone-500">
+                                    Period: <span className="font-bold text-stone-700">{payrollData.month}</span> (Standard {sellerSettings.payroll_working_days || 22} Days/Month) - Fixed OT Rate: {formatPrecisePeso(sellerSettings.overtime_rate || 50)}/hr
+                                </p>
+                            </div>
                         </div>
-                        <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                        <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="text-stone-400 hover:text-stone-600 transition">
+                            <X size={20} strokeWidth={2.5} />
+                        </button>
                     </div>
 
+                    <div className="flex-1 overflow-y-auto px-6 py-6 bg-[#FDFBF9]">
                     <div className="mb-4 rounded-2xl border border-[#E7D8C9] bg-[#FCF7F2] px-4 py-3 text-xs leading-6 text-clay-700">
                         Attendance for {payrollData.month} now prefills absences, undertime, and overtime for linked staff logins. HR can still adjust the values before submitting payroll.
                     </div>
+                    <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-[11px] font-bold text-stone-600 shadow-sm">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1">
+                            <Clock3 size={13} />
+                            1. Review attendance-based payroll
+                        </span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700">
+                            <Banknote size={13} />
+                            2. Submit to Accounting
+                        </span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">
+                            <Users size={13} />
+                            3. Accounting approves or rejects
+                        </span>
+                    </div>
 
-                    {errors.items && (
-                        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium leading-6 text-red-700">
-                            {errors.items}
-                        </div>
-                    )}
+                      {errors.items && (
+                          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium leading-6 text-red-700">
+                              {errors.items}
+                          </div>
+                      )}
 
-                    <div className="overflow-x-auto border border-gray-200 rounded-xl mb-6">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-gray-50 font-bold text-gray-500 uppercase">
+                      <div className="mb-4 space-y-3 md:hidden">
+                          {payrollData.items.map((item, index) => (
+                              <div key={`mobile-payroll-${item.employee_id}`} className={`rounded-2xl border border-stone-200 bg-white p-4 shadow-sm ${!item.isSelected ? 'opacity-60' : ''}`}>
+                                  <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0">
+                                          <p className="text-sm font-bold text-gray-900">{item.name}</p>
+                                          <p className="mt-0.5 text-[11px] text-stone-500">{formatPeso(item.salary)}</p>
+                                          <p className="mt-1 text-[10px] text-stone-400">
+                                              {item.has_attendance_source
+                                                  ? `${item.attendance_days_worked || 0} attended day(s) used for prefill`
+                                                  : 'Manual payroll entry'}
+                                          </p>
+                                      </div>
+                                      <label className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-bold text-stone-600">
+                                          <input
+                                              type="checkbox"
+                                              className="h-3.5 w-3.5 rounded border-gray-300 text-clay-600 focus:ring-clay-500"
+                                              checked={item.isSelected}
+                                              onChange={(e) => updatePayrollItem(index, 'isSelected', e.target.checked)}
+                                          />
+                                          Include
+                                      </label>
+                                  </div>
+
+                                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                      <div>
+                                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">Absences</label>
+                                          <input
+                                              type="number"
+                                              className="w-full rounded-xl border border-red-200 bg-white p-2 text-sm text-red-900 shadow-none focus:border-red-500 focus:ring-red-500"
+                                              value={item.absences_days ?? ''}
+                                              disabled={!item.isSelected}
+                                              onChange={(e) => updatePayrollItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                              min="0"
+                                              max="31"
+                                              step="0.5"
+                                          />
+                                      </div>
+                                      <div>
+                                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">Undertime</label>
+                                          <input
+                                              type="number"
+                                              className="w-full rounded-xl border border-orange-200 bg-white p-2 text-sm text-orange-900 shadow-none focus:border-orange-500 focus:ring-orange-500"
+                                              value={item.undertime_hours ?? ''}
+                                              disabled={!item.isSelected}
+                                              onChange={(e) => updatePayrollItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                              min="0"
+                                              step="0.5"
+                                          />
+                                      </div>
+                                      <div>
+                                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">Overtime</label>
+                                          <input
+                                              type="number"
+                                              className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-sm text-clay-900 shadow-none focus:border-clay-500 focus:ring-clay-500"
+                                              value={item.overtime_hours ?? ''}
+                                              disabled={!item.isSelected}
+                                              onChange={(e) => updatePayrollItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                              min="0"
+                                              step="0.5"
+                                          />
+                                      </div>
+                                  </div>
+
+                                  <div className="mt-3 flex items-center justify-between rounded-xl bg-stone-50 px-3 py-2">
+                                      <span className="text-[11px] font-medium text-stone-500">Estimated Net</span>
+                                      <span className="text-sm font-bold text-clay-700">{item.isSelected ? formatPrecisePeso(calculateNetPay(item)) : formatPrecisePeso(0)}</span>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+
+                      <div className="mb-6 hidden overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm md:block">
+                          <table className="w-full text-left text-sm">
+                            <thead className="bg-[#FDFBF9] text-[9px] font-bold text-stone-400 uppercase tracking-widest border-b border-stone-100">
                                 <tr>
-                                    <th className="px-4 py-3 w-10 text-center border-r border-gray-100">Pay</th>
-                                    <th className="px-4 py-3">Employee</th>
-                                    <th className="px-4 py-3">Base Salary</th>
-                                    <th className="px-4 py-3 w-28 bg-red-50/50 text-red-700" title="Deductions per day (Standard 8-hr shift). Reduces total days worked by 22.">Absences (Days)</th>
-                                    <th className="px-4 py-3 w-28 bg-orange-50/50 text-orange-700" title="Deductions per hour. Reduces gross salary based on hourly rate.">Undertime (Hrs)</th>
-                                    <th className="px-4 py-3 w-28 bg-[#F8EEE6] text-clay-700" title={`Fixed Rate: ${formatPrecisePeso(sellerSettings.overtime_rate || 50)}/hour`}>Overtime (Hrs)</th>
-                                    <th className="px-4 py-3 text-right">Net Pay (Est)</th>
+                                    <th className="px-5 py-3.5 w-10 text-center border-r border-stone-100">Pay</th>
+                                    <th className="px-5 py-3.5">Employee</th>
+                                    <th className="px-5 py-3.5">Base Salary</th>
+                                    <th className="px-4 py-3.5 w-28 bg-[#FCF3F3] text-red-700 border-l border-[#FCE8E8]" title="Deductions per day (Standard 8-hr shift). Reduces total days worked by 22.">Absences (Days)</th>
+                                    <th className="px-4 py-3.5 w-28 bg-orange-50/50 text-orange-700 border-l border-orange-100" title="Deductions per hour. Reduces gross salary based on hourly rate.">Undertime (Hrs)</th>
+                                    <th className="px-4 py-3.5 w-28 bg-[#FCF7F2] text-clay-700 border-l border-[#E7D8C9]" title={`Fixed Rate: ${formatPrecisePeso(sellerSettings.overtime_rate || 50)}/hour`}>Overtime (Hrs)</th>
+                                    <th className="px-5 py-3.5 text-right w-[140px] border-l border-stone-100">Net Pay (Est)</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-stone-100">
                                 {payrollData.items.map((item, index) => (
-                                    <tr key={item.employee_id} className={`hover:bg-gray-50 transition ${!item.isSelected && 'opacity-50 grayscale'}`}>
-                                        <td className="px-4 py-3 text-center border-r border-gray-100">
+                                    <tr key={item.employee_id} className={`hover:bg-stone-50 transition ${!item.isSelected && 'opacity-50 grayscale'}`}>
+                                        <td className="px-5 py-3.5 text-center border-r border-stone-100">
                                             <input 
                                                 type="checkbox" 
-                                                className="w-4 h-4 text-clay-600 rounded border-gray-300 focus:ring-clay-500 cursor-pointer"
+                                                className="w-4 h-4 text-clay-600 rounded border-stone-300 focus:ring-clay-500 cursor-pointer"
                                                 checked={item.isSelected}
                                                 onChange={(e) => updatePayrollItem(index, 'isSelected', e.target.checked)}
                                             />
                                         </td>
-                                        <td className="px-4 py-3 font-medium text-gray-900">
+                                        <td className="px-5 py-3.5 font-bold text-stone-900">
                                             <div>{item.name}</div>
-                                            <div className="mt-1 text-[10px] font-medium text-gray-500">
+                                            <div className="mt-1 text-[10px] font-medium text-stone-500">
                                                 {item.has_attendance_source
                                                     ? `${item.attendance_days_worked || 0} attended day(s) used for prefill`
                                                     : 'Manual payroll entry - no linked attendance source'}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-gray-500 drop-shadow-sm font-semibold">{formatPeso(item.salary)}</td>
+                                        <td className="px-5 py-3.5 text-stone-600 font-bold">{formatPeso(item.salary)}</td>
                                         
-                                        <td className="px-4 py-3 bg-red-50/20">
+                                        <td className="px-4 py-3.5 bg-[#FCF3F3] border-l border-[#FCE8E8]">
                                             <input 
                                                 type="number" 
-                                                className="w-full border-red-200 bg-white shadow-inner rounded-lg text-sm p-1.5 focus:border-red-500 focus:ring-red-500 text-red-900 font-medium"
+                                                className="w-full border-red-200 bg-white shadow-none rounded-lg text-sm p-1.5 focus:border-red-500 focus:ring-red-500 text-red-900 font-bold text-center"
                                                 value={item.absences_days ?? ''}
                                                 disabled={!item.isSelected}
                                                 onChange={(e) => updatePayrollItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value))}
                                                 min="0" max="31" step="0.5"
                                             />
                                         </td>
-                                        <td className="px-4 py-3 bg-orange-50/20">
+                                        <td className="px-4 py-3.5 bg-orange-50/20 border-l border-orange-100">
                                             <input 
                                                 type="number" 
-                                                className="w-full border-orange-200 bg-white shadow-inner rounded-lg text-sm p-1.5 focus:border-orange-500 focus:ring-orange-500 text-orange-900 font-medium"
+                                                className="w-full border-orange-200 bg-white shadow-none rounded-lg text-sm p-1.5 focus:border-orange-500 focus:ring-orange-500 text-orange-900 font-bold text-center"
                                                 value={item.undertime_hours ?? ''}
                                                 disabled={!item.isSelected}
                                                 onChange={(e) => updatePayrollItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
                                                 min="0" step="0.5"
                                             />
                                         </td>
-                                        <td className="px-4 py-3 bg-[#FCF7F2]">
+                                        <td className="px-4 py-3.5 bg-[#FCF7F2] border-l border-[#E7D8C9]">
                                             <input 
                                                 type="number" 
-                                                className="w-full border-[#E7D8C9] bg-white shadow-inner rounded-lg text-sm p-1.5 focus:border-clay-500 focus:ring-clay-500 text-clay-900 font-medium"
+                                                className="w-full border-[#E7D8C9] bg-white shadow-none rounded-lg text-sm p-1.5 focus:border-clay-500 focus:ring-clay-500 text-clay-900 font-bold text-center"
                                                 value={item.overtime_hours ?? ''}
                                                 disabled={!item.isSelected}
                                                 onChange={(e) => updatePayrollItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
@@ -2422,7 +2486,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                             />
                                         </td>
 
-                                        <td className="px-4 py-3 text-right font-bold text-gray-900">
+                                        <td className="px-5 py-3.5 text-right font-bold text-stone-900 border-l border-stone-100">
                                             {item.isSelected ? formatPrecisePeso(calculateNetPay(item)) : formatPrecisePeso(0)}
                                         </td>
                                     </tr>
@@ -2431,20 +2495,21 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </table>
                     </div>
 
-                    <div className="flex justify-between items-center bg-[#FCF7F2] border border-[#E7D8C9] p-4 rounded-xl">
-                        <span className="text-gray-500 font-medium">Selected For Payment: {payrollData.items.filter(i => i.isSelected).length}</span>
+                    <div className="flex justify-between items-center bg-[#FCF7F2] border border-[#E7D8C9] px-6 py-5 rounded-[1.25rem]">
+                        <span className="text-clay-700 font-bold text-sm tracking-tight uppercase">Selected For Payment: {payrollData.items.filter(i => i.isSelected).length}</span>
                         <div className="text-right">
-                            <span className="text-gray-500 font-medium mr-3">Total Payroll Estimate:</span>
-                            <span className="text-2xl font-bold text-clay-700">
+                            <span className="text-stone-500 font-bold text-[10px] uppercase tracking-widest mr-3">Total Payroll Estimate</span>
+                            <span className="text-2xl font-bold tracking-tight text-clay-900">
                                 {formatPrecisePeso(payrollData.items.filter(i => i.isSelected).reduce((acc, item) => acc + calculateNetPay(item), 0))}
                             </span>
                         </div>
                     </div>
+                    </div>
 
-                    <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
-                        <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={payrollProcessing || payrollData.items.filter(i => i.isSelected).length === 0 || !canEditHrRecords} className="disabled:opacity-50 px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
-                            Request Pay
+                    <div className="flex flex-col-reverse gap-3 border-t border-stone-100 px-6 py-4 sm:flex-row sm:justify-end bg-[#FCF7F2]/50">
+                        <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="rounded-xl px-5 py-2.5 text-[13px] font-bold text-stone-600 transition hover:text-stone-900">Cancel</button>
+                        <button type="submit" disabled={payrollProcessing || payrollData.items.filter(i => i.isSelected).length === 0 || !canEditHrRecords} className="rounded-xl bg-clay-700 px-6 py-2.5 text-[13px] font-bold text-white transition hover:bg-clay-800 disabled:opacity-70 disabled:cursor-not-allowed">
+                            Submit to Accounting
                         </button>
                     </div>
                 </form>
@@ -2452,18 +2517,21 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
             {/* PAYROLL SETTINGS MODAL */}
             <Modal show={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} maxWidth="sm">
-                <form onSubmit={submitSettings} className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-gray-900">Payroll Settings</h2>
-                        <button type="button" onClick={() => setIsSettingsOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                <form onSubmit={submitSettings} className="flex max-h-[85vh] flex-col">
+                    <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">Payroll Settings</h2>
+                            <p className="mt-1 text-[13px] text-gray-500">Adjust the fixed overtime rate and standard working days used in payroll requests.</p>
+                        </div>
+                        <button type="button" onClick={() => setIsSettingsOpen(false)} className={modalCloseButtonClass}><X size={18} /></button>
                     </div>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-4 overflow-y-auto px-6 py-6">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Fixed Overtime Rate (PHP/hr)</label>
                             <input 
                                 type="number" 
-                                className="w-full border-gray-300 rounded-xl focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
+                                className="w-full rounded-xl border-gray-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500" 
                                 value={settingsData.overtime_rate ?? ''} 
                                 onChange={e => setSettingsData('overtime_rate', e.target.value)} 
                                 required min="0" step="any"
@@ -2473,7 +2541,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             <label className="block text-sm font-bold text-gray-700 mb-1">Standard Work Days / Month</label>
                             <input 
                                 type="number" 
-                                className="w-full border-gray-300 rounded-xl focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
+                                className="w-full rounded-xl border-gray-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500" 
                                 value={settingsData.payroll_working_days ?? ''} 
                                 onChange={e => setSettingsData('payroll_working_days', e.target.value)} 
                                 required min="1" max="31"
@@ -2481,9 +2549,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
                     </div>
 
-                    <div className="mt-8 flex flex-col-reverse gap-3 pt-4 border-t border-gray-100 sm:flex-row sm:justify-end">
-                        <button type="button" onClick={() => setIsSettingsOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={settingsProcessing || !canEditHrRecords} className="px-6 py-2 bg-clay-600 text-white rounded-xl font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-200">
+                    <div className="flex flex-col-reverse gap-3 border-t border-gray-100 px-6 py-4 sm:flex-row sm:justify-end">
+                        <button type="button" onClick={() => setIsSettingsOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button>
+                        <button type="submit" disabled={settingsProcessing || !canEditHrRecords} className="rounded-xl bg-clay-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-clay-700">
                             Save Settings
                         </button>
                     </div>

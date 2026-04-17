@@ -52,7 +52,7 @@ class SellerOrderTimelineTest extends TestCase
             'seller_net_amount' => 1130,
             'total_amount' => 1286,
             'status' => 'Shipped',
-            'payment_method' => 'Wallet',
+            'payment_method' => 'GCash',
             'payment_status' => 'paid',
             'shipping_method' => 'Delivery',
             'shipping_address' => '123 Buyer Street, Dasmarinas City, Cavite',

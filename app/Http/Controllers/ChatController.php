@@ -33,6 +33,7 @@ class ChatController extends Controller
         $actor = $request->user();
         $sellerPerspective = $this->isSellerWorkspaceChatActor($actor);
         $this->authorizeChatActor($actor, $sellerPerspective);
+        $this->ensureSellerMessagingWritable($actor, $sellerPerspective);
 
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
@@ -103,6 +104,7 @@ class ChatController extends Controller
         $actor = $request->user();
         $sellerPerspective = $this->isSellerWorkspaceChatActor($actor);
         $this->authorizeChatActor($actor, $sellerPerspective);
+        $this->ensureSellerMessagingWritable($actor, $sellerPerspective);
 
         $request->validate([
             'receiver_id' => 'required|exists:users,id'
@@ -410,6 +412,19 @@ class ChatController extends Controller
     private function resolveConversationUserId(User $actor, bool $sellerPerspective): int
     {
         return $sellerPerspective ? $this->sellerOwnerId() : $actor->id;
+    }
+
+    private function ensureSellerMessagingWritable(User $actor, bool $sellerPerspective): void
+    {
+        if (!$sellerPerspective) {
+            return;
+        }
+
+        abort_unless(
+            $actor->canEditSellerModule('messages'),
+            403,
+            'This capability is read-only for your account.'
+        );
     }
 
     private function hasExistingConversation(int $firstUserId, int $secondUserId): bool

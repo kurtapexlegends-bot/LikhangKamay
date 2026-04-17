@@ -28,7 +28,7 @@ class AccountingTransparencyTest extends TestCase
         $requester = $this->createStaff($owner, 'procurement', [
             'procurement' => true,
             'stock_requests' => true,
-        ]);
+        ], User::STAFF_ACCESS_PERMISSION_CAN_EDIT);
         $this->clockInStaff($requester);
         $accountingStaff = $this->createStaff($owner, 'accounting', [
             'accounting' => true,

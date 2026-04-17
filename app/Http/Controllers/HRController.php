@@ -206,7 +206,7 @@ class HRController extends Controller
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
 
-        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only HR access can only view records.');
+        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
 
         $request->merge([
             'name' => trim((string) $request->input('name')),
@@ -251,16 +251,16 @@ class HRController extends Controller
                     ->withInput();
             }
 
-            abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with full staff account access can create staff login accounts.');
+            abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
 
             $rules = array_merge($rules, [
                 'email' => ['required', 'string', 'email', 'max:255', 'regex:/^[A-Z0-9._%+-]+@gmail\.com$/i', 'unique:users,email'],
                 'default_password' => ['required', 'string', Password::defaults()],
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
-                'staff_access_permission_level' => ['required', 'string', Rule::in(User::staffAccessPermissionLevels())],
+                'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
                 'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevelValidationValues())],
                 'module_overrides' => ['nullable', 'array'],
-                'module_overrides.*' => ['boolean'],
+                'module_overrides.*' => ['nullable'],
             ]);
         }
 
@@ -287,17 +287,21 @@ class HRController extends Controller
                 return;
             }
 
-            $modulePermissions = collect($supportedModules)
-                ->mapWithKeys(function (string $module) use ($validated) {
-                    return [$module => (bool) data_get($validated, "module_overrides.{$module}", false)];
-                })
-                ->all();
+            $modulePermissions = $this->normalizeRequestedModuleOverrides(
+                $validated['module_overrides'] ?? [],
+                $supportedModules,
+                $validated['staff_role_preset_key'],
+                $validated['staff_access_permission_level'] ?? null
+            );
             $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, true);
             $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
-            $modulePermissions = User::withStaffAccessPermissionLevelFlag($modulePermissions, $validated['staff_access_permission_level'] ?? null);
+            $modulePermissions = User::withStaffAccessPermissionLevelFlag(
+                $modulePermissions,
+                data_get($modulePermissions, 'hr')
+            );
             $modulePermissions = User::withManageStaffAccountsFlag(
                 $modulePermissions,
-                User::normalizeStaffAccessPermissionLevel($validated['staff_access_permission_level'] ?? null) === User::STAFF_ACCESS_PERMISSION_FULL
+                data_get($modulePermissions, 'hr') === User::STAFF_ACCESS_PERMISSION_CAN_EDIT
             );
 
             $staffAccount = User::create([
@@ -319,7 +323,7 @@ class HRController extends Controller
             $this->recordStaffAccessAudit($seller, $actor, 'login_created', $employee, $staffAccount, [
                 'changes' => [
                     'Created seller portal login',
-                    'Assigned ' . $this->permissionLevelLabel($staffAccount->getStaffAccessPermissionLevel()) . ' permission level',
+                    'Assigned module-specific access levels',
                 ],
                 'after' => $this->buildStaffAccessSnapshot($staffAccount),
             ]);
@@ -346,7 +350,7 @@ class HRController extends Controller
     {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
-        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only HR access can only view records.');
+        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -361,7 +365,7 @@ class HRController extends Controller
         $linkedLoginSnapshot = $linkedLogin ? $this->buildStaffAccessSnapshot($linkedLogin) : null;
 
         if ($linkedLogin && !$actor->canDeleteStaffAccounts()) {
-            abort(403, 'Only the shop owner or a user with full staff account access can remove staff login accounts.');
+            abort(403, 'Only the shop owner or a user with editable People & Payroll access can remove staff login accounts.');
         }
 
         DB::transaction(function () use ($employee, $linkedLogin) {
@@ -386,7 +390,7 @@ class HRController extends Controller
     {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
-        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only HR access can only view records.');
+        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -405,10 +409,10 @@ class HRController extends Controller
             ? ($canManageLoginSettings ? $request->boolean('create_login_account', $linkedLogin->isWorkspaceAccessEnabled()) : $linkedLogin->isWorkspaceAccessEnabled())
             : $request->boolean('create_login_account');
         if ($linkedLogin && $request->has('create_login_account') && !$canManageLoginSettings) {
-            abort(403, 'Only the shop owner or a user with update or full staff account access can update seller login access.');
+            abort(403, 'Only the shop owner or a user with editable People & Payroll access can update seller login access.');
         }
         if (!$linkedLogin && $wantsLoginAccount && !$canCreateLoginSettings) {
-            abort(403, 'Only the shop owner or a user with full staff account access can create staff login accounts.');
+            abort(403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
         }
         $shouldManageLoginSettings = $linkedLogin
             ? $canManageLoginSettings
@@ -460,10 +464,10 @@ class HRController extends Controller
                 ],
                 'default_password' => [$linkedLogin ? 'nullable' : 'required', 'string', Password::defaults()],
                 'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
-                'staff_access_permission_level' => ['required', 'string', Rule::in(User::staffAccessPermissionLevels())],
+                'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
                 'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevelValidationValues())],
                 'module_overrides' => ['nullable', 'array'],
-                'module_overrides.*' => ['boolean'],
+                'module_overrides.*' => ['nullable'],
             ]);
         }
 
@@ -505,17 +509,21 @@ class HRController extends Controller
                 }
             }
 
-            $modulePermissions = collect($supportedModules)
-                ->mapWithKeys(function (string $module) use ($validated) {
-                    return [$module => (bool) data_get($validated, "module_overrides.{$module}", false)];
-                })
-                ->all();
+            $modulePermissions = $this->normalizeRequestedModuleOverrides(
+                $validated['module_overrides'] ?? [],
+                $supportedModules,
+                $validated['staff_role_preset_key'],
+                $validated['staff_access_permission_level'] ?? null
+            );
             $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, $wantsLoginAccount);
             $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
-            $modulePermissions = User::withStaffAccessPermissionLevelFlag($modulePermissions, $validated['staff_access_permission_level'] ?? null);
+            $modulePermissions = User::withStaffAccessPermissionLevelFlag(
+                $modulePermissions,
+                data_get($modulePermissions, 'hr')
+            );
             $modulePermissions = User::withManageStaffAccountsFlag(
                 $modulePermissions,
-                User::normalizeStaffAccessPermissionLevel($validated['staff_access_permission_level'] ?? null) === User::STAFF_ACCESS_PERMISSION_FULL
+                data_get($modulePermissions, 'hr') === User::STAFF_ACCESS_PERMISSION_CAN_EDIT
             );
 
             if ($linkedLogin) {
@@ -588,17 +596,17 @@ class HRController extends Controller
         }
         if ($auditBefore !== null && $auditAfter !== null) {
             if (($auditBefore['permission_level'] ?? null) !== ($auditAfter['permission_level'] ?? null)) {
-                $auditChanges[] = 'Changed permission level to ' . $this->permissionLevelLabel($auditAfter['permission_level'] ?? null);
+                $auditChanges[] = 'Changed People & Payroll access to ' . $this->permissionLevelLabel($auditAfter['permission_level'] ?? null);
             }
             if (($auditBefore['role_preset_key'] ?? null) !== ($auditAfter['role_preset_key'] ?? null)) {
-                $auditChanges[] = 'Changed role preset';
+                $auditChanges[] = 'Changed capability template';
             }
             if (($auditBefore['modules'] ?? []) !== ($auditAfter['modules'] ?? [])) {
-                $auditChanges[] = 'Updated module access';
+                $auditChanges[] = 'Updated capability access';
             }
         }
         if ($createdLogin && $auditAfter !== null) {
-            $auditChanges[] = 'Assigned ' . $this->permissionLevelLabel($auditAfter['permission_level'] ?? null) . ' permission level';
+            $auditChanges[] = 'Assigned capability-specific access levels';
         }
 
         if ($createdLogin || $workspaceSuspended || $workspaceRestored || !empty($auditChanges)) {
@@ -640,7 +648,7 @@ class HRController extends Controller
 
     public function updateSettings(Request $request)
     {
-        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only HR access can only view records.');
+        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $request->validate([
             'overtime_rate' => 'required|numeric|min:0',
@@ -657,7 +665,7 @@ class HRController extends Controller
 
     public function generatePayroll(Request $request)
     {
-        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only HR access can only view records.');
+        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $validated = $request->validate([
             'action' => ['nullable', 'string', Rule::in(['draft', 'submit'])],
@@ -814,7 +822,7 @@ class HRController extends Controller
 
     public function destroyPayroll($id)
     {
-        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only HR access can only view records.');
+        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $payroll = Payroll::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -833,11 +841,11 @@ class HRController extends Controller
     private function rolePresetOptions(SellerEntitlementService $entitlementService): array
     {
         $labels = [
-            'hr' => ['label' => 'HR', 'description' => 'HR records, payroll, and employee management.'],
-            'accounting' => ['label' => 'Accounting', 'description' => 'Funds, payroll approval, and finance visibility.'],
-            'procurement' => ['label' => 'Procurement', 'description' => 'Inventory and stock request coordination.'],
-            'customer_support' => ['label' => 'Customer Support', 'description' => 'Orders, buyer messages, and customer review handling.'],
-            'custom' => ['label' => 'Custom', 'description' => 'Start blank and choose modules manually.'],
+            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
+            'accounting' => ['label' => 'Finance Review', 'description' => 'Business funds, payroll approval, and finance visibility.'],
+            'procurement' => ['label' => 'Inventory & Restocking', 'description' => 'Supply tracking, stock requests, and purchasing coordination.'],
+            'customer_support' => ['label' => 'Customer Care', 'description' => 'Orders, buyer messages, team inbox, and customer review handling.'],
+            'custom' => ['label' => 'Custom Capability Mix', 'description' => 'Start blank and choose the exact capabilities manually.'],
         ];
 
         return collect($entitlementService->getRolePresetDefaults())
@@ -862,12 +870,13 @@ class HRController extends Controller
             '3d' => ['label' => '3D Manager', 'description' => '3D asset uploads and management.'],
             'orders' => ['label' => 'Orders', 'description' => 'Order processing and status updates.'],
             'messages' => ['label' => 'Messages', 'description' => 'Buyer inbox and seller order conversations.'],
+            'team_messages' => ['label' => 'Team Inbox', 'description' => 'Internal seller workspace conversations.'],
             'reviews' => ['label' => 'Reviews', 'description' => 'Customer review replies and moderation.'],
             'shop_settings' => ['label' => 'Shop Settings', 'description' => 'Seller storefront profile settings.'],
-            'hr' => ['label' => 'HR', 'description' => 'Employees, payroll, and HR records.'],
-            'accounting' => ['label' => 'Accounting', 'description' => 'Finance approvals and payroll visibility.'],
-            'procurement' => ['label' => 'Procurement', 'description' => 'Inventory and purchasing workflows.'],
-            'stock_requests' => ['label' => 'Stock Requests', 'description' => 'Restock request tracking.'],
+            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access management.'],
+            'accounting' => ['label' => 'Finance Approvals', 'description' => 'Finance review, fund visibility, and payroll approval.'],
+            'procurement' => ['label' => 'Inventory Operations', 'description' => 'Inventory tracking, supply management, and purchasing workflows.'],
+            'stock_requests' => ['label' => 'Restock Requests', 'description' => 'Restock request tracking and approval flow.'],
         ];
 
         return collect($entitlementService->getSupportedStaffModules())
@@ -915,7 +924,7 @@ class HRController extends Controller
             [
                 'key' => User::STAFF_MANAGER_USER_LEVEL,
                 'label' => 'Staff Manager',
-                'description' => 'Can manage employee logins and staff permissions inside HR when HR access is enabled.',
+                'description' => 'Can manage employee logins and staff permissions inside People & Payroll when that capability is enabled.',
             ],
         ];
     }
@@ -987,14 +996,13 @@ class HRController extends Controller
             return false;
         }
 
-        return $actor->getStaffAccessPermissionLevel() !== User::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        return $actor->canEditSellerModule('hr');
     }
 
     private function permissionLevelLabel(?string $level): string
     {
         return match (User::normalizeStaffAccessPermissionLevel($level)) {
-            User::STAFF_ACCESS_PERMISSION_UPDATE => 'Update Access',
-            User::STAFF_ACCESS_PERMISSION_FULL => 'Full Access',
+            User::STAFF_ACCESS_PERMISSION_CAN_EDIT => 'Can Edit',
             default => 'Read Only',
         };
     }
@@ -1002,12 +1010,59 @@ class HRController extends Controller
     private function resolveRequestedStaffAccessPermissionLevel(Request $request): string
     {
         if ($request->boolean('manage_staff_accounts')) {
-            return User::STAFF_ACCESS_PERMISSION_FULL;
+            return User::STAFF_ACCESS_PERMISSION_CAN_EDIT;
         }
 
         return User::normalizeStaffUserLevel($request->input('staff_user_level')) === User::STAFF_MANAGER_USER_LEVEL
-            ? User::STAFF_ACCESS_PERMISSION_FULL
+            ? User::STAFF_ACCESS_PERMISSION_CAN_EDIT
             : User::STAFF_ACCESS_PERMISSION_READ_ONLY;
+    }
+
+    /**
+     * @param  array<string, mixed>  $requestedOverrides
+     * @param  array<int, string>  $supportedModules
+     * @return array<string, mixed>
+     */
+    private function normalizeRequestedModuleOverrides(array $requestedOverrides, array $supportedModules, string $presetKey, ?string $legacyPermissionLevel = null): array
+    {
+        $presetModules = $this->rolePresetModules($presetKey);
+        $defaultLevel = $legacyPermissionLevel !== null
+            ? User::normalizeStaffAccessPermissionLevel($legacyPermissionLevel)
+            : User::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+
+        $normalized = collect($supportedModules)
+            ->mapWithKeys(function (string $module) use ($presetModules, $defaultLevel) {
+                return [$module => in_array($module, $presetModules, true) ? $defaultLevel : false];
+            })
+            ->all();
+
+        foreach ($requestedOverrides as $module => $value) {
+            if (!in_array($module, $supportedModules, true)) {
+                continue;
+            }
+
+            if ($value === true || $value === 1 || $value === '1') {
+                $normalized[$module] = $defaultLevel;
+                continue;
+            }
+
+            if ($value === false || $value === 0 || $value === '0' || $value === null || $value === '') {
+                $normalized[$module] = false;
+                continue;
+            }
+
+            $normalized[$module] = User::normalizeStaffModuleAccessLevel($value) ?? false;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function rolePresetModules(string $presetKey): array
+    {
+        return app(SellerEntitlementService::class)->getRolePresetDefaults()[$presetKey] ?? [];
     }
 
     /**
@@ -1055,7 +1110,7 @@ class HRController extends Controller
     private function notifyAccountingOfPayrollRun(Payroll $payroll, User $seller, string $month): void
     {
         $requesterName = $this->sellerActor()->name ?: 'A staff member';
-        $message = "{$requesterName} submitted the payroll request for {$month} for accounting approval.";
+        $message = "{$requesterName} submitted the payroll request for {$month} for Accounting approval.";
 
         $this->accountingRecipientsForSeller($seller)->each(function (User $recipient) use ($payroll, $message) {
             $recipient->notify(new AccountingApprovalRequestedNotification(

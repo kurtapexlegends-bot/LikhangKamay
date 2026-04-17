@@ -59,7 +59,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                             End Context Session
                         </h2>
                         <p className="mt-0.5 text-[13px] text-stone-500 font-medium">
-                            Determine the state of the current attendance.
+                            Pause time or clock out before signing out of the workspace.
                         </p>
                     </div>
 
@@ -88,6 +88,9 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                                 {startedAt ? `Checked in: ${startedAt}` : 'Checked in and recording'}
                             </span>
                         </div>
+                        <p className="mt-2 text-[12px] font-medium text-stone-600">
+                            Choose <span className="font-bold text-stone-800">Take Break</span> to pause time, or <span className="font-bold text-stone-800">Clock Out</span> to end the shift before logout.
+                        </p>
                     </div>
                 ) : null}
 

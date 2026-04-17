@@ -1,34 +1,35 @@
 import React, { useState } from 'react';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 
-// Actually, looking at the code, there's no explicit toast import. I should check how notifications are handled or just use a simple alert/flash message display if no toast lib is installed.
-// Based on typical Inertia setup, flash messages are passed as props.
-// I will check if there is a Toast component or if I need to implement a simple useEffect for flash messages.
-// For now, I'll stick to the Imports.
-import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import { 
     Package, AlertTriangle, TrendingUp, Plus, Search, ChevronDown, 
     User, LogOut, Building2, Edit2, Trash2, RefreshCw, Box, Menu, 
-    Banknote, Check, Wallet, Users, CheckCircle, AlertCircle, 
+    Banknote, Check, Users, CheckCircle, AlertCircle, 
     FileText, Clock, X // Added X
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 
 const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other']; // Phase 1: Removed Raw Materials
 const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
 
 export default function ProcurementIndex({ auth, supplies, requests, finances, totalItems, lowStockItems, totalValue, categories, initTab }) {
     const { addToast } = useToast();
+    const { canEdit: canEditProcurement, isReadOnly: isProcurementReadOnly } = useSellerModuleAccess('procurement');
+    const { canEdit: canEditStockRequests } = useSellerModuleAccess('stock_requests');
     const [showAddModal, setShowAddModal] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
+    const [actionNotice, setActionNotice] = useState(null);
     const [showRestockModal, setShowRestockModal] = useState(false);
     const [showConfirmRequest, setShowConfirmRequest] = useState(false);
     const [selectedSupply, setSelectedSupply] = useState(null);
@@ -79,69 +80,86 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
     const handleAdd = (e) => {
         e.preventDefault();
+        if (!canEditProcurement) return;
         post(route('supplies.store'), {
             onSuccess: () => {
                 reset();
                 setShowAddModal(false);
+                setActionNotice(null);
+            },
+            onError: () => {
+                setActionNotice('Supply could not be saved yet. Review the form and try again.');
+                addToast('Supply could not be saved yet.', 'error');
             },
         });
     };
 
     const handleRestock = (e) => {
         e.preventDefault();
+        if (!canEditProcurement) return;
         restockForm.post(route('supplies.restock', selectedSupply.id), {
             onSuccess: () => {
                 restockForm.reset();
                 setShowRestockModal(false);
                 setSelectedSupply(null);
+                setActionNotice(null);
+            },
+            onError: () => {
+                setActionNotice('Restock update failed. Try again once the quantity looks correct.');
+                addToast('Restock update failed.', 'error');
             },
         });
     };
 
     const handleDelete = (supply) => {
+        if (!canEditProcurement) return;
         setSupplyToDelete(supply);
         setShowDeleteModal(true);
     };
 
     const confirmDelete = () => {
+        if (!canEditProcurement) return;
         router.delete(route('supplies.destroy', supplyToDelete.id), {
             onSuccess: () => {
                 setShowDeleteModal(false);
                 setSupplyToDelete(null);
-            }
+                setActionNotice(null);
+            },
+            onError: () => {
+                setActionNotice('This supply could not be deleted right now.');
+                addToast('Delete failed.', 'error');
+            },
         });
     };
 
     const openRestockModal = (supply) => {
+        if (!canEditProcurement) return;
         setSelectedSupply(supply);
         setShowRestockModal(true);
     };
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
-            <Head title="Inventory" />
-            
-            {/* SIDEBAR */}
-            <SellerSidebar active="procurement" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <Head title="Inventory Operations" />
 
             {/* MAIN CONTENT */}
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
                 
                 {/* --- HEADER (Standardized) --- */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
                     <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Inventory</h1>
+                                <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Inventory Operations</h1>
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
                                     <Building2 size={10} className="text-blue-400" /> Enterprise
                                 </span>
                             </div>
                             <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
-                                Manage your inventory and supplies
+                                Manage materials, stock levels, and restock actions
                             </p>
                         </div>
                     </div>
@@ -151,8 +169,9 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         {/* Actions */}
                         <div className="flex items-center gap-2 sm:gap-3">
                             <button 
-                                onClick={() => setShowAddModal(true)} 
-                                className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95"
+                                onClick={() => canEditProcurement && setShowAddModal(true)} 
+                                disabled={!canEditProcurement}
+                                className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <Plus size={16} /> <span className="hidden sm:inline">Add Supply</span>
                             </button>
@@ -191,6 +210,16 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                 </header>
 
                 <main className="p-4 sm:p-6 space-y-6">
+                    {isProcurementReadOnly && (
+                        <ReadOnlyCapabilityNotice label="Inventory operations are read only for your account. Supply updates are disabled." />
+                    )}
+
+                    {actionNotice && (
+                        <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700">
+                            <AlertCircle size={13} />
+                            {actionNotice}
+                        </div>
+                    )}
                     
 
 
@@ -254,6 +283,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                 <input 
                                     type="text" 
+                                    disabled={!canEditProcurement}
                                     placeholder="Search supplies..." 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -263,7 +293,95 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         </div>
 
                         {/* Table Body */}
-                        <div className="overflow-x-auto flex-1">
+                        <div className="space-y-3 p-4 sm:hidden">
+                            {filteredSupplies.length > 0 ? (
+                                filteredSupplies.map((supply) => (
+                                    <div key={supply.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200 shrink-0">
+                                                    {supply.product && supply.product.img ? (
+                                                        <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
+                                                    ) : (
+                                                        <Package size={14} />
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-gray-900">{supply.name}</p>
+                                                    <p className="mt-1 text-[11px] text-gray-500">{supply.category}</p>
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0">
+                                                {supply.quantity <= supply.min_stock ? (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
+                                                        <AlertTriangle size={10} /> Low Stock
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+                                                        In Stock
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 text-xs">
+                                            <div>
+                                                <p className="font-bold uppercase tracking-wide text-gray-400">Stock</p>
+                                                <p className="mt-1 font-semibold text-gray-700">{supply.quantity} {supply.unit}</p>
+                                            </div>
+                                            <div>
+                                                <p className="font-bold uppercase tracking-wide text-gray-400">Unit Cost</p>
+                                                <p className="mt-1 font-semibold text-gray-700">{supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString()}` : '-'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <p className="font-bold uppercase tracking-wide text-gray-400">Supplier</p>
+                                                <p className="mt-1 font-semibold text-gray-700">{supply.supplier || '-'}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-end gap-2">
+                                            <button
+                                                disabled={!canEditProcurement}
+                                                onClick={() => openRestockModal(supply)}
+                                                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                                title="Restock"
+                                            >
+                                                <RefreshCw size={14} />
+                                            </button>
+                                            <button
+                                                disabled={!canEditStockRequests}
+                                                onClick={() => {
+                                                    setSupplyToRequest(supply);
+                                                    setRequestQuantity(supply.min_stock * 2);
+                                                    setShowConfirmRequest(true);
+                                                }}
+                                                className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                                title="Request Restock"
+                                            >
+                                                <Banknote size={14} />
+                                            </button>
+                                            <button
+                                                disabled={!canEditProcurement}
+                                                onClick={() => handleDelete(supply)}
+                                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <WorkspaceEmptyState
+                                    icon={Package}
+                                    title="No supplies found"
+                                    description="Start by adding inventory items so Procurement can track stock levels, restocks, and accounting requests."
+                                    actionLabel={canEditProcurement ? 'Add New Supply' : 'Read Only'}
+                                    onAction={canEditProcurement ? () => setShowAddModal(true) : undefined}
+                                />
+                            )}
+                        </div>
+                        <div className="hidden overflow-x-auto flex-1 sm:block">
                             <table className="w-full min-w-[900px] text-left">
                                 <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>
@@ -284,7 +402,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-8 h-8 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200">
                                                             {supply.product && supply.product.img ? (
-                                                                <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" />
+                                                                <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
                                                             ) : (
                                                                 <Package size={14} />
                                                             )}
@@ -317,26 +435,29 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
+                                                            disabled={!canEditProcurement}
                                                             onClick={() => openRestockModal(supply)}
-                                                            className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                                            className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="Restock"
                                                         >
                                                             <RefreshCw size={14} />
                                                         </button>
                                                         <button
+                                                            disabled={!canEditStockRequests}
                                                             onClick={() => {
                                                                 setSupplyToRequest(supply);
                                                                 setRequestQuantity(supply.min_stock * 2);
                                                                 setShowConfirmRequest(true);
                                                             }}
-                                                            className="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors"
+                                                            className="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="Request Restock"
                                                         >
                                                             <Banknote size={14} />
                                                         </button>
                                                         <button
+                                                            disabled={!canEditProcurement}
                                                             onClick={() => handleDelete(supply)}
-                                                            className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                                            className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="Delete"
                                                         >
                                                             <Trash2 size={14} />
@@ -352,8 +473,8 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                                     icon={Package}
                                                     title="No supplies found"
                                                     description="Start by adding inventory items so Procurement can track stock levels, restocks, and accounting requests."
-                                                    actionLabel="Add New Supply"
-                                                    onAction={() => setShowAddModal(true)}
+                                                    actionLabel={canEditProcurement ? 'Add New Supply' : 'Read Only'}
+                                                    onAction={canEditProcurement ? () => setShowAddModal(true) : undefined}
                                                 />
                                             </td>
                                         </tr>
@@ -397,6 +518,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-700 mb-1">Category</label>
                                 <select 
+                                    disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                                     value={data.category} 
                                     onChange={e => setData('category', e.target.value)}
@@ -411,6 +533,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 <label className="block text-[10px] font-bold text-gray-700 mb-1">Quantity</label>
                                 <input 
                                     type="number" 
+                                    disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                                     value={data.quantity} 
                                     onChange={e => setData('quantity', e.target.value)} 
@@ -421,6 +544,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-700 mb-1">Unit</label>
                                 <select 
+                                    disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                                     value={data.unit} 
                                     onChange={e => setData('unit', e.target.value)}
@@ -436,6 +560,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 <input 
                                     type="number" 
                                     step="0.01"
+                                    disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                                     placeholder="0.00"
                                     value={data.unit_cost} 
@@ -446,6 +571,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 <label className="block text-[10px] font-bold text-gray-700 mb-1">Supplier</label>
                                 <input 
                                     type="text" 
+                                    disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                                     placeholder="Supplier name"
                                     value={data.supplier} 
@@ -457,6 +583,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         <div>
                             <label className="block text-[10px] font-bold text-gray-700 mb-1">Notes</label>
                             <textarea 
+                                disabled={!canEditProcurement}
                                 className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition resize-none" 
                                 rows={2}
                                 placeholder="Optional notes..."
@@ -467,8 +594,14 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3 pt-3 border-t border-gray-100">
+                        {Object.keys(errors).length > 0 && (
+                            <p className="mr-auto inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700">
+                                <AlertCircle size={13} />
+                                Review the highlighted supply fields first.
+                            </p>
+                        )}
                         <button type="button" onClick={() => setShowAddModal(false)} className="px-3 py-1.5 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={processing} className="px-4 py-1.5 text-xs bg-clay-600 text-white rounded-lg font-bold hover:bg-clay-700 transition shadow-sm">
+                        <button type="submit" disabled={!canEditProcurement || processing} className="px-4 py-1.5 text-xs bg-clay-600 text-white rounded-lg font-bold hover:bg-clay-700 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50">
                             {processing ? 'Adding...' : 'Add Supply'}
                         </button>
                     </div>
@@ -487,6 +620,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         <label className="block text-[10px] font-bold text-gray-700 mb-1">Quantity to Add</label>
                         <input 
                             type="number" 
+                            disabled={!canEditProcurement}
                             className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                             value={restockForm.data.quantity} 
                             onChange={e => restockForm.setData('quantity', e.target.value)} 
@@ -498,7 +632,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
                     <div className="mt-4 flex justify-end gap-3">
                         <button type="button" onClick={() => setShowRestockModal(false)} className="px-3 py-1.5 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={restockForm.processing} className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">
+                        <button type="submit" disabled={!canEditProcurement || restockForm.processing} className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-50">
                             {restockForm.processing ? 'Adding...' : 'Add Stock'}
                         </button>
                     </div>
@@ -528,6 +662,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             <div className="relative">
                                 <input 
                                     type="number" 
+                                    disabled={!canEditStockRequests}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-amber-500 focus:ring-amber-500 shadow-sm transition pr-12 font-bold" 
                                     value={requestQuantity} 
                                     onChange={e => setRequestQuantity(e.target.value)} 
@@ -543,13 +678,22 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     <div className="flex justify-center gap-3">
                         <button onClick={() => setShowConfirmRequest(false)} className="px-3 py-1.5 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
                         <button 
+                            disabled={!canEditStockRequests}
                             onClick={() => {
+                                if (!canEditStockRequests) return;
                                 router.post(route('supplies.request', supplyToRequest.id), { quantity: requestQuantity }, { 
                                     preserveScroll: true,
-                                    onSuccess: () => setShowConfirmRequest(false)
+                                    onSuccess: () => {
+                                        setShowConfirmRequest(false);
+                                        setActionNotice(null);
+                                    },
+                                    onError: () => {
+                                        setActionNotice('Restock request could not be submitted right now.');
+                                        addToast('Restock request failed.', 'error');
+                                    }
                                 });
                             }} 
-                            className="px-4 py-1.5 text-xs bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition shadow-sm"
+                            className="px-4 py-1.5 text-xs bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Submit Request
                         </button>
@@ -577,8 +721,9 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             Cancel, Keep it
                         </button>
                         <button 
+                            disabled={!canEditProcurement}
                             onClick={confirmDelete}
-                            className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition duration-200 shadow-lg shadow-red-200 active:scale-95 flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition duration-200 shadow-lg shadow-red-200 active:scale-95 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <Trash2 size={18} /> Yes, Delete
                         </button>
@@ -588,3 +733,5 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         </div>
     );
 }
+
+ProcurementIndex.layout = (page) => <SellerWorkspaceLayout active="procurement">{page}</SellerWorkspaceLayout>;

@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Notifications\OrderDeliveryUpdateNotification;
 use App\Services\AddressGeocodingService;
 use App\Services\LalamoveService;
-use App\Services\WalletService;
 use App\Support\StructuredAddress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -659,20 +658,18 @@ class LalamoveDeliveryFlowTest extends TestCase
         );
     }
 
-    public function test_failed_lalamove_delivery_waits_for_hold_window_then_auto_cancels_and_refunds_paid_orders(): void
+    public function test_failed_lalamove_delivery_waits_for_hold_window_then_auto_cancels_paid_orders(): void
     {
         Mail::fake();
         Notification::fake();
 
         $seller = $this->createSeller();
         $buyer = User::factory()->createOne();
-        $walletService = app(WalletService::class);
-        $walletService->getOrCreateWallet($buyer);
 
         $product = $this->createProduct($seller, stock: 3, price: 900);
         $order = $this->createAcceptedDeliveryOrder($seller, $buyer, $product, [
             'status' => 'Shipped',
-            'payment_method' => 'Wallet',
+            'payment_method' => 'GCash',
             'payment_status' => 'paid',
             'merchandise_subtotal' => 900,
             'convenience_fee_amount' => 27,
@@ -705,14 +702,7 @@ class LalamoveDeliveryFlowTest extends TestCase
         $this->assertSame('return_to_sender_failed_delivery', $order->cancellation_reason);
         $this->assertNotNull($order->cancelled_at);
         $this->assertNotNull($delivery->auto_cancelled_at);
-        $this->assertSame('927.00', $buyer->wallet->balance);
         $this->assertSame(3, $product->stock);
-        $this->assertDatabaseHas('wallet_transactions', [
-            'order_id' => $order->id,
-            'category' => 'order_refund_credit',
-            'direction' => 'credit',
-            'amount' => '927.00',
-        ]);
     }
 
     public function test_shipping_reminder_only_targets_orders_older_than_three_days(): void

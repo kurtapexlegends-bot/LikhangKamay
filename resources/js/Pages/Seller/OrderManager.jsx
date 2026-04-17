@@ -1,32 +1,30 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import SellerHeader from '@/Components/SellerHeader';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { 
     Package, ShoppingBag, Search, Filter, Truck, CheckCircle2, 
     Clock, XCircle, Printer, AlertCircle, MessageCircle, X, 
-    ChevronDown, User, LogOut, AlertTriangle, Hash, MapPin, 
-    PackageCheck, RotateCcw, Box, Eye, Wallet, DollarSign, Menu, Camera as CameraIcon,
-    CheckCircle, Calendar, ChevronLeft, ChevronRight, ExternalLink, LoaderCircle
+    ChevronDown, AlertTriangle, Hash, MapPin, 
+    PackageCheck, RotateCcw, Box, Eye, CreditCard, DollarSign, Camera as CameraIcon,
+    CheckCircle, Calendar, ChevronLeft, ChevronRight, ExternalLink, LoaderCircle, User
 } from 'lucide-react';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 
 const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
-    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-300">
+    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-300">
         <div className="flex items-center justify-between">
             <div>
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">{title}</p>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-stone-400">{title}</p>
                 <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{value}</h3>
             </div>
-            <div className={`w-10 h-10 ${bg} ${color} rounded-xl flex items-center justify-center shadow-sm`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${color}`}>
                 <Icon size={20} />
             </div>
         </div>
@@ -36,7 +34,7 @@ const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
 const Tab = ({ label, count, active, onClick, color = 'clay' }) => (
     <button 
         onClick={onClick}
-        className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+        className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-bold transition-colors ${
             active 
             ? 'border-clay-600 text-clay-700 bg-clay-50/30' 
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -62,7 +60,7 @@ const StatusBadge = ({ status }) => {
         'Delivered': { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200', icon: MapPin },
         'Completed': { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200', icon: CheckCircle2 },
         'Refund/Return': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200', icon: RotateCcw },
-        'Refunded': { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200', icon: Wallet },
+        'Refunded': { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200', icon: CreditCard },
         'Replaced': { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200', icon: PackageCheck },
         'Rejected': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', icon: XCircle },
         'Cancelled': { bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200', icon: XCircle },
@@ -90,7 +88,7 @@ const PaymentStatusBadge = ({ status, method }) => {
     
     return (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${bg} ${text} ${border}`}>
-            <Wallet size={10} />
+            <CreditCard size={10} />
             {label} - {method || 'COD'}
         </span>
     );
@@ -344,7 +342,7 @@ const sellerIssueSummary = (order) => {
         return {
             tone: 'border-purple-200 bg-purple-50',
             badgeTone: 'border-purple-200 bg-white text-purple-700',
-            icon: Wallet,
+            icon: CreditCard,
             title: 'Refund completed',
             detail: 'The refund is already processed for this order. The return case is closed unless a new issue is opened.',
             timestampLabel: null,
@@ -365,6 +363,7 @@ export default function OrderManager({ auth, orders = [] }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [quickFilter, setQuickFilter] = useState('all');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const [bookingOrderId, setBookingOrderId] = useState(null);
@@ -373,6 +372,7 @@ export default function OrderManager({ auth, orders = [] }) {
     // --- FLASH MESSAGE HANDLING ---
     const { flash, sellerSidebar } = usePage().props;
     const canAccessMessages = sellerSidebar?.visibleModules?.includes('messages');
+    const { canEdit: canEditOrders, isReadOnly: isOrdersReadOnly } = useSellerModuleAccess('orders');
     useFlashToast(flash, addToast);
 
     // Confirmation Modal State
@@ -381,7 +381,8 @@ export default function OrderManager({ auth, orders = [] }) {
         title: '',
         message: '',
         action: null,
-        isDestructive: false
+        isDestructive: false,
+        processing: false,
     });
 
     // Shipping Modal State
@@ -404,7 +405,8 @@ export default function OrderManager({ auth, orders = [] }) {
         shippingNotes: '',
         proofOfDelivery: null,
         previewUrl: null,
-        isPickup: false
+        isPickup: false,
+        processing: false,
     });
 
     const revokeShippingPreview = () => {
@@ -420,6 +422,7 @@ export default function OrderManager({ auth, orders = [] }) {
         error: '',
         processing: false,
     });
+    const [returnActionKey, setReturnActionKey] = useState(null);
 
     const hasActiveCourierTracking = useMemo(() => {
         return orders.some((order) => {
@@ -430,6 +433,11 @@ export default function OrderManager({ auth, orders = [] }) {
             return !['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED'].includes(String(order?.delivery?.status || '').toUpperCase());
         });
     }, [orders]);
+    const paymentHoldCount = useMemo(() => (
+        orders.filter((order) => order.payment_method !== 'COD' && order.payment_status !== 'paid' && order.status === 'Accepted').length
+    ), [orders]);
+    const returnQueueCount = useMemo(() => orders.filter((order) => order.status === 'Refund/Return').length, [orders]);
+    const pendingQueueCount = useMemo(() => orders.filter((order) => order.status === 'Pending').length, [orders]);
 
     useEffect(() => {
         if (!hasActiveCourierTracking || typeof window === 'undefined') {
@@ -476,6 +484,31 @@ export default function OrderManager({ auth, orders = [] }) {
             );
         }
 
+        if (quickFilter !== 'all') {
+            result = result.filter((order) => {
+                if (quickFilter === 'urgent') {
+                    return ['Pending', 'Refund/Return'].includes(order.status);
+                }
+
+                if (quickFilter === 'payment_hold') {
+                    return order.payment_method !== 'COD'
+                        && order.payment_status !== 'paid'
+                        && order.status === 'Accepted';
+                }
+
+                if (quickFilter === 'returns') {
+                    return order.status === 'Refund/Return';
+                }
+
+                if (quickFilter === 'live_courier') {
+                    return isLalamoveManagedOrder(order)
+                        && !['COMPLETED', 'CANCELED', 'EXPIRED', 'REJECTED'].includes(String(order?.delivery?.status || '').toUpperCase());
+                }
+
+                return true;
+            });
+        }
+
         // Date Filtering
         if (dateRange.start || dateRange.end) {
             result = result.filter(o => {
@@ -502,7 +535,7 @@ export default function OrderManager({ auth, orders = [] }) {
         }
 
         return result;
-    }, [orders, activeTab, searchQuery, dateRange]);
+    }, [orders, activeTab, searchQuery, quickFilter, dateRange]);
 
     // Pagination Logic
     const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -513,10 +546,18 @@ export default function OrderManager({ auth, orders = [] }) {
 
     React.useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, activeTab, dateRange]);
+    }, [searchQuery, activeTab, quickFilter, dateRange]);
+
+    const applyQuickFilter = (filterKey, nextTab = activeTab) => {
+        setQuickFilter(filterKey);
+        setActiveTab(nextTab);
+        setSearchQuery('');
+        setCurrentPage(1);
+    };
 
     // --- ACTIONS ---
     const initiateStatusUpdate = (orderId, newStatus) => {
+        if (!canEditOrders) return;
         let title = "Update Order Status";
         let message = `Mark this order as ${newStatus}?`;
         let isDestructive = false;
@@ -547,16 +588,20 @@ export default function OrderManager({ auth, orders = [] }) {
             title,
             message,
             isDestructive,
+            processing: false,
             action: () => {
                 router.post(route('orders.update', orderId), { status: newStatus }, {
                     preserveScroll: true,
-                    onSuccess: () => setConfirmModal({ ...confirmModal, isOpen: false })
+                    onStart: () => setConfirmModal((current) => ({ ...current, processing: true })),
+                    onSuccess: () => setConfirmModal((current) => ({ ...current, isOpen: false, processing: false })),
+                    onFinish: () => setConfirmModal((current) => ({ ...current, processing: false })),
                 });
             }
         });
     };
 
     const openShippingModal = (order, mode = 'ship') => {
+        if (!canEditOrders) return;
         revokeShippingPreview();
 
         const modalConfig = (() => {
@@ -622,6 +667,7 @@ export default function OrderManager({ auth, orders = [] }) {
             previewUrl: null,
             isPickup: order.shipping_method === 'Pick Up',
             existingProofUrl: order.proof_of_delivery || null,
+            processing: false,
             ...modalConfig,
         });
     };
@@ -634,6 +680,7 @@ export default function OrderManager({ auth, orders = [] }) {
             proofOfDelivery: null,
             previewUrl: null,
             existingProofUrl: null,
+            processing: false,
         }));
     };
 
@@ -642,6 +689,7 @@ export default function OrderManager({ auth, orders = [] }) {
     }, [shippingModal.previewUrl]);
 
     const openReplacementModal = (orderId) => {
+        if (!canEditOrders) return;
         setReplacementModal({
             isOpen: true,
             orderId,
@@ -662,6 +710,7 @@ export default function OrderManager({ auth, orders = [] }) {
     };
 
     const submitShipping = () => {
+        if (!canEditOrders) return;
         const formData = new FormData();
         
         formData.append('status', shippingModal.status);
@@ -673,12 +722,15 @@ export default function OrderManager({ auth, orders = [] }) {
 
         router.post(route('orders.update', shippingModal.orderId), formData, {
             preserveScroll: true,
+            onStart: () => setShippingModal((current) => ({ ...current, processing: true })),
             onSuccess: () => closeShippingModal(),
+            onFinish: () => setShippingModal((current) => ({ ...current, processing: false })),
             forceFormData: true,
         });
     };
 
     const createLalamoveDelivery = (orderId) => {
+        if (!canEditOrders) return;
         router.post(route('orders.lalamove.store', orderId), {}, {
             preserveScroll: true,
             onStart: () => setBookingOrderId(orderId),
@@ -687,6 +739,7 @@ export default function OrderManager({ auth, orders = [] }) {
     };
 
     const submitReplacementApproval = () => {
+        if (!canEditOrders) return;
         const description = replacementModal.resolutionDescription.trim();
 
         if (!description) {
@@ -713,6 +766,21 @@ export default function OrderManager({ auth, orders = [] }) {
         });
     };
 
+    const submitRefundApproval = (orderId) => {
+        if (!canEditOrders) return;
+        if (returnActionKey || replacementModal.processing) {
+            return;
+        }
+
+        const actionKey = `${orderId}:refund`;
+        setReturnActionKey(actionKey);
+
+        router.post(route('orders.approve-return', orderId), { action_type: 'refund' }, {
+            preserveScroll: true,
+            onFinish: () => setReturnActionKey(null),
+        });
+    };
+
     const openChat = (userId) => {
         if (!canAccessMessages) return;
         router.visit(route('chat.index', { user_id: userId }));
@@ -731,67 +799,30 @@ export default function OrderManager({ auth, orders = [] }) {
     return (
         <>
             <Head title="Order Manager" />
-                
-                {/* --- HEADER --- */}
-                <header className="bg-white/90 backdrop-blur-xl border-b border-gray-100 flex flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 sm:flex-row sm:items-center sm:justify-between sticky top-0 z-40 shadow-sm">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
-                            <Menu size={24} />
-                        </button>
-                        <div>
-                            <h1 className="text-xl font-bold text-gray-900">Order Management</h1>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Process orders, track shipments & manage returns</p>
-                        </div>
-                    </div>
+            <SellerHeader
+                title="Orders"
+                subtitle="Process fulfillment, courier updates, and returns."
+                auth={auth}
+                onMenuClick={openSidebar}
+                actions={(
+                    <a
+                        href={route('orders.export')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 shadow-sm transition hover:bg-stone-50 hover:border-stone-300"
+                    >
+                        <Printer size={16} /> Export
+                    </a>
+                )}
+            />
 
-                                        
-                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-6">
-                        {/* 1. Actions */}
-                        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-                            <a 
-                                href={route('orders.export')} 
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
-                            >
-                                <Printer size={16} /> Export
-                            </a>
-
-                            <NotificationDropdown />
-                        </div>
-
-                        {/* Divider */}
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-
-                        {/* 2. Profile Dropdown */}
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
-                                        <LogOut size={16} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
-
-                <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
+                <main className="mx-auto flex-1 w-full max-w-[1400px] p-4 sm:p-6 overflow-y-auto space-y-6">
+                    {isOrdersReadOnly && (
+                        <ReadOnlyCapabilityNotice label="Orders is read only for your account. Fulfillment and return actions are disabled." />
+                    )}
                     
                     {/* 1. KPI CARDS */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
                         <KPICard 
                             title="Needs Action" 
                             value={urgentCount} 
@@ -822,11 +853,82 @@ export default function OrderManager({ auth, orders = [] }) {
                         />
                     </div>
 
+                    {(urgentCount > 0 || paymentHoldCount > 0 || hasActiveCourierTracking || returnQueueCount > 0) && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3">
+                            {urgentCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('urgent', 'All')}
+                                    className={`inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'urgent'
+                                            ? 'border-amber-300 bg-amber-50 text-amber-800'
+                                            : 'border-amber-200 text-amber-700 hover:bg-amber-50'
+                                    }`}
+                                >
+                                    <AlertCircle size={13} />
+                                    {urgentCount} need attention
+                                </button>
+                            )}
+                            {paymentHoldCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('payment_hold', 'Processing')}
+                                    className={`inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'payment_hold'
+                                            ? 'border-red-300 bg-red-50 text-red-800'
+                                            : 'border-red-200 text-red-700 hover:bg-red-50'
+                                    }`}
+                                >
+                                    <CreditCard size={13} />
+                                    {paymentHoldCount} payment hold
+                                </button>
+                            )}
+                            {hasActiveCourierTracking && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('live_courier', 'All')}
+                                    className={`inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'live_courier'
+                                            ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                            : 'border-blue-200 text-blue-700 hover:bg-blue-50'
+                                    }`}
+                                >
+                                    <Truck size={13} />
+                                    Live courier
+                                </button>
+                            )}
+                            {returnQueueCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('returns', 'Returns')}
+                                    className={`inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'returns'
+                                            ? 'border-teal-300 bg-teal-50 text-teal-800'
+                                            : 'border-teal-200 text-teal-700 hover:bg-teal-50'
+                                    }`}
+                                >
+                                    <RotateCcw size={13} />
+                                    {returnQueueCount} return {returnQueueCount === 1 ? 'case' : 'cases'}
+                                </button>
+                            )}
+                            {quickFilter !== 'all' && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('all', 'All')}
+                                    className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-100"
+                                >
+                                    <X size={12} />
+                                    Clear quick view
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                     {/* 2. ORDER BOARD */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                         
                         {/* Tabs */}
-                        <div className="flex border-b border-gray-100 px-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex overflow-x-auto border-b border-gray-100 px-3 sm:px-4" style={{ scrollbarWidth: 'none' }}>
                             <Tab label="All" count={orders.length} active={activeTab === 'All'} onClick={() => setActiveTab('All')} />
                             <Tab label="Pending" count={getCount('Pending')} active={activeTab === 'Pending'} onClick={() => setActiveTab('Pending')} />
                             <Tab label="Processing" count={getCount('Accepted')} active={activeTab === 'Processing'} onClick={() => setActiveTab('Processing')} />
@@ -839,18 +941,18 @@ export default function OrderManager({ auth, orders = [] }) {
                         </div>
 
                         {/* Filters & Search */}
-                        <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex flex-col gap-3 items-stretch md:flex-row md:items-center">
+                        <div className="flex flex-col items-stretch gap-3 border-b border-gray-50 bg-gray-50/30 p-3.5 md:flex-row md:items-center">
                             <div className="relative w-full md:w-80">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                 <input 
                                     type="text" 
-                                    placeholder="Search Order ID, Customer..." 
+                                    placeholder="Search order, buyer, or item..." 
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-clay-200 focus:border-clay-500 transition-all shadow-sm" 
+                                    className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-medium transition-colors focus:border-clay-500 focus:ring-2 focus:ring-clay-200" 
                                 />
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-clay-200 focus-within:border-clay-500 transition-all shadow-sm w-full md:w-auto">
+                            <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 transition-colors focus-within:border-clay-500 focus-within:ring-2 focus-within:ring-clay-200 md:w-auto">
                                 <Calendar className="text-gray-400" size={14} />
                                 <div className="flex flex-wrap items-center gap-2">
                                     <input 
@@ -870,6 +972,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                 {(dateRange.start || dateRange.end) && (
                                     <button 
                                         onClick={() => setDateRange({ start: '', end: '' })}
+                                        aria-label="Clear date filters"
                                         className="text-gray-400 hover:text-red-500 transition-colors ml-1 p-0.5 rounded-md hover:bg-red-50"
                                         title="Clear dates"
                                     >
@@ -878,15 +981,67 @@ export default function OrderManager({ auth, orders = [] }) {
                                 )}
                             </div>
                         </div>
+                        <div className="flex flex-wrap items-center gap-2 border-b border-gray-50 px-3 py-3 sm:px-4">
+                            <button
+                                type="button"
+                                onClick={() => applyQuickFilter('all', activeTab)}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    quickFilter === 'all'
+                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                All visible
+                            </button>
+                            {pendingQueueCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('urgent', 'Pending')}
+                                    className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'urgent' && activeTab === 'Pending'
+                                            ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                            : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                    }`}
+                                >
+                                    Pending queue
+                                </button>
+                            )}
+                            {paymentHoldCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('payment_hold', 'Processing')}
+                                    className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'payment_hold'
+                                            ? 'border-red-200 bg-red-50 text-red-700'
+                                            : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                    }`}
+                                >
+                                    Payment hold
+                                </button>
+                            )}
+                            {returnQueueCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickFilter('returns', 'Returns')}
+                                    className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                        quickFilter === 'returns'
+                                            ? 'border-teal-200 bg-teal-50 text-teal-700'
+                                            : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                    }`}
+                                >
+                                    Return queue
+                                </button>
+                            )}
+                        </div>
 
                         {/* Order List */}
-                        <div className="divide-y divide-gray-100">
+                        <div className="space-y-3 p-3 sm:space-y-0 sm:p-0 sm:divide-y sm:divide-gray-100">
                             {paginatedOrders.length > 0 ? (
                                 paginatedOrders.map((order) => {
                                     const issueSummary = sellerIssueSummary(order);
 
                                     return (
-                                    <div key={order.id} className="px-3.5 py-3 sm:px-4 sm:py-3.5 hover:bg-gray-50/50 transition-all group">
+                                    <div key={order.id} className="group rounded-2xl border border-stone-200 bg-white px-3.5 py-3 shadow-sm transition-colors hover:bg-gray-50/50 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-4 sm:py-3 sm:shadow-none">
                                         
                                         {/* Order Header */}
                                         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -902,10 +1057,10 @@ export default function OrderManager({ auth, orders = [] }) {
                                                 </div>
                                                 <div className="flex items-center gap-1.5 text-gray-700">
                                                     <User size={12} />
-                                                    <span className="text-xs font-bold">{order.customer}</span>
+                                                    <span className="text-xs font-semibold">{order.customer}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-wrap items-center gap-2">
+                                            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                                                 <PaymentStatusBadge status={order.payment_status} method={order.payment_method} />
                                                 <StatusBadge status={order.status} />
                                             </div>
@@ -915,8 +1070,10 @@ export default function OrderManager({ auth, orders = [] }) {
                                         <div className="mb-3 flex flex-wrap gap-1.5 sm:gap-2">
                                             {order.payment_status === 'pending' && order.payment_method === 'COD' && ['Pending', 'Accepted', 'Shipped', 'Ready for Pickup', 'Delivered'].includes(order.status) && (
                                                 <button
+                                                    disabled={!canEditOrders}
                                                     onClick={() => router.post(route('orders.payment-status', order.id), { payment_status: 'paid' })}
-                                                    className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-green-700 hover:bg-green-100 transition"
+                                                    aria-label={`Mark order ${order.id} as paid`}
+                                                    className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-green-700 hover:bg-green-100 transition disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
                                                     <DollarSign size={12} />
                                                     Mark as Paid
@@ -925,7 +1082,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                             {order.tracking_number && (
                                                 <div className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5">
                                                     <Hash size={12} className="text-indigo-600" />
-                                                    <span className="text-[10px] font-bold text-indigo-700">{order.tracking_number}</span>
+                                                    <span className="text-[10px] font-semibold text-indigo-700">{order.tracking_number}</span>
                                                 </div>
                                             )}
                                             {order.proof_of_delivery && (
@@ -964,7 +1121,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                             {/* Items */}
                                             <div className="flex-1 space-y-2">
                                                 {order.items.map((item, idx) => (
-                                                    <div key={idx} className="flex flex-col gap-2.5 rounded-lg border border-gray-100 bg-gray-50 p-2.5 sm:flex-row sm:items-center sm:gap-3">
+                                                    <div key={idx} className="flex flex-col gap-2.5 rounded-lg border border-gray-100 bg-gray-50 p-2 sm:flex-row sm:items-center sm:gap-3">
                                                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
                                                             <img 
                                                                 src={item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`} 
@@ -974,17 +1131,17 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="truncate text-[13px] font-bold text-gray-900">{item.name}</p>
+                                                            <p className="truncate text-[13px] font-semibold text-gray-900">{item.name}</p>
                                                             <p className="text-[11px] text-gray-500">Variant: {item.variant} / Qty {item.qty}</p>
                                                         </div>
-                                                        <div className="text-[13px] font-bold text-gray-700">PHP {Number(item.price).toLocaleString()}</div>
+                                                        <div className="text-[13px] font-semibold text-gray-700">PHP {Number(item.price).toLocaleString()}</div>
                                                     </div>
                                                 ))}
                                             </div>
 
                                             {/* Action Panel */}
                                             <div className="border-t border-gray-100 pt-3 lg:w-64 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-                                                <div className="mb-3 text-left lg:text-right">
+                                                <div className="mb-3 rounded-xl bg-stone-50 px-3 py-2 text-left lg:bg-transparent lg:px-0 lg:py-0 lg:text-right">
                                                     <p className="text-[11px] font-medium text-gray-400">Total</p>
                                                     <p className="text-xl font-bold text-clay-700">PHP {order.total}</p>
                                                 </div>
@@ -1002,7 +1159,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         <div className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-left">
                                                             {/* Header row: label + track link */}
                                                             <div className="flex items-center justify-between gap-2 mb-1.5">
-                                                                <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-gray-400">Courier</p>
+                                                                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-400">Courier</p>
                                                                 {order.delivery.share_link && (
                                                                     <a
                                                                         href={order.delivery.share_link}
@@ -1136,21 +1293,24 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             {canAccessMessages && (
                                                                 <button 
                                                                     onClick={() => openChat(order.user_id)} 
-                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition hover:bg-gray-50"
+                                                                    aria-label={`Open chat for order ${order.id}`}
+                                                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20"
                                                                 >
                                                                     <MessageCircle size={16} /> Discuss Shipping
                                                                 </button>
                                                             )}
-                                                            <div className="flex gap-2">
+                                                            <div className="flex flex-col gap-2 sm:flex-row">
                                                                 <button 
+                                                                    disabled={!canEditOrders}
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Rejected')} 
-                                                                    className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
+                                                                    className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                                                                 >
                                                                     <XCircle size={14} className="inline mr-1" /> Reject
                                                                 </button>
                                                                 <button 
+                                                                    disabled={!canEditOrders}
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Accepted')} 
-                                                                    className="flex-1 rounded-lg bg-clay-600 px-3 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-clay-700"
+                                                                    className="flex-1 rounded-lg bg-clay-600 px-3 py-2.5 text-xs font-bold text-white shadow-md transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
                                                                 >
                                                                     <CheckCircle2 size={14} className="inline mr-1" /> Accept
                                                                 </button>
@@ -1173,23 +1333,25 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                 </div>
                                                             ) : order.shipping_method === 'Pick Up' ? (
                                                                 <button 
+                                                                    disabled={!canEditOrders}
                                                                     onClick={() => openShippingModal(order, 'pickup-ready')} 
-                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5 hover:bg-orange-600"
+                                                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-200 transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30 disabled:cursor-not-allowed disabled:opacity-50"
                                                                 >
                                                                     <PackageCheck size={18} /> Mark as Ready for Pickup
                                                                 </button>
                                                             ) : (
                                                                 <div className="space-y-2.5">
                                                                     <button
+                                                                        disabled={!canEditOrders}
                                                                         onClick={() => openShippingModal(order, 'ship')}
-                                                                        className="w-full flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-100"
+                                                                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 shadow-sm transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                                                                     >
                                                                         <PackageCheck size={18} /> Mark as Shipped
                                                                     </button>
                                                                     <button
                                                                         onClick={() => createLalamoveDelivery(order.id)}
-                                                                        disabled={!order.lalamove_booking_ready || bookingOrderId === order.id}
-                                                                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                                                                        disabled={!canEditOrders || !order.lalamove_booking_ready || bookingOrderId === order.id}
+                                                                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                                                                     >
                                                                         {bookingOrderId === order.id ? (
                                                                             <>
@@ -1238,8 +1400,9 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             </div>
                                                             {!isLalamoveManagedOrder(order) && (
                                                                 <button
+                                                                    disabled={!canEditOrders}
                                                                     onClick={() => openShippingModal(order, 'deliver')}
-                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-200 transition-all hover:-translate-y-0.5 hover:bg-teal-700"
+                                                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-200 transition-colors hover:bg-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/30 disabled:cursor-not-allowed disabled:opacity-50"
                                                                 >
                                                                     <MapPin size={18} />
                                                                     {order.status === 'Ready for Pickup' ? 'Mark as Picked Up' : 'Mark as Delivered'}
@@ -1258,8 +1421,9 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                 </div>
                                                             </div>
                                                             <button
+                                                                disabled={!canEditOrders}
                                                                 onClick={() => initiateStatusUpdate(order.id, 'Completed')}
-                                                                className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-200 transition-all hover:-translate-y-0.5 hover:bg-green-700"
+                                                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-200 transition-colors hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                                                             >
                                                                 <CheckCircle2 size={18} /> Complete Transaction
                                                             </button>
@@ -1290,32 +1454,36 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         <>
                                                             {canAccessMessages && (
                                                                 <button
-                                                                    onClick={() => openChat(order.user_id)}
-                                                                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-clay-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-clay-700"
+                                                                        onClick={() => openChat(order.user_id)}
+                                                                        aria-label={`Open chat for order ${order.id}`}
+                                                                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-clay-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-clay-700"
                                                                 >
                                                                     <MessageCircle size={16} /> Negotiate
                                                                 </button>
                                                             )}
                                                             <div className="flex flex-col gap-2">
-                                                                <div className="flex gap-2">
+                                                                <div className="flex flex-col gap-2 sm:flex-row">
                                                                     <button
-                                                                        onClick={() => router.post(route('orders.approve-return', order.id), { action_type: 'refund' }, { preserveScroll: true })}
-                                                                        className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm"
+                                                                        onClick={() => submitRefundApproval(order.id)}
+                                                                        disabled={!canEditOrders || !!returnActionKey || replacementModal.processing}
+                                                                        className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                                                         title="Refunds money without deducting stock"
                                                                     >
-                                                                        Approve (Refund)
+                                                                        {returnActionKey === `${order.id}:refund` ? 'Refunding...' : 'Approve (Refund)'}
                                                                     </button>
                                                                     <button
                                                                         onClick={() => openReplacementModal(order.id)}
-                                                                        className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm"
+                                                                        disabled={!canEditOrders || !!returnActionKey || replacementModal.processing}
+                                                                        className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                                                         title="Restarts the delivery cycle and requires a compensation note"
                                                                     >
                                                                         Approve (Replace)
                                                                     </button>
                                                                 </div>
                                                                 <button
+                                                                    disabled={!canEditOrders}
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Completed')}
-                                                                    className="w-full px-2 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold hover:bg-red-100 transition"
+                                                                    className="w-full px-2 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold hover:bg-red-100 transition disabled:cursor-not-allowed disabled:opacity-50"
                                                                 >
                                                                     Reject Return
                                                                 </button>
@@ -1328,7 +1496,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             href={route('orders.receipt', order.id)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-green-600 font-bold text-sm hover:underline"
+                                                            className="flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-green-600 transition-colors hover:text-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/20"
                                                         >
                                                             <Printer size={16} /> View Receipt
                                                         </a>
@@ -1367,7 +1535,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                     <button 
                                         disabled={currentPage === 1}
                                         onClick={() => setCurrentPage(prev => prev - 1)}
-                                        className="p-2 border border-gray-200 bg-white rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm shrink-0"
+                                        aria-label="Go to previous page"
+                                        className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         <ChevronLeft size={16} />
                                     </button>
@@ -1376,7 +1545,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                             <button 
                                                 key={i}
                                                 onClick={() => setCurrentPage(i + 1)}
-                                                className={`w-9 h-9 rounded-lg text-sm font-bold flex items-center justify-center transition-all shrink-0 ${
+                                                aria-label={`Go to page ${i + 1}`}
+                                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-colors ${
                                                     currentPage === i + 1 
                                                     ? 'bg-clay-600 text-white shadow-md' 
                                                     : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm'
@@ -1389,7 +1559,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                     <button 
                                         disabled={currentPage === totalPages}
                                         onClick={() => setCurrentPage(prev => prev + 1)}
-                                        className="p-2 border border-gray-200 bg-white rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm shrink-0"
+                                        aria-label="Go to next page"
+                                        className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         <ChevronRight size={16} />
                                     </button>
@@ -1409,16 +1580,19 @@ export default function OrderManager({ auth, orders = [] }) {
                     <p className="text-sm text-gray-500 mb-6 leading-relaxed">{confirmModal.message}</p>
                     <div className="flex justify-center gap-3">
                         <button 
-                            onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} 
-                            className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition"
+                            onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                            disabled={confirmModal.processing}
+                            className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button 
-                            onClick={confirmModal.action} 
-                            className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:-translate-y-0.5 ${confirmModal.isDestructive ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200' : 'bg-clay-600 hover:bg-clay-700 shadow-lg shadow-clay-200'}`}
+                            onClick={confirmModal.action}
+                            disabled={!canEditOrders || confirmModal.processing}
+                            className={`inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 ${confirmModal.isDestructive ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 focus-visible:ring-red-500/20' : 'bg-clay-600 hover:bg-clay-700 shadow-lg shadow-clay-200 focus-visible:ring-clay-500/30'} disabled:cursor-not-allowed disabled:opacity-60`}
                         >
-                            Confirm
+                            {confirmModal.processing && <LoaderCircle size={16} className="animate-spin" />}
+                            {confirmModal.processing ? 'Saving...' : 'Confirm'}
                         </button>
                     </div>
                 </div>
@@ -1452,6 +1626,29 @@ export default function OrderManager({ auth, orders = [] }) {
                     </div>
                     
                     <div className="space-y-5">
+                        <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${
+                            shippingModal.status === 'Delivered'
+                                ? 'border-teal-200 bg-teal-50 text-teal-800'
+                                : shippingModal.isPickup
+                                    ? 'border-orange-200 bg-orange-50 text-orange-800'
+                                    : 'border-blue-200 bg-blue-50 text-blue-800'
+                        }`}>
+                            <p className="font-bold uppercase tracking-[0.16em]">
+                                {shippingModal.status === 'Delivered'
+                                    ? 'Next step'
+                                    : shippingModal.isPickup
+                                        ? 'Pickup flow'
+                                        : 'Shipping flow'}
+                            </p>
+                            <p className="mt-1">
+                                {shippingModal.status === 'Delivered'
+                                    ? 'Submitting this closes the seller-side delivery step and keeps the latest proof visible to the buyer.'
+                                    : shippingModal.isPickup
+                                        ? 'Mark the order ready first, then confirm the handover once the buyer actually receives it.'
+                                        : 'Submit shipping proof now, then return once delivery is complete to attach the final proof if needed.'}
+                            </p>
+                        </div>
+
                         {shippingModal.allowTracking && (
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -1459,6 +1656,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                     Tracking Number
                                 </label>
                                 <TextInput 
+                                    disabled={!canEditOrders}
                                     value={shippingModal.trackingNumber}
                                     onChange={(e) => setShippingModal({ ...shippingModal, trackingNumber: e.target.value })}
                                     placeholder="e.g. LALA-12345678"
@@ -1475,6 +1673,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50 transition relative overflow-hidden group">
                                     <input 
                                         type="file" 
+                                        disabled={!canEditOrders}
                                         className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                         accept="image/*"
                                         onChange={(e) => {
@@ -1521,6 +1720,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                 {shippingModal.noteLabel} <span className="text-gray-400 font-normal">(Optional)</span>
                             </label>
                             <textarea 
+                                disabled={!canEditOrders}
                                 value={shippingModal.shippingNotes}
                                 onChange={(e) => setShippingModal({ ...shippingModal, shippingNotes: e.target.value })}
                                 placeholder={shippingModal.notePlaceholder}
@@ -1533,22 +1733,24 @@ export default function OrderManager({ auth, orders = [] }) {
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
                         <button 
                             onClick={closeShippingModal} 
-                            className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition"
+                            disabled={shippingModal.processing}
+                            className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button 
                             onClick={submitShipping}
-                            disabled={shippingModal.proofRequired && !shippingModal.proofOfDelivery}
-                            className={`px-6 py-2.5 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 ${
+                            disabled={!canEditOrders || shippingModal.processing || (shippingModal.proofRequired && !shippingModal.proofOfDelivery)}
+                            className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
                                 shippingModal.status === 'Delivered'
-                                    ? 'bg-teal-600 hover:bg-teal-700 shadow-teal-200'
+                                    ? 'bg-teal-600 hover:bg-teal-700 shadow-teal-200 focus-visible:ring-teal-500/30'
                                     : shippingModal.isPickup
-                                        ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200'
-                                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                                        ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200 focus-visible:ring-orange-500/30'
+                                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200 focus-visible:ring-blue-500/30'
                             }`}
                         >
-                            <CheckCircle2 size={16} /> {shippingModal.confirmLabel}
+                            {shippingModal.processing ? <LoaderCircle size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                            {shippingModal.processing ? 'Saving...' : shippingModal.confirmLabel}
                         </button>
                     </div>
                 </div>
@@ -1569,11 +1771,16 @@ export default function OrderManager({ auth, orders = [] }) {
                     <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-xs text-teal-800">
                         The order will return to the normal delivery lifecycle and must be officially received by the buyer again.
                     </div>
+                    <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-xs leading-relaxed text-stone-700">
+                        <p className="font-bold uppercase tracking-[0.16em] text-stone-500">What happens after approval</p>
+                        <p className="mt-1">The order stays active, keeps the seller resolution note, and goes back through delivery until the buyer confirms receipt again.</p>
+                    </div>
 
                     <div className="mt-4">
                         <label className="mb-2 block text-sm font-bold text-gray-700">Compensation / Resolution Description</label>
                         <textarea
                             rows={4}
+                            disabled={!canEditOrders}
                             value={replacementModal.resolutionDescription}
                             onChange={(event) => setReplacementModal((current) => ({
                                 ...current,
@@ -1600,7 +1807,7 @@ export default function OrderManager({ auth, orders = [] }) {
                         <button
                             type="button"
                             onClick={submitReplacementApproval}
-                            disabled={replacementModal.processing}
+                            disabled={!canEditOrders || replacementModal.processing}
                             className="rounded-xl bg-teal-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-teal-200 hover:bg-teal-700 disabled:opacity-50"
                         >
                             {replacementModal.processing ? 'Approving...' : 'Approve Replacement'}

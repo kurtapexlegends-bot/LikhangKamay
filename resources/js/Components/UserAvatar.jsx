@@ -20,12 +20,12 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     return (
         <div className="relative inline-flex">
             {isPremium && (
-                <div className="absolute -top-2 -right-1.5 z-10 text-amber-500 drop-shadow-sm rotate-[15deg]">
+                <div className="absolute -top-2 -right-1.5 z-10 rotate-[15deg] text-amber-500">
                     <Crown size={16} strokeWidth={2.5} className="fill-amber-400" />
                 </div>
             )}
             {isElite && (
-                <div className="absolute -top-2 -right-1.5 z-10 text-violet-500 drop-shadow-sm rotate-[15deg]">
+                <div className="absolute -top-2 -right-1.5 z-10 rotate-[15deg] text-violet-500">
                     <Sparkles size={14} strokeWidth={2.5} className="fill-violet-400" />
                 </div>
             )}

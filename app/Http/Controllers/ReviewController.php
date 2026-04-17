@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\SellerActivityLog;
 use App\Notifications\NewReviewNotification;
 use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
@@ -177,9 +178,34 @@ class ReviewController extends Controller
 
         $review = Review::with('product')->findOrFail($id);
         $this->authorizeSellerOwnership($review->product->user_id);
+        $beforeReply = $review->seller_reply;
 
         $review->update([
             'seller_reply' => RichTextSanitizer::sanitize($request->seller_reply),
+        ]);
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $review->product->user_id,
+            'actor_user_id' => $request->user()?->id,
+            'actor_type' => SellerActivityLog::resolveActorType($request->user(), 'owner'),
+            'category' => 'operations',
+            'module' => 'reviews',
+            'event_type' => 'review_reply_updated',
+            'severity' => 'info',
+            'status' => 'updated',
+            'title' => 'Review Reply Saved',
+            'summary' => "A seller reply was saved for {$review->product->name}.",
+            'subject_type' => Review::class,
+            'subject_id' => $review->id,
+            'subject_label' => $review->product->name,
+            'reference' => 'Review #' . $review->id,
+            'details' => [
+                'before' => ['seller_reply' => $beforeReply],
+                'after' => ['seller_reply' => $review->seller_reply],
+                'lines' => ['Updated seller response to a buyer review.'],
+            ],
+            'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
+            'target_label' => 'Open Reviews',
         ]);
 
         return back()->with('success', 'Reply posted successfully!');
@@ -189,9 +215,34 @@ class ReviewController extends Controller
     {
         $review = Review::with('product')->findOrFail($id);
         $this->authorizeSellerOwnership($review->product->user_id);
+        $beforeReply = $review->seller_reply;
 
         $review->update([
             'seller_reply' => null,
+        ]);
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $review->product->user_id,
+            'actor_user_id' => request()->user()?->id,
+            'actor_type' => SellerActivityLog::resolveActorType(request()->user(), 'owner'),
+            'category' => 'operations',
+            'module' => 'reviews',
+            'event_type' => 'review_reply_removed',
+            'severity' => 'warning',
+            'status' => 'removed',
+            'title' => 'Review Reply Removed',
+            'summary' => "The seller reply for {$review->product->name} was removed.",
+            'subject_type' => Review::class,
+            'subject_id' => $review->id,
+            'subject_label' => $review->product->name,
+            'reference' => 'Review #' . $review->id,
+            'details' => [
+                'before' => ['seller_reply' => $beforeReply],
+                'after' => ['seller_reply' => null],
+                'lines' => ['Removed seller response from the review thread.'],
+            ],
+            'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
+            'target_label' => 'Open Reviews',
         ]);
 
         return back()->with('success', 'Reply deleted successfully!');
@@ -205,6 +256,25 @@ class ReviewController extends Controller
         if ($review->is_pinned) {
             $review->update(['is_pinned' => false]);
 
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $review->product->user_id,
+                'actor_user_id' => request()->user()?->id,
+                'actor_type' => SellerActivityLog::resolveActorType(request()->user(), 'owner'),
+                'category' => 'operations',
+                'module' => 'reviews',
+                'event_type' => 'review_unpinned',
+                'severity' => 'info',
+                'status' => 'updated',
+                'title' => 'Pinned Review Removed',
+                'summary' => "A pinned review was removed from {$review->product->name}.",
+                'subject_type' => Review::class,
+                'subject_id' => $review->id,
+                'subject_label' => $review->product->name,
+                'reference' => 'Review #' . $review->id,
+                'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
+                'target_label' => 'Open Reviews',
+            ]);
+
             return back()->with('success', 'Review unpinned.');
         }
 
@@ -213,6 +283,25 @@ class ReviewController extends Controller
             ->update(['is_pinned' => false]);
 
         $review->update(['is_pinned' => true]);
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $review->product->user_id,
+            'actor_user_id' => request()->user()?->id,
+            'actor_type' => SellerActivityLog::resolveActorType(request()->user(), 'owner'),
+            'category' => 'operations',
+            'module' => 'reviews',
+            'event_type' => 'review_pinned',
+            'severity' => 'success',
+            'status' => 'updated',
+            'title' => 'Review Pinned',
+            'summary' => "A review for {$review->product->name} was pinned to the top.",
+            'subject_type' => Review::class,
+            'subject_id' => $review->id,
+            'subject_label' => $review->product->name,
+            'reference' => 'Review #' . $review->id,
+            'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
+            'target_label' => 'Open Reviews',
+        ]);
 
         return back()->with('success', 'Review pinned to top!');
     }

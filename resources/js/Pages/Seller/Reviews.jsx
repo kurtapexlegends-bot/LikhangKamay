@@ -6,6 +6,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import CompactPagination from '@/Components/CompactPagination';
+import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import {
     Star, MessageSquare, Image as ImageIcon, Search, Filter, Pin, PinOff,
     Menu, ChevronDown, User, LogOut, Send, Bold, Italic, X,
@@ -15,6 +16,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 
 // --- Simple Rich Text Toolbar ---
 const RichTextEditor = ({ value, onChange, placeholder }) => {
@@ -57,6 +59,7 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
 
 export default function Reviews({ auth, reviews, stats, flash }) {
     const { addToast } = useToast();
+    const { canEdit: canEditReviews, isReadOnly: isReviewsReadOnly } = useSellerModuleAccess('reviews');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [filter, setFilter] = useState('All');
     const [replyingTo, setReplyingTo] = useState(null);
@@ -122,6 +125,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     };
 
     const submitReply = (reviewId) => {
+        if (!canEditReviews) return;
         if (!replyText.trim()) return;
         router.post(route('reviews.reply', reviewId), { seller_reply: replyText }, {
             preserveScroll: true,
@@ -133,16 +137,19 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     };
 
     const togglePin = (reviewId) => {
+        if (!canEditReviews) return;
         router.post(route('reviews.toggle-pin', reviewId), {}, { preserveScroll: true });
     };
 
     const handleQuickReply = (reviewId, text) => {
+        if (!canEditReviews) return;
         router.post(route('reviews.reply', reviewId), { seller_reply: text }, {
             preserveScroll: true,
         });
     };
 
     const deleteReply = () => {
+        if (!canEditReviews) return;
         if (confirmingDelete) {
             router.delete(route('reviews.destroy-reply', confirmingDelete), {
                 preserveScroll: true,
@@ -211,6 +218,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                    {isReviewsReadOnly && (
+                        <ReadOnlyCapabilityNotice label="Reviews are read only for your account. Reply, pin, and moderation actions are disabled." />
+                    )}
 
                     {/* Stats Overview */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -330,8 +340,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                         <span className="text-[11px] font-medium text-gray-400">{review.date}</span>
                                                         {/* Pin Button */}
                                                         <button
+                                                            disabled={!canEditReviews}
                                                             onClick={() => togglePin(review.id)}
-                                                            className={`p-1.5 rounded-lg transition-all ${review.is_pinned ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                                                            className={`p-1.5 rounded-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 ${review.is_pinned ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
                                                             title={review.is_pinned ? 'Unpin review' : 'Pin to top'}
                                                         >
                                                             {review.is_pinned ? <PinOff size={12} /> : <Pin size={12} />}
@@ -363,10 +374,10 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 {review.seller_reply && replyingTo !== review.id && (
                                                     <div className="mt-2 p-3 bg-clay-50/70 border border-clay-100 rounded-xl relative group">
                                                         <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={() => openEditReply(review.id, review.seller_reply)} className="p-1 text-gray-400 hover:text-clay-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-gray-200 shadow-sm text-xs flex items-center gap-1" title="Edit Reply">
+                                                            <button disabled={!canEditReviews} onClick={() => canEditReviews && openEditReply(review.id, review.seller_reply)} className="p-1 text-gray-400 hover:text-clay-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-gray-200 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50" title="Edit Reply">
                                                                 <Edit2 size={12} /> Edit
                                                             </button>
-                                                            <button onClick={() => setConfirmingDelete(review.id)} className="p-1 text-gray-400 hover:text-red-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-red-100 shadow-sm text-xs flex items-center gap-1" title="Delete Reply">
+                                                            <button disabled={!canEditReviews} onClick={() => canEditReviews && setConfirmingDelete(review.id)} className="p-1 text-gray-400 hover:text-red-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-red-100 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50" title="Delete Reply">
                                                                 <Trash2 size={12} />
                                                             </button>
                                                         </div>
@@ -383,8 +394,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 {!review.seller_reply && replyingTo !== review.id && (
                                                     <div className="mt-3 flex items-center gap-2">
                                                         <button
-                                                            onClick={() => openReply(review.id)}
-                                                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition shadow-sm"
+                                                            disabled={!canEditReviews}
+                                                            onClick={() => canEditReviews && openReply(review.id)}
+                                                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                                         >
                                                             <Reply size={13} className="text-gray-500" /> Reply
                                                         </button>
@@ -392,7 +404,8 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                             <Dropdown.Trigger>
                                                                 <button
                                                                     type="button"
-                                                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition shadow-sm"
+                                                                    disabled={!canEditReviews}
+                                                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                                                     title="Choose a quick reply"
                                                                 >
                                                                     <Zap size={13} className="text-amber-500 fill-amber-500" /> Quick Reply
@@ -402,8 +415,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                                 {QUICK_REPLIES.map((qs, idx) => (
                                                                     <button
                                                                         key={idx}
+                                                                        disabled={!canEditReviews}
                                                                         onClick={() => handleQuickReply(review.id, qs)}
-                                                                        className="px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-xs text-left font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all leading-snug"
+                                                                        className="px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-xs text-left font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all leading-snug disabled:cursor-not-allowed disabled:opacity-50"
                                                                     >
                                                                         {qs}
                                                                     </button>
@@ -434,7 +448,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                                 </button>
                                                                 <button
                                                                     onClick={() => submitReply(review.id)}
-                                                                    disabled={!replyText.trim() || plainTextLength > 500}
+                                                                    disabled={!replyText.trim() || plainTextLength > 500 || !canEditReviews}
                                                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-clay-600 rounded-lg hover:bg-clay-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                                 >
                                                                     <Send size={12} /> Post Reply
@@ -489,7 +503,8 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                         </button>
                         <button
                             type="button"
-                            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-red-500/20"
+                            disabled={!canEditReviews}
+                            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                             onClick={deleteReply}
                         >
                             Delete

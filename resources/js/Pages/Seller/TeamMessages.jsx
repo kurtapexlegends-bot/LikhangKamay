@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import EmojiPicker from 'emoji-picker-react';
-import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
 import UserAvatar from '@/Components/UserAvatar';
 import MediaViewer from '@/Components/Chat/MediaViewer';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import {
+    AlertCircle,
     ArrowLeft,
     FileIcon,
     Image as ImageIcon,
@@ -17,6 +18,7 @@ import {
     Users,
     X,
 } from 'lucide-react';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 const groupMessagesByDate = (messages) => messages.reduce((groups, message) => {
     const key = message.dateLabel || 'Today';
@@ -36,17 +38,20 @@ const attachmentLabel = (message) => {
 };
 
 export default function TeamMessages({ auth, conversations = [], activeMessages = [], currentChatUser = null }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
     const [searchTerm, setSearchTerm] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
     const [activeMedia, setActiveMedia] = useState(null);
+    const [syncNotice, setSyncNotice] = useState(null);
+    const [brokenMessageImages, setBrokenMessageImages] = useState({});
+    const [attachmentPreviewBroken, setAttachmentPreviewBroken] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
     const imageInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
+    const { openSidebar } = useSellerWorkspaceShell();
 
     const { data, setData, post, processing, reset, errors } = useForm({
         receiver_id: currentChatUser?.id || '',
@@ -72,7 +77,11 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         if (currentChatUser) {
             setShowMobileList(false);
             inputRef.current?.focus();
-            window.axios.post(route('team-messages.seen'), { sender_id: currentChatUser.id });
+            if (window.axios) {
+                window.axios.post(route('team-messages.seen'), { sender_id: currentChatUser.id }).catch(() => {
+                    setSyncNotice('Team inbox is temporarily stale. It will sync again shortly.');
+                });
+            }
         }
     }, [currentChatUser, setData]);
 
@@ -80,7 +89,13 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         if (!currentChatUser) return undefined;
 
         const interval = setInterval(() => {
-            router.reload({ only: ['conversations', 'activeMessages', 'currentChatUser'] });
+            router.reload({
+                only: ['conversations', 'activeMessages', 'currentChatUser'],
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => setSyncNotice(null),
+                onError: () => setSyncNotice('Live updates paused. Refresh this page if the inbox stops moving.'),
+            });
         }, 4000);
 
         return () => clearInterval(interval);
@@ -151,6 +166,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         }
 
         setData('attachment', file);
+        setAttachmentPreviewBroken(false);
         setAttachmentPreview({
             url: URL.createObjectURL(file),
             name: file.name,
@@ -178,19 +194,12 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-800">
             <Head title="Team Inbox" />
 
-            <SellerSidebar
-                active="team-messages"
-                user={auth.user}
-                mobileOpen={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
-            />
-
-            <div className="flex min-h-screen flex-col lg:ml-56">
+            <div className="flex min-h-screen flex-col">
                 <SellerHeader
                     title="Team Inbox"
                     subtitle="Internal messages only."
                     auth={auth}
-                    onMenuClick={() => setSidebarOpen(true)}
+                    onMenuClick={openSidebar}
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                 />
 
@@ -244,12 +253,13 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                         </div>
                                     </Link>
                                 )) : (
-                                    <div className="p-8 text-center">
-                                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-stone-100 text-stone-300">
-                                            <Users size={24} />
-                                        </div>
-                                        <p className="mt-4 text-sm font-bold text-stone-700">No teammates found</p>
-                                        <p className="mt-1 text-xs text-stone-400">Try another search.</p>
+                                    <div className="p-6">
+                                        <WorkspaceEmptyState
+                                            compact
+                                            icon={Users}
+                                            title="No teammates found"
+                                            description="Try another search or wait for teammate conversations to appear."
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -286,6 +296,12 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
 
                                 <div className="min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
                                     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+                                        {syncNotice && (
+                                            <div className="inline-flex items-center gap-2 self-start rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700">
+                                                <AlertCircle size={13} />
+                                                {syncNotice}
+                                            </div>
+                                        )}
                                         {Object.keys(groupedMessages).map((dateLabel) => (
                                             <div key={dateLabel}>
                                                 <div className="mb-3 flex items-center gap-3">
@@ -310,17 +326,24 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                                             >
                                                                 {message.attachment_path && message.attachment_type === 'image' && (
                                                                     <div className="mb-2 overflow-hidden rounded-xl bg-white/10">
-                                                                        <img
-                                                                            src={`/storage/${message.attachment_path}`}
-                                                                            alt="Team attachment"
-                                                                            className="max-h-56 w-full cursor-zoom-in object-contain transition hover:scale-[1.02]"
-                                                                            onClick={() => {
-                                                                                const index = galleryImages.findIndex((image) => image.id === message.id);
-                                                                                setActiveMedia({
-                                                                                    index: index >= 0 ? index : 0,
-                                                                                });
-                                                                            }}
-                                                                        />
+                                                                        {brokenMessageImages[message.id] ? (
+                                                                            <div className={`flex min-h-[140px] items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center text-xs font-medium ${message.sender === 'me' ? 'border-white/20 text-white/80' : 'border-stone-200 bg-stone-50 text-stone-500'}`}>
+                                                                                Image unavailable. The rest of this conversation is still safe to continue.
+                                                                            </div>
+                                                                        ) : (
+                                                                            <img
+                                                                                src={`/storage/${message.attachment_path}`}
+                                                                                alt="Team attachment"
+                                                                                className="max-h-56 w-full cursor-zoom-in object-contain transition hover:scale-[1.02]"
+                                                                                onClick={() => {
+                                                                                    const index = galleryImages.findIndex((image) => image.id === message.id);
+                                                                                    setActiveMedia({
+                                                                                        index: index >= 0 ? index : 0,
+                                                                                    });
+                                                                                }}
+                                                                                onError={() => setBrokenMessageImages((current) => ({ ...current, [message.id]: true }))}
+                                                                            />
+                                                                        )}
                                                                     </div>
                                                                 )}
 
@@ -386,7 +409,13 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                                 <div className="flex min-w-0 items-center gap-3 overflow-hidden">
                                                     {attachmentPreview.type === 'image' ? (
                                                         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-                                                            <img src={attachmentPreview.url} alt="Preview" className="h-full w-full object-cover" />
+                                                            {attachmentPreviewBroken ? (
+                                                                <div className="flex h-full w-full items-center justify-center bg-stone-50 text-stone-400">
+                                                                    <FileIcon size={18} />
+                                                                </div>
+                                                            ) : (
+                                                                <img src={attachmentPreview.url} alt="Preview" className="h-full w-full object-cover" onError={() => setAttachmentPreviewBroken(true)} />
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-clay-500 shadow-sm">
@@ -410,8 +439,11 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                             </div>
                                         )}
 
-                                        {errors.message && (
-                                            <p className="mb-2 text-sm font-medium text-red-600">{errors.message}</p>
+                                        {(errors.message || errors.attachment) && (
+                                            <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700">
+                                                <AlertCircle size={13} />
+                                                {errors.message || errors.attachment}
+                                            </p>
                                         )}
 
                                         <form onSubmit={handleSubmit} className="flex w-full items-end gap-2 sm:gap-3">
@@ -514,3 +546,5 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         </div>
     );
 }
+
+TeamMessages.layout = (page) => <SellerWorkspaceLayout active="team-messages">{page}</SellerWorkspaceLayout>;

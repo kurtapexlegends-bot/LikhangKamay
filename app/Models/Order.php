@@ -14,8 +14,6 @@ class Order extends Model
     protected static ?bool $supportsShippingFeeAmountColumn = null;
     protected static ?bool $supportsPlatformCommissionAmountColumn = null;
     protected static ?bool $supportsSellerNetAmountColumn = null;
-    protected static ?bool $supportsWalletSettledAtColumn = null;
-    protected static ?bool $supportsRefundedToWalletAtColumn = null;
 
     protected $fillable = [
         'artisan_id', 'user_id', 'order_number', 'customer_name', 
@@ -25,7 +23,6 @@ class Order extends Model
         'shipping_recipient_name', 'shipping_contact_phone', 'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
         'accepted_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'cancellation_reason', 'shipping_method', 'proof_of_delivery',
         'return_reason', 'return_proof_image',
-        'wallet_settled_at', 'refunded_to_wallet_at',
         'replacement_resolution_description', 'replacement_started_at', 'replacement_resolved_at',
     ];
 
@@ -38,8 +35,6 @@ class Order extends Model
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
-        'wallet_settled_at' => 'datetime',
-        'refunded_to_wallet_at' => 'datetime',
         'replacement_started_at' => 'datetime',
         'replacement_resolved_at' => 'datetime',
         'merchandise_subtotal' => 'decimal:2',
@@ -64,11 +59,6 @@ class Order extends Model
     public function artisan()
     {
         return $this->belongsTo(User::class, 'artisan_id');
-    }
-
-    public function walletTransactions()
-    {
-        return $this->hasMany(WalletTransaction::class);
     }
 
     public function delivery()
@@ -97,13 +87,6 @@ class Order extends Model
                 unset($order->attributes['seller_net_amount']);
             }
 
-            if (!static::supportsWalletSettledAtColumn()) {
-                unset($order->attributes['wallet_settled_at']);
-            }
-
-            if (!static::supportsRefundedToWalletAtColumn()) {
-                unset($order->attributes['refunded_to_wallet_at']);
-            }
         });
     }
 
@@ -123,14 +106,6 @@ class Order extends Model
 
         if (!static::supportsSellerNetAmountColumn()) {
             unset($attributes['seller_net_amount']);
-        }
-
-        if (!static::supportsWalletSettledAtColumn()) {
-            unset($attributes['wallet_settled_at']);
-        }
-
-        if (!static::supportsRefundedToWalletAtColumn()) {
-            unset($attributes['refunded_to_wallet_at']);
         }
 
         return $attributes;
@@ -185,40 +160,6 @@ class Order extends Model
         }
 
         return static::$supportsSellerNetAmountColumn;
-    }
-
-    public static function supportsWalletSettledAtColumn(): bool
-    {
-        if (static::$supportsWalletSettledAtColumn !== null) {
-            return static::$supportsWalletSettledAtColumn;
-        }
-
-        try {
-            /** @var SchemaBuilder $schema */
-            $schema = Schema::connection((new static())->getConnectionName());
-            static::$supportsWalletSettledAtColumn = $schema->hasColumn((new static())->getTable(), 'wallet_settled_at');
-        } catch (\Throwable) {
-            static::$supportsWalletSettledAtColumn = false;
-        }
-
-        return static::$supportsWalletSettledAtColumn;
-    }
-
-    public static function supportsRefundedToWalletAtColumn(): bool
-    {
-        if (static::$supportsRefundedToWalletAtColumn !== null) {
-            return static::$supportsRefundedToWalletAtColumn;
-        }
-
-        try {
-            /** @var SchemaBuilder $schema */
-            $schema = Schema::connection((new static())->getConnectionName());
-            static::$supportsRefundedToWalletAtColumn = $schema->hasColumn((new static())->getTable(), 'refunded_to_wallet_at');
-        } catch (\Throwable) {
-            static::$supportsRefundedToWalletAtColumn = false;
-        }
-
-        return static::$supportsRefundedToWalletAtColumn;
     }
 
     public function getResolvedShippingFeeAmount(): float

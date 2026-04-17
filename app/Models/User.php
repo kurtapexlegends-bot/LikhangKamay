@@ -27,8 +27,9 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public const STAFF_MANAGER_USER_LEVEL = 'manager';
     public const STAFF_ONLY_USER_LEVEL_ALIASES = ['staff', 'staff_only', 'standard_staff'];
     public const STAFF_ACCESS_PERMISSION_READ_ONLY = 'read_only';
-    public const STAFF_ACCESS_PERMISSION_UPDATE = 'update_access';
-    public const STAFF_ACCESS_PERMISSION_FULL = 'full_access';
+    public const STAFF_ACCESS_PERMISSION_CAN_EDIT = 'can_edit';
+    public const STAFF_ACCESS_PERMISSION_UPDATE = 'can_edit';
+    public const STAFF_ACCESS_PERMISSION_FULL = 'can_edit';
 
     protected static ?bool $hasSplitNameColumns = null;
 
@@ -311,9 +312,16 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     {
         return [
             self::STAFF_ACCESS_PERMISSION_READ_ONLY,
-            self::STAFF_ACCESS_PERMISSION_UPDATE,
-            self::STAFF_ACCESS_PERMISSION_FULL,
+            self::STAFF_ACCESS_PERMISSION_CAN_EDIT,
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function staffModuleAccessLevels(): array
+    {
+        return static::staffAccessPermissionLevels();
     }
 
     /**
@@ -342,21 +350,82 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public static function normalizeStaffAccessPermissionLevel(mixed $level): string
     {
-        return in_array($level, self::staffAccessPermissionLevels(), true)
-            ? $level
-            : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        return match ($level) {
+            self::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+            self::STAFF_ACCESS_PERMISSION_UPDATE,
+            self::STAFF_ACCESS_PERMISSION_FULL,
+            'update_access',
+            'full_access' => self::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+            self::STAFF_ACCESS_PERMISSION_READ_ONLY => self::STAFF_ACCESS_PERMISSION_READ_ONLY,
+            default => self::STAFF_ACCESS_PERMISSION_READ_ONLY,
+        };
     }
 
-    public function getStaffAccessPermissionLevel(): string
+    public static function normalizeStaffModuleAccessLevel(mixed $level): ?string
+    {
+        if ($level === null || $level === false || $level === '' || $level === 0 || $level === '0') {
+            return null;
+        }
+
+        if ($level === true || $level === 1 || $level === '1') {
+            return self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+        }
+
+        return in_array($level, static::staffModuleAccessLevels(), true)
+            ? $level
+            : static::normalizeStaffAccessPermissionLevel($level);
+    }
+
+    public function getStaffModuleAccessLevel(string $module): ?string
     {
         if ($this->isSellerOwner()) {
-            return self::STAFF_ACCESS_PERMISSION_FULL;
+            return self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
         }
 
         if (!$this->isStaff()) {
-            return self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+            return null;
         }
 
+        $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
+
+        if (array_key_exists($module, $permissions)) {
+            $rawValue = $permissions[$module];
+
+            if ($rawValue === true || $rawValue === 1 || $rawValue === '1') {
+                return $this->resolveLegacyStaffModuleAccessLevel();
+            }
+
+            if ($rawValue === false || $rawValue === 0 || $rawValue === '0' || $rawValue === null || $rawValue === '') {
+                return null;
+            }
+
+            $explicit = static::normalizeStaffModuleAccessLevel($rawValue);
+
+            if ($explicit !== null) {
+                return $explicit;
+            }
+        }
+
+        $presetKey = $this->staff_role_preset_key ?: 'custom';
+        $presetModules = app(SellerEntitlementService::class)->getRolePresetDefaults()[$presetKey] ?? [];
+
+        if (in_array($module, $presetModules, true)) {
+            return $this->resolveLegacyStaffModuleAccessLevel();
+        }
+
+        if ($module === 'team_messages') {
+            $seller = $this->getEffectiveSeller();
+
+            if ($seller?->isPremiumTier()) {
+                return self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveLegacyStaffModuleAccessLevel(): string
+    {
         $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
 
         if (array_key_exists(self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG, $permissions)) {
@@ -365,18 +434,31 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
         if (array_key_exists(self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG, $permissions)) {
             return (bool) $permissions[self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG]
-                ? self::STAFF_ACCESS_PERMISSION_FULL
+                ? self::STAFF_ACCESS_PERMISSION_CAN_EDIT
                 : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
         }
 
         return static::normalizeStaffUserLevel($permissions[self::STAFF_USER_LEVEL_FLAG] ?? null) === self::STAFF_MANAGER_USER_LEVEL
-            ? self::STAFF_ACCESS_PERMISSION_FULL
+            ? self::STAFF_ACCESS_PERMISSION_CAN_EDIT
             : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+    }
+
+    public function getStaffAccessPermissionLevel(): string
+    {
+        if ($this->isSellerOwner()) {
+            return self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+        }
+
+        if (!$this->isStaff()) {
+            return self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        }
+
+        return $this->resolveLegacyStaffModuleAccessLevel();
     }
 
     public function hasStaffManagementPermission(): bool
     {
-        return $this->getStaffAccessPermissionLevel() !== self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        return $this->getStaffModuleAccessLevel('hr') === self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
     }
 
     public static function normalizeStaffUserLevel(mixed $level): string
@@ -516,7 +598,6 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     {
         return [
             'overview',
-            'wallet',
             'products',
             'analytics',
             '3d',
@@ -594,6 +675,20 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return app(SellerEntitlementService::class)->canAccessModule($this, $module);
     }
 
+    public function canEditSellerModule(string $module): bool
+    {
+        if ($this->isSellerOwner()) {
+            return true;
+        }
+
+        if (!$this->isWorkspaceAccessEnabled()) {
+            return false;
+        }
+
+        return in_array($module, app(SellerEntitlementService::class)->getGrantedStaffModules($this), true)
+            && $this->getStaffModuleAccessLevel($module) === self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+    }
+
     public function canAccessSellerWorkspace(): bool
     {
         return app(SellerEntitlementService::class)->canAccessWorkspace($this);
@@ -625,20 +720,17 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             return true;
         }
 
-        if (!$this->isWorkspaceAccessEnabled() || !$this->hasStaffManagementPermission()) {
+        if (!$this->isWorkspaceAccessEnabled()) {
             return false;
         }
 
-        return in_array('hr', app(SellerEntitlementService::class)->getGrantedStaffModules($this), true);
+        return in_array('hr', app(SellerEntitlementService::class)->getGrantedStaffModules($this), true)
+            && $this->getStaffModuleAccessLevel('hr') === self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
     }
 
     public function canCreateStaffAccounts(): bool
     {
-        if (!$this->canUpdateStaffAccounts()) {
-            return false;
-        }
-
-        return $this->getStaffAccessPermissionLevel() === self::STAFF_ACCESS_PERMISSION_FULL;
+        return $this->canUpdateStaffAccounts();
     }
 
     public function canDeleteStaffAccounts(): bool
@@ -816,16 +908,6 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->hasMany(\App\Models\UserAddress::class);
     }
 
-    public function wallet()
-    {
-        return $this->hasOne(\App\Models\Wallet::class);
-    }
-
-    public function sellerWalletWithdrawalRequests()
-    {
-        return $this->hasMany(\App\Models\SellerWalletWithdrawalRequest::class);
-    }
-    
     public function sponsorshipRequests()
     {
         return $this->hasMany(\App\Models\SponsorshipRequest::class);
