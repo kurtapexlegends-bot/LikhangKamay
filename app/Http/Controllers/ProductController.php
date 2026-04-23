@@ -856,7 +856,10 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load(['user', 'reviews.user']);
+        $product->load([
+            'user',
+            'reviews' => fn ($query) => $query->visibleToMarketplace()->with('user'),
+        ]);
         $viewer = Auth::user();
 
         $product->model_url = $product->model_3d_path
@@ -983,8 +986,8 @@ class ProductController extends Controller
             ->where('id', '!=', $product->id)
             ->where('category', $product->category)
             ->with('user')
-            ->withAvg('reviews', 'rating')
-            ->withCount('reviews')
+            ->withAvg('publicReviews as reviews_avg_rating', 'rating')
+            ->withCount('publicReviews as reviews_count')
             ->orderByRaw("
                 CASE
                     WHEN user_id = ? THEN 1
@@ -1014,8 +1017,8 @@ class ProductController extends Controller
                 ->where('id', '!=', $product->id)
                 ->whereNotIn('id', $preferredMatches->pluck('id'))
                 ->with('user')
-                ->withAvg('reviews', 'rating')
-                ->withCount('reviews')
+                ->withAvg('publicReviews as reviews_avg_rating', 'rating')
+                ->withCount('publicReviews as reviews_count')
                 ->orderByRaw("
                     CASE
                         WHEN category = ? THEN 1

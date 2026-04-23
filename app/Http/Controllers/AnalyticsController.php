@@ -67,6 +67,50 @@ class AnalyticsController extends Controller
             ->where('status', 'Pending')
             ->count();
 
+        $completedOrdersCount = Order::where('artisan_id', $sellerId)
+            ->where('status', 'Completed')
+            ->count();
+
+        $stalledOrders = Order::query()
+            ->where('artisan_id', $sellerId)
+            ->whereNotIn('status', ['Completed', 'Cancelled', 'Refunded', 'Replaced'])
+            ->where('created_at', '<=', now()->subDays(3))
+            ->count();
+
+        $lowStockProducts = Product::query()
+            ->where('user_id', $sellerId)
+            ->where('status', 'Active')
+            ->where('stock', '<=', 5)
+            ->orderBy('stock')
+            ->orderBy('name')
+            ->take(5)
+            ->get(['id', 'name', 'stock', 'sold', 'slug'])
+            ->map(fn (Product $product) => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'stock' => (int) $product->stock,
+                'sold' => (int) ($product->sold ?? 0),
+                'slug' => $product->slug,
+            ]);
+
+        $repeatBuyers = Order::query()
+            ->join('users', 'orders.user_id', '=', 'users.id')
+            ->where('orders.artisan_id', $sellerId)
+            ->where('orders.status', 'Completed')
+            ->selectRaw('orders.user_id, users.name, COUNT(*) as orders_count, SUM(orders.total_amount) as total_spend')
+            ->groupBy('orders.user_id', 'users.name')
+            ->havingRaw('COUNT(*) >= 2')
+            ->orderByDesc('orders_count')
+            ->orderByDesc('total_spend')
+            ->take(5)
+            ->get()
+            ->map(fn ($buyer) => [
+                'id' => (int) $buyer->user_id,
+                'name' => $buyer->name,
+                'orders_count' => (int) $buyer->orders_count,
+                'total_spend' => (float) $buyer->total_spend,
+            ]);
+
         $chartBaseQuery = function () use ($sellerId, $categoryFilter) {
             $query = OrderItem::query()
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
@@ -193,9 +237,21 @@ class AnalyticsController extends Controller
                 'total_orders' => $current['orders'],
                 'avg_order_value' => $current['avg'],
                 'pending_orders' => $pendingOrders,
+                'stalled_orders' => $stalledOrders,
                 'growth' => $growth,
                 'average_rating' => $reviewStats['average'],
                 'review_stats' => $reviewStats,
+            ],
+            'insights' => [
+                'low_stock_products' => $lowStockProducts,
+                'repeat_buyers' => $repeatBuyers,
+                'stalled_orders' => $stalledOrders,
+            ],
+            'dataContext' => [
+                'generated_at' => now()->toIso8601String(),
+                'completed_orders_count' => $completedOrdersCount,
+                'category_filter' => $categoryFilter,
+                'source_label' => 'Completed orders, active products, and live review records.',
             ],
             'chartData' => ['monthly' => $monthlyData, 'yearly' => $yearlyData],
             'categoryData' => $categoryData,

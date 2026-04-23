@@ -121,76 +121,84 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
 
     return (
         <section className={className}>
-            <header className="flex items-center justify-between">
+            <header className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-medium text-gray-900">Address Book</h2>
-                    <p className="mt-1 text-sm text-gray-600">
-                        Manage your shipping addresses for faster checkout.
+                    <h3 className="text-lg font-bold text-stone-900">Addresses</h3>
+                    <p className="mt-1 text-sm text-stone-500">
+                        Manage your shipping and billing addresses.
                     </p>
                 </div>
                 <button 
                     onClick={() => (isAdding || editingAddressId ? cancelForm() : startAdding())}
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                        isAdding || editingAddressId 
+                            ? 'text-stone-600 hover:text-stone-900 bg-stone-100' 
+                            : 'bg-clay-600 text-white hover:bg-clay-700 shadow-sm'
+                    }`}
                 >
                     {isAdding || editingAddressId ? 'Cancel' : (
                         <>
-                            <Plus size={14} />
+                            <Plus size={16} />
                             Add New
                         </>
                     )}
                 </button>
             </header>
 
-            {/* Address List */}
             {!isAdding && !editingAddressId && (
-                <div className="mt-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {addresses.length === 0 ? (
-                        <p className="text-sm text-gray-400 italic">No saved addresses yet.</p>
+                        <div className="col-span-2 py-12 text-center bg-stone-50 rounded-2xl border border-dashed border-stone-200">
+                            <MapPin size={32} className="mx-auto text-stone-300 mb-3" />
+                            <p className="text-sm font-medium text-stone-400">No addresses found.</p>
+                        </div>
                     ) : (
                         addresses.map((addr) => (
-                            <div key={addr.id} className={`p-4 rounded-lg border ${addr.is_default ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'}`}>
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-bold text-gray-800">{addr.label}</span>
-                                            <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100 font-bold uppercase tracking-wide">
+                            <div key={addr.id} className={`p-5 rounded-2xl border transition-all ${addr.is_default ? 'border-clay-200 bg-clay-50/30' : 'border-stone-200 bg-white hover:border-stone-300'}`}>
+                                <div className="flex flex-col h-full">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-stone-900">{addr.label}</span>
+                                            <span className="text-[10px] bg-stone-100 text-stone-500 px-2 py-0.5 rounded border border-stone-200 font-bold uppercase tracking-wider">
                                                 {humanizeAddressType(addr.address_type)}
                                             </span>
                                             {addr.is_default && (
-                                                <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                    <CheckCircle size={10} /> Default
+                                                <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-100 font-bold uppercase tracking-wider">
+                                                    Primary
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-sm text-gray-900 font-medium">{addr.recipient_name} | {addr.phone_number}</p>
-                                        <p className="text-sm text-gray-600 mt-1 flex gap-1">
-                                            <MapPin size={14} className="mt-0.5 shrink-0" /> 
+                                    </div>
+                                    
+                                    <div className="space-y-1 mb-4 flex-1 text-sm">
+                                        <p className="font-bold text-stone-800">{addr.recipient_name}</p>
+                                        <p className="text-stone-500 font-medium">{addr.phone_number}</p>
+                                        <p className="text-stone-600 font-medium flex gap-2">
+                                            <MapPin size={16} className="mt-0.5 shrink-0 text-stone-400" />
                                             {resolveAddressDisplay(addr)}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-1 self-start sm:self-auto">
+
+                                    <div className="flex items-center gap-3 pt-3 border-t border-stone-100 mt-auto">
                                         {!addr.is_default && (
                                             <button
                                                 onClick={() => setDefault(addr.id)}
-                                                className="rounded-md px-2 py-1 text-[11px] font-medium text-gray-500 transition hover:bg-white hover:text-indigo-600"
+                                                className="text-xs font-bold text-clay-600 hover:text-clay-700 transition-colors"
                                             >
-                                                Set Default
+                                                Set Primary
                                             </button>
                                         )}
                                         <button
                                             onClick={() => startEditing(addr)}
-                                            className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-gray-500 transition hover:bg-white hover:text-indigo-600"
+                                            className="text-xs font-bold text-stone-500 hover:text-stone-900 transition-colors"
                                         >
-                                            <Pencil size={13} />
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => openDeleteAddressModal(addr)}
-                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-red-600"
-                                            aria-label={`Delete ${addr.label} address`}
-                                            title="Delete address"
+                                            className="ml-auto text-stone-400 hover:text-red-600 transition-colors"
                                         >
-                                            <Trash2 size={15} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </div>
@@ -200,107 +208,102 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                 </div>
             )}
 
-            {/* Add New Form */}
             {(isAdding || editingAddressId) && (
-                <form onSubmit={submit} className="mt-6 space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div>
-                        <InputLabel value="Address Type" />
-                        <div className="mt-2 grid grid-cols-3 gap-2">
-                            {ADDRESS_TYPES.map((type) => (
-                                <button
-                                    key={type.value}
-                                    type="button"
-                                    onClick={() => {
-                                        setData('address_type', type.value);
-                                        if (!data.label.trim() || ['Home', 'Office', 'Other'].includes(data.label)) {
-                                            setData('label', type.label);
-                                        }
-                                    }}
-                                    className={`rounded-lg border px-3 py-2 text-sm font-bold transition ${
-                                        data.address_type === type.value
-                                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                            : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300'
-                                    }`}
-                                >
-                                    {type.label}
-                                </button>
-                            ))}
-                        </div>
-                        <InputError className="mt-2" message={errors.address_type} />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100">
+                    <form onSubmit={submit} className="space-y-6">
                         <div>
-                            <InputLabel htmlFor="label" value="Label" />
+                            <InputLabel value="Address Type" className="text-stone-600 font-bold mb-3" />
+                            <div className="flex flex-wrap gap-2">
+                                {ADDRESS_TYPES.map((type) => (
+                                    <button
+                                        key={type.value}
+                                        type="button"
+                                        onClick={() => {
+                                            setData('address_type', type.value);
+                                            if (!data.label.trim() || ['Home', 'Office', 'Other'].includes(data.label)) {
+                                                setData('label', type.label);
+                                            }
+                                        }}
+                                        className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all ${
+                                            data.address_type === type.value
+                                                ? 'border-clay-600 bg-clay-600 text-white'
+                                                : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300'
+                                        }`}
+                                    >
+                                        {type.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <InputError className="mt-2" message={errors.address_type} />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <InputLabel htmlFor="label" value="Label" className="text-stone-700 font-bold" />
+                                <TextInput
+                                    id="label"
+                                    className="mt-1 block w-full border-stone-200 bg-white"
+                                    value={data.label}
+                                    onChange={(e) => setData('label', e.target.value)}
+                                    required
+                                />
+                                <InputError className="mt-2" message={errors.label} />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="phone_number" value="Phone Number" className="text-stone-700 font-bold" />
+                                <TextInput
+                                    id="phone_number"
+                                    className="mt-1 block w-full border-stone-200 bg-white"
+                                    value={data.phone_number}
+                                    onChange={(e) => setData('phone_number', e.target.value)}
+                                    required
+                                />
+                                <InputError className="mt-2" message={errors.phone_number} />
+                            </div>
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="recipient_name" value="Recipient Name" className="text-stone-700 font-bold" />
                             <TextInput
-                                id="label"
-                                className="mt-1 block w-full"
-                                value={data.label}
-                                onChange={(e) => setData('label', e.target.value)}
+                                id="recipient_name"
+                                className="mt-1 block w-full border-stone-200 bg-white"
+                                value={data.recipient_name}
+                                onChange={(e) => setData('recipient_name', e.target.value)}
                                 required
                             />
-                            <InputError className="mt-2" message={errors.label} />
+                            <InputError className="mt-2" message={errors.recipient_name} />
                         </div>
-                        <div>
-                            <InputLabel htmlFor="phone_number" value="Phone Number" />
-                            <TextInput
-                                id="phone_number"
-                                className="mt-1 block w-full"
-                                value={data.phone_number}
-                                onChange={(e) => setData('phone_number', e.target.value)}
-                                required
-                            />
-                            <InputError className="mt-2" message={errors.phone_number} />
-                        </div>
-                    </div>
 
-                    <div>
-                        <InputLabel htmlFor="recipient_name" value="Recipient Name" />
-                        <TextInput
-                            id="recipient_name"
-                            className="mt-1 block w-full"
-                            value={data.recipient_name}
-                            onChange={(e) => setData('recipient_name', e.target.value)}
+                        <StructuredAddressFields
+                            key={`address-form-${editingAddressId ?? 'new'}`}
+                            data={data}
+                            setData={setData}
+                            errors={errors}
                             required
                         />
-                        <InputError className="mt-2" message={errors.recipient_name} />
-                    </div>
 
-                    <StructuredAddressFields
-                        key={`address-form-${editingAddressId ?? 'new'}`}
-                        data={data}
-                        setData={setData}
-                        errors={errors}
-                        required
-                        helperText="Save a complete address."
-                        previewLabel="Saved Address"
-                    />
-
-                    <div className="flex items-center gap-4">
-                        <PrimaryButton disabled={processing}>
-                            {editingAddressId ? 'Save Changes' : 'Save Address'}
-                        </PrimaryButton>
-                        <button 
-                            type="button" 
-                            onClick={cancelForm}
-                            className="text-sm text-gray-500 hover:text-gray-700 underline"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
+                        <div className="flex items-center justify-end gap-3 pt-4">
+                            <button 
+                                type="button" 
+                                onClick={cancelForm}
+                                className="text-sm font-bold text-stone-500 hover:text-stone-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <PrimaryButton disabled={processing}>
+                                {editingAddressId ? 'Update Address' : 'Add Address'}
+                            </PrimaryButton>
+                        </div>
+                    </form>
+                </div>
             )}
 
             <ConfirmationModal
                 isOpen={!!deleteAddressTarget}
                 onClose={closeDeleteAddressModal}
                 onConfirm={deleteAddress}
-                title="Delete address?"
-                message={deleteAddressTarget
-                    ? `Remove ${deleteAddressTarget.label} from your address book?`
-                    : 'Are you sure you want to delete this address?'}
-                icon={AlertTriangle}
-                iconBg="bg-red-50 text-red-600"
+                title="Delete Address"
+                message={`Are you sure you want to delete this address? This action cannot be undone.`}
                 confirmText="Delete"
                 confirmColor="bg-red-600 hover:bg-red-700"
             />

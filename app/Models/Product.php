@@ -45,18 +45,18 @@ class Product extends Model
 
     public function getRatingAttribute()
     {
-        if ($this->relationLoaded('reviews')) {
-            return $this->reviews->avg('rating') ? round($this->reviews->avg('rating'), 1) : 0;
+        if ($this->relationLoaded('publicReviews')) {
+            return $this->publicReviews->avg('rating') ? round($this->publicReviews->avg('rating'), 1) : 0;
         }
-        return round($this->reviews()->avg('rating'), 1) ?? 0;
+        return round($this->publicReviews()->avg('rating'), 1) ?? 0;
     }
 
     public function getReviewsCountAttribute()
     {
-        if ($this->relationLoaded('reviews')) {
-            return $this->reviews->count();
+        if ($this->relationLoaded('publicReviews')) {
+            return $this->publicReviews->count();
         }
-        return $this->reviews()->count();
+        return $this->publicReviews()->count();
     }
 
     public function user()
@@ -67,6 +67,11 @@ class Product extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class)->latest();
+    }
+
+    public function publicReviews()
+    {
+        return $this->hasMany(Review::class)->visibleToMarketplace()->latest();
     }
 
     public function supply()

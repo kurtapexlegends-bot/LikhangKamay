@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Menu, User, Shield, MapPin, AlertTriangle } from 'lucide-react';
+import { Menu, User, Shield, MapPin, AlertTriangle, LogOut } from 'lucide-react';
 import DeleteUserForm from '@/Pages/Profile/Partials/DeleteUserForm';
 import UpdatePasswordForm from '@/Pages/Profile/Partials/UpdatePasswordForm';
 import UpdateAddressForm from '@/Pages/Profile/Partials/UpdateAddressForm';
@@ -23,77 +23,71 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
     useFlashToast(flash, addToast);
 
     const profileContent = (
-        <>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-clay-50 text-clay-600 rounded-lg">
-                        <User size={20} />
-                    </div>
-                    <div>
-                        <h3 className="text-base font-bold text-gray-900">Personal Information</h3>
-                        <p className="text-xs text-gray-500">
-                            {isPersonalOnly ? 'Update your personal account details and profile photo.' : 'Update your account details and shop info.'}
-                        </p>
+        <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/20">
+                    <div className="flex items-center gap-2.5">
+                        <User size={18} className="text-stone-400" />
+                        <h3 className="text-base font-bold text-stone-900">
+                            {isPersonalOnly ? 'Personal Information' : 'Shop Information'}
+                        </h3>
                     </div>
                 </div>
-                {isPersonalOnly ? (
-                    <UpdateProfileInformationForm
-                        mustVerifyEmail={mustVerifyEmail}
-                        status={status}
-                        className="max-w-xl"
-                    />
-                ) : (
-                    <SellerUpdateProfileInformationForm
-                        mustVerifyEmail={mustVerifyEmail}
-                        status={status}
-                        className="max-w-xl"
-                    />
-                )}
+                <div className="p-6">
+                    {isPersonalOnly ? (
+                        <UpdateProfileInformationForm
+                            mustVerifyEmail={mustVerifyEmail}
+                            status={status}
+                            className="max-w-2xl"
+                        />
+                    ) : (
+                        <SellerUpdateProfileInformationForm
+                            mustVerifyEmail={mustVerifyEmail}
+                            status={status}
+                            className="max-w-2xl"
+                        />
+                    )}
+                </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                        <Shield size={20} />
-                    </div>
-                    <div>
-                        <h3 className="text-base font-bold text-gray-900">Security</h3>
-                        <p className="text-xs text-gray-500">Ensure your account is secure with a strong password.</p>
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/20">
+                    <div className="flex items-center gap-2.5">
+                        <Shield size={18} className="text-stone-400" />
+                        <h3 className="text-base font-bold text-stone-900">Security</h3>
                     </div>
                 </div>
-                <UpdatePasswordForm className="max-w-xl" />
+                <div className="p-6">
+                    <UpdatePasswordForm className="max-w-2xl" />
+                </div>
             </div>
 
             {!isPersonalOnly && (
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                                <MapPin size={20} />
-                            </div>
-                            <div>
-                                <h3 className="text-base font-bold text-gray-900">Address Book & Additional Contacts</h3>
-                                <p className="text-xs text-gray-500">Manage additional store locations or contact numbers.</p>
-                            </div>
+                <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/20">
+                        <div className="flex items-center gap-2.5">
+                            <MapPin size={18} className="text-stone-400" />
+                            <h3 className="text-base font-bold text-stone-900">Addresses</h3>
                         </div>
                     </div>
-                    <UpdateAddressForm addresses={addresses} />
+                    <div className="p-6">
+                        <UpdateAddressForm addresses={addresses} />
+                    </div>
                 </div>
             )}
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-red-50 text-red-600 rounded-lg">
-                        <AlertTriangle size={20} />
-                    </div>
-                    <div>
-                        <h3 className="text-base font-bold text-red-600">Danger Zone</h3>
-                        <p className="text-xs text-gray-500">Permanently delete your account and data.</p>
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-red-50 bg-red-50/10">
+                    <div className="flex items-center gap-2.5">
+                        <AlertTriangle size={18} className="text-red-500" />
+                        <h3 className="text-base font-bold text-red-600">Delete Account</h3>
                     </div>
                 </div>
-                <DeleteUserForm className="max-w-xl" />
+                <div className="p-6">
+                    <DeleteUserForm className="max-w-2xl" />
+                </div>
             </div>
-        </>
+        </div>
     );
 
     if (isAdminShell) {
@@ -101,7 +95,7 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
             <>
                 <Head title="Profile Settings" />
                 <AdminLayout title="Profile Settings">
-                    <div className="max-w-4xl space-y-6">
+                    <div className="max-w-4xl px-4 sm:px-0">
                         {profileContent}
                     </div>
                 </AdminLayout>
@@ -110,37 +104,45 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
     }
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
-            <Head title="Seller Profile" />
+        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-stone-800">
+            <Head title="My Profile" />
             <SellerSidebar active="" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                <header className="bg-white border-b border-stone-100 flex items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-4">
+                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-stone-500 hover:text-clay-600 transition-colors">
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
-                            <h1 className="text-xl font-bold text-gray-900">My Profile</h1>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage your account settings</p>
+                            <h1 className="text-lg font-bold text-stone-900">Profile Settings</h1>
+                            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider hidden sm:block">Update your account configuration</p>
                         </div>
                     </div>
                     
                     <Dropdown>
                         <Dropdown.Trigger>
-                            <button className="flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-clay-600 transition">
+                            <button className="flex items-center gap-2 text-sm font-bold text-stone-700 hover:text-clay-700 transition">
                                 <span className="hidden md:inline">{auth.user.shop_name || auth.user.name}</span>
-                                <UserAvatar user={auth.user} className="w-8 h-8" />
+                                <UserAvatar user={auth.user} className="w-8 h-8 rounded-lg" />
                             </button>
                         </Dropdown.Trigger>
-                        <Dropdown.Content>
-                            <WorkspaceLogoutLink className="text-red-600">Log Out</WorkspaceLogoutLink>
+                        <Dropdown.Content align="right" width="48">
+                            <div className="px-4 py-3 border-b border-stone-50">
+                                <p className="text-xs font-bold text-stone-900 truncate">{auth.user.name}</p>
+                                <p className="text-[10px] text-stone-500 truncate">{auth.user.email}</p>
+                            </div>
+                            <WorkspaceLogoutLink className="w-full text-left px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 flex items-center gap-2">
+                                <LogOut size={14} /> Sign Out
+                            </WorkspaceLogoutLink>
                         </Dropdown.Content>
                     </Dropdown>
                 </header>
 
-                <main className="p-4 sm:p-6 space-y-6 max-w-4xl">
-                    {profileContent}
+                <main className="flex-1 overflow-y-auto">
+                    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+                        {profileContent}
+                    </div>
                 </main>
             </div>
         </div>

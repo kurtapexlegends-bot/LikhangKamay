@@ -76,6 +76,33 @@ const STANDARD_PRODUCT_CATEGORIES = [
 const modalFieldClass = 'w-full mt-1 rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500';
 const modalTextareaClass = `${modalFieldClass} min-h-[110px]`;
 const modalCloseButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-gray-300 hover:text-gray-700';
+const PRODUCT_MANAGER_VIEW_KEY = 'seller-product-manager-view';
+
+const readStoredProductManagerView = () => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(window.localStorage.getItem(PRODUCT_MANAGER_VIEW_KEY) || 'null');
+
+        if (!parsed || typeof parsed !== 'object') {
+            return null;
+        }
+
+        return {
+            activeTab: typeof parsed.activeTab === 'string' ? parsed.activeTab : 'All',
+            searchQuery: typeof parsed.searchQuery === 'string' ? parsed.searchQuery : '',
+            quickFilter: typeof parsed.quickFilter === 'string' ? parsed.quickFilter : 'all',
+            sortConfig: {
+                key: typeof parsed?.sortConfig?.key === 'string' ? parsed.sortConfig.key : 'name',
+                direction: parsed?.sortConfig?.direction === 'desc' ? 'desc' : 'asc',
+            },
+        };
+    } catch {
+        return null;
+    }
+};
 
 export default function ProductManager({ auth, products: dbProducts = [], categories: serverCategories = [], subscription }) {
     const { openSidebar } = useSellerWorkspaceShell();
@@ -83,6 +110,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     const [products, setProducts] = useState(dbProducts);
     useEffect(() => { setProducts(dbProducts); }, [dbProducts]);
     const [selectedProductIds, setSelectedProductIds] = useState([]);
+    const storedView = readStoredProductManagerView();
 
     const categories = useMemo(() => (
         Array.isArray(serverCategories) && serverCategories.length > 0
@@ -91,10 +119,10 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     ), [serverCategories]);
     const defaultCategory = categories[0] || STANDARD_PRODUCT_CATEGORIES[0];
 
-    const [activeTab, setActiveTab] = useState('All');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [quickFilter, setQuickFilter] = useState('all');
-    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+    const [activeTab, setActiveTab] = useState(storedView?.activeTab || 'All');
+    const [searchQuery, setSearchQuery] = useState(storedView?.searchQuery || '');
+    const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || 'all');
+    const [sortConfig, setSortConfig] = useState(storedView?.sortConfig || { key: 'name', direction: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
 
     const { addToast } = useToast();
@@ -290,6 +318,19 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     useEffect(() => {
         setCurrentPage(1);
+    }, [activeTab, searchQuery, quickFilter, sortConfig]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        window.localStorage.setItem(PRODUCT_MANAGER_VIEW_KEY, JSON.stringify({
+            activeTab,
+            searchQuery,
+            quickFilter,
+            sortConfig,
+        }));
     }, [activeTab, searchQuery, quickFilter, sortConfig]);
 
     useEffect(() => {
@@ -579,6 +620,14 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         setCurrentPage(1);
     };
 
+    const resetSavedView = () => {
+        setActiveTab('All');
+        setSearchQuery('');
+        setQuickFilter('all');
+        setSortConfig({ key: 'name', direction: 'asc' });
+        setCurrentPage(1);
+    };
+
     const selectVisibleProducts = () => {
         if (!visibleProductIds.length) {
             return;
@@ -723,6 +772,14 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                 <input type="text" placeholder="Search product, category, or SKU" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-lg border-none bg-gray-50 py-2 pl-9 pr-6 text-xs focus:ring-2 focus:ring-clay-500/20" />
                                 {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-2.5 rounded text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"><X size={12} /></button>}
                             </div>
+                            <button
+                                type="button"
+                                onClick={resetSavedView}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50 sm:w-auto"
+                            >
+                                <RefreshCw size={13} />
+                                Reset saved view
+                            </button>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3">
                             <button
@@ -766,7 +823,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     onClick={selectVisibleProducts}
                                     className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-500 transition-colors hover:bg-stone-50"
                                 >
-                                    Select page
+                                    Select all
                                 </button>
                             )}
                         </div>

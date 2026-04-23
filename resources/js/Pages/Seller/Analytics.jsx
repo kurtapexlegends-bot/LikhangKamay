@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -6,6 +6,7 @@ import SellerHeader from '@/Components/SellerHeader';
 import {
     Package,
     ShoppingBag,
+    Activity,
     BarChart3,
     DollarSign,
     CreditCard,
@@ -14,6 +15,7 @@ import {
     TrendingUp,
     TrendingDown,
     Download,
+    Users,
 } from 'lucide-react';
 import {
     AreaChart,
@@ -67,6 +69,8 @@ const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 export default function Analytics({
     auth,
     metrics,
+    insights,
+    dataContext,
     chartData,
     categoryData,
     topProducts,
@@ -81,6 +85,8 @@ export default function Analytics({
     const [chartFilter, setChartFilter] = useState('Monthly');
     const [sponsorshipFilter, setSponsorshipFilter] = useState('Daily');
     const [catFilter, setCatFilter] = useState(filters.category);
+    const [lowStockSort, setLowStockSort] = useState('stock_low');
+    const [repeatBuyerSort, setRepeatBuyerSort] = useState('orders');
 
     const currentChartData = chartData[chartFilter.toLowerCase()] || [];
     const currentSponsorshipChartData = sponsorshipChartData?.[sponsorshipFilter.toLowerCase()] || [];
@@ -89,6 +95,73 @@ export default function Analytics({
     const sponsorshipIsAvailable = !!sponsorshipAnalyticsAvailability?.is_available;
     const sponsorshipHasActivity = !!sponsorshipAnalyticsAvailability?.has_activity;
     const sponsorshipMessage = sponsorshipAnalyticsAvailability?.message || 'No sponsorship activity yet.';
+    const lowStockProducts = insights?.low_stock_products || [];
+    const repeatBuyers = insights?.repeat_buyers || [];
+    const stalledOrders = Number(insights?.stalled_orders || metrics?.stalled_orders || 0);
+    const pendingOrders = Number(metrics?.pending_orders || 0);
+    const analyticsGeneratedAt = dataContext?.generated_at;
+    const completedOrdersCount = Number(dataContext?.completed_orders_count || 0);
+    const selectedCategoryLabel = dataContext?.category_filter || 'All Categories';
+
+    const generatedRelativeLabel = useMemo(() => {
+        if (!analyticsGeneratedAt) {
+            return 'freshly generated';
+        }
+
+        const now = Date.now();
+        const target = new Date(analyticsGeneratedAt).getTime();
+
+        if (Number.isNaN(target)) {
+            return 'freshly generated';
+        }
+
+        const diffMinutes = Math.round((target - now) / 60000);
+        const formatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+        if (Math.abs(diffMinutes) < 60) {
+            return formatter.format(diffMinutes, 'minute');
+        }
+
+        const diffHours = Math.round(diffMinutes / 60);
+        if (Math.abs(diffHours) < 24) {
+            return formatter.format(diffHours, 'hour');
+        }
+
+        const diffDays = Math.round(diffHours / 24);
+        return formatter.format(diffDays, 'day');
+    }, [analyticsGeneratedAt]);
+
+    const sortedLowStockProducts = useMemo(() => {
+        const nextProducts = [...lowStockProducts];
+
+        return nextProducts.sort((left, right) => {
+            if (lowStockSort === 'sold_high') {
+                return Number(right.sold || 0) - Number(left.sold || 0);
+            }
+
+            if (lowStockSort === 'name') {
+                return String(left.name || '').localeCompare(String(right.name || ''));
+            }
+
+            return Number(left.stock || 0) - Number(right.stock || 0);
+        });
+    }, [lowStockProducts, lowStockSort]);
+
+    const sortedRepeatBuyers = useMemo(() => {
+        const nextBuyers = [...repeatBuyers];
+
+        return nextBuyers.sort((left, right) => {
+            if (repeatBuyerSort === 'spend') {
+                return Number(right.total_spend || 0) - Number(left.total_spend || 0);
+            }
+
+            if (repeatBuyerSort === 'name') {
+                return String(left.name || '').localeCompare(String(right.name || ''));
+            }
+
+            return Number(right.orders_count || 0) - Number(left.orders_count || 0);
+        });
+    }, [repeatBuyers, repeatBuyerSort]);
 
     const updateCategoryFilter = (newCat) => {
         setCatFilter(newCat);
@@ -122,12 +195,166 @@ export default function Analytics({
             />
 
                 <main className="mx-auto flex-1 w-full max-w-[1400px] p-4 sm:p-6 overflow-y-auto space-y-6">
+                    <div className="flex flex-col gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-600">
+                                <Activity size={16} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-stone-900">Analytics uses live shop data</p>
+                                <p className="text-xs text-stone-500">
+                                    Updated {generatedRelativeLabel}. Based on {completedOrdersCount.toLocaleString()} completed orders, active product records, and review activity.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="inline-flex w-fit rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-stone-600">
+                            {selectedCategoryLabel === 'All Categories' ? 'All categories' : selectedCategoryLabel}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                         <MetricCard title="Total Revenue" value={formatPeso(metrics.total_revenue)} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-blue-100" text="text-blue-600" />
                         <MetricCard title="Gross Profit" value={formatPeso(metrics.gross_profit)} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-green-100" text="text-green-600" />
                         <MetricCard title="Total Orders" value={Number(metrics.total_orders).toLocaleString()} growth={metrics.growth.orders} icon={ShoppingBag} bg="bg-purple-100" text="text-purple-600" />
                         <MetricCard title="Average Order" value={formatPeso(metrics.avg_order_value)} growth={metrics.growth.avg} icon={CreditCard} bg="bg-amber-100" text="text-amber-600" />
                         <MetricCard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-yellow-100" text="text-yellow-500" />
+                    </div>
+
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 flex flex-col min-h-[250px]">
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-base font-bold text-gray-900">Low Stock Watch</h3>
+                                    <p className="text-xs text-gray-500">Products that need attention soon</p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                    <select
+                                        value={lowStockSort}
+                                        onChange={(event) => setLowStockSort(event.target.value)}
+                                        className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-stone-600 outline-none"
+                                    >
+                                        <option value="stock_low">Least stock</option>
+                                        <option value="sold_high">Most sold</option>
+                                        <option value="name">Name</option>
+                                    </select>
+                                    <div className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                        {sortedLowStockProducts.length} flagged
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex-1">
+                                {sortedLowStockProducts.length > 0 ? (
+                                    <div className="space-y-2.5">
+                                        {sortedLowStockProducts.map((product) => (
+                                            <Link
+                                                key={product.id}
+                                                href={route('products.index')}
+                                                className="flex items-center justify-between gap-3 rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3 transition hover:bg-stone-100"
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-bold text-gray-900">{product.name}</p>
+                                                    <p className="mt-0.5 text-xs text-gray-500">{product.stock} left in stock</p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-lg font-black text-clay-700">{product.stock}</p>
+                                                    <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{product.sold} sold</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="h-full rounded-2xl border border-stone-100 bg-stone-50">
+                                        <WorkspaceEmptyState
+                                            compact
+                                            icon={Package}
+                                            title="No low-stock products"
+                                            description="Your active listings still have healthy stock levels."
+                                            actionLabel="Manage Products"
+                                            actionHref={route('products.index')}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 flex flex-col min-h-[250px]">
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-base font-bold text-gray-900">Repeat Buyers</h3>
+                                    <p className="text-xs text-gray-500">Customers who already came back</p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                    <select
+                                        value={repeatBuyerSort}
+                                        onChange={(event) => setRepeatBuyerSort(event.target.value)}
+                                        className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-stone-600 outline-none"
+                                    >
+                                        <option value="orders">Most orders</option>
+                                        <option value="spend">Highest spend</option>
+                                        <option value="name">Name</option>
+                                    </select>
+                                    <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                                        {sortedRepeatBuyers.length} buyers
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex-1">
+                                {sortedRepeatBuyers.length > 0 ? (
+                                    <div className="space-y-2.5">
+                                        {sortedRepeatBuyers.map((buyer) => (
+                                            <div key={buyer.id} className="rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-bold text-gray-900">{buyer.name}</p>
+                                                        <p className="mt-0.5 text-xs text-gray-500">{buyer.orders_count} completed orders</p>
+                                                    </div>
+                                                    <p className="shrink-0 text-lg font-black text-clay-700">{formatPeso(buyer.total_spend)}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="h-full rounded-2xl border border-stone-100 bg-stone-50">
+                                        <WorkspaceEmptyState
+                                            compact
+                                            icon={Users}
+                                            title="No repeat buyers yet"
+                                            description="Returning customers will show up here once your shop starts retaining buyers."
+                                            actionLabel="View Orders"
+                                            actionHref={route('orders.index')}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 flex flex-col min-h-[250px]">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-base font-bold text-gray-900">Order Attention</h3>
+                                    <p className="text-xs text-gray-500">Queues that may need follow-up</p>
+                                </div>
+                                <div className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-stone-600">
+                                    {pendingOrders} pending
+                                </div>
+                            </div>
+
+                            <div className="mt-4 space-y-3">
+                                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">Pending Orders</p>
+                                    <p className="mt-2 text-3xl font-black tracking-tight text-amber-800">{pendingOrders}</p>
+                                </div>
+                                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-700">Stalled Open Orders</p>
+                                    <p className="mt-2 text-3xl font-black tracking-tight text-rose-700">{stalledOrders}</p>
+                                    <p className="mt-2 text-xs leading-6 text-rose-500">
+                                        Open orders older than 3 days without completion or cancellation.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">

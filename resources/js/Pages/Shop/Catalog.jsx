@@ -7,6 +7,7 @@ import {
     Sparkles, ArrowUpDown, Filter, Award
 } from 'lucide-react';
 import Modal from '@/Components/Modal';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent, useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import FilterSidebar from './Partials/FilterSidebar';
@@ -182,6 +183,7 @@ export default function Catalog(props) {
     const formatPrice = (price) => {
         return Number(price).toLocaleString('en-PH');
     };
+    const quickRecoverySearches = ['Planter', 'Mug', 'Tableware'];
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
@@ -413,22 +415,33 @@ export default function Catalog(props) {
                             </div>
                         ) : (
                             /* Empty State */
-                            <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-gray-100">
-                                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-3 text-gray-300">
-                                    <Search size={24} />
-                                </div>
-                                <h3 className="font-semibold text-gray-900 text-base">No products found</h3>
-                                <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">
-                                    {safeFilters.search 
-                                        ? `No matches for "${safeFilters.search}". Try different keywords.`
-                                        : 'No products match your filters. Try adjusting your criteria.'}
-                                </p>
-                                <button 
-                                    onClick={clearAllFilters} 
-                                    className="mt-4 text-clay-600 font-medium text-sm hover:underline transition"
-                                >
-                                    Clear all filters
-                                </button>
+                            <div className="space-y-4 rounded-xl border border-gray-100 bg-white py-10">
+                                <WorkspaceEmptyState
+                                    icon={Search}
+                                    title="No products found"
+                                    description={safeFilters.search
+                                        ? `No matches for "${safeFilters.search}". Try a simpler keyword or reset your filters.`
+                                        : 'No products match your current filters. Try widening your search.'}
+                                    actionLabel="Clear all filters"
+                                    onAction={clearAllFilters}
+                                />
+                                {safeFilters.search && (
+                                    <div className="flex flex-wrap items-center justify-center gap-2 px-4">
+                                        {quickRecoverySearches.map((term) => (
+                                            <button
+                                                key={term}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSearchTerm(term);
+                                                    applyFilters({ search: term });
+                                                }}
+                                                className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition hover:border-clay-300 hover:text-clay-700"
+                                            >
+                                                Try “{term}”
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

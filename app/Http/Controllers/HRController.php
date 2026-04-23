@@ -331,16 +331,16 @@ class HRController extends Controller
             try {
                 $staffAccount->sendEmailVerificationNotification();
             } catch (Throwable $exception) {
-                Log::error('Staff verification email failed to send.', [
+                Log::error('Staff verification code email failed to send.', [
                     'staff_user_id' => $staffAccount->id,
                     'email' => $staffAccount->email,
                     'message' => $exception->getMessage(),
                 ]);
 
-                return redirect()->back()->with('error', 'Employee and staff login were created, but the verification email could not be sent right now.');
+                return redirect()->back()->with('error', 'Employee and staff login were created, but the verification code could not be sent right now.');
             }
 
-            return redirect()->back()->with('success', 'Employee and staff login created. A verification email was sent.');
+            return redirect()->back()->with('success', 'Employee and staff login created. A verification code was sent.');
         }
 
         return redirect()->back()->with('success', 'Employee added successfully.');
@@ -627,13 +627,13 @@ class HRController extends Controller
             try {
                 $linkedLogin->sendEmailVerificationNotification();
             } catch (Throwable $exception) {
-                Log::error('Updated staff verification email failed to send.', [
+                Log::error('Updated staff verification code email failed to send.', [
                     'staff_user_id' => $linkedLogin->id,
                     'email' => $linkedLogin->email,
                     'message' => $exception->getMessage(),
                 ]);
 
-                return redirect()->back()->with('error', 'Employee details were updated, but the verification email could not be sent right now.');
+                return redirect()->back()->with('error', 'Employee details were updated, but the verification code could not be sent right now.');
             }
         }
 
@@ -937,7 +937,7 @@ class HRController extends Controller
         bool $passwordReset
     ): string {
         if ($createdLogin) {
-            return 'Employee updated and seller login created. A verification email was sent.';
+            return 'Employee updated and seller login created. A verification code was sent.';
         }
 
         if ($workspaceSuspended) {
@@ -968,7 +968,7 @@ class HRController extends Controller
         $followUps = [];
 
         if ($emailChanged) {
-            $followUps[] = 'A verification email was sent to the updated address.';
+            $followUps[] = 'A verification code was sent to the updated address.';
         }
 
         if ($passwordReset) {

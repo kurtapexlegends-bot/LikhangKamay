@@ -8,11 +8,7 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import SellerHeader from '@/Components/SellerHeader';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { 
-    Package, ShoppingBag, Search, Filter, Truck, CheckCircle2, 
-    Clock, XCircle, Printer, AlertCircle, MessageCircle, X, 
-    ChevronDown, AlertTriangle, Hash, MapPin, 
-    PackageCheck, RotateCcw, Box, Eye, CreditCard, DollarSign, Camera as CameraIcon,
-    CheckCircle, Calendar, ChevronLeft, ChevronRight, ExternalLink, LoaderCircle, User
+    Download, ChevronRight, Hash, XCircle, Printer, Store, DollarSign, PenSquare, Edit, Edit3, X, Eye, EyeOff, LoaderCircle, MapPin, Search, Plus, Filter, FileText, DownloadCloud, AlertTriangle, MessageCircle, MoreVertical, Bell, Upload, ExternalLink, RefreshCw, Tag, Play, StopCircle, Building2, User, Camera as CameraIcon, Mail, Phone, Calendar, Star, Clock, Heart, PackageCheck, PackageOpen, RotateCcw, Truck, CheckCircle2, Package, CheckCircle, Save, Trash2, ArrowRight, Activity, CreditCard, ChevronLeft, AlertCircle, Box, ShoppingBag, ChevronDown
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -357,14 +353,43 @@ const sellerIssueSummary = (order) => {
     return null;
 };
 
+const ORDER_MANAGER_VIEW_KEY = 'seller-order-manager-view';
+
+const readStoredOrderManagerView = () => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(window.localStorage.getItem(ORDER_MANAGER_VIEW_KEY) || 'null');
+
+        if (!parsed || typeof parsed !== 'object') {
+            return null;
+        }
+
+        return {
+            activeTab: typeof parsed.activeTab === 'string' ? parsed.activeTab : 'All',
+            searchQuery: typeof parsed.searchQuery === 'string' ? parsed.searchQuery : '',
+            quickFilter: typeof parsed.quickFilter === 'string' ? parsed.quickFilter : 'all',
+            dateRange: {
+                start: typeof parsed?.dateRange?.start === 'string' ? parsed.dateRange.start : '',
+                end: typeof parsed?.dateRange?.end === 'string' ? parsed.dateRange.end : '',
+            },
+        };
+    } catch {
+        return null;
+    }
+};
+
 // --- MAIN COMPONENT ---
 export default function OrderManager({ auth, orders = [] }) {
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
-    const [activeTab, setActiveTab] = useState('All');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [quickFilter, setQuickFilter] = useState('all');
-    const [dateRange, setDateRange] = useState({ start: '', end: '' });
+    const storedView = readStoredOrderManagerView();
+    const [activeTab, setActiveTab] = useState(storedView?.activeTab || 'All');
+    const [searchQuery, setSearchQuery] = useState(storedView?.searchQuery || '');
+    const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || 'all');
+    const [dateRange, setDateRange] = useState(storedView?.dateRange || { start: '', end: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const [bookingOrderId, setBookingOrderId] = useState(null);
     const itemsPerPage = 10;
@@ -548,10 +573,31 @@ export default function OrderManager({ auth, orders = [] }) {
         setCurrentPage(1);
     }, [searchQuery, activeTab, quickFilter, dateRange]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        window.localStorage.setItem(ORDER_MANAGER_VIEW_KEY, JSON.stringify({
+            activeTab,
+            searchQuery,
+            quickFilter,
+            dateRange,
+        }));
+    }, [activeTab, searchQuery, quickFilter, dateRange]);
+
     const applyQuickFilter = (filterKey, nextTab = activeTab) => {
         setQuickFilter(filterKey);
         setActiveTab(nextTab);
         setSearchQuery('');
+        setCurrentPage(1);
+    };
+
+    const resetSavedView = () => {
+        setActiveTab('All');
+        setSearchQuery('');
+        setQuickFilter('all');
+        setDateRange({ start: '', end: '' });
         setCurrentPage(1);
     };
 
@@ -980,6 +1026,14 @@ export default function OrderManager({ auth, orders = [] }) {
                                     </button>
                                 )}
                             </div>
+                            <button
+                                type="button"
+                                onClick={resetSavedView}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50 md:ml-auto"
+                            >
+                                <RefreshCw size={13} />
+                                Reset saved view
+                            </button>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 border-b border-gray-50 px-3 py-3 sm:px-4">
                             <button
@@ -1156,95 +1210,109 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     )}
 
                                                     {order.delivery && (
-                                                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-left">
-                                                            {/* Header row: label + track link */}
-                                                            <div className="flex items-center justify-between gap-2 mb-1.5">
-                                                                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-400">Courier</p>
+                                                        <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2] p-3 shadow-sm transition-colors hover:border-clay-300">
+                                                            <div className="mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Truck size={12} className="text-clay-600" />
+                                                                    <p className="text-[10px] font-extrabold uppercase tracking-wide text-clay-700">Courier Tracking</p>
+                                                                </div>
                                                                 {order.delivery.share_link && (
                                                                     <a
                                                                         href={order.delivery.share_link}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
-                                                                        className="inline-flex items-center gap-0.5 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] font-bold text-gray-600 hover:bg-gray-100 shadow-sm"
+                                                                        className="inline-flex items-center gap-1 rounded-md border border-clay-200 bg-white px-2 py-1 text-[10px] font-bold text-clay-700 hover:bg-clay-50 hover:text-clay-800 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all"
                                                                     >
-                                                                        Track <ExternalLink size={9} />
+                                                                        Live Track <ExternalLink size={10} />
                                                                     </a>
                                                                 )}
                                                             </div>
 
-                                                            {/* Status badges row */}
-                                                            <div className="flex flex-wrap items-center gap-1 mb-1.5">
+                                                            <div className="flex flex-wrap items-center gap-1.5 mb-2">
                                                                 {order.delivery.flow_type === 'replacement_exchange' && (
-                                                                    <span className="inline-flex rounded border border-teal-200 bg-teal-50 px-1.5 py-0 text-[9px] font-bold text-teal-700">
+                                                                    <span className="inline-flex rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[10px] font-bold tracking-tight text-teal-700 shadow-sm">
                                                                         {order.delivery.flow_label}
                                                                     </span>
                                                                 )}
-                                                                <div className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-bold ${sellerCourierTrackingState(order).tone}`}>
-                                                                    <Truck size={10} />
+                                                                <div className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold shadow-sm ${sellerCourierTrackingState(order).tone}`}>
                                                                     {sellerCourierTrackingState(order).label}
                                                                 </div>
                                                             </div>
 
-                                                            {/* Detail text */}
-                                                            <p className="text-[10px] leading-snug text-gray-500 mb-1.5">{sellerCourierTrackingState(order).detail}</p>
+                                                            <p className="text-[11px] leading-relaxed text-stone-600 mb-2.5 font-medium">{sellerCourierTrackingState(order).detail}</p>
 
-                                                            {/* Route legs (compact inline) */}
                                                             {order.delivery.flow_type === 'replacement_exchange' && order.delivery.route_legs?.length > 0 && (
-                                                                <div className="mb-1.5 flex flex-col gap-0.5">
+                                                                <div className="mb-2.5 flex flex-col gap-1 rounded-lg bg-white/60 p-2 border border-stone-100/50">
                                                                     {order.delivery.route_legs.map((leg) => (
-                                                                        <p key={`${leg.label}-${leg.from}-${leg.to}`} className="text-[9px] text-teal-700 font-medium">
-                                                                            <span className="font-bold">{leg.label}:</span> {leg.from} → {leg.to}
-                                                                        </p>
+                                                                        <div key={`${leg.label}-${leg.from}-${leg.to}`} className="flex items-start gap-2">
+                                                                            <div className="mt-1 h-1 w-1 shrink-0 rounded-full bg-teal-400" />
+                                                                            <p className="text-[10px] text-stone-700 font-medium">
+                                                                                <span className="font-bold text-teal-800">{leg.label}:</span> {leg.from} <span className="mx-0.5 text-stone-400">→</span> {leg.to}
+                                                                            </p>
+                                                                        </div>
                                                                     ))}
                                                                 </div>
                                                             )}
 
-                                                            {/* Meta IDs row */}
                                                             {(order.delivery.external_order_id || order.delivery.last_updated_at) && (
-                                                                <div className="flex flex-wrap gap-1 text-[9px]">
+                                                                <div className="flex flex-wrap gap-1.5 mt-2 pt-2.5 border-t border-stone-200/50">
                                                                     {order.delivery.external_order_id && (
-                                                                        <span className="rounded border border-gray-200 bg-white px-1.5 py-0 font-bold text-gray-600">
-                                                                            ID: {order.delivery.external_order_id}
-                                                                        </span>
+                                                                        <div className="flex items-center gap-1 px-1.5 text-[9px]">
+                                                                            <Hash size={10} className="text-stone-400" />
+                                                                            <span className="font-bold text-stone-600">ID: {order.delivery.external_order_id}</span>
+                                                                        </div>
                                                                     )}
                                                                     {order.delivery.last_updated_at && (
-                                                                        <span className="rounded border border-gray-200 bg-white px-1.5 py-0 text-gray-500">
-                                                                            {order.delivery.last_updated_at}
-                                                                        </span>
+                                                                        <div className="flex items-center gap-1 px-1.5 text-[9px] text-stone-500 border-l border-stone-300/50">
+                                                                            <Clock size={10} className="text-stone-400" />
+                                                                            <span>{order.delivery.last_updated_at}</span>
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             )}
 
-                                                            {/* Return-to-sender hold */}
                                                             {order.delivery.pending_auto_cancel && (
-                                                                <div className="mt-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-[9px] text-red-700">
-                                                                    <span className="font-bold">Return-to-sender hold —</span> Auto-cancel after {order.delivery.cancel_hold_ends_at} if unresolved.
+                                                                <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2 text-red-700 shadow-sm">
+                                                                    <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+                                                                    <div className="text-[10px]">
+                                                                        <span className="font-bold">Return-to-sender Hold</span>
+                                                                        <p className="mt-0.5">Auto-cancel after {order.delivery.cancel_hold_ends_at} if unresolved.</p>
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>
                                                     )}
 
                                                     {order.timeline?.length > 0 && (
-                                                        <div className="rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-left">
-                                                            <div className="mb-2 flex items-center justify-between gap-2">
-                                                                <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-stone-400">Recent Activity</p>
-                                                                <span className="text-[9px] font-bold text-stone-400">{order.timeline.length} events</span>
+                                                        <div className="rounded-xl border border-stone-200/80 bg-white p-3 shadow-sm transition-colors hover:border-clay-200 flex flex-col">
+                                                            <div className="mb-3 flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Activity size={12} className="text-stone-400" />
+                                                                    <p className="text-[10px] font-extrabold uppercase tracking-wide text-stone-500">Recent Activity</p>
+                                                                </div>
+                                                                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9px] font-bold text-stone-500">{order.timeline.length} events</span>
                                                             </div>
-                                                            <div className="space-y-2">
-                                                                {order.timeline.slice(0, 4).map((entry) => (
-                                                                    <div key={entry.key} className="flex items-start gap-2">
-                                                                        <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-clay-500" />
-                                                                        <div className="min-w-0 flex-1">
-                                                                            <div className="flex flex-wrap items-center gap-1.5">
-                                                                                <p className="text-[10px] font-bold text-stone-800">{entry.label}</p>
-                                                                                <span className={`rounded-full border px-1.5 py-0 text-[8px] font-bold uppercase tracking-wide ${timelineSourceTone(entry.source)}`}>
+                                                            <div className="space-y-3 pl-1">
+                                                                {order.timeline.slice(0, 4).map((entry, i) => (
+                                                                    <div key={entry.key} className="relative flex items-start gap-3">
+                                                                        {i !== order.timeline.slice(0, 4).length - 1 && (
+                                                                            <div className="absolute left-[3px] top-[14px] bottom-[-14px] w-[2px] bg-stone-100" />
+                                                                        )}
+                                                                        <div className="relative mt-1 h-2 w-2 shrink-0 rounded-full bg-clay-500 ring-4 ring-white shadow-sm" />
+                                                                        <div className="min-w-0 flex-1 bg-stone-50/50 rounded-lg p-2 border border-stone-100/50">
+                                                                            <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                                                                <p className="text-[11px] font-bold text-stone-800">{entry.label}</p>
+                                                                                <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider shadow-sm ${timelineSourceTone(entry.source)}`}>
                                                                                     {entry.source}
                                                                                 </span>
                                                                             </div>
                                                                             {entry.description && (
-                                                                                <p className="mt-0.5 text-[9px] leading-snug text-stone-500">{entry.description}</p>
+                                                                                <p className="mt-1 text-[10px] leading-relaxed text-stone-600">{entry.description}</p>
                                                                             )}
-                                                                            <p className="mt-0.5 text-[9px] font-medium text-stone-400">{formatTimelineStamp(entry.timestamp)}</p>
+                                                                            <div className="mt-1.5 flex items-center gap-1 text-[9px] font-medium text-stone-400">
+                                                                                <Clock size={10} />
+                                                                                <span>{formatTimelineStamp(entry.timestamp)}</span>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 ))}

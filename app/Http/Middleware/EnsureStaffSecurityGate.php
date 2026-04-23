@@ -15,7 +15,7 @@ class EnsureStaffSecurityGate
      */
     protected array $verificationRoutes = [
         'verification.notice',
-        'verification.verify',
+        'verification.code',
         'verification.send',
         'staff.attendance.resume-prompt',
         'staff.attendance.resume',

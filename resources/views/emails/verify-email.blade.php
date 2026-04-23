@@ -35,16 +35,17 @@
             font-weight: bold;
             color: #b45309;
         }
-        .button {
+        .code {
             display: inline-block;
-            background: #b45309;
-            color: white !important;
-            padding: 14px 32px;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
+            background: #f9fafb;
+            color: #111827;
+            padding: 16px 28px;
+            border-radius: 14px;
+            letter-spacing: 0.35em;
+            font-size: 28px;
+            font-weight: 700;
             margin: 24px 0;
+            border: 1px solid #e5e7eb;
         }
         .warning {
             background: #fef3c7;
@@ -71,18 +72,17 @@
         <h1 style="font-size: 24px; color: #1f2937; margin-top: 16px;">Verify Your Email</h1>
 
         <p style="color: #6b7280;">
-            Welcome to LikhangKamay. Please click the button below to verify your email address and activate your account.
+            Welcome to LikhangKamay. Enter the verification code below in the app to verify your email address and activate your account.
         </p>
 
-        <a href="{{ $url }}" class="button">Verify Email Address</a>
+        <div class="code">{{ $code }}</div>
 
         <div class="warning">
-            This verification link expires in <strong>60 minutes</strong>. If you did not create an account with LikhangKamay, you can safely ignore this email.
+            This verification code expires in <strong>{{ max(1, $expiresInMinutes) }} minutes</strong>. If you did not create an account with LikhangKamay, you can safely ignore this email.
         </div>
 
         <p style="font-size: 12px; color: #9ca3af;">
-            If the button does not work, copy and paste this secure verification link into your browser:<br>
-            <a href="{{ $url }}" style="color: #b45309; word-break: break-all;">{{ $url }}</a>
+            For security, enter the code directly on the LikhangKamay verification page while signed in to your account.
         </p>
 
         <div class="footer">

@@ -176,6 +176,7 @@ export default function AuditLog({ auth, auditLog }) {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedModule, setSelectedModule] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
+    const [selectedSeverity, setSelectedSeverity] = useState('all');
     const [selectedActor, setSelectedActor] = useState('all');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -204,6 +205,12 @@ export default function AuditLog({ auth, auditLog }) {
         return ['all', ...options];
     }, [entries]);
 
+    const severityOptions = useMemo(() => {
+        const options = Array.from(new Set(entries.map((entry) => entry.severity).filter(Boolean)));
+
+        return ['all', ...options];
+    }, [entries]);
+
     const filteredEntries = useMemo(() => {
         const normalizedSearch = deferredSearch.trim().toLowerCase();
         const startTimestamp = startDate ? new Date(`${startDate}T00:00:00`).getTime() : null;
@@ -219,6 +226,10 @@ export default function AuditLog({ auth, auditLog }) {
             }
 
             if (selectedStatus !== 'all' && entry.status !== selectedStatus) {
+                return false;
+            }
+
+            if (selectedSeverity !== 'all' && entry.severity !== selectedSeverity) {
                 return false;
             }
 
@@ -265,7 +276,7 @@ export default function AuditLog({ auth, auditLog }) {
 
             return searchHaystack.includes(normalizedSearch);
         });
-    }, [deferredSearch, endDate, entries, selectedActor, selectedCategory, selectedModule, selectedStatus, startDate]);
+    }, [deferredSearch, endDate, entries, selectedActor, selectedCategory, selectedModule, selectedSeverity, selectedStatus, startDate]);
 
     const groupedEntries = useMemo(() => {
         const groups = new Map();
@@ -343,6 +354,7 @@ export default function AuditLog({ auth, auditLog }) {
         setSelectedCategory('all');
         setSelectedModule('all');
         setSelectedStatus('all');
+        setSelectedSeverity('all');
         setSelectedActor('all');
         setStartDate('');
         setEndDate('');
@@ -430,6 +442,7 @@ export default function AuditLog({ auth, auditLog }) {
                                 <div className="flex-1 min-w-0"><FilterSelect value={selectedCategory} onChange={setSelectedCategory} options={categoryOptions.map((option) => [option.key, option.label])} /></div>
                                 <div className="flex-1 min-w-0"><FilterSelect value={selectedModule} onChange={setSelectedModule} options={moduleOptions.map((option) => [option, option === 'all' ? 'All modules' : (moduleLabel[option] || formatStatusLabel(option))])} /></div>
                                 <div className="flex-1 min-w-0"><FilterSelect value={selectedStatus} onChange={setSelectedStatus} options={statusOptions.map((option) => [option, option === 'all' ? 'All statuses' : formatStatusLabel(option)])} /></div>
+                                <div className="flex-1 min-w-0"><FilterSelect value={selectedSeverity} onChange={setSelectedSeverity} options={severityOptions.map((option) => [option, option === 'all' ? 'All severities' : formatStatusLabel(option)])} /></div>
                                 <div className="flex-1 min-w-0"><FilterSelect value={selectedActor} onChange={setSelectedActor} options={actorOptions.map((option) => [option, option === 'all' ? 'All actors' : (actorTypeLabel[option] || formatStatusLabel(option))])} /></div>
                             </div>
                         </div>
@@ -571,7 +584,9 @@ export default function AuditLog({ auth, auditLog }) {
                                             : 'border-amber-200 bg-amber-50 text-amber-700'
                                     }`}
                                 >
-                                    {source.label} · {source.count}
+                                    <span>{source.label}</span>
+                                    <span className="mx-1 h-1 w-1 rounded-full bg-current opacity-50" />
+                                    <span>{source.count}</span>
                                 </span>
                             ))}
                         </div>

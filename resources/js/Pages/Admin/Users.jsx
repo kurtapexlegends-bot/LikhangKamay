@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Users, Store, Search, Shield, Briefcase, ChevronDown } from 'lucide-react';
+import { Users, Store, Search, Shield, Briefcase, ChevronDown, X } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 
@@ -143,6 +143,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
     const [expandedRows, setExpandedRows] = useState(() => (
         filters.search ? getAutoExpandedRows(users.data || []) : {}
     ));
+    const deferredSearch = useDeferredValue(search);
 
     useEffect(() => {
         setSearch(filters.search || '');
@@ -170,7 +171,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
     const handleSearch = (event) => {
         event.preventDefault();
 
-        router.get(route('admin.users'), { search, role: filters.role }, {
+        router.get(route('admin.users'), { search: search.trim(), role: filters.role }, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -178,7 +179,16 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
     };
 
     const handleRoleFilter = (role) => {
-        router.get(route('admin.users'), { search, role }, {
+        router.get(route('admin.users'), { search: search.trim(), role }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
+    const clearSearch = () => {
+        setSearch('');
+        router.get(route('admin.users'), { search: '', role: filters.role }, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -267,8 +277,18 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                 value={search}
                                 onChange={(event) => setSearch(event.target.value)}
                                 placeholder="Search accounts or staff..."
-                                className="w-full rounded-full border border-stone-200 bg-stone-50 py-2.5 pl-10 pr-4 text-sm font-medium text-stone-900 placeholder-stone-400 transition-all focus:border-clay-300 focus:bg-white focus:ring-2 focus:ring-clay-500/20"
+                                className="w-full rounded-full border border-stone-200 bg-stone-50 py-2.5 pl-10 pr-10 text-sm font-medium text-stone-900 placeholder-stone-400 transition-all focus:border-clay-300 focus:bg-white focus:ring-2 focus:ring-clay-500/20"
                             />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={clearSearch}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-stone-400 transition-colors hover:text-stone-700"
+                                    aria-label="Clear account search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
                         </form>
                     </div>
                 </div>
@@ -337,6 +357,11 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                             <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-600">
                                 {users.total} total accounts
                             </span>
+                            {deferredSearch.trim() !== String(filters.search || '').trim() && (
+                                <span className="inline-flex items-center rounded-md bg-clay-50 border border-clay-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-clay-700">
+                                    Search pending submit
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

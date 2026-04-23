@@ -3,11 +3,11 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Services\EmailVerificationCodeService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -156,52 +156,37 @@ class StaffAccountSecurityTest extends TestCase
             ->create([
                 'must_change_password' => true,
             ]);
+        [$code] = app(EmailVerificationCodeService::class)->issue($staff);
 
         Event::fake();
 
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $staff->id, 'hash' => sha1($staff->email)]
-        );
-
-        $response = $this->actingAs($staff)->get($verificationUrl);
+        $response = $this->actingAs($staff)->post(route('verification.code'), [
+            'code' => $code,
+        ]);
 
         Event::assertDispatched(Verified::class);
         $this->assertTrue($staff->fresh()->hasVerifiedEmail());
         $response->assertRedirect(route('staff.password.edit', absolute: false).'?verified=1');
     }
 
-    public function test_staff_email_verification_link_can_be_completed_while_logged_out(): void
+    public function test_logged_out_guest_cannot_submit_staff_verification_code(): void
     {
         $staff = User::factory()->staff(User::factory()->artisanApproved()->create())
             ->unverified()
             ->create([
                 'must_change_password' => true,
             ]);
+        [$code] = app(EmailVerificationCodeService::class)->issue($staff);
 
-        Event::fake();
+        $response = $this->post(route('verification.code'), [
+            'code' => $code,
+        ]);
 
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $staff->id, 'hash' => sha1($staff->email)]
-        );
-
-        $response = $this->get($verificationUrl);
-
-        Event::assertDispatched(Verified::class);
-        $this->assertTrue($staff->fresh()->hasVerifiedEmail());
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Auth/VerificationResult')
-            ->where('status', 'Email verified successfully. Sign in with the staff account to continue.')
-            ->where('loginEmail', $staff->email)
-            ->where('signedInAsDifferentUser', false)
-        );
+        $response->assertRedirect(route('login', absolute: false));
+        $this->assertFalse($staff->fresh()->hasVerifiedEmail());
     }
 
-    public function test_staff_email_verification_link_keeps_a_different_authenticated_user_signed_in_instead_of_403ing(): void
+    public function test_staff_verification_code_only_applies_to_authenticated_account(): void
     {
         $owner = User::factory()->artisanApproved()->create();
         $staff = User::factory()->staff($owner)
@@ -209,27 +194,16 @@ class StaffAccountSecurityTest extends TestCase
             ->create([
                 'must_change_password' => true,
             ]);
+        [$code] = app(EmailVerificationCodeService::class)->issue($staff);
 
-        Event::fake();
+        $response = $this->actingAs($owner)
+            ->from(route('verification.notice'))
+            ->post(route('verification.code'), [
+                'code' => $code,
+            ]);
 
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $staff->id, 'hash' => sha1($staff->email)]
-        );
-
-        $response = $this->actingAs($owner)->get($verificationUrl);
-
-        Event::assertDispatched(Verified::class);
-        $this->assertTrue($staff->fresh()->hasVerifiedEmail());
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Auth/VerificationResult')
-            ->where('status', 'Email verified successfully. Sign in with the staff account to continue.')
-            ->where('loginEmail', $staff->email)
-            ->where('signedInAsDifferentUser', true)
-            ->where('currentUser.name', $owner->name)
-        );
+        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertFalse($staff->fresh()->hasVerifiedEmail());
         $this->assertAuthenticatedAs($owner);
     }
 }

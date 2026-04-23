@@ -3,11 +3,11 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Services\EmailVerificationCodeService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class EmailVerificationTest extends TestCase
@@ -23,36 +23,33 @@ class EmailVerificationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_email_can_be_verified(): void
+    public function test_email_can_be_verified_with_valid_code(): void
     {
         $user = User::factory()->unverified()->create();
+        [$code] = app(EmailVerificationCodeService::class)->issue($user);
 
         Event::fake();
 
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $user->id, 'hash' => sha1($user->email)]
-        );
-
-        $response = $this->actingAs($user)->get($verificationUrl);
+        $response = $this->actingAs($user)->post(route('verification.code'), [
+            'code' => $code,
+        ]);
 
         Event::assertDispatched(Verified::class);
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
         $response->assertRedirect('/?verified=1');
     }
 
-    public function test_email_is_not_verified_with_invalid_hash(): void
+    public function test_email_is_not_verified_with_invalid_code(): void
     {
         $user = User::factory()->unverified()->create();
+        app(EmailVerificationCodeService::class)->issue($user);
 
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $user->id, 'hash' => sha1('wrong-email')]
-        );
-
-        $this->actingAs($user)->get($verificationUrl);
+        $this->actingAs($user)
+            ->from(route('verification.notice'))
+            ->post(route('verification.code'), [
+                'code' => '000000',
+            ])
+            ->assertSessionHasErrors('code');
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }
@@ -67,7 +64,7 @@ class EmailVerificationTest extends TestCase
 
         $response
             ->assertRedirect()
-            ->assertSessionHas('status', 'verification-link-sent');
+            ->assertSessionHas('status', 'verification-code-sent');
 
         Notification::assertSentTo($user, \App\Notifications\VerifyEmailNotification::class);
     }

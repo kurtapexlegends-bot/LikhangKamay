@@ -64,7 +64,7 @@ class HrStaffProvisioningTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification code was sent.');
 
         $employee = Employee::first();
         $staff = User::where('role', 'staff')->first();
@@ -124,7 +124,7 @@ class HrStaffProvisioningTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification code was sent.');
 
         $staff = User::where('email', 'nina.torres@gmail.com')->first();
 
@@ -158,7 +158,7 @@ class HrStaffProvisioningTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification code was sent.');
 
         $staff = User::where('email', 'paolo.cruz@gmail.com')->first();
 
@@ -347,7 +347,7 @@ class HrStaffProvisioningTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification code was sent.');
 
         $staff = User::where('email', 'managed.user@gmail.com')->first();
 
@@ -420,7 +420,7 @@ class HrStaffProvisioningTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Employee and staff login created. A verification email was sent.');
+        $response->assertSessionHas('success', 'Employee and staff login created. A verification code was sent.');
 
         $staff = User::where('email', 'staff.only.alias@gmail.com')->first();
 
@@ -579,7 +579,7 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas(
             'success',
-            'Employee and seller login updated successfully. A verification email was sent to the updated address. The employee must change the new password on next sign-in.'
+            'Employee and seller login updated successfully. A verification code was sent to the updated address. The employee must change the new password on next sign-in.'
         );
 
         $linkedLogin->refresh();
@@ -633,7 +633,7 @@ class HrStaffProvisioningTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Employee updated and seller login created. A verification email was sent.');
+        $response->assertSessionHas('success', 'Employee updated and seller login created. A verification code was sent.');
 
         $staff = User::where('employee_id', $employee->id)->first();
 

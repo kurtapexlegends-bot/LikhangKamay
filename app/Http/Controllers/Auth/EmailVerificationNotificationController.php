@@ -7,16 +7,23 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use App\Services\EmailVerificationCodeService;
 
 class EmailVerificationNotificationController extends Controller
 {
     /**
      * Send a new email verification notification.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, EmailVerificationCodeService $emailVerificationCodeService): RedirectResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
             return redirect()->intended($this->redirectPathForVerifiedUser($request->user()));
+        }
+
+        $secondsUntilResend = $emailVerificationCodeService->secondsUntilResendAvailable($request->user());
+
+        if ($secondsUntilResend > 0) {
+            return back()->with('error', "Please wait {$secondsUntilResend} seconds before requesting another verification code.");
         }
 
         try {
@@ -28,10 +35,10 @@ class EmailVerificationNotificationController extends Controller
                 'message' => $exception->getMessage(),
             ]);
 
-            return back()->with('error', 'Unable to send the verification email right now. Please try again later.');
+            return back()->with('error', 'Unable to send the verification code right now. Please try again later.');
         }
 
-        return back()->with('status', 'verification-link-sent');
+        return back()->with('status', 'verification-code-sent');
     }
 
     protected function redirectPathForVerifiedUser(\App\Models\User $user): string

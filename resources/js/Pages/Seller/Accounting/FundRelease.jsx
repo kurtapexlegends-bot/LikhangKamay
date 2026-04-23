@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import SellerHeader from '@/Components/SellerHeader';
 import Modal from '@/Components/Modal';
@@ -8,7 +8,7 @@ import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
 import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
-import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Eye, FileText, History, LoaderCircle, Pencil, Users, X } from 'lucide-react';
+import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Download, Eye, FileText, History, LoaderCircle, Pencil, Search, Users, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 
@@ -56,6 +56,9 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
     const [historyPage, setHistoryPage] = useState(1);
     const [baseFundsProcessing, setBaseFundsProcessing] = useState(false);
     const [reviewProcessing, setReviewProcessing] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [entryTypeFilter, setEntryTypeFilter] = useState('all');
+    const deferredSearch = useDeferredValue(searchTerm);
 
     const allPending = useMemo(() => (
         [...pendingRequests, ...pendingPayrolls]
@@ -70,16 +73,47 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
     ), [history, payrollHistory]);
 
     const itemsPerPage = 6;
-    const totalPendingPages = Math.max(1, Math.ceil(allPending.length / itemsPerPage));
-    const totalHistoryPages = Math.max(1, Math.ceil(allHistory.length / itemsPerPage));
+    const filterLedgerEntries = (items) => {
+        const normalizedSearch = deferredSearch.trim().toLowerCase();
+
+        return items.filter((item) => {
+            if (entryTypeFilter !== 'all' && item.type !== entryTypeFilter) {
+                return false;
+            }
+
+            if (!normalizedSearch) {
+                return true;
+            }
+
+            return [
+                item.id,
+                item.type,
+                item.month,
+                item.requester?.name,
+                item.requester?.role,
+                item.supply?.name,
+                item.supply?.category,
+                item.status,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase()
+                .includes(normalizedSearch);
+        });
+    };
+
+    const filteredPending = useMemo(() => filterLedgerEntries(allPending), [allPending, deferredSearch, entryTypeFilter]);
+    const filteredHistory = useMemo(() => filterLedgerEntries(allHistory), [allHistory, deferredSearch, entryTypeFilter]);
+    const totalPendingPages = Math.max(1, Math.ceil(filteredPending.length / itemsPerPage));
+    const totalHistoryPages = Math.max(1, Math.ceil(filteredHistory.length / itemsPerPage));
     const paginatedPending = useMemo(() => {
         const startIndex = (pendingPage - 1) * itemsPerPage;
-        return allPending.slice(startIndex, startIndex + itemsPerPage);
-    }, [allPending, pendingPage]);
+        return filteredPending.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredPending, pendingPage]);
     const paginatedHistory = useMemo(() => {
         const startIndex = (historyPage - 1) * itemsPerPage;
-        return allHistory.slice(startIndex, startIndex + itemsPerPage);
-    }, [allHistory, historyPage]);
+        return filteredHistory.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredHistory, historyPage]);
 
     useFlashToast(flash, addToast);
 
@@ -94,6 +128,11 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
             setHistoryPage(totalHistoryPages);
         }
     }, [historyPage, totalHistoryPages]);
+
+    useEffect(() => {
+        setPendingPage(1);
+        setHistoryPage(1);
+    }, [deferredSearch, entryTypeFilter, activeTab]);
 
     const closeReviewModal = () => {
         setReviewModal((current) => ({ ...current, open: false }));
@@ -151,7 +190,22 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
     return (
         <>
             <Head title="Finance & Approvals" />
-            <SellerHeader title="Finance" subtitle="Business funds, payroll review, and inventory approvals" auth={auth} onMenuClick={openSidebar} badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }} />
+            <SellerHeader
+                title="Finance"
+                subtitle="Business funds, payroll review, and inventory approvals"
+                auth={auth}
+                onMenuClick={openSidebar}
+                badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
+                actions={(
+                    <a
+                        href={route('accounting.export')}
+                        className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 shadow-sm transition hover:bg-stone-50"
+                    >
+                        <Download size={15} />
+                        <span>Export Ledger</span>
+                    </a>
+                )}
+            />
 
             <main className="mx-auto w-full max-w-[1400px] p-4 sm:p-6 space-y-6">
                 {isAccountingReadOnly && (
@@ -212,11 +266,56 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                     <button onClick={() => setActiveTab('pending')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'pending' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
                         <AlertCircle size={16} /> Pending Approvals
-                        {allPending.length > 0 && <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-600">{allPending.length}</span>}
+                        {filteredPending.length > 0 && <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-600">{filteredPending.length}</span>}
                     </button>
                     <button onClick={() => setActiveTab('history')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'history' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
                         <History size={16} /> Transaction Ledger
                     </button>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <label className="relative block w-full sm:max-w-sm">
+                        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(event) => setSearchTerm(event.target.value)}
+                            placeholder={activeTab === 'pending' ? 'Search requester, supply, payroll month, or request ID' : 'Search ledger entries, requester, supply, or request ID'}
+                            className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-10 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:border-clay-400 focus:ring-clay-400"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 transition hover:text-stone-700"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {[
+                            ['all', 'All entries'],
+                            ['payroll', 'People & Payroll'],
+                            ['stock_request', 'Inventory'],
+                        ].map(([value, label]) => (
+                            <button
+                                key={value}
+                                type="button"
+                                onClick={() => setEntryTypeFilter(value)}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    entryTypeFilter === value
+                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                        <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-semibold text-stone-600">
+                            {(activeTab === 'pending' ? filteredPending.length : filteredHistory.length)} visible
+                        </span>
+                    </div>
                 </div>
 
                 {activeTab === 'pending' && (
@@ -273,7 +372,9 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                 <WorkspaceEmptyState
                                     icon={CheckCircle}
                                     title="No pending approvals"
-                                    description="Payroll and inventory requests that still need finance review will appear here."
+                                    description={searchTerm || entryTypeFilter !== 'all'
+                                        ? 'Try another search or clear the active filter to review more requests.'
+                                        : 'Payroll and inventory requests that still need finance review will appear here.'}
                                     actionLabel="Review Inventory"
                                     actionHref={route('procurement.index')}
                                     secondaryActionLabel="Open HR"
@@ -286,7 +387,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                             <CompactPagination
                                 currentPage={pendingPage}
                                 totalPages={totalPendingPages}
-                                totalItems={allPending.length}
+                                totalItems={filteredPending.length}
                                 itemsPerPage={itemsPerPage}
                                 itemLabel="requests"
                                 onPageChange={setPendingPage}
@@ -358,7 +459,9 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                     compact
                                     icon={History}
                                     title="No transaction history yet"
-                                    description="Approved or rejected payroll and inventory releases will be recorded in this ledger."
+                                    description={searchTerm || entryTypeFilter !== 'all'
+                                        ? 'Try another search or clear the active filter to review more ledger history.'
+                                        : 'Approved or rejected payroll and inventory releases will be recorded in this ledger.'}
                                 />
                             )}
                         </div>
@@ -367,7 +470,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                             <CompactPagination
                                 currentPage={historyPage}
                                 totalPages={totalHistoryPages}
-                                totalItems={allHistory.length}
+                                totalItems={filteredHistory.length}
                                 itemsPerPage={itemsPerPage}
                                 itemLabel="entries"
                                 onPageChange={setHistoryPage}

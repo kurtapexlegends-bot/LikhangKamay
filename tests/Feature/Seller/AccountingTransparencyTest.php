@@ -274,6 +274,22 @@ class AccountingTransparencyTest extends TestCase
         $this->assertSame('Paid', $payroll->fresh()->status);
     }
 
+    public function test_owner_can_export_finance_ledger_csv(): void
+    {
+        $owner = $this->createSellerOwner();
+        $this->createPendingStockRequest($owner, null);
+        $this->createPendingPayroll($owner, null);
+
+        $response = $this->actingAs($owner)->get(route('accounting.export'));
+        $content = $response->streamedContent();
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=utf-8');
+        $this->assertStringContainsString('FINANCE SNAPSHOT', $content);
+        $this->assertStringContainsString('PENDING INVENTORY REQUESTS', $content);
+        $this->assertStringContainsString('PENDING PAYROLL', $content);
+    }
+
     private function createSellerOwner(): User
     {
         $owner = User::factory()->artisanApproved()->create([

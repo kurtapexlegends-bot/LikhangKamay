@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -34,6 +34,8 @@ export default function PendingArtisans({ artisans }) {
     const [processing, setProcessing] = useState(false);
     const [approvalError, setApprovalError] = useState('');
     const [viewedDocumentsByArtisan, setViewedDocumentsByArtisan] = useState(() => buildViewedDocumentMap(artisans));
+    const [documentPreviewingKey, setDocumentPreviewingKey] = useState(null);
+    const deferredSearchQuery = useDeferredValue(searchQuery);
 
     useEffect(() => {
         setViewedDocumentsByArtisan(buildViewedDocumentMap(artisans));
@@ -59,6 +61,7 @@ export default function PendingArtisans({ artisans }) {
 
         setViewingDoc(doc);
         setApprovalError('');
+        setDocumentPreviewingKey(doc.key);
 
         window.axios
             .post(route('admin.artisan.documents.viewed', viewingArtisan.id), {
@@ -73,7 +76,15 @@ export default function PendingArtisans({ artisans }) {
                 }));
             })
             .catch((error) => {
-                console.error('Failed to mark artisan document as viewed:', error);
+                const message =
+                    error?.response?.data?.message ||
+                    'Document preview opened, but review progress could not be saved.';
+
+                setApprovalError(message);
+                addToast(message, 'error');
+            })
+            .finally(() => {
+                setDocumentPreviewingKey(null);
             });
     };
 
@@ -82,7 +93,7 @@ export default function PendingArtisans({ artisans }) {
         [viewingArtisan, viewedDocumentsByArtisan],
     );
     const filteredArtisans = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
+        const query = deferredSearchQuery.trim().toLowerCase();
 
         return artisans.filter((artisan) => {
             if (reviewFilter === 'ready' && !artisan.documents_ready_for_approval) {
@@ -104,7 +115,7 @@ export default function PendingArtisans({ artisans }) {
                 artisan.address,
             ].some((value) => String(value || '').toLowerCase().includes(query));
         });
-    }, [artisans, reviewFilter, searchQuery]);
+    }, [artisans, deferredSearchQuery, reviewFilter]);
     const viewedDocumentsCount = viewingArtisan ? (viewedDocumentsByArtisan[viewingArtisan.id] ?? []).length : 0;
     const submittedDocumentsCount = viewingArtisan?.submitted_document_count ?? currentDocuments.filter((doc) => !!doc.url).length;
     const allSubmittedDocumentsViewed = submittedDocumentsCount > 0 && viewedDocumentsCount >= submittedDocumentsCount;
@@ -154,7 +165,6 @@ export default function PendingArtisans({ artisans }) {
                 setProcessing(false);
             },
             onError: (errors) => {
-                console.error('Rejection failed:', errors);
                 addToast(errors.reason ?? 'Rejection failed. Please review the form and try again.', 'error');
             },
         });
@@ -372,8 +382,8 @@ export default function PendingArtisans({ artisans }) {
                                 {currentDocuments.map(doc => (
                                     <div 
                                         key={doc.key}
-                                        onClick={() => openDocumentPreview(doc)}
-                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-3.5 transition ${doc.url ? 'cursor-pointer bg-white hover:border-clay-300 hover:bg-stone-50/60' : 'bg-stone-50/50 opacity-60'}`}
+                                        onClick={() => documentPreviewingKey !== doc.key && openDocumentPreview(doc)}
+                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-3.5 transition ${doc.url ? 'cursor-pointer bg-white hover:border-clay-300 hover:bg-stone-50/60' : 'bg-stone-50/50 opacity-60'} ${documentPreviewingKey === doc.key ? 'pointer-events-none opacity-75' : ''}`}
                                     >
                                         
                                         <div className="flex items-center justify-between mb-3 relative z-10">
@@ -384,7 +394,7 @@ export default function PendingArtisans({ artisans }) {
                                                 <div>
                                                     <span className="font-bold text-[12px] text-stone-800 block">{doc.label}</span>
                                                     <span className="text-[10px] text-stone-400 font-medium">
-                                                        {doc.url ? (doc.viewed ? 'Viewed' : 'Click to Preview') : 'Missing File'}
+                                                        {doc.url ? (documentPreviewingKey === doc.key ? 'Saving review...' : (doc.viewed ? 'Viewed' : 'Click to Preview')) : 'Missing File'}
                                                     </span>
                                                 </div>
                                             </div>

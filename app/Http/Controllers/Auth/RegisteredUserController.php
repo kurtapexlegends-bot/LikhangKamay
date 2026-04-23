@@ -65,16 +65,16 @@ class RegisteredUserController extends Controller
         try {
             event(new Registered($user));
         } catch (Throwable $exception) {
-            Log::error('Registration verification email failed to send.', [
+            Log::error('Registration verification code email failed to send.', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'message' => $exception->getMessage(),
             ]);
 
             return redirect()->route('verification.notice')
-                ->with('error', 'Account created, but we could not send the verification email right now. Please try resending it from the verification page.');
+                ->with('error', 'Account created, but we could not send the verification code right now. Please try resending it from the verification page.');
         }
 
-        return redirect()->route('verification.notice')->with('status', 'verification-link-sent');
+        return redirect()->route('verification.notice')->with('status', 'verification-code-sent');
     }
 }

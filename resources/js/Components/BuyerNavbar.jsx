@@ -4,7 +4,7 @@ import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
     MessageCircle, ChevronDown, ShoppingBag, 
-    Search, ShoppingCart, User, LogOut
+    Search, ShoppingCart, User, LogOut, Heart
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 
@@ -109,6 +109,7 @@ export default function BuyerNavbar() {
                                             </div>
                                             <Dropdown.Link href={route('profile.edit')}><User size={16} className="inline mr-2"/> Profile Settings</Dropdown.Link>
                                             <Dropdown.Link href={route('my-orders.index')}><ShoppingBag size={16} className="inline mr-2"/> My Purchases</Dropdown.Link>
+                                            <Dropdown.Link href={route('saved.index')}><Heart size={16} className="inline mr-2"/> Saved</Dropdown.Link>
                                             {/* SELLER LINK */}
                                             {sellerWorkspaceHref && (
                                                 <Dropdown.Link href={sellerWorkspaceHref} className="text-clay-600 font-bold bg-clay-50/50">

@@ -17,8 +17,8 @@ class ShopController extends Controller
         // 1. Base Query - Include aggregates for rating and count
         $query = Product::where('status', 'Active')
             ->with(['user'])
-            ->withAvg('reviews', 'rating')
-            ->withCount('reviews');
+            ->withAvg('publicReviews as reviews_avg_rating', 'rating')
+            ->withCount('publicReviews as reviews_count');
 
         // 2. Filters
 
@@ -151,7 +151,10 @@ class ShopController extends Controller
             $minRating = (float) $request->min_rating;
             $query->where(function ($q) use ($minRating) {
                 // Products with avg rating >= min
-                $q->whereRaw('(SELECT AVG(rating) FROM reviews WHERE reviews.product_id = products.id) >= ?', [$minRating]);
+                $q->whereRaw(
+                    '(SELECT AVG(rating) FROM reviews WHERE reviews.product_id = products.id AND reviews.is_hidden_from_marketplace = 0) >= ?',
+                    [$minRating]
+                );
             });
         }
 
@@ -302,7 +305,7 @@ class ShopController extends Controller
         $totalSales = $products->sum('sold');
         $avgRating = \App\Models\Review::whereHas('product', function ($q) use ($seller) {
             $q->where('user_id', $seller->id);
-        })->avg('rating') ?? 0;
+        })->visibleToMarketplace()->avg('rating') ?? 0;
 
         return Inertia::render('Shop/SellerProfile', [
             'seller' => [
@@ -335,6 +338,7 @@ class ShopController extends Controller
 
         $totalSales = $user->products->sum('sold');
         $avgRating  = \App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
+            ->visibleToMarketplace()
             ->avg('rating') ?? 0;
 
         return Inertia::render('Seller/ShopSettings', [

@@ -128,6 +128,9 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                     return;
                 }
 
+                // Ensure scroll position is reset after DOM is fully updated
+                container.scrollTop = 0;
+
                 const isScrollable = container.scrollHeight > container.clientHeight + 4;
                 setHasReachedBottom(!isScrollable);
             });

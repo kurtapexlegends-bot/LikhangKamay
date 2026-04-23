@@ -17,7 +17,8 @@ import {
     User,
     Award,
     TrendingUp,
-    BarChart2
+    BarChart2,
+    ShieldAlert
 } from 'lucide-react';
 
 export default function AdminLayout({ title, children }) {
@@ -37,6 +38,7 @@ export default function AdminLayout({ title, children }) {
             title: 'User Management',
             items: [
                 { name: 'Users', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
+                { name: 'Review Moderation', href: route('admin.review-moderation'), icon: ShieldAlert, current: route().current('admin.review-moderation') },
                 {
                     name: 'Pending Artisans',
                     href: route('admin.pending'),
@@ -150,6 +152,7 @@ export default function AdminLayout({ title, children }) {
                             {title === 'Monetization' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track revenue and subscription metrics</p>}
                             {title === 'Platform Insights' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Deep dive into revenue forecasts, category performance, and platform health</p>}
                             {title === 'User Management' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage buyers, artisans, staff, and admins</p>}
+                            {title === 'Review Moderation' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Handle seller-submitted review moderation requests</p>}
                             {title === 'Pending Artisans' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review artisan applications</p>}
                             {title === 'Sponsorship Requests' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review and manage artisan product sponsorship requests</p>}
                         </div>

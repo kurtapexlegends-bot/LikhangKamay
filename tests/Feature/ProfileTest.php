@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -77,6 +78,8 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
+        Notification::fake();
+
         $user = User::factory()->createOne();
 
         $response = $this
@@ -98,6 +101,7 @@ class ProfileTest extends TestCase
         $this->assertSame('User', $user->last_name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
+        Notification::assertSentTo($user, \App\Notifications\VerifyEmailNotification::class);
     }
 
     public function test_profile_update_keeps_existing_avatar_when_no_new_avatar_is_uploaded(): void

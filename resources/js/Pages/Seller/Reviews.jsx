@@ -10,13 +10,47 @@ import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import {
     Star, MessageSquare, Image as ImageIcon, Search, Filter, Pin, PinOff,
     Menu, ChevronDown, User, LogOut, Send, Bold, Italic, X,
-    CheckCircle, AlertCircle, Edit2, Trash2, Zap, Reply
+    CheckCircle, AlertCircle, Edit2, Trash2, Zap, Reply, ShieldAlert
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+
+const moderationStatusLabel = (status) => {
+    if (status === 'resolved') return 'Request approved';
+    if (status === 'under_review') return 'Under review';
+    if (status === 'rejected') return 'Request rejected';
+    return 'Pending review';
+};
+
+const moderationOutcomeLabel = (dispute) => {
+    if (!dispute) return null;
+    if (dispute.status === 'resolved') {
+        return dispute.review_hidden_from_marketplace
+            ? 'Review hidden from marketplace'
+            : 'Request approved, but review is still visible';
+    }
+    if (dispute.status === 'rejected') {
+        return 'Review remains visible in the marketplace';
+    }
+    if (dispute.status === 'under_review') {
+        return 'Review is still visible while admin checks the request';
+    }
+    return 'No review action yet';
+};
+
+const moderationOutcomeTone = (dispute) => {
+    if (!dispute) return 'border-stone-200 bg-stone-50 text-stone-600';
+    if (dispute.status === 'resolved' && dispute.review_hidden_from_marketplace) {
+        return 'border-rose-200 bg-rose-50 text-rose-700';
+    }
+    if (['resolved', 'rejected'].includes(dispute.status)) {
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    }
+    return 'border-stone-200 bg-stone-50 text-stone-600';
+};
 
 // --- Simple Rich Text Toolbar ---
 const RichTextEditor = ({ value, onChange, placeholder }) => {
@@ -65,6 +99,13 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [confirmingDelete, setConfirmingDelete] = useState(null);
+    const [disputeModal, setDisputeModal] = useState({ open: false, review: null, mode: 'create' });
+    const [disputeReason, setDisputeReason] = useState('Misleading review');
+    const [disputeDetails, setDisputeDetails] = useState('');
+    const [disputeErrors, setDisputeErrors] = useState({});
+    const [disputeFeedback, setDisputeFeedback] = useState('');
+    const [submittingDispute, setSubmittingDispute] = useState(false);
+    const [confirmingDisputeRemoval, setConfirmingDisputeRemoval] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     useFlashToast(flash, addToast);
 
@@ -76,7 +117,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
 
     const filteredReviews = filter === 'All'
         ? reviews
-        : reviews.filter(r => r.rating === parseInt(filter));
+        : filter === 'Hidden'
+            ? reviews.filter((review) => review.is_hidden_from_marketplace)
+            : reviews.filter((review) => review.rating === parseInt(filter));
 
     // Sort: pinned first, then by date (already sorted by latest from backend)
     const sortedReviews = [...filteredReviews].sort((a, b) => {
@@ -156,6 +199,64 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 onSuccess: () => setConfirmingDelete(null),
             });
         }
+    };
+
+    const openDisputeModal = (review, mode = 'create') => {
+        setDisputeModal({ open: true, review, mode });
+        setDisputeReason(mode === 'edit' ? (review.dispute?.reason || 'Misleading review') : 'Misleading review');
+        setDisputeDetails(mode === 'edit' ? (review.dispute?.details || '') : '');
+        setDisputeErrors({});
+        setDisputeFeedback('');
+    };
+
+    const submitDispute = () => {
+        if (!canEditReviews || !disputeModal.review || submittingDispute) return;
+
+        setSubmittingDispute(true);
+        setDisputeErrors({});
+        setDisputeFeedback('');
+
+        const endpoint = disputeModal.mode === 'edit'
+            ? route('review-disputes.update', disputeModal.review.dispute.id)
+            : route('reviews.dispute', disputeModal.review.id);
+        const method = disputeModal.mode === 'edit' ? 'patch' : 'post';
+
+        router[method](endpoint, {
+            reason: disputeReason,
+            details: disputeDetails,
+        }, {
+            preserveScroll: true,
+            onError: (errors) => {
+                setDisputeErrors(errors);
+                setDisputeFeedback(errors.reason || errors.details || errors.review || 'We could not submit that moderation request yet.');
+            },
+            onSuccess: (page) => {
+                const flash = page?.props?.flash ?? {};
+
+                if (flash?.success) {
+                    setDisputeModal({ open: false, review: null, mode: 'create' });
+                    setDisputeReason('Misleading review');
+                    setDisputeDetails('');
+                    setDisputeErrors({});
+                    setDisputeFeedback('');
+                    return;
+                }
+
+                if (flash?.error) {
+                    setDisputeFeedback(flash.error);
+                }
+            },
+            onFinish: () => setSubmittingDispute(false),
+        });
+    };
+
+    const removeDispute = () => {
+        if (!canEditReviews || !confirmingDisputeRemoval) return;
+
+        router.delete(route('review-disputes.destroy', confirmingDisputeRemoval.id), {
+            preserveScroll: true,
+            onSuccess: () => setConfirmingDisputeRemoval(null),
+        });
     };
 
     const plainTextLength = replyText ? replyText.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim().length : 0;
@@ -274,7 +375,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             </div>
 
                             <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto">
-                                {['All', '5', '4', '3', '2', '1'].map((option) => (
+                                {['All', 'Hidden', '5', '4', '3', '2', '1'].map((option) => (
                                     <button
                                         key={option}
                                         onClick={() => setFilter(option)}
@@ -283,7 +384,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                             : 'text-gray-500 hover:text-gray-700'
                                             }`}
                                     >
-                                        {option === 'All' ? 'All Reviews' : `${option} Star`}
+                                        {option === 'All' ? 'All Reviews' : option === 'Hidden' ? 'Hidden' : `${option} Star`}
                                     </button>
                                 ))}
                             </div>
@@ -338,12 +439,23 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-[11px] font-medium text-gray-400">{review.date}</span>
+                                                        {!review.dispute && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={!canEditReviews}
+                                                                onClick={() => canEditReviews && openDisputeModal(review)}
+                                                                className="rounded-lg border border-rose-100 bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                title="Request moderation"
+                                                            >
+                                                                <ShieldAlert size={12} />
+                                                            </button>
+                                                        )}
                                                         {/* Pin Button */}
                                                         <button
-                                                            disabled={!canEditReviews}
+                                                            disabled={!canEditReviews || review.is_hidden_from_marketplace}
                                                             onClick={() => togglePin(review.id)}
                                                             className={`p-1.5 rounded-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 ${review.is_pinned ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
-                                                            title={review.is_pinned ? 'Unpin review' : 'Pin to top'}
+                                                            title={review.is_hidden_from_marketplace ? 'Hidden reviews cannot be pinned' : review.is_pinned ? 'Unpin review' : 'Pin to top'}
                                                         >
                                                             {review.is_pinned ? <PinOff size={12} /> : <Pin size={12} />}
                                                         </button>
@@ -354,6 +466,49 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                     <p className="text-gray-700 leading-snug text-sm mb-3 mt-2">
                                                         {review.comment}
                                                     </p>
+                                                )}
+
+                                                {review.dispute && (
+                                                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                                                        <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                                            <ShieldAlert size={12} />
+                                                            {moderationStatusLabel(review.dispute.status)}
+                                                        </div>
+                                                        <div className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${moderationOutcomeTone(review.dispute)}`}>
+                                                            {moderationOutcomeLabel(review.dispute)}
+                                                        </div>
+                                                        {['pending', 'under_review'].includes(review.dispute.status) && (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!canEditReviews}
+                                                                    onClick={() => canEditReviews && openDisputeModal(review, 'edit')}
+                                                                    className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                >
+                                                                    <Edit2 size={11} />
+                                                                    Edit Request
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!canEditReviews}
+                                                                    onClick={() => canEditReviews && setConfirmingDisputeRemoval(review.dispute)}
+                                                                    className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                >
+                                                                    <Trash2 size={11} />
+                                                                    Remove Request
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {!review.dispute && review.is_hidden_from_marketplace && (
+                                                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                                                        <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-rose-700">
+                                                            <AlertCircle size={12} />
+                                                            Hidden from marketplace
+                                                        </div>
+                                                    </div>
                                                 )}
 
                                                 {review.photos && review.photos.length > 0 && (
@@ -483,6 +638,120 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     </div>
                 </main>
             </div>
+
+            <Modal show={disputeModal.open} onClose={() => {
+                setDisputeModal({ open: false, review: null, mode: 'create' });
+                setDisputeErrors({});
+                setDisputeFeedback('');
+                setSubmittingDispute(false);
+            }} maxWidth="md">
+                <div className="p-6">
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                            <ShieldAlert size={20} />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900">
+                                {disputeModal.mode === 'edit' ? 'Edit Moderation Request' : 'Request Review Moderation'}
+                            </h2>
+                            <p className="text-sm text-gray-500">
+                                {disputeModal.mode === 'edit'
+                                    ? 'Update the reason or details before the request is closed.'
+                                    : 'Flag this review for admin review with a clear reason.'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        {disputeFeedback && (
+                            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                                {disputeFeedback}
+                            </div>
+                        )}
+                        <div>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">Reason</label>
+                            <select
+                                value={disputeReason}
+                                onChange={(event) => setDisputeReason(event.target.value)}
+                                className={`w-full rounded-xl border px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-clay-300 ${disputeErrors.reason ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200'}`}
+                            >
+                                <option value="Misleading review">Misleading review</option>
+                                <option value="Abusive language">Abusive language</option>
+                                <option value="Spam or irrelevant content">Spam or irrelevant content</option>
+                                <option value="Suspected fraudulent review">Suspected fraudulent review</option>
+                            </select>
+                            {disputeErrors.reason && (
+                                <p className="mt-1 text-[11px] font-medium text-rose-600">{disputeErrors.reason}</p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">Details</label>
+                            <textarea
+                                value={disputeDetails}
+                                onChange={(event) => setDisputeDetails(event.target.value)}
+                                rows={4}
+                                maxLength={1500}
+                                placeholder="State what looks inaccurate or why this review needs moderation."
+                                className={`w-full rounded-xl border px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-clay-300 ${disputeErrors.details ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200'}`}
+                            />
+                            <p className="mt-1 text-[11px] text-gray-400">{disputeDetails.length} / 1500</p>
+                            {disputeErrors.details && (
+                                <p className="mt-1 text-[11px] font-medium text-rose-600">{disputeErrors.details}</p>
+                            )}
+                        </div>
+                    </div>
+                    <div className="mt-6 flex items-center gap-3">
+                        <button
+                            type="button"
+                            className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-200"
+                            onClick={() => {
+                                setDisputeModal({ open: false, review: null, mode: 'create' });
+                                setDisputeErrors({});
+                                setDisputeFeedback('');
+                                setSubmittingDispute(false);
+                            }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!canEditReviews || submittingDispute}
+                            className="flex-1 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={submitDispute}
+                        >
+                            {submittingDispute ? 'Submitting...' : disputeModal.mode === 'edit' ? 'Save Changes' : 'Submit Request'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal show={confirmingDisputeRemoval !== null} onClose={() => setConfirmingDisputeRemoval(null)} maxWidth="sm">
+                <div className="p-6">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 mb-4 mx-auto">
+                        <ShieldAlert className="w-6 h-6 text-rose-600" />
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Remove moderation request?</h2>
+                    <p className="text-sm text-gray-500 text-center mb-6">
+                        This will withdraw the open review moderation request so it no longer appears in the admin queue.
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition"
+                            onClick={() => setConfirmingDisputeRemoval(null)}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!canEditReviews}
+                            className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl transition disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={removeDispute}
+                        >
+                            Remove Request
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
             <Modal show={confirmingDelete !== null} onClose={() => setConfirmingDelete(null)} maxWidth="sm">
                 <div className="p-6">

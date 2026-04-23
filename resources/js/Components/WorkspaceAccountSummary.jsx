@@ -13,10 +13,10 @@ export const getWorkspaceAccountDisplayName = (user) => {
     if (!user) return '';
 
     if (user.role === 'artisan') {
-        return user.shop_name || user.name;
+        return user.shop_name || user.first_name;
     }
 
-    return user.name;
+    return user.first_name;
 };
 
 export default function WorkspaceAccountSummary({

@@ -48,50 +48,40 @@ export default function SellerUpdateProfileInformation({
 
     return (
         <section className={className}>
-            <header>
-                <h2 className="text-base font-medium text-gray-900">
-                    Profile Information
-                </h2>
-
-                <p className="mt-0.5 text-xs text-gray-600">
-                    Update your account's profile information and shop details.
+            <header className="mb-6">
+                <h3 className="text-lg font-bold text-stone-900">Shop Profile</h3>
+                <p className="mt-1 text-sm text-stone-500">
+                    Your shop identity is visible to customers and partners.
                 </p>
             </header>
 
-            <form onSubmit={submit} className="mt-4 space-y-4">
-                
-                {/* Avatar Input */}
-                {/* Avatar Input - Polished UI */}
-                <div className="flex flex-col items-center sm:flex-row gap-6 pb-4 border-b border-gray-100">
+            <div className="space-y-8">
+                {/* Avatar Section */}
+                <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-stone-100">
                     <div className="relative group">
-                        <div className="w-24 h-24 rounded-full ring-2 ring-gray-50 overflow-hidden shadow-sm flex items-center justify-center bg-clay-100 flex-none aspect-square">
+                        <div className="w-24 h-24 rounded-full bg-stone-100 overflow-hidden border border-stone-200 flex items-center justify-center">
                             {data.preview_url || user.avatar ? (
                                 <img 
                                     src={data.preview_url || (user.avatar.startsWith('http') ? user.avatar : `/storage/${user.avatar}`)} 
                                     alt="Avatar" 
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                    className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <span className="text-3xl font-bold text-clay-600 uppercase">
-                                    {(user.shop_name || user.name).charAt(0)}
+                                <span className="text-3xl font-bold text-stone-400">
+                                    {(user.shop_name || user.name).charAt(0).toUpperCase()}
                                 </span>
                             )}
                         </div>
-                        {/* Overlay camera icon on hover */}
                         <label 
                             htmlFor="avatar" 
-                            className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity duration-300"
+                            className="absolute inset-0 bg-stone-900/40 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity duration-200"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                                 <circle cx="12" cy="13" r="4"></circle>
                             </svg>
                         </label>
-                        <input 
-                            id="avatar" 
-                            type="file" 
-                            className="hidden" 
-                            accept="image/*"
+                        <input id="avatar" type="file" className="hidden" accept="image/*"
                             onChange={(e) => {
                                 const file = e.target.files[0];
                                 if (file) {
@@ -102,115 +92,98 @@ export default function SellerUpdateProfileInformation({
                             }}
                         />
                     </div>
-                    
-                    <div className="flex-1 text-center sm:text-left space-y-2">
-                        <div>
-                            <h3 className="text-sm font-bold text-gray-900">Profile Photo</h3>
-                            <p className="text-xs text-gray-500">This will be displayed on your shop and products.</p>
-                        </div>
+
+                    <div className="flex-1 text-center sm:text-left">
+                        <h4 className="text-sm font-bold text-stone-900">Shop Avatar</h4>
+                        <p className="text-xs text-stone-500 mb-3">Professional photos represent your craftsmanship quality.</p>
                         
-                        <div className="flex flex-col sm:flex-row items-center gap-2">
-                            <label 
-                                htmlFor="avatar"
-                                className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:ring-2 focus:ring-clay-200 transition cursor-pointer"
-                            >
-                                Change Photo
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                            <label htmlFor="avatar" className="px-3 py-1.5 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-50 transition-colors cursor-pointer">
+                                Change Image
                             </label>
-                            
                             {data.avatar && (
-                                <button
-                                    onClick={submit}
-                                    disabled={processing}
-                                    className="px-3 py-1.5 bg-clay-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-clay-700 focus:ring-2 focus:ring-clay-500 transition animate-fade-in"
-                                >
-                                    Save Photo
+                                <button type="button" onClick={submit} disabled={processing} className="px-3 py-1.5 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition-colors">
+                                    Save Image
                                 </button>
                             )}
-
-                            <span className="text-[10px] text-gray-400">JPG, GIF or PNG. Max 10MB.</span>
                         </div>
-                        <InputError className="mt-1" message={errors.avatar} />
                     </div>
                 </div>
 
-                {/* Email (Read Only) */}
-                <div>
-                    <InputLabel htmlFor="email" value="Email (Cannot be changed)" />
-                    <TextInput
-                        id="email"
-                        type="email"
-                        className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-                        value={data.email}
-                        disabled={true}
-                    />
-                </div>
+                <form onSubmit={submit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2 pb-2 border-b border-stone-50">
+                             <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider">Account Information</h4>
+                        </div>
 
-                {/* Personal Name (Read Only) */}
-                <div>
-                    <InputLabel htmlFor="name" value="Owner Name (Cannot be changed)" />
-                    <TextInput
-                        id="name"
-                        className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-                        value={data.name}
-                        disabled={true}
-                    />
-                </div>
+                        <div>
+                            <InputLabel value="Email Address" className="text-stone-400 font-bold" />
+                            <div className="mt-1 px-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm font-bold text-stone-500 cursor-not-allowed">
+                                {data.email}
+                            </div>
+                        </div>
 
-                {/* Shop Name (Read Only) */}
-                <div>
-                    <InputLabel htmlFor="shop_name" value="Shop Name (Cannot be changed)" />
-                    <TextInput
-                        id="shop_name"
-                        className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-                        value={data.shop_name}
-                        disabled={true}
-                    />
-                </div>
+                        <div>
+                            <InputLabel value="Legal Name" className="text-stone-400 font-bold" />
+                            <div className="mt-1 px-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm font-bold text-stone-500 cursor-not-allowed">
+                                {data.name}
+                            </div>
+                        </div>
 
-                {/* Primary Phone */}
-                <div>
-                    <InputLabel htmlFor="phone_number" value="Primary Phone Number (Manage additional numbers in Address Book)" />
-                    <TextInput
-                        id="phone_number"
-                        className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-                        value={data.phone_number}
-                        disabled={true}
-                    />
-                    <InputError className="mt-2" message={errors.phone_number} />
-                </div>
+                        <div>
+                            <InputLabel value="Shop Name" className="text-stone-400 font-bold" />
+                            <div className="mt-1 px-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm font-bold text-stone-500 cursor-not-allowed">
+                                {data.shop_name}
+                            </div>
+                        </div>
 
-                {/* Primary Address */}
-                <div className="space-y-4">
-                    <StructuredAddressFields
-                        data={data}
-                        setData={setData}
-                        errors={errors}
-                        fieldNames={{ postal_code: 'zip_code' }}
-                        helperText=""
-                        readOnly
-                        showPreview={false}
-                    />
-                </div>
-                <div className="mt-1 text-xs text-gray-500 italic">
-                    Default Address Book is used first for courier pickup. This saved profile address is the fallback.
-                </div>
+                        <div>
+                             <InputLabel value="Phone Number" className="text-stone-400 font-bold" />
+                             <div className="mt-1 px-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm font-bold text-stone-500 cursor-not-allowed">
+                                 {data.phone_number || 'Not set'}
+                             </div>
+                        </div>
 
-                <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing} className="bg-clay-600 hover:bg-clay-700">Save Changes</PrimaryButton>
+                        <div className="md:col-span-2 space-y-4 pt-4">
+                             <div className="pb-2 border-b border-stone-50">
+                                  <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider">Default Logistics Address</h4>
+                             </div>
+                             <div className="opacity-70">
+                                <StructuredAddressFields
+                                    data={data}
+                                    setData={setData}
+                                    errors={errors}
+                                    fieldNames={{ postal_code: 'zip_code' }}
+                                    readOnly
+                                    showPreview={false}
+                                />
+                             </div>
+                             <div className="flex items-start gap-3 bg-stone-50 p-4 rounded-xl border border-stone-100">
+                                <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-300" />
+                                <p className="text-xs font-medium text-stone-500 leading-relaxed">
+                                   This is your primary business address used for fulfillment. To manage multiple locations, use the <span className="font-bold text-stone-800 underline">Address Registry</span>.
+                                </p>
+                             </div>
+                        </div>
+                    </div>
 
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
-                    >
-                        <p className="text-sm text-gray-600">
-                            Saved.
-                        </p>
-                    </Transition>
-                </div>
-            </form>
+                    <div className="flex items-center gap-4 pt-6 border-t border-stone-100">
+                        <PrimaryButton disabled={processing}>
+                            {processing ? 'Saving...' : 'Save Changes'}
+                        </PrimaryButton>
+
+                        <Transition
+                            show={recentlySuccessful}
+                            enter="transition ease-in-out"
+                            enterFrom="opacity-0"
+                            leave="transition ease-in-out"
+                            leaveTo="opacity-0"
+                        >
+                            <p className="text-sm text-stone-500 font-bold">Saved.</p>
+                        </Transition>
+                    </div>
+                </form>
+            </div>
         </section>
     );
 }

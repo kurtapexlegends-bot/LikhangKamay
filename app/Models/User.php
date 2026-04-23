@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\SellerEntitlementService;
+use App\Services\EmailVerificationCodeService;
 use App\Models\UserAddress;
 use App\Support\PersonName;
 use App\Support\StructuredAddress;
@@ -109,6 +110,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     {
         return [
             'email_verified_at' => 'datetime',
+            'email_verification_code_expires_at' => 'datetime',
+            'email_verification_code_sent_at' => 'datetime',
             'password' => 'hashed',
             'setup_completed_at' => 'datetime',
             'approved_at' => 'datetime',
@@ -125,7 +128,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function sendEmailVerificationNotification(): void
     {
-        $notification = new \App\Notifications\VerifyEmailNotification;
+        [$code, $expiresAt] = app(EmailVerificationCodeService::class)->issue($this);
+        $notification = new \App\Notifications\VerifyEmailNotification($code, $expiresAt);
 
         if (app()->environment('production') && config('queue.default') !== 'sync') {
             $this->notify($notification);

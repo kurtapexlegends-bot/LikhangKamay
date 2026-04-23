@@ -79,7 +79,7 @@ class StaffDashboardController extends Controller
             ->count();
         $unresolvedReviews = Review::query()
             ->whereNull('seller_reply')
-            ->whereHas('product', fn ($query) => $query->where('user_id', $sellerId))
+            ->whereHas('product', fn($query) => $query->where('user_id', $sellerId))
             ->count();
 
         $variantMeta = match ($variant) {
@@ -90,10 +90,10 @@ class StaffDashboardController extends Controller
                 'focus' => 'Human Resources',
                 'theme' => 'clay',
                 'stats' => [
-                    ['label' => 'Employees', 'value' => $employeeCount, 'tone' => 'clay'],
-                    ['label' => 'Active Staff', 'value' => $activeEmployees, 'tone' => 'emerald'],
-                    ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls, 'tone' => 'amber'],
-                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky'],
+                    ['label' => 'Employees', 'value' => $employeeCount],
+                    ['label' => 'Active Staff', 'value' => $activeEmployees],
+                    ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls],
+                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages],
                 ],
                 'highlights' => [
                     'Keep employee records accurate and payroll drafts ready for accounting review.',
@@ -187,7 +187,7 @@ class StaffDashboardController extends Controller
      */
     private function buildCardsForVariant(string $variant, array $visibleModules, array $metrics): array
     {
-        $hasModule = fn (string $module): bool => in_array($module, $visibleModules, true);
+        $hasModule = fn(string $module): bool => in_array($module, $visibleModules, true);
 
         $catalog = [
             'hr' => [
@@ -288,7 +288,7 @@ class StaffDashboardController extends Controller
 
                 return $hasModule($catalog[$key]['module']);
             })
-            ->map(fn (string $key) => $catalog[$key])
+            ->map(fn(string $key) => $catalog[$key])
             ->values()
             ->all();
     }

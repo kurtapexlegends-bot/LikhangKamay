@@ -183,6 +183,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.index');
     Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.reply');
     Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.destroy-reply');
+    Route::post('/reviews/{id}/dispute', [ReviewController::class, 'dispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.dispute');
+    Route::patch('/review-disputes/{reviewDispute}', [ReviewController::class, 'updateDispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('review-disputes.update');
+    Route::delete('/review-disputes/{reviewDispute}', [ReviewController::class, 'destroyDispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('review-disputes.destroy');
     Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.toggle-pin');
 
     // ERP MODULES
@@ -215,6 +218,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         // ACCOUNTING (Fund Release)
         Route::get('/accounting', [AccountingController::class, 'index'])->middleware('seller.module:accounting')->name('accounting.index');
+        Route::get('/accounting/export', [AccountingController::class, 'export'])->middleware('seller.module:accounting')->name('accounting.export');
         Route::post('/accounting/release/{stockRequest}', [AccountingController::class, 'approveRelease'])->middleware('seller.module:accounting')->name('accounting.approve');
         Route::post('/accounting/reject/{stockRequest}', [AccountingController::class, 'rejectRelease'])->middleware('seller.module:accounting')->name('accounting.reject');
         Route::post('/accounting/update-funds', [AccountingController::class, 'updateBaseFunds'])->middleware('seller.module:accounting')->name('accounting.update-funds'); // <--- Added
@@ -233,6 +237,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::get('/checkout', [OrderController::class, 'create'])->name('checkout.create');
     Route::post('/checkout/shipping-quote', [OrderController::class, 'quoteShipping'])->name('checkout.shipping-quote');
     Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
+    Route::get('/saved', function () {
+        return Inertia::render('Buyer/Saved');
+    })->name('saved.index');
 
     // PAYMENT ROUTES
     Route::get('/payment/{orderId}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
@@ -278,6 +285,9 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
+    Route::get('/review-moderation', [SuperAdminController::class, 'reviewModeration'])->name('admin.review-moderation');
+    Route::patch('/review-moderation/{reviewDispute}', [SuperAdminController::class, 'updateReviewModeration'])->name('admin.review-moderation.update');
+    Route::delete('/review-moderation/{reviewDispute}', [SuperAdminController::class, 'destroyReviewModeration'])->name('admin.review-moderation.destroy');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
     Route::get('/pending-artisans/{id}', [SuperAdminController::class, 'viewArtisan'])->name('admin.artisan.view');
     Route::post('/pending-artisans/{id}/documents/viewed', [SuperAdminController::class, 'markArtisanDocumentViewed'])->name('admin.artisan.documents.viewed');

@@ -72,6 +72,123 @@ class AccountingController extends Controller
         ]);
     }
 
+    public function export()
+    {
+        $seller = $this->sellerOwner();
+        $financials = $this->buildFinancialSnapshot($seller);
+
+        $pendingRelease = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->where('status', StockRequest::STATUS_PENDING)
+            ->latest()
+            ->get();
+
+        $releasedHistory = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->whereIn('status', [
+                StockRequest::STATUS_ACCOUNTING_APPROVED,
+                StockRequest::STATUS_ORDERED,
+                StockRequest::STATUS_PARTIALLY_RECEIVED,
+                StockRequest::STATUS_RECEIVED,
+                StockRequest::STATUS_COMPLETED,
+                StockRequest::STATUS_REJECTED,
+            ])
+            ->latest()
+            ->take(50)
+            ->get();
+
+        $pendingPayrolls = Payroll::with(['requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->where('status', 'Pending')
+            ->latest()
+            ->get();
+
+        $payrollHistory = Payroll::with(['requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->whereIn('status', ['Paid', 'Rejected'])
+            ->latest()
+            ->take(50)
+            ->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="finance_ledger_' . now()->format('Y-m-d_H-i-s') . '.csv"',
+        ];
+
+        $callback = function () use ($financials, $pendingRelease, $releasedHistory, $pendingPayrolls, $payrollHistory) {
+            $file = fopen('php://output', 'w');
+
+            fputcsv($file, ['FINANCE SNAPSHOT']);
+            fputcsv($file, ['Base Funds', 'Revenue', 'Expenses', 'Current Balance']);
+            fputcsv($file, [$financials['base_funds'], $financials['revenue'], $financials['expenses'], $financials['balance']]);
+
+            fputcsv($file, []);
+            fputcsv($file, ['PENDING INVENTORY REQUESTS']);
+            fputcsv($file, ['Request ID', 'Supply', 'Requester', 'Quantity', 'Amount', 'Status', 'Created At']);
+            foreach ($pendingRelease as $request) {
+                fputcsv($file, [
+                    $request->id,
+                    $request->supply?->name,
+                    $this->resolveRequester($request)?->name,
+                    $request->quantity,
+                    $request->total_cost,
+                    $request->status,
+                    optional($request->created_at)->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fputcsv($file, []);
+            fputcsv($file, ['INVENTORY HISTORY']);
+            fputcsv($file, ['Request ID', 'Supply', 'Requester', 'Amount', 'Status', 'Reviewed At', 'Reason']);
+            foreach ($releasedHistory as $request) {
+                fputcsv($file, [
+                    $request->id,
+                    $request->supply?->name,
+                    $this->resolveRequester($request)?->name,
+                    $request->total_cost,
+                    $request->status,
+                    optional($request->updated_at)->format('Y-m-d H:i:s'),
+                    $request->rejection_reason,
+                ]);
+            }
+
+            fputcsv($file, []);
+            fputcsv($file, ['PENDING PAYROLL']);
+            fputcsv($file, ['Payroll ID', 'Month', 'Requester', 'Employees', 'Amount', 'Status', 'Created At']);
+            foreach ($pendingPayrolls as $payroll) {
+                fputcsv($file, [
+                    $payroll->id,
+                    $payroll->month,
+                    $this->resolveRequester($payroll)?->name,
+                    $payroll->employee_count,
+                    $payroll->total_amount,
+                    $payroll->status,
+                    optional($payroll->created_at)->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fputcsv($file, []);
+            fputcsv($file, ['PAYROLL HISTORY']);
+            fputcsv($file, ['Payroll ID', 'Month', 'Requester', 'Employees', 'Amount', 'Status', 'Reviewed At', 'Reason']);
+            foreach ($payrollHistory as $payroll) {
+                fputcsv($file, [
+                    $payroll->id,
+                    $payroll->month,
+                    $this->resolveRequester($payroll)?->name,
+                    $payroll->employee_count,
+                    $payroll->total_amount,
+                    $payroll->status,
+                    optional($payroll->updated_at)->format('Y-m-d H:i:s'),
+                    $payroll->rejection_reason,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function approveRelease(StockRequest $stockRequest)
     {
         $this->authorizeSellerOwnership($stockRequest->user_id);

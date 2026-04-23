@@ -1,4 +1,4 @@
-import React, { lazy, useEffect, useState, Suspense } from 'react';
+import React, { lazy, useEffect, useMemo, useState, Suspense } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import UserAvatar from '@/Components/UserAvatar';
@@ -6,9 +6,10 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
     Heart, ChevronRight, Check, Pin,
-    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2
+    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2, History
 } from 'lucide-react';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
+import { getRecentlyViewedProducts, isProductWishlisted, rememberViewedProduct, toggleWishlistedProduct } from '@/utils/buyerSignals';
 
 import { useToast } from '@/Components/ToastContext';
 
@@ -33,15 +34,15 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [addedToCart, setAddedToCart] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(false);
+    const [recentlyViewed, setRecentlyViewed] = useState([]);
     const [deletingReview, setDeletingReview] = useState(false);
     const [reviewPhotoPreviewUrls, setReviewPhotoPreviewUrls] = useState([]);
-    const chatRequirementMessage = !auth?.
-    user
+    const chatRequirementMessage = !auth?.user
         ? 'Log in as a buyer first.'
         : auth.user.role && auth.user.role !== 'buyer'
             ? 'Buyer accounts only.'
             : product?.viewer_can_chat_seller
-                ? 'Chat available'
+                ? ''
                 : 'Chat opens after your first order.';
 
     // Build gallery
@@ -71,6 +72,16 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             nextUrls.forEach((url) => URL.revokeObjectURL(url));
         };
     }, [data.photos]);
+
+    useEffect(() => {
+        setIsWishlisted(isProductWishlisted(product.id));
+        rememberViewedProduct(product);
+        setRecentlyViewed(
+            getRecentlyViewedProducts().filter((entry) => Number(entry.id) !== Number(product.id)).slice(0, 4)
+        );
+    }, [product]);
+
+    const wishlistLabel = useMemo(() => (isWishlisted ? 'Saved' : 'Save'), [isWishlisted]);
 
     const submitReview = (e) => {
         e.preventDefault();
@@ -162,6 +173,15 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
         }
 
         addToast('You can chat this seller after your first order with them.', 'info');
+    };
+
+    const handleWishlistToggle = () => {
+        const nextWishlisted = toggleWishlistedProduct(product);
+        setIsWishlisted(nextWishlisted);
+        addToast(
+            nextWishlisted ? 'Saved to your wishlist. Open Saved to view it.' : 'Removed from your wishlist.',
+            'success',
+        );
     };
 
     return (
@@ -276,14 +296,14 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             {/* Wishlist */}
                             <div className="flex items-center justify-end mt-4 pt-4 border-t border-gray-100">
                                 <button
-                                    onClick={() => setIsWishlisted(!isWishlisted)}
+                                    onClick={handleWishlistToggle}
                                     aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition ${
                                         isWishlisted ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-400 hover:text-red-500'
                                     }`}
                                 >
                                     <Heart size={14} className={isWishlisted ? 'fill-current' : ''} />
-                                    {isWishlisted ? 'Saved' : 'Save'}
+                                    {wishlistLabel}
                                 </button>
                             </div>
                         </div>
@@ -480,13 +500,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 View Shop
                             </Link>
                         </div>
-                        <span className={`mt-2 inline-flex w-fit rounded-full border px-2.5 py-1 text-[10px] font-bold ${
-                            product?.viewer_can_chat_seller
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                : 'border-stone-200 bg-stone-50 text-stone-500'
-                        }`}>
-                            {product?.viewer_can_chat_seller ? 'Chat available now.' : chatRequirementMessage}
-                        </span>
+                        {!product?.viewer_can_chat_seller && (
+                            <span className="mt-2 inline-flex w-fit rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-bold text-stone-500">
+                                {chatRequirementMessage}
+                            </span>
+                        )}
                     </div>
 
                     {/* Description (Right Col - 2/3 width) */}
@@ -736,6 +754,38 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 </div>
 
             </div>
+
+            {recentlyViewed.length > 0 && (
+                <div className="max-w-6xl mx-auto px-4 pt-2">
+                    <div className="mb-4 flex items-center gap-2">
+                        <History size={16} className="text-clay-600" />
+                        <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-stone-500">Recently Viewed</h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {recentlyViewed.map((entry) => (
+                            <Link
+                                key={entry.id}
+                                href={route('product.show', entry.slug)}
+                                className="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm transition hover:border-clay-300 hover:shadow-md"
+                            >
+                                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-50">
+                                    <img
+                                        src={entry.image}
+                                        alt={entry.name}
+                                        className="h-full w-full object-cover"
+                                        onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/no-image.png'; }}
+                                    />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="line-clamp-2 text-xs font-semibold text-stone-900 transition group-hover:text-clay-700">{entry.name}</p>
+                                    <p className="mt-1 text-[11px] text-stone-500">{entry.sellerName}</p>
+                                    <p className="mt-1 text-xs font-bold text-clay-700">PHP {Number(entry.price || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* ========== RELATED PRODUCTS ========== */}
             {relatedProducts.length > 0 && (

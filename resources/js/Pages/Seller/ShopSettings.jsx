@@ -5,7 +5,7 @@ import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import { useToast } from '@/Components/ToastContext';
 import {
     Camera, Save, Star, Package, MapPin, Calendar,
-    Filter, CheckCircle, Pencil, AlertCircle
+    Filter, CheckCircle, Pencil, AlertCircle, Heart, Crown, Sparkles, Search, ArrowUpDown, Flame
 } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -79,7 +79,7 @@ export default function ShopSettings({ auth, user, stats }) {
         });
     };
 
-    const shopName = data.shop_name || user?.name || 'Your Shop';
+    const shopName = user?.shop_name || user?.name || 'Your Shop';
     const location = user?.city || 'Philippines';
     const joinedAt = user?.created_at
         ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -196,12 +196,26 @@ export default function ShopSettings({ auth, user, stats }) {
                                     {/* Editable Info */}
                                     <div className="text-center md:text-left flex-1">
                                         {/* Shop Name — read-only display */}
-                                        <div className="flex flex-col md:flex-row items-center md:items-baseline gap-3 mb-1.5 group/name relative">
-                                            <h1 className="text-xl md:text-2xl font-bold text-stone-900 tracking-tight px-2 py-1 -ml-2">
+                                        <div className="mb-1.5 flex flex-col items-center gap-3 md:flex-row md:items-baseline">
+                                            <h1 className="flex items-center gap-2 px-2 py-1 text-xl font-bold tracking-tight text-stone-900 md:text-2xl -ml-2">
                                                 {shopName}
+                                                {user?.premium_tier === 'premium' && (
+                                                    <div title="Premium Artisan" className="flex items-center justify-center rounded-full bg-amber-100 p-1.5 text-amber-500 shadow-sm">
+                                                        <Crown size={16} strokeWidth={3} />
+                                                    </div>
+                                                )}
+                                                {user?.premium_tier === 'super_premium' && (
+                                                    <div title="Elite Artisan" className="flex items-center justify-center rounded-full bg-violet-100 p-1.5 text-violet-500 shadow-sm">
+                                                        <Sparkles size={16} strokeWidth={3} />
+                                                    </div>
+                                                )}
                                             </h1>
                                             <span className="text-[10px] uppercase font-bold tracking-widest bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full shrink-0">
                                                 Verified Artisan
+                                            </span>
+                                            <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-600 shadow-sm">
+                                                <Heart size={12} />
+                                                Follow Shop
                                             </span>
                                         </div>
 
@@ -255,51 +269,72 @@ export default function ShopSettings({ auth, user, stats }) {
                         </div>
 
                         {/* Products Section — real preview */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 mt-10">
-                            <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                                <Package size={22} className="text-orange-600" />
+                        <div className="mb-4 mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                                <Package size={18} className="text-orange-600" />
                                 Products Collection
                             </h2>
-                            <div className="flex gap-2">
-                                <a 
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="relative w-full sm:w-auto">
+                                    <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                                    <input
+                                        type="text"
+                                        value=""
+                                        readOnly
+                                        placeholder="Search..."
+                                        className="w-full sm:w-48 rounded-lg border border-stone-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-stone-700 shadow-sm outline-none"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm">
+                                    <Filter size={14} className="text-stone-400" />
+                                    <span className="text-xs font-semibold text-stone-700">All Categories</span>
+                                </div>
+                                <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm">
+                                    <ArrowUpDown size={14} className="text-stone-400" />
+                                    <span className="text-xs font-semibold text-stone-700">Featured</span>
+                                </div>
+                                <a
                                     href={route('products.index')}
-                                    className="text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 transition px-4 py-2 rounded-full shadow-sm"
+                                    className="ml-0 inline-flex flex-1 sm:flex-none items-center justify-center rounded-lg bg-clay-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-clay-700 md:ml-2"
                                 >
-                                    Manage Products
+                                    Manage
                                 </a>
                             </div>
                         </div>
 
                         {user?.products?.length > 0 ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
+                            <div className="mb-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                                 {user.products.map((product) => (
                                     <div 
                                         key={product.id} 
-                                        className="group bg-white rounded-2xl border border-stone-200/60 shadow-sm hover:border-stone-300 hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden"
+                                        className="group bg-white rounded-xl border border-stone-200/70 shadow-sm hover:border-clay-300 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden"
                                     >
-                                        <div className="aspect-square relative bg-stone-50 border-b border-stone-100 overflow-hidden flex items-center justify-center p-4">
+                                        <div className="aspect-square relative bg-stone-50 border-b border-stone-100 overflow-hidden flex items-center justify-center p-2">
                                             <img 
                                                 src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
                                                 alt={product.name} 
-                                                className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
+                                                className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-105"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                             />
                                             {hasRating(product.rating) && (
-                                                <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
-                                                    {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-0.5" />
+                                                <div className="absolute top-1.5 right-1.5 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 text-stone-700 border border-stone-200/50">
+                                                    {formatRating(product.rating)} <Star size={9} className="fill-amber-400 text-amber-400 -mt-[1px]" />
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="p-4 flex flex-col justify-between flex-1 bg-white">
-                                            <h3 className="text-xs font-semibold text-stone-800 line-clamp-2 group-hover:text-orange-600 transition leading-snug mb-2">
+                                        <div className="p-3 flex flex-col flex-1 bg-white">
+                                            <h3 className="text-xs font-semibold text-stone-800 line-clamp-2 group-hover:text-clay-600 transition-colors leading-tight mb-2">
                                                 {product.name}
                                             </h3>
-                                            <div className="flex items-end justify-between mt-auto">
-                                                <div className="font-bold text-sm text-stone-900 tracking-tight">
-                                                    PHP {Number(product.price).toLocaleString('en-PH')}
+                                            <div className="flex items-end justify-between mt-auto pt-1">
+                                                <div className="font-bold text-[13px] text-stone-900 tracking-tight">
+                                                    ₱ {Number(product.price).toLocaleString('en-PH')}
                                                 </div>
                                                 {product.sold > 0 && (
-                                                    <span className="text-[10px] text-stone-500 font-medium bg-stone-100 px-1.5 py-0.5 rounded-md">{product.sold} sold</span>
+                                                    <span className="text-[10px] text-stone-500 font-medium flex items-center gap-0.5">
+                                                        <Flame size={10} className="text-orange-500" />
+                                                        {product.sold}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>

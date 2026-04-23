@@ -9,9 +9,11 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class ProfileController extends Controller
 {
@@ -48,6 +50,7 @@ class ProfileController extends Controller
     {
         $data = $request->validated();
         $user = $request->user();
+        $emailChanged = false;
 
         $name = PersonName::normalize(
             $data['first_name'] ?? null,
@@ -92,9 +95,28 @@ class ProfileController extends Controller
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
+            $emailChanged = true;
         }
 
         $user->save();
+
+        if ($emailChanged) {
+            try {
+                $user->sendEmailVerificationNotification();
+            } catch (Throwable $exception) {
+                Log::error('Profile verification code email failed to send.', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                return Redirect::route('profile.edit')
+                    ->with('error', 'Profile updated, but the verification code could not be sent right now.');
+            }
+
+            return Redirect::route('profile.edit')
+                ->with('status', 'verification-code-sent');
+        }
 
         return Redirect::route('profile.edit');
     }

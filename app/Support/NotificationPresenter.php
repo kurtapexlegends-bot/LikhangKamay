@@ -43,6 +43,7 @@ class NotificationPresenter
             'new_review' => route('reviews.index'),
             'low_stock' => route('products.index'),
             'replacement_resolution' => route('my-orders.index'),
+            'review_moderation_status' => route('my-orders.index'),
             'sponsorship_status' => route('seller.sponsorships') . (isset($data['request_id']) ? '#request-' . $data['request_id'] : ''),
             'artisan_application' => route('admin.pending'),
             default => $data['url'] ?? null,

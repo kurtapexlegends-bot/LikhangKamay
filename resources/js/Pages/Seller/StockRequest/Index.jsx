@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useDeferredValue, useState } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
@@ -43,8 +43,10 @@ export default function StockRequestIndex({ auth, requests }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { canEdit: canEditStockRequests, isReadOnly: isStockRequestsReadOnly } = useSellerModuleAccess('stock_requests');
     const [activeTab, setActiveTab] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
     const [actionNotice, setActionNotice] = useState(null);
     const [processingId, setProcessingId] = useState(null);
+    const deferredSearch = useDeferredValue(searchTerm);
     
     // Modal States
     const [receiveModal, setReceiveModal] = useState({ open: false, id: null, max: null });
@@ -61,10 +63,35 @@ export default function StockRequestIndex({ auth, requests }) {
     };
 
     // Filter requests based on tab
-    const filteredRequests = requests.filter(req => {
-        if (activeTab === 'all') return true;
-        if (activeTab === 'pending') return req.status === 'pending';
-        return req.status === activeTab;
+    const filteredRequests = requests.filter((req) => {
+        const matchesTab = activeTab === 'all'
+            ? true
+            : activeTab === 'pending'
+                ? req.status === 'pending'
+                : req.status === activeTab;
+
+        if (!matchesTab) {
+            return false;
+        }
+
+        const normalizedSearch = deferredSearch.trim().toLowerCase();
+
+        if (!normalizedSearch) {
+            return true;
+        }
+
+        return [
+            req.id,
+            req.supply?.name,
+            req.supply?.category,
+            req.requester?.name,
+            req.status,
+            req.supply?.supplier,
+        ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(normalizedSearch);
     });
 
     // --- FLASH MESSAGE HANDLING ---
@@ -75,6 +102,7 @@ export default function StockRequestIndex({ auth, requests }) {
     const handleMarkAsOrdered = () => {
         if (!canEditStockRequests) return;
         router.post(route('stock-requests.ordered', selectedRequest.id), {}, {
+            onStart: () => setProcessingId(selectedRequest?.id ? `ordered-${selectedRequest.id}` : null),
             onSuccess: () => {
                 setShowOrderModal(false);
                 setSelectedRequest(null);
@@ -84,6 +112,7 @@ export default function StockRequestIndex({ auth, requests }) {
                 setActionNotice('This request could not be marked as ordered right now.');
                 addToast('Order update failed.', 'error');
             },
+            onFinish: () => setProcessingId(null),
         });
     };
 
@@ -99,6 +128,7 @@ export default function StockRequestIndex({ auth, requests }) {
         e.preventDefault();
         if (!canEditStockRequests) return;
         router.post(route('stock-requests.receive', receiveModal.id), { quantity: qtyInput }, {
+            onStart: () => setProcessingId(`receive-${receiveModal.id}`),
             onSuccess: () => {
                 setReceiveModal({ open: false, id: null, max: null });
                 setActionNotice(null);
@@ -106,7 +136,8 @@ export default function StockRequestIndex({ auth, requests }) {
             onError: () => {
                 setActionNotice('Received quantity could not be recorded right now.');
                 addToast('Receive action failed.', 'error');
-            }
+            },
+            onFinish: () => setProcessingId(null),
         });
     };
 
@@ -122,6 +153,7 @@ export default function StockRequestIndex({ auth, requests }) {
         e.preventDefault();
         if (!canEditStockRequests) return;
         router.post(route('stock-requests.transfer', transferModal.id), { quantity: qtyInput }, {
+            onStart: () => setProcessingId(`transfer-${transferModal.id}`),
             onSuccess: () => {
                 setTransferModal({ open: false, id: null, max: null });
                 setActionNotice(null);
@@ -129,7 +161,8 @@ export default function StockRequestIndex({ auth, requests }) {
             onError: () => {
                 setActionNotice('Transfer to active inventory did not go through.');
                 addToast('Transfer failed.', 'error');
-            }
+            },
+            onFinish: () => setProcessingId(null),
         });
     };
 
@@ -289,6 +322,37 @@ export default function StockRequestIndex({ auth, requests }) {
                             })}
                             </div>
                         </div>
+                        <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label className="relative block w-full sm:max-w-sm">
+                                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(event) => setSearchTerm(event.target.value)}
+                                    placeholder="Search item, supplier, requester, or request ID"
+                                    className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-10 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:border-clay-400 focus:ring-clay-400"
+                                />
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 transition hover:text-stone-700"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </label>
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                                <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-stone-600">
+                                    {filteredRequests.length} visible
+                                </span>
+                                {searchTerm && (
+                                    <span className="inline-flex items-center rounded-full border border-clay-200 bg-[#FCF7F2] px-3 py-1 text-clay-700">
+                                        Filtered queue
+                                    </span>
+                                )}
+                            </div>
+                        </div>
 
                         {/* TABLE */}
                         <div className="space-y-3 p-4 sm:hidden">
@@ -351,23 +415,23 @@ export default function StockRequestIndex({ auth, requests }) {
                                         <div className="mt-3 flex items-center justify-end gap-2">
                                             {req.status === 'accounting_approved' && (
                                                 <button 
-                                                    disabled={!canEditStockRequests}
+                                                    disabled={!canEditStockRequests || processingId === `ordered-${req.id}`}
                                                     onClick={() => {
                                                         setSelectedRequest(req);
                                                         setShowOrderModal(true);
                                                     }} 
                                                     className="inline-flex items-center gap-1.5 px-3 py-2 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
-                                                    <Truck size={13} /> Mark Ordered
+                                                    <Truck size={13} /> {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
                                                 </button>
                                             )}
                                             {(req.status === 'ordered' || req.status === 'partially_received' || req.status === 'received') && (
-                                                <button disabled={!canEditStockRequests} onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 text-white text-[11px] font-bold rounded-lg hover:bg-amber-700 transition-all disabled:cursor-not-allowed disabled:opacity-50">
+                                                <button disabled={!canEditStockRequests || processingId === `receive-${req.id}`} onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 text-white text-[11px] font-bold rounded-lg hover:bg-amber-700 transition-all disabled:cursor-not-allowed disabled:opacity-50">
                                                     <Package size={13} /> Receive
                                                 </button>
                                             )}
                                             {(req.status === 'received' && (req.received_quantity - req.transferred_quantity > 0)) && (
-                                                <button disabled={!canEditStockRequests} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-stone-700 text-white text-[11px] font-bold rounded-lg hover:bg-stone-800 transition-all disabled:cursor-not-allowed disabled:opacity-50">
+                                                <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-stone-700 text-white text-[11px] font-bold rounded-lg hover:bg-stone-800 transition-all disabled:cursor-not-allowed disabled:opacity-50">
                                                     <ArrowRight size={13} /> Transfer
                                                 </button>
                                             )}
@@ -466,23 +530,23 @@ export default function StockRequestIndex({ auth, requests }) {
                                                     <div className="flex items-center justify-end gap-2">
                                                         {req.status === 'accounting_approved' && (
                                                             <button 
-                                                                disabled={!canEditStockRequests}
+                                                                disabled={!canEditStockRequests || processingId === `ordered-${req.id}`}
                                                                 onClick={() => {
                                                                     setSelectedRequest(req);
                                                                     setShowOrderModal(true);
                                                                 }} 
                                                                 className="inline-flex items-center gap-1.5 px-2 py-1 bg-clay-600 text-white text-[10px] font-bold rounded-lg hover:bg-clay-700 transition-all active:scale-95 shadow-sm shadow-clay-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
                                                             >
-                                                                <Truck size={13} /> Mark Ordered
+                                                                <Truck size={13} /> {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
                                                             </button>
                                                         )}
                                                         {(req.status === 'ordered' || req.status === 'partially_received' || req.status === 'received') && (
-                                                            <button disabled={!canEditStockRequests} onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-600 text-white text-[10px] font-bold rounded-lg hover:bg-amber-700 transition-all active:scale-95 shadow-sm shadow-amber-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
+                                                            <button disabled={!canEditStockRequests || processingId === `receive-${req.id}`} onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-600 text-white text-[10px] font-bold rounded-lg hover:bg-amber-700 transition-all active:scale-95 shadow-sm shadow-amber-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
                                                                 <Package size={13} /> Receive
                                                             </button>
                                                         )}
                                                         {(req.status === 'received' && (req.received_quantity - req.transferred_quantity > 0)) && (
-                                                            <button disabled={!canEditStockRequests} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-stone-700 text-white text-[10px] font-bold rounded-lg hover:bg-stone-800 transition-all active:scale-95 shadow-sm shadow-stone-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
+                                                            <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-stone-700 text-white text-[10px] font-bold rounded-lg hover:bg-stone-800 transition-all active:scale-95 shadow-sm shadow-stone-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
                                                                 <ArrowRight size={13} /> Transfer
                                                             </button>
                                                         )}
@@ -538,7 +602,7 @@ export default function StockRequestIndex({ auth, requests }) {
                         </div>
                         <div className="flex justify-end gap-3">
                             <button type="button" onClick={() => setReceiveModal({ open: false, id: null, max: null })} className="px-3 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                            <button type="submit" disabled={!canEditStockRequests} className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">Receive Items</button>
+                            <button type="submit" disabled={!canEditStockRequests || processingId === `receive-${receiveModal.id}`} className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">{processingId === `receive-${receiveModal.id}` ? 'Receiving...' : 'Receive Items'}</button>
                         </div>
                     </form>
                 </Modal>
@@ -558,7 +622,7 @@ export default function StockRequestIndex({ auth, requests }) {
                         </div>
                         <div className="flex justify-end gap-3">
                             <button type="button" onClick={() => setTransferModal({ open: false, id: null, max: null })} className="px-3 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                            <button type="submit" disabled={!canEditStockRequests} className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">Transfer</button>
+                            <button type="submit" disabled={!canEditStockRequests || processingId === `transfer-${transferModal.id}`} className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">{processingId === `transfer-${transferModal.id}` ? 'Transferring...' : 'Transfer'}</button>
                         </div>
                     </form>
                 </Modal>
@@ -583,11 +647,11 @@ export default function StockRequestIndex({ auth, requests }) {
                                 Cancel
                             </button>
                             <button 
-                                disabled={!canEditStockRequests}
+                                disabled={!canEditStockRequests || processingId === `ordered-${selectedRequest?.id}`}
                                 onClick={handleMarkAsOrdered}
                                 className="px-4 py-2 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
                             >
-                                Confirm Order
+                                {processingId === `ordered-${selectedRequest?.id}` ? 'Confirming...' : 'Confirm Order'}
                             </button>
                         </div>
                     </div>

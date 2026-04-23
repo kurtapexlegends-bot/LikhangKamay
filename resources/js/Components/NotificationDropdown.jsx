@@ -1,17 +1,61 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { formatChatRelative } from '@/lib/chatTime';
 
+const matchesNotificationFilter = (notification, filterKey) => {
+    if (filterKey === 'all') {
+        return true;
+    }
+
+    if (filterKey === 'unread') {
+        return !notification.read_at;
+    }
+
+    if (filterKey === 'orders') {
+        return ['new_order', 'delivery_update', 'replacement_resolution'].includes(notification.type);
+    }
+
+    if (filterKey === 'messages') {
+        return ['new_message', 'team_message'].includes(notification.type);
+    }
+
+    if (filterKey === 'attention') {
+        return ['low_stock', 'accounting_rejected', 'artisan_application', 'sponsorship_status', 'review_moderation_status'].includes(notification.type);
+    }
+
+    return true;
+};
+
 export default function NotificationDropdown() {
     const { notifications = [], unreadNotificationCount = 0 } = usePage().props;
     const [isOpen, setIsOpen] = useState(false);
     const [activeMenu, setActiveMenu] = useState(null);
+    const [activeFilter, setActiveFilter] = useState('all');
     const [confirmClearOpen, setConfirmClearOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [relativeNow, setRelativeNow] = useState(() => Date.now());
     const dropdownRef = useRef(null);
+
+    const filterDefinitions = useMemo(() => ([
+        { key: 'all', label: 'All' },
+        { key: 'unread', label: 'Unread' },
+        { key: 'orders', label: 'Orders' },
+        { key: 'messages', label: 'Messages' },
+        { key: 'attention', label: 'Attention' },
+    ]), []);
+
+    const filteredNotifications = useMemo(() => (
+        notifications.filter((notification) => matchesNotificationFilter(notification, activeFilter))
+    ), [notifications, activeFilter]);
+
+    const filterCounts = useMemo(() => (
+        Object.fromEntries(filterDefinitions.map((filter) => [
+            filter.key,
+            notifications.filter((notification) => matchesNotificationFilter(notification, filter.key)).length,
+        ]))
+    ), [notifications, filterDefinitions]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -70,6 +114,8 @@ export default function NotificationDropdown() {
                 return <MessageCircle size={16} className="text-blue-500" />;
             case 'new_review':
                 return <Star size={16} className="text-yellow-500" />;
+            case 'review_moderation_status':
+                return <AlertTriangle size={16} className="text-rose-500" />;
             case 'low_stock':
                 return <AlertTriangle size={16} className="text-red-500" />;
             case 'sponsorship_status':
@@ -183,10 +229,28 @@ export default function NotificationDropdown() {
                         </div>
                     </div>
 
+                    <div className="flex gap-2 overflow-x-auto border-b border-stone-100 bg-white px-3 py-2">
+                        {filterDefinitions.map((filter) => (
+                            <button
+                                key={filter.key}
+                                type="button"
+                                onClick={() => setActiveFilter(filter.key)}
+                                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                    activeFilter === filter.key
+                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
+                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                            >
+                                <span>{filter.label}</span>
+                                <span className="text-[10px] opacity-80">{filterCounts[filter.key] || 0}</span>
+                            </button>
+                        ))}
+                    </div>
+
                     {/* Notification List */}
                     <div className="max-h-80 overflow-y-auto">
-                        {notifications.length > 0 ? (
-                            notifications.map((notification) => (
+                        {filteredNotifications.length > 0 ? (
+                            filteredNotifications.map((notification) => (
                                 <div 
                                     key={notification.id}
                                     className={`relative group border-b border-stone-100 p-4 transition-colors hover:bg-stone-50/70 ${
@@ -253,7 +317,7 @@ export default function NotificationDropdown() {
                         ) : (
                             <div className="p-8 text-center text-gray-400">
                                 <Bell size={32} className="mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">No notifications yet</p>
+                                <p className="text-sm">{activeFilter === 'all' ? 'No notifications yet' : `No ${activeFilter} notifications`}</p>
                             </div>
                         )}
                     </div>
