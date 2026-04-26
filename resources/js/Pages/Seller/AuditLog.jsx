@@ -427,43 +427,45 @@ export default function AuditLog({ auth, auditLog }) {
                     </div>
 
                     <div className="px-5 py-4 sm:px-8 border-b border-stone-100 bg-[#FCF7F2]/30">
-                        <div className="flex flex-col xl:flex-row gap-3">
-                            <label className="relative flex-1 block">
+                        {/* Top Row: Search and Action/Status */}
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            <label className="relative flex-1 block w-full">
                                 <Search size={16} strokeWidth={2.5} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                                 <input
                                     value={searchTerm}
                                     onChange={(event) => setSearchTerm(event.target.value)}
                                     placeholder="Search details, actor, subject, reference..."
-                                    className="w-full rounded-xl border border-stone-200 bg-white pl-10 pr-4 py-2 text-sm font-bold text-stone-900 shadow-sm outline-none transition-all focus:border-clay-500 focus:ring-2 focus:ring-clay-100 placeholder:font-medium placeholder:text-stone-400 hover:border-stone-300"
+                                    className="w-full rounded-xl border border-stone-200 bg-white pl-10 pr-4 py-2.5 text-sm font-bold text-stone-900 shadow-sm outline-none transition-all focus:border-clay-500 focus:ring-2 focus:ring-clay-100 placeholder:font-medium placeholder:text-stone-400 hover:border-stone-300"
                                 />
                             </label>
 
-                            <div className="flex flex-1 flex-col sm:flex-row gap-3 min-w-0">
-                                <div className="flex-1 min-w-0"><FilterSelect value={selectedCategory} onChange={setSelectedCategory} options={categoryOptions.map((option) => [option.key, option.label])} /></div>
-                                <div className="flex-1 min-w-0"><FilterSelect value={selectedModule} onChange={setSelectedModule} options={moduleOptions.map((option) => [option, option === 'all' ? 'All modules' : (moduleLabel[option] || formatStatusLabel(option))])} /></div>
-                                <div className="flex-1 min-w-0"><FilterSelect value={selectedStatus} onChange={setSelectedStatus} options={statusOptions.map((option) => [option, option === 'all' ? 'All statuses' : formatStatusLabel(option)])} /></div>
-                                <div className="flex-1 min-w-0"><FilterSelect value={selectedSeverity} onChange={setSelectedSeverity} options={severityOptions.map((option) => [option, option === 'all' ? 'All severities' : formatStatusLabel(option)])} /></div>
-                                <div className="flex-1 min-w-0"><FilterSelect value={selectedActor} onChange={setSelectedActor} options={actorOptions.map((option) => [option, option === 'all' ? 'All actors' : (actorTypeLabel[option] || formatStatusLabel(option))])} /></div>
-                            </div>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200/40 pt-3">
-                            <div className="flex items-center gap-2">
-                                <DateInput label="From" value={startDate} onChange={setStartDate} />
-                                <DateInput label="To" value={endDate} onChange={setEndDate} />
-                            </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4 shrink-0 self-end md:self-auto w-full md:w-auto justify-between md:justify-end">
                                 <button
                                     type="button"
                                     onClick={resetFilters}
-                                    className="text-[11px] font-bold text-stone-500 hover:text-clay-700"
+                                    className="text-xs font-bold text-stone-500 hover:text-clay-700 transition"
                                 >
                                     Reset filters
                                 </button>
-                                <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-stone-500">
+                                <span className="inline-flex items-center rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs font-bold uppercase tracking-widest text-stone-600 shadow-sm">
                                     {filteredEntries.length} Visible
                                 </span>
                             </div>
+                        </div>
+
+                        {/* Bottom Row: Date Range & Dropdowns */}
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+                            <div className="sm:col-span-2 xl:col-span-3 flex items-center bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-clay-100 focus-within:border-clay-500 transition-all h-[38px]">
+                                <DateInput label="From" value={startDate} onChange={setStartDate} />
+                                <div className="h-full w-px bg-stone-200 shrink-0"></div>
+                                <DateInput label="To" value={endDate} onChange={setEndDate} />
+                            </div>
+                            
+                            <FilterSelect value={selectedCategory} onChange={setSelectedCategory} options={categoryOptions.map((option) => [option.key, option.label])} />
+                            <FilterSelect value={selectedModule} onChange={setSelectedModule} options={moduleOptions.map((option) => [option, option === 'all' ? 'All modules' : (moduleLabel[option] || formatStatusLabel(option))])} />
+                            <FilterSelect value={selectedStatus} onChange={setSelectedStatus} options={statusOptions.map((option) => [option, option === 'all' ? 'All statuses' : formatStatusLabel(option)])} />
+                            <FilterSelect value={selectedSeverity} onChange={setSelectedSeverity} options={severityOptions.map((option) => [option, option === 'all' ? 'All severities' : formatStatusLabel(option)])} />
+                            <FilterSelect value={selectedActor} onChange={setSelectedActor} options={actorOptions.map((option) => [option, option === 'all' ? 'All actors' : (actorTypeLabel[option] || formatStatusLabel(option))])} />
                         </div>
                     </div>
 
@@ -615,11 +617,11 @@ function CompactMeta({ label, value, color = 'text-stone-700' }) {
 
 function FilterSelect({ value, onChange, options }) {
     return (
-        <label className="relative block h-full">
+        <label className="relative block h-[38px]">
             <select
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full h-full appearance-none rounded-xl border border-stone-200 bg-white pl-3.5 pr-8 py-2.5 text-xs font-bold text-stone-700 shadow-sm outline-none transition-all focus:border-clay-500 focus:ring-2 focus:ring-clay-100 hover:border-stone-300 hover:bg-stone-50"
+                className="w-full h-full appearance-none rounded-xl border border-stone-200 bg-white pl-3 pr-8 text-xs font-bold text-stone-700 shadow-sm outline-none transition-all focus:border-clay-500 focus:ring-2 focus:ring-clay-100 hover:border-stone-300 hover:bg-stone-50 cursor-pointer"
             >
                 {options.map(([optionValue, optionLabel]) => (
                     <option key={optionValue} value={optionValue}>
@@ -627,7 +629,7 @@ function FilterSelect({ value, onChange, options }) {
                     </option>
                 ))}
             </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400">
                 <ChevronDown size={14} strokeWidth={2.5} />
             </div>
         </label>
@@ -636,13 +638,13 @@ function FilterSelect({ value, onChange, options }) {
 
 function DateInput({ label, value, onChange }) {
     return (
-        <label className="flex h-10 w-fit items-center gap-2 rounded-xl border border-stone-200 bg-white px-3.5 shadow-sm transition-all hover:border-stone-300 focus-within:border-clay-500 focus-within:ring-2 focus-within:ring-clay-100">
+        <label className="flex flex-1 h-full items-center gap-2 px-3 hover:bg-stone-50 transition cursor-pointer">
             <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 shrink-0">{label}</span>
             <input
                 type="date"
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="bg-transparent text-xs font-bold text-stone-700 outline-none w-[110px]"
+                className="flex-1 w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0"
             />
         </label>
     );

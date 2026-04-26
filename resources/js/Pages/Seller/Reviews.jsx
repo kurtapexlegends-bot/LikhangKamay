@@ -70,19 +70,19 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
     };
 
     return (
-        <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-clay-200 focus-within:border-clay-400 transition-all">
-            <div className="flex items-center gap-1 px-3 py-2 bg-gray-50 border-b border-gray-200">
-                <button type="button" onClick={() => exec('bold')} className="p-1.5 rounded-md hover:bg-gray-200 text-gray-600 transition" title="Bold">
+        <div className="border border-stone-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-clay-200 focus-within:border-clay-400 transition-all">
+            <div className="flex items-center gap-1 px-3 py-2 bg-stone-50 border-b border-stone-200">
+                <button type="button" onClick={() => exec('bold')} className="p-1.5 rounded-md hover:bg-stone-200 text-stone-600 transition" title="Bold">
                     <Bold size={14} />
                 </button>
-                <button type="button" onClick={() => exec('italic')} className="p-1.5 rounded-md hover:bg-gray-200 text-gray-600 transition" title="Italic">
+                <button type="button" onClick={() => exec('italic')} className="p-1.5 rounded-md hover:bg-stone-200 text-stone-600 transition" title="Italic">
                     <Italic size={14} />
                 </button>
             </div>
             <div
                 ref={editorRef}
                 contentEditable
-                className="min-h-[80px] max-h-[200px] overflow-y-auto p-3 text-sm text-gray-700 focus:outline-none"
+                className="min-h-[80px] max-h-[200px] overflow-y-auto p-3 text-sm text-stone-700 focus:outline-none"
                 onInput={() => onChange(editorRef.current?.innerHTML || '')}
                 data-placeholder={placeholder}
                 suppressContentEditableWarning
@@ -262,7 +262,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     const plainTextLength = replyText ? replyText.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim().length : 0;
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <div className="min-h-screen bg-stone-50 flex font-sans text-stone-800">
             <Head title="Shop Reviews" />
 
             <SellerSidebar
@@ -275,14 +275,14 @@ export default function Reviews({ auth, reviews, stats, flash }) {
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
 
                 {/* --- HEADER --- */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-stone-200 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
                     <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
+                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-stone-500 hover:text-clay-600">
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
-                            <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Customer Ratings</h1>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Shop quality feedback & reviews</p>
+                            <h1 className="truncate text-lg sm:text-xl font-bold text-stone-900">Customer Ratings</h1>
+                            <p className="text-xs text-stone-500 font-medium mt-0.5 hidden sm:block">Shop quality feedback & reviews</p>
                         </div>
                     </div>
 
@@ -291,17 +291,17 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                         <div className="flex items-center gap-2 sm:gap-3">
                             <NotificationDropdown />
                         </div>
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
+                        <div className="hidden sm:block h-8 w-px bg-stone-200"></div>
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-stone-500 bg-transparent hover:text-stone-700 focus:outline-none transition ease-in-out duration-150">
                                             <div className="hidden lg:block">
                                                 <WorkspaceAccountSummary user={auth.user} />
                                             </div>
                                             <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
+                                            <ChevronDown size={16} className="text-stone-400" />
                                         </button>
                                     </span>
                                 </Dropdown.Trigger>
@@ -309,7 +309,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
                                         <User size={16} /> Profile
                                     </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
+                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-rose-600 hover:text-rose-700">
                                         <LogOut size={16} /> Log Out
                                     </WorkspaceLogoutLink>
                                 </Dropdown.Content>
@@ -325,23 +325,23 @@ export default function Reviews({ auth, reviews, stats, flash }) {
 
                     {/* Stats Overview */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Shop Rating</h3>
-                            <h1 className="text-5xl font-black text-gray-900 mb-3">{stats.average ? stats.average.toFixed(1) : '0.0'}</h1>
+                        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-stone-200 flex flex-col items-center justify-center text-center">
+                            <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Shop Rating</h3>
+                            <h1 className="text-5xl font-black text-stone-900 mb-3">{stats.average ? stats.average.toFixed(1) : '0.0'}</h1>
                             <div className="flex items-center gap-0.5 mb-1.5">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <Star
                                         key={star}
                                         size={20}
-                                        className={star <= Math.round(stats.average || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
+                                        className={star <= Math.round(stats.average || 0) ? 'fill-amber-400 text-amber-400' : 'text-stone-200'}
                                     />
                                 ))}
                             </div>
-                            <p className="text-xs text-gray-500 font-medium">Based on {stats.total || 0} reviews</p>
+                            <p className="text-xs text-stone-500 font-medium">Based on {stats.total || 0} reviews</p>
                         </div>
 
-                        <div className="md:col-span-2 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
-                            <h3 className="text-base font-bold text-gray-900 mb-4">Rating Distribution</h3>
+                        <div className="md:col-span-2 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-stone-200 flex flex-col justify-center">
+                            <h3 className="text-base font-bold text-stone-900 mb-4">Rating Distribution</h3>
                             <div className="space-y-3">
                                 {[5, 4, 3, 2, 1].map((star) => {
                                     const count = stats.stars ? stats.stars[star] : 0;
@@ -349,16 +349,16 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                     return (
                                         <div key={star} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setFilter(star.toString())}>
                                             <div className="flex items-center justify-end gap-1 w-10">
-                                                <span className="text-xs font-bold text-gray-700">{star}</span>
+                                                <span className="text-xs font-bold text-stone-700">{star}</span>
                                                 <Star size={12} className="fill-amber-400 text-amber-400" />
                                             </div>
-                                            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-amber-400 rounded-full"
                                                     style={{ width: `${percentage}%` }}
                                                 />
                                             </div>
-                                            <span className="text-xs font-medium text-gray-500 w-10 text-right">{count || 0}</span>
+                                            <span className="text-xs font-medium text-stone-500 w-10 text-right">{count || 0}</span>
                                         </div>
                                     );
                                 })}
@@ -367,21 +367,21 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     </div>
 
                     {/* Reviews List */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mt-4 relative z-10">
-                        <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 mt-4 relative z-10">
+                        <div className="p-5 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
-                                <h3 className="text-base font-bold text-gray-900">Recent Customer Reviews</h3>
-                                <p className="text-xs text-gray-500 mt-0.5">Read what your customers are saying</p>
+                                <h3 className="text-base font-bold text-stone-900">Recent Customer Reviews</h3>
+                                <p className="text-xs text-stone-500 mt-0.5">Read what your customers are saying</p>
                             </div>
 
-                            <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto">
+                            <div className="flex bg-stone-100 p-1 rounded-lg overflow-x-auto">
                                 {['All', 'Hidden', '5', '4', '3', '2', '1'].map((option) => (
                                     <button
                                         key={option}
                                         onClick={() => setFilter(option)}
                                         className={`px-4 py-1.5 whitespace-nowrap rounded-md text-xs font-bold transition-all ${filter === option
                                             ? 'bg-white text-clay-900 shadow-sm'
-                                            : 'text-gray-500 hover:text-gray-700'
+                                            : 'text-stone-500 hover:text-stone-700'
                                             }`}
                                     >
                                         {option === 'All' ? 'All Reviews' : option === 'Hidden' ? 'Hidden' : `${option} Star`}
@@ -390,10 +390,10 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             </div>
                         </div>
 
-                        <div className="divide-y divide-gray-50">
+                        <div className="divide-y divide-stone-50">
                             {paginatedReviews.length > 0 ? (
                                 paginatedReviews.map((review, index) => (
-                                    <div key={review.id} className={`p-4 sm:p-5 hover:bg-gray-50/50 transition-colors ${review.is_pinned ? 'bg-amber-50/30 border-l-4 border-amber-400' : ''} ${index === paginatedReviews.length - 1 ? 'rounded-b-2xl' : ''}`}>
+                                    <div key={review.id} className={`p-4 sm:p-5 hover:bg-stone-50/50 transition-colors ${review.is_pinned ? 'bg-amber-50/30 border-l-4 border-amber-400' : ''} ${index === paginatedReviews.length - 1 ? 'rounded-b-2xl' : ''}`}>
 
                                         {/* Pinned Badge */}
                                         {review.is_pinned && (
@@ -405,7 +405,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
 
                                         <div className="flex flex-col sm:flex-row gap-4">
                                             {/* Product Image */}
-                                            <div className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
+                                            <div className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-stone-100 overflow-hidden border border-stone-200">
                                                 {review.product_image ? (
                                                     <img
                                                         src={review.product_image.startsWith('http') || review.product_image.startsWith('/storage') ? review.product_image : `/storage/${review.product_image}`}
@@ -414,7 +414,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                         onError={(e) => { e.target.style.display = 'none'; }}
                                                     />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                    <div className="w-full h-full flex items-center justify-center text-stone-400">
                                                         <ImageIcon size={18} />
                                                     </div>
                                                 )}
@@ -424,21 +424,21 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 mb-1.5">
                                                     <div>
                                                         <div className="flex items-center gap-2 mb-0.5">
-                                                            <h4 className="font-bold text-sm text-gray-900">{review.customer}</h4>
+                                                            <h4 className="font-bold text-sm text-stone-900">{review.customer}</h4>
                                                             <div className="flex items-center gap-0.5">
                                                                 {[1, 2, 3, 4, 5].map((s) => (
                                                                     <Star
                                                                         key={s}
                                                                         size={12}
-                                                                        className={s <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
+                                                                        className={s <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-stone-200'}
                                                                     />
                                                                 ))}
                                                             </div>
                                                         </div>
-                                                        <p className="text-[11px] text-gray-500">Item: <span className="font-medium text-gray-700">{review.product_name}</span></p>
+                                                        <p className="text-[11px] text-stone-500">Item: <span className="font-medium text-stone-700">{review.product_name}</span></p>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[11px] font-medium text-gray-400">{review.date}</span>
+                                                        <span className="text-[11px] font-medium text-stone-400">{review.date}</span>
                                                         {!review.dispute && (
                                                             <button
                                                                 type="button"
@@ -454,7 +454,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                         <button
                                                             disabled={!canEditReviews || review.is_hidden_from_marketplace}
                                                             onClick={() => togglePin(review.id)}
-                                                            className={`p-1.5 rounded-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 ${review.is_pinned ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                                                            className={`p-1.5 rounded-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 ${review.is_pinned ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'text-stone-400 hover:text-amber-500 hover:bg-amber-50'}`}
                                                             title={review.is_hidden_from_marketplace ? 'Hidden reviews cannot be pinned' : review.is_pinned ? 'Unpin review' : 'Pin to top'}
                                                         >
                                                             {review.is_pinned ? <PinOff size={12} /> : <Pin size={12} />}
@@ -463,7 +463,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 </div>
 
                                                 {review.comment && (
-                                                    <p className="text-gray-700 leading-snug text-sm mb-3 mt-2">
+                                                    <p className="text-stone-700 leading-snug text-sm mb-3 mt-2">
                                                         {review.comment}
                                                     </p>
                                                 )}
@@ -514,7 +514,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 {review.photos && review.photos.length > 0 && (
                                                     <div className="flex gap-2 mt-2 mb-3 overflow-x-auto pb-1">
                                                         {review.photos.map((photo, idx) => (
-                                                            <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                                                            <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-stone-200 shrink-0">
                                                                 <img
                                                                     src={photo.startsWith('http') ? photo : `/storage/${photo}`}
                                                                     alt={`Review photo ${idx + 1}`}
@@ -529,19 +529,19 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                 {review.seller_reply && replyingTo !== review.id && (
                                                     <div className="mt-2 p-3 bg-clay-50/70 border border-clay-100 rounded-xl relative group">
                                                         <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button disabled={!canEditReviews} onClick={() => canEditReviews && openEditReply(review.id, review.seller_reply)} className="p-1 text-gray-400 hover:text-clay-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-gray-200 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50" title="Edit Reply">
+                                                            <button disabled={!canEditReviews} onClick={() => canEditReviews && openEditReply(review.id, review.seller_reply)} className="p-1 text-stone-400 hover:text-clay-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-stone-200 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50" title="Edit Reply">
                                                                 <Edit2 size={12} /> Edit
                                                             </button>
-                                                            <button disabled={!canEditReviews} onClick={() => canEditReviews && setConfirmingDelete(review.id)} className="p-1 text-gray-400 hover:text-red-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-red-100 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50" title="Delete Reply">
+                                                            <button disabled={!canEditReviews} onClick={() => canEditReviews && setConfirmingDelete(review.id)} className="p-1 text-stone-400 hover:text-rose-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-rose-100 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50" title="Delete Reply">
                                                                 <Trash2 size={12} />
                                                             </button>
                                                         </div>
                                                         <div className="flex items-center gap-2 mb-2 pr-16">
                                                             <UserAvatar user={auth.user} className="w-5 h-5 shadow-sm" />
-                                                            <span className="text-[11px] font-bold text-gray-900">{auth.user.shop_name || auth.user.name}</span>
+                                                            <span className="text-[11px] font-bold text-stone-900">{auth.user.shop_name || auth.user.name}</span>
                                                             <span className="text-[9px] font-bold tracking-wider uppercase text-clay-600 bg-clay-100/50 px-1 py-0.5 rounded border border-clay-200/50">Seller Reply</span>
                                                         </div>
-                                                        <div className="text-[13px] text-gray-700 leading-snug prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: review.seller_reply }} />
+                                                        <div className="text-[13px] text-stone-700 leading-snug prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: review.seller_reply }} />
                                                     </div>
                                                 )}
 
@@ -551,9 +551,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                         <button
                                                             disabled={!canEditReviews}
                                                             onClick={() => canEditReviews && openReply(review.id)}
-                                                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                                                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-stone-700 bg-white border border-stone-200 rounded-lg hover:border-stone-300 hover:bg-stone-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                                         >
-                                                            <Reply size={13} className="text-gray-500" /> Reply
+                                                            <Reply size={13} className="text-stone-500" /> Reply
                                                         </button>
                                                         <Dropdown>
                                                             <Dropdown.Trigger>
@@ -572,7 +572,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                                         key={idx}
                                                                         disabled={!canEditReviews}
                                                                         onClick={() => handleQuickReply(review.id, qs)}
-                                                                        className="px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-xs text-left font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all leading-snug disabled:cursor-not-allowed disabled:opacity-50"
+                                                                        className="px-3 py-2 bg-white border border-stone-200 rounded-lg shadow-sm text-xs text-left font-medium text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-all leading-snug disabled:cursor-not-allowed disabled:opacity-50"
                                                                     >
                                                                         {qs}
                                                                     </button>
@@ -591,13 +591,13 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                                             placeholder="Write your reply..."
                                                         />
                                                         <div className="flex items-center justify-between gap-4 pt-1">
-                                                            <span className={`text-[10px] font-bold ${plainTextLength > 500 ? 'text-red-500' : 'text-gray-400'}`}>
+                                                            <span className={`text-[10px] font-bold ${plainTextLength > 500 ? 'text-rose-500' : 'text-stone-400'}`}>
                                                                 {plainTextLength} / 500
                                                             </span>
                                                             <div className="flex items-center gap-2">
                                                                 <button
                                                                     onClick={() => { setReplyingTo(null); setReplyText(''); }}
-                                                                    className="px-3 py-1.5 text-xs font-semibold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                                                                    className="px-3 py-1.5 text-xs font-semibold text-stone-500 border border-stone-200 rounded-lg hover:bg-stone-50 transition"
                                                                 >
                                                                     Cancel
                                                                 </button>
@@ -618,11 +618,11 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                 ))
                             ) : (
                                 <div className="p-12 text-center flex flex-col items-center justify-center">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                                        <MessageSquare size={24} className="text-gray-400" />
+                                    <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-4 border border-stone-100">
+                                        <MessageSquare size={24} className="text-stone-400" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-1">No reviews found</h3>
-                                    <p className="text-gray-500">There are no reviews matching your current filter.</p>
+                                    <h3 className="text-lg font-bold text-stone-900 mb-1">No reviews found</h3>
+                                    <p className="text-stone-500">There are no reviews matching your current filter.</p>
                                 </div>
                             )}
                         </div>
@@ -651,10 +651,10 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             <ShieldAlert size={20} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900">
+                            <h2 className="text-lg font-bold text-stone-900">
                                 {disputeModal.mode === 'edit' ? 'Edit Moderation Request' : 'Request Review Moderation'}
                             </h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-stone-500">
                                 {disputeModal.mode === 'edit'
                                     ? 'Update the reason or details before the request is closed.'
                                     : 'Flag this review for admin review with a clear reason.'}
@@ -668,11 +668,11 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             </div>
                         )}
                         <div>
-                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">Reason</label>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Reason</label>
                             <select
                                 value={disputeReason}
                                 onChange={(event) => setDisputeReason(event.target.value)}
-                                className={`w-full rounded-xl border px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-clay-300 ${disputeErrors.reason ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200'}`}
+                                className={`w-full rounded-xl border px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-clay-300 ${disputeErrors.reason ? 'border-rose-300 bg-rose-50/40' : 'border-stone-200'}`}
                             >
                                 <option value="Misleading review">Misleading review</option>
                                 <option value="Abusive language">Abusive language</option>
@@ -684,16 +684,16 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             )}
                         </div>
                         <div>
-                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">Details</label>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Details</label>
                             <textarea
                                 value={disputeDetails}
                                 onChange={(event) => setDisputeDetails(event.target.value)}
                                 rows={4}
                                 maxLength={1500}
                                 placeholder="State what looks inaccurate or why this review needs moderation."
-                                className={`w-full rounded-xl border px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-clay-300 ${disputeErrors.details ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200'}`}
+                                className={`w-full rounded-xl border px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-clay-300 ${disputeErrors.details ? 'border-rose-300 bg-rose-50/40' : 'border-stone-200'}`}
                             />
-                            <p className="mt-1 text-[11px] text-gray-400">{disputeDetails.length} / 1500</p>
+                            <p className="mt-1 text-[11px] text-stone-400">{disputeDetails.length} / 1500</p>
                             {disputeErrors.details && (
                                 <p className="mt-1 text-[11px] font-medium text-rose-600">{disputeErrors.details}</p>
                             )}
@@ -702,7 +702,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     <div className="mt-6 flex items-center gap-3">
                         <button
                             type="button"
-                            className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-200"
+                            className="flex-1 rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-bold text-stone-700 transition hover:bg-stone-200"
                             onClick={() => {
                                 setDisputeModal({ open: false, review: null, mode: 'create' });
                                 setDisputeErrors({});
@@ -729,14 +729,14 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 mb-4 mx-auto">
                         <ShieldAlert className="w-6 h-6 text-rose-600" />
                     </div>
-                    <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Remove moderation request?</h2>
-                    <p className="text-sm text-gray-500 text-center mb-6">
+                    <h2 className="text-lg font-bold text-stone-900 text-center mb-2">Remove moderation request?</h2>
+                    <p className="text-sm text-stone-500 text-center mb-6">
                         This will withdraw the open review moderation request so it no longer appears in the admin queue.
                     </p>
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
-                            className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition"
+                            className="flex-1 px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-sm rounded-xl transition"
                             onClick={() => setConfirmingDisputeRemoval(null)}
                         >
                             Cancel
@@ -755,17 +755,17 @@ export default function Reviews({ auth, reviews, stats, flash }) {
 
             <Modal show={confirmingDelete !== null} onClose={() => setConfirmingDelete(null)} maxWidth="sm">
                 <div className="p-6">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4 mx-auto">
-                        <AlertCircle className="w-6 h-6 text-red-600" />
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 mb-4 mx-auto">
+                        <AlertCircle className="w-6 h-6 text-rose-600" />
                     </div>
-                    <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Delete Reply?</h2>
-                    <p className="text-sm text-gray-500 text-center mb-6">
+                    <h2 className="text-lg font-bold text-stone-900 text-center mb-2">Delete Reply?</h2>
+                    <p className="text-sm text-stone-500 text-center mb-6">
                         Are you sure you want to delete your reply? This action cannot be undone.
                     </p>
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
-                            className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition"
+                            className="flex-1 px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-sm rounded-xl transition"
                             onClick={() => setConfirmingDelete(null)}
                         >
                             Cancel
@@ -773,7 +773,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                         <button
                             type="button"
                             disabled={!canEditReviews}
-                            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                             onClick={deleteReply}
                         >
                             Delete
