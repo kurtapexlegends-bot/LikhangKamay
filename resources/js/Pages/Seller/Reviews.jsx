@@ -128,7 +128,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         return 0;
     });
 
-    const itemsPerPage = 6;
+    const itemsPerPage = 10;
     const totalPages = Math.max(1, Math.ceil(sortedReviews.length / itemsPerPage));
     const paginatedReviews = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -627,14 +627,16 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             )}
                         </div>
 
-                        <CompactPagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            totalItems={sortedReviews.length}
-                            itemsPerPage={itemsPerPage}
-                            itemLabel="reviews"
-                            onPageChange={setCurrentPage}
-                        />
+                        {totalPages > 1 && (
+                            <CompactPagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalItems={sortedReviews.length}
+                                itemsPerPage={itemsPerPage}
+                                itemLabel="reviews"
+                                onPageChange={setCurrentPage}
+                            />
+                        )}
                     </div>
                 </main>
             </div>

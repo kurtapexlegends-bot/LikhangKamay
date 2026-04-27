@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import Footer from '@/Components/Footer';
@@ -10,6 +10,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import { hasRating, formatRating } from '@/utils/rating';
 import { useToast } from '@/Components/ToastContext';
 import { isShopFollowed, toggleFollowedShop } from '@/utils/buyerSignals';
+import CompactPagination from '@/Components/CompactPagination';
 
 export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     const { addToast } = useToast();
@@ -66,6 +67,16 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
             'success',
         );
     };
+
+    const ITEMS_PER_PAGE = 20;
+    const [page, setPage] = useState(1);
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+    const paginatedProducts = useMemo(() => {
+        const start = (page - 1) * ITEMS_PER_PAGE;
+        return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredProducts, page]);
+
+    useEffect(() => setPage(1), [searchTerm, categoryFilter, sortBy]);
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
@@ -237,29 +248,34 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                 )}
 
                 {/* --- PRODUCTS SECTION (COMPACT) --- */}
-                <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 px-3">
                         <Package size={18} className="text-orange-600" />
-                        Products Collection
-                    </h2>
+                        <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Products Collection</h2>
+                    </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="relative w-full sm:w-auto">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-1">
+                        <div className="relative w-full sm:w-64">
                             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                             <input
                                 type="text"
                                 value={searchTerm}
                                 onChange={(event) => setSearchTerm(event.target.value)}
-                                placeholder="Search..."
-                                className="w-full sm:w-48 rounded-lg border border-stone-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-stone-700 shadow-sm outline-none transition focus:border-clay-400 focus:ring-1 focus:ring-clay-400"
+                                placeholder="Search products..."
+                                className="w-full rounded-xl border-none bg-stone-50 py-2 pl-9 pr-3 text-xs font-medium text-stone-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-clay-500/30"
                             />
                         </div>
-                        <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm">
-                            <Filter size={14} className="text-stone-400" />
+                        
+                        <div className="h-6 w-px bg-stone-200 hidden sm:block mx-1"></div>
+
+                        <div className="relative flex flex-1 items-center sm:flex-none">
+                            <div className="pointer-events-none absolute left-3 flex items-center justify-center text-stone-400">
+                                <Filter size={14} />
+                            </div>
                             <select
                                 value={categoryFilter}
                                 onChange={(event) => setCategoryFilter(event.target.value)}
-                                className="bg-transparent text-xs font-semibold text-stone-700 outline-none w-full sm:w-auto cursor-pointer"
+                                className="w-full appearance-none rounded-xl border-none bg-stone-50 py-2 pl-9 pr-8 text-xs font-bold text-stone-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-clay-500/30 sm:w-auto cursor-pointer"
                             >
                                 {categoryOptions.map((option) => (
                                     <option key={option} value={option}>
@@ -268,12 +284,15 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                 ))}
                             </select>
                         </div>
-                        <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm">
-                            <ArrowUpDown size={14} className="text-stone-400" />
+                        
+                        <div className="relative flex flex-1 items-center sm:flex-none">
+                            <div className="pointer-events-none absolute left-3 flex items-center justify-center text-stone-400">
+                                <ArrowUpDown size={14} />
+                            </div>
                             <select
                                 value={sortBy}
                                 onChange={(event) => setSortBy(event.target.value)}
-                                className="bg-transparent text-xs font-semibold text-stone-700 outline-none w-full sm:w-auto cursor-pointer"
+                                className="w-full appearance-none rounded-xl border-none bg-stone-50 py-2 pl-9 pr-8 text-xs font-bold text-stone-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-clay-500/30 sm:w-auto cursor-pointer"
                             >
                                 <option value="featured">Featured</option>
                                 <option value="popular">Most Sold</option>
@@ -285,61 +304,83 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                     </div>
                 </div>
 
-                {filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                        {filteredProducts.map((product) => (
-                            <Link 
-                                href={route('product.show', product.slug)} 
-                                key={product.id} 
-                                className="group bg-white rounded-xl border border-stone-200/70 shadow-sm hover:border-clay-300 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden"
-                            >
-                                {/* Image */}
-                                <div className="aspect-square relative bg-stone-50 border-b border-stone-100 overflow-hidden flex items-center justify-center p-2">
-                                    <img 
-                                        src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
-                                        alt={product.name} 
-                                        className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-105"
-                                        onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                    />
-                                    {product.is_new && (
-                                        <span className="absolute top-1.5 left-1.5 bg-clay-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">NEW</span>
-                                    )}
-                                    {hasRating(product.rating) && (
-                                        <div className="absolute top-1.5 right-1.5 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 text-stone-700 border border-stone-200/50">
-                                            {formatRating(product.rating)} <Star size={9} className="fill-amber-400 text-amber-400 -mt-[1px]" />
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-3 flex flex-col flex-1 bg-white">
-                                    <h3 className="text-xs font-semibold text-stone-800 line-clamp-2 group-hover:text-clay-600 transition-colors leading-tight mb-2">
-                                        {product.name}
-                                    </h3>
-
-                                    <div className="flex items-end justify-between mt-auto pt-1">
-                                        <div className="font-bold text-[13px] text-stone-900 tracking-tight">
-                                            ₱ {formatPrice(product.price)}
-                                        </div>
+                {paginatedProducts.length > 0 ? (
+                    <div className="flex flex-col gap-8">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+                            {paginatedProducts.map((product) => (
+                                <Link 
+                                    href={route('product.show', product.slug)} 
+                                    key={product.id} 
+                                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-clay-300 hover:shadow-xl"
+                                >
+                                    {/* Image */}
+                                    <div className="aspect-[4/3] relative bg-stone-50 overflow-hidden flex items-center justify-center">
+                                        <img 
+                                            src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
+                                            alt={product.name} 
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                                        
+                                        {product.is_new && (
+                                            <span className="absolute top-3 left-3 bg-clay-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">NEW</span>
+                                        )}
+                                        {hasRating(product.rating) && (
+                                            <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md shadow-sm text-[11px] font-bold px-2 py-1 rounded-md flex items-center gap-1 text-stone-700">
+                                                {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-[1px]" />
+                                            </div>
+                                        )}
+                                        
                                         {product.sold > 0 && (
-                                            <span className="text-[10px] text-stone-500 font-medium flex items-center gap-0.5">
-                                                <Flame size={10} className="text-orange-500" />
-                                                {product.sold}
-                                            </span>
+                                            <div className="absolute bottom-3 left-3 flex justify-between pointer-events-none opacity-0 transition-opacity group-hover:opacity-100 z-10">
+                                                <span className="text-[10px] text-white/90 font-medium flex items-center gap-1 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm shadow-sm">
+                                                    <Flame size={10} className="text-orange-400" />
+                                                    {product.sold} sold
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
-                                </div>
-                            </Link>
-                        ))}
+
+                                    {/* Content */}
+                                    <div className="flex flex-col flex-1 p-5 bg-white">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-clay-600 mb-1.5">{product.category || 'Product'}</p>
+                                        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-stone-900 group-hover:text-clay-800 transition-colors mb-3">
+                                            {product.name}
+                                        </h3>
+
+                                        <div className="mt-auto flex items-end justify-between pt-2">
+                                            <div className="font-bold text-base text-stone-900 tracking-tight">
+                                                PHP {formatPrice(product.price)}
+                                            </div>
+                                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-50 text-stone-400 transition-colors group-hover:bg-clay-100 group-hover:text-clay-700 shadow-sm" title="View Product">
+                                                <ShoppingCart size={14} />
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                        {totalPages > 1 && (
+                            <div className="mt-8 border-t border-stone-200 pt-8 flex justify-center">
+                                <CompactPagination
+                                    currentPage={page}
+                                    totalPages={totalPages}
+                                    totalItems={filteredProducts.length}
+                                    itemsPerPage={ITEMS_PER_PAGE}
+                                    onPageChange={setPage}
+                                />
+                            </div>
+                        )}
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                            <Package size={32} />
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-stone-300 bg-stone-50 py-16 px-4 text-center">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-4 ring-stone-50">
+                            <Package size={24} className="text-stone-400" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900">No matching products</h3>
-                        <p className="text-gray-500 text-sm mt-1">
-                            {products.length > 0 ? 'Try another keyword or category for this shop.' : "This artisan hasn't added any products to their shop yet."}
+                        <h3 className="text-lg font-bold text-stone-900">No matching products found</h3>
+                        <p className="mt-2 text-sm text-stone-500 max-w-sm">
+                            {products.length > 0 ? "We couldn't find any products matching your search or filters. Try adjusting them." : "This artisan hasn't added any products to their shop yet."}
                         </p>
                     </div>
                 )}

@@ -14,6 +14,7 @@ import {
     Star,
     TrendingUp,
     TrendingDown,
+    Minus,
     Download,
     Users,
 } from 'lucide-react';
@@ -29,9 +30,22 @@ import {
     Pie,
     Cell,
 } from 'recharts';
+import ExportButton from '@/Components/ExportButton';
 
 const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
-    const isPositive = growth >= 0;
+    let growthColor = 'text-stone-500';
+    let GrowthIcon = Minus;
+    let growthPrefix = '';
+
+    if (growth > 0) {
+        growthColor = 'text-emerald-600';
+        GrowthIcon = TrendingUp;
+        growthPrefix = '+';
+    } else if (growth < 0) {
+        growthColor = 'text-rose-600';
+        GrowthIcon = TrendingDown;
+        growthPrefix = ''; // The negative sign is inherently part of the number
+    }
 
     return (
         <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
@@ -39,13 +53,11 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
                 <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
                 <h3 className="text-2xl font-bold text-stone-900 tracking-tight">{value}</h3>
 
-                {growth !== undefined ? (
-                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                        <span>{isPositive ? '+' : ''}{growth}% vs last month</span>
+                {growth !== undefined && (
+                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>
+                        <GrowthIcon size={12} />
+                        <span>{growthPrefix}{growth}% vs last month</span>
                     </div>
-                ) : (
-                    <p className="text-[10px] font-medium text-stone-400 mt-1">Real data only</p>
                 )}
             </div>
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} ${text}`}>
@@ -177,15 +189,9 @@ export default function Analytics({
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={sellerSubscription?.canExportAnalytics ? (
-                    <a
-                        href={route('analytics.export')}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 shadow-sm transition hover:bg-stone-50"
-                    >
-                        <Download size={16} />
-                        <span>Download Report</span>
-                    </a>
+                    <ExportButton href={route('analytics.export')} icon={Download} variant="primary" className="hidden sm:inline-flex">
+                        Download Report
+                    </ExportButton>
                 ) : (
                     <div className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-500 shadow-sm">
                         <DollarSign size={15} />

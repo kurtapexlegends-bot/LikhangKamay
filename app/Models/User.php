@@ -76,6 +76,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'artisan_rejection_reason',
         'approved_at',
         'approved_by',
+        'artisan_welcomed',
         // Social Auth Fields
         'social_provider',
         'social_id',

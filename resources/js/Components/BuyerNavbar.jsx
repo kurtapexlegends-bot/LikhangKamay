@@ -4,7 +4,7 @@ import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
     MessageCircle, ChevronDown, ShoppingBag, 
-    Search, ShoppingCart, User, LogOut, Heart
+    Search, ShoppingCart, User, LogOut, Heart, Clock
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 
@@ -107,9 +107,20 @@ export default function BuyerNavbar() {
                                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Signed in as</p>
                                                 <p className="text-sm font-bold text-gray-900 truncate">{user.email}</p>
                                             </div>
-                                            <Dropdown.Link href={route('profile.edit')}><User size={16} className="inline mr-2"/> Profile Settings</Dropdown.Link>
-                                            <Dropdown.Link href={route('my-orders.index')}><ShoppingBag size={16} className="inline mr-2"/> My Purchases</Dropdown.Link>
-                                            <Dropdown.Link href={route('saved.index')}><Heart size={16} className="inline mr-2"/> Saved</Dropdown.Link>
+                                            {user.role !== 'artisan' || user.artisan_status !== 'pending' ? (
+                                                <>
+                                                    <Dropdown.Link href={route('profile.edit')}><User size={16} className="inline mr-2"/> Profile Settings</Dropdown.Link>
+                                                    <Dropdown.Link href={route('my-orders.index')}><ShoppingBag size={16} className="inline mr-2"/> My Purchases</Dropdown.Link>
+                                                    <Dropdown.Link href={route('saved.index')}><Heart size={16} className="inline mr-2"/> Saved</Dropdown.Link>
+                                                </>
+                                            ) : (
+                                                <Dropdown.Link href={route('artisan.pending')} className="text-amber-600 font-bold bg-amber-50/50">
+                                                    <span className="flex items-center">
+                                                        <Clock size={16} className="inline mr-2" />
+                                                        Application Status
+                                                    </span>
+                                                </Dropdown.Link>
+                                            )}
                                             {/* SELLER LINK */}
                                             {sellerWorkspaceHref && (
                                                 <Dropdown.Link href={sellerWorkspaceHref} className="text-clay-600 font-bold bg-clay-50/50">

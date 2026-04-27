@@ -3,6 +3,7 @@ import { Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
+import CompactPagination from '@/Components/CompactPagination';
 import {
     Clock, Eye, CheckCircle, XCircle, 
     FileText, Phone, MapPin, AlertTriangle, X, Download, LoaderCircle
@@ -116,6 +117,19 @@ export default function PendingArtisans({ artisans }) {
             ].some((value) => String(value || '').toLowerCase().includes(query));
         });
     }, [artisans, deferredSearchQuery, reviewFilter]);
+
+    const ITEMS_PER_PAGE = 5;
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.max(1, Math.ceil(filteredArtisans.length / ITEMS_PER_PAGE));
+    const paginatedArtisans = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredArtisans.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredArtisans, currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [deferredSearchQuery, reviewFilter]);
+
     const viewedDocumentsCount = viewingArtisan ? (viewedDocumentsByArtisan[viewingArtisan.id] ?? []).length : 0;
     const submittedDocumentsCount = viewingArtisan?.submitted_document_count ?? currentDocuments.filter((doc) => !!doc.url).length;
     const allSubmittedDocumentsViewed = submittedDocumentsCount > 0 && viewedDocumentsCount >= submittedDocumentsCount;
@@ -261,7 +275,11 @@ export default function PendingArtisans({ artisans }) {
                                 />
                             </div>
                         )}
-                        {filteredArtisans.map(artisan => (
+                        {paginatedArtisans.map(artisan => {
+                            const viewedCount = (viewedDocumentsByArtisan[artisan.id] ?? []).length;
+                            const isReady = artisan.submitted_document_count > 0 && viewedCount === artisan.submitted_document_count;
+
+                            return (
                             <div key={artisan.id} className="grid grid-cols-1 gap-4 px-4 py-3.5 transition hover:bg-stone-50/40 sm:px-6 md:grid-cols-12 md:items-center">
                                 <div className="col-span-4 flex items-center gap-3.5">
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-clay-100 bg-clay-50 text-sm font-bold text-clay-700">
@@ -300,22 +318,22 @@ export default function PendingArtisans({ artisans }) {
                                     <div className="rounded-xl border border-stone-200 bg-stone-50/70 px-3 py-2">
                                         <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider">
                                             <span className="text-stone-500">Documents</span>
-                                            <span className={artisan.documents_ready_for_approval ? 'text-emerald-700' : 'text-amber-700'}>
-                                                {artisan.viewed_document_count}/{artisan.submitted_document_count}
+                                            <span className={isReady ? 'text-emerald-700' : 'text-amber-700'}>
+                                                {viewedCount}/{artisan.submitted_document_count}
                                             </span>
                                         </div>
                                         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
                                             <div
-                                                className={`h-full rounded-full transition-[width] ${artisan.documents_ready_for_approval ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                                                className={`h-full rounded-full transition-[width] ${isReady ? 'bg-emerald-500' : 'bg-amber-400'}`}
                                                 style={{
                                                     width: `${artisan.submitted_document_count > 0
-                                                        ? Math.min(100, (artisan.viewed_document_count / artisan.submitted_document_count) * 100)
+                                                        ? Math.min(100, (viewedCount / artisan.submitted_document_count) * 100)
                                                         : 0}%`,
                                                 }}
                                             />
                                         </div>
                                         <p className="mt-2 text-[10px] text-stone-500">
-                                            {artisan.documents_ready_for_approval
+                                            {isReady
                                                 ? 'Ready for approval'
                                                 : 'Preview all submitted files first'}
                                         </p>
@@ -327,7 +345,7 @@ export default function PendingArtisans({ artisans }) {
                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-md">
                                             <Clock size={10} /> Pending
                                         </span>
-                                        {artisan.documents_ready_for_approval && (
+                                        {isReady && (
                                             <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
                                                 <CheckCircle size={9} /> Review Complete
                                             </span>
@@ -344,8 +362,17 @@ export default function PendingArtisans({ artisans }) {
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
+                    <CompactPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={filteredArtisans.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setCurrentPage}
+                        itemLabel="applications"
+                    />
                 </div>
             )}
 
@@ -459,12 +486,7 @@ export default function PendingArtisans({ artisans }) {
                                 )}
                              </div>
                              <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
-                                {processing && (
-                                    <WorkspaceLoadingState
-                                        label="Saving review"
-                                        detail="Updating application status"
-                                    />
-                                )}
+
                                 <button
                                     onClick={() => {
                                         setApprovalError('');

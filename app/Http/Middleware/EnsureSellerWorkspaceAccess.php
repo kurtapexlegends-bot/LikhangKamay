@@ -13,6 +13,10 @@ class EnsureSellerWorkspaceAccess
         /** @var \App\Models\User|null $user */
         $user = $request->user();
 
+        if ($user && $user->isArtisan() && $user->isPendingApproval()) {
+            return redirect()->route('artisan.pending');
+        }
+
         if (!$user || !$user->canAccessSellerWorkspace()) {
             abort(403, 'Unauthorized action. Seller workspace access only.');
         }

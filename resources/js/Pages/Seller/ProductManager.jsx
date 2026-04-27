@@ -19,7 +19,7 @@ import {
     TrendingUp, X, Tag, Image as ImageIcon,
     AlertTriangle, ChevronUp, ChevronDown,
     MoreVertical, RotateCcw,
-    Check, CheckCircle, Plus, Edit3, RefreshCw, Archive, Crown
+    Check, CheckCircle, Plus, Edit3, RefreshCw, Archive, Crown, ListTodo
 } from 'lucide-react';
 
 const KPICard = ({ title, value, icon: Icon, color, bg }) => (
@@ -294,7 +294,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         return result;
     }, [products, activeTab, searchQuery, quickFilter, sortConfig]);
 
-    const itemsPerPage = 8;
+    const itemsPerPage = 10;
     const totalPages = Math.max(1, Math.ceil(processedProducts.length / itemsPerPage));
     const paginatedProducts = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -694,9 +694,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
                     {/* METRICS */}
                     <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3">
-                        <KPICard title="Total Products" value={products.length} icon={Package} color="text-blue-600" bg="bg-blue-50" />
-                        <KPICard title="Total Sold Units" value={products.reduce((acc, curr) => acc + (parseInt(curr.sold) || 0), 0)} icon={TrendingUp} color="text-green-600" bg="bg-green-50" />
-                        <KPICard title="Low Stock Alerts" value={products.filter(p => p.stock < 10).length} icon={AlertCircle} color="text-red-600" bg="bg-red-50" />
+                        <KPICard title="Total Products" value={products.length} icon={Package} color="text-sky-600" bg="bg-sky-50" />
+                        <KPICard title="Total Sold Units" value={products.reduce((acc, curr) => acc + (parseInt(curr.sold) || 0), 0)} icon={TrendingUp} color="text-emerald-600" bg="bg-emerald-50" />
+                        <KPICard title="Low Stock Alerts" value={products.filter(p => p.stock < 10).length} icon={AlertCircle} color="text-rose-600" bg="bg-rose-50" />
                     </div>
 
                     {(incompleteDraftCount > 0 || remainingActivationSlots === 0 || lowStockCount > 0) && (
@@ -716,7 +716,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                 </button>
                             )}
                             {remainingActivationSlots === 0 ? (
-                                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-bold text-red-700">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1 text-[11px] font-bold text-rose-700">
                                     <Archive size={13} />
                                     Active product limit reached
                                 </span>
@@ -781,74 +781,79 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                 Reset saved view
                             </button>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3">
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFilter('all', activeTab)}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
-                                    quickFilter === 'all'
-                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
-                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                }`}
-                            >
-                                All visible
-                            </button>
-                            {incompleteDraftCount > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => applyQuickFilter('needs_readiness', 'Draft')}
-                                    className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
-                                        quickFilter === 'needs_readiness'
-                                            ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                            : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                    }`}
-                                >
-                                    Needs media
-                                </button>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFilter('ready_drafts', 'Draft')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
-                                    quickFilter === 'ready_drafts'
-                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                }`}
-                            >
-                                Ready drafts
-                            </button>
-                            {visibleProductIds.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={selectVisibleProducts}
-                                    className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-500 transition-colors hover:bg-stone-50"
-                                >
-                                    Select all
-                                </button>
-                            )}
-                        </div>
-
-                        {selectedProductIds.length > 0 && (
-                            <div className="flex flex-col gap-3 border-b border-gray-100 bg-[#FCF7F2] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="inline-flex rounded-full bg-clay-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-clay-700">
-                                        {selectedProductIds.length} selected
-                                    </span>
-                                    <button onClick={() => setSelectedProductIds([])} className="rounded px-1 py-0.5 text-[11px] font-bold text-stone-500 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20">
-                                        Clear
+                        {selectedProductIds.length > 0 ? (
+                            <div className="flex flex-col gap-3 border-b border-clay-200 bg-clay-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between animate-fadeIn">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-clay-600 text-[11px] font-bold text-white shadow-sm">
+                                        {selectedProductIds.length}
+                                    </div>
+                                    <span className="text-[13px] font-bold text-clay-900">Products Selected</span>
+                                    <div className="h-4 w-px bg-clay-200 mx-1 hidden sm:block"></div>
+                                    <button onClick={() => setSelectedProductIds([])} className="text-[11px] font-bold text-clay-500 transition-colors hover:text-clay-700 focus-visible:outline-none">
+                                        Clear Selection
                                     </button>
                                 </div>
                                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Active')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
-                                        <CheckCircle size={13} /> Activate
+                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Active')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+                                        <CheckCircle size={13} className="text-emerald-500" /> Activate
                                     </button>
-                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Draft')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
-                                        <RotateCcw size={13} /> Save as Draft
+                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Draft')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 shadow-sm transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+                                        <RotateCcw size={13} className="text-amber-500" /> Save as Draft
                                     </button>
-                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Archived')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
-                                        <Archive size={13} /> Archive
+                                    <button disabled={!canEditProducts} onClick={() => runBulkStatusUpdate('Archived')} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+                                        <Archive size={13} className="text-stone-400" /> Archive
                                     </button>
                                 </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between animate-fadeIn">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">Quick Filters:</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => applyQuickFilter('all', activeTab)}
+                                        className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition-colors ${
+                                            quickFilter === 'all'
+                                                ? 'border-clay-200 bg-clay-50 text-clay-700 shadow-sm'
+                                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-stone-700'
+                                        }`}
+                                    >
+                                        All visible
+                                    </button>
+                                    {incompleteDraftCount > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => applyQuickFilter('needs_readiness', 'Draft')}
+                                            className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition-colors ${
+                                                quickFilter === 'needs_readiness'
+                                                    ? 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
+                                                    : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-stone-700'
+                                            }`}
+                                        >
+                                            Needs media
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => applyQuickFilter('ready_drafts', 'Draft')}
+                                        className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition-colors ${
+                                            quickFilter === 'ready_drafts'
+                                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
+                                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-stone-700'
+                                        }`}
+                                    >
+                                        Ready drafts
+                                    </button>
+                                </div>
+                                {visibleProductIds.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={selectVisibleProducts}
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-600 shadow-sm transition-colors hover:border-clay-300 hover:text-clay-700 sm:w-auto"
+                                    >
+                                        <Check size={13} /> Select Page
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -891,28 +896,28 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                 <td className="px-5 py-3 font-bold text-gray-700 text-sm">₱{product.price}</td>
                                                 <td className="px-5 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.stock < 10 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}`}>
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.stock < 10 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
                                                             {product.stock} units
                                                         </span>
-                                                        {product.stock < 10 && <AlertCircle size={12} className="text-red-500" />}
+                                                        {product.stock < 10 && <AlertCircle size={12} className="text-rose-500" />}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-3 text-sm font-medium text-gray-600">{product.sold}</td>
                                                 <td className="px-5 py-3">
                                                     <div className="flex flex-col items-start gap-1">
-                                                        {product.stock < 10 && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-600 border border-red-200 uppercase tracking-wide">Low Stock</span>}
-                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.status === 'Active' ? 'bg-green-50 text-green-700 border-green-100' : product.status === 'Archived' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>{product.status}</span>
+                                                        {product.stock < 10 && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 border border-rose-200 uppercase tracking-wide">Low Stock</span>}
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : product.status === 'Archived' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>{product.status}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-3 text-right">
                                                     <div className="flex justify-end gap-1.5">
-                                                        <button disabled={!canEditProducts} onClick={() => openRestockModal(product)} className="rounded-md p-1.5 text-green-600 transition-colors hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Restock' : 'Read only'}><RefreshCw size={14} /></button>
+                                                        <button disabled={!canEditProducts} onClick={() => openRestockModal(product)} className="rounded-md p-1.5 text-emerald-600 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Restock' : 'Read only'}><RefreshCw size={14} /></button>
                                                         <button disabled={!canEditProducts} onClick={() => openDeductModal(product)} className="rounded-md p-1.5 text-orange-600 transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Manual Deduct' : 'Read only'}><TrendingUp size={14} className="rotate-180" /></button>
-                                                        <button disabled={!canEditProducts} onClick={() => openEditModal(product)} className="rounded-md p-1.5 text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Edit' : 'Read only'}><Edit3 size={14} /></button>
+                                                        <button disabled={!canEditProducts} onClick={() => openEditModal(product)} className="rounded-md p-1.5 text-sky-600 transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Edit' : 'Read only'}><Edit3 size={14} /></button>
                                                         {product.status === 'Archived' ? (
                                                             <button disabled={!canEditProducts} onClick={() => openArchiveModal(product)} className="rounded-md p-1.5 text-amber-500 transition-colors hover:bg-amber-50 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Unarchive' : 'Read only'}><RotateCcw size={14} /></button>
                                                         ) : (
-                                                            <button disabled={!canEditProducts} onClick={() => openArchiveModal(product)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Archive' : 'Read only'}><Archive size={14} /></button>
+                                                            <button disabled={!canEditProducts} onClick={() => openArchiveModal(product)} className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={canEditProducts ? 'Archive' : 'Read only'}><Archive size={14} /></button>
                                                         )}
                                                     </div>
                                                 </td>
@@ -952,7 +957,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                     <h3 className="truncate pr-2 text-sm font-bold text-gray-900">{product.name}</h3>
                                                     <p className="text-[10px] font-mono tracking-wide text-gray-400">{product.sku}</p>
                                                 </div>
-                                                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${product.status === 'Active' ? 'bg-green-50 text-green-700 border-green-100' : product.status === 'Archived' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
+                                                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${product.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : product.status === 'Archived' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
                                                     {product.status}
                                                 </span>
                                             </div>
@@ -971,7 +976,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                             <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                                                 <span>Sold: {product.sold}</span>
                                                 {product.stock < 10 && (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600">
                                                         <AlertCircle size={10} /> Low Stock
                                                     </span>
                                                 )}
@@ -979,7 +984,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         </div>
                                         </div>
                                         <div className="mt-3 flex flex-col gap-2">
-                                            <button disabled={!canEditProducts} onClick={() => openEditModal(product)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-bold text-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                            <button disabled={!canEditProducts} onClick={() => openEditModal(product)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-[11px] font-bold text-sky-700 disabled:cursor-not-allowed disabled:opacity-50">
                                                 <Edit3 size={14} /> Edit Product
                                             </button>
                                         </div>
@@ -999,14 +1004,16 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                              )}
                         </div>
 
-                        <CompactPagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            totalItems={processedProducts.length}
-                            itemsPerPage={itemsPerPage}
-                            itemLabel="products"
-                            onPageChange={setCurrentPage}
-                        />
+                        {totalPages > 1 && (
+                            <CompactPagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalItems={processedProducts.length}
+                                itemsPerPage={10}
+                                itemLabel="products"
+                                onPageChange={setCurrentPage}
+                            />
+                        )}
                     </div>
                 </main>
 
@@ -1068,7 +1075,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     <div className="shrink-0 border-b border-gray-100 px-5 py-5 sm:px-6">
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <h2 className="text-2xl font-serif font-bold text-gray-900">{data.id ? 'Edit Product' : 'New Product'}</h2>
+                                <h2 className="text-2xl font-bold text-gray-900">{data.id ? 'Edit Product' : 'New Product'}</h2>
                                 <div className="mt-1 flex items-center gap-2">
                                     <span className="text-xs font-bold uppercase tracking-wider text-gray-400">SKU:</span>
                                     <span className="rounded border border-gray-200 bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-600">{data.sku}</span>
@@ -1259,48 +1266,85 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         {/* TAB 3: MEDIA */}
                         {activeFormTab === 'Media' && (
                             <div className="space-y-6 animate-fadeIn">
-                                <div className={`rounded-2xl border px-4 py-4 ${activationReadiness.canActivate ? 'border-emerald-200 bg-emerald-50/70' : 'border-amber-200 bg-amber-50/80'}`}>
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <p className={`text-xs font-bold uppercase tracking-wider ${activationReadiness.canActivate ? 'text-emerald-700' : 'text-amber-700'}`}>
-                                                Activation Checklist
-                                            </p>
-                                            <p className={`mt-1 text-sm font-bold ${activationReadiness.canActivate ? 'text-emerald-900' : 'text-amber-900'}`}>
-                                                {activationReadiness.canActivate
-                                                    ? 'This product is ready to be listed as Active.'
-                                                    : 'Complete the media requirements before listing this product as Active.'}
-                                            </p>
-                                        </div>
-                                        <div className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${activationReadiness.canActivate ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                            {activationReadiness.canActivate ? 'Ready' : 'Draft only'}
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                                        {activationReadiness.items.map((item) => (
-                                            <div
-                                                key={item.key}
-                                                className={`rounded-xl border px-3 py-3 ${item.complete ? 'border-emerald-200 bg-white/80' : 'border-amber-200 bg-white/70'}`}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    {item.complete ? (
-                                                        <CheckCircle size={16} className="text-emerald-600" />
-                                                    ) : (
-                                                        <AlertCircle size={16} className="text-amber-600" />
-                                                    )}
-                                                    <p className="text-sm font-bold text-gray-900">{item.label}</p>
-                                                </div>
-                                                <p className={`mt-1 text-[11px] ${item.complete ? 'text-emerald-700' : 'text-amber-700'}`}>
-                                                    {item.complete ? 'Ready' : item.detail}
+                                <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden mb-6">
+                                    {/* Header */}
+                                    <div className={`px-6 py-5 border-b ${activationReadiness.canActivate ? 'bg-emerald-50/50 border-emerald-100' : 'bg-stone-50/50 border-stone-100'}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                                    {activationReadiness.canActivate ? <CheckCircle size={18} className="text-emerald-500"/> : <ListTodo size={18} className="text-stone-400"/>}
+                                                    Activation Checklist
+                                                </h3>
+                                                <p className="mt-1 text-xs text-stone-500">
+                                                    {activationReadiness.canActivate 
+                                                        ? 'All media requirements met. This product is ready for activation.'
+                                                        : 'Complete these requirements before listing this product as Active.'}
                                                 </p>
                                             </div>
-                                        ))}
+                                            <div className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide border ${activationReadiness.canActivate ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                                                {activationReadiness.canActivate ? 'Ready' : 'Draft only'}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Progress Bar */}
+                                        {!activationReadiness.canActivate && (
+                                            <div className="mt-5">
+                                                <div className="flex justify-between text-[10px] font-bold text-stone-500 mb-1.5">
+                                                    <span>Progress</span>
+                                                    <span>{activationReadiness.items.filter(i => i.complete).length} of {activationReadiness.items.length} completed</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-stone-200 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-clay-500 transition-all duration-500 ease-out"
+                                                        style={{ width: `${(activationReadiness.items.filter(i => i.complete).length / activationReadiness.items.length) * 100}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Checklist Items */}
+                                    <div className="p-4 sm:p-6 bg-white">
+                                        <div className="grid gap-3 sm:grid-cols-3">
+                                            {activationReadiness.items.map((item) => (
+                                                <div
+                                                    key={item.key}
+                                                    className={`relative rounded-xl border p-4 transition-all ${
+                                                        item.complete 
+                                                            ? 'border-emerald-100 bg-emerald-50/30' 
+                                                            : 'border-stone-200 bg-white hover:border-stone-300'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="mt-0.5 shrink-0">
+                                                            {item.complete ? (
+                                                                <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                                                    <Check size={12} strokeWidth={3} />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="h-5 w-5 rounded-full border-2 border-stone-300 flex items-center justify-center">
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-stone-300"></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <p className={`text-sm font-bold ${item.complete ? 'text-gray-900' : 'text-gray-700'}`}>
+                                                                {item.label}
+                                                            </p>
+                                                            <p className={`mt-0.5 text-xs ${item.complete ? 'text-emerald-600 font-medium' : 'text-stone-500'}`}>
+                                                                {item.complete ? 'Completed' : item.detail}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="mb-6 flex gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-                                    <ImageIcon className="text-blue-500 shrink-0" size={20} />
-                                    <p className="text-xs text-blue-700 leading-relaxed">
+                                <div className="mb-6 flex gap-3 rounded-xl border border-sky-100 bg-sky-50/50 p-4">
+                                    <ImageIcon className="text-sky-500 shrink-0" size={20} />
+                                    <p className="text-xs text-sky-700 leading-relaxed">
                                         Use clear, well-lit photos with a simple background.
                                     </p>
                                 </div>
@@ -1321,7 +1365,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                                 setData('cover_photo', null);
                                                                 setPreviews(prev => ({ ...prev, cover: null }));
                                                             }} 
-                                                            className="bg-white text-red-600 px-4 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-red-50 transition"
+                                                            className="bg-white text-rose-600 px-4 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-rose-50 transition"
                                                         >
                                                             Remove Photo
                                                         </button>
@@ -1346,7 +1390,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
                                                 <InputLabel value="Gallery Images" />
-                                                <span className={`text-[10px] font-bold ${previews.gallery.length < 3 ? 'text-orange-500' : previews.gallery.length > 5 ? 'text-red-500' : 'text-green-600'}`}>
+                                                <span className={`text-[10px] font-bold ${previews.gallery.length < 3 ? 'text-orange-500' : previews.gallery.length > 5 ? 'text-rose-500' : 'text-emerald-600'}`}>
                                                     {previews.gallery.length < 3 
                                                         ? `Add ${3 - previews.gallery.length} more (Min 3)`
                                                         : previews.gallery.length > 5 
@@ -1363,7 +1407,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                             <button 
                                                                 type="button" 
                                                                 onClick={() => handleRemoveGalleryImage(idx)}
-                                                                className="w-8 h-8 flex items-center justify-center bg-white text-red-600 rounded-full shadow-lg hover:bg-red-50 transition drop-shadow"
+                                                                className="w-8 h-8 flex items-center justify-center bg-white text-rose-600 rounded-full shadow-lg hover:bg-rose-50 transition drop-shadow"
                                                                 title="Remove image"
                                                             >
                                                                 <X size={16} strokeWidth={3} />
@@ -1388,12 +1432,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                             
                                             {/* Case 1: New File Selected */}
                                             {data.model_3d ? (
-                                                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-xl">
+                                                <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-white rounded-lg text-green-600 shadow-sm"><Check size={16} /></div>
+                                                        <div className="p-2 bg-white rounded-lg text-emerald-600 shadow-sm"><Check size={16} /></div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-green-800 truncate max-w-[150px]">{data.model_3d.name}</p>
-                                                            <p className="text-[10px] text-green-600">Ready to upload</p>
+                                                            <p className="text-sm font-bold text-emerald-800 truncate max-w-[150px]">{data.model_3d.name}</p>
+                                                            <p className="text-[10px] text-emerald-600">Ready to upload</p>
                                                         </div>
                                                     </div>
                                                     <button
@@ -1403,7 +1447,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                             setData('model_3d_assets', []);
                                                             setData('model_3d_asset_paths', []);
                                                         }}
-                                                        className="text-green-600 hover:text-green-800"
+                                                        className="text-emerald-600 hover:text-emerald-800"
                                                     >
                                                         <X size={16}/>
                                                     </button>
@@ -1411,15 +1455,15 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                             ) : (
                                                 // Case 2: Existing Model (Edit Mode)
                                                 data.model_3d_path ? (
-                                                    <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                                                    <div className="flex items-center justify-between p-3 bg-sky-50 border border-sky-100 rounded-xl">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm"><Cuboid size={16} /></div>
+                                                            <div className="p-2 bg-white rounded-lg text-sky-600 shadow-sm"><Cuboid size={16} /></div>
                                                             <div>
-                                                                <p className="text-sm font-bold text-blue-800">Current Model</p>
-                                                                <p className="text-[10px] text-blue-600">Keep it or replace it with a new file.</p>
+                                                                <p className="text-sm font-bold text-sky-800">Current Model</p>
+                                                                <p className="text-[10px] text-sky-600">Keep it or replace it with a new file.</p>
                                                             </div>
                                                         </div>
-                                                        <label className="cursor-pointer text-xs font-bold text-blue-600 hover:underline">
+                                                        <label className="cursor-pointer text-xs font-bold text-sky-600 hover:underline">
                                                             Replace
                                                             <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
                                                         </label>
@@ -1540,7 +1584,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             </Modal>
             <Modal show={archiveModalOpen} onClose={() => setArchiveModalOpen(false)} maxWidth="sm">
                 <div className="p-5 sm:p-6 text-center">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${selectedProduct?.status === 'Archived' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${selectedProduct?.status === 'Archived' ? 'bg-amber-100 text-amber-600' : 'bg-rose-100 text-rose-600'}`}>
                         {selectedProduct?.status === 'Archived' ? <RotateCcw size={24} /> : <Archive size={24} />}
                     </div>
                     <h2 className="text-lg font-bold text-gray-900 mb-2">
@@ -1556,7 +1600,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         <button
                             onClick={confirmArchive}
                             disabled={!canEditProducts}
-                            className={`rounded-xl px-4 py-2.5 text-sm font-bold text-white ${selectedProduct?.status === 'Archived' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-red-600 hover:bg-red-700'}`}
+                            className={`rounded-xl px-4 py-2.5 text-sm font-bold text-white ${selectedProduct?.status === 'Archived' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-rose-600 hover:bg-rose-700'}`}
                         >
                             {selectedProduct?.status === 'Archived' ? 'Yes, Unarchive' : 'Yes, Archive'}
                         </button>

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import CompactPagination from '@/Components/CompactPagination';
+import ExportButton from '@/Components/ExportButton';
 
 const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
     <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-300">
@@ -851,14 +853,9 @@ export default function OrderManager({ auth, orders = [] }) {
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={(
-                    <a
-                        href={route('orders.export')}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 shadow-sm transition hover:bg-stone-50 hover:border-stone-300"
-                    >
-                        <Printer size={16} /> Export
-                    </a>
+                    <ExportButton href={route('orders.export')} icon={Printer} variant="primary">
+                        Export
+                    </ExportButton>
                 )}
             />
 
@@ -1595,45 +1592,14 @@ export default function OrderManager({ auth, orders = [] }) {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="p-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-center gap-4 sm:justify-between">
-                                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">
-                                    Showing <span className="font-bold text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-gray-900">{Math.min(currentPage * itemsPerPage, filteredOrders.length)}</span> of <span className="font-bold text-gray-900">{filteredOrders.length}</span> orders
-                                </span>
-                                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto" style={{ scrollbarWidth: 'none' }}>
-                                    <button 
-                                        disabled={currentPage === 1}
-                                        onClick={() => setCurrentPage(prev => prev - 1)}
-                                        aria-label="Go to previous page"
-                                        className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <ChevronLeft size={16} />
-                                    </button>
-                                    <div className="flex items-center gap-1">
-                                        {[...Array(totalPages)].map((_, i) => (
-                                            <button 
-                                                key={i}
-                                                onClick={() => setCurrentPage(i + 1)}
-                                                aria-label={`Go to page ${i + 1}`}
-                                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-colors ${
-                                                    currentPage === i + 1 
-                                                    ? 'bg-clay-600 text-white shadow-md' 
-                                                    : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm'
-                                                }`}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <button 
-                                        disabled={currentPage === totalPages}
-                                        onClick={() => setCurrentPage(prev => prev + 1)}
-                                        aria-label="Go to next page"
-                                        className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <ChevronRight size={16} />
-                                    </button>
-                                </div>
-                            </div>
+                            <CompactPagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalItems={filteredOrders.length}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={setCurrentPage}
+                                itemLabel="orders"
+                            />
                         )}
                     </div>
                 </main>

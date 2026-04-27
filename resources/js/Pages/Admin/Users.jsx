@@ -1,8 +1,11 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Users, Store, Search, Shield, Briefcase, ChevronDown, X } from 'lucide-react';
+import { Users, Store, Search, Shield, Briefcase, ChevronDown, X, Filter } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
+import CompactPagination from '@/Components/CompactPagination';
+import Dropdown from '@/Components/Dropdown';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
 const roleTabs = ['all', 'artisan', 'buyer', 'super_admin'];
 
@@ -73,16 +76,16 @@ const summarizeModulePermissions = (modulePermissions = {}) => {
 function StaffMemberList({ staffMembers, emptyMessage }) {
     if (!staffMembers.length) {
         return (
-            <div className="rounded-xl border border-dashed border-stone-200 bg-stone-50/50 px-4 py-8 text-center text-[11px] font-bold tracking-wide uppercase text-stone-400">
+            <div className="rounded-xl border border-dashed border-stone-200 bg-stone-50/50 px-5 py-8 text-center text-xs font-medium tracking-wide uppercase text-stone-400">
                 {emptyMessage}
             </div>
         );
     }
 
     return (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
             {staffMembers.map((staffMember) => (
-                <div key={staffMember.id} className="rounded-xl border border-stone-200 bg-white px-4 py-3 transition hover:border-stone-300 hover:bg-stone-50/40">
+                <div key={staffMember.id} className="rounded-xl border border-stone-200 bg-white p-5 transition hover:border-stone-300 hover:shadow-sm">
                     {(() => {
                         const moduleSummary = summarizeModulePermissions(staffMember.module_permissions || {});
 
@@ -92,36 +95,36 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                         <div className="flex min-w-0 items-center gap-3">
                             <UserAvatar user={staffMember} className="h-10 w-10 border border-[#E8D9CB]" />
                             <div className="min-w-0">
-                                <p className="truncate text-sm font-extrabold text-stone-900">{staffMember.name}</p>
-                                <p className="truncate text-[11px] text-stone-500 font-medium">{staffMember.email}</p>
+                                <p className="truncate text-sm font-semibold text-stone-900">{staffMember.name}</p>
+                                <p className="truncate text-xs text-stone-500 font-medium">{staffMember.email}</p>
                             </div>
                         </div>
 
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest ${stateClasses[staffMember.account_state_tone] || stateClasses.neutral
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-widest ${stateClasses[staffMember.account_state_tone] || stateClasses.neutral
                             }`}>
                             {staffMember.account_state}
                         </span>
                     </div>
 
-                    <div className="mt-3.5 flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center rounded-md border border-[#E8D9CB] bg-[#F2EAE1] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#7A5037]">
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center rounded-md border border-[#E8D9CB] bg-[#F2EAE1] px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-[#7A5037]">
                             {formatStaffPreset(staffMember.staff_role_preset_key)}
                         </span>
                         {(moduleSummary.canEditCount + moduleSummary.readOnlyCount) > 0 && (
-                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-white px-2.5 py-1 text-[9px] font-bold tracking-wider text-stone-600">
+                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-medium tracking-wider text-stone-600">
                                 {moduleSummary.canEditCount} edit / {moduleSummary.readOnlyCount} view
                             </span>
                         )}
-                        <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-100 px-2.5 py-1 text-[9px] font-bold tracking-wider text-stone-600">
+                        <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-100 px-2.5 py-1 text-[10px] font-medium tracking-wider text-stone-600">
                             {staffMember.employee_linked ? (staffMember.employee_name || 'Employee linked') : 'No employee record'}
                         </span>
-                        <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-[9px] font-bold tracking-wider ${staffMember.email_verified ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                        <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-[10px] font-medium tracking-wider ${staffMember.email_verified ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
                             }`}>
                             {staffMember.email_verified ? 'Email verified' : 'Email pending'}
                         </span>
                     </div>
 
-                    <p className="mt-2.5 text-[10px] font-medium leading-relaxed text-stone-500">
+                    <p className="mt-3 text-xs font-medium leading-relaxed text-stone-500">
                         {staffMember.requires_password_change
                             ? 'Password reset required on next sign-in.'
                             : staffMember.workspace_access_enabled
@@ -245,26 +248,21 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
                         {/* Tab Segment for Role Filters */}
-                        <div className="flex w-full sm:w-auto items-center gap-6 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex w-full sm:w-auto items-center overflow-x-auto bg-stone-100/80 p-1.5 rounded-2xl border border-stone-200/60" style={{ scrollbarWidth: 'none' }}>
                             {roleTabs.map((role) => (
                                 <button
                                     key={role}
                                     type="button"
                                     onClick={() => handleRoleFilter(role)}
-                                    className={`relative flex items-center gap-2 whitespace-nowrap py-3 text-sm font-bold transition-colors ${filters.role === role
-                                            ? 'text-stone-900'
-                                            : 'text-stone-500 hover:text-stone-700'
+                                    className={`relative flex items-center gap-1.5 whitespace-nowrap px-4 py-2 text-[13px] font-medium transition-all rounded-xl ${filters.role === role
+                                            ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
+                                            : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'
                                         }`}
                                 >
                                     {role === 'all' && 'All Users'}
                                     {role === 'artisan' && <><Store size={14} /> Artisans</>}
                                     {role === 'buyer' && <><Users size={14} /> Buyers</>}
                                     {role === 'super_admin' && <><Shield size={14} /> Admins</>}
-
-                                    {/* Active Tab Indicator (Underline) */}
-                                    {filters.role === role && (
-                                        <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full bg-clay-600"></div>
-                                    )}
                                 </button>
                             ))}
                         </div>
@@ -298,67 +296,49 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                 <div className="border-b border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:px-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <p className="text-sm font-extrabold text-stone-900">Platform Accounts</p>
-                            <p className="text-[11px] font-medium text-stone-500">
+                            <p className="text-sm font-semibold text-stone-900">Platform Accounts</p>
+                            <p className="text-xs font-medium text-stone-500">
                                 Staff accounts stay grouped under their parent shop rows.
                             </p>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setQuickView('all')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
-                                    quickView === 'all'
-                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
-                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                }`}
-                            >
-                                All visible
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setQuickView('artisan_staff')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
-                                    quickView === 'artisan_staff'
-                                        ? 'border-[#E8D9CB] bg-[#F2EAE1] text-[#7A5037]'
-                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                }`}
-                            >
-                                Shops with staff
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setQuickView('buyer_unverified')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
-                                    quickView === 'buyer_unverified'
-                                        ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                }`}
-                            >
-                                Buyer email pending
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setQuickView('workspace_attention')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
-                                    quickView === 'workspace_attention'
-                                        ? 'border-red-200 bg-red-50 text-red-700'
-                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                }`}
-                            >
-                                Workspace attention
-                            </button>
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button
+                                        type="button"
+                                        className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[12px] font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 hover:border-stone-300"
+                                    >
+                                        <Filter size={14} className="text-stone-400" />
+                                        Filter: {quickView === 'all' ? 'All visible' : quickView === 'artisan_staff' ? 'Shops with staff' : quickView === 'buyer_unverified' ? 'Buyer email pending' : 'Workspace attention'}
+                                        <ChevronDown size={14} className="ml-1 text-stone-400" />
+                                    </button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Content align="right" width="56">
+                                    <button onClick={() => setQuickView('all')} className={`block w-full px-4 py-2.5 text-left text-[13px] transition ${quickView === 'all' ? 'bg-clay-50 text-clay-700 font-medium' : 'text-stone-600 font-medium hover:bg-stone-50'}`}>
+                                        All visible
+                                    </button>
+                                    <button onClick={() => setQuickView('artisan_staff')} className={`block w-full px-4 py-2.5 text-left text-[13px] transition ${quickView === 'artisan_staff' ? 'bg-[#F2EAE1] text-[#7A5037] font-medium' : 'text-stone-600 font-medium hover:bg-stone-50'}`}>
+                                        Shops with staff
+                                    </button>
+                                    <button onClick={() => setQuickView('buyer_unverified')} className={`block w-full px-4 py-2.5 text-left text-[13px] transition ${quickView === 'buyer_unverified' ? 'bg-amber-50 text-amber-700 font-medium' : 'text-stone-600 font-medium hover:bg-stone-50'}`}>
+                                        Buyer email pending
+                                    </button>
+                                    <button onClick={() => setQuickView('workspace_attention')} className={`block w-full px-4 py-2.5 text-left text-[13px] transition ${quickView === 'workspace_attention' ? 'bg-red-50 text-red-700 font-medium' : 'text-stone-600 font-medium hover:bg-stone-50'}`}>
+                                        Workspace attention
+                                    </button>
+                                </Dropdown.Content>
+                            </Dropdown>
                             {visibleNestedStaffCount > 0 && (
-                                <span className="inline-flex items-center rounded-md bg-[#F2EAE1] border border-[#E8D9CB] px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-[#7A5037]">
+                                <span className="inline-flex items-center rounded-md bg-[#F2EAE1] border border-[#E8D9CB] px-2.5 py-1 text-[10px] font-medium uppercase tracking-widest text-[#7A5037]">
                                     {visibleNestedStaffCount} visible staff
                                 </span>
                             )}
-                            <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-600">
+                            <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-600">
                                 {users.total} total accounts
                             </span>
                             {deferredSearch.trim() !== String(filters.search || '').trim() && (
-                                <span className="inline-flex items-center rounded-md bg-clay-50 border border-clay-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-clay-700">
+                                <span className="inline-flex items-center rounded-md bg-clay-50 border border-clay-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-clay-700">
                                     Search pending submit
                                 </span>
                             )}
@@ -369,10 +349,12 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                 <div className="space-y-3 p-3 md:hidden">
                     {filteredAccounts.length === 0 && (
                         <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 px-4 py-10 text-center">
-                            <div className="flex flex-col items-center justify-center gap-2 text-stone-400">
-                                <Search size={24} className="opacity-50" />
-                                <p className="text-sm font-bold text-stone-900">No matching accounts</p>
-                                <p className="text-xs text-stone-500">Try another quick view or broaden the search query.</p>
+                            <div className="flex flex-col items-center justify-center gap-3 text-stone-400">
+                                <Search size={28} className="opacity-50 animate-bounce" />
+                                <div>
+                                    <p className="text-sm font-semibold text-stone-900">No matching accounts</p>
+                                    <p className="text-xs text-stone-500 mt-0.5">Try another quick view or broaden the search query.</p>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -393,8 +375,8 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
-                                                    <p className="truncate text-sm font-bold text-stone-900">{user.name}</p>
-                                                    <p className="truncate text-[11px] font-medium text-stone-500">{user.email}</p>
+                                                    <p className="truncate text-sm font-medium text-stone-900">{user.name}</p>
+                                                    <p className="truncate text-xs font-medium text-stone-500">{user.email}</p>
                                                 </div>
                                                 {isExpandable && (
                                                     <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-stone-500">
@@ -404,7 +386,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                             </div>
 
                                             <div className="mt-3 flex flex-wrap gap-2">
-                                                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
+                                                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
                                                     {user.role === 'artisan' && <Store size={10} />}
                                                     {user.role === 'super_admin' && <Shield size={10} />}
                                                     {user.role === 'buyer' && <Users size={10} />}
@@ -412,7 +394,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                                     {user.role === 'super_admin' && 'Admin'}
                                                     {user.role === 'buyer' && 'Buyer'}
                                                 </span>
-                                                <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                                <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
                                                     {user.account_state}
                                                 </span>
                                             </div>
@@ -420,12 +402,12 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                     </div>
                                 </button>
 
-                                <div className="mt-3 grid grid-cols-1 gap-2 text-[11px] text-stone-600">
+                                <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-stone-600">
                                     <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
-                                        <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Workspace / Setup</p>
+                                        <p className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Workspace / Setup</p>
                                         {user.role === 'artisan' ? (
                                             <>
-                                                <p className="mt-1 font-bold text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
+                                                <p className="mt-1 font-medium text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
                                                 <p className="mt-1 text-stone-500">
                                                     {user.staff_count === 1 ? '1 staff account' : `${user.staff_count} staff accounts`}
                                                 </p>
@@ -437,10 +419,10 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                         )}
                                     </div>
                                     <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
-                                        <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Joined</p>
+                                        <p className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Joined</p>
                                         <p className="mt-1 font-medium text-stone-700">{user.created_at}</p>
                                         {user.role === 'buyer' && (
-                                            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                                            <p className="mt-1 text-xs font-medium uppercase tracking-wider text-stone-400">
                                                 {user.email_verified ? 'Email verified' : 'Email pending'}
                                             </p>
                                         )}
@@ -448,12 +430,12 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                 </div>
 
                                 {isExpandable && isExpanded && (
-                                    <div className="mt-3 rounded-xl border border-[#E8D9CB] bg-[#FDFBF9] p-3">
+                                    <div className="mt-3 rounded-xl border border-[#E8D9CB] bg-[#FDFBF9] p-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <div className="mb-3 flex items-center justify-between">
-                                            <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-900">
+                                            <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-stone-900">
                                                 <Briefcase size={13} className="text-[#7A5037]" /> Connected Staff
                                             </h3>
-                                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-600">
+                                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-600">
                                                 {user.staff_members.length} visible
                                             </span>
                                         </div>
@@ -472,21 +454,23 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                     <table className="w-full min-w-[960px]">
                         <thead className="bg-[#FAF9F7] border-b border-stone-200">
                             <tr>
-                                <th className="px-5 py-2 text-left text-[9px] font-extrabold uppercase tracking-widest text-stone-500">Primary Identity</th>
-                                <th className="px-5 py-2 text-left text-[9px] font-extrabold uppercase tracking-widest text-stone-500">Workspace / Setup</th>
-                                <th className="px-5 py-2 text-center text-[9px] font-extrabold uppercase tracking-widest text-stone-500">Role</th>
-                                <th className="px-5 py-2 text-center text-[9px] font-extrabold uppercase tracking-widest text-stone-500">Account State</th>
-                                <th className="px-5 py-2 text-left text-[9px] font-extrabold uppercase tracking-widest text-stone-500">Join Date</th>
+                                <th className="px-5 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-stone-500">Primary Identity</th>
+                                <th className="px-5 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-stone-500">Workspace / Setup</th>
+                                <th className="px-5 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-stone-500">Role</th>
+                                <th className="px-5 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-stone-500">Account State</th>
+                                <th className="px-5 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-stone-500">Join Date</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
                             {filteredAccounts.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center">
-                                        <div className="flex flex-col items-center justify-center text-stone-400 gap-2">
-                                            <Search size={24} className="opacity-50" />
-                                            <p className="text-sm font-bold text-stone-900">No matching accounts</p>
-                                            <p className="text-xs text-stone-500">Try another quick view or broaden the search query.</p>
+                                    <td colSpan={5} className="px-6 py-16 text-center">
+                                        <div className="flex flex-col items-center justify-center text-stone-400 gap-3">
+                                            <Search size={28} className="opacity-50 animate-bounce" />
+                                            <div>
+                                                <p className="text-sm font-semibold text-stone-900">No matching accounts</p>
+                                                <p className="text-xs text-stone-500 mt-0.5">Try another quick view or broaden the search query.</p>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -510,7 +494,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                             <td className="px-5 py-2.5">
                                                 <div className="flex items-center gap-3">
                                                     {isExpandable ? (
-                                                        <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 transition-all ${isExpanded ? 'shadow-inner border-stone-300 text-stone-600 bg-stone-50' : 'group-hover:bg-stone-50 group-hover:border-stone-300'
+                                                        <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 transition-all duration-300 group-hover:scale-105 ${isExpanded ? 'shadow-inner border-stone-300 text-stone-600 bg-stone-50' : 'group-hover:bg-stone-50 group-hover:border-stone-300'
                                                             }`}>
                                                             <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                                                         </span>
@@ -518,8 +502,8 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
 
                                                     <UserAvatar user={user} className="h-8 w-8 border border-stone-200 transition-all" />
                                                     <div className="min-w-0">
-                                                        <p className="text-xs font-bold text-stone-900 truncate">{user.name}</p>
-                                                        <p className="text-[10px] text-stone-500 truncate font-medium">{user.email}</p>
+                                                        <p className="text-xs font-medium text-stone-900 truncate">{user.name}</p>
+                                                        <p className="text-xs text-stone-500 truncate font-medium">{user.email}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -528,18 +512,18 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                                 {user.role === 'artisan' ? (
                                                     <div className="space-y-0.5">
                                                         <div className="flex flex-wrap items-center gap-1.5">
-                                                            <p className="text-[11px] font-bold text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
-                                                            <span className="inline-flex items-center rounded bg-stone-100 border border-stone-200 px-1.5 py-0 text-[9px] font-bold text-stone-600">
+                                                            <p className="text-xs font-medium text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
+                                                            <span className="inline-flex items-center rounded bg-stone-100 border border-stone-200 px-1.5 py-0 text-[10px] font-medium text-stone-600">
                                                                 {user.staff_count === 1 ? '1 staff' : `${user.staff_count} staff`}
                                                             </span>
                                                             {filters.search && user.matched_staff_count > 0 && (
-                                                                <span className="inline-flex items-center rounded bg-clay-50 border border-clay-100 px-1.5 py-0 text-[9px] font-bold text-clay-700">
+                                                                <span className="inline-flex items-center rounded bg-clay-50 border border-clay-100 px-1.5 py-0 text-[10px] font-medium text-clay-700">
                                                                     {user.matched_staff_count} match
                                                                 </span>
                                                             )}
                                                         </div>
 
-                                                        <div className="flex flex-wrap items-center gap-3 text-[10px] text-stone-400 font-medium">
+                                                        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400 font-medium">
                                                             <span>
                                                                 {isExpandable
                                                                     ? (isExpanded ? 'Hide staff list.' : 'Click to view staff.')
@@ -548,14 +532,14 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                                         </div>
                                                     </div>
                                                 ) : user.role === 'super_admin' ? (
-                                                    <span className="text-[10px] uppercase tracking-wider font-bold text-stone-400">Platform Admins</span>
+                                                    <span className="text-xs uppercase tracking-wider font-medium text-stone-400">Platform Admins</span>
                                                 ) : (
-                                                    <span className="text-[10px] uppercase tracking-wider font-bold text-stone-400">Standard User</span>
+                                                    <span className="text-xs uppercase tracking-wider font-medium text-stone-400">Standard User</span>
                                                 )}
                                             </td>
 
                                             <td className="px-5 py-2.5 text-center">
-                                                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer
+                                                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer
                                                     }`}>
                                                     {user.role === 'artisan' && <Store size={10} />}
                                                     {user.role === 'super_admin' && <Shield size={10} />}
@@ -569,19 +553,19 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
 
                                             <td className="px-5 py-2.5 text-center">
                                                 <div className="flex flex-col items-center gap-1">
-                                                    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral
+                                                    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral
                                                         }`}>
                                                         {user.account_state}
                                                     </span>
                                                     {user.role === 'buyer' && (
-                                                        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">
+                                                        <p className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">
                                                             {user.email_verified ? 'Verified' : 'Unverified'}
                                                         </p>
                                                     )}
                                                 </div>
                                             </td>
 
-                                            <td className="px-5 py-2.5 text-[11px] font-medium text-stone-500 whitespace-nowrap">
+                                            <td className="px-5 py-2.5 text-xs font-medium text-stone-500 whitespace-nowrap">
                                                 {user.created_at}
                                             </td>
                                         </tr>
@@ -589,20 +573,20 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                         {isExpandable && isExpanded && (
                                             <tr className="bg-[#F8F6F4] relative">
                                                 <td colSpan={5} className="px-4 pb-4 pt-1 sm:px-6">
-                                                    <div className="absolute left-[36px] top-0 bottom-4 w-px bg-[#E8D9CB] z-0 hidden sm:block"></div>
+                                                    <div className="absolute left-[36px] top-0 h-6 w-5 rounded-bl-xl border-b-2 border-l-2 border-[#E8D9CB] z-0 hidden sm:block"></div>
 
-                                                    <div className="relative z-10 mt-1 rounded-xl border border-[#E8D9CB] bg-[#FDFBF9] p-4 sm:ml-[42px]">
-                                                        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-stone-100 pb-3">
+                                                    <div className="relative z-10 mt-1 rounded-2xl border border-[#E8D9CB] bg-white p-5 shadow-sm sm:ml-[42px] animate-in fade-in slide-in-from-top-2 duration-300">
+                                                        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-stone-100 pb-4">
                                                             <div>
-                                                                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900 flex items-center gap-1.5"><Briefcase size={14} className="text-[#7A5037]" /> Connected Staff</h3>
-                                                                <p className="text-[10px] text-stone-500 font-medium mt-0.5">
+                                                                <h3 className="text-sm font-semibold tracking-wide text-stone-900 flex items-center gap-2"><Briefcase size={16} className="text-[#7A5037]" /> Connected Staff</h3>
+                                                                <p className="text-xs text-stone-500 font-medium mt-1">
                                                                     {filters.search && user.matched_staff_count > 0
                                                                         ? `${user.matched_staff_count} matching staff result${user.matched_staff_count === 1 ? '' : 's'} shown inside ${user.shop_name || user.name}.`
                                                                         : `All staff managed by ${user.shop_name || user.name}.`}
                                                                 </p>
                                                             </div>
 
-                                                            <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-600">
+                                                            <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-600">
                                                                 {user.staff_members.length} visible
                                                             </span>
                                                         </div>
@@ -631,17 +615,17 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                         <Briefcase size={16} />
                                     </span>
                                     <div>
-                                        <h3 className="text-sm font-bold text-stone-900">{unlinkedStaffGroup.label}</h3>
-                                        <p className="text-[11px] font-medium text-stone-500">{unlinkedStaffGroup.description}</p>
+                                        <h3 className="text-sm font-medium text-stone-900">{unlinkedStaffGroup.label}</h3>
+                                        <p className="text-xs font-medium text-stone-500">{unlinkedStaffGroup.description}</p>
                                     </div>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-600">
+                                    <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-600">
                                         {unlinkedStaffGroup.staff_count} total
                                     </span>
                                     {filters.search && unlinkedStaffGroup.matched_staff_count > 0 && (
-                                        <span className="inline-flex items-center rounded-md bg-clay-50 border border-clay-100 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-clay-700">
+                                        <span className="inline-flex items-center rounded-md bg-clay-50 border border-clay-100 px-2 py-1 text-[10px] font-medium uppercase tracking-widest text-clay-700">
                                             {unlinkedStaffGroup.matched_staff_count} match
                                         </span>
                                     )}
@@ -657,23 +641,14 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                 )}
 
                 {users.last_page > 1 && (
-                    <div className="flex items-center justify-between border-t border-stone-100 px-6 py-4 bg-[#FAF9F7]">
-                        <p className="text-[11px] font-medium text-stone-500 tracking-wide">
-                            Displaying {users.from}-{users.to} of <span className="font-bold text-stone-900">{users.total}</span> accounts
-                        </p>
-                        <div className="flex items-center gap-2">
-                            {users.prev_page_url && (
-                                <Link href={users.prev_page_url} className="rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-[10px] font-extrabold uppercase tracking-widest text-stone-600 transition hover:bg-stone-50 hover:text-stone-900">
-                                    Previous
-                                </Link>
-                            )}
-                            {users.next_page_url && (
-                                <Link href={users.next_page_url} className="rounded-xl border border-clay-700 bg-clay-600 px-3.5 py-2 text-[10px] font-extrabold uppercase tracking-widest text-white transition hover:bg-clay-700">
-                                    Next Page
-                                </Link>
-                            )}
-                        </div>
-                    </div>
+                    <CompactPagination
+                        currentPage={users.current_page}
+                        totalPages={users.last_page}
+                        totalItems={users.total}
+                        itemsPerPage={users.per_page}
+                        onPageChange={(page) => router.get(route('admin.users'), { search: search.trim(), role: filters.role, page }, { preserveState: true, preserveScroll: true, replace: true })}
+                        itemLabel="accounts"
+                    />
                 )}
             </div>
         </AdminLayout>

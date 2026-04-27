@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Modal from '@/Components/Modal';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { Search, ShieldAlert, Trash2, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import CompactPagination from '@/Components/CompactPagination';
 
 const statusClasses = {
     pending: 'border-amber-200 bg-amber-50 text-amber-700',
@@ -98,6 +99,18 @@ export default function ReviewModeration({ disputes = [] }) {
             ].some((value) => String(value || '').toLowerCase().includes(query));
         });
     }, [disputes, search, statusFilter, quickView]);
+
+    const ITEMS_PER_PAGE = 10;
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.max(1, Math.ceil(filteredDisputes.length / ITEMS_PER_PAGE));
+    const paginatedDisputes = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredDisputes.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredDisputes, currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, statusFilter, quickView]);
 
     const openActionModal = (dispute, status) => {
         setModalState({ open: true, dispute, status });
@@ -244,9 +257,9 @@ export default function ReviewModeration({ disputes = [] }) {
                         </button>
                     </div>
 
-                    {filteredDisputes.length > 0 ? (
+                    {paginatedDisputes.length > 0 ? (
                         <div className="divide-y divide-stone-100">
-                            {filteredDisputes.map((dispute) => {
+                            {paginatedDisputes.map((dispute) => {
                                 const outcome = getModerationOutcome(dispute);
 
                                 return (
@@ -351,6 +364,14 @@ export default function ReviewModeration({ disputes = [] }) {
                             />
                         </div>
                     )}
+                    <CompactPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={filteredDisputes.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setCurrentPage}
+                        itemLabel="disputes"
+                    />
                 </div>
             </div>
 

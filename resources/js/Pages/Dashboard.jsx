@@ -3,12 +3,13 @@ import { Head, Link, usePage, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import Modal from '@/Components/Modal';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Search, Calendar, ChevronDown, 
     TrendingUp, TrendingDown, DollarSign, Users, CreditCard,
     MoreHorizontal, Filter, ArrowUpRight, XCircle, CheckCircle2, Truck, AlertCircle, Check,
-    LogOut, User, Download, Plus, Menu, Crown
+    LogOut, User, Download, Plus, Menu, Crown, Minus, Sparkles
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -20,7 +21,19 @@ import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 const COLORS = ['#c07251', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
 
 const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
-    const isPositive = growth >= 0;
+    let growthColor = 'text-gray-500';
+    let GrowthIcon = Minus;
+    let growthPrefix = '';
+
+    if (growth > 0) {
+        growthColor = 'text-green-600';
+        GrowthIcon = TrendingUp;
+        growthPrefix = '+';
+    } else if (growth < 0) {
+        growthColor = 'text-red-600';
+        GrowthIcon = TrendingDown;
+        growthPrefix = ''; // The negative sign is inherently part of the number
+    }
     
     return (
         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
@@ -29,9 +42,9 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
                 <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{value}</h3>
                 
                 {growth !== undefined && (
-                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                        {isPositive ? <TrendingUp size={12}/> : <TrendingDown size={12}/>}
-                        <span>{isPositive ? '+' : ''}{growth}% vs last month</span>
+                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>
+                        <GrowthIcon size={12}/>
+                        <span>{growthPrefix}{growth}% vs last month</span>
                     </div>
                 )}
                 {growth === undefined && <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>}
@@ -70,6 +83,24 @@ export default function Dashboard({ auth }) {
     const [date, setDate] = useState(filters.date || '');
     const [pendingRequests, setPendingRequests] = useState(initialMetrics.pending_requests || 0);
     const searchTimeoutRef = useRef(null);
+
+    const isNewlyApproved = auth.user.approved_at 
+        ? (new Date() - new Date(auth.user.approved_at)) / (1000 * 60 * 60 * 24) <= 7 
+        : false;
+
+    const [showWelcome, setShowWelcome] = useState(
+        auth.user.role === 'artisan' && 
+        (auth.user.artisan_welcomed === 0 || auth.user.artisan_welcomed === false) &&
+        isNewlyApproved
+    );
+
+    const closeWelcomeModal = () => {
+        setShowWelcome(false);
+        router.post(route('artisan.welcome.dismiss'), {}, {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
 
     const currentChartData = chartFilter === 'Monthly' ? chartData.monthly : chartData.yearly;
 
@@ -455,6 +486,37 @@ export default function Dashboard({ auth }) {
 
                 </main>
             </div>
+
+            <Modal show={showWelcome} onClose={closeWelcomeModal} maxWidth="md">
+                <div className="p-8 text-center relative overflow-hidden bg-white">
+                    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-amber-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-amber-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                    
+                    <div className="relative z-10">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 border border-amber-200 shadow-sm mb-6">
+                            <Sparkles className="h-8 w-8 text-amber-600" aria-hidden="true" />
+                        </div>
+                        
+                        <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2 tracking-tight">
+                            Welcome to LikhangKamay!
+                        </h2>
+                        
+                        <p className="text-sm text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed">
+                            Congratulations! Your artisan application has been approved. You are now officially part of our growing community of local craftsmen. Let's start setting up your store and showcasing your handcrafted items.
+                        </p>
+                        
+                        <div className="flex flex-col gap-3 mt-4">
+                            <button
+                                type="button"
+                                className="w-full inline-flex justify-center rounded-xl bg-clay-600 px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-clay-700 transition-colors focus:outline-none focus:ring-2 focus:ring-clay-500 focus:ring-offset-2"
+                                onClick={closeWelcomeModal}
+                            >
+                                Get Started
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

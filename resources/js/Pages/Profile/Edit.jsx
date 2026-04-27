@@ -17,7 +17,7 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
         { id: 'account', label: 'Profile', icon: User },
         { id: 'security', label: 'Security', icon: Shield },
         { id: 'addresses', label: 'Addresses', icon: MapPin },
-        ...(userRole === 'artisan' ? [{ id: 'shop', label: 'Shop', icon: Store }] : []),
+
         { id: 'danger', label: 'Delete Account', icon: AlertTriangle, variant: 'danger' },
     ];
 
@@ -91,33 +91,7 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
                                     </div>
                                 )}
 
-                                {/* SHOP SETTINGS (ARTISAN ONLY) */}
-                                {activeTab === 'shop' && (
-                                    <div className="animate-in fade-in duration-300">
-                                        <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                            <div>
-                                                <h3 className="text-lg font-bold text-stone-900">Shop</h3>
-                                                <p className="text-sm text-stone-500 mt-1">Manage your storefront and artisan operations.</p>
-                                            </div>
-                                            <Link href={route('dashboard')} className="inline-flex items-center gap-2 bg-clay-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-clay-700 transition">
-                                                Go to Dashboard <ChevronRight size={14} />
-                                            </Link>
-                                        </header>
-                                        
-                                        <div className="bg-stone-50 rounded-2xl p-8 border border-stone-100 text-center">
-                                            <div className="w-16 h-16 bg-white rounded-xl border border-stone-100 flex items-center justify-center mx-auto mb-4">
-                                                <Store size={32} className="text-clay-600" />
-                                            </div>
-                                            <h4 className="text-lg font-bold text-stone-900 mb-2">Artisan Workspace</h4>
-                                            <p className="text-sm text-stone-500 mb-6 max-w-sm mx-auto font-medium">
-                                                Inventory, products, and fulfillment are managed in your artisan dashboard.
-                                            </p>
-                                            <Link href={route('dashboard')} className="inline-flex items-center justify-center px-8 py-2.5 bg-stone-900 text-white text-xs font-bold rounded-xl hover:bg-stone-800 transition shadow-sm">
-                                                Open Workspace
-                                            </Link>
-                                        </div>
-                                    </div>
-                                )}
+
 
                                 {/* DANGER ZONE */}
                                 {activeTab === 'danger' && (

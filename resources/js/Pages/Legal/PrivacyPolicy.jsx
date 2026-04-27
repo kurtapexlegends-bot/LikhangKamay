@@ -51,7 +51,7 @@ export default function PrivacyPolicy() {
         },
         {
             title: "Contact Our Data Protection Officer",
-            content: "For privacy inquiries or to exercise your data rights, contact: privacy@likhangkamay.ph | Data Protection Officer: LikhangKamay Privacy Team | Address: Metro Manila, Philippines"
+            content: "For privacy inquiries or to exercise your data rights, contact: likhangkamaybusiness@gmail.com | Data Protection Officer: LikhangKamay Privacy Team | Address: Metro Manila, Philippines"
         }
     ];
 
@@ -141,7 +141,7 @@ export default function PrivacyPolicy() {
                     {/* Contact */}
                     <div className="mt-6 p-4 bg-gray-50 rounded-xl text-center">
                         <p className="text-sm text-gray-500">
-                            Questions? Contact us at <span className="font-semibold text-green-600">privacy@likhangkamay.ph</span>
+                            Questions? Contact us at <span className="font-semibold text-green-600">likhangkamaybusiness@gmail.com</span>
                         </p>
                     </div>
                 </div>

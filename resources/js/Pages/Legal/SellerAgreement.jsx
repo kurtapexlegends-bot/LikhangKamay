@@ -63,7 +63,7 @@ export default function SellerAgreement() {
         },
         {
             title: "Contact Seller Support",
-            content: "For questions about this Agreement: Email sellers@likhangkamay.ph | Seller Hotline available in Seller Dashboard | Address: Metro Manila, Philippines"
+            content: "For questions about this Agreement: Email likhangkamaybusiness@gmail.com | Seller Hotline available in Seller Dashboard | Address: Metro Manila, Philippines"
         }
     ];
 
@@ -179,7 +179,7 @@ export default function SellerAgreement() {
                     {/* Contact */}
                     <div className="mt-6 p-4 bg-gray-50 rounded-xl text-center">
                         <p className="text-sm text-gray-500">
-                            Questions? Contact <span className="font-semibold text-amber-600">sellers@likhangkamay.ph</span>
+                            Questions? Contact <span className="font-semibold text-amber-600">likhangkamaybusiness@gmail.com</span>
                         </p>
                     </div>
                 </div>

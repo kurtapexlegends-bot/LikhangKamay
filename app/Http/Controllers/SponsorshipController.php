@@ -106,7 +106,7 @@ class SponsorshipController extends Controller
     {
         $requests = SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
             ->latest()
-            ->paginate(20);
+            ->paginate(10);
 
         return Inertia::render('Admin/SponsorshipRequests', [
             'requests' => $requests

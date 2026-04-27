@@ -19,6 +19,7 @@ class ArtisanSetupController extends Controller
 {
     public function create()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Guard: Only artisans can access this page
@@ -41,6 +42,7 @@ class ArtisanSetupController extends Controller
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = $request->user();
         $step = $request->input('current_step');
 
@@ -94,17 +96,17 @@ class ArtisanSetupController extends Controller
         // --- STEP 2: LEGAL FILES ---
         if ($step == 2) {
             $request->validate([
-                'business_permit' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
-                'dti_registration' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
-                'valid_id' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
-                'tin_id' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+                'business_permit' => [$user->business_permit ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+                'dti_registration' => [$user->dti_registration ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+                'valid_id' => [$user->valid_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+                'tin_id' => [$user->tin_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
             ]);
 
-            $upload = function ($key) use ($request) {
+            $upload = function ($key) use ($request, $user) {
                 if ($request->hasFile($key)) {
                     return $request->file($key)->store('legal_docs', 'public');
                 }
-                return null;
+                return $user->{$key};
             };
 
             ArtisanStatusLog::create([
@@ -183,5 +185,17 @@ class ArtisanSetupController extends Controller
         }
 
         return back()->with('error', 'Invalid step');
+    }
+
+    public function dismissWelcome(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        
+        if ($user->isArtisan()) {
+            $user->update(['artisan_welcomed' => true]);
+        }
+        
+        return back();
     }
 }

@@ -51,7 +51,7 @@ export default function SellerDataPrivacy() {
         },
         {
             title: "Contact for Seller Privacy",
-            content: "For seller-specific privacy inquiries: Email seller-privacy@likhangkamay.ph | Data Protection Officer available via Seller Dashboard | NPC: complaints@privacy.gov.ph"
+            content: "For seller-specific privacy inquiries: Email likhangkamaybusiness@gmail.com | Data Protection Officer available via Seller Dashboard | NPC: complaints@privacy.gov.ph"
         }
     ];
 
@@ -141,7 +141,7 @@ export default function SellerDataPrivacy() {
                     {/* Contact */}
                     <div className="mt-6 p-4 bg-gray-50 rounded-xl text-center">
                         <p className="text-sm text-gray-500">
-                            Questions? Contact <span className="font-semibold text-purple-600">seller-privacy@likhangkamay.ph</span>
+                            Questions? Contact <span className="font-semibold text-purple-600">likhangkamaybusiness@gmail.com</span>
                         </p>
                     </div>
                 </div>

@@ -18,8 +18,10 @@ export default function Cart({ cart }) {
     }), []);
 
     // --- FLASH MESSAGE HANDLING ---
-    const { flash } = usePage().props;
+    const { flash, auth } = usePage().props;
     useFlashToast(flash, addToast);
+
+    const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
 
     // Convert the cart object (from PHP Session) into an array
     const cartItems = Object.values(cart || {});
@@ -340,19 +342,27 @@ export default function Cart({ cart }) {
                                         </span>
                                     </div>
 
-                                    <button
-                                        onClick={proceedToCheckout}
-                                        disabled={selectedItems.size === 0}
-                                        className="w-full h-11 bg-clay-600 text-white rounded-sm font-medium flex items-center justify-center gap-2 hover:bg-clay-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Checkout ({selectedItems.size})
-                                        <ArrowRight size={16} />
-                                    </button>
+                                    {isPendingArtisan ? (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-bold text-amber-700 shadow-sm">
+                                            Checkout is disabled while your shop application is under review.
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={proceedToCheckout}
+                                                disabled={selectedItems.size === 0}
+                                                className="w-full h-11 bg-clay-600 text-white rounded-sm font-medium flex items-center justify-center gap-2 hover:bg-clay-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Checkout ({selectedItems.size})
+                                                <ArrowRight size={16} />
+                                            </button>
 
-                                    {selectedItems.size === 0 && (
-                                        <p className="text-xs text-amber-600 text-center mt-2">
-                                            Please select at least one item to checkout
-                                        </p>
+                                            {selectedItems.size === 0 && (
+                                                <p className="text-xs text-amber-600 text-center mt-2">
+                                                    Please select at least one item to checkout
+                                                </p>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 

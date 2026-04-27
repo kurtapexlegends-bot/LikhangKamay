@@ -388,7 +388,7 @@ class SuperAdminController extends Controller
         }
 
         $users = $query->orderBy('created_at', 'desc')
-            ->paginate(20)
+            ->paginate(10)
             ->withQueryString()
             ->through(function (User $user) use ($search) {
                 return $this->mapAdminPrimaryAccount($user, $search);

@@ -171,7 +171,7 @@ export default function VerifyEmail({ status, verification }) {
 
                     {/* Footer */}
                     <p className="text-center text-xs text-gray-400 mt-6">
-                        Need help? Contact us at support@likhangkamay.ph
+                        Need help? Contact us at likhangkamaybusiness@gmail.com
                     </p>
                 </div>
             </div>

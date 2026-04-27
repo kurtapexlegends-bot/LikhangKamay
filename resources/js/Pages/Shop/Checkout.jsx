@@ -26,6 +26,7 @@ const resolveAddressDisplay = (address) => address?.full_address || formatStruct
 export default function Checkout({ auth, pricing }) {
     const { flash, items: incomingItems = [] } = usePage().props;
     const { addToast } = useToast();
+    const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
     const convenienceFeeRate = pricing?.convenience_fee_rate ?? 0.03;
     const defaultAddress = auth.user.addresses?.find((address) => address.is_default) || null;
     const [selectedAddressId, setSelectedAddressId] = useState(defaultAddress?.id || 'new');
@@ -706,7 +707,8 @@ export default function Checkout({ auth, pricing }) {
                                     </button>
                                 )}
                             </div>
-                            <button onClick={submitCheckout} disabled={submitDisabled} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"><ShieldCheck size={18} />{processing ? 'Processing...' : totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</button>
+                            <button onClick={submitCheckout} disabled={submitDisabled || isPendingArtisan} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"><ShieldCheck size={18} />{processing ? 'Processing...' : totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</button>
+                            {isPendingArtisan && <p className="mt-2 text-center text-xs font-bold text-amber-600">Checkout is disabled for pending shops.</p>}
                             <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400"><MessageCircle size={12} />Chat opens after ordering</p>
                         </div>
                     </div>
@@ -729,7 +731,7 @@ export default function Checkout({ auth, pricing }) {
                     </div>
                     <button
                         onClick={submitCheckout}
-                        disabled={submitDisabled}
+                        disabled={submitDisabled || isPendingArtisan}
                         className="flex h-11 flex-[1.2] items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <ShieldCheck size={16} />

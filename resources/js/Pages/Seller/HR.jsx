@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import CompactPagination from '@/Components/CompactPagination';
 
 const FALLBACK_ROLE_PRESETS = [
     { key: 'hr', label: 'People & Payroll', description: 'Employee records, payroll prep, and workspace access coordination.', modules: ['hr'] },
@@ -1794,29 +1795,15 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </div>
                         
                         {/* Pagination Component */}
-                        {payrolls.links && payrolls.links.length > 3 && (
-                            <div className="px-6 py-4 flex items-center justify-between border-t border-gray-100 bg-gray-50/30">
-                                <div className="text-xs text-gray-500 font-medium">
-                                    Showing <span className="font-bold text-gray-900">{payrolls.from || 0}</span> to <span className="font-bold text-gray-900">{payrolls.to || 0}</span> of <span className="font-bold text-gray-900">{payrolls.total}</span> entries
-                                </div>
-                                <div className="flex gap-1">
-                                    {payrolls.links.map((link, i) => (
-                                        <button
-                                            key={i}
-                                            disabled={!link.url || link.active}
-                                            onClick={() => router.get(link.url)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                                link.active 
-                                                    ? 'bg-clay-600 text-white shadow-md shadow-clay-200' 
-                                                    : !link.url 
-                                                        ? 'bg-gray-50 text-gray-300 cursor-not-allowed' 
-                                                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                                            }`}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
+                        {payrolls.last_page > 1 && (
+                            <CompactPagination
+                                currentPage={payrolls.current_page}
+                                totalPages={payrolls.last_page}
+                                totalItems={payrolls.total}
+                                itemsPerPage={payrolls.per_page}
+                                onPageChange={(page) => router.get(route('hr.index'), { page }, { preserveState: true, preserveScroll: true, replace: true })}
+                                itemLabel="payrolls"
+                            />
                         )}
                     </div>
                 </main>

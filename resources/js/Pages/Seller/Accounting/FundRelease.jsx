@@ -11,6 +11,7 @@ import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Download, Eye, FileText, History, LoaderCircle, Pencil, Search, Users, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import ExportButton from '@/Components/ExportButton';
 
 const formatMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const formatShortMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -72,7 +73,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
             .sort((a, b) => b._date - a._date)
     ), [history, payrollHistory]);
 
-    const itemsPerPage = 6;
+    const itemsPerPage = 10;
     const filterLedgerEntries = (items) => {
         const normalizedSearch = deferredSearch.trim().toLowerCase();
 
@@ -197,13 +198,9 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                 actions={(
-                    <a
-                        href={route('accounting.export')}
-                        className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 shadow-sm transition hover:bg-stone-50"
-                    >
-                        <Download size={15} />
-                        <span>Export Ledger</span>
-                    </a>
+                    <ExportButton href={route('accounting.export')} className="hidden sm:inline-flex" variant="primary">
+                        Export Ledger
+                    </ExportButton>
                 )}
             />
 
@@ -383,16 +380,18 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                             )}
                         </div>
 
-                        <div className="border-t border-stone-100 bg-[#FDFBF9]">
-                            <CompactPagination
-                                currentPage={pendingPage}
-                                totalPages={totalPendingPages}
-                                totalItems={filteredPending.length}
-                                itemsPerPage={itemsPerPage}
-                                itemLabel="requests"
-                                onPageChange={setPendingPage}
-                            />
-                        </div>
+                        {totalPendingPages > 1 && (
+                            <div className="border-t border-stone-100 bg-[#FDFBF9]">
+                                <CompactPagination
+                                    currentPage={pendingPage}
+                                    totalPages={totalPendingPages}
+                                    totalItems={filteredPending.length}
+                                    itemsPerPage={itemsPerPage}
+                                    itemLabel="requests"
+                                    onPageChange={setPendingPage}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -466,16 +465,18 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                             )}
                         </div>
 
-                        <div className="border-t border-stone-100 bg-[#FDFBF9]">
-                            <CompactPagination
-                                currentPage={historyPage}
-                                totalPages={totalHistoryPages}
-                                totalItems={filteredHistory.length}
-                                itemsPerPage={itemsPerPage}
-                                itemLabel="entries"
-                                onPageChange={setHistoryPage}
-                            />
-                        </div>
+                        {totalHistoryPages > 1 && (
+                            <div className="border-t border-stone-100 bg-[#FDFBF9]">
+                                <CompactPagination
+                                    currentPage={historyPage}
+                                    totalPages={totalHistoryPages}
+                                    totalItems={filteredHistory.length}
+                                    itemsPerPage={itemsPerPage}
+                                    itemLabel="entries"
+                                    onPageChange={setHistoryPage}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
             </main>
@@ -614,68 +615,103 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
                             {isPayroll && (
                                 <>
-                                    <div className="grid gap-4 lg:grid-cols-2">
-                                        <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-                                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Requester File</p>
-                                            <div className="mt-3">
-                                                <p className="text-[15px] font-bold text-stone-900">{selectedItem.requester?.name || 'Seller owner'}</p>
-                                                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mt-1">{formatRole(selectedItem.requester?.role)}</p>
-                                                <p className="text-[11px] font-medium text-stone-400 mt-2">Submitted {formatDate(selectedItem.created_at)}</p>
-                                            </div>
-                                        </div>
+                                    {/* 1. Unified Financial Summary */}
+                                    <div className="rounded-[1.5rem] bg-stone-900 text-white shadow-lg overflow-hidden relative">
+                                        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+                                        <div className="p-6 relative z-10">
+                                            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                                                
+                                                {/* Requester Info */}
+                                                <div>
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Payroll Requester</p>
+                                                    <div className="mt-2 flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/5">
+                                                            <Users size={16} className="text-stone-300" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-white">{selectedItem.requester?.name || 'Seller owner'}</p>
+                                                            <p className="text-[11px] font-medium text-stone-400 mt-0.5">{formatRole(selectedItem.requester?.role)} &bull; Submitted {formatDate(selectedItem.created_at)}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-                                        <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Treasury Check</p>
-                                            <div className="mt-3 grid grid-cols-2 gap-3">
+                                                {/* Prominent KPI Metrics */}
+                                                <div className="flex gap-6 bg-white/5 rounded-2xl p-4 border border-white/10 shrink-0">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Total Disbursed</p>
+                                                        <p className="mt-1 text-xl font-bold tracking-tight text-emerald-400">{formatMoney(selectedItem.amount)}</p>
+                                                    </div>
+                                                    <div className="w-px bg-white/10"></div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Employees</p>
+                                                        <p className="mt-1 text-xl font-bold tracking-tight text-white">{selectedItem.employee_count}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Treasury Check */}
+                                            <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 md:grid-cols-3 gap-6">
                                                 <div>
                                                     <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Current Balance</p>
-                                                    <p className="mt-0.5 text-lg font-bold tracking-tight text-stone-900">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</p>
+                                                    <p className="mt-1 text-[15px] font-bold tracking-tight text-white">{formatMoney(selectedItem.fund_snapshot?.available_balance)}</p>
                                                 </div>
-                                                <div className="border-l border-stone-100 pl-3">
-                                                    <p className={`text-[9px] font-bold uppercase tracking-widest ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-500' : 'text-emerald-500'}`}>After Release</p>
-                                                    <p className={`mt-0.5 text-lg font-bold tracking-tight ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatMoney(selectedItem.fund_snapshot?.remaining_balance)}</p>
+                                                <div>
+                                                    <p className={`text-[9px] font-bold uppercase tracking-widest ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>After Release</p>
+                                                    <p className={`mt-1 text-[15px] font-bold tracking-tight ${Number(selectedItem.fund_snapshot?.remaining_balance) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatMoney(selectedItem.fund_snapshot?.remaining_balance)}</p>
                                                 </div>
+                                                {selectedItem.activity?.last_reviewed_at && (
+                                                    <div className="col-span-2 md:col-span-1 md:text-right">
+                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Reviewed Status</p>
+                                                        <p className="mt-1 text-[11px] font-medium text-stone-300">{formatDateTime(selectedItem.activity.last_reviewed_at)}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="rounded-[1.5rem] border border-stone-200 bg-white shadow-sm overflow-hidden">
-                                        <div className="px-5 py-4 border-b border-stone-100 bg-[#FDFBF9]">
-                                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Detailed Ledger</p>
-                                            <p className="mt-1 text-[11px] font-medium text-stone-500">Employee specific deductions and runtime pay</p>
-                                        </div>
-
-                                        <div className="flex gap-4 px-5 py-4 border-b border-stone-100 bg-stone-50 overflow-x-auto text-[11px]">
-                                            <span className="font-medium text-stone-500"><strong className="font-bold text-stone-900 mr-1.5">{selectedItem.employee_count}</strong>Employees</span>
-                                            <span className="font-medium text-stone-500"><strong className="font-bold text-stone-900 mr-1.5">{formatMoney(selectedItem.amount)}</strong>Total Disbursed</span>
-                                            {selectedItem.activity?.last_reviewed_at && <span className="font-medium text-stone-500 ml-auto whitespace-nowrap">Reviewed {formatDateTime(selectedItem.activity.last_reviewed_at)}</span>}
+                                    {/* 2 & 3. Detailed Ledger with Sticky Header & Focus States */}
+                                    <div className="rounded-[1.5rem] border border-stone-200 bg-white shadow-sm overflow-hidden mt-6">
+                                        <div className="px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
+                                            <p className="text-[11px] font-bold uppercase tracking-widest text-stone-800">Detailed Ledger Breakdown</p>
+                                            <p className="mt-1 text-[12px] font-medium text-stone-500">Employee specific deductions and runtime pay</p>
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="w-full min-w-[980px] text-left">
-                                                <thead>
-                                                    <tr className="border-b border-stone-100 text-[9px] font-bold uppercase tracking-widest text-stone-400">
-                                                        <th className="px-5 py-3.5">Employee</th>
-                                                        <th className="px-3 py-3.5 text-right">Base Salary</th>
-                                                        <th className="px-3 py-3.5 text-right">Work Days</th>
-                                                        <th className="px-3 py-3.5 text-right text-red-500">Abs/Und</th>
-                                                        <th className="px-3 py-3.5 text-right text-emerald-500">Overtime</th>
-                                                        <th className="px-5 py-3.5 text-right">Net Release</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-stone-100">
-                                                    {selectedItem.line_items?.map((line) => (
-                                                        <tr key={line.id} className="text-[12px] font-medium text-stone-600 transition-colors hover:bg-stone-50">
-                                                            <td className="px-5 py-3 font-bold text-stone-900">{line.employee_name}</td>
-                                                            <td className="px-3 py-3 text-right">{formatMoney(line.base_salary)}</td>
-                                                            <td className="px-3 py-3 text-right">{line.days_worked}</td>
-                                                            <td className="px-3 py-3 text-right text-red-600">-{formatMoney(Number(line.absence_deduction) + Number(line.undertime_deduction))}</td>
-                                                            <td className="px-3 py-3 text-right text-emerald-600">+{formatMoney(line.overtime_pay)}</td>
-                                                            <td className="px-5 py-3 text-right text-[13px] font-bold tracking-tight text-stone-900">{formatMoney(line.net_pay)}</td>
+                                            {(!selectedItem.line_items || selectedItem.line_items.length === 0) ? (
+                                                <div className="py-12">
+                                                    <WorkspaceEmptyState
+                                                        compact
+                                                        icon={Users}
+                                                        title="No employees found"
+                                                        description="This payroll request contains no line items."
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <table className="w-full min-w-[980px] text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-stone-200 text-[10px] font-bold uppercase tracking-widest text-stone-500 bg-stone-50/50">
+                                                            <th className="px-6 py-4 sticky left-0 bg-stone-50/95 backdrop-blur z-10 border-r border-stone-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">Employee</th>
+                                                            <th className="px-4 py-4 text-right">Base Salary</th>
+                                                            <th className="px-4 py-4 text-right">Work Days</th>
+                                                            <th className="px-4 py-4 text-right text-rose-500">Abs/Und Deductions</th>
+                                                            <th className="px-4 py-4 text-right text-emerald-600">Overtime Pay</th>
+                                                            <th className="px-6 py-4 text-right text-emerald-800 bg-emerald-50/30">Net Release</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-stone-100">
+                                                        {selectedItem.line_items.map((line) => (
+                                                            <tr key={line.id} className="text-[13px] font-medium text-stone-600 transition-all hover:bg-stone-50 group border-l-2 border-transparent hover:border-emerald-500">
+                                                                <td className="px-6 py-4 font-bold text-stone-900 sticky left-0 bg-white group-hover:bg-stone-50 transition-colors z-10 border-r border-stone-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">{line.employee_name}</td>
+                                                                <td className="px-4 py-4 text-right">{formatMoney(line.base_salary)}</td>
+                                                                <td className="px-4 py-4 text-right">{line.days_worked}</td>
+                                                                <td className="px-4 py-4 text-right text-rose-600 font-semibold">-{formatMoney(Number(line.absence_deduction) + Number(line.undertime_deduction))}</td>
+                                                                <td className="px-4 py-4 text-right text-emerald-600 font-semibold">+{formatMoney(line.overtime_pay)}</td>
+                                                                <td className="px-6 py-4 text-right text-[14px] font-bold tracking-tight text-emerald-800 bg-emerald-50/30">{formatMoney(line.net_pay)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            )}
                                         </div>
                                     </div>
                                 </>
@@ -692,29 +728,34 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
                     <div className="border-t border-stone-100 px-5 py-4 sm:px-6 bg-[#FDFBF9]">
                         {isPendingReview ? (
-                            <div className="space-y-4">
-                                <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
-                                    <label className="text-[9px] font-bold uppercase tracking-widest text-stone-500">Rejection Reason</label>
-                                    <textarea disabled={!canEditAccounting} className="mt-3 w-full resize-none rounded-xl border-stone-300 text-[13px] font-medium transition focus:border-red-500 focus:ring-red-500 shadow-sm disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500" rows={3} placeholder="State the exact finance reason if you reject this release..." value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} />
-                                    <p className="mt-2 text-[10px] font-medium text-stone-500 uppercase tracking-wide">A specific internal note is required before rejecting a financial release.</p>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="flex-1 max-w-sm">
+                                    <input 
+                                        type="text"
+                                        disabled={!canEditAccounting}
+                                        className="w-full rounded-xl border-stone-200 py-2.5 px-4 text-[12px] font-medium transition focus:border-red-400 focus:ring-red-400 disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-400 shadow-sm"
+                                        placeholder="Add note to enable rejection..."
+                                        value={rejectReason}
+                                        onChange={(event) => setRejectReason(event.target.value)}
+                                        title="A note is required to reject this release."
+                                    />
                                 </div>
-
-                                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <div className="flex items-center justify-end gap-2 shrink-0">
                                     {reviewProcessing && (
                                         <WorkspaceLoadingState
-                                            label={reviewProcessing === 'approve' ? 'Approving request' : 'Rejecting request'}
-                                            detail="Updating accounting review safely"
-                                            className="sm:mr-auto"
+                                            label={reviewProcessing === 'approve' ? 'Approving...' : 'Rejecting...'}
+                                            className="hidden sm:flex mr-2"
+                                            compact
                                         />
                                     )}
-                                    <button type="button" disabled={!!reviewProcessing} onClick={closeReviewModal} className="rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-50">Close</button>
-                                    <button type="button" onClick={handleReject} disabled={!canEditAccounting || !rejectReason.trim() || !!reviewProcessing} className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition shadow-sm ${canEditAccounting && rejectReason.trim() && !reviewProcessing ? 'bg-red-600 text-white hover:bg-red-700' : 'cursor-not-allowed border border-stone-200 bg-stone-100 text-stone-400'}`}>
-                                        {reviewProcessing === 'reject' && <LoaderCircle size={15} className="animate-spin" />}
-                                        {reviewProcessing === 'reject' ? 'Rejecting...' : 'Reject Request'}
+                                    <button type="button" disabled={!!reviewProcessing} onClick={closeReviewModal} className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
+                                    <button type="button" onClick={handleReject} disabled={!canEditAccounting || !rejectReason.trim() || !!reviewProcessing} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-[11px] font-bold uppercase tracking-widest transition shadow-sm ${canEditAccounting && rejectReason.trim() && !reviewProcessing ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 hover:border-red-300' : 'cursor-not-allowed border border-stone-200 bg-stone-50 text-stone-400'}`}>
+                                        {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
+                                        Reject
                                     </button>
-                                    <button type="button" onClick={handleApprove} disabled={!canEditAccounting || !!reviewProcessing} className="inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-60">
-                                        {reviewProcessing === 'approve' && <LoaderCircle size={15} className="animate-spin" />}
-                                        {reviewProcessing === 'approve' ? 'Approving...' : (isPayroll ? 'Approve & Release' : 'Approve Amount')}
+                                    <button type="button" onClick={handleApprove} disabled={!canEditAccounting || !!reviewProcessing} className="inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-5 py-2 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-60">
+                                        {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
+                                        {reviewProcessing === 'approve' ? 'Wait...' : 'Approve'}
                                     </button>
                                 </div>
                             </div>

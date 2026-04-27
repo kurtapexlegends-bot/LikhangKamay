@@ -139,7 +139,7 @@ export default function TermsOfService() {
                     {/* Contact */}
                     <div className="mt-6 p-4 bg-gray-50 rounded-xl text-center">
                         <p className="text-sm text-gray-500">
-                            Questions? Contact us at <span className="font-semibold text-clay-600">legal@likhangkamay.ph</span>
+                            Questions? Contact us at <span className="font-semibold text-clay-600">likhangkamaybusiness@gmail.com</span>
                         </p>
                     </div>
                 </div>

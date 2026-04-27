@@ -22,6 +22,7 @@ import {
     ShieldCheck,
     User,
 } from 'lucide-react';
+import ExportButton from '@/Components/ExportButton';
 
 const summaryCards = [
     { key: 'total_events', label: 'Total Logged Events', icon: ClipboardList, tone: 'bg-[#FCF7F2] text-clay-700' },
@@ -372,20 +373,12 @@ export default function AuditLog({ auth, auditLog }) {
                 badge={{ label: 'Workspace Oversight', iconColor: 'text-stone-400' }}
                 actions={
                     <>
-                        <button
-                            type="button"
-                            onClick={() => window.print()}
-                            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50"
-                        >
-                            <Printer size={16} /> Print
-                        </button>
-                        <button
-                            type="button"
-                            onClick={exportCsv}
-                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700"
-                        >
-                            <Download size={16} /> Export CSV
-                        </button>
+                        <ExportButton onClick={() => window.print()} icon={Printer}>
+                            Print
+                        </ExportButton>
+                        <ExportButton onClick={exportCsv} variant="primary">
+                            Export CSV
+                        </ExportButton>
                     </>
                 }
             />

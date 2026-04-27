@@ -29,7 +29,7 @@ const matchesNotificationFilter = (notification, filterKey) => {
 };
 
 export default function NotificationDropdown() {
-    const { notifications = [], unreadNotificationCount = 0 } = usePage().props;
+    const { notifications = [], unreadNotificationCount = 0, auth } = usePage().props;
     const [isOpen, setIsOpen] = useState(false);
     const [activeMenu, setActiveMenu] = useState(null);
     const [activeFilter, setActiveFilter] = useState('all');
@@ -38,13 +38,27 @@ export default function NotificationDropdown() {
     const [relativeNow, setRelativeNow] = useState(() => Date.now());
     const dropdownRef = useRef(null);
 
-    const filterDefinitions = useMemo(() => ([
-        { key: 'all', label: 'All' },
-        { key: 'unread', label: 'Unread' },
-        { key: 'orders', label: 'Orders' },
-        { key: 'messages', label: 'Messages' },
-        { key: 'attention', label: 'Attention' },
-    ]), []);
+    const filterDefinitions = useMemo(() => {
+        const isSuperAdmin = auth?.user?.role === 'super_admin';
+        const base = [
+            { key: 'all', label: 'All' },
+            { key: 'unread', label: 'Unread' },
+        ];
+        
+        if (isSuperAdmin) {
+            return [
+                ...base,
+                { key: 'attention', label: 'Attention' },
+            ];
+        }
+
+        return [
+            ...base,
+            { key: 'orders', label: 'Orders' },
+            { key: 'messages', label: 'Messages' },
+            { key: 'attention', label: 'Attention' },
+        ];
+    }, [auth?.user?.role]);
 
     const filteredNotifications = useMemo(() => (
         notifications.filter((notification) => matchesNotificationFilter(notification, activeFilter))

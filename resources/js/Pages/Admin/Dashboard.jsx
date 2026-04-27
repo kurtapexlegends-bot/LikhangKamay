@@ -107,31 +107,28 @@ export default function AdminDashboard({ stats, recentUsers }) {
             </div>
 
             {pendingCount > 0 && (
-                <div className="group relative mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between overflow-hidden rounded-2xl border border-clay-100 bg-gradient-to-r from-clay-50 to-white p-5 sm:p-8 shadow-sm">
-                    <div className="absolute right-0 top-0 -mr-4 -mt-4 h-24 w-24 rounded-full bg-clay-100 opacity-50 blur-xl transition-transform duration-700 group-hover:scale-150"></div>
-
-                    <div className="relative z-10 flex items-center gap-4 sm:gap-6">
-                        <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-clay-100 bg-white shadow-sm">
-                            <AlertTriangle size={32} className="text-clay-600" />
+                <div className="mb-8 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/50 shadow-sm transition hover:shadow-md">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 border border-amber-200">
+                                <AlertTriangle size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-amber-900">
+                                    Action Required
+                                </h3>
+                                <p className="mt-0.5 text-xs font-medium text-amber-700">
+                                    <span className="font-bold">{pendingCount}</span> new artisan application{pendingCount > 1 ? "s" : ""} require your verification.
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-gray-900">
-                                Action Required
-                            </h3>
-                            <p className="mt-1 text-gray-600">
-                                <span className="font-bold text-clay-700">{pendingCount}</span> new artisan
-                                application
-                                {pendingCount > 1 ? "s" : ""}{" "}
-                                require your verification.
-                            </p>
-                        </div>
+                        <Link
+                            href={route("admin.pending")}
+                            className="flex shrink-0 w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
+                        >
+                            Review Applications <ChevronRight size={14} />
+                        </Link>
                     </div>
-                    <Link
-                        href={route("admin.pending")}
-                        className="relative z-10 flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-clay-600 px-6 py-3 font-medium text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700"
-                    >
-                        Review Applications <ChevronRight size={18} />
-                    </Link>
                 </div>
             )}
 

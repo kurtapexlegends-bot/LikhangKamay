@@ -37,6 +37,9 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const [recentlyViewed, setRecentlyViewed] = useState([]);
     const [deletingReview, setDeletingReview] = useState(false);
     const [reviewPhotoPreviewUrls, setReviewPhotoPreviewUrls] = useState([]);
+    
+    const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
+    
     const chatRequirementMessage = !auth?.user
         ? 'Log in as a buyer first.'
         : auth.user.role && auth.user.role !== 'buyer'
@@ -164,6 +167,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
         if (product?.viewer_can_chat_seller) {
             router.visit(route('buyer.chat', { user_id: sellerId }));
+            return;
+        }
+
+        if (isPendingArtisan) {
+            addToast('Chat is disabled while your shop is pending approval.', 'info');
             return;
         }
 
@@ -408,30 +416,38 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
                             {/* Action Buttons */}
                             <div className="mb-6 hidden gap-3 sm:flex sm:flex-row">
-                                <button
-                                    onClick={addToCart}
-                                    disabled={product.stock === 0 || isAddingToCart}
-                                    className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border-2 border-clay-600 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
-                                        addedToCart
-                                            ? 'bg-emerald-500 border-emerald-500 text-white'
-                                            : 'bg-white text-clay-600 hover:bg-clay-50'
-                                    } disabled:cursor-not-allowed disabled:opacity-50`}
-                                >
-                                    {isAddingToCart ? (
-                                        <Loader2 size={16} className="animate-spin" />
-                                    ) : addedToCart ? (
-                                        <><Check size={16} /> Added!</>
-                                    ) : (
-                                        <><ShoppingCart size={16} /> Add To Cart</>
-                                    )}
-                                </button>
-                                <button
-                                    onClick={handleBuyNow}
-                                    disabled={product.stock === 0}
-                                    className="h-10 flex-1 rounded-lg bg-clay-600 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    Buy Now
-                                </button>
+                                {isPendingArtisan ? (
+                                    <div className="flex w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-[13px] font-bold text-amber-700 shadow-sm">
+                                        Purchasing is disabled while your shop application is under review.
+                                    </div>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={addToCart}
+                                            disabled={product.stock === 0 || isAddingToCart}
+                                            className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border-2 border-clay-600 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                                                addedToCart
+                                                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                    : 'bg-white text-clay-600 hover:bg-clay-50'
+                                            } disabled:cursor-not-allowed disabled:opacity-50`}
+                                        >
+                                            {isAddingToCart ? (
+                                                <Loader2 size={16} className="animate-spin" />
+                                            ) : addedToCart ? (
+                                                <><Check size={16} /> Added!</>
+                                            ) : (
+                                                <><ShoppingCart size={16} /> Add To Cart</>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={handleBuyNow}
+                                            disabled={product.stock === 0}
+                                            className="h-10 flex-1 rounded-lg bg-clay-600 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Buy Now
+                                        </button>
+                                    </>
+                                )}
                             </div>
 
                             {/* Product Info */}
@@ -500,10 +516,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 View Shop
                             </Link>
                         </div>
-                        {!product?.viewer_can_chat_seller && (
-                            <span className="mt-2 inline-flex w-fit rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-bold text-stone-500">
-                                {chatRequirementMessage}
-                            </span>
+                        {!product?.viewer_can_chat_seller && chatRequirementMessage && (
+                            <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg border border-stone-100 bg-stone-50 py-2 text-[11px] font-medium text-stone-500">
+                                <MessageCircle size={12} className="text-stone-400" />
+                                <span>{chatRequirementMessage}</span>
+                            </div>
                         )}
                     </div>
 
@@ -625,7 +642,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 </h3>
                                 
                                 {auth?.user ? (
-                                    canWriteReview ? (
+                                    isPendingArtisan ? (
+                                        <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-[13px] leading-relaxed text-amber-700">
+                                            Reviews are disabled for pending artisan accounts.
+                                        </div>
+                                    ) : canWriteReview ? (
                                         <form onSubmit={submitReview} className="space-y-3">
                                             {Object.keys(errors).length > 0 && (
                                                 <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
@@ -843,24 +864,32 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 <span className="text-[11px] font-medium text-stone-500">Qty {quantity}</span>
                             </div>
                         </div>
-                        <button
-                            onClick={addToCart}
-                            disabled={product.stock === 0 || isAddingToCart}
-                            className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 px-4 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
-                                addedToCart
-                                    ? 'border-emerald-500 bg-emerald-500 text-white'
-                                    : 'border-clay-600 bg-white text-clay-600'
-                            } disabled:cursor-not-allowed disabled:opacity-50`}
-                        >
-                            {isAddingToCart ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={15} />}
-                        </button>
-                        <button
-                            onClick={handleBuyNow}
-                            disabled={product.stock === 0}
-                            className="flex h-11 flex-[1.4] items-center justify-center rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Buy Now
-                        </button>
+                        {isPendingArtisan ? (
+                            <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 text-[13px] font-bold text-amber-700">
+                                Disabled for pending shops
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={addToCart}
+                                    disabled={product.stock === 0 || isAddingToCart}
+                                    className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 px-4 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                                        addedToCart
+                                            ? 'border-emerald-500 bg-emerald-500 text-white'
+                                            : 'border-clay-600 bg-white text-clay-600'
+                                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                                >
+                                    {isAddingToCart ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={15} />}
+                                </button>
+                                <button
+                                    onClick={handleBuyNow}
+                                    disabled={product.stock === 0}
+                                    className="flex h-11 flex-[1.4] items-center justify-center rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Buy Now
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
         </ShopLayout>

@@ -68,7 +68,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                 { title: "Data Retention", content: "Data retained while account is active. Some records kept up to 5 years for legal/tax compliance." },
                 { title: "Children's Privacy", content: "Not intended for users under 18. We do not knowingly collect minor's data." },
                 { title: "Policy Changes", content: "We may update this policy. Continued use constitutes acceptance." },
-                { title: "Contact", content: "Email: privacy@likhangkamay.ph | Dasmarinas, Cavite, Philippines" }
+                { title: "Contact", content: "Email: likhangkamaybusiness@gmail.com | Dasmariñas, Cavite, Philippines" }
             ]
         },
         seller: {
@@ -86,7 +86,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                 { title: "Account Termination", content: "Accounts may be suspended for violations, low ratings below 3.5, order fulfillment failures, or fraud." },
                 { title: "Intellectual Property", content: "You retain ownership of designs. You grant LikhangKamay a license to display and promote your products." },
                 { title: "Agreement Changes", content: "We may update this agreement with 14 days notice. Continued use constitutes acceptance." },
-                { title: "Contact", content: "Email: sellers@likhangkamay.ph | Dasmarinas, Cavite, Philippines" }
+                { title: "Contact", content: "Email: likhangkamaybusiness@gmail.com | Dasmarinas, Cavite, Philippines" }
             ]
         },
         sellerPrivacy: {
@@ -101,7 +101,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                 { title: "Data Retention", content: "Retained during active selling plus 5 years for financial records (BIR requirement), 3 years for dispute records." },
                 { title: "Your Rights", content: "Access, correct, request erasure, export data, object to processing, and withdraw consent under RA 10173." },
                 { title: "Data Breach Response", content: "We notify affected sellers within 72 hours and report to the National Privacy Commission." },
-                { title: "Contact", content: "Email: seller-privacy@likhangkamay.ph | NPC: complaints@privacy.gov.ph" }
+                { title: "Contact", content: "Email: likhangkamaybusiness@gmail.com | NPC: complaints@privacy.gov.ph" }
             ]
         }
     };

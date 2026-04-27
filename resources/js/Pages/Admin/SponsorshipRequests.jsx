@@ -8,6 +8,7 @@ import {
 import { useToast } from '@/Components/ToastContext';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import Modal from '@/Components/Modal';
+import CompactPagination from '@/Components/CompactPagination';
 
 const MetricCard = ({ title, value, subtitle, icon: Icon, tone = 'amber' }) => {
     const tones = {
@@ -297,25 +298,16 @@ export default function SponsorshipRequests({ requests }) {
                         </table>
                     </div>
 
-                    {/* Pagination (if applicable) */}
-                    {requests.links && requests.links.length > 3 && (
-                        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-center gap-1">
-                            {requests.links.map((link, i) => (
-                                <button
-                                    key={i}
-                                    disabled={!link.url || link.active}
-                                    onClick={() => link.url && router.visit(link.url, { preserveScroll: true })}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                                        link.active
-                                            ? 'bg-clay-600 text-white'
-                                            : !link.url
-                                                ? 'text-gray-300 cursor-not-allowed hidden md:inline-block'
-                                                : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                />
-                            ))}
-                        </div>
+                    {/* Pagination */}
+                    {requests.last_page > 1 && (
+                        <CompactPagination
+                            currentPage={requests.current_page}
+                            totalPages={requests.last_page}
+                            totalItems={requests.total}
+                            itemsPerPage={requests.per_page}
+                            onPageChange={(page) => router.get(route('admin.sponsorships'), { page }, { preserveScroll: true, preserveState: true })}
+                            itemLabel="requests"
+                        />
                     )}
                 </div>
             </div>

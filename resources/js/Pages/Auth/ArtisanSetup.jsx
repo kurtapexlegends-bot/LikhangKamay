@@ -14,6 +14,8 @@ import {
     Sparkles,
     ArrowRight,
     LogOut,
+    AlertTriangle,
+    ChevronDown,
 } from 'lucide-react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -23,6 +25,7 @@ import { CAVITE_REGION, normalizeCaviteAddressText } from '@/lib/caviteAddresses
 
 export default function ArtisanSetup({ auth }) {
     const [step, setStep] = React.useState(1);
+    const [showRejection, setShowRejection] = React.useState(false);
     const isRejected = auth.user.artisan_status === 'rejected';
     const defaultRegion = auth.user.region || CAVITE_REGION;
     const defaultCity = auth.user.city
@@ -102,20 +105,6 @@ export default function ArtisanSetup({ auth }) {
                 </header>
 
                 <main className="mx-auto max-w-4xl px-4 py-8">
-                    {isRejected && (
-                        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4">
-                            <div className="flex items-start gap-3">
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100">
-                                    <ShieldCheck size={20} className="text-red-600" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-red-800">Your Previous Application Was Rejected</h3>
-                                    <p className="mt-1 text-sm text-red-700">{auth.user.artisan_rejection_reason}</p>
-                                    <p className="mt-2 text-xs text-red-600">Please update your documents and resubmit.</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="mb-8 text-center">
                         <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
@@ -140,6 +129,34 @@ export default function ArtisanSetup({ auth }) {
                     </div>
 
                     <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl shadow-gray-200/50">
+                        {isRejected && (
+                            <div className="border-b border-red-100 bg-red-50/50 transition-all duration-300">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRejection(!showRejection)}
+                                    className="flex w-full items-center justify-between px-6 py-4 sm:px-10 hover:bg-red-50/80 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <AlertTriangle size={20} className="text-red-600" />
+                                        <h3 className="text-sm font-bold text-red-900">Application Needs Revisions</h3>
+                                    </div>
+                                    <ChevronDown
+                                        size={20}
+                                        className={`text-red-400 transition-transform duration-300 ${showRejection ? 'rotate-180' : ''}`}
+                                    />
+                                </button>
+                                
+                                {showRejection && (
+                                    <div className="px-6 pb-6 sm:px-10 sm:pb-8 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <p className="text-sm text-red-700">Your previous application could not be approved due to the following reason:</p>
+                                        <div className="mt-3 rounded-xl bg-white p-4 border border-red-100 shadow-sm">
+                                            <p className="text-sm font-medium text-red-800">{auth.user.artisan_rejection_reason}</p>
+                                        </div>
+                                        <p className="mt-3 text-xs font-medium text-red-600">Please review the reason above, update your details below, and resubmit.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {step === 1 && (
                             <form onSubmit={submit} className="p-6 sm:p-10">
                                 <div className="mb-8">
@@ -234,6 +251,7 @@ export default function ArtisanSetup({ auth }) {
                                         label="Business Permit (Mayor's Permit)"
                                         id="business_permit"
                                         file={data.business_permit}
+                                        existingFile={!!auth.user.business_permit}
                                         onFileSelect={(file) => handleFileChange(file, 'business_permit')}
                                         error={errors.business_permit}
                                     />
@@ -241,6 +259,7 @@ export default function ArtisanSetup({ auth }) {
                                         label="DTI Registration"
                                         id="dti_registration"
                                         file={data.dti_registration}
+                                        existingFile={!!auth.user.dti_registration}
                                         onFileSelect={(file) => handleFileChange(file, 'dti_registration')}
                                         error={errors.dti_registration}
                                     />
@@ -248,6 +267,7 @@ export default function ArtisanSetup({ auth }) {
                                         label="Valid Government ID (Front)"
                                         id="valid_id"
                                         file={data.valid_id}
+                                        existingFile={!!auth.user.valid_id}
                                         onFileSelect={(file) => handleFileChange(file, 'valid_id')}
                                         error={errors.valid_id}
                                     />
@@ -255,6 +275,7 @@ export default function ArtisanSetup({ auth }) {
                                         label="TIN ID / Registration"
                                         id="tin_id"
                                         file={data.tin_id}
+                                        existingFile={!!auth.user.tin_id}
                                         onFileSelect={(file) => handleFileChange(file, 'tin_id')}
                                         error={errors.tin_id}
                                     />
@@ -315,7 +336,7 @@ function StepPill({ number, icon, label, active, current }) {
     );
 }
 
-const FileUploadField = React.memo(({ label, id, onFileSelect, error, file }) => {
+const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, existingFile }) => {
     const inputRef = useRef(null);
 
     return (
@@ -324,7 +345,7 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file }) =>
             <div
                 onClick={() => inputRef.current?.click()}
                 className={`mt-1 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition hover:bg-gray-50 ${
-                    file ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-white'
+                    file ? 'border-green-400 bg-green-50' : existingFile ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-300 bg-white'
                 }`}
             >
                 {file ? (
@@ -332,6 +353,12 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file }) =>
                         <FileCheck size={32} className="mb-2 text-green-600" />
                         <p className="max-w-full truncate text-sm font-medium text-green-700">{file.name}</p>
                         <p className="text-xs text-green-600">Click to change</p>
+                    </>
+                ) : existingFile ? (
+                    <>
+                        <CheckCircle2 size={32} className="mb-2 text-emerald-600" />
+                        <p className="text-sm font-bold text-emerald-700">Document on File</p>
+                        <p className="text-xs text-emerald-600">Click to replace</p>
                     </>
                 ) : (
                     <>

@@ -20,9 +20,13 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): Response
+    public function edit(Request $request)
     {
         $user = $request->user();
+
+        if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
+            return redirect()->route('artisan.pending');
+        }
 
         // Workspace profile shell for seller owners, seller staff, and super admins.
         if (in_array($user->role, ['artisan', 'staff', 'super_admin'], true)) {
@@ -48,8 +52,12 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $data = $request->validated();
         $user = $request->user();
+        if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
+            return redirect()->route('artisan.pending');
+        }
+
+        $data = $request->validated();
         $emailChanged = false;
 
         $name = PersonName::normalize(
@@ -126,11 +134,14 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = $request->user();
+        if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
+            return redirect()->route('artisan.pending');
+        }
+
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);
-
-        $user = $request->user();
 
         Auth::logout();
 
