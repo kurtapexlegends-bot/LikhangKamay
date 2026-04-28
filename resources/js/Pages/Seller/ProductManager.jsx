@@ -6,6 +6,7 @@ import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
+import TextAreaWithCounter from '@/Components/TextAreaWithCounter';
 import Checkbox from '@/Components/Checkbox';
 import CompactPagination from '@/Components/CompactPagination';
 import External3DToolLink from '@/Components/External3DToolLink';
@@ -1100,7 +1101,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         </div>
                     </div>
 
-                    <div className="min-h-[400px] flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
                         {/* TAB 1: ESSENTIALS */}
                         {activeFormTab === 'Essentials' && (
                             <div className="space-y-6 animate-fadeIn">
@@ -1119,12 +1120,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     
                                     <div className="md:col-span-2">
                                         <InputLabel value="Description" />
-                                        <textarea 
+                                        <TextAreaWithCounter
                                             className={modalTextareaClass}
                                             rows="4" 
                                             value={data.description} 
                                             onChange={(e) => setData('description', e.target.value)} 
                                             placeholder="Describe the texture, story, and details..."
+                                            maxLength={500}
                                         />
                                     </div>
 

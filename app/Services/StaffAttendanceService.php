@@ -150,11 +150,12 @@ class StaffAttendanceService
             ->get();
 
         foreach ($sessions as $session) {
-            $workedMinutes = max(0, $session->clock_in_at->diffInMinutes($now));
+            $closedAt = $session->last_heartbeat_at ?: $threshold;
+            $workedMinutes = max(0, $session->clock_in_at->diffInMinutes($closedAt));
 
             $session->update([
-                'clock_out_at' => $now,
-                'last_heartbeat_at' => $session->last_heartbeat_at ?: $threshold,
+                'clock_out_at' => $closedAt,
+                'last_heartbeat_at' => $closedAt,
                 'close_mode' => self::MODE_PAUSED,
                 'close_reason' => self::CLOSE_REASON_INACTIVITY_TIMEOUT,
                 'worked_minutes' => $workedMinutes,

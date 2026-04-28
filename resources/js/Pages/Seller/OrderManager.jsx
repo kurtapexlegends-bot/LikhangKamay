@@ -53,8 +53,8 @@ const StatusBadge = ({ status }) => {
     const config = {
         'Pending': { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', icon: Clock },
         'Accepted': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', icon: PackageCheck },
-        'Shipped': { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200', icon: Truck },
-        'Ready for Pickup': { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200', icon: PackageCheck },
+        'Shipped': { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-200', icon: Truck },
+        'Ready for Pickup': { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-200', icon: PackageCheck },
         'Delivered': { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200', icon: MapPin },
         'Completed': { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200', icon: CheckCircle2 },
         'Refund/Return': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200', icon: RotateCcw },
@@ -108,7 +108,7 @@ const lalamoveStatusConfig = (status) => {
     const configs = {
         ASSIGNING_DRIVER: {
             label: 'Assigning Driver',
-            tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+            tone: 'border-sky-200 bg-sky-50 text-sky-700',
             detail: 'Lalamove is looking for a courier.',
         },
         ON_GOING: {
@@ -239,7 +239,7 @@ const sellerDeliverySummary = (order) => {
 
         if (order.status === 'Ready for Pickup') {
             return {
-                tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+                tone: 'border-sky-200 bg-sky-50 text-sky-700',
                 title: 'Waiting for buyer pickup',
                 detail: 'Mark the order as picked up once the handover is complete.',
             };
@@ -268,7 +268,7 @@ const sellerDeliverySummary = (order) => {
 
     if (order.status === 'Shipped') {
         return {
-            tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+            tone: 'border-sky-200 bg-sky-50 text-sky-700',
             title: 'Manual shipment in progress',
             detail: 'Keep the shipment proof visible to the buyer, then upload final delivery proof when the parcel arrives.',
         };
@@ -884,8 +884,8 @@ export default function OrderManager({ auth, orders = [] }) {
                             title="In Transit / Ready" 
                             value={getCount('Shipped') + getCount('Delivered') + getCount('Ready for Pickup')}  
                             icon={Truck} 
-                            color="text-indigo-600" 
-                            bg="bg-indigo-50" 
+                            color="text-sky-600" 
+                            bg="bg-sky-50" 
                         />
                         <KPICard 
                             title="Completed" 
@@ -1131,9 +1131,9 @@ export default function OrderManager({ auth, orders = [] }) {
                                                 </button>
                                             )}
                                             {order.tracking_number && (
-                                                <div className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5">
-                                                    <Hash size={12} className="text-indigo-600" />
-                                                    <span className="text-[10px] font-semibold text-indigo-700">{order.tracking_number}</span>
+                                                <div className="inline-flex items-center gap-1.5 bg-sky-50 border border-sky-100 rounded-lg px-2.5 py-1.5">
+                                                    <Hash size={12} className="text-sky-600" />
+                                                    <span className="text-[10px] font-semibold text-sky-700">{order.tracking_number}</span>
                                                 </div>
                                             )}
                                             {order.proof_of_delivery && (

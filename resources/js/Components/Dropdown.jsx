@@ -47,18 +47,18 @@ const Content = ({ align = 'right', width = '48', contentClasses = 'py-1 bg-whit
         <Transition
             as={Fragment}
             show={open}
-            enter="transition ease-out duration-200"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
+            enter="transition-all ease-out duration-300"
+            enterFrom="opacity-0 scale-95 translate-y-2"
+            enterTo="opacity-100 scale-100 translate-y-0"
+            leave="transition-all ease-in duration-150"
+            leaveFrom="opacity-100 scale-100 translate-y-0"
+            leaveTo="opacity-0 scale-95 translate-y-2"
         >
             <div
-                className={`absolute z-50 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
+                className={`absolute z-50 rounded-2xl shadow-xl border border-gray-100 bg-white overflow-hidden ${alignmentClasses} ${widthClasses}`}
                 onClick={() => setOpen(false)}
             >
-                <div className={`rounded-md ring-1 ring-black ring-opacity-5 ` + contentClasses}>
+                <div className={`rounded-2xl ` + contentClasses}>
                     {children}
                 </div>
             </div>

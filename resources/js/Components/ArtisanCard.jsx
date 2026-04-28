@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/react';
 
 export default function ArtisanCard({ name, location, rating, image, avatar, tags }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition duration-300 group cursor-pointer">
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay-900/5 group cursor-pointer">
             {/* Cover Image */}
             <div className="h-32 bg-gray-100 overflow-hidden relative">
                 <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />

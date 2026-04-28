@@ -285,7 +285,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                         {currentChatUser ? (
                             <>
                                 {/* ACTIVE CHAT HEADER */}
-                                <div className="bg-white border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 shrink-0 shadow-sm z-10">
+                                <div className="bg-white/90 backdrop-blur-md border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 shrink-0 shadow-sm sticky top-0 z-20">
                                     <div className="flex min-w-0 items-center gap-3">
                                         <button 
                                             onClick={() => setShowMobileList(true)}
@@ -438,8 +438,8 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                 </div>
 
                                 {/* MESSAGE INPUT */}
-                                <div className="p-3 bg-white border-t border-gray-100 shrink-0 relative">
-                                    <div className="max-w-3xl mx-auto">
+                                <div className="p-3 sm:p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 shrink-0 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
+                                    <div className="max-w-3xl mx-auto flex flex-col">
                                     {/* Emoji Picker Popover */}
                                     {showEmojiPicker && (
                                         <div ref={emojiPickerRef} className="absolute bottom-full right-3 sm:right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
@@ -454,7 +454,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
 
                                     {/* Attachment Preview */}
                                     {attachmentPreview && (
-                                        <div className="mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-start justify-between group animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="mb-3 mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-start justify-between group animate-in fade-in slide-in-from-bottom-2">
                                             <div className="flex items-center gap-3 overflow-hidden">
                                                 {attachmentPreview.type === 'image' ? (
                                                     <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-gray-200 shadow-sm bg-white">
@@ -482,37 +482,40 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                         </div>
                                     )}
 
-                                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-2 focus-within:ring-clay-100 rounded-full flex items-center pr-1 transition-all overflow-hidden">
-                                            <div className="flex items-center pl-1 group/attachments">
+                                    <form onSubmit={handleSendMessage} className="flex w-full flex-col gap-3">
+                                        <div className="flex items-end gap-2 sm:gap-3 w-full">
+                                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all overflow-hidden shadow-sm">
+                                            <div className="flex items-center gap-0.5 px-1">
                                                 <button 
                                                     type="button" 
                                                     onClick={() => imageInputRef.current?.click()}
-                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-100 rounded-full transition-all duration-200"
+                                                    className="p-2 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white hover:text-clay-600"
                                                     title="Attach Image"
                                                 >
-                                                    <ImageIcon size={18} />
+                                                    <ImageIcon size={20} />
                                                 </button>
                                                 <button 
                                                     type="button" 
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-100 rounded-full transition-all duration-200"
+                                                    className="p-2 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white hover:text-clay-600"
                                                     title="Attach Document"
                                                 >
-                                                    <Paperclip size={18} />
+                                                    <Paperclip size={20} />
                                                 </button>
                                             </div>
 
-                                            <input 
+                                            <textarea 
                                                 ref={inputRef}
-                                                type="text" 
+                                                rows={1}
                                                 value={data.message}
                                                 onChange={(e) => {
                                                     setData('message', e.target.value);
+                                                    e.target.style.height = 'auto';
+                                                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                                                     signalTyping();
                                                 }}
-                                                placeholder="Write a message..." 
-                                                className="flex-1 w-full pl-4 pr-2 py-2 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400"
+                                                placeholder="Type your message here..." 
+                                                className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[120px] custom-scrollbar leading-relaxed"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter' && !e.shiftKey) {
                                                         e.preventDefault();
@@ -526,19 +529,20 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                             <button 
                                                 type="button" 
                                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                className={`p-1.5 mr-1 rounded-full transition-colors shrink-0 ${showEmojiPicker ? 'text-clay-600 bg-clay-100' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                                                className={`p-2 mx-1 rounded-xl transition-all shrink-0 ${showEmojiPicker ? 'bg-white text-clay-600 shadow-sm' : 'text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm'}`}
                                                 title="Insert Emoji"
                                             >
-                                                <Smile size={18} />
+                                                <Smile size={20} />
                                             </button>
                                         </div>
                                         <button 
                                             type="submit" 
                                             disabled={processing || (!data.message.trim() && !data.attachment)}
-                                            className="w-10 h-10 bg-clay-600 text-white rounded-full flex items-center justify-center hover:bg-clay-700 hover:shadow-md transition-all disabled:opacity-50 disabled:hover:shadow-none shrink-0"
+                                            className="h-12 w-12 rounded-2xl flex items-center justify-center transition-all shrink-0 disabled:opacity-50 disabled:hover:shadow-none disabled:cursor-not-allowed bg-clay-600 text-white hover:bg-clay-700 hover:shadow-lg"
                                         >
-                                            <Send size={18} className="ml-0.5" />
+                                            <Send size={20} className="ml-1" />
                                         </button>
+                                        </div>
                                     </form>
 
                                     {/* Hidden File Inputs */}

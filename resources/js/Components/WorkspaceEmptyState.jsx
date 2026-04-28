@@ -1,29 +1,7 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-
-function ActionControl({ label, href, onClick, tone = 'primary' }) {
-    if (!label) {
-        return null;
-    }
-
-    const baseClassName = tone === 'secondary'
-        ? 'inline-flex items-center justify-center rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[12px] font-bold text-stone-700 transition hover:bg-stone-50'
-        : 'inline-flex items-center justify-center rounded-xl bg-clay-600 px-4 py-2.5 text-[12px] font-bold text-white transition hover:bg-clay-700';
-
-    if (href) {
-        return (
-            <Link href={href} className={baseClassName}>
-                {label}
-            </Link>
-        );
-    }
-
-    return (
-        <button type="button" onClick={onClick} className={baseClassName}>
-            {label}
-        </button>
-    );
-}
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function WorkspaceEmptyState({
     icon: Icon,
@@ -48,8 +26,24 @@ export default function WorkspaceEmptyState({
             </p>
             {(actionLabel || secondaryActionLabel) && (
                 <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
-                    <ActionControl label={actionLabel} href={actionHref} onClick={onAction} />
-                    <ActionControl label={secondaryActionLabel} href={secondaryActionHref} onClick={onSecondaryAction} tone="secondary" />
+                    {actionLabel && (
+                        actionHref ? (
+                            <Link href={actionHref}>
+                                <PrimaryButton className="px-6">{actionLabel}</PrimaryButton>
+                            </Link>
+                        ) : (
+                            <PrimaryButton onClick={onAction} className="px-6">{actionLabel}</PrimaryButton>
+                        )
+                    )}
+                    {secondaryActionLabel && (
+                        secondaryActionHref ? (
+                            <Link href={secondaryActionHref}>
+                                <SecondaryButton className="px-6">{secondaryActionLabel}</SecondaryButton>
+                            </Link>
+                        ) : (
+                            <SecondaryButton onClick={onSecondaryAction} className="px-6">{secondaryActionLabel}</SecondaryButton>
+                        )
+                    )}
                 </div>
             )}
         </div>

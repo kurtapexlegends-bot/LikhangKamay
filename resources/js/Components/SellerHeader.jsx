@@ -59,10 +59,10 @@ export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge
                 <div className="relative">
                     <Dropdown>
                         <Dropdown.Trigger>
-                            <span className="inline-flex rounded-md">
+                            <span className="inline-flex rounded-xl">
                                 <button
                                     type="button"
-                                    className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                    className="inline-flex items-center gap-2 sm:gap-3 px-2 py-2 border border-transparent text-sm leading-4 font-bold rounded-xl text-stone-600 bg-transparent hover:bg-stone-50 hover:text-stone-800 focus:outline-none transition-all duration-300 active:scale-95"
                                 >
                                     <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                     <UserAvatar user={auth.user} />

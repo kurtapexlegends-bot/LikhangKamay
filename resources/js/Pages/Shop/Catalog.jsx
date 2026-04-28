@@ -326,7 +326,7 @@ export default function Catalog(props) {
                                     </span>
                                 ))}
                                 {selectedLocations.map(loc => (
-                                    <span key={loc} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                    <span key={loc} className="inline-flex items-center gap-1 bg-stone-100 text-stone-800 text-xs font-medium px-2.5 py-1 rounded-full">
                                         <MapPin size={10} /> {loc}
                                         <button onClick={() => handleLocationChange(loc)} className="hover:text-red-500">
                                             <X size={12} />

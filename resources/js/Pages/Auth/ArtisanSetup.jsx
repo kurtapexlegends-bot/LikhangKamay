@@ -230,8 +230,8 @@ export default function ArtisanSetup({ auth }) {
                             <form onSubmit={submit} className="p-6 sm:p-10">
                                 <div className="mb-8">
                                     <div className="mb-1 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
-                                            <FileText size={20} className="text-blue-600" />
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                                            <FileText size={20} className="text-amber-600" />
                                         </div>
                                         <div>
                                             <h2 className="text-xl font-bold text-gray-900">Legal Verification</h2>
@@ -323,11 +323,11 @@ export default function ArtisanSetup({ auth }) {
 
 function StepPill({ number, icon, label, active, current }) {
     return (
-        <div className={`flex items-center gap-2 rounded-xl px-4 py-2 transition ${
-            current ? 'bg-clay-600 text-white' : active ? 'bg-clay-100 text-clay-700' : 'text-gray-400'
+        <div className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300 ${
+            current ? 'bg-clay-600 text-white shadow-md shadow-clay-200 scale-105' : active ? 'bg-clay-100 text-clay-700' : 'text-gray-400'
         }`}>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                current ? 'bg-white text-clay-600' : active ? 'bg-clay-200 text-clay-700' : 'bg-gray-100'
+            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                current ? 'bg-white text-clay-600 animate-pulse' : active ? 'bg-clay-200 text-clay-700' : 'bg-gray-100'
             }`}>
                 {icon || number}
             </div>
@@ -344,21 +344,21 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, exis
             <InputLabel htmlFor={id} value={label} />
             <div
                 onClick={() => inputRef.current?.click()}
-                className={`mt-1 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition hover:bg-gray-50 ${
-                    file ? 'border-green-400 bg-green-50' : existingFile ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-300 bg-white'
+                className={`mt-1 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 hover:shadow-md ${
+                    file ? 'border-clay-400 bg-clay-50/50' : existingFile ? 'border-clay-300 bg-clay-50/30' : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
                 }`}
             >
                 {file ? (
                     <>
-                        <FileCheck size={32} className="mb-2 text-green-600" />
-                        <p className="max-w-full truncate text-sm font-medium text-green-700">{file.name}</p>
-                        <p className="text-xs text-green-600">Click to change</p>
+                        <FileCheck size={32} className="mb-2 text-clay-600" />
+                        <p className="max-w-full truncate text-sm font-medium text-clay-800">{file.name}</p>
+                        <p className="text-xs text-clay-600">Click to change</p>
                     </>
                 ) : existingFile ? (
                     <>
-                        <CheckCircle2 size={32} className="mb-2 text-emerald-600" />
-                        <p className="text-sm font-bold text-emerald-700">Document on File</p>
-                        <p className="text-xs text-emerald-600">Click to replace</p>
+                        <CheckCircle2 size={32} className="mb-2 text-clay-600" />
+                        <p className="text-sm font-bold text-clay-800">Document on File</p>
+                        <p className="text-xs text-clay-600">Click to replace</p>
                     </>
                 ) : (
                     <>

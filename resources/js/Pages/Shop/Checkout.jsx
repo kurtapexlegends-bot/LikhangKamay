@@ -485,7 +485,7 @@ export default function Checkout({ auth, pricing }) {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setDefaultAddress(address.id)}
-                                                                className="rounded-md px-1.5 py-1 text-[10px] font-medium leading-none text-gray-500 transition hover:bg-white hover:text-indigo-600"
+                                                                className="rounded-md px-1.5 py-1 text-[10px] font-medium leading-none text-gray-500 transition hover:bg-white hover:text-clay-600"
                                                             >
                                                                 Set Default
                                                             </button>
@@ -493,7 +493,7 @@ export default function Checkout({ auth, pricing }) {
                                                         <button
                                                             type="button"
                                                             onClick={() => startEditingAddress(address)}
-                                                            className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[10px] font-medium leading-none text-gray-500 transition hover:bg-white hover:text-indigo-600"
+                                                            className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[10px] font-medium leading-none text-gray-500 transition hover:bg-white hover:text-clay-600"
                                                         >
                                                             <Pencil size={12} />
                                                             Edit

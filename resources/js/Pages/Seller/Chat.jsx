@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
+import SellerHeader from '@/Components/SellerHeader';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import EmojiPicker from 'emoji-picker-react';
@@ -228,65 +229,25 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 h-screen transition-all duration-300">
                 
                 {/* --- HEADER --- */}
-                {/* --- HEADER --- */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 shrink-0 z-50 sticky top-0">
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-clay-600">
-                            <Menu size={24} />
-                        </button>
-                        <div>
-                            <div className="flex items-center gap-3">
-                                <h1 className="text-xl font-bold text-gray-900">Messages</h1>
-                                <div className="flex items-center gap-1.5 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full hidden sm:flex">
-                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                                    Live
-                                </div>
-                                {conversations.length > 0 && (
-                                    <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                                        {conversations.length}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
-                                Communicate with your customers
-                            </p>
-                        </div>
-                    </div>
-
-                                        
-                    <div className="flex items-center gap-3 sm:gap-6">
-                        {/* 1. Actions */}
+                <SellerHeader
+                    title={
                         <div className="flex items-center gap-3">
-                            <NotificationDropdown />
+                            <span>Messages</span>
+                            <div className="flex items-center gap-1.5 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full hidden sm:flex">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                Live
+                            </div>
+                            {conversations.length > 0 && (
+                                <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                                    {conversations.length}
+                                </span>
+                            )}
                         </div>
-
-                        {/* Divider */}
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-
-                        {/* 2. Profile Dropdown */}
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 sm:gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="flex items-center gap-2 text-red-600 hover:text-red-700">
-                                        <LogOut size={16} /> Log Out
-                                    </Dropdown.Link>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
+                    }
+                    subtitle="Communicate with your customers"
+                    auth={auth}
+                    onMenuClick={() => setSidebarOpen(true)}
+                />
 
                 {/* --- CHAT INTERFACE --- */}
                 <div className="flex-1 flex overflow-hidden">
@@ -782,4 +743,3 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         </div>
     );
 }
-

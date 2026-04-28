@@ -137,13 +137,13 @@ const OrderTimeline = ({ status, isPickup }) => {
     const steps = isPickup ? [
         { key: 'Pending', label: 'Placed', icon: Clock, color: 'amber' },
         { key: 'Accepted', label: 'Confirmed', icon: PackageCheck, color: 'blue' },
-        { key: 'Ready for Pickup', label: 'Ready', icon: Store, color: 'indigo' },
+        { key: 'Ready for Pickup', label: 'Ready', icon: Store, color: 'sky' },
         { key: 'Delivered', label: 'Picked Up', icon: CheckCircle, color: 'teal' },
         { key: 'Completed', label: 'Completed', icon: Star, color: 'green' },
     ] : [
         { key: 'Pending', label: 'Placed', icon: Clock, color: 'amber' },
         { key: 'Accepted', label: 'Confirmed', icon: PackageCheck, color: 'blue' },
-        { key: 'Shipped', label: 'Shipped', icon: Truck, color: 'indigo' },
+        { key: 'Shipped', label: 'Shipped', icon: Truck, color: 'sky' },
         { key: 'Delivered', label: 'Delivered', icon: MapPin, color: 'teal' },
         { key: 'Completed', label: 'Completed', icon: CheckCircle, color: 'green' },
     ];
@@ -293,8 +293,8 @@ const StatusBadge = ({ status }) => {
     const config = {
         'Pending': { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', icon: Clock },
         'Accepted': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', icon: PackageCheck },
-        'Shipped': { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200', icon: Truck },
-        'Ready for Pickup': { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200', icon: Store },
+        'Shipped': { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-200', icon: Truck },
+        'Ready for Pickup': { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-200', icon: Store },
         'Delivered': { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200', icon: MapPin },
         'Completed': { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200', icon: CheckCircle },
         'Refund/Return': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200', icon: RotateCcw },
@@ -346,7 +346,7 @@ const deliveryStatusConfig = (status) => {
     const configs = {
         ASSIGNING_DRIVER: {
             label: 'Assigning Driver',
-            tone: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+            tone: 'border-sky-200 bg-sky-50 text-sky-700',
             detail: 'Lalamove is assigning a courier.',
         },
         ON_GOING: {
@@ -460,7 +460,7 @@ const buyerDeliverySummary = (order) => {
     if (order.shipping_method === 'Pick Up') {
         if (order.status === 'Ready for Pickup') {
             return {
-                tone: 'border-indigo-100 bg-indigo-50',
+                tone: 'border-sky-100 bg-sky-50',
                 title: 'Ready for pickup',
                 detail: 'Your order is packed and ready. Coordinate the pickup time with the seller.',
                 latestEvent,
@@ -513,7 +513,7 @@ const buyerDeliverySummary = (order) => {
 
     if (order.status === 'Shipped') {
         return {
-            tone: 'border-indigo-100 bg-indigo-50',
+            tone: 'border-sky-100 bg-sky-50',
             title: 'Shipment in progress',
             detail: 'The seller marked the parcel as shipped. Check the shipment proof and tracking details if provided.',
             latestEvent,
