@@ -27,6 +27,7 @@ class HandleInertiaRequests extends Middleware
         // Get user notifications if authenticated
         $notifications = [];
         $unreadNotificationCount = 0;
+        $unreadMessageCount = 0;
         
         if ($request->user()) {
             $notifications = $request->user()->notifications()
@@ -34,6 +35,7 @@ class HandleInertiaRequests extends Middleware
                 ->get()
                 ->map(fn ($notification) => NotificationPresenter::present($notification, $request->user()));
             $unreadNotificationCount = $request->user()->unreadNotifications()->count();
+            $unreadMessageCount = \App\Models\Message::where('receiver_id', $request->user()->id)->where('is_read', false)->count();
         }
 
         $user = $request->user();
@@ -58,6 +60,7 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => $cartCount,
             'notifications' => $notifications,
             'unreadNotificationCount' => $unreadNotificationCount,
+            'unreadMessageCount' => $unreadMessageCount,
             'pendingArtisanCount' => $request->user() && $request->user()->role === 'super_admin' 
                 ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
                 : 0,

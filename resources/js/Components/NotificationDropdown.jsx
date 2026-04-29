@@ -205,14 +205,16 @@ export default function NotificationDropdown() {
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label={isOpen ? 'Close notifications' : 'Open notifications'}
-                className="relative rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-clay-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-clay-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 group"
             >
-                <Bell size={20} />
-                {unreadNotificationCount > 0 && (
-                    <span className="absolute top-0 right-0 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white">
-                        {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-                    </span>
-                )}
+                <div className="relative inline-flex">
+                    <Bell size={20} className="group-hover:scale-110 transition-transform" />
+                    {unreadNotificationCount > 0 && (
+                        <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
+                            {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                        </span>
+                    )}
+                </div>
             </button>
 
             {/* Dropdown */}

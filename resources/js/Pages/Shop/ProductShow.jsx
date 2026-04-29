@@ -131,6 +131,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             quantity: quantity 
         }, {
             preserveScroll: true,
+            preserveState: true,
+            only: ['cartCount', 'flash', 'errors'],
             onSuccess: () => {
                 setAddedToCart(true);
                 addToast('Added to cart.', 'success');
@@ -273,7 +275,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         onClick={() => { setActiveImageIndex(index); setViewMode('image'); }}
                                         aria-label={`Show product image ${index + 1}`}
                                         title={`Show product image ${index + 1}`}
-                                        className={`flex-shrink-0 w-16 h-16 rounded-xl border-2 overflow-hidden transition ${
+                                        className={`flex-shrink-0 w-16 h-16 rounded-xl border-2 overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${
                                             activeImageIndex === index && viewMode === 'image'
                                                 ? 'border-clay-600'
                                                 : 'border-gray-200 hover:border-gray-300'

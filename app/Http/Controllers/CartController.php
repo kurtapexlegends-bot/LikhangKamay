@@ -137,7 +137,9 @@ class CartController extends Controller
             'variant' => 'nullable|string|max:120',
         ]);
 
-        $product = Product::with('user')->findOrFail($validated['product_id']);
+        $product = Product::select('id', 'user_id', 'sku', 'name', 'slug', 'price', 'stock', 'cover_photo_path')
+            ->with('user:id,name,shop_name,city')
+            ->findOrFail($validated['product_id']);
         $requestedQty = (int) ($validated['quantity'] ?? 1);
         $variant = trim((string) ($validated['variant'] ?? 'Standard')) ?: 'Standard';
         $cartKey = $this->makeCartKey($product->id, $variant);

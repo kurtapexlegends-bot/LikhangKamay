@@ -9,7 +9,7 @@ import {
 import UserAvatar from '@/Components/UserAvatar';
 
 export default function BuyerNavbar() {
-    const { auth, cartCount, sellerSidebar } = usePage().props;
+    const { auth, cartCount, sellerSidebar, unreadMessageCount } = usePage().props;
     const user = auth?.user;
     const rawBuyerName = user?.name?.trim()
         || [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
@@ -66,22 +66,31 @@ export default function BuyerNavbar() {
                         {user ? (
                             <>
                                 {showBuyerChat && (
-                                    <Link href={route('buyer.chat')} className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group">
-                                        <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
+                                    <Link href={route('buyer.chat')} className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition group">
+                                        <div className="relative inline-flex">
+                                            <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
+                                            {unreadMessageCount > 0 && (
+                                                <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
+                                                    {unreadMessageCount}
+                                                </span>
+                                            )}
+                                        </div>
                                     </Link>
                                 )}
 
                                 {/* FIX: Changed <button> to <Link> pointing to cart.index */}
                                 <Link 
                                     href={route('cart.index')} 
-                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition relative group"
+                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition group"
                                 >
-                                    <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
-                                    {cartCount > 0 && (
-                                        <span className="absolute top-0 right-0 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
-                                            {cartCount}
-                                        </span>
-                                    )}
+                                    <div className="relative inline-flex">
+                                        <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
+                                        {cartCount > 0 && (
+                                            <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
+                                                {cartCount}
+                                            </span>
+                                        )}
+                                    </div>
                                 </Link>
 
                                 <NotificationDropdown />

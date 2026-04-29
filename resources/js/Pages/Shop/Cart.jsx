@@ -351,7 +351,7 @@ export default function Cart({ cart }) {
                                             <button
                                                 onClick={proceedToCheckout}
                                                 disabled={selectedItems.size === 0}
-                                                className="w-full h-11 bg-clay-600 text-white rounded-sm font-medium flex items-center justify-center gap-2 hover:bg-clay-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="w-full h-11 bg-clay-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-clay-700 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
                                             >
                                                 Checkout ({selectedItems.size})
                                                 <ArrowRight size={16} />

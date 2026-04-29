@@ -88,6 +88,8 @@ class AuthenticatedSessionController extends Controller
 
     private function performLogout(Request $request): RedirectResponse
     {
+        $cart = $request->session()->get('cart', []);
+
         Auth::guard('web')->logout();
 
         $request->session()->forget([
@@ -100,6 +102,10 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        if (!empty($cart)) {
+            $request->session()->put('cart', $cart);
+        }
 
         return redirect('/');
     }
