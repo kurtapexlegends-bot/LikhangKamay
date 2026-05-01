@@ -282,6 +282,7 @@ Route::get('/payment/cancel', [PaymentController::class, 'cancel'])->name('payme
 Route::get('/subscription/payment/success', [SubscriptionController::class, 'success'])->middleware('signed')->name('seller.subscription.payment.success');
 Route::get('/subscription/payment/cancel', [SubscriptionController::class, 'cancel'])->middleware('signed')->name('seller.subscription.payment.cancel');
 Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
+Route::post('/webhooks/paymongo', [\App\Http\Controllers\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
 
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {

@@ -490,15 +490,9 @@ const buyerDeliverySummary = (order) => {
     }
 
     if (order.delivery?.provider === 'lalamove') {
-        const courierState = buyerCourierTrackingState(order);
-
-        return {
-            tone: 'border-sky-100 bg-sky-50',
-            title: courierState.label,
-            detail: courierState.detail,
-            latestEvent,
-            latestEventTime,
-        };
+        // The detailed "Courier Tracking" card below handles Lalamove status.
+        // We return null here to prevent duplicating the status in a summary box.
+        return null;
     }
 
     if (order.status === 'Accepted') {
@@ -904,24 +898,26 @@ export default function MyOrders({ auth, orders }) {
                                         </div>
                                     ) : (
                                         <div className="space-y-1.5">
-                                            <div className={`rounded-xl border px-3 py-2 ${deliverySummary.tone}`}>
-                                                <div className="flex flex-wrap items-start justify-between gap-2">
-                                                    <div className="min-w-0">
-                                                        <p className="text-[12px] font-bold text-stone-900">{deliverySummary.title}</p>
-                                                        <p className="text-[10px] leading-snug text-stone-600">{deliverySummary.detail}</p>
+                                            {deliverySummary && (
+                                                <div className={`rounded-xl border px-3 py-2 ${deliverySummary.tone}`}>
+                                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                                        <div className="min-w-0">
+                                                            <p className="text-[12px] font-bold text-stone-900">{deliverySummary.title}</p>
+                                                            <p className="text-[10px] leading-snug text-stone-600">{deliverySummary.detail}</p>
+                                                        </div>
+                                                        {deliverySummary.latestEventTime && (
+                                                            <span className="rounded-full border border-white/80 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-stone-500">
+                                                                {deliverySummary.latestEventTime}
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    {deliverySummary.latestEventTime && (
-                                                        <span className="rounded-full border border-white/80 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-stone-500">
-                                                            {deliverySummary.latestEventTime}
-                                                        </span>
+                                                    {deliverySummary.latestEvent && (
+                                                        <p className="mt-1 text-[9px] font-medium text-stone-500">
+                                                            Latest update: {deliverySummary.latestEvent.label}
+                                                        </p>
                                                     )}
                                                 </div>
-                                                {deliverySummary.latestEvent && (
-                                                    <p className="mt-1 text-[9px] font-medium text-stone-500">
-                                                        Latest update: {deliverySummary.latestEvent.label}
-                                                    </p>
-                                                )}
-                                            </div>
+                                            )}
 
                                             {/* Address row */}
                                             <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">

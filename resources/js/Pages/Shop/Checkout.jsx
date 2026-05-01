@@ -665,7 +665,7 @@ export default function Checkout({ auth, pricing }) {
                                                 <>
                                                     <div className="flex justify-between"><span>Merchandise</span><span className="font-medium">{peso(group.subtotal)}</span></div>
                                                     {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Convenience Fee (3%)</span><span className="font-medium">{peso(group.convenienceFee)}</span></div>}
-                                                    {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Shipping Fee</span><span className="font-medium">{peso(group.shippingFee)}</span></div>}
+                                                    {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Shipping Fee</span><span className={shippingQuote.status !== 'ready' ? 'italic text-gray-400 font-normal' : 'font-medium'}>{shippingQuote.status === 'ready' ? peso(group.shippingFee) : (shippingQuote.status === 'error' ? 'Unavailable' : 'Calculating...')}</span></div>}
                                                 </>
                                             )}
                                             {showAggregateBreakdown && (

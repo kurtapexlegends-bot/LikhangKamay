@@ -1017,6 +1017,13 @@ class OrderController extends Controller
                     );
                     $seller->notify(new \App\Notifications\NewOrderNotification($order));
                 }
+
+                \App\Models\PlatformActivity::create([
+                    'user_id' => Auth::id(),
+                    'action' => 'order_placed',
+                    'description' => 'A buyer placed an order (#' . $order->order_number . ').',
+                    'metadata' => ['order_id' => $order->id]
+                ]);
             }
         });
 
@@ -1035,13 +1042,6 @@ class OrderController extends Controller
             }
         }
         Session::put('cart', $cart);
-
-        \App\Models\PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'order_placed',
-            'description' => 'A buyer placed an order (#' . $order->order_number . ').',
-            'metadata' => ['order_id' => $order->id]
-        ]);
 
         return redirect()->route('my-orders.index')->with('success', 'Order placed successfully. The seller will confirm it and arrange delivery or pickup next.');
     }

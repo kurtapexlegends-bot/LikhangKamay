@@ -38,6 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff.security' => \App\Http\Middleware\EnsureStaffSecurityGate::class,
             'staff.attendance' => \App\Http\Middleware\EnsureStaffAttendanceActive::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            '/webhooks/*',
+        ]);
         
     })
     ->withExceptions(function (Exceptions $exceptions): void {
