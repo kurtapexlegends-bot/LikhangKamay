@@ -808,6 +808,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     {
         $defaultAddress = $this->getDefaultAddress();
         $candidates = [];
+        /** @var array<string, bool> $seen */
         $seen = [];
 
         $pushCandidate = function (array $parts) use (&$candidates, &$seen): void {
@@ -910,7 +911,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public function addresses()
     {
-        return $this->hasMany(\App\Models\UserAddress::class);
+        return $this->hasMany(UserAddress::class);
     }
 
     public function sponsorshipRequests()
@@ -994,16 +995,16 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
         static::creating(function ($user) {
             if ($user->role === 'artisan' && !empty($user->shop_name)) {
-                $user->shop_slug = \Illuminate\Support\Str::slug($user->shop_name . '-' . \Illuminate\Support\Str::random(6));
+                $user->shop_slug = Str::slug($user->shop_name . '-' . Str::random(6));
             }
         });
 
         static::updating(function ($user) {
             // BUG-M6 Fix: Regenerate slug if empty and user is artisan
             if (empty($user->shop_slug) && !empty($user->shop_name) && $user->role === 'artisan') {
-                $user->shop_slug = \Illuminate\Support\Str::slug($user->shop_name . '-' . \Illuminate\Support\Str::random(6));
+                $user->shop_slug = Str::slug($user->shop_name . '-' . Str::random(6));
             } elseif ($user->isDirty('shop_name') && !empty($user->shop_name) && empty($user->shop_slug)) {
-                $user->shop_slug = \Illuminate\Support\Str::slug($user->shop_name . '-' . \Illuminate\Support\Str::random(6));
+                $user->shop_slug = Str::slug($user->shop_name . '-' . Str::random(6));
             }
         });
     }

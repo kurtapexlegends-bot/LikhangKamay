@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
+import AnnouncementBanner from '@/Components/AnnouncementBanner';
 
 const SellerWorkspaceShellContext = createContext({
     openSidebar: () => {},
@@ -26,7 +27,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     onClose={() => setSidebarOpen(false)}
                 />
 
-                <div scroll-region="true" className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:ml-56">
+                <div scroll-region="true" className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:ml-56 animate-page-enter">
                     {children}
                 </div>
             </div>

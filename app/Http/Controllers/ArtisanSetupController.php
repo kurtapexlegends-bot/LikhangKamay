@@ -115,6 +115,13 @@ class ArtisanSetupController extends Controller
                 'new_status' => 'pending',
             ]);
 
+            \App\Models\PlatformActivity::create([
+                'user_id' => $user->id,
+                'action' => 'artisan_registered',
+                'description' => 'A new artisan shop applied: ' . $user->shop_name,
+                'metadata' => ['shop_name' => $user->shop_name]
+            ]);
+
             $user->update([
                 'business_permit' => $upload('business_permit'),
                 'dti_registration' => $upload('dti_registration'),
@@ -125,57 +132,15 @@ class ArtisanSetupController extends Controller
                 'artisan_rejection_reason' => null,
             ]);
 
-            UserModel::query()
-                ->where('role', 'super_admin')
-                ->each(function (UserModel $admin) use ($user): void {
-                    $admin->notify(new NewArtisanApplicationNotification($user));
-                });
-
-            $adminEmails = collect([
-                config('services.artisan_applications.notification_email'),
-            ])
-                ->flatMap(function ($value) {
-                    if (!filled($value)) {
-                        return [];
-                    }
-
-                    return preg_split('/[,;]+/', (string) $value) ?: [];
-                })
-                ->merge(
-                    UserModel::query()
-                        ->where('role', 'super_admin')
-                        ->whereNotNull('email')
-                        ->pluck('email')
-                )
-                ->map(fn ($email) => strtolower(trim((string) $email)))
-                ->filter(fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL))
-                ->unique()
-                ->values();
-
-            if ($adminEmails->isNotEmpty()) {
-                try {
-                    $mailer = Mail::to($adminEmails->all());
-
-                    if (app()->environment('production') && config('queue.default') !== 'sync') {
-                        $mailer->queue(new NewArtisanApplication($user));
-                    } else {
-                        $mailer->send(new NewArtisanApplication($user));
-                    }
-                } catch (\Throwable $e) {
-                    report($e);
-
-                    return redirect()
-                        ->route('artisan.pending')
-                        ->with('warning', 'Application submitted, but the admin notification email could not be sent.');
-                }
+            $emailResult = $this->sendApplicationEmails($user);
+            
+            if ($emailResult === 'failed_send') {
+                return redirect()
+                    ->route('artisan.pending')
+                    ->with('warning', 'Application submitted, but the admin notification email could not be sent.');
             }
-
-            if ($adminEmails->isEmpty()) {
-                Log::warning('Artisan application submitted without an email recipient.', [
-                    'artisan_user_id' => $user->id,
-                    'shop_name' => $user->shop_name,
-                ]);
-
+            
+            if ($emailResult === 'no_recipients') {
                 return redirect()
                     ->route('artisan.pending')
                     ->with('warning', 'Application submitted, but no admin email recipient is configured.');
@@ -197,5 +162,61 @@ class ArtisanSetupController extends Controller
         }
         
         return back();
+    }
+
+    private function sendApplicationEmails(UserModel $user): string
+    {
+        UserModel::query()
+            ->where('role', 'super_admin')
+            ->each(function (UserModel $admin) use ($user): void {
+                $admin->notify(new NewArtisanApplicationNotification($user));
+            });
+
+        $adminEmails = collect([
+            config('services.artisan_applications.notification_email'),
+        ])
+            ->flatMap(function ($value) {
+                if (!filled($value)) {
+                    return [];
+                }
+
+                return preg_split('/[,;]+/', (string) $value) ?: [];
+            })
+            ->merge(
+                UserModel::query()
+                    ->where('role', 'super_admin')
+                    ->whereNotNull('email')
+                    ->pluck('email')
+            )
+            ->map(fn ($email) => strtolower(trim((string) $email)))
+            ->filter(fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values();
+
+        if ($adminEmails->isNotEmpty()) {
+            try {
+                $mailer = Mail::to($adminEmails->all());
+
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue(new NewArtisanApplication($user));
+                } else {
+                    $mailer->send(new NewArtisanApplication($user));
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                return 'failed_send';
+            }
+        }
+
+        if ($adminEmails->isEmpty()) {
+            Log::warning('Artisan application submitted without an email recipient.', [
+                'artisan_user_id' => $user->id,
+                'shop_name' => $user->shop_name,
+            ]);
+
+            return 'no_recipients';
+        }
+
+        return 'success';
     }
 }

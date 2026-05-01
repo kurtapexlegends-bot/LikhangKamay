@@ -4,6 +4,7 @@ import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import AnnouncementBanner from '@/Components/AnnouncementBanner';
 import {
     LayoutDashboard,
     Users,
@@ -22,14 +23,18 @@ import {
 } from 'lucide-react';
 
 export default function AdminLayout({ title, children }) {
-    const { pendingArtisanCount, auth } = usePage().props;
+    const { pendingArtisanCount, auth, globalAnnouncement } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // ... navigationGroups omitted for brevity ...
+    // Note: I will only replace the top of the file up to isMobileMenuOpen, then I'll use another replace for the render part.
 
     const navigationGroups = [
         {
             title: 'Platform Overview',
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
+                { name: 'Announcements', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
                 { name: 'Monetization', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
             ]
@@ -38,7 +43,7 @@ export default function AdminLayout({ title, children }) {
             title: 'User Management',
             items: [
                 { name: 'Users', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
-                { name: 'Review Moderation', href: route('admin.review-moderation'), icon: ShieldAlert, current: route().current('admin.review-moderation') },
+                { name: 'Moderation Queue', href: route('admin.moderation'), icon: ShieldAlert, current: route().current('admin.moderation') },
                 {
                     name: 'Pending Artisans',
                     href: route('admin.pending'),
@@ -57,11 +62,13 @@ export default function AdminLayout({ title, children }) {
     ];
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans flex text-gray-800">
-            <Head title={title ? `${title} - Admin` : 'Admin Panel'} />
+        <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-gray-800">
+            <AnnouncementBanner announcement={globalAnnouncement} />
+            <div className="flex-1 flex">
+                <Head title={title ? `${title} - Admin` : 'Admin Panel'} />
 
-            {/* Mobile Sidebar Overlay */}
-            {isMobileMenuOpen && (
+                {/* Mobile Sidebar Overlay */}
+                {isMobileMenuOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -155,6 +162,8 @@ export default function AdminLayout({ title, children }) {
                             {title === 'Review Moderation' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Handle seller-submitted review moderation requests</p>}
                             {title === 'Pending Artisans' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review artisan applications</p>}
                             {title === 'Sponsorship Requests' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review and manage artisan product sponsorship requests</p>}
+                            {title === 'System Announcements' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage global alerts and messages across the marketplace.</p>}
+                            {title === 'Moderation Queue' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review flagged products and user content.</p>}
                         </div>
                     </div>
 
@@ -193,9 +202,10 @@ export default function AdminLayout({ title, children }) {
                 </header>
 
                 {/* Scrollable Content */}
-                <main className="flex-1 px-4 pt-4 pb-8 sm:px-6 space-y-6">
+                <main className="flex-1 px-4 pt-4 pb-8 sm:px-6 space-y-6 animate-page-enter">
                     {children}
                 </main>
+            </div>
             </div>
         </div>
     );

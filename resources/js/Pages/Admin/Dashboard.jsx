@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
+import ActivityTicker from "@/Components/ActivityTicker";
 
 const statusToneClasses = {
     danger: "bg-red-100 text-red-800 border-red-200",
@@ -66,7 +67,7 @@ const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
     );
 };
 
-export default function AdminDashboard({ stats, recentUsers }) {
+export default function AdminDashboard({ stats, recentUsers, activities }) {
     const pendingCount = typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans;
 
     return (
@@ -132,20 +133,22 @@ export default function AdminDashboard({ stats, recentUsers }) {
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-50 px-4 sm:px-6 py-4 sm:py-5">
-                    <h3 className="text-lg font-bold text-gray-900">
-                        Recent Registrations
-                    </h3>
-                    <Link
-                        href={route("admin.users")}
-                        className="flex items-center gap-1 text-xs font-bold text-clay-600 transition hover:text-clay-800"
-                    >
-                        View All Users <ChevronRight size={14} />
-                    </Link>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[760px]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                {/* Recent Registrations Table */}
+                <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-50 px-4 sm:px-6 py-4 sm:py-5 shrink-0">
+                        <h3 className="text-lg font-bold text-gray-900">
+                            Recent Registrations
+                        </h3>
+                        <Link
+                            href={route("admin.users")}
+                            className="flex items-center gap-1 text-xs font-bold text-clay-600 transition hover:text-clay-800"
+                        >
+                            View All Users <ChevronRight size={14} />
+                        </Link>
+                    </div>
+                    <div className="overflow-x-auto flex-1">
+                        <table className="w-full min-w-[760px]">
                         <thead className="bg-stone-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
@@ -248,6 +251,12 @@ export default function AdminDashboard({ stats, recentUsers }) {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Live Activity Ticker */}
+            <div className="lg:col-span-1 h-[500px]">
+                <ActivityTicker activities={activities} />
+            </div>
             </div>
         </AdminLayout>
     );

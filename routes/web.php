@@ -272,6 +272,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::patch('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update');
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // REPORTING
+    Route::post('/report', [\App\Http\Controllers\FlaggedContentController::class, 'store'])->name('report.store');
 });
 
 Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
@@ -299,6 +302,21 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');
     Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\SponsorshipController::class, 'approve'])->name('admin.sponsorships.approve');
     Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\SponsorshipController::class, 'reject'])->name('admin.sponsorships.reject');
+
+    // System Announcements
+    Route::get('/announcements', [SuperAdminController::class, 'announcements'])->name('admin.announcements');
+    Route::post('/announcements', [SuperAdminController::class, 'storeAnnouncement'])->name('admin.announcements.store');
+    Route::patch('/announcements/{announcement}', [SuperAdminController::class, 'updateAnnouncement'])->name('admin.announcements.update');
+    Route::delete('/announcements/{announcement}', [SuperAdminController::class, 'destroyAnnouncement'])->name('admin.announcements.destroy');
+    Route::post('/announcements/{announcement}/broadcast', [SuperAdminController::class, 'broadcastAnnouncement'])->name('admin.announcements.broadcast');
+    Route::post('/announcements/{announcement}/stop', [SuperAdminController::class, 'stopAnnouncement'])->name('admin.announcements.stop');
+
+    // Moderation Queue
+    Route::get('/moderation-queue', [SuperAdminController::class, 'moderationQueue'])->name('admin.moderation');
+    Route::post('/moderation-queue/{id}/resolve', [SuperAdminController::class, 'resolveFlag'])->name('admin.moderation.resolve');
+    Route::post('/moderation-queue/{id}/takedown', [SuperAdminController::class, 'takedownProduct'])->name('admin.moderation.takedown');
+    Route::post('/moderation-queue/{id}/suspend', [SuperAdminController::class, 'suspendUser'])->name('admin.moderation.suspend');
+    Route::post('/moderation-queue/{id}/dismiss', [SuperAdminController::class, 'dismissFlag'])->name('admin.moderation.dismiss');
 });
 
 

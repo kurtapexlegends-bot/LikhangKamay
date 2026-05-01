@@ -23,9 +23,18 @@ Artisan::command('staff:auto-pause-inactive', function () {
     $this->info("Auto-paused {$count} inactive staff attendance session(s).");
 })->purpose('Pause stale staff attendance sessions after inactivity');
 
+Artisan::command('announcements:expire', function () {
+    $count = \App\Models\SystemAnnouncement::where('is_active', true)
+        ->whereNotNull('expires_at')
+        ->where('expires_at', '<=', now())
+        ->update(['is_active' => false]);
+    $this->info("Expired {$count} announcement(s).");
+})->purpose('Auto-deactivate announcements past their expiry time');
+
 Schedule::command('orders:auto-complete')->daily();
 Schedule::command('staff:auto-pause-inactive')->everyMinute();
 Schedule::command('orders:cancel-unpaid')->hourly();
+Schedule::command('announcements:expire')->everyMinute();
 Schedule::command('reviews:remind')->dailyAt('10:00');
 Schedule::command('orders:remind-shipping')->dailyAt('09:00');
 Schedule::command('orders:sync-lalamove')->everyFifteenMinutes();

@@ -1,6 +1,9 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import BulkActionPill from '@/Components/BulkActionPill';
+import Checkbox from '@/Components/Checkbox';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
 import CompactPagination from '@/Components/CompactPagination';
@@ -36,7 +39,27 @@ export default function PendingArtisans({ artisans }) {
     const [approvalError, setApprovalError] = useState('');
     const [viewedDocumentsByArtisan, setViewedDocumentsByArtisan] = useState(() => buildViewedDocumentMap(artisans));
     const [documentPreviewingKey, setDocumentPreviewingKey] = useState(null);
+    const [selectedArtisans, setSelectedArtisans] = useState([]);
     const deferredSearchQuery = useDeferredValue(searchQuery);
+
+    const toggleArtisanSelection = (id) => {
+        setSelectedArtisans(prev => 
+            prev.includes(id) ? prev.filter(aId => aId !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAllCurrentPage = () => {
+        const pageIds = paginatedArtisans.map(a => a.id);
+        const allSelected = pageIds.every(id => selectedArtisans.includes(id));
+        
+        if (allSelected) {
+            setSelectedArtisans(prev => prev.filter(id => !pageIds.includes(id)));
+        } else {
+            setSelectedArtisans(prev => [...new Set([...prev, ...pageIds])]);
+        }
+    };
+
+    const clearSelection = () => setSelectedArtisans([]);
 
     useEffect(() => {
         setViewedDocumentsByArtisan(buildViewedDocumentMap(artisans));
@@ -281,22 +304,28 @@ export default function PendingArtisans({ artisans }) {
 
                             return (
                             <div key={artisan.id} className="grid grid-cols-1 gap-4 px-4 py-3.5 transition hover:bg-stone-50/40 sm:px-6 md:grid-cols-12 md:items-center">
-                                <div className="col-span-4 flex items-center gap-3.5">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-clay-100 bg-clay-50 text-sm font-bold text-clay-700">
-                                        {artisan.avatar ? (
-                                            <img 
-                                                src={artisan.avatar.startsWith('http') ? artisan.avatar : `/storage/${artisan.avatar}`} 
-                                                alt={artisan.name} 
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            artisan.name?.charAt(0).toUpperCase()
-                                        )}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h3 className="font-semibold text-[13px] text-stone-900 truncate">{artisan.shop_name}</h3>
-                                        <p className="text-stone-500 text-[12px] truncate">{artisan.name}</p>
-                                        <p className="text-[10px] text-stone-400 mt-0.5">Submitted {artisan.submitted_at}</p>
+                                <div className="col-span-4 flex items-center gap-3">
+                                    <Checkbox 
+                                        checked={selectedArtisans.includes(artisan.id)}
+                                        onChange={() => toggleArtisanSelection(artisan.id)}
+                                    />
+                                    <div className="flex items-center gap-3.5 min-w-0">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-clay-100 bg-clay-50 text-sm font-bold text-clay-700">
+                                            {artisan.avatar ? (
+                                                <img 
+                                                    src={artisan.avatar.startsWith('http') ? artisan.avatar : `/storage/${artisan.avatar}`} 
+                                                    alt={artisan.name} 
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                artisan.name?.charAt(0).toUpperCase()
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="font-semibold text-[13px] text-stone-900 truncate">{artisan.shop_name}</h3>
+                                            <p className="text-stone-500 text-[12px] truncate">{artisan.name}</p>
+                                            <p className="text-[10px] text-stone-400 mt-0.5">Submitted {artisan.submitted_at}</p>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -618,6 +647,28 @@ export default function PendingArtisans({ artisans }) {
                     </div>
                 )}
             </Modal>
+
+            <BulkActionPill selectedCount={selectedArtisans.length} onClear={clearSelection}>
+                <button
+                    onClick={() => {
+                        // Bulk Reject placeholder logic
+                        addToast(`Bulk reject initiated for ${selectedArtisans.length} applications.`, 'info');
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-stone-300 transition-colors hover:bg-red-500/20 hover:text-red-400"
+                >
+                    <XCircle size={14} /> Reject
+                </button>
+                <button
+                    onClick={() => {
+                         // Bulk Approve placeholder logic
+                         addToast(`Bulk approve initiated for ${selectedArtisans.length} applications.`, 'success');
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-xs font-bold text-emerald-400 transition-colors hover:bg-emerald-500/30 hover:text-emerald-300"
+                >
+                    <CheckCircle size={14} /> Approve
+                </button>
+            </BulkActionPill>
+
         </AdminLayout>
     );
 }

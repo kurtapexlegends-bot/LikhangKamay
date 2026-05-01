@@ -1,11 +1,12 @@
 import React, { lazy, useEffect, useMemo, useState, Suspense } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
+import Modal from '@/Components/Modal';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
-    Heart, ChevronRight, Check, Pin,
+    Heart, ChevronRight, Check, Pin, Flag,
     Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2, History
 } from 'lucide-react';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
@@ -38,6 +39,25 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const [deletingReview, setDeletingReview] = useState(false);
     const [reviewPhotoPreviewUrls, setReviewPhotoPreviewUrls] = useState([]);
     
+    // Reporting Logic
+    const [isReporting, setIsReporting] = useState(false);
+    const { data: reportData, setData: setReportData, post: postReport, processing: reportProcessing, reset: resetReport } = useForm({
+        reportable_type: 'App\\Models\\Product',
+        reportable_id: product.id,
+        reason: '',
+    });
+
+    const submitReport = (e) => {
+        e.preventDefault();
+        postReport(route('report.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsReporting(false);
+                resetReport();
+            }
+        });
+    };
+
     const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
     
     const chatRequirementMessage = !auth?.user
@@ -303,8 +323,17 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 )}
                             </div>
 
-                            {/* Wishlist */}
-                            <div className="flex items-center justify-end mt-4 pt-4 border-t border-gray-100">
+                            {/* Wishlist & Report */}
+                            <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                                {auth?.user && (
+                                    <button
+                                        onClick={() => setIsReporting(true)}
+                                        aria-label="Report this product"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition bg-gray-50 text-gray-400 hover:text-red-500"
+                                    >
+                                        <Flag size={14} /> Report
+                                    </button>
+                                )}
                                 <button
                                     onClick={handleWishlistToggle}
                                     aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
@@ -894,6 +923,41 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         )}
                     </div>
                 </div>
+
+                <Modal show={isReporting} onClose={() => setIsReporting(false)} maxWidth="sm">
+                    <div className="p-6">
+                        <h2 className="text-lg font-bold text-stone-900 mb-2">Report Content</h2>
+                        <p className="text-sm text-stone-500 mb-4">
+                            If you believe this product violates community guidelines, please let us know why.
+                        </p>
+                        <form onSubmit={submitReport}>
+                            <textarea
+                                value={reportData.reason}
+                                onChange={(e) => setReportData('reason', e.target.value)}
+                                placeholder="Explain why you are reporting this product..."
+                                required
+                                rows={4}
+                                className="w-full rounded-xl border-stone-200 focus:ring-red-500 focus:border-red-500 text-sm shadow-sm resize-none mb-4"
+                            ></textarea>
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsReporting(false)}
+                                    className="px-4 py-2 rounded-xl text-stone-500 font-bold hover:bg-stone-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={reportProcessing}
+                                    className="px-4 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 active:scale-95 transition disabled:opacity-50"
+                                >
+                                    {reportProcessing ? 'Submitting...' : 'Submit Report'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </Modal>
         </ShopLayout>
     );
 }

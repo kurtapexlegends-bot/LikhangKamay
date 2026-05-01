@@ -13,7 +13,7 @@ use Inertia\Inertia;
 
 class SponsorshipController extends Controller
 {
-    private function getUsedCreditsForUser($user): int
+    private function getUsedCreditsForUser(\App\Models\User $user): int
     {
         return $user->sponsorshipRequests()
             ->where('created_at', '>=', now()->subDays(30))

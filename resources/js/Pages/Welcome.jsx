@@ -1,6 +1,7 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
+import AnnouncementBanner from '@/Components/AnnouncementBanner';
 import {
     Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter
 } from 'lucide-react';
@@ -21,6 +22,7 @@ const CATEGORY_ICONS = {
 };
 
 export default function Welcome({ featuredProducts = [], sponsoredProducts = [], topSellers = [], categories = [] }) {
+    const { globalAnnouncement } = usePage().props;
     const sponsoredPlacement = 'home_sponsored';
 
     useSponsoredImpressionTracking(sponsoredProducts, sponsoredPlacement);
@@ -34,6 +36,8 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
             <Head title="LikhangKamay - Artisan Marketplace" />
+
+            <AnnouncementBanner announcement={globalAnnouncement} />
 
             {/* Use consistent BuyerNavbar */}
             <BuyerNavbar />

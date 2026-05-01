@@ -45,6 +45,35 @@ class HandleInertiaRequests extends Middleware
             ? app(StaffAttendanceService::class)->buildLogoutContext($user)
             : null;
 
+        $announcementQuery = \App\Models\SystemAnnouncement::where('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            });
+
+        // Filter by target audience
+        $userRole = $user?->role;
+        if ($userRole) {
+            $announcementQuery->where(function ($query) use ($userRole) {
+                $query->where('target_audience', 'all');
+                if (in_array($userRole, ['artisan', 'staff'])) {
+                    $query->orWhere('target_audience', 'artisans');
+                } elseif ($userRole === 'buyer') {
+                    $query->orWhere('target_audience', 'buyers');
+                } elseif ($userRole === 'super_admin') {
+                    $query->orWhere('target_audience', 'artisans')
+                          ->orWhere('target_audience', 'buyers');
+                }
+            });
+        } else {
+            // Guest users only see 'all' audience
+            $announcementQuery->where('target_audience', 'all');
+        }
+
+        $globalAnnouncement = $announcementQuery->latest()->first();
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -61,6 +90,7 @@ class HandleInertiaRequests extends Middleware
             'notifications' => $notifications,
             'unreadNotificationCount' => $unreadNotificationCount,
             'unreadMessageCount' => $unreadMessageCount,
+            'globalAnnouncement' => $globalAnnouncement,
             'pendingArtisanCount' => $request->user() && $request->user()->role === 'super_admin' 
                 ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
                 : 0,

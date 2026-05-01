@@ -38,7 +38,7 @@ class SuperAdminController extends Controller
     /**
      * Helper to calculate count and percentage growth
      */
-    private function getMetric($model, $conditions = [], $dateColumn = 'created_at')
+    private function getMetric(string $model, array $conditions = [], string $dateColumn = 'created_at')
     {
         $query = $model::query();
 
@@ -166,6 +166,8 @@ class SuperAdminController extends Controller
             })
             ->values();
 
+        $activities = \App\Models\PlatformActivity::with('user:id,name,shop_name')->latest()->take(20)->get();
+
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'totalArtisans' => $totalArtisans,
@@ -175,6 +177,7 @@ class SuperAdminController extends Controller
                 'rejectedArtisans' => $rejectedArtisans,
             ],
             'recentUsers' => $recentUsers,
+            'activities' => $activities,
         ]);
     }
 
@@ -777,7 +780,7 @@ class SuperAdminController extends Controller
     /**
      * Approve an artisan application
      */
-    public function approveArtisan($id)
+    public function approveArtisan(int|string $id)
     {
         $artisan = $this->findPendingArtisanOrFail($id);
         $submittedDocumentKeys = $this->getSubmittedArtisanDocumentKeys($artisan);
@@ -826,7 +829,7 @@ class SuperAdminController extends Controller
     /**
      * Reject an artisan application
      */
-    public function rejectArtisan(Request $request, $id)
+    public function rejectArtisan(Request $request, int|string $id)
     {
         $request->validate([
             'reason' => 'required|string|min:10|max:1000',
@@ -865,7 +868,7 @@ class SuperAdminController extends Controller
         return redirect()->back()->with('success', 'Artisan application rejected.');
     }
 
-    public function markArtisanDocumentViewed(Request $request, $id)
+    public function markArtisanDocumentViewed(Request $request, int|string $id)
     {
         $artisan = $this->findPendingArtisanOrFail($id);
         $requiredDocumentKeys = $this->getSubmittedArtisanDocumentKeys($artisan);
@@ -898,7 +901,7 @@ class SuperAdminController extends Controller
     /**
      * View a single artisan's details (for document review)
      */
-    public function viewArtisan($id)
+    public function viewArtisan(int|string $id)
     {
         $artisan = User::where('role', 'artisan')->findOrFail($id);
         $address = StructuredAddress::formatPhilippineAddress([
@@ -1098,7 +1101,7 @@ class SuperAdminController extends Controller
     /**
      * Get the accurate historical count of a premium tier at a specific point in time.
      */
-    private function getHistoricalTierCount($tier, $daysAgo = 30)
+    private function getHistoricalTierCount(string $tier, int $daysAgo = 30)
     {
         $snapshot = $this->getHistoricalTierSnapshot(now()->subDays($daysAgo));
 
@@ -1108,7 +1111,7 @@ class SuperAdminController extends Controller
     /**
      * Get the accurate historical count of an artisan status at a specific point in time.
      */
-    private function getHistoricalStatusCount($status, $daysAgo = 30)
+    private function getHistoricalStatusCount(string $status, int $daysAgo = 30)
     {
         $statusLogs = ArtisanStatusLog::query()
             ->whereIn('user_id', $this->artisanIds())
@@ -1140,7 +1143,7 @@ class SuperAdminController extends Controller
     /**
      * @return array<string, int>
      */
-    private function getHistoricalTierSnapshot($targetDate): array
+    private function getHistoricalTierSnapshot(\DateTimeInterface|string $targetDate): array
     {
         $tierLogs = UserTierLog::query()
             ->whereIn('user_id', $this->artisanIds())
@@ -1154,5 +1157,180 @@ class SuperAdminController extends Controller
             'premium' => $tierLogs->where('new_tier', 'premium')->count(),
             'super_premium' => $tierLogs->where('new_tier', 'super_premium')->count(),
         ];
+    }
+
+    // --- SYSTEM ANNOUNCEMENTS ---
+
+    public function announcements()
+    {
+        return Inertia::render('Admin/Announcements', [
+            'announcements' => \App\Models\SystemAnnouncement::with('creator:id,name')->latest()->get(),
+        ]);
+    }
+
+    public function storeAnnouncement(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'icon_name' => 'nullable|string|max:50',
+            'bg_color' => 'nullable|string|max:20',
+            'text_color' => 'nullable|string|max:20',
+            'action_text' => 'nullable|string|max:50',
+            'action_url' => 'nullable|string|max:255',
+            'type' => 'required|in:info,warning,danger,success,custom',
+            'target_audience' => 'required|in:all,artisans,buyers',
+            'is_active' => 'boolean',
+            'starts_at' => 'nullable|date',
+            'expires_at' => 'nullable|date|after:starts_at',
+            'display_duration' => 'nullable|integer|min:5|max:600',
+        ]);
+
+        $validated['created_by'] = Auth::id();
+
+        if ($validated['is_active'] ?? false) {
+            \App\Models\SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
+        }
+
+        \App\Models\SystemAnnouncement::create($validated);
+
+        return back()->with('success', 'Announcement created successfully.');
+    }
+
+    public function updateAnnouncement(Request $request, \App\Models\SystemAnnouncement $announcement)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'icon_name' => 'nullable|string|max:50',
+            'bg_color' => 'nullable|string|max:20',
+            'text_color' => 'nullable|string|max:20',
+            'action_text' => 'nullable|string|max:50',
+            'action_url' => 'nullable|string|max:255',
+            'type' => 'required|in:info,warning,danger,success,custom',
+            'target_audience' => 'required|in:all,artisans,buyers',
+            'is_active' => 'boolean',
+            'starts_at' => 'nullable|date',
+            'expires_at' => 'nullable|date|after:starts_at',
+            'display_duration' => 'nullable|integer|min:5|max:600',
+        ]);
+
+        if ($validated['is_active'] ?? false) {
+            \App\Models\SystemAnnouncement::where('id', '!=', $announcement->id)->where('is_active', true)->update(['is_active' => false]);
+        }
+
+        $announcement->update($validated);
+
+        return back()->with('success', 'Announcement updated successfully.');
+    }
+
+    public function destroyAnnouncement(\App\Models\SystemAnnouncement $announcement)
+    {
+        $announcement->delete();
+
+        return back()->with('success', 'Announcement deleted successfully.');
+    }
+
+    public function broadcastAnnouncement(\App\Models\SystemAnnouncement $announcement)
+    {
+        \App\Models\SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
+        $announcement->update([
+            'is_active' => true,
+            'broadcast_version' => ($announcement->broadcast_version ?? 0) + 1,
+        ]);
+
+        return back()->with('success', 'Announcement is now live across the platform.');
+    }
+
+    public function stopAnnouncement(\App\Models\SystemAnnouncement $announcement)
+    {
+        $announcement->update(['is_active' => false]);
+
+        return back()->with('success', 'Broadcast stopped.');
+    }
+
+    // --- MODERATION QUEUE ---
+
+    public function moderationQueue()
+    {
+        $flags = \App\Models\FlaggedContent::with(['reporter:id,name', 'reportable'])
+            ->where('status', 'pending')
+            ->latest()
+            ->paginate(15);
+
+        return Inertia::render('Admin/ModerationQueue', [
+            'flags' => $flags
+        ]);
+    }
+
+    public function resolveFlag(int|string $id, Request $request)
+    {
+        $flag = \App\Models\FlaggedContent::findOrFail($id);
+        
+        $flag->update([
+            'status' => 'resolved',
+            'resolved_by' => Auth::id(),
+            'resolved_at' => now(),
+        ]);
+
+        return back()->with('success', 'Content flag marked as resolved.');
+    }
+
+    public function takedownProduct(int|string $id, Request $request)
+    {
+        $flag = \App\Models\FlaggedContent::findOrFail($id);
+        
+        if ($flag->reportable_type === 'App\Models\Product' && $flag->reportable) {
+            $flag->reportable->update(['status' => 'Rejected']);
+        }
+
+        $flag->update([
+            'status' => 'resolved',
+            'resolved_by' => Auth::id(),
+            'resolved_at' => now(),
+        ]);
+
+        return back()->with('success', 'Product taken down and flag resolved.');
+    }
+
+    public function suspendUser(int|string $id, Request $request)
+    {
+        $flag = \App\Models\FlaggedContent::findOrFail($id);
+        
+        $userId = null;
+        if ($flag->reportable_type === 'App\Models\Product' && $flag->reportable) {
+            $userId = $flag->reportable->user_id;
+        } elseif ($flag->reportable_type === 'App\Models\User') {
+            $userId = $flag->reportable_id;
+        }
+
+        if ($userId) {
+            $user = User::find($userId);
+            if ($user) {
+                // Simplest suspension: flip them to a suspended status if exists, or remove permissions
+                $user->update(['artisan_status' => 'rejected']); 
+            }
+        }
+
+        $flag->update([
+            'status' => 'resolved',
+            'resolved_by' => Auth::id(),
+            'resolved_at' => now(),
+        ]);
+
+        return back()->with('success', 'User suspended and flag resolved.');
+    }
+
+    public function dismissFlag(int|string $id, Request $request)
+    {
+        $flag = \App\Models\FlaggedContent::findOrFail($id);
+        
+        $flag->update([
+            'status' => 'dismissed',
+            'resolved_by' => Auth::id(),
+            'resolved_at' => now(),
+        ]);
+
+        return back()->with('success', 'Content flag dismissed.');
     }
 }

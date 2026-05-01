@@ -24,3 +24,29 @@ html, body {
     height: 0px;
     background: transparent; /* Chrome/Safari/Webkit */
 }
+
+/* Page content entrance — GPU-accelerated, non-blocking */
+@keyframes page-enter {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-page-enter {
+    animation: page-enter 0.18s ease-out both;
+}
+
+/* Inertia progress bar styling */
+#nprogress .bar {
+    height: 2.5px !important;
+    background: linear-gradient(90deg, #c07251, #a65638) !important;
+}
+
+#nprogress .peg {
+    box-shadow: 0 0 8px #c07251, 0 0 4px #c07251 !important;
+}
