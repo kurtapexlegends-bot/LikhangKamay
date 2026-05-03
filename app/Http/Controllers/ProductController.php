@@ -30,16 +30,6 @@ class ProductController extends Controller
     private const MIN_ACTIVE_GALLERY_IMAGES = 3;
     private const MAX_GALLERY_IMAGES = 5;
 
-    const VALID_CATEGORIES = [
-        'Tableware',
-        'Drinkware',
-        'Vases & Jars',
-        'Planters & Pots',
-        'Home Decor',
-        'Kitchenware',
-        'Artisan Sets',
-    ];
-
     public function index()
     {
         $seller = $this->sellerOwner();
@@ -109,7 +99,7 @@ class ProductController extends Controller
 
         return Inertia::render('Seller/ProductManager', [
             'products' => $products,
-            'categories' => self::VALID_CATEGORIES,
+            'categories' => \App\Models\Category::pluck('name')->toArray(),
             'subscription' => [
                 'plan' => $seller->premium_tier,
                 'activeCount' => $seller->products()->where('status', 'Active')->count(),
@@ -127,7 +117,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'sku' => 'required|unique:products,sku',
             'name' => 'required|string|max:255',
-            'category' => ['required', 'string', Rule::in(self::VALID_CATEGORIES)],
+            'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],
             'price' => 'required|numeric',
             'cost_price' => 'nullable|numeric',
             'stock' => 'required|integer',
@@ -292,7 +282,7 @@ class ProductController extends Controller
             'cost_price' => 'nullable|numeric',
             'stock' => 'required|integer',
             'status' => 'required|string',
-            'category' => ['required', 'string', Rule::in(self::VALID_CATEGORIES)],
+            'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],
             'cover_photo' => 'nullable|image|max:10240',
             'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
             'gallery.*' => 'nullable|image|max:10240',

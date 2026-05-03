@@ -223,7 +223,7 @@ class ShopController extends Controller
         })->values();
 
         // 6. Categories list
-        $categories = ['All', ...ProductController::VALID_CATEGORIES];
+        $categories = ['All', ...\App\Models\Category::pluck('name')->toArray()];
 
         return Inertia::render('Shop/Catalog', [
             'products' => $products,

@@ -1395,4 +1395,60 @@ class SuperAdminController extends Controller
 
         return back()->with('success', 'System cache successfully purged. Memory is clear.');
     }
+
+    // --- GLOBAL TAXONOMY ENGINE ---
+
+    public function taxonomyIndex()
+    {
+        $categories = \App\Models\Category::withCount('products')->orderBy('name')->get();
+
+        return Inertia::render('Admin/Taxonomy', [
+            'categories' => $categories
+        ]);
+    }
+
+    public function taxonomyStore(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:categories,name'
+        ]);
+
+        \App\Models\Category::create([
+            'name' => $validated['name'],
+            'slug' => \Illuminate\Support\Str::slug($validated['name'])
+        ]);
+
+        return back()->with('success', 'Category created successfully.');
+    }
+
+    public function taxonomyUpdate(Request $request, \App\Models\Category $category)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:categories,name,' . $category->id
+        ]);
+
+        $oldName = $category->name;
+        $newName = $validated['name'];
+
+        $category->update([
+            'name' => $newName,
+            'slug' => \Illuminate\Support\Str::slug($newName)
+        ]);
+
+        // Mass update existing products
+        \App\Models\Product::where('category', $oldName)->update(['category' => $newName]);
+
+        return back()->with('success', 'Category renamed and all associated products updated.');
+    }
+
+    public function taxonomyDestroy(\App\Models\Category $category)
+    {
+        if ($category->products()->count() > 0) {
+            return back()->with('error', 'Cannot delete a category that contains products. Please reassign the products first.');
+        }
+
+        $category->delete();
+
+        return back()->with('success', 'Category deleted successfully.');
+    }
 }

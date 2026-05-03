@@ -325,6 +325,12 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     
     // Support Impersonation
     Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
+
+    // Global Taxonomy Engine
+    Route::get('/taxonomy', [SuperAdminController::class, 'taxonomyIndex'])->name('admin.taxonomy.index');
+    Route::post('/taxonomy', [SuperAdminController::class, 'taxonomyStore'])->name('admin.taxonomy.store');
+    Route::patch('/taxonomy/{category}', [SuperAdminController::class, 'taxonomyUpdate'])->name('admin.taxonomy.update');
+    Route::delete('/taxonomy/{category}', [SuperAdminController::class, 'taxonomyDestroy'])->name('admin.taxonomy.destroy');
 });
 
 // Stop Impersonation Route (Protected by standard auth)

@@ -19,7 +19,7 @@ class HomeController extends Controller
             'featuredProducts' => $this->getFeaturedProducts(collect($sponsoredProducts)->pluck('id')->all()),
             'sponsoredProducts' => $sponsoredProducts,
             'topSellers' => $this->getTopSellers(),
-            'categories' => ProductController::VALID_CATEGORIES,
+            'categories' => \App\Models\Category::pluck('name')->toArray(),
         ]);
     }
 

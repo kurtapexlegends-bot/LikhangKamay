@@ -20,7 +20,8 @@ import {
     TrendingUp,
     BarChart2,
     ShieldAlert,
-    Activity
+    Activity,
+    FolderTree
 } from 'lucide-react';
 
 export default function AdminLayout({ title, children }) {
@@ -53,6 +54,12 @@ export default function AdminLayout({ title, children }) {
                     current: route().current('admin.pending'),
                     badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
+            ]
+        },
+        {
+            title: 'Catalog & Storefront',
+            items: [
+                { name: 'Taxonomy Engine', href: route('admin.taxonomy.index'), icon: FolderTree, current: route().current('admin.taxonomy.*') },
             ]
         },
         {
