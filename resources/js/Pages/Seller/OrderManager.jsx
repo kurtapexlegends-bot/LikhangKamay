@@ -14,6 +14,7 @@ import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import CompactPagination from '@/Components/CompactPagination';
 import ExportButton from '@/Components/ExportButton';
+import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
 
 const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
     <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-300">

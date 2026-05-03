@@ -1104,11 +1104,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     <div>
                                         <InputLabel value="Product Title" className="mb-1.5 text-stone-600" />
                                         <TextInput 
-                                            className="w-full rounded-xl border-stone-200 focus:border-stone-900 focus:ring-stone-900 shadow-sm text-base font-bold placeholder:font-medium placeholder:text-stone-300" 
+                                            className="w-full text-base font-bold placeholder:font-medium placeholder:text-stone-300" 
                                             value={data.name} 
                                             onChange={(e) => setData('name', e.target.value)} 
                                             placeholder="e.g. Handcrafted Stoneware Vase"
                                             autoFocus
+                                            hasError={!!errors.name}
                                         />
                                         <InputError message={errors.name} className="mt-2" />
                                     </div>
@@ -1223,12 +1224,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         <div>
                                             <InputLabel value="Price *" className="mb-1.5" />
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold">₱</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold z-10">₱</span>
                                                 <TextInput 
                                                     type="number" 
-                                                    className="w-full pl-7 rounded-xl border-stone-200 text-sm font-bold" 
+                                                    className="w-full pl-7 text-sm font-bold relative" 
                                                     value={data.price} 
                                                     onChange={(e) => setData('price', e.target.value)} 
+                                                    hasError={!!errors.price}
                                                 />
                                             </div>
                                             <InputError message={errors.price} className="mt-2" />
@@ -1236,10 +1238,10 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         <div>
                                             <InputLabel value="Cost Price" className="mb-1.5" />
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold">₱</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold z-10">₱</span>
                                                 <TextInput 
                                                     type="number" 
-                                                    className="w-full pl-7 rounded-xl border-dashed border-stone-200 bg-stone-50 text-sm font-medium" 
+                                                    className="w-full pl-7 text-sm font-medium relative" 
                                                     value={data.cost_price} 
                                                     onChange={(e) => setData('cost_price', e.target.value)} 
                                                     placeholder="0.00"
@@ -1248,7 +1250,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         </div>
                                         <div>
                                             <InputLabel value="Stock *" className="mb-1.5" />
-                                            <TextInput type="number" className="w-full rounded-xl border-stone-200 text-sm font-bold" value={data.stock} onChange={(e) => setData('stock', e.target.value)} />
+                                            <TextInput 
+                                                type="number" 
+                                                className="w-full text-sm font-bold" 
+                                                value={data.stock} 
+                                                onChange={(e) => setData('stock', e.target.value)} 
+                                                hasError={!!errors.stock}
+                                            />
                                             <InputError message={errors.stock} className="mt-2" />
                                         </div>
                                         <div>

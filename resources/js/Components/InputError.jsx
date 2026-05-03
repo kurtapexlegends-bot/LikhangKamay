@@ -4,9 +4,9 @@ export default function InputError({ message, className = '', ...props }) {
     return message ? (
         <div 
             {...props} 
-            className={'flex items-center gap-1.5 text-sm text-red-600 animate-in fade-in slide-in-from-top-1 duration-300 ' + className}
+            className={'flex items-start gap-1.5 text-xs font-bold text-rose-500 animate-in fade-in slide-in-from-top-2 zoom-in-[0.98] duration-500 ease-out fill-mode-both ' + className}
         >
-            <AlertCircle size={14} className="shrink-0" />
+            <AlertCircle size={14} className="shrink-0 mt-0.5" />
             <p>{message}</p>
         </div>
     ) : null;

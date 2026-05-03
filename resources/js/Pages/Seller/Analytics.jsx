@@ -31,6 +31,7 @@ import {
     Cell,
 } from 'recharts';
 import ExportButton from '@/Components/ExportButton';
+import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
 
 const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
     let growthColor = 'text-stone-500';
@@ -99,6 +100,7 @@ export default function Analytics({
     const [catFilter, setCatFilter] = useState(filters.category);
     const [lowStockSort, setLowStockSort] = useState('stock_low');
     const [repeatBuyerSort, setRepeatBuyerSort] = useState('orders');
+    const [isLoading, setIsLoading] = useState(false);
 
     const currentChartData = chartData[chartFilter.toLowerCase()] || [];
     const currentSponsorshipChartData = sponsorshipChartData?.[sponsorshipFilter.toLowerCase()] || [];
@@ -177,7 +179,12 @@ export default function Analytics({
 
     const updateCategoryFilter = (newCat) => {
         setCatFilter(newCat);
-        router.get(route('analytics.index'), { category: newCat }, { preserveState: true, preserveScroll: true });
+        setIsLoading(true);
+        router.get(route('analytics.index'), { category: newCat }, { 
+            preserveState: true, 
+            preserveScroll: true,
+            onFinish: () => setIsLoading(false)
+        });
     };
 
     return (
@@ -202,15 +209,28 @@ export default function Analytics({
 
                 <main className="mx-auto flex-1 w-full max-w-[1400px] p-4 sm:p-6 overflow-y-auto space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-                        <MetricCard title="Total Revenue" value={formatPeso(metrics.total_revenue)} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-stone-50" text="text-clay-600" />
-                        <MetricCard title="Gross Profit" value={formatPeso(metrics.gross_profit)} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-emerald-50" text="text-emerald-600" />
-                        <MetricCard title="Total Orders" value={Number(metrics.total_orders).toLocaleString()} growth={metrics.growth.orders} icon={ShoppingBag} bg="bg-purple-50" text="text-purple-600" />
-                        <MetricCard title="Average Order" value={formatPeso(metrics.avg_order_value)} growth={metrics.growth.avg} icon={CreditCard} bg="bg-amber-50" text="text-amber-600" />
-                        <MetricCard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-yellow-50" text="text-yellow-600" />
+                        {isLoading ? (
+                            <ArtisanSkeleton variant="stat" count={5} />
+                        ) : (
+                            <>
+                                <MetricCard title="Total Revenue" value={formatPeso(metrics.total_revenue)} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-stone-50" text="text-clay-600" />
+                                <MetricCard title="Gross Profit" value={formatPeso(metrics.gross_profit)} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-emerald-50" text="text-emerald-600" />
+                                <MetricCard title="Total Orders" value={Number(metrics.total_orders).toLocaleString()} growth={metrics.growth.orders} icon={ShoppingBag} bg="bg-purple-50" text="text-purple-600" />
+                                <MetricCard title="Average Order" value={formatPeso(metrics.avg_order_value)} growth={metrics.growth.avg} icon={CreditCard} bg="bg-amber-50" text="text-amber-600" />
+                                <MetricCard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-yellow-50" text="text-yellow-600" />
+                            </>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                        <div className="min-w-0 lg:col-span-2 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-200">
+                        <div className="min-w-0 lg:col-span-2 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+                            {isLoading && (
+                                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
+                                    <div className="h-full w-full relative overflow-hidden bg-stone-50/30">
+                                        <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                                    </div>
+                                </div>
+                            )}
                             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
                                 <div>
                                     <h3 className="text-lg font-bold text-stone-900">Revenue Analytics</h3>
@@ -597,7 +617,13 @@ export default function Analytics({
                         </div>
                     )}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+                            {isLoading && (
+                                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex flex-col">
+                                    <div className="h-20 shrink-0"></div>
+                                    <ArtisanSkeleton variant="list" count={5} />
+                                </div>
+                            )}
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h3 className="text-lg font-bold text-stone-900">Top Products</h3>
@@ -643,7 +669,12 @@ export default function Analytics({
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col">
+                        <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col relative overflow-hidden">
+                            {isLoading && (
+                                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center p-12">
+                                    <ArtisanSkeleton variant="circle" className="w-full aspect-square max-w-[200px]" />
+                                </div>
+                            )}
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h3 className="text-lg font-bold text-stone-900">Customer Ratings</h3>

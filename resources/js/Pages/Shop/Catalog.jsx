@@ -444,7 +444,7 @@ export default function Catalog(props) {
                                                     setSearchTerm(term);
                                                     applyFilters({ search: term });
                                                 }}
-                                                className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition-all hover:border-clay-300 hover:text-clay-700 active:scale-95"
+                                                className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition hover:border-clay-300 hover:text-clay-700"
                                             >
                                                 Try “{term}”
                                             </button>

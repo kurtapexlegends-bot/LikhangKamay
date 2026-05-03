@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown'; 
 import NotificationDropdown from '@/Components/NotificationDropdown';
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import MobileDock from '@/Components/MobileDock';
 
 export default function BuyerNavbar() {
     const { auth, cartCount, sellerSidebar, unreadMessageCount } = usePage().props;
@@ -25,6 +26,16 @@ export default function BuyerNavbar() {
 
     const params = new URLSearchParams(window.location.search);
     const [term, setTerm] = useState(params.get('search') || '');
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // Initialize on mount
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -34,16 +45,16 @@ export default function BuyerNavbar() {
     return (
         <>
         <ImpersonationBanner />
-        <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm/50">
+        <nav className={`bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md py-1' : 'shadow-sm/50 py-3'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-wrap items-center gap-3 py-3 md:h-20 md:flex-nowrap md:justify-between md:items-center md:gap-8">
+                <div className={`flex flex-wrap items-center gap-3 md:flex-nowrap md:justify-between md:items-center md:gap-8 transition-all duration-300 ${isScrolled ? 'md:h-14' : 'md:h-20'}`}>
                     
                     {/* LOGO */}
                     <Link href="/" className="order-1 flex min-w-0 items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
-                        <img src="/images/logo.png" alt="Logo" className="w-9 h-9 sm:w-10 sm:h-10 object-contain" />
-                        <div className="flex min-w-0 flex-col">
-                            <span className="truncate font-serif text-lg sm:text-xl font-bold text-gray-900 leading-none tracking-tight">LikhangKamay</span>
-                            <span className="hidden sm:block text-[10px] text-clay-600 font-bold tracking-widest uppercase mt-0.5">Artisan Marketplace</span>
+                        <img src="/images/logo.png" alt="Logo" className={`object-contain transition-all duration-300 ${isScrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-9 h-9 sm:w-10 sm:h-10'}`} />
+                        <div className={`flex min-w-0 flex-col transition-all duration-300 ${isScrolled ? 'opacity-0 w-0 overflow-hidden sm:opacity-100 sm:w-auto' : 'opacity-100 w-auto'}`}>
+                            <span className={`truncate font-serif font-bold text-gray-900 leading-none tracking-tight transition-all duration-300 ${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`}>LikhangKamay</span>
+                            <span className={`hidden sm:block font-bold tracking-widest uppercase mt-0.5 text-clay-600 transition-all duration-300 ${isScrolled ? 'text-[8px]' : 'text-[10px]'}`}>Artisan Marketplace</span>
                         </div>
                     </Link>
 
@@ -53,12 +64,12 @@ export default function BuyerNavbar() {
                             <input 
                                 type="text" 
                                 placeholder="Search pottery, vases, artisans..." 
-                                className="w-full pl-10 pr-24 py-2.5 md:pl-12 md:pr-32 md:py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:bg-white focus:border-clay-300 focus:ring-4 focus:ring-clay-100/50 transition-all shadow-sm placeholder-gray-400 text-gray-800"
+                                className={`w-full bg-gray-50 border border-gray-200 rounded-full text-sm focus:bg-white focus:border-clay-300 focus:ring-4 focus:ring-clay-100/50 transition-all duration-300 shadow-sm placeholder-gray-400 text-gray-800 ${isScrolled ? 'pl-10 pr-20 py-2 md:pl-10 md:pr-24 md:py-2 text-xs' : 'pl-10 pr-24 py-2.5 md:pl-12 md:pr-32 md:py-3'}`}
                                 value={term}
                                 onChange={(e) => setTerm(e.target.value)}
                             />
-                            <Search className="absolute left-3.5 md:left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-600 transition-colors" size={18} />
-                            <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-clay-600 text-white px-4 md:px-6 py-2 rounded-full text-xs font-bold hover:bg-clay-700 hover:shadow-md transition-all active:scale-95">
+                            <Search className={`absolute transition-all duration-300 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-600 ${isScrolled ? 'left-3.5 md:left-3.5 w-4 h-4' : 'left-3.5 md:left-4 w-5 h-5'}`} />
+                            <button type="submit" className={`absolute right-1.5 top-1/2 -translate-y-1/2 bg-clay-600 text-white rounded-full font-bold hover:bg-clay-700 hover:shadow-md transition-all duration-300 active:scale-95 ${isScrolled ? 'px-3 md:px-4 py-1 text-[10px]' : 'px-4 md:px-6 py-2 text-xs'}`}>
                                 Search
                             </button>
                         </form>
@@ -158,6 +169,7 @@ export default function BuyerNavbar() {
                 </div>
             </div>
         </nav>
+        <MobileDock />
         </>
     );
 }

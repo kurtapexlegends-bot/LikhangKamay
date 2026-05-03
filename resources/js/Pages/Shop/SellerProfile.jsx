@@ -203,8 +203,8 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     <Link 
                                         href={route('product.show', product.slug)}
                                         key={product.id}
-                                        className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col ${
-                                            isTop ? 'border-amber-200 ring-2 ring-amber-100 shadow-md' : 'border-stone-200/60 shadow-sm hover:border-stone-300'
+                                        className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-500 hover:-translate-y-1.5 active:scale-[0.98] flex flex-col ${
+                                            isTop ? 'border-amber-200 ring-2 ring-amber-100 shadow-xl shadow-amber-900/5 hover:shadow-2xl hover:shadow-amber-900/10' : 'border-stone-200/60 shadow-sm hover:border-clay-200 hover:shadow-2xl hover:shadow-stone-900/10'
                                         }`}
                                     >
                                         <div className={`aspect-square relative overflow-hidden flex items-center justify-center p-3 ${isTop ? 'bg-amber-50/30' : 'bg-stone-50'}`}>
@@ -311,7 +311,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                 <Link 
                                     href={route('product.show', product.slug)} 
                                     key={product.id} 
-                                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-clay-300 hover:shadow-xl"
+                                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-sm transition-all duration-500 hover:-translate-y-1.5 active:scale-[0.98] hover:border-clay-200 hover:shadow-2xl hover:shadow-stone-900/10"
                                 >
                                     {/* Image */}
                                     <div className="aspect-[4/3] relative bg-stone-50 overflow-hidden flex items-center justify-center">

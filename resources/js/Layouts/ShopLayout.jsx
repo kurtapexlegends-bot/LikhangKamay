@@ -4,6 +4,7 @@ import BuyerNavbar from '@/Components/BuyerNavbar';
 import AnnouncementBanner from '@/Components/AnnouncementBanner';
 import Footer from '@/Components/Footer';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import MobileDock from '@/Components/MobileDock';
 
 export default function ShopLayout({ children }) {
     const { globalAnnouncement } = usePage().props;
@@ -18,6 +19,9 @@ export default function ShopLayout({ children }) {
             <main className="flex-1 animate-page-enter">
                 {children}
             </main>
+
+            {/* --- MOBILE NAVIGATION DOCK --- */}
+            <MobileDock />
 
             {/* --- FOOTER --- */}
             <Footer />

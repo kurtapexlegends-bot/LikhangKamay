@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
 
 const COLORS = ['#c07251', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
 
@@ -84,6 +85,7 @@ export default function Dashboard({ auth }) {
     const [status, setStatus] = useState(filters.status || 'All');
     const [date, setDate] = useState(filters.date || '');
     const [pendingRequests, setPendingRequests] = useState(initialMetrics.pending_requests || 0);
+    const [isLoading, setIsLoading] = useState(false);
     const searchTimeoutRef = useRef(null);
 
     const isNewlyApproved = auth.user.approved_at 
@@ -110,11 +112,13 @@ export default function Dashboard({ auth }) {
     // leaving metrics, charts, and categories untouched (no full-page reload).
     const applyFilters = useCallback((overrides = {}) => {
         const params = { search, status, date, ...overrides };
+        setIsLoading(true);
         router.get(route('dashboard'), params, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
             only: ['recentOrders', 'filters'],
+            onFinish: () => setIsLoading(false),
         });
     }, [search, status, date]);
 
@@ -159,38 +163,44 @@ export default function Dashboard({ auth }) {
                     
                     {/* 1. KEY METRICS CARDS WITH REAL GROWTH DATA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <MetricCard 
-                            title="Total Revenue" 
-                            value={`₱${Number(metrics.revenue).toLocaleString()}`} 
-                            growth={metrics.revenue_growth} 
-                            icon={DollarSign} 
-                            bg="bg-blue-100" 
-                            text="text-blue-600" 
-                        />
-                        <MetricCard 
-                            title="Total Orders" 
-                            value={metrics.orders} 
-                            growth={metrics.orders_growth} 
-                            icon={ShoppingBag} 
-                            bg="bg-purple-100" 
-                            text="text-purple-600" 
-                        />
-                        <MetricCard 
-                            title="Total Customers" 
-                            value={metrics.customers} 
-                            growth={metrics.customers_growth} 
-                            icon={Users} 
-                            bg="bg-red-100" 
-                            text="text-red-600" 
-                        />
-                        <MetricCard 
-                            title="Avg. Order Value" 
-                            value={`₱${Number(metrics.avg_value).toLocaleString()}`} 
-                            growth={metrics.avg_growth} 
-                            icon={CreditCard} 
-                            bg="bg-amber-100" 
-                            text="text-amber-600" 
-                        />
+                        {isLoading ? (
+                            <ArtisanSkeleton variant="stat" count={4} />
+                        ) : (
+                            <>
+                                <MetricCard 
+                                    title="Total Revenue" 
+                                    value={`₱${Number(metrics.revenue).toLocaleString()}`} 
+                                    growth={metrics.revenue_growth} 
+                                    icon={DollarSign} 
+                                    bg="bg-blue-100" 
+                                    text="text-blue-600" 
+                                />
+                                <MetricCard 
+                                    title="Total Orders" 
+                                    value={metrics.orders} 
+                                    growth={metrics.orders_growth} 
+                                    icon={ShoppingBag} 
+                                    bg="bg-purple-100" 
+                                    text="text-purple-600" 
+                                />
+                                <MetricCard 
+                                    title="Total Customers" 
+                                    value={metrics.customers} 
+                                    growth={metrics.customers_growth} 
+                                    icon={Users} 
+                                    bg="bg-red-100" 
+                                    text="text-red-600" 
+                                />
+                                <MetricCard 
+                                    title="Avg. Order Value" 
+                                    value={`₱${Number(metrics.avg_value).toLocaleString()}`} 
+                                    growth={metrics.avg_growth} 
+                                    icon={CreditCard} 
+                                    bg="bg-amber-100" 
+                                    text="text-amber-600" 
+                                />
+                            </>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -214,7 +224,15 @@ export default function Dashboard({ auth }) {
                                 </div>
                             </div>
                             
-                            <div className="h-80 w-full">
+                            <div className="h-80 w-full relative">
+                                {isLoading ? (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl transition-all">
+                                        <div className="h-full w-full relative overflow-hidden rounded-xl bg-stone-50/50">
+                                            <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                                        </div>
+                                    </div>
+                                ) : null}
+                                
                                 {currentChartData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                         <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -252,6 +270,12 @@ export default function Dashboard({ auth }) {
                             </div>
                             
                             <div className="flex-1 min-h-[220px] relative">
+                                {isLoading ? (
+                                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                                        <ArtisanSkeleton variant="circle" className="w-40 h-40" />
+                                    </div>
+                                ) : null}
+
                                 {categoryData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                         <PieChart>
@@ -353,7 +377,13 @@ export default function Dashboard({ auth }) {
                                 </div>
                             </div>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto min-h-[300px] relative">
+                            {isLoading ? (
+                                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 transition-all flex flex-col">
+                                    <ArtisanSkeleton variant="list" count={5} />
+                                </div>
+                            ) : null}
+
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     <tr>

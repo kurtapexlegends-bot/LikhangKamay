@@ -185,7 +185,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                 <Link 
                                     href={route('product.show', product.slug)} 
                                     key={product.id} 
-                                    className="bg-white rounded-lg hover:shadow-lg hover:-translate-y-0.5 transition duration-200 border border-gray-100 overflow-hidden flex flex-col group"
+                                    className="bg-white rounded-2xl hover:shadow-2xl hover:shadow-stone-900/10 hover:-translate-y-1.5 transition-all duration-500 border border-stone-100 overflow-hidden flex flex-col group active:scale-[0.98]"
                                 >
                                     <div className="aspect-square relative bg-gray-100 overflow-hidden">
                                         <img 
@@ -258,37 +258,37 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                 const orderClass = isFirst ? 'order-1 md:order-2' : isSecond ? 'order-2 md:order-1' : 'order-3 md:order-3';
                                 
                                 return (
-                                    <div key={store.store_slug || originalIdx} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-lg flex flex-col ${orderClass} ${
-                                        isFirst ? 'border-amber-200 ring-2 ring-amber-100 relative z-10' : 'border-gray-100'
+                                    <div key={store.store_slug || originalIdx} className={`group bg-white rounded-2xl border shadow-sm overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-stone-900/10 hover:-translate-y-1.5 active:scale-[0.98] flex flex-col ${orderClass} ${
+                                        isFirst ? 'border-amber-200 ring-2 ring-amber-100 relative z-10' : 'border-stone-100'
                                     }`}>
                                         {/* Store Header - CENTERED */}
-                                        <div className={`p-3 flex flex-col items-center text-center gap-2 border-b ${isFirst ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100' : 'bg-gray-50 border-gray-100'}`}>
-                                            <div className="relative mx-auto w-12 h-12">
+                                        <div className={`p-3 flex flex-col items-center text-center gap-2 border-b ${isFirst ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100' : 'bg-stone-50 border-stone-100'}`}>
+                                            <Link href={route('shop.seller', store.store_slug)} className="relative mx-auto w-12 h-12 block">
                                                 <UserAvatar 
                                                     user={{ 
                                                         avatar: store.store_avatar, 
                                                         name: store.store_name, 
                                                         premium_tier: store.premium_tier 
                                                     }} 
-                                                    className={`w-12 h-12 text-xl ${isFirst ? 'border-2 border-amber-300 shadow-md ring-0' : 'ring-0 border border-gray-200'}`}
+                                                    className={`w-12 h-12 text-xl transition-transform duration-500 group-hover:scale-110 group-hover:shadow-lg ${isFirst ? 'border-2 border-amber-300 shadow-md ring-0' : 'ring-0 border border-stone-200'}`}
                                                 />
                                                 {isFirst && (
                                                     <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-gradient-to-r from-amber-400 to-orange-400 border-2 border-white rounded-full flex items-center justify-center shadow z-20" title="#1 Top Seller">
                                                         <Trophy size={11} className="text-white" strokeWidth={3} />
                                                     </div>
                                                 )}
-                                            </div>
+                                            </Link>
                                             <div className="flex-1 w-full flex flex-col items-center">
-                                                <Link href={route('shop.seller', store.store_slug)} className="font-bold text-gray-900 hover:text-clay-600 transition text-base line-clamp-1 block">
+                                                <Link href={route('shop.seller', store.store_slug)} className="font-bold text-stone-900 group-hover:text-clay-600 transition-colors text-base line-clamp-1 block">
                                                     {store.store_name}
                                                 </Link>
-                                                <div className="flex items-center gap-2 text-xs text-gray-500 justify-center mt-1.5 border border-gray-200 bg-white px-3 py-1 rounded-full shadow-sm">
-                                                    <span className={`font-bold flex items-center gap-1.5 ${isFirst ? 'text-amber-600' : 'text-gray-700'}`}>
-                                                        {isFirst ? <Trophy size={14} className="text-amber-500" /> : <span className="text-gray-400">#</span>}
+                                                <div className="flex items-center gap-2 text-xs text-stone-500 justify-center mt-1.5 border border-stone-200 bg-white px-3 py-1 rounded-full shadow-sm group-hover:border-clay-200 transition-colors">
+                                                    <span className={`font-bold flex items-center gap-1.5 ${isFirst ? 'text-amber-600' : 'text-stone-700'}`}>
+                                                        {isFirst ? <Trophy size={14} className="text-amber-500" /> : <span className="text-stone-400">#</span>}
                                                         {originalIdx + 1}
                                                     </span>
-                                                    <span className="w-px h-3 bg-gray-300"></span>
-                                                    <span className="font-medium text-gray-600">{formatSold(store.total_sold)} sold</span>
+                                                    <span className="w-px h-3 bg-stone-300"></span>
+                                                    <span className="font-medium text-stone-600">{formatSold(store.total_sold)} sold</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -300,7 +300,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                     href={route('product.show', store.products[0].slug)}
                                                     className="group flex flex-col items-center text-center w-full max-w-[120px] z-10"
                                                 >
-                                                    <div className={`w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 relative shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 ${isFirst ? 'border-amber-300 shadow-amber-100/50 group-hover:border-amber-400' : 'border-clay-200 group-hover:border-clay-400'}`}>
+                                                    <div className={`w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 relative shadow-md transition-all duration-500 active:scale-[0.96] group-hover:shadow-2xl group-hover:shadow-stone-900/10 group-hover:-translate-y-1.5 ${isFirst ? 'border-amber-300 shadow-amber-100/50 group-hover:border-amber-400' : 'border-clay-200 group-hover:border-clay-400'}`}>
                                                         <img 
                                                             src={store.products[0].img ? (store.products[0].img.startsWith('http') || store.products[0].img.startsWith('/storage') ? store.products[0].img : `/storage/${store.products[0].img}`) : '/images/no-image.png'}
                                                             alt={store.products[0].name}
@@ -332,7 +332,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                         href={route('product.show', store.products[1].slug)}
                                                         className="group flex flex-col items-center text-center max-w-[80px]"
                                                     >
-                                                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-gray-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1 bg-white">
+                                                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
                                                             <img 
                                                                 src={store.products[1].img ? (store.products[1].img.startsWith('http') || store.products[1].img.startsWith('/storage') ? store.products[1].img : `/storage/${store.products[1].img}`) : '/images/no-image.png'}
                                                                 alt={store.products[1].name}
@@ -355,7 +355,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                         href={route('product.show', store.products[2].slug)}
                                                         className="group flex flex-col items-center text-center max-w-[80px]"
                                                     >
-                                                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-gray-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1 bg-white">
+                                                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
                                                             <img 
                                                                 src={store.products[2].img ? (store.products[2].img.startsWith('http') || store.products[2].img.startsWith('/storage') ? store.products[2].img : `/storage/${store.products[2].img}`) : '/images/no-image.png'}
                                                                 alt={store.products[2].name}
