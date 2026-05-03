@@ -21,7 +21,7 @@ export default function SellerHeader({ title, subtitle, auth, onMenuClick, badge
             <div className="flex min-w-0 items-center gap-3">
                 <button
                     onClick={onMenuClick}
-                    className="lg:hidden text-gray-500 hover:text-clay-600"
+                    className="lg:hidden text-gray-500 hover:text-clay-600 transition-all active:scale-95"
                 >
                     <Menu size={24} />
                 </button>

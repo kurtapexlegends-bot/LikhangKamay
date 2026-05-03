@@ -33,22 +33,19 @@ export default function AdminLayout({ title, children }) {
 
     const navigationGroups = [
         {
-            title: 'Platform Overview',
+            title: 'Platform Pulse',
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
-                { name: 'Diagnostics', href: route('admin.diagnostics'), icon: Activity, current: route().current('admin.diagnostics') },
-                { name: 'Announcements', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
-                { name: 'Monetization', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
+                { name: 'Diagnostics', href: route('admin.diagnostics'), icon: Activity, current: route().current('admin.diagnostics') },
             ]
         },
         {
-            title: 'User Management',
+            title: 'User Accounts',
             items: [
-                { name: 'Users', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
-                { name: 'Moderation Queue', href: route('admin.moderation'), icon: ShieldAlert, current: route().current('admin.moderation') },
+                { name: 'User Directory', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
                 {
-                    name: 'Pending Artisans',
+                    name: 'Artisan Applications',
                     href: route('admin.pending'),
                     icon: Store,
                     current: route().current('admin.pending'),
@@ -57,15 +54,23 @@ export default function AdminLayout({ title, children }) {
             ]
         },
         {
-            title: 'Catalog & Storefront',
+            title: 'Product Catalog',
             items: [
                 { name: 'Taxonomy Engine', href: route('admin.taxonomy.index'), icon: FolderTree, current: route().current('admin.taxonomy.*') },
+                { name: 'Sponsorships', href: route('admin.sponsorships'), icon: Award, current: route().current('admin.sponsorships') },
             ]
         },
         {
-            title: 'Marketing & Growth',
+            title: 'Trust & Safety',
             items: [
-                { name: 'Sponsorships', href: route('admin.sponsorships'), icon: Award, current: route().current('admin.sponsorships') },
+                { name: 'Moderation Queue', href: route('admin.moderation'), icon: ShieldAlert, current: route().current('admin.moderation') },
+                { name: 'Global Alerts', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
+            ]
+        },
+        {
+            title: 'Business Config',
+            items: [
+                { name: 'Platform Revenue', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
             ]
         }
     ];
@@ -104,7 +109,7 @@ export default function AdminLayout({ title, children }) {
                     {/* Mobile Close Button */}
                     <button
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="lg:hidden text-gray-400 hover:text-gray-600"
+                        className="lg:hidden text-gray-400 hover:text-gray-600 transition-all active:scale-95"
                     >
                         <X size={20} />
                     </button>
@@ -123,7 +128,7 @@ export default function AdminLayout({ title, children }) {
                                         key={item.name}
                                         href={item.href}
                                         className={`
-                                            flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200
+                                            flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200 active:scale-95
                                             ${item.current
                                                 ? 'bg-clay-600 text-white shadow-md shadow-clay-200'
                                                 : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
@@ -158,7 +163,7 @@ export default function AdminLayout({ title, children }) {
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
-                            className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg transition lg:hidden"
+                            className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-all active:scale-95 lg:hidden"
                         >
                             <Menu size={24} />
                         </button>

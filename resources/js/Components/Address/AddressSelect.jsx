@@ -59,9 +59,9 @@ export default function AddressSelect({
                         setTimeout(() => inputRef.current?.focus(), 50);
                     }
                 }}
-                className={`flex w-full items-center justify-between rounded-xl border border-gray-300 px-4 py-3 text-left shadow-sm transition ${
+                className={`flex w-full items-center justify-between rounded-xl border border-gray-300 px-4 py-3 text-left shadow-sm transition active:scale-95 ${
                     disabled
-                        ? 'cursor-not-allowed bg-gray-100 text-gray-500'
+                        ? 'cursor-not-allowed bg-gray-100 text-gray-500 active:scale-100'
                         : 'bg-white focus:border-clay-500 focus:ring-1 focus:ring-clay-500'
                 } ${
                     value ? 'text-gray-900' : 'text-gray-400'

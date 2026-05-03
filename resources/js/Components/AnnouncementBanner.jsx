@@ -164,7 +164,7 @@ export default function AnnouncementBanner({ announcement }) {
                     {/* Subtle Dismiss Button */}
                     <button 
                         onClick={dismiss}
-                        className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 ${closeClass}`}
+                        className={`flex items-center justify-center w-8 h-8 rounded-full transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50 ${closeClass}`}
                         aria-label="Dismiss announcement"
                     >
                         <X size={16} />

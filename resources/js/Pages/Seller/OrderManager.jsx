@@ -1359,7 +1359,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                 <button 
                                                                     onClick={() => openChat(order.user_id)} 
                                                                     aria-label={`Open chat for order ${order.id}`}
-                                                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20"
+                                                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition-all hover:bg-gray-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20"
                                                                 >
                                                                     <MessageCircle size={16} /> Discuss Shipping
                                                                 </button>
@@ -1368,14 +1368,14 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                 <button 
                                                                     disabled={!canEditOrders}
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Rejected')} 
-                                                                    className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                    className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                                                                 >
                                                                     <XCircle size={14} className="inline mr-1" /> Reject
                                                                 </button>
                                                                 <button 
                                                                     disabled={!canEditOrders}
                                                                     onClick={() => initiateStatusUpdate(order.id, 'Accepted')} 
-                                                                    className="flex-1 rounded-lg bg-clay-600 px-3 py-2.5 text-xs font-bold text-white shadow-md transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                    className="flex-1 rounded-lg bg-clay-600 px-3 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-clay-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
                                                                 >
                                                                     <CheckCircle2 size={14} className="inline mr-1" /> Accept
                                                                 </button>

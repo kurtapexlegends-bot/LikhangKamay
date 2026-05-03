@@ -206,7 +206,7 @@ export default function Dashboard({ auth }) {
                                         <button
                                             key={filter}
                                             onClick={() => setChartFilter(filter)}
-                                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${chartFilter === filter ? 'bg-white text-clay-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all active:scale-95 ${chartFilter === filter ? 'bg-white text-clay-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                         >
                                             {filter}
                                         </button>
@@ -425,7 +425,7 @@ export default function Dashboard({ auth }) {
                                                 only: ['recentOrders', 'filters'],
                                             })}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 ${
                                                 link.active 
                                                     ? 'bg-clay-600 text-white shadow-sm' 
                                                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'

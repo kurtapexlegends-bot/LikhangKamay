@@ -347,7 +347,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                                         <button
                                                             type="button"
                                                             onClick={() => (isPendingPlan ? window.location.assign(pendingUpgrade.checkoutUrl) : handleUpgrade(plan.id))}
-                                                            className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition ${upgradeButtonClass}`}
+                                                            className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 ${upgradeButtonClass}`}
                                                         >
                                                             {isPendingPlan ? 'Continue Payment' : `Upgrade to ${plan.name}`}
                                                             <ArrowRight className="h-[15px] w-[15px]" />
@@ -356,7 +356,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                                         <button
                                                             type="button"
                                                             onClick={() => initiateDowngrade(plan.id, plan.limit)}
-                                                            className="inline-flex w-full items-center justify-center rounded-[1rem] border-2 border-stone-200 bg-white px-4 py-2.5 text-[14px] font-bold text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
+                                                            className="inline-flex w-full items-center justify-center rounded-[1rem] border-2 border-stone-200 bg-white px-4 py-2.5 text-[14px] font-bold text-stone-600 transition-all hover:border-stone-300 hover:text-stone-900 active:scale-95"
                                                         >
                                                             Downgrade
                                                         </button>
@@ -374,7 +374,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                     <button
                                         type="button"
                                         onClick={() => window.location.assign(pendingUpgrade.checkoutUrl)}
-                                        className="inline-flex items-center gap-1.5 font-bold text-orange-600 transition hover:text-orange-700"
+                                        className="inline-flex items-center gap-1.5 font-bold text-orange-600 transition-all active:scale-95 hover:text-orange-700"
                                     >
                                         Continue Payment
                                         <ChevronRight className="h-[15px] w-[15px]" />
@@ -444,7 +444,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                                     <button
                                                         type="button"
                                                         onClick={() => window.location.assign(transaction.checkoutUrl)}
-                                                        className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-3 py-2 text-[12px] font-bold text-white transition hover:bg-orange-700"
+                                                        className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-3 py-2 text-[12px] font-bold text-white transition-all active:scale-95 hover:bg-orange-700"
                                                     >
                                                         Continue Payment
                                                         <ChevronRight className="h-4 w-4" />

@@ -123,28 +123,28 @@ export default function MediaViewer({ show, media, onClose, mediaList = [], init
                                     <div className="flex items-center gap-2">
                                         <button 
                                             onClick={handleZoomOut}
-                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-md border border-white/10"
+                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 backdrop-blur-md border border-white/10"
                                             title="Zoom Out (-)"
                                         >
                                             <ZoomOut size={18} />
                                         </button>
                                         <button 
                                             onClick={handleZoomIn}
-                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-md border border-white/10"
+                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 backdrop-blur-md border border-white/10"
                                             title="Zoom In (+)"
                                         >
                                             <ZoomIn size={18} />
                                         </button>
                                         <button 
                                             onClick={handleRotate}
-                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-md border border-white/10"
+                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 backdrop-blur-md border border-white/10"
                                             title="Rotate (R)"
                                         >
                                             <RotateCcw size={18} />
                                         </button>
                                         <button 
                                             onClick={handleReset}
-                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-md border border-white/10 text-xs font-bold"
+                                            className="p-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 backdrop-blur-md border border-white/10 text-xs font-bold"
                                             title="Reset View"
                                         >
                                             1:1
@@ -152,7 +152,7 @@ export default function MediaViewer({ show, media, onClose, mediaList = [], init
                                         <div className="w-px h-6 bg-white/20 mx-1" />
                                         <button 
                                             onClick={handleDownload}
-                                            className="p-2.5 rounded-full bg-clay-500 text-white hover:bg-clay-600 shadow-lg shadow-clay-900/20 transition-all hover:scale-110 active:scale-90"
+                                            className="p-2.5 rounded-full bg-clay-500 text-white hover:bg-clay-600 shadow-lg shadow-clay-900/20 transition-all hover:scale-110 active:scale-95"
                                             title="Download"
                                         >
                                             <Download size={18} />
@@ -170,7 +170,7 @@ export default function MediaViewer({ show, media, onClose, mediaList = [], init
                                                 className={`p-4 rounded-full transition-all backdrop-blur-md border border-white/10 ${
                                                     currentIndex === 0 
                                                     ? 'bg-white/5 text-white/20 cursor-not-allowed' 
-                                                    : 'bg-white/10 text-white hover:bg-white/20 hover:scale-110 active:scale-90'
+                                                    : 'bg-white/10 text-white hover:bg-white/20 hover:scale-110 active:scale-95'
                                                 }`}
                                                 title="Previous (Left Arrow)"
                                             >
@@ -184,7 +184,7 @@ export default function MediaViewer({ show, media, onClose, mediaList = [], init
                                                 className={`p-4 rounded-full transition-all backdrop-blur-md border border-white/10 ${
                                                     currentIndex === mediaList.length - 1 
                                                     ? 'bg-white/5 text-white/20 cursor-not-allowed' 
-                                                    : 'bg-white/10 text-white hover:bg-white/20 hover:scale-110 active:scale-90'
+                                                    : 'bg-white/10 text-white hover:bg-white/20 hover:scale-110 active:scale-95'
                                                 }`}
                                                 title="Next (Right Arrow)"
                                             >

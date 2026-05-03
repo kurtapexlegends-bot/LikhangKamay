@@ -18,7 +18,7 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
                 </div>
                 <button
                     onClick={onClear}
-                    className="ml-1 rounded-full p-1.5 text-stone-400 hover:bg-stone-800 hover:text-white transition-colors"
+                    className="ml-1 rounded-full p-1.5 text-stone-400 hover:bg-stone-800 hover:text-white transition-all active:scale-95"
                     title="Clear selection"
                 >
                     <X size={14} />

@@ -45,7 +45,7 @@ export default function FilterSidebar({
                 {activeFilterCount > 0 && (
                     <button 
                         onClick={onClearAll}
-                        className="text-xs text-clay-600 hover:underline"
+                        className="text-xs text-clay-600 hover:underline transition-all active:scale-95"
                     >
                         Clear All
                     </button>
@@ -60,7 +60,7 @@ export default function FilterSidebar({
                         <li key={cat}>
                             <button 
                                 onClick={() => onCategoryClick(cat)}
-                                className={`text-sm w-full text-left py-2 px-3 rounded-lg transition-all flex justify-between items-center ${
+                                className={`text-sm w-full text-left py-2 px-3 rounded-lg transition-all active:scale-95 flex justify-between items-center ${
                                     activeCategory === cat 
                                     ? 'bg-clay-600 text-white font-medium' 
                                     : 'text-gray-600 hover:bg-gray-50 hover:text-clay-600'
@@ -97,7 +97,7 @@ export default function FilterSidebar({
                 </div>
                 <button 
                     onClick={onApplyPrice}
-                    className="w-full bg-clay-600 text-white text-xs font-medium py-2 rounded-lg hover:bg-clay-700 transition"
+                    className="w-full bg-clay-600 text-white text-xs font-medium py-2 rounded-lg hover:bg-clay-700 transition-all active:scale-95"
                 >
                     Apply Price
                 </button>
@@ -113,7 +113,7 @@ export default function FilterSidebar({
                         <button
                             key={option.value}
                             onClick={() => onRatingChange(option.value)}
-                            className={`w-full text-left py-2 px-3 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                            className={`w-full text-left py-2 px-3 rounded-lg text-sm transition-all active:scale-95 flex items-center gap-2 ${
                                 minRating === option.value
                                     ? 'bg-amber-50 text-amber-700 font-medium border border-amber-200'
                                     : 'text-gray-600 hover:bg-gray-50'

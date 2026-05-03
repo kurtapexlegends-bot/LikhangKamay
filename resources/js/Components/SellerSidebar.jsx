@@ -740,11 +740,11 @@ const AttendanceActionButton = ({ icon: Icon, label, onClick, disabled, tone = '
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
+        className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all active:scale-95 ${
             tone === 'danger'
                 ? 'border-red-100 bg-red-50/70 text-red-700 hover:bg-red-50'
                 : 'border-stone-200 bg-stone-50/80 text-stone-700 hover:bg-stone-100'
-        } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
+        } ${disabled ? 'cursor-not-allowed opacity-60 active:scale-100' : ''}`}
     >
         <span className="flex items-center gap-2 text-xs font-bold">
             <Icon size={14} strokeWidth={2.4} />
@@ -823,7 +823,7 @@ const CategoryGroup = ({ title, open, onToggle, children }) => (
         <button
             type="button"
             onClick={onToggle}
-            className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-colors hover:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+            className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-all hover:text-gray-500 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
         >
             <span>{title}</span>
             <ChevronRight
@@ -842,7 +842,7 @@ const CategoryGroup = ({ title, open, onToggle, children }) => (
 const ModuleToggle = ({ label, description, enabled, onToggle, icon: Icon, color, locked = false }) => (
     <button
         onClick={locked ? undefined : onToggle}
-        className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${enabled ? 'border-clay-100 bg-clay-50' : 'border-transparent bg-white'} ${locked ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:bg-gray-50'}`}
+        className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${enabled ? 'border-clay-100 bg-clay-50' : 'border-transparent bg-white'} ${locked ? 'cursor-not-allowed opacity-80 active:scale-100' : 'cursor-pointer hover:bg-gray-50'}`}
         type="button"
     >
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${enabled ? color : 'bg-gray-100 text-gray-400'}`}>
@@ -870,7 +870,7 @@ const NavItem = ({ href, icon: Icon, active, children, compact, onClick }) => (
         preserveScroll
         preserveState
         onClick={onClick}
-        className={`group flex items-center gap-3 rounded-lg px-4 ${compact ? 'py-2' : 'py-2.5'} text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${active ? 'bg-clay-600 text-white' : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}`}
+        className={`group flex items-center gap-3 rounded-lg px-4 ${compact ? 'py-2' : 'py-2.5'} text-xs font-bold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${active ? 'bg-clay-600 text-white' : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700'}`}
     >
         <Icon size={compact ? 16 : 18} strokeWidth={2.5} className={active ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'} />
         {children}

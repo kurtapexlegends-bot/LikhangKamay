@@ -69,7 +69,7 @@ export default function BuyerNavbar() {
                         {user ? (
                             <>
                                 {showBuyerChat && (
-                                    <Link href={route('buyer.chat')} className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition group">
+                                    <Link href={route('buyer.chat')} className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group">
                                         <div className="relative inline-flex">
                                             <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
                                             {unreadMessageCount > 0 && (
@@ -84,7 +84,7 @@ export default function BuyerNavbar() {
                                 {/* FIX: Changed <button> to <Link> pointing to cart.index */}
                                 <Link 
                                     href={route('cart.index')} 
-                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition group"
+                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group"
                                 >
                                     <div className="relative inline-flex">
                                         <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
@@ -103,7 +103,7 @@ export default function BuyerNavbar() {
                                 <div className="relative">
                                     <Dropdown>
                                         <Dropdown.Trigger>
-                                            <button className="flex items-center gap-2 sm:gap-3 pl-1 pr-1.5 sm:pr-2 py-1 rounded-full hover:bg-gray-50 transition border border-transparent hover:border-gray-200 group">
+                                            <button className="flex items-center gap-2 sm:gap-3 pl-1 pr-1.5 sm:pr-2 py-1 rounded-full hover:bg-gray-50 transition-all active:scale-95 border border-transparent hover:border-gray-200 group">
                                                 <UserAvatar 
                                                     user={user} 
                                                     className="w-9 h-9 border-2 border-white shadow-sm group-hover:border-clay-200 transition-colors" 
@@ -150,8 +150,8 @@ export default function BuyerNavbar() {
                             </>
                         ) : (
                             <div className="flex items-center gap-1.5 sm:gap-2">
-                                <Link href={route('login')} className="px-3 sm:px-4 py-2 text-sm font-bold text-gray-600 hover:text-clay-600">Log In</Link>
-                                <Link href={route('register')} className="px-3 sm:px-4 py-2 bg-clay-600 text-white rounded-full text-sm font-bold hover:bg-clay-700">Sign Up</Link>
+                                <Link href={route('login')} className="px-3 sm:px-4 py-2 text-sm font-bold text-gray-600 hover:text-clay-600 transition-all active:scale-95">Log In</Link>
+                                <Link href={route('register')} className="px-3 sm:px-4 py-2 bg-clay-600 text-white rounded-full text-sm font-bold hover:bg-clay-700 transition-all active:scale-95">Sign Up</Link>
                             </div>
                         )}
                     </div>

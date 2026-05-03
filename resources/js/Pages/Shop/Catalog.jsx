@@ -11,6 +11,7 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent, useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import FilterSidebar from './Partials/FilterSidebar';
+import CatalogSkeleton from '@/Components/CatalogSkeleton';
 
 export default function Catalog(props) {
     // Explicitly handle potentially null props BEFORE any hooks
@@ -67,6 +68,7 @@ export default function Catalog(props) {
     const [addingId, setAddingId] = useState(null);
     const [addedId, setAddedId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Sort options configuration
     const sortOptions = [
@@ -104,7 +106,12 @@ export default function Catalog(props) {
             if (!params[key] || params[key] === 'All') delete params[key];
         });
         
-        router.get(route('shop.index'), params, { preserveState: true, preserveScroll: true });
+        setIsLoading(true);
+        router.get(route('shop.index'), params, { 
+            preserveState: true, 
+            preserveScroll: true,
+            onFinish: () => setIsLoading(false)
+        });
     };
 
     const handleCategoryClick = (cat) => { 
@@ -269,7 +276,7 @@ export default function Catalog(props) {
                                         <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-0.5">Search Results</p>
                                         <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                                             "{safeFilters.search}"
-                                            <button onClick={clearSearch} className="text-gray-300 hover:text-red-500 transition" title="Clear">
+                                            <button onClick={clearSearch} className="text-gray-300 hover:text-red-500 transition-all active:scale-95" title="Clear">
                                                 <X size={16} />
                                             </button>
                                         </h1>
@@ -286,7 +293,7 @@ export default function Catalog(props) {
                             <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => setIsFilterOpen(true)}
-                                    className="lg:hidden flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:border-clay-300 transition"
+                                    className="lg:hidden flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:border-clay-300 transition-all active:scale-95"
                                 >
                                     <SlidersHorizontal size={14} /> Filters
                                     {activeFilterCount > 0 && (
@@ -345,7 +352,9 @@ export default function Catalog(props) {
                         )}
 
                         {/* --- PRODUCT GRID --- */}
-                        {products.length > 0 ? (
+                        {isLoading ? (
+                            <CatalogSkeleton />
+                        ) : products.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                                 {products.map((product) => (
                                     <Link 
@@ -435,7 +444,7 @@ export default function Catalog(props) {
                                                     setSearchTerm(term);
                                                     applyFilters({ search: term });
                                                 }}
-                                                className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition hover:border-clay-300 hover:text-clay-700"
+                                                className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition-all hover:border-clay-300 hover:text-clay-700 active:scale-95"
                                             >
                                                 Try “{term}”
                                             </button>
