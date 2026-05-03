@@ -1,11 +1,12 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Users, Store, Search, Shield, Briefcase, ChevronDown, X, Filter } from 'lucide-react';
+import { Users, Store, Search, Shield, Briefcase, ChevronDown, X, Filter, VenetianMask } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 import CompactPagination from '@/Components/CompactPagination';
 import Dropdown from '@/Components/Dropdown';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
 const roleTabs = ['all', 'artisan', 'buyer', 'super_admin'];
 
@@ -143,6 +144,7 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
 export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }) {
     const [search, setSearch] = useState(filters.search || '');
     const [quickView, setQuickView] = useState('all');
+    const [impersonateTarget, setImpersonateTarget] = useState(null);
     const [expandedRows, setExpandedRows] = useState(() => (
         filters.search ? getAutoExpandedRows(users.data || []) : {}
     ));
@@ -196,6 +198,18 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
             preserveScroll: true,
             replace: true,
         });
+    };
+
+    const handleImpersonate = (userId) => {
+        setImpersonateTarget(userId);
+    };
+
+    const confirmImpersonation = () => {
+        if (impersonateTarget) {
+            router.post(`/admin/users/${impersonateTarget}/impersonate`, {}, {
+                onFinish: () => setImpersonateTarget(null),
+            });
+        }
     };
 
     const toggleExpandedRow = (accountId) => {
@@ -459,12 +473,13 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                 <th className="px-5 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-stone-500">Role</th>
                                 <th className="px-5 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-stone-500">Account State</th>
                                 <th className="px-5 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-stone-500">Join Date</th>
+                                <th className="px-5 py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-stone-500">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
                             {filteredAccounts.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-16 text-center">
+                                    <td colSpan={6} className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center justify-center text-stone-400 gap-3">
                                             <Search size={28} className="opacity-50 animate-bounce" />
                                             <div>
@@ -568,11 +583,24 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                             <td className="px-5 py-2.5 text-xs font-medium text-stone-500 whitespace-nowrap">
                                                 {user.created_at}
                                             </td>
+                                            
+                                            <td className="px-5 py-2.5 text-right whitespace-nowrap">
+                                                {user.role !== 'super_admin' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
+                                                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-stone-900 border border-stone-800 px-3 py-1.5 text-[10px] font-bold text-white shadow-sm transition hover:bg-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-stone-900/20"
+                                                        title={`Impersonate ${user.name}`}
+                                                    >
+                                                        <VenetianMask size={12} /> Login As
+                                                    </button>
+                                                )}
+                                            </td>
                                         </tr>
 
                                         {isExpandable && isExpanded && (
                                             <tr className="bg-[#F8F6F4] relative">
-                                                <td colSpan={5} className="px-4 pb-4 pt-1 sm:px-6">
+                                                <td colSpan={6} className="px-4 pb-4 pt-1 sm:px-6">
                                                     <div className="absolute left-[36px] top-0 h-6 w-5 rounded-bl-xl border-b-2 border-l-2 border-[#E8D9CB] z-0 hidden sm:block"></div>
 
                                                     <div className="relative z-10 mt-1 rounded-2xl border border-[#E8D9CB] bg-white p-5 shadow-sm sm:ml-[42px] animate-in fade-in slide-in-from-top-2 duration-300">
@@ -651,6 +679,18 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                     />
                 )}
             </div>
+
+            <ConfirmationModal
+                isOpen={!!impersonateTarget}
+                onClose={() => setImpersonateTarget(null)}
+                onConfirm={confirmImpersonation}
+                title="Support Impersonation"
+                message="Are you sure you want to securely log in as this user? You will temporarily leave your Super Admin session to view the platform exactly as they do. All actions you take will be logged under your audit trail."
+                icon={VenetianMask}
+                iconBg="bg-stone-100 text-stone-600"
+                confirmText="Login As User"
+                confirmColor="bg-stone-900 hover:bg-black focus-visible:ring-stone-900/30"
+            />
         </AdminLayout>
     );
 }

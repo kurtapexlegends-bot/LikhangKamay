@@ -1171,8 +1171,8 @@ class OrderController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        if ($order->status !== 'Delivered') {
-            return redirect()->back()->with('error', 'You can confirm receipt only after the order is marked as delivered.');
+        if (!in_array($order->status, ['Shipped', 'Delivered', 'Ready for Pickup'])) {
+            return redirect()->back()->with('error', 'You can only confirm receipt for orders that are in transit, ready for pickup, or delivered.');
         }
 
         if ($order->payment_method !== 'COD' && $order->payment_status !== 'paid') {

@@ -881,44 +881,35 @@ export default function MyOrders({ auth, orders }) {
                                 {/* Order Items */}
                                 <div className="p-4 sm:p-6 space-y-4">
                                     {/* Pickup / Delivery Info */}
-                                    {order.shipping_method === 'Pick Up' ? (
-                                        <div className="flex items-center gap-2.5 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2">
-                                            <div className="p-1.5 bg-white rounded-lg shadow-sm text-orange-600 shrink-0">
-                                                <Store size={14} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-[12px] font-bold text-gray-900">Store Pick Up</p>
-                                                <p className="text-[10px] text-gray-500">Coordinate pickup time with seller via chat.</p>
-                                                {order.proof_of_delivery && (
-                                                    <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-600 underline hover:text-orange-800 flex items-center gap-1 mt-0.5">
-                                                        <PackageCheck size={11} /> {buyerProofLabel(order)}
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-1.5">
-                                            {deliverySummary && (
-                                                <div className={`rounded-xl border px-3 py-2 ${deliverySummary.tone}`}>
-                                                    <div className="flex flex-wrap items-start justify-between gap-2">
-                                                        <div className="min-w-0">
-                                                            <p className="text-[12px] font-bold text-stone-900">{deliverySummary.title}</p>
-                                                            <p className="text-[10px] leading-snug text-stone-600">{deliverySummary.detail}</p>
-                                                        </div>
-                                                        {deliverySummary.latestEventTime && (
-                                                            <span className="rounded-full border border-white/80 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-stone-500">
-                                                                {deliverySummary.latestEventTime}
-                                                            </span>
+                                    <div className="space-y-1.5">
+                                        {deliverySummary && (
+                                            <div className={`rounded-xl border px-3 py-2 ${deliverySummary.tone}`}>
+                                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="text-[12px] font-bold text-stone-900">{deliverySummary.title}</p>
+                                                        <p className="text-[10px] leading-snug text-stone-600">{deliverySummary.detail}</p>
+                                                        {order.shipping_method === 'Pick Up' && order.proof_of_delivery && (
+                                                            <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-600 underline hover:text-orange-800 flex items-center gap-1 mt-1.5">
+                                                                <PackageCheck size={11} /> {buyerProofLabel(order)}
+                                                            </a>
                                                         )}
                                                     </div>
-                                                    {deliverySummary.latestEvent && (
-                                                        <p className="mt-1 text-[9px] font-medium text-stone-500">
-                                                            Latest update: {deliverySummary.latestEvent.label}
-                                                        </p>
+                                                    {deliverySummary.latestEventTime && (
+                                                        <span className="rounded-full border border-white/80 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-stone-500">
+                                                            {deliverySummary.latestEventTime}
+                                                        </span>
                                                     )}
                                                 </div>
-                                            )}
+                                                {deliverySummary.latestEvent && (
+                                                    <p className="mt-1 text-[9px] font-medium text-stone-500">
+                                                        Latest update: {deliverySummary.latestEvent.label}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
 
+                                        {order.shipping_method !== 'Pick Up' && (
+                                        <>
                                             {/* Address row */}
                                             <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
                                                 <div className="flex items-start gap-2">
@@ -1039,8 +1030,9 @@ export default function MyOrders({ auth, orders }) {
                                                     )}
                                                 </div>
                                             )}
-                                        </div>
-                                    )}
+                                        </>
+                                        )}
+                                    </div>
 
                                     {issueSummary && (
                                         <div className={`rounded-xl border px-3 py-2.5 ${issueSummary.tone}`}>
@@ -1192,8 +1184,8 @@ export default function MyOrders({ auth, orders }) {
                                             </button>
                                         )}
 
-                                        {/* DELIVERED / READY FOR PICKUP: Confirm Receipt */}
-                                        {(order.status === 'Delivered' && !order.received_at) && (
+                                        {/* IN TRANSIT / READY / DELIVERED: Confirm Receipt */}
+                                        {(['Shipped', 'Ready for Pickup', 'Delivered'].includes(order.status) && !order.received_at) && (
                                             <button 
                                                 onClick={() => openModal('receive', order.id)}
                                                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold shadow-md transition-all hover:-translate-y-0.5 ${

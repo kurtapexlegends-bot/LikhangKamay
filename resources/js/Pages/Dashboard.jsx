@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import Modal from '@/Components/Modal';

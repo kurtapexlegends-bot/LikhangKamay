@@ -1333,4 +1333,66 @@ class SuperAdminController extends Controller
 
         return back()->with('success', 'Content flag dismissed.');
     }
+
+    // --- SYSTEM DIAGNOSTICS & INFRASTRUCTURE ---
+
+    public function diagnostics()
+    {
+        $cacheStatus = 'Online';
+        $dbStatus = 'Online';
+        $paymongoStatus = 'Unknown';
+        
+        try {
+            \Illuminate\Support\Facades\DB::connection()->getPdo();
+        } catch (\Exception $e) {
+            $dbStatus = 'Offline';
+        }
+
+        try {
+            \Illuminate\Support\Facades\Cache::has('test');
+        } catch (\Exception $e) {
+            $cacheStatus = 'Offline';
+        }
+
+        try {
+            $secretKey = config('services.paymongo.secret_key');
+            if ($secretKey) {
+                $response = \Illuminate\Support\Facades\Http::withToken($secretKey)
+                    ->get('https://api.paymongo.com/v1/links?limit=1');
+                $paymongoStatus = $response->successful() ? 'Online' : 'Error';
+            } else {
+                $paymongoStatus = 'Unconfigured';
+            }
+        } catch (\Exception $e) {
+            $paymongoStatus = 'Offline';
+        }
+
+        return Inertia::render('Admin/Diagnostics', [
+            'systemHealth' => [
+                'database' => $dbStatus,
+                'cache' => $cacheStatus,
+                'paymongo' => $paymongoStatus,
+                'lalamove' => 'Unconfigured', // Placeholder
+                'smtp' => config('mail.mailers.smtp.host') ? 'Configured' : 'Unconfigured',
+                'environment' => config('app.env'),
+                'debug_mode' => config('app.debug'),
+            ],
+            'memoryUsage' => round(memory_get_usage(true) / 1024 / 1024, 2),
+            'peakMemoryUsage' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
+        ]);
+    }
+
+    public function purgeCache()
+    {
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        
+        \App\Models\PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => 'system_cache_purged',
+            'description' => 'Super Admin forcefully purged the application cache.',
+        ]);
+
+        return back()->with('success', 'System cache successfully purged. Memory is clear.');
+    }
 }

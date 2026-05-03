@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import AnnouncementBanner from '@/Components/AnnouncementBanner';
 import Footer from '@/Components/Footer';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 export default function ShopLayout({ children }) {
     const { globalAnnouncement } = usePage().props;

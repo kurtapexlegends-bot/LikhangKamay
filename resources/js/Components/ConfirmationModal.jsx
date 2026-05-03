@@ -19,7 +19,7 @@ export default function ConfirmationModal({
                 <div className={`w-16 h-16 ${iconBg} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
                     <Icon size={28} />
                 </div>
-                <h2 className="text-xl font-serif font-bold text-gray-900 mb-2">{title}</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
                 <p className="text-sm text-gray-500 mb-6 leading-relaxed">{message}</p>
                 <div className="flex justify-center gap-3">
                     <button

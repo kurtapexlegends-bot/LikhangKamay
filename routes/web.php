@@ -318,10 +318,18 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/moderation-queue/{id}/takedown', [SuperAdminController::class, 'takedownProduct'])->name('admin.moderation.takedown');
     Route::post('/moderation-queue/{id}/suspend', [SuperAdminController::class, 'suspendUser'])->name('admin.moderation.suspend');
     Route::post('/moderation-queue/{id}/dismiss', [SuperAdminController::class, 'dismissFlag'])->name('admin.moderation.dismiss');
+
+    // System Diagnostics
+    Route::get('/diagnostics', [SuperAdminController::class, 'diagnostics'])->name('admin.diagnostics');
+    Route::post('/diagnostics/cache/purge', [SuperAdminController::class, 'purgeCache'])->name('admin.diagnostics.cache.purge');
+    
+    // Support Impersonation
+    Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
 });
 
-
-
-
+// Stop Impersonation Route (Protected by standard auth)
+Route::post('/impersonation/leave', [\App\Http\Controllers\ImpersonationController::class, 'leave'])
+    ->middleware(['auth'])
+    ->name('impersonation.leave');
 
 require __DIR__.'/auth.php';

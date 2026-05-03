@@ -91,6 +91,7 @@ class HandleInertiaRequests extends Middleware
             'unreadNotificationCount' => $unreadNotificationCount,
             'unreadMessageCount' => $unreadMessageCount,
             'globalAnnouncement' => $globalAnnouncement,
+            'isImpersonating' => Session::has('impersonator_id'),
             'pendingArtisanCount' => $request->user() && $request->user()->role === 'super_admin' 
                 ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
                 : 0,

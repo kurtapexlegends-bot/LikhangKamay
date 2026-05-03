@@ -19,7 +19,8 @@ import {
     Award,
     TrendingUp,
     BarChart2,
-    ShieldAlert
+    ShieldAlert,
+    Activity
 } from 'lucide-react';
 
 export default function AdminLayout({ title, children }) {
@@ -34,6 +35,7 @@ export default function AdminLayout({ title, children }) {
             title: 'Platform Overview',
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
+                { name: 'Diagnostics', href: route('admin.diagnostics'), icon: Activity, current: route().current('admin.diagnostics') },
                 { name: 'Announcements', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
                 { name: 'Monetization', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
@@ -164,6 +166,7 @@ export default function AdminLayout({ title, children }) {
                             {title === 'Sponsorship Requests' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review and manage artisan product sponsorship requests</p>}
                             {title === 'System Announcements' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage global alerts and messages across the marketplace.</p>}
                             {title === 'Moderation Queue' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review flagged products and user content.</p>}
+                            {title === 'Diagnostics Command Center' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Monitor platform memory, cache, and external API heartbeat.</p>}
                         </div>
                     </div>
 

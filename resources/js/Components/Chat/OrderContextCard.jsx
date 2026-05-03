@@ -154,49 +154,25 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
             {/* EXPANDED CONTENT */}
             {isCardExpanded && (
             <div className="px-3 py-3 sm:px-4 lg:px-6 overflow-y-auto custom-scrollbar w-full max-h-[50vh] bg-[#FDFBF9] border-t border-gray-100 shadow-inner animate-in slide-in-from-top-2 fade-in duration-200">
-                <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition-all hover:shadow-md">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{heading}</p>
-                            {hasMultipleActiveOrders && (
-                                <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
-                                    1 of {activeOrdersCount} active
-                                </span>
-                            )}
-                        </div>
-                        <Link
-                            href={order.detailsRoute}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-600 transition hover:text-clay-700 bg-clay-50/50 hover:bg-clay-50 px-3 py-1.5 rounded-lg"
-                        >
-                            <ShoppingBag size={14} />
-                            View Details
-                        </Link>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-                        <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold leading-none ${statusConfig.badge}`}>
-                            <StatusIcon size={14} />
-                            {order.status}
-                        </span>
-                        <span className="text-sm font-bold text-gray-900">{order.orderNumber}</span>
-                        <div className="hidden sm:block h-1 w-1 rounded-full bg-gray-300"></div>
-                        <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                            <Clock3 size={12} className="text-gray-400" />
-                            {order.placedAt}
-                        </span>
-                        
-                        <div className="ml-auto flex items-center gap-2">
-                            <div className="hidden sm:flex items-center gap-1.5 rounded-lg bg-gray-50 border border-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-                                <span className="font-bold text-gray-900">{lineCount}</span> item{lineCount === 1 ? '' : 's'}
-                            </div>
-                            <span className="rounded-lg bg-green-50 border border-green-100 px-3 py-1 text-sm font-bold text-green-700">
-                                {currency.format(order.totalAmount || 0)}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{heading}</p>
+                        {hasMultipleActiveOrders && (
+                            <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
+                                1 of {activeOrdersCount} active
                             </span>
-                        </div>
+                        )}
                     </div>
+                    <Link
+                        href={order.detailsRoute}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-600 transition hover:text-clay-700 bg-clay-50/50 hover:bg-clay-50 px-3 py-1.5 rounded-lg shadow-sm"
+                    >
+                        <ShoppingBag size={14} />
+                        View Full Details
+                    </Link>
                 </div>
 
-                <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
                     <button
                         type="button"
                         onClick={() => setExpanded((value) => !value)}

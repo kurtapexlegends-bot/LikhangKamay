@@ -7,6 +7,7 @@ import {
     Search, ShoppingCart, User, LogOut, Heart, Clock
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 export default function BuyerNavbar() {
     const { auth, cartCount, sellerSidebar, unreadMessageCount } = usePage().props;
@@ -31,6 +32,8 @@ export default function BuyerNavbar() {
     };
 
     return (
+        <>
+        <ImpersonationBanner />
         <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm/50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-wrap items-center gap-3 py-3 md:h-20 md:flex-nowrap md:justify-between md:items-center md:gap-8">
@@ -155,5 +158,6 @@ export default function BuyerNavbar() {
                 </div>
             </div>
         </nav>
+        </>
     );
 }

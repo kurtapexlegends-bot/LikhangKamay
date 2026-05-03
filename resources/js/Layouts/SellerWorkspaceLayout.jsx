@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import AnnouncementBanner from '@/Components/AnnouncementBanner';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 const SellerWorkspaceShellContext = createContext({
     openSidebar: () => {},
@@ -19,6 +20,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
 
     return (
         <SellerWorkspaceShellContext.Provider value={shell}>
+            <ImpersonationBanner />
             <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800">
                 <SellerSidebar
                     active={active}
