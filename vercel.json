@@ -13,6 +13,10 @@
             "dest": "/public/build/$1"
         },
         {
+            "src": "/images/(.*)",
+            "dest": "/public/images/$1"
+        },
+        {
             "src": "/favicon.ico",
             "dest": "/public/favicon.ico"
         },
@@ -25,6 +29,7 @@
             "dest": "/api/index.php"
         }
     ],
+
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
