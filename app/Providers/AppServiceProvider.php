@@ -20,8 +20,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->environment('production') && str_starts_with((string) config('app.url'), 'https://')) {
+        if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
+
+            // Vercel read-only filesystem fix:
+            // Ensure the views directory exists in /tmp
+            $viewPath = '/tmp/storage/framework/views';
+            if (!is_dir($viewPath)) {
+                mkdir($viewPath, 0755, true);
+            }
+            config(['view.compiled' => $viewPath]);
         }
         
         Vite::prefetch(concurrency: 3);
