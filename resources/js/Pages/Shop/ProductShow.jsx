@@ -13,6 +13,7 @@ import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 import { getRecentlyViewedProducts, isProductWishlisted, rememberViewedProduct, toggleWishlistedProduct } from '@/utils/buyerSignals';
 
 import { useToast } from '@/Components/ToastContext';
+import StickyActionBar from '@/Components/StickyActionBar';
 
 const ProductViewer3D = lazy(() => import('@/Components/ProductViewer3D'));
 
@@ -884,8 +885,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     </div>
                 </div>
             )}
-                <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 px-3 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
-                    <div className="mx-auto flex max-w-6xl items-center gap-2.5">
+                <div className="sm:hidden">
+                    <StickyActionBar>
                         <div className="min-w-0 flex-1">
                             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Price</p>
                             <div className="flex items-baseline gap-2">
@@ -900,7 +901,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 Disabled for pending shops
                             </div>
                         ) : (
-                            <>
+                            <div className="flex gap-2.5">
                                 <button
                                     onClick={addToCart}
                                     disabled={product.stock === 0 || isAddingToCart}
@@ -915,13 +916,13 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 <button
                                     onClick={handleBuyNow}
                                     disabled={product.stock === 0}
-                                    className="flex h-11 flex-[1.4] items-center justify-center rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-11 items-center justify-center rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Buy Now
                                 </button>
-                            </>
+                            </div>
                         )}
-                    </div>
+                    </StickyActionBar>
                 </div>
 
                 <Modal show={isReporting} onClose={() => setIsReporting(false)} maxWidth="sm">

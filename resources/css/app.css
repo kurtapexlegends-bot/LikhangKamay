@@ -33,7 +33,7 @@ html, body {
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: none;
     }
 }
 
@@ -46,7 +46,54 @@ html, body {
     height: 2.5px !important;
     background: linear-gradient(90deg, #c07251, #a65638) !important;
 }
-
 #nprogress .peg {
-    box-shadow: 0 0 8px #c07251, 0 0 4px #c07251 !important;
+    box-shadow: 0 0 10px #c07251, 0 0 5px #c07251 !important;
+}
+
+/* Hide MobileDock cleanly when StickyActionBar is present */
+body.has-sticky-action-bar .mobile-dock {
+    transform: translate(-50%, 150%) !important;
+    opacity: 0;
+    pointer-events: none !important;
+}
+
+@media (max-width: 767px) {
+.table-card-mobile {
+    display: block;
+    width: 100%;
+}
+.table-card-mobile thead {
+    display: none;
+}
+.table-card-mobile tbody {
+    display: block;
+    width: 100%;
+}
+.table-card-mobile tr {
+    display: flex;
+    flex-direction: column;
+    border-radius: 0.75rem;
+    background-color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #f3f4f6;
+    padding: 0.5rem;
+}
+.table-card-mobile td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid #f9fafb;
+}
+.table-card-mobile td:last-child {
+    border-bottom: none;
+}
+.table-card-mobile td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
 }

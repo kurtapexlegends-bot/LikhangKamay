@@ -28,7 +28,7 @@ export default function CompactPagination({
                     type="button"
                     disabled={currentPage === 1}
                     onClick={() => onPageChange(currentPage - 1)}
-                    className="shrink-0 rounded-xl border border-stone-200 bg-white p-2 text-stone-500 shadow-sm transition-all duration-300 hover:bg-stone-50 hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                    className="flex h-11 w-11 items-center justify-center shrink-0 rounded-xl border border-stone-200 bg-white text-stone-500 shadow-sm transition-all duration-300 hover:bg-stone-50 hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
                 >
                     <ChevronLeft size={16} />
                 </button>
@@ -42,7 +42,7 @@ export default function CompactPagination({
                                 key={page}
                                 type="button"
                                 onClick={() => onPageChange(page)}
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 active:scale-95 ${
+                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 active:scale-95 ${
                                     currentPage === page
                                         ? 'bg-clay-600 text-white shadow-md shadow-clay-500/20'
                                         : 'border border-stone-200 bg-white text-stone-600 shadow-sm hover:bg-stone-50'
@@ -58,7 +58,7 @@ export default function CompactPagination({
                     type="button"
                     disabled={currentPage === totalPages}
                     onClick={() => onPageChange(currentPage + 1)}
-                    className="shrink-0 rounded-xl border border-stone-200 bg-white p-2 text-stone-500 shadow-sm transition-all duration-300 hover:bg-stone-50 hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                    className="flex h-11 w-11 items-center justify-center shrink-0 rounded-xl border border-stone-200 bg-white text-stone-500 shadow-sm transition-all duration-300 hover:bg-stone-50 hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
                 >
                     <ChevronRight size={16} />
                 </button>

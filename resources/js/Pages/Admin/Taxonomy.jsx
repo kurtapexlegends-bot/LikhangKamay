@@ -81,14 +81,8 @@ export default function Taxonomy({ categories }) {
 
             <div className="max-w-5xl">
                 
-                {/* HEADER & ADD BUTTON */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-stone-900">Category Management</h1>
-                        <p className="text-sm text-stone-500 mt-1 max-w-xl">
-                            Manage the global list of product categories. Renaming a category here will automatically update all existing products currently using it.
-                        </p>
-                    </div>
+                {/* ACTION BAR */}
+                <div className="flex justify-end mb-6">
                     <button 
                         onClick={() => setIsAddOpen(true)}
                         className="bg-clay-600 hover:bg-clay-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 flex items-center gap-2"
@@ -100,7 +94,7 @@ export default function Taxonomy({ categories }) {
                 {/* CATEGORIES TABLE */}
                 <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left table-card-mobile">
                             <thead className="bg-stone-50 border-b border-stone-100">
                                 <tr>
                                     <th className="px-6 py-3 text-xs font-bold text-stone-500 uppercase tracking-widest w-1/2">Category Name</th>
@@ -112,7 +106,7 @@ export default function Taxonomy({ categories }) {
                                 {categories.length > 0 ? (
                                     categories.map((category) => (
                                         <tr key={category.id} className="hover:bg-stone-50/50 transition-colors group">
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4" data-label="Category Name">
                                                 {editingCategory === category.id ? (
                                                     <input
                                                         type="text"
@@ -130,13 +124,13 @@ export default function Taxonomy({ categories }) {
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4" data-label="Products Linked">
                                                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold ${category.products_count > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>
                                                     <Tag size={12} />
                                                     {category.products_count} product{category.products_count !== 1 ? 's' : ''}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-6 py-4 text-right" data-label="Actions">
                                                 {editingCategory === category.id ? (
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button 
@@ -160,18 +154,18 @@ export default function Taxonomy({ categories }) {
                                                                 setEditingCategory(category.id);
                                                                 setEditName(category.name);
                                                             }}
-                                                            className="p-1.5 text-clay-600 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 rounded-lg transition"
+                                                            className="p-1.5 text-stone-500 hover:text-clay-700 bg-white hover:bg-clay-50 border border-stone-200 hover:border-clay-200 rounded-lg shadow-sm transition-all hover:scale-110 active:scale-95"
                                                             title="Rename Category"
                                                         >
-                                                            <Edit2 size={16} />
+                                                            <Edit2 size={14} strokeWidth={2.5} />
                                                         </button>
                                                         <button 
                                                             onClick={() => handleDeleteCategory(category)}
                                                             disabled={category.products_count > 0}
-                                                            className={`p-1.5 rounded-lg transition ${category.products_count > 0 ? 'text-stone-300 cursor-not-allowed' : 'text-red-500 hover:bg-red-50'}`}
+                                                            className={`p-1.5 rounded-lg border shadow-sm transition-all ${category.products_count > 0 ? 'text-stone-300 bg-stone-50 border-stone-100 cursor-not-allowed' : 'text-stone-500 hover:text-red-700 bg-white hover:bg-red-50 border-stone-200 hover:border-red-200 hover:scale-110 active:scale-95'}`}
                                                             title={category.products_count > 0 ? "Cannot delete category with active products" : "Delete Category"}
                                                         >
-                                                            <Trash2 size={16} />
+                                                            <Trash2 size={14} strokeWidth={2.5} />
                                                         </button>
                                                     </div>
                                                 )}
@@ -180,9 +174,11 @@ export default function Taxonomy({ categories }) {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="3" className="px-6 py-12 text-center text-stone-400">
-                                            <FolderTree size={32} className="mx-auto mb-3 text-stone-300" />
-                                            <p>No categories found.</p>
+                                        <td colSpan="3" className="px-6 py-16 text-center bg-stone-50/50">
+                                            <div className="inline-flex p-4 bg-white shadow-sm border border-stone-100 rounded-full mb-3">
+                                                <FolderTree size={24} className="text-stone-400" />
+                                            </div>
+                                            <p className="text-sm font-medium text-stone-500">No categories found.</p>
                                         </td>
                                     </tr>
                                 )}

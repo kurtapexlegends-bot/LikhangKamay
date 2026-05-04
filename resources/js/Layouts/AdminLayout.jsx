@@ -179,6 +179,7 @@ export default function AdminLayout({ title, children }) {
                             {title === 'System Announcements' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage global alerts and messages across the marketplace.</p>}
                             {title === 'Moderation Queue' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review flagged products and user content.</p>}
                             {title === 'Diagnostics Command Center' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Monitor platform memory, cache, and external API heartbeat.</p>}
+                            {title === 'Global Taxonomy Engine' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage the global list of product categories.</p>}
                         </div>
                     </div>
 

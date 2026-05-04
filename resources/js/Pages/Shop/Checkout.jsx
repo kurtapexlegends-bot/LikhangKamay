@@ -714,8 +714,8 @@ export default function Checkout({ auth, pricing }) {
                     </div>
                 </div>
             </div>
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 px-4 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
-                <div className="mx-auto flex max-w-6xl items-center gap-3">
+            <div className="sm:hidden">
+                <StickyActionBar>
                     <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Total Due</p>
                         <p className="text-sm font-bold text-gray-900">{peso(summary.grandTotal)}</p>
@@ -737,7 +737,7 @@ export default function Checkout({ auth, pricing }) {
                         <ShieldCheck size={16} />
                         {processing ? 'Processing...' : 'Place Order'}
                     </button>
-                </div>
+                </StickyActionBar>
             </div>
             <ConfirmationModal
                 isOpen={!!deleteAddressTarget}

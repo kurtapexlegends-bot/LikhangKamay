@@ -22,8 +22,10 @@ export default function TextAreaWithCounter({
                 maxLength={maxLength}
                 rows={rows}
                 placeholder={placeholder}
-                className={`w-full rounded-xl border-gray-300 shadow-sm transition-all duration-300 focus:border-clay-500 focus:ring-clay-500 ${className} ${
-                    isAtLimit ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                className={`w-full rounded-xl shadow-sm transition-all duration-500 outline-none disabled:bg-stone-100 disabled:text-stone-500 disabled:border-stone-200 disabled:shadow-none disabled:cursor-not-allowed ${className} ${
+                    isAtLimit 
+                        ? 'border-rose-300 bg-rose-50/50 text-rose-900 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/20' 
+                        : 'border-stone-200 bg-white text-stone-900 focus:border-clay-500 focus:ring-4 focus:ring-clay-500/20 hover:border-stone-300 disabled:hover:border-stone-200'
                 }`}
             />
             {maxLength && (

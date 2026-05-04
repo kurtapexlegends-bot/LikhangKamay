@@ -43,7 +43,7 @@ export default function MobileDock() {
     ];
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-2rem)] max-w-md md:hidden pointer-events-none">
+        <div className="mobile-dock fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-2rem)] max-w-md md:hidden pointer-events-none transition-all duration-500 ease-in-out">
             <nav className="bg-stone-900/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-stone-950/20 px-4 py-3 flex items-center justify-between pointer-events-auto transition-all duration-500">
                 {navItems.map((item) => {
                     const Icon = item.icon;
