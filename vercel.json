@@ -1,6 +1,9 @@
 {
     "version": 2,
     "framework": null,
+    "buildCommand": "bash vercel-build.sh",
+    "installCommand": "composer install",
+
     "functions": {
         "api/index.php": {
             "runtime": "vercel-php@0.7.3"
@@ -32,6 +35,8 @@
         "APP_EVENTS_CACHE": "/tmp/events.php",
         "APP_PACKAGES_CACHE": "/tmp/packages.php",
         "APP_ROUTES_CACHE": "/tmp/routes.php",
+        "APP_SERVICES_CACHE": "/tmp/services.php",
         "VIEW_COMPILED_PATH": "/tmp/views"
+
     }
 }
