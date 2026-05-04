@@ -213,7 +213,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 id="email"
                                 type="email"
                                 value={email}
-                                className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-100 text-stone-500 py-3 cursor-not-allowed"
+                                className="pl-10 block w-full py-3"
                                 disabled
                             />
                         </div>
@@ -271,7 +271,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 id="email"
                                 type="email"
                                 value={email}
-                                className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-100 text-stone-500 py-3 cursor-not-allowed"
+                                className="pl-10 block w-full py-3"
                                 disabled
                             />
                         </div>
