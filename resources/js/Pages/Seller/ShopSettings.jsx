@@ -97,7 +97,7 @@ export default function ShopSettings({ auth, user, stats }) {
             />
 
             <form onSubmit={submit} className="flex-1">
-                <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+                <div className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                         {isShopSettingsReadOnly && (
                             <ReadOnlyCapabilityNotice label="Shop settings are read only for your account. Profile updates and media changes are disabled." />
                         )}
@@ -361,7 +361,7 @@ export default function ShopSettings({ auth, user, stats }) {
 
                 {/* ── Floating Save Bar ── */}
                 <div className="sticky bottom-0 z-30 border-t border-stone-100 bg-white/80 shadow-lg backdrop-blur-xl">
-                    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
+                    <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
                         <p className="text-xs text-stone-400 hidden sm:block">
                             {errors.banner_image && (
                                 <span className="text-red-500 flex items-center gap-1">

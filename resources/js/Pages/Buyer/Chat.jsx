@@ -11,7 +11,8 @@ import {
 import EmojiPicker from 'emoji-picker-react';
 import OrderContextCard from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
-import MediaViewer from '@/Components/Chat/MediaViewer';
+import { lazy, Suspense } from 'react';
+const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatClock, formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
 
@@ -665,12 +666,14 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
             </main>
 
             {/* Media Viewer Lightbox */}
-            <MediaViewer 
-                show={!!activeMedia} 
-                mediaList={galleryImages}
-                initialIndex={activeMedia?.index || 0}
-                onClose={() => setActiveMedia(null)} 
-            />
+            <Suspense fallback={null}>
+                <MediaViewer 
+                    show={!!activeMedia} 
+                    mediaList={galleryImages}
+                    initialIndex={activeMedia?.index || 0}
+                    onClose={() => setActiveMedia(null)} 
+                />
+            </Suspense>
         </div>
     );
 }

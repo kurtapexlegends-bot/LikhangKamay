@@ -265,7 +265,7 @@ export default function StockRequestIndex({ auth, requests }) {
                     </div>
                 </header>
 
-                <main className="p-4 sm:p-6 space-y-4">
+                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-4">
                     {isStockRequestsReadOnly && (
                         <ReadOnlyCapabilityNotice label="Restock requests are read only for your account. Ordering, receiving, and transfer actions are disabled." />
                     )}

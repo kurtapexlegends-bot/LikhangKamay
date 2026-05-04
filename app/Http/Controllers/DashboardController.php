@@ -48,100 +48,122 @@ class DashboardController extends Controller
         $seller = $user->getEffectiveSeller() ?? $user;
         $userId = $seller->id;
 
-        $getMetricWithGrowth = function ($column, $aggregate = 'count') use ($userId) {
-            $now = Carbon::now();
-            $startThisMonth = $now->copy()->startOfMonth();
-            $startLastMonth = $now->copy()->subMonth()->startOfMonth();
-            $endLastMonth = $now->copy()->subMonth()->endOfMonth();
+        $cacheKey = "seller_dashboard_metrics_{$userId}";
+        $cachedMetrics = Cache::remember($cacheKey, 300, function () use ($userId) {
+            $getMetricWithGrowth = function ($column, $aggregate = 'count') use ($userId) {
+                $now = Carbon::now();
+                $startThisMonth = $now->copy()->startOfMonth();
+                $startLastMonth = $now->copy()->subMonth()->startOfMonth();
+                $endLastMonth = $now->copy()->subMonth()->endOfMonth();
 
-            $q = Order::where('artisan_id', $userId)
-                ->where('status', 'Completed');
+                $q = Order::where('artisan_id', $userId)
+                    ->where('status', 'Completed');
 
-            $currentVal = (clone $q)->where('created_at', '>=', $startThisMonth);
-            $current = $aggregate === 'sum'
-                ? $currentVal->sum($column)
-                : ($aggregate === 'distinct' ? $currentVal->distinct($column)->count($column) : $currentVal->count());
+                $currentVal = (clone $q)->where('created_at', '>=', $startThisMonth);
+                $current = $aggregate === 'sum'
+                    ? $currentVal->sum($column)
+                    : ($aggregate === 'distinct' ? $currentVal->distinct($column)->count($column) : $currentVal->count());
 
-            $prevVal = (clone $q)->whereBetween('created_at', [$startLastMonth, $endLastMonth]);
-            $previous = $aggregate === 'sum'
-                ? $prevVal->sum($column)
-                : ($aggregate === 'distinct' ? $prevVal->distinct($column)->count($column) : $prevVal->count());
+                $prevVal = (clone $q)->whereBetween('created_at', [$startLastMonth, $endLastMonth]);
+                $previous = $aggregate === 'sum'
+                    ? $prevVal->sum($column)
+                    : ($aggregate === 'distinct' ? $prevVal->distinct($column)->count($column) : $prevVal->count());
 
-            $growth = 0;
-            if ($previous > 0) {
-                $growth = (($current - $previous) / $previous) * 100;
-            } elseif ($current > 0) {
-                $growth = 100;
+                $growth = 0;
+                if ($previous > 0) {
+                    $growth = (($current - $previous) / $previous) * 100;
+                } elseif ($current > 0) {
+                    $growth = 100;
+                }
+
+                return ['value' => $current, 'growth' => round($growth, 1)];
+            };
+
+            $revenueData = $getMetricWithGrowth('total_amount', 'sum');
+            $ordersData = $getMetricWithGrowth('id', 'count');
+            $customersData = $getMetricWithGrowth('user_id', 'distinct');
+            $avgValue = $ordersData['value'] > 0 ? $revenueData['value'] / $ordersData['value'] : 0;
+
+            $prevRev = Order::where('artisan_id', $userId)
+                ->where('status', 'Completed')
+                ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
+                ->sum('total_amount');
+            $prevOrd = Order::where('artisan_id', $userId)
+                ->where('status', 'Completed')
+                ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
+                ->count();
+            $prevAvg = $prevOrd > 0 ? $prevRev / $prevOrd : 0;
+
+            $avgGrowth = 0;
+            if ($prevAvg > 0) {
+                $avgGrowth = round((($avgValue - $prevAvg) / $prevAvg) * 100, 1);
+            } elseif ($avgValue > 0) {
+                $avgGrowth = 100;
             }
 
-            return ['value' => $current, 'growth' => round($growth, 1)];
-        };
+            $monthExpr = $this->monthNumberExpression('created_at');
+            $monthlyRaw = Order::where('artisan_id', $userId)
+                ->where('status', 'Completed')
+                ->where('created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
+                ->selectRaw("{$monthExpr} as month_num, SUM(total_amount) as value")
+                ->groupByRaw($monthExpr)
+                ->orderByRaw($monthExpr)
+                ->get()
+                ->keyBy(fn ($row) => (int) $row->month_num);
 
-        $revenueData = $getMetricWithGrowth('total_amount', 'sum');
-        $ordersData = $getMetricWithGrowth('id', 'count');
-        $customersData = $getMetricWithGrowth('user_id', 'distinct');
-        $avgValue = $ordersData['value'] > 0 ? $revenueData['value'] / $ordersData['value'] : 0;
+            $monthlyData = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $monthNum = (int) Carbon::now()->subMonths($i)->format('n');
+                $monthName = Carbon::now()->subMonths($i)->format('M');
+                $monthlyData[] = [
+                    'name' => $monthName,
+                    'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0,
+                ];
+            }
 
-        $prevRev = Order::where('artisan_id', $userId)
-            ->where('status', 'Completed')
-            ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
-            ->sum('total_amount');
-        $prevOrd = Order::where('artisan_id', $userId)
-            ->where('status', 'Completed')
-            ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
-            ->count();
-        $prevAvg = $prevOrd > 0 ? $prevRev / $prevOrd : 0;
+            $yearExpr = $this->yearNumberExpression('created_at');
+            $yearlyData = Order::where('artisan_id', $userId)
+                ->where('status', 'Completed')
+                ->selectRaw("{$yearExpr} as year_num, SUM(total_amount) as value")
+                ->groupByRaw($yearExpr)
+                ->orderByRaw($yearExpr)
+                ->get()
+                ->map(function ($item) {
+                    return ['name' => (string) ((int) $item->year_num), 'value' => (float) $item->value];
+                });
 
-        $avgGrowth = 0;
-        if ($prevAvg > 0) {
-            $avgGrowth = round((($avgValue - $prevAvg) / $prevAvg) * 100, 1);
-        } elseif ($avgValue > 0) {
-            $avgGrowth = 100;
-        }
+            $categoryData = OrderItem::whereHas('order', function ($q) use ($userId) {
+                    $q->where('artisan_id', $userId)->where('status', 'Completed');
+                })
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->select(DB::raw('COALESCE(products.category, "Uncategorized") as name'), DB::raw('SUM(order_items.quantity) as value'))
+                ->groupBy('products.category')
+                ->get()
+                ->map(function ($item) {
+                    return ['name' => $item->name, 'value' => (int) $item->value];
+                })
+                ->filter(fn ($item) => $item['value'] > 0)
+                ->values();
 
-        $monthExpr = $this->monthNumberExpression('created_at');
-        $monthlyRaw = Order::where('artisan_id', $userId)
-            ->where('status', 'Completed')
-            ->where('created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->selectRaw("{$monthExpr} as month_num, SUM(total_amount) as value")
-            ->groupByRaw($monthExpr)
-            ->orderByRaw($monthExpr)
-            ->get()
-            ->keyBy(fn ($row) => (int) $row->month_num);
+            $pendingRequests = \App\Models\StockRequest::where('user_id', $userId)
+                ->where('status', 'pending')
+                ->count();
 
-        $monthlyData = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $monthNum = (int) Carbon::now()->subMonths($i)->format('n');
-            $monthName = Carbon::now()->subMonths($i)->format('M');
-            $monthlyData[] = [
-                'name' => $monthName,
-                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0,
-            ];
-        }
+            $totalDeductions = \App\Models\StockRequest::where('user_id', $userId)
+                ->whereIn('status', [
+                    'accounting_approved',
+                    'ordered',
+                    'partially_received',
+                    'received',
+                    'completed',
+                ])
+                ->sum('total_cost');
 
-        $yearExpr = $this->yearNumberExpression('created_at');
-        $yearlyData = Order::where('artisan_id', $userId)
-            ->where('status', 'Completed')
-            ->selectRaw("{$yearExpr} as year_num, SUM(total_amount) as value")
-            ->groupByRaw($yearExpr)
-            ->orderByRaw($yearExpr)
-            ->get()
-            ->map(function ($item) {
-                return ['name' => (string) ((int) $item->year_num), 'value' => (float) $item->value];
-            });
+            return compact('revenueData', 'ordersData', 'customersData', 'avgValue', 'avgGrowth', 'monthlyData', 'yearlyData', 'categoryData', 'pendingRequests', 'totalDeductions');
+        });
 
-        $categoryData = OrderItem::whereHas('order', function ($q) use ($userId) {
-                $q->where('artisan_id', $userId)->where('status', 'Completed');
-            })
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->select(DB::raw('COALESCE(products.category, "Uncategorized") as name'), DB::raw('SUM(order_items.quantity) as value'))
-            ->groupBy('products.category')
-            ->get()
-            ->map(function ($item) {
-                return ['name' => $item->name, 'value' => (int) $item->value];
-            })
-            ->filter(fn ($item) => $item['value'] > 0)
-            ->values();
+        // Extract cached variables
+        extract($cachedMetrics);
 
         $query = Order::where('artisan_id', $userId)
             ->with(['items', 'user'])

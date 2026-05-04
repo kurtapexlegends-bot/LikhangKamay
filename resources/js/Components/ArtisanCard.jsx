@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 
-export default function ArtisanCard({ name, location, rating, image, avatar, tags }) {
+export default React.memo(function ArtisanCard({ name, location, rating, image, avatar, tags }) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay-900/5 group cursor-pointer">
             {/* Cover Image */}
             <div className="h-32 bg-gray-100 overflow-hidden relative">
-                <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img src={image} alt={name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
             </div>
             
             {/* Artisan Info */}
@@ -16,7 +16,7 @@ export default function ArtisanCard({ name, location, rating, image, avatar, tag
                     <div className="h-16 w-16 rounded-full border-4 border-white bg-clay-100 shadow-sm overflow-hidden flex items-center justify-center">
                          {/* Avatar Logic */}
                          {avatar ? (
-                            <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                            <img src={avatar} alt={name} loading="lazy" className="w-full h-full object-cover" />
                          ) : (
                             <span className="text-2xl font-bold text-clay-600 uppercase">
                                 {name.charAt(0)}

@@ -688,7 +688,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 )}
             />
 
-                <main className="mx-auto flex-1 w-full max-w-[1400px] overflow-y-auto p-4 sm:p-6 space-y-6">
+                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">
                     {isProductsReadOnly && (
                         <ReadOnlyCapabilityNotice label="Products is read only for your account. Add, edit, stock, and bulk actions are disabled." />
                     )}

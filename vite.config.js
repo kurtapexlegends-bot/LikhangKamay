@@ -18,17 +18,26 @@ export default defineConfig({
                     if (id.includes('@react-three/drei') || id.includes('three-stdlib')) {
                         return 'react-three-drei';
                     }
-
                     if (id.includes('/three/examples/') || id.includes('\\three\\examples\\')) {
                         return 'three-examples';
                     }
-
-                    if (
-                        id.includes('@react-three/fiber') ||
-                        id.includes('/three/') ||
-                        id.includes('\\three\\')
-                    ) {
+                    if (id.includes('@react-three/fiber') || id.includes('/three/') || id.includes('\\three\\')) {
                         return 'react-three-core';
+                    }
+                    if (id.includes('node_modules/recharts')) {
+                        return 'vendor-recharts';
+                    }
+                    if (id.includes('node_modules/framer-motion')) {
+                        return 'vendor-framer-motion';
+                    }
+                    if (id.includes('node_modules/@xenova/transformers')) {
+                        return 'vendor-transformers';
+                    }
+                    if (id.includes('node_modules/@supabase')) {
+                        return 'vendor-supabase';
+                    }
+                    if (id.includes('node_modules/lucide-react')) {
+                        return 'vendor-lucide';
                     }
                 },
             },

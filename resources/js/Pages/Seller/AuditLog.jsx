@@ -383,7 +383,7 @@ export default function AuditLog({ auth, auditLog }) {
                 }
             />
 
-            <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                 <section className="mb-6">
                     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
                         {summaryCards.map(({ key, label, icon: Icon, tone }) => (

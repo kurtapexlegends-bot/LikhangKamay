@@ -865,8 +865,9 @@ const ModuleToggle = ({ label, description, enabled, onToggle, icon: Icon, color
 );
 
 const NavItem = ({ href, icon: Icon, active, children, compact, onClick }) => (
-    <Link 
-        href={href} 
+    <Link
+        href={href}
+        prefetch="hover"
         preserveScroll
         preserveState
         onClick={onClick}

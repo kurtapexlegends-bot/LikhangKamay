@@ -148,7 +148,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full min-w-[760px]">
+                        <table className="w-full text-left table-card-mobile sm:min-w-[760px]">
                         <thead className="bg-stone-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
@@ -168,7 +168,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                         <tbody className="divide-y divide-gray-50">
                             {recentUsers.map((user) => (
                                 <tr key={user.id} className="transition hover:bg-stone-50">
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4" data-label="User">
                                         <div className="flex items-center gap-3">
                                             <UserAvatar user={user} className="h-10 w-10 border border-clay-200" />
                                             <div>
@@ -186,7 +186,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
+                                    <td className="px-6 py-4 text-center sm:text-center" data-label="Role">
                                         <span
                                             className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider shadow-sm ${
                                                 user.role === "artisan"
@@ -206,7 +206,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                             {user.role_label}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
+                                    <td className="px-6 py-4 text-center sm:text-center" data-label="Status">
                                         {user.role === "artisan" ? (
                                             <span
                                                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold ${
@@ -239,7 +239,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-xs font-medium text-gray-500">
+                                    <td className="px-6 py-4 text-xs font-medium text-gray-500" data-label="Registered">
                                         {new Date(user.created_at).toLocaleDateString("en-US", {
                                             month: "short",
                                             day: "numeric",

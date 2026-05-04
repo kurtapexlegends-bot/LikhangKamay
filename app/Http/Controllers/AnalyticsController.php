@@ -11,6 +11,7 @@ use App\Services\SponsorshipAnalyticsService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class AnalyticsController extends Controller

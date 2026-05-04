@@ -3,7 +3,9 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import EmojiPicker from 'emoji-picker-react';
 import SellerHeader from '@/Components/SellerHeader';
 import UserAvatar from '@/Components/UserAvatar';
-import MediaViewer from '@/Components/Chat/MediaViewer';
+import { lazy, Suspense } from 'react';
+
+const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import {
     AlertCircle,
@@ -537,12 +539,14 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                 </div>
             </div>
 
-            <MediaViewer
-                show={!!activeMedia}
-                mediaList={galleryImages}
-                initialIndex={activeMedia?.index || 0}
-                onClose={() => setActiveMedia(null)}
-            />
+            <Suspense fallback={null}>
+                <MediaViewer
+                    show={!!activeMedia}
+                    mediaList={galleryImages}
+                    initialIndex={activeMedia?.index || 0}
+                    onClose={() => setActiveMedia(null)}
+                />
+            </Suspense>
         </div>
     );
 }

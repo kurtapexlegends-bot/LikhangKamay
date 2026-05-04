@@ -860,7 +860,7 @@ export default function OrderManager({ auth, orders = [] }) {
                 )}
             />
 
-                <main className="mx-auto flex-1 w-full max-w-[1400px] p-4 sm:p-6 overflow-y-auto space-y-6">
+                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">
                     {isOrdersReadOnly && (
                         <ReadOnlyCapabilityNotice label="Orders is read only for your account. Fulfillment and return actions are disabled." />
                     )}

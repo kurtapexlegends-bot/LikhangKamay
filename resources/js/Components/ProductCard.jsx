@@ -2,13 +2,14 @@ import React from 'react';
 import { Link } from '@inertiajs/react';
 import { Heart } from 'lucide-react';
 
-export default function ProductCard({ image, title, price, category }) {
+export default React.memo(function ProductCard({ image, title, price, category }) {
     return (
         <div className="group relative bg-white rounded-xl p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay-900/5 border border-transparent hover:border-clay-100">
             <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-gray-100 relative shadow-sm">
                 <img 
                     src={image} 
                     alt={title} 
+                    loading="lazy"
                     className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-in-out"
                 />
                 {/* Secondary Actions Overlay */}

@@ -382,13 +382,13 @@ export default function Catalog(props) {
                                     >
                                         {/* Image */}
                                         <div className="aspect-square relative overflow-hidden bg-stone-100">
-                                            <img 
-                                                src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
-                                                alt={product.name} 
+                                            <img
+                                                loading="lazy"
+                                                src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'}
+                                                alt={product.name}
                                                 className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                            />
-                                            {product.is_sponsored ? (
+                                            />                                            {product.is_sponsored ? (
                                                 <span className="absolute top-1.5 left-1.5 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 border border-amber-200">
                                                     <Award size={9} /> Sponsored
                                                 </span>

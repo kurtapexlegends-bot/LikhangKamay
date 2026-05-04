@@ -190,7 +190,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full min-w-[720px]">
+                        <table className="w-full text-left table-card-mobile sm:min-w-[720px]">
                             <thead className="bg-stone-50">
                                 <tr>
                                     <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -207,8 +207,8 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                             <tbody className="divide-y divide-gray-50">
                                 {recentSubscribers.length > 0 ? recentSubscribers.map((user) => (
                                     <tr key={user.id} className="hover:bg-stone-50 transition">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-3">
+                                        <td className="px-6 py-4" data-label="Artisan">
+                                            <div className="flex items-center justify-center sm:justify-start gap-3">
                                                 <UserAvatar user={user} className="w-9 h-9 border border-clay-200" />
                                                 <div className="min-w-0 text-left">
                                                     <p className="font-bold text-gray-900 text-sm">
@@ -220,8 +220,8 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex flex-col items-center gap-2">
+                                        <td className="px-6 py-4 text-center sm:text-center" data-label="Plan Change">
+                                            <div className="flex flex-col items-center sm:items-center gap-2">
                                                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide ${
                                                     changeDirectionBadgeClasses[user.change_direction] || changeDirectionBadgeClasses.change
                                                 }`}>
@@ -242,7 +242,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-xs text-gray-500 font-medium text-center">
+                                        <td className="px-6 py-4 text-xs text-gray-500 font-medium text-center sm:text-center" data-label="Date">
                                             <div className="space-y-1">
                                                 <div>{user.date}</div>
                                                 <div className="text-[10px] text-stone-400">{user.change_label}</div>
@@ -280,7 +280,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full min-w-[720px]">
+                        <table className="w-full text-left table-card-mobile sm:min-w-[720px]">
                             <thead className="bg-stone-50">
                                 <tr>
                                     <th className="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -297,8 +297,8 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                             <tbody className="divide-y divide-gray-50">
                                 {recentSponsorships.length > 0 ? recentSponsorships.map((req) => (
                                     <tr key={req.id} className="hover:bg-stone-50 transition">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-3">
+                                        <td className="px-6 py-4" data-label="Artisan">
+                                            <div className="flex items-center justify-center sm:justify-start gap-3">
                                                 <UserAvatar user={req.user} className="w-9 h-9 border border-clay-200" />
                                                 <div className="w-48 text-left">
                                                     <p className="font-bold text-gray-900 text-sm truncate" title={req.product_name}>
@@ -310,7 +310,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-6 py-4 text-center sm:text-center" data-label="Status">
                                             <span
                                                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide ${
                                                     req.status === "approved"
@@ -329,7 +329,7 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                                 {req.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-xs text-gray-500 font-medium text-center">
+                                        <td className="px-6 py-4 text-xs text-gray-500 font-medium text-center sm:text-center" data-label="Date">
                                             {req.date}
                                         </td>
                                     </tr>

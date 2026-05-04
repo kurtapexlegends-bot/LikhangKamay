@@ -189,6 +189,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                 >
                                     <div className="aspect-square relative bg-gray-100 overflow-hidden">
                                         <img 
+                                            loading="lazy"
                                             src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
                                             alt={product.name} 
                                             className="w-full h-full object-cover transition duration-300 group-hover:scale-105"

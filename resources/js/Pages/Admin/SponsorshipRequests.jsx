@@ -188,7 +188,7 @@ export default function SponsorshipRequests({ requests }) {
 
                     {/* Table */}
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[940px] text-left border-collapse">
+                        <table className="w-full min-w-full lg:min-w-[940px] text-left border-collapse table-card-mobile">
                             <thead>
                                 <tr className="bg-gray-50/80 border-b border-gray-100">
                                     <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product</th>
@@ -209,7 +209,7 @@ export default function SponsorshipRequests({ requests }) {
                                                     : 'hover:bg-gray-50/50'
                                             }`}
                                         >
-                                            <td className="py-4 px-6 align-middle">
+                                            <td className="py-4 px-6 align-middle" data-label="Product">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-xl border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
                                                         {req.product?.cover_photo_path ? (
@@ -231,15 +231,15 @@ export default function SponsorshipRequests({ requests }) {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6 align-middle">
+                                            <td className="py-4 px-6 align-middle" data-label="Seller">
                                                 <p className="text-sm font-bold text-gray-900">{req.user?.shop_name || req.user?.name}</p>
                                                 <p className="text-[10px] text-gray-500">ID: {req.user?.id}</p>
                                             </td>
-                                            <td className="py-4 px-6 align-middle text-sm text-gray-500 font-medium">
+                                            <td className="py-4 px-6 align-middle text-sm text-gray-500 font-medium" data-label="Requested">
                                                 {new Date(req.created_at).toLocaleDateString()}
                                                 <div className="text-[10px] text-gray-400">{new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                                             </td>
-                                            <td className="py-4 px-6 align-middle">
+                                            <td className="py-4 px-6 align-middle" data-label="Status">
                                                 {getStatusBadge(req.status)}
                                                 {req.status === 'rejected' && req.rejection_reason && (
                                                     <p className="mt-2 max-w-[260px] text-[11px] leading-relaxed text-red-600">

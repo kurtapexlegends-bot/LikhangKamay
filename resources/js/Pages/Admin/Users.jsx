@@ -443,6 +443,18 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                     </div>
                                 </div>
 
+                                {user.role !== 'super_admin' && (
+                                    <div className="mt-3 border-t border-stone-100 pt-3">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
+                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-black hover:scale-[1.02] active:scale-95"
+                                        >
+                                            <VenetianMask size={14} /> Login As
+                                        </button>
+                                    </div>
+                                )}
+
                                 {isExpandable && isExpanded && (
                                     <div className="mt-3 rounded-xl border border-[#E8D9CB] bg-[#FDFBF9] p-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <div className="mb-3 flex items-center justify-between">

@@ -298,7 +298,7 @@ export default function Insights({ revenue, churn, categories, health }) {
                         </div>
                         <div className="overflow-x-auto flex-1">
                             {churn.atRiskList?.length > 0 ? (
-                                <table className="w-full min-w-[720px]">
+                                <table className="w-full text-left table-card-mobile sm:min-w-[720px]">
                                     <thead className="bg-white border-b border-stone-100">
                                         <tr>
                                             <th className="px-6 py-4 text-left text-[10px] font-bold text-stone-400 uppercase tracking-widest">Artisan</th>
@@ -309,7 +309,7 @@ export default function Insights({ revenue, churn, categories, health }) {
                                     <tbody className="divide-y divide-stone-100">
                                         {churn.atRiskList.map(artisan => (
                                             <tr key={artisan.id} className="hover:bg-stone-50/50 transition">
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4" data-label="Artisan">
                                                     <div className="flex items-center gap-3">
                                                         <UserAvatar user={artisan} className="w-9 h-9 rounded-full shadow-sm" />
                                                         <div>
@@ -318,12 +318,12 @@ export default function Insights({ revenue, churn, categories, health }) {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-center">
+                                                <td className="px-6 py-4 text-center sm:text-center" data-label="Tier">
                                                     {artisan.premium_tier === 'super_premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-stone-900 text-white shadow-sm border border-stone-800">Premium+</span>}
                                                     {artisan.premium_tier === 'premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-clay-50 text-clay-700 border border-clay-200">Premium</span>}
                                                     {artisan.premium_tier !== 'premium' && artisan.premium_tier !== 'super_premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200">Free</span>}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4" data-label="Last Seen">
                                                     <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
                                                         {artisan.last_seen}
                                                     </span>

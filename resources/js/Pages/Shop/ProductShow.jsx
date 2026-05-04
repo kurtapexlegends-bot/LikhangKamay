@@ -885,7 +885,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     </div>
                 </div>
             )}
-                <div className="sm:hidden">
+                <div className="md:hidden">
                     <StickyActionBar>
                         <div className="min-w-0 flex-1">
                             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Price</p>

@@ -13,7 +13,8 @@ import {
 import OrderContextCard, { SellerOrderActionBar } from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
-import MediaViewer from '@/Components/Chat/MediaViewer';
+import { lazy, Suspense } from 'react';
+const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
@@ -733,12 +734,14 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                     )}
                 </div>
 
-                <MediaViewer 
-                    show={!!activeMedia} 
-                    mediaList={galleryImages}
-                    initialIndex={activeMedia?.index || 0}
-                    onClose={() => setActiveMedia(null)} 
-                />
+                <Suspense fallback={null}>
+                    <MediaViewer 
+                        show={!!activeMedia} 
+                        mediaList={galleryImages}
+                        initialIndex={activeMedia?.index || 0}
+                        onClose={() => setActiveMedia(null)} 
+                    />
+                </Suspense>
             </div>
         </div>
     );
