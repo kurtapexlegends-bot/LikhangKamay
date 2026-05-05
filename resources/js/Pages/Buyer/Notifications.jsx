@@ -18,14 +18,14 @@ export default function Notifications({ notifications = [], unreadNotificationCo
         <ShopLayout>
             <Head title="My Notifications" />
 
-            <div className="max-w-3xl mx-auto py-10 px-4">
-                <div className="flex items-center justify-between mb-8">
+            <div className="max-w-3xl mx-auto py-6 sm:py-10 px-4">
+                <div className="flex items-center justify-between mb-6 sm:mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-stone-900">Notifications</h1>
-                        <p className="text-stone-500 text-sm">Stay updated with your orders and activity.</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-stone-900">Notifications</h1>
+                        <p className="text-stone-500 text-[11px] sm:text-sm">Stay updated with your orders and activity.</p>
                     </div>
                     {notifications.length > 0 && (
-                        <button className="text-sm font-bold text-clay-600 hover:text-clay-700">
+                        <button className="text-xs sm:text-sm font-bold text-clay-600 hover:text-clay-700 p-2 -mr-2">
                             Mark all as read
                         </button>
                     )}
@@ -34,40 +34,45 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                 {notifications.length > 0 ? (
                     <div className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden">
                         <div className="divide-y divide-stone-50">
-                            {notifications.map((notification) => (
-                                <div 
-                                    key={notification.id}
-                                    className={`p-5 flex gap-4 transition-colors hover:bg-stone-50/50 ${!notification.read_at ? 'bg-clay-50/20' : ''}`}
-                                >
-                                    <div className="shrink-0 w-10 h-10 rounded-2xl bg-stone-100 flex items-center justify-center">
-                                        {getIcon(notification.type)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2 mb-1">
-                                            <h3 className={`text-sm ${!notification.read_at ? 'font-bold text-stone-900' : 'font-semibold text-stone-700'}`}>
-                                                {notification.title}
-                                            </h3>
-                                            <span className="text-[10px] font-medium text-stone-400 whitespace-nowrap">
-                                                {notification.created_at}
-                                            </span>
+                             {notifications.map((notification) => {
+                                const CardWrapper = notification.url ? Link : 'div';
+                                return (
+                                    <CardWrapper 
+                                        key={notification.id}
+                                        href={notification.url}
+                                        className={`p-4 sm:p-5 flex gap-4 transition-all hover:bg-stone-50/80 active:scale-[0.99] border-l-4 ${
+                                            !notification.read_at 
+                                            ? 'bg-clay-50/30 border-clay-500' 
+                                            : 'border-transparent'
+                                        }`}
+                                    >
+                                        <div className="shrink-0 w-10 h-10 rounded-2xl bg-stone-100 flex items-center justify-center shadow-sm">
+                                            {getIcon(notification.type)}
                                         </div>
-                                        <p className="text-sm text-stone-500 leading-relaxed mb-3">
-                                            {notification.message}
-                                        </p>
-                                        {notification.url && (
-                                            <Link 
-                                                href={notification.url}
-                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-600 hover:gap-2 transition-all"
-                                            >
-                                                View details <ArrowRight size={14} />
-                                            </Link>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <h3 className={`text-sm truncate ${!notification.read_at ? 'font-bold text-stone-900' : 'font-semibold text-stone-700'}`}>
+                                                    {notification.title}
+                                                </h3>
+                                                <span className="text-[10px] font-medium text-stone-400 whitespace-nowrap">
+                                                    {notification.created_at}
+                                                </span>
+                                            </div>
+                                            <p className="text-[13px] text-stone-500 leading-relaxed line-clamp-2">
+                                                {notification.message}
+                                            </p>
+                                            {notification.url && (
+                                                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-bold text-clay-600 sm:hidden">
+                                                    Tap to view <ArrowRight size={12} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        {!notification.read_at && (
+                                            <div className="shrink-0 w-2 h-2 rounded-full bg-clay-500 mt-2 shadow-[0_0_8px_rgba(192,114,81,0.5)]"></div>
                                         )}
-                                    </div>
-                                    {!notification.read_at && (
-                                        <div className="shrink-0 w-2 h-2 rounded-full bg-clay-500 mt-2"></div>
-                                    )}
-                                </div>
-                            ))}
+                                    </CardWrapper>
+                                );
+                            })}
                         </div>
                     </div>
                 ) : (

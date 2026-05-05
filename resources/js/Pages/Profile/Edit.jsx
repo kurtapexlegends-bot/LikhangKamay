@@ -26,18 +26,18 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
             <Head title="My Profile" />
             <BuyerNavbar />
 
-            <main className="py-10 sm:py-12">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col lg:flex-row gap-8">
+            <main className="py-4 sm:py-12">
+                <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+                    <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
                         
-                        {/* SIDEBAR NAVIGATION */}
+                        {/* SETTINGS NAVIGATION (Horizontal Scroll on Mobile, Sidebar on Desktop) */}
                         <aside className="w-full lg:w-64 flex-shrink-0">
-                            <div className="bg-white rounded-2xl border border-stone-200 p-4 sticky top-28 shadow-sm">
-                                <div className="mb-6 px-2">
+                            <div className="bg-white rounded-2xl border border-stone-200 p-2 sm:p-4 lg:sticky lg:top-28 shadow-sm">
+                                <div className="hidden lg:block mb-6 px-2">
                                     <h2 className="text-xl font-bold text-stone-900">Settings</h2>
                                     <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">Account Controls</p>
                                 </div>
-                                <nav className="space-y-1">
+                                <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible scrollbar-hide gap-1">
                                     {tabs.map((tab) => {
                                         const Icon = tab.icon;
                                         const isActive = activeTab === tab.id;
@@ -47,13 +47,13 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
                                             <button
                                                 key={tab.id}
                                                 onClick={() => setActiveTab(tab.id)}
-                                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                                                className={`flex items-center gap-2.5 px-4 py-2.5 sm:px-3 text-[13px] sm:text-sm font-bold rounded-xl transition-all whitespace-nowrap shrink-0 lg:w-full ${
                                                     isActive 
                                                         ? 'bg-clay-50 text-clay-700' 
                                                         : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900'
                                                 } ${isDanger && !isActive ? 'hover:bg-red-50 hover:text-red-600' : ''}`}
                                             >
-                                                <Icon size={18} strokeWidth={2.5} className={isActive ? 'text-clay-600' : isDanger ? 'text-red-500' : 'text-stone-400'} />
+                                                <Icon size={16} strokeWidth={2.5} className={isActive ? 'text-clay-600' : isDanger ? 'text-red-500' : 'text-stone-400'} />
                                                 <span className="truncate">{tab.label}</span>
                                             </button>
                                         );
@@ -64,7 +64,7 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
 
                         {/* CONTENT AREA */}
                         <div className="flex-1 min-w-0">
-                            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-stone-200 min-h-[500px] shadow-sm">
+                            <div className="bg-white p-4 sm:p-8 rounded-2xl border border-stone-200 min-h-[400px] shadow-sm">
                                 
                                 {/* ACCOUNT SETTINGS */}
                                 {activeTab === 'account' && (

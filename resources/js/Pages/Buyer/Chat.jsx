@@ -109,16 +109,27 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
         }
     }, [currentChatUser, activeMessages.length]);
 
-    // Track window focus to mark as read when user comes back
+    // Track window focus and handle sticky bar state for mobile
     useEffect(() => {
         const handleFocus = () => {
             if (currentChatUser && document.hasFocus()) {
                 markAsRead(currentChatUser.id);
             }
         };
+        
+        // Hide MobileDock when in a chat on mobile
+        if (currentChatUser && !showMobileList) {
+            document.body.classList.add('has-sticky-action-bar');
+        } else {
+            document.body.classList.remove('has-sticky-action-bar');
+        }
+
         window.addEventListener('focus', handleFocus);
-        return () => window.removeEventListener('focus', handleFocus);
-    }, [currentChatUser]);
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            document.body.classList.remove('has-sticky-action-bar');
+        };
+    }, [currentChatUser, showMobileList]);
 
     const signalTyping = () => {
         if (!currentChatUser) return;
@@ -198,12 +209,14 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
             <Head title="My Messages" />
 
-            {/* --- NAVBAR --- */}
-            <BuyerNavbar />
+            {/* --- NAVBAR --- (Hidden on mobile when in conversation) */}
+            <div className={`${!showMobileList ? 'hidden sm:block' : 'block'}`}>
+                <BuyerNavbar />
+            </div>
 
             {/* CHAT CONTAINER */}
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden flex flex-col sm:flex-row h-[calc(100dvh-112px)] sm:h-[calc(100vh-140px)]">
+            <main className={`flex-1 max-w-7xl w-full mx-auto sm:px-6 lg:px-8 sm:py-6 ${!showMobileList ? 'p-0 sm:px-4' : 'p-4'}`}>
+                <div className={`bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col sm:flex-row h-[calc(100dvh)] sm:h-[calc(100vh-140px)] sm:rounded-2xl`}>
                     
                     {/* LEFT: CONTACT LIST */}
                     <div className={`w-full sm:w-80 sm:max-w-[20rem] border-r border-gray-100 flex flex-col bg-gradient-to-b from-white to-gray-50 ${showMobileList ? 'block' : 'hidden sm:flex'}`}>
@@ -313,16 +326,16 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                     <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                                         <Link 
                                             href={route('my-orders.index')}
-                                            className="p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition sm:p-2.5"
+                                            className="p-3 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-xl transition"
                                             title="View Orders"
                                         >
-                                            <ShoppingBag size={18} />
+                                            <ShoppingBag size={22} className="sm:w-4.5 sm:h-4.5" />
                                         </Link>
                                         <button 
                                             onClick={() => setShowInfoPanel(!showInfoPanel)}
-                                            className={`p-2 rounded-xl transition sm:p-2.5 ${showInfoPanel ? 'bg-clay-100 text-clay-700' : 'text-gray-400 hover:text-clay-600 hover:bg-clay-50'}`}
+                                            className={`p-3 rounded-xl transition ${showInfoPanel ? 'bg-clay-100 text-clay-700' : 'text-gray-400 hover:text-clay-600 hover:bg-clay-50'}`}
                                         >
-                                            <Info size={18} />
+                                            <Info size={22} className="sm:w-4.5 sm:h-4.5" />
                                         </button>
                                     </div>
                                 </div>

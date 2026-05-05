@@ -335,8 +335,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
             <div className="max-w-6xl mx-auto px-3 py-3 pb-28 sm:px-4 sm:py-4 sm:pb-4">
                 
-                {/* Breadcrumb - Compact */}
-                <nav className="flex flex-wrap items-center gap-1.5 text-xs text-gray-400 mb-4">
+                {/* Breadcrumb - Compact - Hidden on Mobile */}
+                <nav className="hidden sm:flex flex-wrap items-center gap-1.5 text-xs text-gray-400 mb-4">
                     <Link href="/" className="hover:text-clay-600">Home</Link>
                     <ChevronRight size={12} />
                     <Link href={route('shop.index')} className="hover:text-clay-600">Shop</Link>
@@ -473,7 +473,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <div className="flex flex-wrap items-center gap-2.5 text-xs mb-3">
                                 <div className="flex items-center gap-1">
                                     <span className="text-clay-600 font-bold underline">{productRating}</span>
-                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
+                                    <div className="flex items-center gap-0.5">
                                         {[1,2,3,4,5].map(s => (
                                             <Star key={s} size={10} className={s <= Math.round(productRating) ? 'fill-clay-600 text-clay-600' : 'text-gray-300'} />
                                         ))}
@@ -496,36 +496,36 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 </span>
                             </div>
 
-                            {/* Specifications - Compact Grid */}
-                            <div className="space-y-2 mb-4 text-xs">
+                            {/* Specifications - Compact Grid for Mobile */}
+                            <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-5 text-[11px] sm:flex sm:flex-col sm:space-y-2 sm:text-xs">
                                 {product.clay_type && (
-                                    <div className="flex">
-                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Material</span>
-                                        <span className="text-gray-700 font-medium">{product.clay_type}</span>
+                                    <div className="flex flex-col sm:flex-row">
+                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Material</span>
+                                        <span className="text-gray-700 font-medium truncate">{product.clay_type}</span>
                                     </div>
                                 )}
                                 {product.glaze_type && (
-                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Finish</span>
-                                        <span className="text-gray-700 font-medium">{product.glaze_type}</span>
+                                    <div className="flex flex-col sm:flex-row">
+                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Finish</span>
+                                        <span className="text-gray-700 font-medium truncate">{product.glaze_type}</span>
                                     </div>
                                 )}
                                 {(product.height > 0 || product.width > 0) && (
-                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Dimensions</span>
-                                        <span className="text-gray-700 font-medium">{product.height || 0}"H x {product.width || 0}"W</span>
+                                    <div className="flex flex-col sm:flex-row">
+                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Dimensions</span>
+                                        <span className="text-gray-700 font-medium truncate">{product.height || 0}"H x {product.width || 0}"W</span>
                                     </div>
                                 )}
                                 {product.firing_method && (
-                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Firing</span>
-                                        <span className="text-gray-700 font-medium">{product.firing_method}</span>
+                                    <div className="flex flex-col sm:flex-row">
+                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Firing</span>
+                                        <span className="text-gray-700 font-medium truncate">{product.firing_method}</span>
                                     </div>
                                 )}
                                 {product.food_safe && (
-                                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-0">
-                                        <span className="w-full sm:w-24 text-gray-400 font-semibold flex-shrink-0 uppercase tracking-wide pt-0.5">Food Safe</span>
-                                        <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-full text-[10px]">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center">
+                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Food Safe</span>
+                                        <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px]">
                                             <Check size={10} /> Yes
                                         </span>
                                     </div>
@@ -540,19 +540,19 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                         <button
                                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
                                             aria-label="Decrease quantity"
-                                            className="flex h-9 w-9 items-center justify-center rounded-l-lg border border-gray-200 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8"
+                                            className="flex h-11 w-11 items-center justify-center rounded-l-xl border border-stone-200 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-l-lg"
                                         >
-                                            <Minus size={14} />
+                                            <Minus size={16} className="sm:w-3.5 sm:h-3.5" />
                                         </button>
-                                        <span className="flex h-9 w-12 items-center justify-center border-y border-gray-200 text-sm font-bold text-gray-900 sm:h-8 sm:w-10 sm:text-xs">
+                                        <span className="flex h-11 w-14 items-center justify-center border-y border-stone-200 text-base font-bold text-stone-900 sm:h-8 sm:w-10 sm:text-xs">
                                             {quantity}
                                         </span>
                                         <button
                                             onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
                                             aria-label="Increase quantity"
-                                            className="flex h-9 w-9 items-center justify-center rounded-r-lg border border-gray-200 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8"
+                                            className="flex h-11 w-11 items-center justify-center rounded-r-xl border border-stone-200 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-r-lg"
                                         >
-                                            <Plus size={14} />
+                                            <Plus size={16} className="sm:w-3.5 sm:h-3.5" />
                                         </button>
                                     </div>
                                     <span className="text-[11px] font-medium text-gray-500 sm:ml-3">{product.stock || 0} in stock</span>
@@ -731,11 +731,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                 </div>
                                                 <p className="text-xs text-gray-700 mt-1.5">{review.comment}</p>
                                                 
-                                                {/* Photos Grid */}
+                                                {/* Photos Grid - Horizontal Scroll on Mobile */}
                                                 {review.photos && review.photos.length > 0 && (
-                                                    <div className="flex gap-2 mt-2">
+                                                    <div className="flex gap-2 mt-2 overflow-x-auto pb-1 -mx-2 px-2 scrollbar-hide">
                                                         {review.photos.map((photo, i) => (
-                                                            <div key={i} className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition">
+                                                            <div key={i} className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition shadow-sm">
                                                                 <img 
                                                                     src={`/storage/${photo}`} 
                                                                     alt="Review Attachment" 
@@ -927,12 +927,12 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         <History size={16} className="text-clay-600" />
                         <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-stone-500">Recently Viewed</h2>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 snap-x hide-scrollbar sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0">
                         {recentlyViewed.map((entry) => (
                             <Link
                                 key={entry.id}
                                 href={route('product.show', entry.slug)}
-                                className="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm transition hover:border-clay-300 hover:shadow-md"
+                                className="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm transition hover:border-clay-300 hover:shadow-md min-w-[200px] flex-shrink-0 snap-center sm:min-w-0"
                             >
                                 <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-50">
                                     <img
