@@ -149,6 +149,7 @@ export default function Dashboard({ auth }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+            <ImpersonationBanner />
             <Head title="Dashboard" />
             <SellerSidebar active="overview" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

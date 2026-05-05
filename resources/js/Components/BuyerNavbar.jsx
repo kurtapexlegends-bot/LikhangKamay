@@ -7,7 +7,6 @@ import {
     Search, ShoppingCart, User, LogOut, Heart, Clock
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
-import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import MobileDock from '@/Components/MobileDock';
 
 export default function BuyerNavbar() {
@@ -83,7 +82,6 @@ export default function BuyerNavbar() {
 
     return (
         <>
-        <ImpersonationBanner />
         <nav className={`bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md py-1' : 'shadow-sm/50 py-3'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className={`flex flex-wrap items-center gap-3 md:flex-nowrap md:justify-between md:items-center md:gap-8 transition-all duration-300 ${isScrolled ? 'md:h-14' : 'md:h-20'}`}>

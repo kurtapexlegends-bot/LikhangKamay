@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import Footer from '@/Components/Footer';
 import {
     MapPin, Calendar, Star, Package, Trophy, Crown, Flame, Sparkles,
@@ -80,6 +81,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
+            <ImpersonationBanner />
             <Head title={`${seller.name} - LikhangKamay Store`} />
             <BuyerNavbar />
 

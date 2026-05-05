@@ -91,78 +91,77 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
             )}
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
                 <StatCard
-                    title="Projected Plan MRR"
+                    title="Plan MRR"
                     metric={metrics.mrr}
-                    prefix="PHP "
+                    prefix="₱"
                     icon={CircleDollarSign}
-                    bg="bg-emerald-100"
+                    bg="bg-emerald-50"
                     text="text-emerald-600"
                     subtitle={metrics.mrr?.basis}
                 />
                 <StatCard
-                    title="Paid Subscribers"
+                    title="Paid Subs"
                     metric={metrics.subscribers.total_paid}
                     icon={Users}
-                    bg="bg-blue-100"
+                    bg="bg-blue-50"
                     text="text-blue-600"
-                    subtitle={`${metrics.subscribers.premium} Premium, ${metrics.subscribers.elite} Elite`}
+                    subtitle={`${metrics.subscribers.premium + metrics.subscribers.elite} active`}
                 />
                 <StatCard
-                    title="Elite Subscribers"
+                    title="Elite Only"
                     metric={metrics.subscribers.elite}
                     icon={Star}
-                    bg="bg-fuchsia-100"
+                    bg="bg-fuchsia-50"
                     text="text-fuchsia-600"
-                    subtitle="Generating sponsorship credits"
                 />
                 <StatCard
-                    title="Active Sponsorships"
+                    title="Sponsored"
                     metric={metrics.sponsorships}
                     icon={Award}
-                    bg="bg-amber-100"
+                    bg="bg-amber-50"
                     text="text-amber-600"
                 />
             </div>
 
-            <div className="mb-8 flex flex-wrap items-center gap-2">
+            <div className="mb-6 sm:mb-8 flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0" style={{ scrollbarWidth: 'none' }}>
                 <Link
                     href={route("admin.sponsorships")}
-                    className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50"
+                    className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[10px] sm:text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50"
                 >
                     <Award size={13} />
-                    Open sponsorship queue
+                    Sponsorship Queue
                 </Link>
                 <Link
                     href={route("admin.users", { role: "artisan" })}
-                    className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50"
+                    className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[10px] sm:text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50"
                 >
                     <Users size={13} />
-                    Review artisan plans
+                    Review Plans
                 </Link>
-                <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-bold text-stone-500">
+                <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[10px] sm:text-[11px] font-bold text-stone-500">
                     <CircleDollarSign size={13} />
-                    {metrics.pendingSponsorships > 0 ? `${metrics.pendingSponsorships} request${metrics.pendingSponsorships === 1 ? '' : 's'} waiting` : 'No sponsorship backlog'}
+                    {metrics.pendingSponsorships > 0 ? `${metrics.pendingSponsorships} pending` : 'No backlog'}
                 </span>
             </div>
 
             {/* Quick Actions (Pending Sponsorships) */}
             {metrics.pendingSponsorships > 0 && (
-                <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-                    <div className="flex items-center gap-4 sm:gap-6">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-100 bg-white sm:h-14 sm:w-14">
+                <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                    <div className="flex items-center gap-3 sm:gap-6">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-100 bg-white sm:h-14 sm:w-14">
                             <Clock
-                                size={28}
-                                className="text-amber-500"
+                                size={20}
+                                className="text-amber-500 sm:w-7 sm:h-7"
                             />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900 text-lg">
+                            <h3 className="font-bold text-gray-900 text-sm sm:text-lg">
                                 Pending Sponsorships
                             </h3>
-                            <p className="text-sm text-gray-600 mt-0.5">
-                                <span className="font-bold text-amber-700">{metrics.pendingSponsorships}</span> sponsorship request{metrics.pendingSponsorships > 1 ? "s" : ""} awaiting your approval.
+                            <p className="text-xs text-gray-600 mt-0.5 sm:text-sm">
+                                <span className="font-bold text-amber-700">{metrics.pendingSponsorships}</span> request{metrics.pendingSponsorships > 1 ? "s" : ""} awaiting approval.
                             </p>
                         </div>
                     </div>
@@ -209,42 +208,38 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                     <tr key={user.id} className="hover:bg-stone-50 transition">
                                         <td className="px-6 py-4" data-label="Artisan">
                                             <div className="flex items-center justify-center sm:justify-start gap-3">
-                                                <UserAvatar user={user} className="w-9 h-9 border border-clay-200" />
+                                                <UserAvatar user={user} className="w-8 h-8 sm:w-9 sm:h-9 border border-clay-200" />
                                                 <div className="min-w-0 text-left">
-                                                    <p className="font-bold text-gray-900 text-sm">
+                                                    <p className="font-bold text-gray-900 text-[13px] sm:text-sm">
                                                         {user.name}
                                                     </p>
-                                                    <p className="text-xs text-gray-500">
+                                                    <p className="text-[11px] text-gray-500 truncate max-w-[120px] sm:max-w-none">
                                                         {user.shop_name || "No Shop Name"}
                                                     </p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center sm:text-center" data-label="Plan Change">
-                                            <div className="flex flex-col items-center sm:items-center gap-2">
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide ${
-                                                    changeDirectionBadgeClasses[user.change_direction] || changeDirectionBadgeClasses.change
-                                                }`}>
-                                                    {user.change_direction === 'upgrade' && <TrendingUp size={12} />}
-                                                    {user.change_direction === 'downgrade' && <TrendingDown size={12} />}
-                                                    {user.change_direction === 'change' && <Minus size={12} />}
-                                                    {user.change_direction}
-                                                </span>
-
-                                                <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-stone-500">
-                                                    <span className="text-stone-500">{user.previous_tier_label || 'Free'}</span>
-                                                    <ChevronRight size={12} className="text-stone-300" />
-                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide ${
-                                                        planTierBadgeClasses[user.tier] || planTierBadgeClasses.Free
-                                                    }`}>
+                                        <td className="px-6 py-4" data-label="Plan Change">
+                                            <div className="flex flex-col items-end sm:items-center gap-1.5">
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-stone-500">
+                                                    <span className="bg-stone-100 px-2 py-0.5 rounded border border-stone-200">{user.previous_tier_label || 'Free'}</span>
+                                                    <ChevronRight size={10} className="text-stone-300" />
+                                                    <span className={`px-2 py-0.5 rounded border ${planTierBadgeClasses[user.tier] || planTierBadgeClasses.Free}`}>
                                                         {user.tier}
                                                     </span>
                                                 </div>
+                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-tight ${
+                                                    changeDirectionBadgeClasses[user.change_direction] || changeDirectionBadgeClasses.change
+                                                }`}>
+                                                    {user.change_direction === 'upgrade' && <TrendingUp size={10} />}
+                                                    {user.change_direction === 'downgrade' && <TrendingDown size={10} />}
+                                                    {user.change_direction}
+                                                </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-xs text-gray-500 font-medium text-center sm:text-center" data-label="Date">
-                                            <div className="space-y-1">
-                                                <div>{user.date}</div>
+                                        <td className="px-6 py-4 text-[11px] text-gray-500 font-medium text-right sm:text-center" data-label="Date">
+                                            <div className="space-y-0.5">
+                                                <div className="text-stone-900 font-bold">{user.date}</div>
                                                 <div className="text-[10px] text-stone-400">{user.change_label}</div>
                                             </div>
                                         </td>

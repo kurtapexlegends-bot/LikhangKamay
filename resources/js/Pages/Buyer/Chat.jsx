@@ -9,6 +9,7 @@ import {
     FileIcon, X, MapPin, Phone, Check
 } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import OrderContextCard from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
 import { lazy, Suspense } from 'react';
@@ -207,6 +208,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
+            <ImpersonationBanner />
             <Head title="My Messages" />
 
             {/* --- NAVBAR --- (Hidden on mobile when in conversation) */}

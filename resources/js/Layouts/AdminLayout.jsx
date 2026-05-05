@@ -23,6 +23,7 @@ import {
     Activity,
     FolderTree
 } from 'lucide-react';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 export default function AdminLayout({ title, children }) {
     const { pendingArtisanCount, auth, globalAnnouncement } = usePage().props;
@@ -77,6 +78,7 @@ export default function AdminLayout({ title, children }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-gray-800">
+            <ImpersonationBanner />
             <AnnouncementBanner announcement={globalAnnouncement} />
             <div className="flex-1 flex">
                 <Head title={title ? `${title} - Admin` : 'Admin Panel'} />

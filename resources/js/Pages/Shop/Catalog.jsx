@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import {
     ChevronDown, Star, ShoppingCart,
     SlidersHorizontal, MapPin, Search, X, Check, Loader2,
@@ -224,8 +225,9 @@ export default function Catalog(props) {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
+        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
             <Head title="Shop Collection" />
+            <ImpersonationBanner />
             <BuyerNavbar />
 
             <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6">

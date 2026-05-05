@@ -223,12 +223,12 @@ export default function PendingArtisans({ artisans }) {
                 </div>
             ) : (
                 <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white">
-                    <div className="flex flex-col gap-3 border-b border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col gap-3 border-b border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0" style={{ scrollbarWidth: 'none' }}>
                             <button
                                 type="button"
                                 onClick={() => setReviewFilter('all')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                className={`whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
                                     reviewFilter === 'all'
                                         ? 'border-clay-200 bg-clay-50 text-clay-700'
                                         : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
@@ -239,7 +239,7 @@ export default function PendingArtisans({ artisans }) {
                             <button
                                 type="button"
                                 onClick={() => setReviewFilter('ready')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                className={`whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
                                     reviewFilter === 'ready'
                                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                         : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
@@ -250,7 +250,7 @@ export default function PendingArtisans({ artisans }) {
                             <button
                                 type="button"
                                 onClick={() => setReviewFilter('needs_preview')}
-                                className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                className={`whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
                                     reviewFilter === 'needs_preview'
                                         ? 'border-amber-200 bg-amber-50 text-amber-700'
                                         : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
@@ -329,18 +329,17 @@ export default function PendingArtisans({ artisans }) {
                                     </div>
                                 </div>
 
-                                <div className="col-span-3 rounded-xl border border-stone-100 bg-stone-50/60 p-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
-                                    <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400 md:hidden">Contact</p>
-                                    <div className="flex flex-col gap-1.5 text-[11px] text-stone-500">
-                                    <div className="flex items-center gap-1.5 truncate">
-                                        <div className="w-4 h-4 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-400 shrink-0"><Phone size={9} /></div>
-                                        <span className="truncate font-medium">{artisan.phone_number}</span>
+                                <div className="col-span-3">
+                                    <div className="flex flex-wrap items-center gap-4 text-[11px] text-stone-500 sm:flex-col sm:items-start sm:gap-1.5">
+                                        <div className="flex items-center gap-1.5 truncate">
+                                            <Phone size={10} className="text-stone-400" />
+                                            <span className="truncate font-medium">{artisan.phone_number}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 truncate">
+                                            <MapPin size={10} className="text-stone-400" />
+                                            <span className="truncate">{artisan.address}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 truncate">
-                                        <div className="w-4 h-4 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-400 shrink-0"><MapPin size={9} /></div>
-                                        <span className="truncate">{artisan.address}</span>
-                                    </div>
-                                </div>
                                 </div>
 
                                 <div className="col-span-2">
@@ -405,140 +404,106 @@ export default function PendingArtisans({ artisans }) {
                 </div>
             )}
 
-            {/* View Documents Modal */}
-            <Modal show={!!viewingArtisan} onClose={() => !viewingDoc && setViewingArtisan(null)} maxWidth="2xl">
+            {/* Artisan Review Drawer */}
+            <SlideOverDrawer
+                show={!!viewingArtisan}
+                onClose={() => !viewingDoc && setViewingArtisan(null)}
+                title="Review Application"
+                widthClass="max-w-2xl"
+            >
                 {viewingArtisan && (
-                    <div className="p-0 overflow-hidden bg-[#FDFBF9]">
-                        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-stone-100 bg-white px-5 py-4 sm:px-6">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-clay-100 bg-clay-50 text-sm font-bold text-clay-700">
+                    <div className="h-full flex flex-col -m-6">
+                        <div className="bg-[#FDFBF9] px-6 py-5 border-b border-stone-100">
+                            <div className="flex items-center gap-4">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-clay-100 bg-clay-50 text-lg font-bold text-clay-700 shadow-sm">
                                     {viewingArtisan.shop_name?.charAt(0).toUpperCase()}
                                 </div>
-                                <div>
-                                    <h3 className="text-[15px] font-bold text-stone-900 leading-tight">{viewingArtisan.shop_name}</h3>
-                                    <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mt-0.5">Application Documents</p>
+                                <div className="min-w-0">
+                                    <h3 className="text-lg font-bold text-stone-900 leading-tight truncate">{viewingArtisan.shop_name}</h3>
+                                    <p className="text-xs font-medium text-stone-500 truncate">{viewingArtisan.name} • {viewingArtisan.email}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setViewingArtisan(null)} className="p-1.5 bg-stone-50 hover:bg-stone-100 border border-stone-100 rounded-full transition text-stone-400 hover:text-stone-600">
-                                <X size={16} />
-                            </button>
                         </div>
                         
-                        <div className="p-4 sm:p-5 max-h-[60vh] overflow-y-auto no-scrollbar">
-                            <style>{`
-                                .no-scrollbar::-webkit-scrollbar {
-                                    display: none;
-                                }
-                                .no-scrollbar {
-                                    -ms-overflow-style: none;
-                                    scrollbar-width: none;
-                                }
-                            `}</style>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="flex-1 overflow-y-auto no-scrollbar p-6">
+                            <div className="mb-6 grid grid-cols-2 gap-3">
                                 {currentDocuments.map(doc => (
                                     <div 
                                         key={doc.key}
                                         onClick={() => documentPreviewingKey !== doc.key && openDocumentPreview(doc)}
-                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-3.5 transition ${doc.url ? 'cursor-pointer bg-white hover:border-clay-300 hover:bg-stone-50/60' : 'bg-stone-50/50 opacity-60'} ${documentPreviewingKey === doc.key ? 'pointer-events-none opacity-75' : ''}`}
+                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-3 transition ${doc.url ? 'cursor-pointer bg-white hover:border-clay-300 hover:shadow-sm' : 'bg-stone-50/50 opacity-60'} ${documentPreviewingKey === doc.key ? 'pointer-events-none' : ''}`}
                                     >
-                                        
-                                        <div className="flex items-center justify-between mb-3 relative z-10">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="p-2 bg-stone-50 rounded-lg group-hover:bg-clay-50 transition-colors border border-stone-100 group-hover:border-clay-100">
-                                                    <doc.icon size={16} className="text-stone-400 group-hover:text-clay-600 transition-colors" />
-                                                </div>
-                                                <div>
-                                                    <span className="font-bold text-[12px] text-stone-800 block">{doc.label}</span>
-                                                    <span className="text-[10px] text-stone-400 font-medium">
-                                                        {doc.url ? (documentPreviewingKey === doc.key ? 'Saving review...' : (doc.viewed ? 'Viewed' : 'Click to Preview')) : 'Missing File'}
-                                                    </span>
-                                                </div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="p-1.5 bg-stone-50 rounded-lg group-hover:bg-clay-50 border border-stone-50 group-hover:border-clay-100">
+                                                <doc.icon size={14} className="text-stone-400 group-hover:text-clay-600" />
                                             </div>
-                                            <div className="flex items-center gap-1.5">
-                                                {doc.viewed && (
-                                                    <span className="inline-flex items-center gap-1 rounded border border-emerald-200/50 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-                                                        <CheckCircle size={8} /> OK
-                                                    </span>
-                                                )}
-                                                {doc.url && (
-                                                    <a 
-                                                        href={doc.url} 
-                                                        download 
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="text-stone-300 hover:text-clay-600 transition p-1 hover:bg-stone-50 rounded-full"
-                                                    >
-                                                        <Download size={14} />
-                                                    </a>
-                                                )}
-                                            </div>
+                                            {doc.viewed && <CheckCircle size={14} className="text-emerald-500" />}
                                         </div>
+                                        <p className="font-bold text-[11px] text-stone-800 truncate mb-1">{doc.label}</p>
                                         
                                         {doc.url ? (
-                                            <div className="relative block aspect-video w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-100 transition group-hover:ring-1 group-hover:ring-clay-100">
+                                            <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-stone-100 bg-stone-50">
                                                 {doc.url.endsWith('.pdf') ? (
-                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-[#FDFBF9] text-stone-400 gap-1.5">
-                                                        <FileText size={32} className="text-clay-200" />
-                                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">PDF Document</span>
-                                                    </div>
+                                                    <div className="w-full h-full flex items-center justify-center bg-white"><FileText size={20} className="text-clay-200" /></div>
                                                 ) : (
-                                                    <>
-                                                        <img src={doc.url} alt={doc.label} className="w-full h-full object-cover" />
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/5 group-hover:opacity-100">
-                                                            <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-bold text-stone-900 transition">
-                                                                <Eye size={12} /> Preview
-                                                            </span>
-                                                        </div>
-                                                    </>
+                                                    <img src={doc.url} alt={doc.label} className="w-full h-full object-cover" />
                                                 )}
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 group-hover:bg-black/10 group-hover:opacity-100 transition">
+                                                    <Eye size={16} className="text-white drop-shadow-md" />
+                                                </div>
                                             </div>
                                         ) : (
-                                            <div className="flex aspect-video w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-200 bg-stone-50 text-stone-400">
-                                                <XCircle size={24} className="text-stone-300" />
-                                                <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Not Uploaded</span>
-                                            </div>
+                                            <div className="aspect-video w-full rounded-lg border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center"><X size={16} className="text-stone-300" /></div>
                                         )}
                                     </div>
                                 ))}
                             </div>
+
+                            <div className="rounded-2xl bg-stone-50 border border-stone-100 p-4 space-y-3">
+                                <h4 className="text-[11px] font-bold uppercase tracking-widest text-stone-400">Review Status</h4>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-[13px] font-bold">
+                                        <span className="text-stone-600">Verification Progress</span>
+                                        <span className={allSubmittedDocumentsViewed ? 'text-emerald-600' : 'text-amber-600'}>
+                                            {viewedDocumentsCount} / {submittedDocumentsCount}
+                                        </span>
+                                    </div>
+                                    <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200">
+                                        <div 
+                                            className={`h-full transition-all duration-500 ${allSubmittedDocumentsViewed ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                                            style={{ width: `${(viewedDocumentsCount / submittedDocumentsCount) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-[11px] font-medium text-stone-500 leading-relaxed">
+                                    All submitted government IDs and business permits must be visually inspected before the "Approve" action becomes available.
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="sticky bottom-0 z-20 flex flex-col gap-3 border-t border-stone-100 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                            <div className="space-y-0.5">
-                                <p className="text-[10px] font-medium text-stone-400">
-                                    Approve once all submitted documents are previewed and reviewed as needed.
-                                </p>
-                                <p className={`text-[10px] font-bold ${allSubmittedDocumentsViewed ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                    Review progress: {viewedDocumentsCount}/{submittedDocumentsCount} submitted documents previewed
-                                </p>
-                                {approvalError && (
-                                    <p className="text-[10px] font-semibold text-red-600">{approvalError}</p>
-                                )}
-                             </div>
-                             <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
-
+                        <div className="bg-white border-t border-stone-100 p-6 space-y-3">
+                            <div className="flex gap-3">
                                 <button
-                                    onClick={() => {
-                                        setApprovalError('');
-                                        setRejectingArtisan(viewingArtisan);
-                                    }}
+                                    onClick={() => setRejectingArtisan(viewingArtisan)}
                                     disabled={processing}
-                                      className="flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-4 py-2 text-[12px] font-bold text-stone-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
+                                    className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-3 text-sm font-bold text-stone-600 hover:bg-red-50 hover:text-red-700 hover:border-red-100 transition"
                                 >
-                                    <XCircle size={14} /> Reject
+                                    <XCircle size={18} /> Reject
                                 </button>
                                 <button
                                     onClick={confirmApprove}
                                     disabled={processing || !allSubmittedDocumentsViewed}
-                                      className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-[12px] font-bold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500"
+                                    className="flex-[2] flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 disabled:bg-stone-200 disabled:shadow-none transition"
                                 >
-                                    {processing ? <LoaderCircle size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                                    {processing ? 'Approving...' : !allSubmittedDocumentsViewed ? 'Preview All Documents First' : 'Approve Application'}
+                                    {processing ? <LoaderCircle size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                                    {processing ? 'Processing...' : 'Approve Application'}
                                 </button>
-                             </div>
+                            </div>
+                            {approvalError && <p className="text-center text-xs font-bold text-red-600">{approvalError}</p>}
                         </div>
                     </div>
                 )}
-            </Modal>
+            </SlideOverDrawer>
 
             {/* Document Preview Modal */}
             <Modal show={!!viewingDoc} onClose={() => setViewingDoc(null)} maxWidth="7xl">

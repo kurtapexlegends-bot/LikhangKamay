@@ -11,6 +11,7 @@ export default function ShopLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
+            <ImpersonationBanner />
             <AnnouncementBanner announcement={globalAnnouncement} />
             {/* --- CONSISTENT HEADER (Using BuyerNavbar) --- */}
             <BuyerNavbar />

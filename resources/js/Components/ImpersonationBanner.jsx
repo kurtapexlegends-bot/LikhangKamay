@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import { ShieldAlert, LogOut } from 'lucide-react';
+import { ShieldAlert, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ImpersonationBanner() {
     const { isImpersonating, auth } = usePage().props;
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     if (!isImpersonating) return null;
 
@@ -12,22 +13,71 @@ export default function ImpersonationBanner() {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-[200] animate-in fade-in slide-in-from-bottom-6 duration-300">
-            <div className="bg-stone-900 border border-stone-800 shadow-2xl shadow-stone-900/20 rounded-full p-2.5 flex flex-col sm:flex-row items-center gap-3 backdrop-blur-md">
-                <div className="flex items-center gap-2.5 px-3">
-                    <ShieldAlert size={16} className="text-amber-400 animate-pulse" />
-                    <p className="text-xs font-medium text-white tracking-wide whitespace-nowrap">
-                        <span className="uppercase text-stone-400 text-[10px] font-bold mr-2">Support Mode</span>
-                        Impersonating <span className="font-bold underline decoration-amber-400 underline-offset-2">{auth.user.name}</span>
-                    </p>
-                </div>
+        <div className="fixed bottom-6 right-6 z-[300] flex items-end justify-end group">
+            {/* Main Container */}
+            <div 
+                className={`
+                    bg-stone-900 border border-stone-800 shadow-2xl shadow-stone-900/40 rounded-2xl 
+                    transition-all duration-500 ease-in-out overflow-hidden flex items-center
+                    ${isCollapsed ? 'w-12 h-12 rounded-full' : 'w-auto h-14 px-1.5'}
+                    backdrop-blur-xl ring-1 ring-white/10
+                `}
+            >
+                {/* Toggle Button */}
                 <button
-                    onClick={leaveImpersonation}
-                    className="flex items-center gap-1.5 bg-amber-50 text-amber-900 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-amber-100 active:scale-95 transition-all shadow-sm border border-amber-200 whitespace-nowrap"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className={`
+                        flex-shrink-0 flex items-center justify-center transition-all duration-300
+                        ${isCollapsed ? 'w-12 h-12' : 'w-10 h-10 hover:bg-white/5 rounded-xl'}
+                    `}
                 >
-                    <LogOut size={14} /> End Impersonation
+                    <ShieldAlert 
+                        size={20} 
+                        className={`text-amber-400 ${isCollapsed ? 'animate-pulse' : ''}`} 
+                    />
                 </button>
+
+                {/* Content - Only shown when expanded */}
+                <div 
+                    className={`
+                        flex items-center gap-4 transition-all duration-500 delay-100
+                        ${isCollapsed ? 'opacity-0 invisible w-0' : 'opacity-100 visible w-auto px-3'}
+                    `}
+                >
+                    <div className="flex flex-col min-w-0">
+                        <span className="uppercase text-stone-500 text-[9px] font-black tracking-[0.2em] leading-none mb-1">Support Mode</span>
+                        <p className="text-[11px] font-bold text-white tracking-tight whitespace-nowrap">
+                            Active: <span className="text-amber-400">{auth.user.name}</span>
+                        </p>
+                    </div>
+
+                    <div className="h-8 w-px bg-white/10 mx-1" />
+
+                    <button
+                        onClick={leaveImpersonation}
+                        className="flex items-center gap-1.5 bg-amber-500 text-stone-950 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-amber-400 active:scale-95 transition-all shadow-lg shadow-amber-500/20 whitespace-nowrap"
+                    >
+                        <LogOut size={12} strokeWidth={3} /> End session
+                    </button>
+                    
+                    <button
+                        onClick={() => setIsCollapsed(true)}
+                        className="p-2 text-stone-500 hover:text-stone-300 transition-colors"
+                        title="Collapse"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
             </div>
+
+            {/* Tooltip for collapsed state */}
+            {isCollapsed && (
+                <div className="absolute bottom-full right-0 mb-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    <div className="bg-stone-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg border border-stone-800 shadow-xl">
+                        Support Mode: <span className="text-amber-400">{auth.user.name}</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

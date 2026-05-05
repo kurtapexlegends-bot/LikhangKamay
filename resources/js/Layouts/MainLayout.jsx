@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import Footer from '@/Components/Footer';
 import MobileDock from '@/Components/MobileDock';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 export default function MainLayout({ children, auth }) {
     const { sellerSidebar } = usePage().props;
@@ -12,6 +13,7 @@ export default function MainLayout({ children, auth }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF7] font-sans text-gray-600 selection:bg-clay-200 selection:text-clay-900 pb-16 md:pb-0">
+            <ImpersonationBanner />
             {/* PLATFORM HEADER */}
             <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">

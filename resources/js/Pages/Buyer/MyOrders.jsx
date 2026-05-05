@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import Dropdown from '@/Components/Dropdown'; 
 import Modal from '@/Components/Modal';
 import RatingModal from '@/Components/RatingModal';
@@ -832,10 +833,9 @@ export default function MyOrders({ auth, orders }) {
     const currentConfig = confirmModal.type ? modalConfigs[confirmModal.type] : null;
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
+        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
             <Head title="My Purchases" />
-
-            {/* --- NAVBAR --- */}
+            <ImpersonationBanner />
             <BuyerNavbar />
 
             <main className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">

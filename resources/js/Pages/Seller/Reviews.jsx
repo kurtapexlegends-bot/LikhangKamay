@@ -17,6 +17,7 @@ import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 const moderationStatusLabel = (status) => {
     if (status === 'resolved') return 'Request approved';
@@ -263,6 +264,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
 
     return (
         <div className="min-h-screen bg-stone-50 flex font-sans text-stone-800">
+            <ImpersonationBanner />
             <Head title="Shop Reviews" />
 
             <SellerSidebar

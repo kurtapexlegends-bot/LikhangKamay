@@ -19,6 +19,7 @@ import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatClock, formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -223,8 +224,9 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     }, {}), [activeMessages, timeNow]);
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
-            <Head title="Messages" />
+        <div className="min-h-screen bg-stone-50 flex font-sans text-stone-800">
+            <ImpersonationBanner />
+            <Head title="Chat" />
             <SellerSidebar active="chat" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 h-screen transition-all duration-300">

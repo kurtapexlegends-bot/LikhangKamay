@@ -7,6 +7,7 @@ import CompactPagination from '@/Components/CompactPagination';
 import Dropdown from '@/Components/Dropdown';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
 
 const roleTabs = ['all', 'artisan', 'buyer', 'super_admin'];
 
@@ -145,6 +146,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
     const [search, setSearch] = useState(filters.search || '');
     const [quickView, setQuickView] = useState('all');
     const [impersonateTarget, setImpersonateTarget] = useState(null);
+    const [drawerArtisan, setDrawerArtisan] = useState(null);
     const [expandedRows, setExpandedRows] = useState(() => (
         filters.search ? getAutoExpandedRows(users.data || []) : {}
     ));
@@ -262,18 +264,18 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
                         {/* Tab Segment for Role Filters */}
-                        <div className="flex w-full sm:w-auto items-center overflow-x-auto bg-stone-100/80 p-1.5 rounded-2xl border border-stone-200/60" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex w-full sm:w-auto items-center overflow-x-auto bg-stone-100/80 p-1 rounded-xl border border-stone-200/60 no-scrollbar">
                             {roleTabs.map((role) => (
                                 <button
                                     key={role}
                                     type="button"
                                     onClick={() => handleRoleFilter(role)}
-                                    className={`relative flex items-center gap-1.5 whitespace-nowrap px-4 py-2 text-[13px] font-medium transition-all rounded-xl ${filters.role === role
+                                    className={`relative flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs font-medium transition-all rounded-lg ${filters.role === role
                                             ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
                                             : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'
                                         }`}
                                 >
-                                    {role === 'all' && 'All Users'}
+                                    {role === 'all' && 'All'}
                                     {role === 'artisan' && <><Store size={14} /> Artisans</>}
                                     {role === 'buyer' && <><Users size={14} /> Buyers</>}
                                     {role === 'super_admin' && <><Shield size={14} /> Admins</>}
@@ -375,102 +377,63 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
 
                     {filteredAccounts.map((user) => {
                         const isExpandable = isExpandableAccount(user);
-                        const isExpanded = !!expandedRows[String(user.id)];
 
                         return (
-                            <div key={user.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-                                <button
-                                    type="button"
-                                    onClick={isExpandable ? () => toggleExpandedRow(user.id) : undefined}
-                                    className={`w-full text-left ${isExpandable ? '' : 'cursor-default'}`}
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <UserAvatar user={user} className="h-10 w-10 shrink-0 border border-stone-200" />
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <p className="truncate text-sm font-medium text-stone-900">{user.name}</p>
-                                                    <p className="truncate text-xs font-medium text-stone-500">{user.email}</p>
-                                                </div>
-                                                {isExpandable && (
-                                                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-stone-500">
-                                                        <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                                    </span>
-                                                )}
+                            <div key={user.id} className="rounded-xl border border-stone-200 bg-white p-3.5 shadow-sm">
+                                <div className="flex items-start gap-3">
+                                    <UserAvatar user={user} className="h-9 w-9 shrink-0 border border-stone-100" />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <p className="truncate text-[13px] font-bold text-stone-900">{user.name}</p>
+                                                <p className="truncate text-[11px] font-medium text-stone-400">{user.email}</p>
                                             </div>
-
-                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
-                                                    {user.role === 'artisan' && <Store size={10} />}
-                                                    {user.role === 'super_admin' && <Shield size={10} />}
-                                                    {user.role === 'buyer' && <Users size={10} />}
-                                                    {user.role === 'artisan' && 'Artisan'}
-                                                    {user.role === 'super_admin' && 'Admin'}
-                                                    {user.role === 'buyer' && 'Buyer'}
-                                                </span>
-                                                <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
-                                                    {user.account_state}
-                                                </span>
+                                            <div className="flex shrink-0 gap-1.5">
+                                                {isExpandable && (
+                                                    <button
+                                                        onClick={() => setDrawerArtisan(user)}
+                                                        className="inline-flex h-7 px-2.5 items-center gap-1 rounded-lg border border-[#E8D9CB] bg-[#F2EAE1] text-[10px] font-bold uppercase tracking-wider text-[#7A5037]"
+                                                    >
+                                                        <Briefcase size={12} /> {user.staff_count}
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleImpersonate(user.id)}
+                                                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-stone-900 text-white shadow-sm"
+                                                >
+                                                    <VenetianMask size={14} />
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
-                                </button>
 
-                                <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-stone-600">
-                                    <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
-                                        <p className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Workspace / Setup</p>
-                                        {user.role === 'artisan' ? (
-                                            <>
-                                                <p className="mt-1 font-medium text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
-                                                <p className="mt-1 text-stone-500">
-                                                    {user.staff_count === 1 ? '1 staff account' : `${user.staff_count} staff accounts`}
-                                                </p>
-                                            </>
-                                        ) : (
-                                            <p className="mt-1 font-medium text-stone-500">
-                                                {user.role === 'super_admin' ? 'Platform Admins' : 'Standard User'}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
-                                        <p className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Joined</p>
-                                        <p className="mt-1 font-medium text-stone-700">{user.created_at}</p>
-                                        {user.role === 'buyer' && (
-                                            <p className="mt-1 text-xs font-medium uppercase tracking-wider text-stone-400">
-                                                {user.email_verified ? 'Email verified' : 'Email pending'}
-                                            </p>
-                                        )}
+                                        <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                            <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
+                                                {user.role === 'artisan' && <Store size={10} />}
+                                                {user.role === 'super_admin' && <Shield size={10} />}
+                                                {user.role === 'buyer' && <Users size={10} />}
+                                                {user.role_label}
+                                            </span>
+                                            <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                                {user.account_state}
+                                            </span>
+                                            {user.role === 'artisan' && user.shop_name && (
+                                                <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-[9px] font-bold text-stone-500 uppercase tracking-wider">
+                                                    {user.shop_name}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-between border-t border-stone-50 pt-2.5 text-[10px] font-medium text-stone-400">
+                                            <span>Joined {user.created_at}</span>
+                                            {user.role === 'buyer' && (
+                                                <span className={user.email_verified ? 'text-emerald-600' : 'text-amber-600'}>
+                                                    {user.email_verified ? 'Verified' : 'Pending'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {user.role !== 'super_admin' && (
-                                    <div className="mt-3 border-t border-stone-100 pt-3">
-                                        <button
-                                            type="button"
-                                            onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
-                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-black hover:scale-[1.02] active:scale-95"
-                                        >
-                                            <VenetianMask size={14} /> Login As
-                                        </button>
-                                    </div>
-                                )}
-
-                                {isExpandable && isExpanded && (
-                                    <div className="mt-3 rounded-xl border border-[#E8D9CB] bg-[#FDFBF9] p-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="mb-3 flex items-center justify-between">
-                                            <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-stone-900">
-                                                <Briefcase size={13} className="text-[#7A5037]" /> Connected Staff
-                                            </h3>
-                                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-600">
-                                                {user.staff_members.length} visible
-                                            </span>
-                                        </div>
-                                        <StaffMemberList
-                                            staffMembers={user.staff_members || []}
-                                            emptyMessage="No staff accounts linked to this shop."
-                                        />
-                                    </div>
-                                )}
                             </div>
                         );
                     })}
@@ -691,6 +654,32 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                     />
                 )}
             </div>
+
+            <SlideOverDrawer
+                show={!!drawerArtisan}
+                onClose={() => setDrawerArtisan(null)}
+                title={drawerArtisan ? `${drawerArtisan.shop_name || drawerArtisan.name}'s Staff` : 'Connected Staff'}
+                widthClass="max-w-xl"
+            >
+                {drawerArtisan && (
+                    <div className="space-y-6">
+                        <div className="rounded-2xl bg-stone-50 p-4 border border-stone-100">
+                            <div className="flex items-center gap-3">
+                                <UserAvatar user={drawerArtisan} className="h-12 w-12 border border-white shadow-sm" />
+                                <div>
+                                    <h4 className="text-sm font-bold text-stone-900">{drawerArtisan.shop_name || 'Primary Account'}</h4>
+                                    <p className="text-xs text-stone-500 font-medium">{drawerArtisan.name} • {drawerArtisan.email}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <StaffMemberList
+                            staffMembers={drawerArtisan.staff_members || []}
+                            emptyMessage="No staff accounts linked to this shop."
+                        />
+                    </div>
+                )}
+            </SlideOverDrawer>
 
             <ConfirmationModal
                 isOpen={!!impersonateTarget}

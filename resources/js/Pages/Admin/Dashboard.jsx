@@ -72,38 +72,38 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
 
     return (
         <AdminLayout title="Overview">
-            <div className="mb-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
                 <StatCard
-                    title="Total Artisans"
+                    title="Artisans"
                     metric={stats.totalArtisans}
                     icon={Store}
-                    bg="bg-blue-100"
+                    bg="bg-blue-50"
                     text="text-blue-600"
-                    subtitle="Registered sellers"
+                    subtitle="Registered"
                 />
                 <StatCard
-                    title="Total Buyers"
+                    title="Buyers"
                     metric={stats.totalBuyers}
                     icon={Users}
-                    bg="bg-purple-100"
+                    bg="bg-purple-50"
                     text="text-purple-600"
-                    subtitle="Shopping customers"
+                    subtitle="Customers"
                 />
                 <StatCard
-                    title="Pending Needs"
+                    title="Pending"
                     metric={stats.pendingArtisans}
                     icon={Clock}
-                    bg="bg-amber-100"
+                    bg="bg-amber-50"
                     text="text-amber-600"
-                    subtitle="Need review"
+                    subtitle="Reviews"
                 />
                 <StatCard
-                    title="Active Artisans"
+                    title="Active"
                     metric={stats.approvedArtisans}
                     icon={CheckCircle}
-                    bg="bg-green-100"
+                    bg="bg-green-50"
                     text="text-green-600"
-                    subtitle="Approved & verified"
+                    subtitle="Verified"
                 />
             </div>
 
@@ -136,20 +136,20 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Recent Registrations Table */}
                 <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-50 px-4 sm:px-6 py-4 sm:py-5 shrink-0">
-                        <h3 className="text-lg font-bold text-gray-900">
+                    <div className="flex items-center justify-between border-b border-gray-50 px-4 sm:px-6 py-3.5 sm:py-5 shrink-0">
+                        <h3 className="text-sm sm:text-lg font-bold text-gray-900">
                             Recent Registrations
                         </h3>
                         <Link
                             href={route("admin.users")}
-                            className="flex items-center gap-1 text-xs font-bold text-clay-600 transition hover:text-clay-800"
+                            className="flex items-center gap-1 text-[11px] font-bold text-clay-600 transition hover:text-clay-800"
                         >
-                            View All Users <ChevronRight size={14} />
+                            View All <ChevronRight size={14} />
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full text-left table-card-mobile sm:min-w-[760px]">
-                        <thead className="bg-stone-50">
+                        <table className="w-full text-left sm:min-w-[760px]">
+                        <thead className="hidden sm:table-header-group bg-stone-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     User
@@ -167,84 +167,73 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {recentUsers.map((user) => (
-                                <tr key={user.id} className="transition hover:bg-stone-50">
-                                    <td className="px-6 py-4" data-label="User">
+                                <tr key={user.id} className="flex flex-col sm:table-row p-4 sm:p-0 transition hover:bg-stone-50">
+                                    <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0">
                                         <div className="flex items-center gap-3">
-                                            <UserAvatar user={user} className="h-10 w-10 border border-clay-200" />
+                                            <UserAvatar user={user} className="h-9 w-9 sm:h-10 sm:w-10 border border-clay-200" />
                                             <div>
-                                                <p className="text-sm font-bold text-gray-900">
+                                                <p className="text-[13px] sm:text-sm font-bold text-gray-900">
                                                     {user.name}
                                                 </p>
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-[11px] sm:text-xs text-gray-500 truncate max-w-[200px]">
                                                     {user.email}
                                                 </p>
-                                                {user.role === "staff" && user.seller_shop_name && (
-                                                    <p className="text-[11px] font-medium text-clay-600">
-                                                        Staff for {user.seller_shop_name}
-                                                    </p>
-                                                )}
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-center sm:text-center" data-label="Role">
-                                        <span
-                                            className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider shadow-sm ${
-                                                user.role === "artisan"
-                                                    ? "bg-orange-100 text-orange-800 border-orange-200"
-                                                    : user.role === "staff"
-                                                      ? "bg-[#F5EEE6] text-[#7A5037] border-[#E7D8C9]"
-                                                      : user.role === "super_admin"
-                                                        ? "bg-gray-900 text-white border-gray-900"
-                                                        : "bg-blue-50 text-blue-700 border-blue-100"
-                                            }`}
-                                        >
-                                            {user.role === "artisan" && <Store size={14} />}
-                                            {user.role === "staff" && <Briefcase size={14} />}
-                                            {user.role === "super_admin" && <Users size={14} />}
-                                            {user.role === "buyer" && <Users size={14} />}
-
-                                            {user.role_label}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center sm:text-center" data-label="Status">
-                                        {user.role === "artisan" ? (
+                                    <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0">
+                                        <div className="flex items-center justify-between sm:justify-center">
+                                            <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Role</span>
                                             <span
-                                                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold ${
-                                                    user.artisan_status === "approved"
-                                                        ? "bg-green-100 text-green-800 border-green-200"
-                                                        : user.artisan_status === "rejected"
-                                                          ? "bg-red-100 text-red-800 border-red-200"
-                                                          : "bg-amber-100 text-amber-800 border-amber-200"
+                                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-sm ${
+                                                    user.role === "artisan"
+                                                        ? "bg-orange-100 text-orange-800 border-orange-200"
+                                                        : user.role === "staff"
+                                                          ? "bg-[#F5EEE6] text-[#7A5037] border-[#E7D8C9]"
+                                                          : user.role === "super_admin"
+                                                            ? "bg-gray-900 text-white border-gray-900"
+                                                            : "bg-blue-50 text-blue-700 border-blue-100"
                                                 }`}
                                             >
-                                                {user.artisan_status === "approved" && <CheckCircle size={14} />}
-                                                {user.artisan_status === "rejected" && <XCircle size={14} />}
-                                                {user.artisan_status === "pending" && <Clock size={14} />}
-
-                                                {user.artisan_status === "approved" && "Verified"}
-                                                {user.artisan_status === "rejected" && "Rejected"}
-                                                {user.artisan_status === "pending" && "Pending"}
+                                                {user.role_label}
                                             </span>
-                                        ) : user.role === "staff" ? (
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold ${
-                                                    statusToneClasses[user.account_state_tone] || statusToneClasses.neutral
-                                                }`}
-                                            >
-                                                {user.account_state}
-                                            </span>
-                                        ) : (
-                                            <span className="text-xs font-medium text-gray-300">
-                                                —
-                                            </span>
-                                        )}
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-xs font-medium text-gray-500" data-label="Registered">
-                                        {new Date(user.created_at).toLocaleDateString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            year: "numeric",
-                                        })}
+                                    <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0">
+                                        <div className="flex items-center justify-between sm:justify-center">
+                                            <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Status</span>
+                                            {user.role === "artisan" ? (
+                                                <span
+                                                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
+                                                        user.artisan_status === "approved"
+                                                            ? "bg-green-100 text-green-800 border-green-200"
+                                                            : user.artisan_status === "rejected"
+                                                            ? "bg-red-100 text-red-800 border-red-200"
+                                                            : "bg-amber-100 text-amber-800 border-amber-200"
+                                                    }`}
+                                                >
+                                                    {user.artisan_status === "approved" && "Verified"}
+                                                    {user.artisan_status === "rejected" && "Rejected"}
+                                                    {user.artisan_status === "pending" && "Pending"}
+                                                </span>
+                                            ) : user.role === "staff" ? (
+                                                <span className={`text-[10px] font-bold ${statusToneClasses[user.account_state_tone] || ''}`}>
+                                                    {user.account_state}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-medium text-gray-300 sm:block hidden">—</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="sm:px-6 sm:py-4 text-[11px] sm:text-xs font-medium text-gray-400">
+                                        <div className="flex items-center justify-between sm:justify-start">
+                                            <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Joined</span>
+                                            {new Date(user.created_at).toLocaleDateString("en-US", {
+                                                month: "short",
+                                                day: "numeric",
+                                                year: "numeric",
+                                            })}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

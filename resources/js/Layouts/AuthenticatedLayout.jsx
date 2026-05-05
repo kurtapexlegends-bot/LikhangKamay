@@ -4,6 +4,7 @@ import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import MobileDock from '@/Components/MobileDock';
 import { Link, usePage } from '@inertiajs/react';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import { useState } from 'react';
 
 export default function AuthenticatedLayout({ header, children }) {
@@ -14,6 +15,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+            <ImpersonationBanner />
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">

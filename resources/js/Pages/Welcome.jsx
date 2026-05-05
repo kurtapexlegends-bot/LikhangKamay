@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import AnnouncementBanner from '@/Components/AnnouncementBanner';
 import {
     Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter
@@ -40,6 +41,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
             <AnnouncementBanner announcement={globalAnnouncement} />
 
             {/* Use consistent BuyerNavbar */}
+            <ImpersonationBanner />
             <BuyerNavbar />
 
             {/* --- MAIN CONTENT --- */}

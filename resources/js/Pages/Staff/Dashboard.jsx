@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
+import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import {
     ArrowRight,
     Briefcase,
@@ -165,6 +166,7 @@ export default function StaffDashboard({ auth, hub }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-800">
+            <ImpersonationBanner />
             <Head title={hub.title} />
 
             <SellerSidebar

@@ -105,47 +105,48 @@ export default function Insights({ revenue, churn, categories, health }) {
 
                 {/* ====================== SECTION 1 & 2: REVENUE FORECASTING & CATEGORY HEATMAP ====================== */}
                 <section className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                         <StatCard
-                            title="Current Est. MRR"
+                            title="Est. MRR"
                             metric={`₱${revenue.currentMRR}`}
                             icon={TrendingUp}
                             bg="bg-clay-50/50 border-clay-100"
                             text="text-clay-600"
-                            subtitle="Based on active premium subscriptions"
+                            subtitle="Current"
                         />
                         <StatCard
-                            title="Forecasted Next Month"
+                            title="Forecast"
                             metric={`₱${revenue.forecastedMRR}`}
                             growth={revenue.growthRate}
                             icon={Activity}
                             bg="bg-emerald-50/50 border-emerald-100"
                             text="text-emerald-600"
+                            subtitle="Next Month"
                         />
                         <StatCard
-                            title="Avg Monthly MRR Growth"
+                            title="Growth"
                             metric={`${revenue.growthRate > 0 ? '+' : ''}${revenue.growthRate}%`}
                             icon={BarChart2}
                             bg={revenue.growthRate > 0 ? 'bg-emerald-50/50 border-emerald-100' : revenue.growthRate < 0 ? 'bg-amber-50/50 border-amber-100' : 'bg-stone-50/50 border-stone-100'}
                             text={revenue.growthRate > 0 ? 'text-emerald-600' : revenue.growthRate < 0 ? 'text-amber-500' : 'text-stone-500'}
-                            subtitle="Trailing average over last 3 months"
+                            subtitle="3M Avg"
                         />
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         {/* 6-Month MRR History */}
                         <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
-                            <div className="px-5 sm:px-6 py-5 border-b border-stone-100 flex items-center justify-between min-h-[84px] bg-stone-50/30">
+                            <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
                                 <div>
-                                    <h3 className="font-bold text-stone-900 text-lg flex items-center gap-2">
+                                    <h3 className="font-bold text-stone-900 text-sm sm:text-lg">
                                         MRR Velocity
                                     </h3>
-                                    <p className="text-xs font-medium text-stone-500 mt-0.5">6-Month historical recurring revenue</p>
+                                    <p className="hidden sm:block text-xs font-medium text-stone-500 mt-0.5">6-Month historical recurring revenue</p>
                                 </div>
                             </div>
-                            <div className="p-4 sm:p-6 flex-grow flex items-center">
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <AreaChart data={revenue.history} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                            <div className="p-2 sm:p-6 flex-grow flex items-center">
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <AreaChart data={revenue.history} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}>
                                         <defs>
                                             <linearGradient id="adminMrrFill" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#c07251" stopOpacity={0.16} />
@@ -164,27 +165,27 @@ export default function Insights({ revenue, churn, categories, health }) {
 
                         {/* Category Performance */}
                         <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
-                            <div className="px-5 sm:px-6 py-5 border-b border-stone-100 flex items-center justify-between min-h-[84px] bg-stone-50/30">
+                            <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
                                 <div>
-                                    <h3 className="font-bold text-stone-900 text-lg flex items-center gap-2">
-                                        <ShoppingBag className="text-clay-600" size={20} />
-                                        Category Performance
+                                    <h3 className="font-bold text-stone-900 text-sm sm:text-lg flex items-center gap-2">
+                                        <ShoppingBag className="text-clay-600" size={16} />
+                                        Categories
                                     </h3>
-                                    <p className="text-xs font-medium text-stone-500 mt-0.5">Top product categories driving Gross Merchandise Value</p>
+                                    <p className="hidden sm:block text-xs font-medium text-stone-500 mt-0.5">Top product categories driving GMV</p>
                                 </div>
                             </div>
-                            <div className="p-5 sm:p-6 flex-grow flex items-center">
+                            <div className="p-4 sm:p-6 flex-grow flex items-center">
                                 {categories.length > 0 ? (
                                     <div className="w-full">
-                                        <div className="h-[220px] w-full flex items-center justify-center relative">
-                                            <PieChart width={220} height={220}>
+                                        <div className="h-[180px] w-full flex items-center justify-center relative">
+                                            <PieChart width={180} height={180}>
                                                 <Pie
                                                     data={categories}
                                                     nameKey="category"
                                                     cx="50%"
                                                     cy="50%"
-                                                    innerRadius={58}
-                                                    outerRadius={86}
+                                                    innerRadius={45}
+                                                    outerRadius={75}
                                                     paddingAngle={4}
                                                     dataKey="gmv"
                                                     stroke="none"
@@ -197,16 +198,16 @@ export default function Insights({ revenue, churn, categories, health }) {
                                             </PieChart>
                                         </div>
 
-                                        <div className="mt-3 space-y-2 pt-5 border-t border-stone-100">
+                                        <div className="mt-2 space-y-1.5 pt-4 border-t border-stone-100">
                                             {categories.map((item, index) => (
-                                                <div key={item.category || index} className="flex items-center justify-between text-xs group hover:bg-stone-50 p-1.5 -mx-1.5 rounded-lg transition-colors">
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
-                                                        <span className="font-bold text-stone-700 group-hover:text-stone-900 transition-colors truncate">{item.category}</span>
+                                                <div key={item.category || index} className="flex items-center justify-between text-[11px] group hover:bg-stone-50 p-1 -mx-1 rounded-md transition-colors">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                                                        <span className="font-bold text-stone-700 truncate">{item.category}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-4 shrink-0">
+                                                    <div className="flex items-center gap-3 shrink-0">
                                                         <span className="font-bold text-stone-900">P{Number(item.gmv).toLocaleString()}</span>
-                                                        <span className="text-stone-400 font-medium w-10 text-right">
+                                                        <span className="text-stone-400 font-medium w-8 text-right">
                                                             {totalCategoryGmv > 0 ? Math.round((Number(item.gmv) / totalCategoryGmv) * 100) : 0}%
                                                         </span>
                                                     </div>
@@ -227,36 +228,36 @@ export default function Insights({ revenue, churn, categories, health }) {
                 {/* ====================== SECTION 3: PLATFORM HEALTH & CHURN ====================== */}
                 <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Platform Health Stats */}
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="space-y-4 sm:space-y-6">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-6">
                             <StatCard
-                                title="Order Completion Rate"
+                                title="Completion"
                                 metric={`${health.completionRate}%`}
-                                subtitle={`${health.completedOrders} of ${health.totalOrders} total`}
+                                subtitle="Orders"
                                 icon={ClipboardCheck}
                                 bg="bg-stone-50/50 border-stone-200"
                                 text="text-stone-600"
                             />
                             <StatCard
-                                title="Average Order Value"
+                                title="AOV"
                                 metric={`₱${Number(health.aov)}`}
-                                subtitle="From completed orders"
+                                subtitle="Avg Order"
                                 icon={TrendingUp}
                                 bg="bg-stone-50/50 border-stone-200"
                                 text="text-stone-600"
                             />
                             <StatCard
-                                title="Review Rate"
+                                title="Reviews"
                                 metric={`${health.reviewRate}%`}
-                                subtitle="Reviews per completed order"
+                                subtitle="Rate"
                                 icon={Star}
                                 bg="bg-stone-50/50 border-stone-200"
                                 text="text-stone-600"
                             />
                             <StatCard
-                                title="Refund Rate"
+                                title="Refunds"
                                 metric={`${health.refundRate}%`}
-                                subtitle="Orders refunded"
+                                subtitle="Rate"
                                 icon={AlertTriangle}
                                 bg={health.refundRate > 5 ? 'bg-red-50 border-red-100' : 'bg-stone-50/50 border-stone-200'}
                                 text={health.refundRate > 5 ? 'text-red-600' : 'text-stone-400'}
@@ -308,8 +309,8 @@ export default function Insights({ revenue, churn, categories, health }) {
                                     </thead>
                                     <tbody className="divide-y divide-stone-100">
                                         {churn.atRiskList.map(artisan => (
-                                            <tr key={artisan.id} className="hover:bg-stone-50/50 transition">
-                                                <td className="px-6 py-4" data-label="Artisan">
+                                            <tr key={artisan.id} className="flex flex-col sm:table-row p-4 sm:p-0 hover:bg-stone-50/50 transition">
+                                                <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0">
                                                     <div className="flex items-center gap-3">
                                                         <UserAvatar user={artisan} className="w-9 h-9 rounded-full shadow-sm" />
                                                         <div>
@@ -318,15 +319,21 @@ export default function Insights({ revenue, churn, categories, health }) {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-center sm:text-center" data-label="Tier">
-                                                    {artisan.premium_tier === 'super_premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-stone-900 text-white shadow-sm border border-stone-800">Premium+</span>}
-                                                    {artisan.premium_tier === 'premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-clay-50 text-clay-700 border border-clay-200">Premium</span>}
-                                                    {artisan.premium_tier !== 'premium' && artisan.premium_tier !== 'super_premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200">Free</span>}
+                                                <td className="sm:px-6 sm:py-4 mb-2 sm:mb-0">
+                                                    <div className="flex items-center justify-between sm:justify-center">
+                                                        <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Tier</span>
+                                                        {artisan.premium_tier === 'super_premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-stone-900 text-white shadow-sm border border-stone-800">Premium+</span>}
+                                                        {artisan.premium_tier === 'premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-clay-50 text-clay-700 border border-clay-200">Premium</span>}
+                                                        {artisan.premium_tier !== 'premium' && artisan.premium_tier !== 'super_premium' && <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200">Free</span>}
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-4" data-label="Last Seen">
-                                                    <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-                                                        {artisan.last_seen}
-                                                    </span>
+                                                <td className="sm:px-6 sm:py-4">
+                                                    <div className="flex items-center justify-between sm:justify-start">
+                                                        <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Activity</span>
+                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                                                            Last seen {artisan.last_seen}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
