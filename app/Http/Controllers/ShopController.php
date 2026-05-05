@@ -195,8 +195,10 @@ class ShopController extends Controller
             ->filter()
             ->values();
 
-        // 5. Fetch Products
-        $products = $query->get()->map(function ($product) {
+        // 5. Fetch Products (Paginated)
+        $paginator = $query->paginate(20);
+        
+        $paginator->through(function ($product) {
             return [
                 'id' => $product->id,
                 'slug' => $product->slug,
@@ -218,7 +220,7 @@ class ShopController extends Controller
         });
 
         // 5b. Separate Sponsored Products for highlighting (if search is active)
-        $sponsoredResults = $products->filter(function($p) {
+        $sponsoredResults = collect($paginator->items())->filter(function($p) {
             return $p['is_sponsored'];
         })->values();
 
@@ -226,7 +228,7 @@ class ShopController extends Controller
         $categories = ['All', ...\App\Models\Category::pluck('name')->toArray()];
 
         return Inertia::render('Shop/Catalog', [
-            'products' => $products,
+            'products' => $paginator,
             'sponsoredProducts' => $sponsoredResults,
             'categories' => $categories,
             'availableLocations' => $availableLocations,

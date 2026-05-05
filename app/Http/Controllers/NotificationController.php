@@ -11,16 +11,26 @@ class NotificationController extends Controller
     /**
      * Get all notifications for the authenticated user.
      */
-    public function index()
+    public function index(Request $request)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
-        return response()->json([
-            'notifications' => $user->notifications()->take(20)->get()->map(
-                fn ($notification) => NotificationPresenter::present($notification, $user)
-            ),
-            'unread_count' => $user->unreadNotifications()->count(),
+        $notifications = $user->notifications()->take(30)->get()->map(
+            fn ($notification) => \App\Support\NotificationPresenter::present($notification, $user)
+        );
+        $unreadCount = $user->unreadNotifications()->count();
+
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json([
+                'notifications' => $notifications,
+                'unread_count' => $unreadCount,
+            ]);
+        }
+
+        return \Inertia\Inertia::render('Buyer/Notifications', [
+            'notifications' => $notifications,
+            'unreadNotificationCount' => $unreadCount,
         ]);
     }
 

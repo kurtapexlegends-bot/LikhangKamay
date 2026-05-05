@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import BuyerNavbar from '@/Components/BuyerNavbar';
 import {
@@ -12,15 +12,26 @@ import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent, useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import FilterSidebar from './Partials/FilterSidebar';
 import CatalogSkeleton from '@/Components/CatalogSkeleton';
+import axios from 'axios';
 
 export default function Catalog(props) {
     // Explicitly handle potentially null props BEFORE any hooks
-    const products = Array.isArray(props.products)
-        ? props.products.map((product) => ({
+    const initialProducts = Array.isArray(props.products?.data)
+        ? props.products.data.map((product) => ({
             ...product,
             rating: normalizeRating(product?.rating),
         }))
         : [];
+    
+    const [products, setProducts] = useState(initialProducts);
+    const [nextPageUrl, setNextPageUrl] = useState(props.products?.next_page_url);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    
+    useEffect(() => {
+        setProducts(initialProducts);
+        setNextPageUrl(props.products?.next_page_url);
+    }, [props.products]);
+
     const sponsoredProducts = Array.isArray(props.sponsoredProducts)
         ? props.sponsoredProducts.map((product) => ({
             ...product,
@@ -191,6 +202,26 @@ export default function Catalog(props) {
         return Number(price).toLocaleString('en-PH');
     };
     const quickRecoverySearches = ['Planter', 'Mug', 'Tableware'];
+
+    const loadMore = async () => {
+        if (!nextPageUrl || isLoadingMore) return;
+        setIsLoadingMore(true);
+        try {
+            const response = await axios.get(nextPageUrl, {
+                headers: { 'X-Inertia': 'true' }
+            });
+            const newProducts = response.data.props.products.data.map((product) => ({
+                ...product,
+                rating: normalizeRating(product?.rating),
+            }));
+            setProducts(prev => [...prev, ...newProducts]);
+            setNextPageUrl(response.data.props.products.next_page_url);
+        } catch (error) {
+            console.error("Error loading more products:", error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">

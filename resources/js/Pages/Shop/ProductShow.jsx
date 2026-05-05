@@ -960,12 +960,12 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-clay-500">Related Pieces</span>
                         You Might Also Like
                     </h2>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
+                    <div className="flex overflow-x-auto lg:grid lg:grid-cols-4 gap-4 sm:gap-6 mt-8 pb-4 lg:pb-0 snap-x snap-mandatory hide-scrollbar">
                         {relatedProducts.map((related) => (
                             <Link 
                                 href={route('product.show', related.slug)} 
                                 key={related.id} 
-                                className="group flex flex-col overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-clay-300 hover:shadow-md"
+                                className="group flex flex-col overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-clay-300 hover:shadow-md min-w-[200px] lg:min-w-0 snap-center"
                             >
                                 <div className="aspect-square relative overflow-hidden bg-[#FDFBF9]">
                                     <img 

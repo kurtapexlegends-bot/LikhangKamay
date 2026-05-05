@@ -18,6 +18,31 @@ use Inertia\Inertia;
 class ReviewController extends Controller
 {
     use InteractsWithSellerContext;
+    
+    public function buyerIndex()
+    {
+        $reviews = Review::where('user_id', Auth::id())
+            ->with(['product'])
+            ->latest()
+            ->get()
+            ->map(fn($review) => [
+                'id' => $review->id,
+                'rating' => $review->rating,
+                'comment' => $review->comment,
+                'date' => $review->created_at->format('M d, Y'),
+                'seller_reply' => $review->seller_reply,
+                'product' => [
+                    'name' => $review->product?->name,
+                    'image' => $review->product?->cover_photo_path 
+                        ? (str_starts_with($review->product->cover_photo_path, 'http') ? $review->product->cover_photo_path : '/storage/' . $review->product->cover_photo_path)
+                        : null,
+                ]
+            ]);
+
+        return Inertia::render('Buyer/Reviews', [
+            'reviews' => $reviews
+        ]);
+    }
 
     public function index()
     {

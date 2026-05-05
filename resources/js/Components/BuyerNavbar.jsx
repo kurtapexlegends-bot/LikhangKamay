@@ -135,7 +135,7 @@ export default function BuyerNavbar() {
                                 <Link 
                                     id="navbar-cart-icon"
                                     href={route('cart.index')} 
-                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group relative"
+                                    className="hidden md:inline-flex p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group relative"
                                 >
                                     <div className="relative inline-flex">
                                         <ShoppingCart size={20} className="group-hover:scale-110 transition-transform cart-icon-svg" />

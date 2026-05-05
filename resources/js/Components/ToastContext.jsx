@@ -56,14 +56,18 @@ function ToastItem({ toast, onRemove }) {
     };
 
     return (
-        <div className={`pointer-events-auto flex items-center gap-3 rounded-lg px-4 py-3 text-white shadow-lg transform transition-all duration-300 animate-in slide-in-from-right-10 fade-in ${bgColors[toast.type] || 'bg-gray-800'}`}>
+        <div className={`pointer-events-auto relative flex items-center gap-3 rounded-lg px-4 py-3 text-white shadow-lg transform transition-all duration-300 animate-in slide-in-from-right-10 fade-in overflow-hidden ${bgColors[toast.type] || 'bg-gray-800'}`}>
             <div className={`p-1 rounded-full bg-white/20`}>
                 {icons[toast.type]}
             </div>
-            <p className="text-sm font-medium pr-2">{toast.message}</p>
-            <button onClick={() => onRemove(toast.id)} className="text-white/70 hover:text-white transition">
+            <p className="text-sm font-medium pr-2 z-10">{toast.message}</p>
+            <button onClick={() => onRemove(toast.id)} className="text-white/70 hover:text-white transition z-10">
                 <X size={14} />
             </button>
+            <div 
+                className="absolute bottom-0 left-0 h-1 bg-white/40 animate-toast-shrink" 
+                style={{ animationDuration: `${toast.duration}ms` }} 
+            />
         </div>
     );
 }

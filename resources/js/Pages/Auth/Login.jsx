@@ -53,43 +53,43 @@ export default function Login({ status, canResetPassword }) {
                 
                 {/* Email Field */}
                 <div>
-                    <InputLabel htmlFor="email" value="Email Address" className="text-stone-700 font-bold mb-1.5" />
                     <div className="relative group">
                         <TextInput
                             id="email"
                             type="email"
                             name="email"
                             value={data.email}
-                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 pl-11 transition-all duration-300 focus:shadow-md focus:shadow-clay-500/10"
+                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 pl-11 transition-all duration-300 focus:shadow-md focus:shadow-clay-500/10"
                             autoComplete="username"
                             isFocused={true}
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="@example.com"
+                            floatingLabel="Email Address"
+                            withIcon={true}
                         />
-                        <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-500 transition-colors duration-300" />
+                        <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-500 transition-colors duration-300 pointer-events-none z-20" />
                     </div>
                     <InputError message={errors.email} className="mt-2" />
                 </div>
 
                 {/* Password Field with Toggle */}
                 <div>
-                    <InputLabel htmlFor="password" value="Password" className="text-stone-700 font-bold mb-1.5" />
                     <div className="relative group">
                         <TextInput
                             id="password"
                             type={showPassword ? "text" : "password"}
                             name="password"
                             value={data.password}
-                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 py-3 pl-11 pr-10 transition-all duration-300 focus:shadow-md focus:shadow-clay-500/10"
+                            className="block w-full rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-clay-500 focus:ring-clay-500 pl-11 pr-10 transition-all duration-300 focus:shadow-md focus:shadow-clay-500/10"
                             autoComplete="current-password"
                             onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Enter your password"
+                            floatingLabel="Password"
+                            withIcon={true}
                         />
-                        <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-500 transition-colors duration-300" />
+                        <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-500 transition-colors duration-300 pointer-events-none z-20" />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-clay-600 focus:outline-none transition-colors duration-300"
+                            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-clay-600 focus:outline-none transition-colors duration-300 z-20"
                         >
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>

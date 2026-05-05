@@ -119,40 +119,40 @@ export default function Register() {
             <form onSubmit={submit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <InputLabel htmlFor="first_name" value="First Name" className="text-stone-700 font-bold mb-1.5" />
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
                                 <User size={18} />
                             </div>
                             <TextInput
                                 id="first_name"
                                 name="first_name"
                                 value={data.first_name}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
                                 autoComplete="given-name"
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
                                 required
-                                placeholder="John"
+                                floatingLabel="First Name"
+                                withIcon={true}
                             />
                         </div>
                         <InputError message={errors.first_name} className="mt-2" />
                     </div>
 
                     <div>
-                        <InputLabel htmlFor="last_name" value="Last Name" className="text-stone-700 font-bold mb-1.5" />
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
                                 <User size={18} />
                             </div>
                             <TextInput
                                 id="last_name"
                                 name="last_name"
                                 value={data.last_name}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
-                                placeholder="Doe"
+                                floatingLabel="Last Name"
+                                withIcon={true}
                             />
                         </div>
                         <InputError message={errors.last_name} className="mt-2" />
@@ -160,9 +160,8 @@ export default function Register() {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="email" value="Email Address" className="text-stone-700 font-bold mb-1.5" />
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
                             <Mail size={18} />
                         </div>
                         <TextInput
@@ -170,11 +169,12 @@ export default function Register() {
                             type="email"
                             name="email"
                             value={data.email}
-                            className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                            className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
                             autoComplete="username"
                             onChange={(e) => setData('email', e.target.value)}
                             required
-                            placeholder="@example.com"
+                            floatingLabel="Email Address"
+                            withIcon={true}
                         />
                     </div>
                     <InputError message={errors.email} className="mt-2" />
@@ -183,9 +183,8 @@ export default function Register() {
                 {/* Split Password Fields with Toggle */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <InputLabel htmlFor="password" value="Password" className="text-stone-700 font-bold mb-1.5" />
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
                                 <Lock size={18} />
                             </div>
                             <TextInput
@@ -193,25 +192,25 @@ export default function Register() {
                                 type={showPassword ? "text" : "password"}
                                 name="password"
                                 value={data.password}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 pr-10 transition-all hover:border-stone-300"
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 pr-10 transition-all hover:border-stone-300"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
                                 required
-                                placeholder="********"
+                                floatingLabel="Password"
+                                withIcon={true}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 mt-1 pr-3.5 flex items-center text-stone-400 hover:text-clay-600 transition-colors"
+                                className="absolute inset-y-0 right-0 mt-1 pr-3.5 flex items-center text-stone-400 hover:text-clay-600 transition-colors z-20"
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
                     </div>
                     <div>
-                        <InputLabel htmlFor="password_confirmation" value="Confirm" className="text-stone-700 font-bold mb-1.5" />
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
                                 <Lock size={18} />
                             </div>
                             <TextInput
@@ -219,11 +218,12 @@ export default function Register() {
                                 type={showPassword ? "text" : "password"}
                                 name="password_confirmation"
                                 value={data.password_confirmation}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
                                 required
-                                placeholder="********"
+                                floatingLabel="Confirm Password"
+                                withIcon={true}
                             />
                         </div>
                     </div>
