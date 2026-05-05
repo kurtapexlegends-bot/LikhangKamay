@@ -49,7 +49,7 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
     }
 
     return (
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow group">
             <div>
                 <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
                 <h3 className="text-2xl font-bold text-stone-900 tracking-tight">{value}</h3>
@@ -200,7 +200,7 @@ export default function Analytics({
                         Download Report
                     </ExportButton>
                 ) : (
-                    <div className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-500 shadow-sm">
+                    <div className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-100 bg-stone-50 px-4 py-2 text-[11px] font-bold text-stone-500 shadow-sm">
                         <DollarSign size={15} />
                         <span>Premium Export</span>
                     </div>
@@ -215,15 +215,15 @@ export default function Analytics({
                             <>
                                 <MetricCard title="Total Revenue" value={formatPeso(metrics.total_revenue)} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-stone-50" text="text-clay-600" />
                                 <MetricCard title="Gross Profit" value={formatPeso(metrics.gross_profit)} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-emerald-50" text="text-emerald-600" />
-                                <MetricCard title="Total Orders" value={Number(metrics.total_orders).toLocaleString()} growth={metrics.growth.orders} icon={ShoppingBag} bg="bg-purple-50" text="text-purple-600" />
-                                <MetricCard title="Average Order" value={formatPeso(metrics.avg_order_value)} growth={metrics.growth.avg} icon={CreditCard} bg="bg-amber-50" text="text-amber-600" />
-                                <MetricCard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-yellow-50" text="text-yellow-600" />
+                                <MetricCard title="Total Orders" value={Number(metrics.total_orders).toLocaleString()} growth={metrics.growth.orders} icon={ShoppingBag} bg="bg-clay-50" text="text-clay-600" />
+                                <MetricCard title="Average Order" value={formatPeso(metrics.avg_order_value)} growth={metrics.growth.avg} icon={CreditCard} bg="bg-stone-50" text="text-stone-600" />
+                                <MetricCard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-amber-50" text="text-amber-600" />
                             </>
                         )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                        <div className="min-w-0 lg:col-span-2 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+                        <div className="min-w-0 lg:col-span-2 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-100 relative overflow-hidden">
                             {isLoading && (
                                 <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
                                     <div className="h-full w-full relative overflow-hidden bg-stone-50/30">
@@ -284,7 +284,7 @@ export default function Analytics({
                             </div>
                         </div>
 
-                        <div className="min-w-0 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col">
+                        <div className="min-w-0 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-100 flex flex-col">
                             <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center mb-4">
                                 <div>
                                     <h3 className="text-lg font-bold text-stone-900">Sales by Category</h3>
@@ -352,7 +352,7 @@ export default function Analytics({
                     </div>
 
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 flex flex-col min-h-[280px]">
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col min-h-[280px]">
                             <div className="flex items-start justify-between gap-2 mb-4">
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ export default function Analytics({
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 flex flex-col min-h-[280px]">
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col min-h-[280px]">
                             <div className="flex items-start justify-between gap-2 mb-4">
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export default function Analytics({
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 flex flex-col min-h-[280px]">
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col min-h-[280px]">
                             <div className="flex items-start justify-between gap-2 mb-4">
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -499,7 +499,7 @@ export default function Analytics({
                         </div>
                     </div>
                     {canViewSponsoredPerformance && (
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
                             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
                                 <div>
                                     <h3 className="text-lg font-bold text-stone-900">Sponsored Performance</h3>
@@ -532,10 +532,10 @@ export default function Analytics({
                             ) : (
                                 <>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-                                        <MetricCard title="Sponsored Impressions" value={Number(sponsorshipMetrics?.impressions || 0).toLocaleString()} icon={BarChart3} bg="bg-stone-50" text="text-orange-600" />
-                                        <MetricCard title="Sponsored Clicks" value={Number(sponsorshipMetrics?.clicks || 0).toLocaleString()} icon={TrendingUp} bg="bg-stone-50" text="text-amber-700" />
-                                        <MetricCard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toLocaleString()}%`} icon={PieIcon} bg="bg-stone-50" text="text-emerald-600" />
-                                        <MetricCard title="Sponsored Revenue" value={formatPeso(sponsorshipMetrics?.sponsored_revenue || 0)} icon={DollarSign} bg="bg-stone-50" text="text-clay-600" />
+                                        <MetricCard title="Sponsored Impressions" value={Number(sponsorshipMetrics?.impressions || 0).toLocaleString()} icon={BarChart3} bg="bg-stone-50" text="text-clay-600" />
+                                        <MetricCard title="Sponsored Clicks" value={Number(sponsorshipMetrics?.clicks || 0).toLocaleString()} icon={TrendingUp} bg="bg-stone-50" text="text-stone-600" />
+                                        <MetricCard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toLocaleString()}%`} icon={PieIcon} bg="bg-emerald-50" text="text-emerald-600" />
+                                        <MetricCard title="Sponsored Revenue" value={formatPeso(sponsorshipMetrics?.sponsored_revenue || 0)} icon={DollarSign} bg="bg-clay-50" text="text-clay-600" />
                                     </div>
 
                                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -578,7 +578,7 @@ export default function Analytics({
                                                     </AreaChart>
                                                 </ResponsiveContainer>
                                             ) : (
-                                                <div className="h-full rounded-2xl border border-dashed border-stone-200 bg-stone-50">
+                                                <div className="h-full rounded-2xl border border-dashed border-stone-100 bg-stone-50">
                                                     <WorkspaceEmptyState
                                                         compact
                                                         icon={BarChart3}
@@ -606,7 +606,7 @@ export default function Analytics({
                                                     <p className="text-xs text-stone-500 mb-1">Click-Through Rate</p>
                                                     <p className="text-2xl font-black text-amber-700">{Number(sponsorshipMetrics?.ctr || 0).toLocaleString()}%</p>
                                                 </div>
-                                                <p className="text-xs leading-relaxed text-stone-500 pt-2 border-t border-stone-200">
+                                                <p className="text-xs leading-relaxed text-stone-500 pt-2 border-t border-stone-100">
                                                     Sponsored orders and revenue are snapshot-based at checkout, so completed sales stay attributed even after a sponsorship period ends.
                                                 </p>
                                             </div>
@@ -617,7 +617,7 @@ export default function Analytics({
                         </div>
                     )}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-stone-100 relative overflow-hidden">
                             {isLoading && (
                                 <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex flex-col">
                                     <div className="h-20 shrink-0"></div>
@@ -637,9 +637,9 @@ export default function Analytics({
                                         <div key={index} className="flex items-center gap-4 p-3 hover:bg-stone-50 rounded-xl transition-colors group">
                                             <span className="text-stone-400 font-bold w-4">#{index + 1}</span>
                                             {item.img ? (
-                                                <img src={item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`} alt={item.name} className="w-12 h-12 rounded-lg object-cover bg-stone-100 border border-stone-200" onError={(e) => { e.target.style.display = 'none'; }} />
+                                                <img src={item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`} alt={item.name} className="w-12 h-12 rounded-lg object-cover bg-stone-100 border border-stone-100" onError={(e) => { e.target.style.display = 'none'; }} />
                                             ) : (
-                                                <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 border border-stone-200"><Package size={20} /></div>
+                                                <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 border border-stone-100"><Package size={20} /></div>
                                             )}
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-bold text-stone-800 truncate">{item.name}</p>
@@ -669,7 +669,7 @@ export default function Analytics({
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col relative overflow-hidden">
+                        <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-100 flex flex-col relative overflow-hidden">
                             {isLoading && (
                                 <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center p-12">
                                     <ArtisanSkeleton variant="circle" className="w-full aspect-square max-w-[200px]" />

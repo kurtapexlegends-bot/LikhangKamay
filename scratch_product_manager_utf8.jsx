@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
@@ -142,13 +142,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     // --- MODAL STATES ---
     const [productModalOpen, setProductModalOpen] = useState(false);
-    const [activeFormTab, setActiveFormTab] = useState('Essentials');
     const [restockModalOpen, setRestockModalOpen] = useState(false);
     const [archiveModalOpen, setArchiveModalOpen] = useState(false);
     const [limitModalOpen, setLimitModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [restockAmount, setRestockAmount] = useState('');
-
+    const [activeFormTab, setActiveFormTab] = useState('Essentials');
 
     // --- FORM SETUP ---
     const { data, setData, post, processing, progress, errors, reset, clearErrors, hasErrors } = useForm({
@@ -355,7 +354,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         setSelectedProduct(null);
         reset(); 
         clearErrors();
-
+        setActiveFormTab('Essentials');
         setPreviews({ cover: null, gallery: [] });
         setData({
             ...data,
@@ -376,7 +375,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             model_3d_path: null,
             track_as_supply: false,
         });
-        setActiveFormTab('Essentials');
         setProductModalOpen(true);
     };
 
@@ -385,7 +383,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         cleanupPreviews();
         setSelectedProduct(product);
         clearErrors();
-
+        setActiveFormTab('Essentials');
         setData({
             ...product,
             category: categories.includes(product.category) ? product.category : defaultCategory,
@@ -404,7 +402,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             cover: product.img, 
             gallery: product.gallery_paths ? product.gallery_paths.map(path => `/storage/${path}`) : [] 
         });
-        setActiveFormTab('Essentials');
         setProductModalOpen(true);
     };
 
@@ -547,6 +544,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     const handleStatusChange = (nextStatus) => {
         if (nextStatus === 'Active' && !activationReadiness.canActivate) {
+            setActiveFormTab('Media');
             addToast(`Add ${activationReadiness.missingLabels.join(', ')} before listing this product as Active.`, 'info');
             return;
         }
@@ -690,7 +688,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 )}
             />
 
-                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">
+                <main className="mx-auto flex-1 w-full max-w-[1400px] overflow-y-auto p-4 sm:p-6 space-y-6">
                     {isProductsReadOnly && (
                         <ReadOnlyCapabilityNotice label="Products is read only for your account. Add, edit, stock, and bulk actions are disabled." />
                     )}
@@ -1062,6 +1060,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             <InputError message={deductForm.errors.reason} className="mt-2" />
                         </div>
                     </div>
+
                     <div className="flex justify-end gap-3 border-t border-gray-100 px-5 py-4 sm:px-6">
                         <button type="button" onClick={() => setDeductModalOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button>
                         <PrimaryButton disabled={!canEditProducts || deductForm.processing} className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50">
@@ -1070,46 +1069,42 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     </div>
                 </form>
             </Modal>
-            {/* --- ADD/EDIT PRODUCT MODAL --- */}
-            <Modal show={productModalOpen} onClose={closeProductModal} maxWidth="2xl">
-                <form onSubmit={submitProduct} className="flex max-h-[85vh] flex-col">
-                    <div className="shrink-0 border-b border-gray-100 px-5 py-5 sm:px-6">
-                        <div className="flex items-start justify-between gap-4">
+
+            {/* --- PRODUCT COMPOSER MODAL --- */}
+            <Modal show={productModalOpen} onClose={closeProductModal} maxWidth="5xl">
+                <form onSubmit={submitProduct} className="flex max-h-[90vh] flex-col bg-[#FDFBF9]">
+                    {/* Header */}
+                    <div className="shrink-0 border-b border-stone-200/60 bg-white px-6 py-5 flex items-center justify-between sticky top-0 z-20">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-50 text-stone-700 border border-stone-200 shadow-sm">
+                                <Package size={24} />
+                            </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900">{data.id ? 'Edit Product' : 'New Product'}</h2>
-                                <div className="mt-1 flex items-center gap-2">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400">SKU:</span>
-                                    <span className="rounded border border-gray-200 bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-600">{data.sku}</span>
+                                <h2 className="text-xl font-bold text-stone-900 tracking-tight">{data.id ? 'Edit Product' : 'Product Composer'}</h2>
+                                <div className="mt-0.5 flex items-center gap-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">SKU</span>
+                                    <span className="rounded bg-stone-100 px-2 py-0.5 font-mono text-[11px] font-bold text-stone-600">{data.sku}</span>
                                 </div>
                             </div>
-                            <button type="button" onClick={closeProductModal} className={modalCloseButtonClass}>
-                                <X size={18} />
-                            </button>
                         </div>
-
-                        <div className="mt-4 flex rounded-xl bg-gray-100 p-1">
-                            {['Essentials', 'Details', 'Media'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    type="button"
-                                    onClick={() => setActiveFormTab(tab)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeFormTab === tab ? 'bg-white text-clay-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
+                        <button type="button" onClick={closeProductModal} className="p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-900 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-stone-200">
+                            <X size={20} />
+                        </button>
                     </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-                        {/* TAB 1: ESSENTIALS */}
-                        {activeFormTab === 'Essentials' && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="md:col-span-2">
-                                        <InputLabel value="Product Name *" />
+                    {/* Body - 2 Columns */}
+                    <div className="min-h-0 flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+                            
+                            {/* LEFT COLUMN: Content & Details */}
+                            <div className="lg:col-span-7 space-y-8">
+                                <section className="space-y-5">
+                                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider border-b border-stone-200 pb-2">Essentials</h3>
+                                    
+                                    <div>
+                                        <InputLabel value="Product Title" className="mb-1.5 text-stone-600" />
                                         <TextInput 
-                                            className={`${modalFieldClass} text-lg font-bold`} 
+                                            className="w-full rounded-xl border-stone-200 focus:border-stone-900 focus:ring-stone-900 shadow-sm text-base font-bold placeholder:font-medium placeholder:text-stone-300" 
                                             value={data.name} 
                                             onChange={(e) => setData('name', e.target.value)} 
                                             placeholder="e.g. Handcrafted Stoneware Vase"
@@ -1118,11 +1113,11 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         <InputError message={errors.name} className="mt-2" />
                                     </div>
                                     
-                                    <div className="md:col-span-2">
-                                        <InputLabel value="Description" />
+                                    <div>
+                                        <InputLabel value="Story & Description" className="mb-1.5 text-stone-600" />
                                         <TextAreaWithCounter
-                                            className={modalTextareaClass}
-                                            rows="4" 
+                                            className="w-full rounded-xl border-stone-200 focus:border-stone-900 focus:ring-stone-900 shadow-sm text-sm resize-none"
+                                            rows="5" 
                                             value={data.description} 
                                             onChange={(e) => setData('description', e.target.value)} 
                                             placeholder="Describe the texture, story, and details..."
@@ -1130,166 +1125,164 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         />
                                     </div>
 
-                                    <div>
-                                        <InputLabel value="Category *" />
-                                        <select 
-                                            className={modalFieldClass}
-                                            value={data.category} 
-                                            onChange={(e) => setData('category', e.target.value)}
-                                        >
-                                            <option value="" disabled>Select Category</option>
-                                            {categories.map(c => (
-                                                <option key={c} value={c}>{c}</option>
-                                            ))}
-                                        </select>
-                                        <InputError message={errors.category} className="mt-2" />
-                                    </div>
-
-                                    <div>
-                                        <InputLabel value="Status" />
-                                        <select 
-                                            className={modalFieldClass}
-                                            value={data.status} 
-                                            onChange={(e) => handleStatusChange(e.target.value)}
-                                        >
-                                            <option value="Active" disabled={!activationReadiness.canActivate}>Active</option>
-                                            <option value="Draft">Draft</option>
-                                            <option value="Archived">Archived</option>
-                                        </select>
-                                        <div className={`mt-2 rounded-xl border px-3 py-2 ${activationReadiness.canActivate ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
-                                            <p className={`text-[11px] font-bold ${activationReadiness.canActivate ? 'text-emerald-700' : 'text-amber-700'}`}>
-                                                {activationReadiness.canActivate
-                                                    ? 'Ready for Active listing'
-                                                    : `Still needed for Active: ${activationReadiness.missingLabels.join(', ')}`}
-                                            </p>
-                                            <p className={`mt-1 text-[10px] ${activationReadiness.canActivate ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                {activationReadiness.canActivate
-                                                    ? 'Activation requirements are complete.'
-                                                    : 'Active stays locked until the required media is uploaded.'}
-                                            </p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <InputLabel value="Category" className="mb-1.5 text-stone-600" />
+                                            <select 
+                                                className="w-full rounded-xl border-stone-200 focus:border-stone-900 focus:ring-stone-900 shadow-sm text-sm font-medium"
+                                                value={data.category} 
+                                                onChange={(e) => setData('category', e.target.value)}
+                                            >
+                                                <option value="" disabled>Select Category</option>
+                                                {categories.map(c => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
+                                            </select>
+                                            <InputError message={errors.category} className="mt-2" />
                                         </div>
-                                    </div>
-
-                                    <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
-                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Inventory & Pricing</h3>
-                                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                                            <div>
-                                                <InputLabel value="Price (₱) *" />
-                                                <div className="relative mt-1">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₱</span>
-                                                    <TextInput 
-                                                        type="number" 
-                                                        className="w-full pl-7" 
-                                                        value={data.price} 
-                                                        onChange={(e) => setData('price', e.target.value)} 
-                                                    />
+                                        <div className="flex flex-col h-full justify-start">
+                                            <InputLabel value="Listing Status" className="mb-1.5 text-stone-600" />
+                                            <select 
+                                                className="w-full rounded-xl border-stone-200 focus:border-stone-900 focus:ring-stone-900 shadow-sm text-sm font-medium"
+                                                value={data.status} 
+                                                onChange={(e) => handleStatusChange(e.target.value)}
+                                            >
+                                                <option value="Active" disabled={!activationReadiness.canActivate}>Active</option>
+                                                <option value="Draft">Draft</option>
+                                                <option value="Archived">Archived</option>
+                                            </select>
+                                            <div className={`mt-3 rounded-xl border px-3 py-2.5 shadow-sm transition-all ${activationReadiness.canActivate ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/50'}`}>
+                                                <div className="flex items-start gap-2">
+                                                    <div className="mt-0.5 shrink-0">
+                                                        {activationReadiness.canActivate ? <CheckCircle size={14} className="text-emerald-500" /> : <AlertTriangle size={14} className="text-amber-500" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className={`text-[11px] font-bold ${activationReadiness.canActivate ? 'text-emerald-800' : 'text-amber-800'}`}>
+                                                            {activationReadiness.canActivate ? 'Ready for Activation' : 'Activation Locked'}
+                                                        </p>
+                                                        <p className={`mt-0.5 text-[10px] font-medium leading-snug ${activationReadiness.canActivate ? 'text-emerald-600' : 'text-amber-700'}`}>
+                                                            {activationReadiness.canActivate
+                                                                ? 'All media requirements met.'
+                                                                : `Missing: ${activationReadiness.missingLabels.join(', ')}`}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <InputError message={errors.price} className="mt-2" />
-                                            </div>
-                                            <div>
-                                                <InputLabel value="Cost Price (₱)" />
-                                                <div className="relative mt-1">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₱</span>
-                                                    <TextInput 
-                                                        type="number" 
-                                                        className={`${modalFieldClass} border-gray-200 bg-gray-50 pl-7`} 
-                                                        value={data.cost_price} 
-                                                        onChange={(e) => setData('cost_price', e.target.value)} 
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <InputLabel value="Stock *" />
-                                                <TextInput type="number" className="w-full mt-1" value={data.stock} onChange={(e) => setData('stock', e.target.value)} />
-                                                <InputError message={errors.stock} className="mt-2" />
-                                            </div>
-                                            <div>
-                                                <InputLabel value="Lead Time (Days)" />
-                                                <TextInput type="number" className="w-full mt-1" value={data.lead_time} onChange={(e) => setData('lead_time', e.target.value)} />
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        )}
+                                </section>
 
-                        {/* TAB 2: DETAILS */}
-                        {activeFormTab === 'Details' && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <InputLabel value="Clay Type" />
-                                        <select className={modalFieldClass} value={data.clay_type} onChange={(e) => setData('clay_type', e.target.value)}>
-                                            {['Earthenware', 'Stoneware', 'Porcelain'].map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <InputLabel value="Firing Method" />
-                                        <select className={modalFieldClass} value={data.firing_method} onChange={(e) => setData('firing_method', e.target.value)}>
-                                            {['Electric Kiln', 'Wood-fired', 'Gas Kiln', 'Raku'].map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <InputLabel value="Glaze Type" />
-                                        <select className={modalFieldClass} value={data.glaze_type} onChange={(e) => setData('glaze_type', e.target.value)}>
-                                            {['Matte', 'Glossy', 'Satin', 'Crackle', 'Unglazes'].map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-                                    </div>
+                                <section className="space-y-5">
+                                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider border-b border-stone-200 pb-2">Physical Details</h3>
                                     
-                                    <div className="flex items-center pt-6">
-                                        <label className="flex items-center gap-3 cursor-pointer group">
-                                            <Checkbox name="food_safe" checked={data.food_safe} onChange={(e) => setData('food_safe', e.target.checked)} />
-                                            <div>
-                                                <span className="text-sm font-bold text-gray-700 group-hover:text-clay-600 transition">Food Safe</span>
-                                                <p className="text-xs text-gray-500">Safe for eating / Lead-free</p>
-                                            </div>
-                                        </label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                        <div><InputLabel value="Height (cm)" className="mb-1.5"/><TextInput type="number" className="w-full rounded-xl border-stone-200 text-sm" value={data.height} onChange={(e) => setData('height', e.target.value)} /></div>
+                                        <div><InputLabel value="Width (cm)" className="mb-1.5"/><TextInput type="number" className="w-full rounded-xl border-stone-200 text-sm" value={data.width} onChange={(e) => setData('width', e.target.value)} /></div>
+                                        <div><InputLabel value="Weight (g)" className="mb-1.5"/><TextInput type="number" className="w-full rounded-xl border-stone-200 text-sm" value={data.weight} onChange={(e) => setData('weight', e.target.value)} /></div>
                                     </div>
-                                </div>
 
-                                <div className="pt-4 border-t border-gray-100">
-                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Dimensions</h3>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                        <div><InputLabel value="Height (cm)" /><TextInput type="number" className="w-full mt-1" value={data.height} onChange={(e) => setData('height', e.target.value)} /></div>
-                                        <div><InputLabel value="Width (cm)" /><TextInput type="number" className="w-full mt-1" value={data.width} onChange={(e) => setData('width', e.target.value)} /></div>
-                                        <div><InputLabel value="Weight (g)" /><TextInput type="number" className="w-full mt-1" value={data.weight} onChange={(e) => setData('weight', e.target.value)} /></div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <InputLabel value="Clay Type" className="mb-1.5" />
+                                            <select className="w-full rounded-xl border-stone-200 text-sm font-medium" value={data.clay_type} onChange={(e) => setData('clay_type', e.target.value)}>
+                                                {['Earthenware', 'Stoneware', 'Porcelain'].map(o => <option key={o} value={o}>{o}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <InputLabel value="Firing Method" className="mb-1.5" />
+                                            <select className="w-full rounded-xl border-stone-200 text-sm font-medium" value={data.firing_method} onChange={(e) => setData('firing_method', e.target.value)}>
+                                                {['Electric Kiln', 'Wood-fired', 'Gas Kiln', 'Raku'].map(o => <option key={o} value={o}>{o}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <InputLabel value="Glaze Type" className="mb-1.5" />
+                                            <select className="w-full rounded-xl border-stone-200 text-sm font-medium" value={data.glaze_type} onChange={(e) => setData('glaze_type', e.target.value)}>
+                                                {['Matte', 'Glossy', 'Satin', 'Crackle', 'Unglazes'].map(o => <option key={o} value={o}>{o}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center justify-start sm:pl-2 pt-2 sm:pt-6">
+                                            <label className="flex items-center gap-3 cursor-pointer group">
+                                                <Checkbox name="food_safe" checked={data.food_safe} onChange={(e) => setData('food_safe', e.target.checked)} className="w-5 h-5 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
+                                                <div>
+                                                    <span className="text-sm font-bold text-stone-800 group-hover:text-stone-950 transition">Food Safe</span>
+                                                    <p className="text-[10px] text-stone-500 font-medium">Safe for eating / Lead-free</p>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
+                                </section>
                             </div>
-                        )}
 
-                        {/* TAB 3: MEDIA */}
-                        {activeFormTab === 'Media' && (
-                            <div className="space-y-6 animate-fadeIn">
-                                <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden mb-6">
-                                    <div className={`px-6 py-5 border-b ${activationReadiness.canActivate ? 'bg-emerald-50/50 border-emerald-100' : 'bg-stone-50/50 border-stone-100'}`}>
+                            {/* RIGHT COLUMN: Media & Logistics */}
+                            <div className="lg:col-span-5 flex flex-col gap-6">
+                                
+                                {/* Logistics Panel */}
+                                <div className="bg-white border border-stone-200 rounded-2xl p-5 sm:p-6 shadow-sm">
+                                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider border-b border-stone-100 pb-2 mb-4">Pricing & Inventory</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <InputLabel value="Price *" className="mb-1.5" />
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold">₱</span>
+                                                <TextInput 
+                                                    type="number" 
+                                                    className="w-full pl-7 rounded-xl border-stone-200 text-sm font-bold" 
+                                                    value={data.price} 
+                                                    onChange={(e) => setData('price', e.target.value)} 
+                                                />
+                                            </div>
+                                            <InputError message={errors.price} className="mt-2" />
+                                        </div>
+                                        <div>
+                                            <InputLabel value="Cost Price" className="mb-1.5" />
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold">₱</span>
+                                                <TextInput 
+                                                    type="number" 
+                                                    className="w-full pl-7 rounded-xl border-dashed border-stone-200 bg-stone-50 text-sm font-medium" 
+                                                    value={data.cost_price} 
+                                                    onChange={(e) => setData('cost_price', e.target.value)} 
+                                                    placeholder="0.00"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <InputLabel value="Stock *" className="mb-1.5" />
+                                            <TextInput type="number" className="w-full rounded-xl border-stone-200 text-sm font-bold" value={data.stock} onChange={(e) => setData('stock', e.target.value)} />
+                                            <InputError message={errors.stock} className="mt-2" />
+                                        </div>
+                                        <div>
+                                            <InputLabel value="Lead Time (Days)" className="mb-1.5" />
+                                            <TextInput type="number" className="w-full rounded-xl border-stone-200 text-sm font-medium" value={data.lead_time} onChange={(e) => setData('lead_time', e.target.value)} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Media Panel */}
+                                <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col">
+                                    <div className={`px-5 py-4 border-b shrink-0 ${activationReadiness.canActivate ? 'bg-emerald-50/50 border-emerald-100' : 'bg-stone-50/50 border-stone-100'}`}>
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                                                    {activationReadiness.canActivate ? <CheckCircle size={18} className="text-emerald-500"/> : <ListTodo size={18} className="text-stone-400"/>}
-                                                    Activation Checklist
+                                                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900 flex items-center gap-1.5">
+                                                    {activationReadiness.canActivate ? <CheckCircle size={14} className="text-emerald-500"/> : <ListTodo size={14} className="text-stone-400"/>}
+                                                    Media Requirements
                                                 </h3>
-                                                <p className="mt-1 text-xs text-stone-500">
+                                                <p className="mt-0.5 text-[10px] text-stone-500 font-medium">
                                                     {activationReadiness.canActivate 
-                                                        ? 'All media requirements met. This product is ready for activation.'
-                                                        : 'Complete these requirements before listing this product as Active.'}
+                                                        ? 'All requirements met.'
+                                                        : 'Complete requirements to list as Active.'}
                                                 </p>
                                             </div>
-                                            <div className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide border ${activationReadiness.canActivate ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                                            <div className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide border ${activationReadiness.canActivate ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                                                 {activationReadiness.canActivate ? 'Ready' : 'Draft only'}
                                             </div>
                                         </div>
                                         
                                         {!activationReadiness.canActivate && (
-                                            <div className="mt-5">
-                                                <div className="flex justify-between text-[10px] font-bold text-stone-500 mb-1.5">
-                                                    <span>Progress</span>
-                                                    <span>{activationReadiness.items.filter(i => i.complete).length} of {activationReadiness.items.length} completed</span>
-                                                </div>
+                                            <div className="mt-3">
                                                 <div className="h-1.5 w-full bg-stone-200 rounded-full overflow-hidden">
                                                     <div 
-                                                        className="h-full bg-clay-500 transition-all duration-500 ease-out"
+                                                        className="h-full bg-stone-900 transition-all duration-500 ease-out"
                                                         style={{ width: `${(activationReadiness.items.filter(i => i.complete).length / activationReadiness.items.length) * 100}%` }}
                                                     />
                                                 </div>
@@ -1297,154 +1290,111 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         )}
                                     </div>
 
-                                    <div className="p-4 sm:p-6 bg-white">
-                                        <div className="grid gap-3 sm:grid-cols-3">
-                                            {activationReadiness.items.map((item) => (
-                                                <div
-                                                    key={item.key}
-                                                    className={`relative rounded-xl border p-4 transition-all ${
-                                                        item.complete 
-                                                            ? 'border-emerald-100 bg-emerald-50/30' 
-                                                            : 'border-stone-200 bg-white hover:border-stone-300'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="mt-0.5 shrink-0">
-                                                            {item.complete ? (
-                                                                <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                                                                    <Check size={12} strokeWidth={3} />
-                                                                </div>
-                                                            ) : (
-                                                                <div className="h-5 w-5 rounded-full border-2 border-stone-300 flex items-center justify-center">
-                                                                    <div className="h-1.5 w-1.5 rounded-full bg-stone-300"></div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <p className={`text-sm font-bold ${item.complete ? 'text-gray-900' : 'text-gray-700'}`}>
-                                                                {item.label}
-                                                            </p>
-                                                            <p className={`mt-0.5 text-xs ${item.complete ? 'text-emerald-600 font-medium' : 'text-stone-500'}`}>
-                                                                {item.complete ? 'Completed' : item.detail}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Cover Photo */}
-                                    <div>
-                                        <InputLabel value="Cover Photo (Main)" className="mb-2" />
-                                        <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-clay-400 transition group bg-gray-50">
-                                            {previews.cover ? (
-                                                <>
-                                                    <img src={previews.cover} alt="Cover" className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => {
-                                                                revokeBlobUrl(previews.cover);
-                                                                setData('cover_photo', null);
-                                                                setPreviews(prev => ({ ...prev, cover: null }));
-                                                            }} 
-                                                            className="bg-white text-rose-600 px-4 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-rose-50 transition"
-                                                        >
-                                                            Remove Photo
-                                                        </button>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer">
-                                                    <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
-                                                        <Plus className="text-clay-600" />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-gray-600">Upload Cover</span>
-                                                    <span className="text-[10px] text-gray-400 mt-1">JPG/PNG, Max 5MB</span>
-                                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'cover_photo')} />
-                                                </label>
-                                            )}
-                                        </div>
-                                        <InputError message={errors.cover_photo} className="mt-2" />
-                                    </div>
-
-                                    {/* Gallery & 3D */}
-                                    <div className="space-y-6">
+                                    <div className="p-5 space-y-6 flex-1">
+                                        {/* Cover Photo */}
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
-                                                <InputLabel value="Gallery Images" />
-                                                <span className={`text-[10px] font-bold ${previews.gallery.length < 3 ? 'text-orange-500' : previews.gallery.length > 5 ? 'text-rose-500' : 'text-emerald-600'}`}>
-                                                    {previews.gallery.length < 3 
-                                                        ? `Add ${3 - previews.gallery.length} more (Min 3)`
-                                                        : previews.gallery.length > 5 
-                                                        ? `Exceeds max (Max 5)`
-                                                        : 'Perfect (3-5 images)'}
+                                                <InputLabel value="Cover Photo" className="text-stone-600" />
+                                                {!previews.cover && <span className="text-[10px] font-bold text-amber-600 uppercase">Required</span>}
+                                            </div>
+                                            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-dashed border-stone-200 hover:border-stone-400 transition-all bg-stone-50/50 group">
+                                                {previews.cover ? (
+                                                    <>
+                                                        <img src={previews.cover} alt="Cover" className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-stone-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                                            <button 
+                                                                type="button" 
+                                                                onClick={() => {
+                                                                    revokeBlobUrl(previews.cover);
+                                                                    setData('cover_photo', null);
+                                                                    setPreviews(prev => ({ ...prev, cover: null }));
+                                                                }} 
+                                                                className="bg-white text-stone-900 px-4 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-rose-50 hover:text-rose-600 transition active:scale-95"
+                                                            >
+                                                                Remove Cover
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group-hover:-translate-y-1 transition-transform">
+                                                        <div className="w-12 h-12 bg-white rounded-full shadow-sm border border-stone-100 flex items-center justify-center mb-3">
+                                                            <ImageIcon className="text-stone-400 group-hover:text-stone-900 transition-colors" size={20} />
+                                                        </div>
+                                                        <span className="text-sm font-bold text-stone-700">Upload Cover</span>
+                                                        <span className="text-[10px] text-stone-400 font-medium mt-1">JPG/PNG, Max 5MB</span>
+                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'cover_photo')} />
+                                                    </label>
+                                                )}
+                                            </div>
+                                            <InputError message={errors.cover_photo} className="mt-2" />
+                                        </div>
+
+                                        {/* Gallery */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <InputLabel value="Gallery Images" className="text-stone-600" />
+                                                <span className={`text-[10px] font-bold ${previews.gallery.length < 3 ? 'text-amber-600' : previews.gallery.length > 5 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                                    {previews.gallery.length < 3 ? `Need ${3 - previews.gallery.length} more` : `${previews.gallery.length} / 5`}
                                                 </span>
                                             </div>
-                                            
-                                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                                 {previews.gallery.map((preview, idx) => (
-                                                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                                                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group">
                                                         <img src={preview} className="w-full h-full object-cover" />
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                                        <div className="absolute inset-0 bg-stone-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                                                             <button 
                                                                 type="button" 
                                                                 onClick={() => handleRemoveGalleryImage(idx)}
-                                                                className="w-8 h-8 flex items-center justify-center bg-white text-rose-600 rounded-full shadow-lg hover:bg-rose-50 transition drop-shadow"
-                                                                title="Remove image"
+                                                                className="w-8 h-8 flex items-center justify-center bg-white text-stone-900 hover:text-rose-600 rounded-full shadow-lg transition active:scale-95"
                                                             >
-                                                                <X size={16} strokeWidth={3} />
+                                                                <X size={14} strokeWidth={3} />
                                                             </button>
                                                         </div>
                                                     </div>
                                                 ))}
-
                                                 {previews.gallery.length < 5 && (
-                                                    <label className="aspect-square rounded-lg border-2 border-dashed border-gray-200 hover:border-clay-400 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition">
-                                                        <Plus size={20} className="text-gray-400 mb-1" />
-                                                        <span className="text-[10px] font-bold text-gray-500">Add</span>
+                                                    <label className="aspect-square rounded-xl border-2 border-dashed border-stone-200 hover:border-stone-400 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-50 transition group">
+                                                        <Plus size={20} className="text-stone-400 group-hover:text-stone-900 transition-colors mb-1" />
+                                                        <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 group-hover:text-stone-900">Add</span>
                                                         <input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'gallery')} />
                                                     </label>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <div className="pt-6 border-t border-gray-100">
-                                            <InputLabel value="3D Model" className="mb-2" />
+                                        <div className="pt-5 border-t border-stone-100">
+                                            <InputLabel value="3D Model" className="mb-2 text-stone-600" />
                                             {data.model_3d ? (
-                                                <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-white rounded-lg text-emerald-600 shadow-sm"><Check size={16} /></div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-emerald-800 truncate max-w-[150px]">{data.model_3d.name}</p>
-                                                            <p className="text-[10px] text-emerald-600">Ready to upload</p>
+                                                <div className="flex items-center justify-between p-3 bg-emerald-50/50 border border-emerald-200 rounded-xl">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="w-8 h-8 shrink-0 bg-white rounded-lg text-emerald-600 shadow-sm border border-emerald-100 flex items-center justify-center"><Check size={14} /></div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-bold text-emerald-900 truncate">{data.model_3d.name}</p>
+                                                            <p className="text-[10px] text-emerald-700 font-medium">Ready to upload</p>
                                                         </div>
                                                     </div>
-                                                    <button type="button" onClick={() => setData('model_3d', null)} className="text-emerald-600 hover:text-emerald-800"><X size={16}/></button>
+                                                    <button type="button" onClick={() => { setData('model_3d', null); setData('model_3d_assets', []); }} className="p-2 text-emerald-600 hover:text-emerald-900 shrink-0"><X size={16}/></button>
                                                 </div>
                                             ) : data.model_3d_path ? (
-                                                <div className="flex items-center justify-between p-3 bg-sky-50 border border-sky-100 rounded-xl">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-white rounded-lg text-sky-600 shadow-sm"><Cuboid size={16} /></div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-sky-800">Current Model</p>
-                                                            <p className="text-[10px] text-sky-600">Replace it with a new file.</p>
+                                                <div className="flex items-center justify-between p-3 bg-stone-50 border border-stone-200 rounded-xl">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="w-8 h-8 shrink-0 bg-white rounded-lg text-stone-600 shadow-sm border border-stone-200 flex items-center justify-center"><Cuboid size={14} /></div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-bold text-stone-900">Active Model</p>
+                                                            <p className="text-[10px] text-stone-500 font-medium truncate">{data.model_3d_path.split('/').pop()}</p>
                                                         </div>
                                                     </div>
-                                                    <label className="cursor-pointer text-xs font-bold text-sky-600 hover:underline">
+                                                    <label className="cursor-pointer px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-[10px] font-bold text-stone-700 hover:bg-stone-50 transition shadow-sm shrink-0">
                                                         Replace
                                                         <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
                                                     </label>
                                                 </div>
                                             ) : (
-                                                <label className="flex items-center gap-3 p-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-clay-400 hover:bg-gray-50 transition group">
-                                                    <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:shadow-sm transition"><Cuboid size={20} className="text-gray-400 group-hover:text-clay-600" /></div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-bold text-gray-700">Upload .glb / .gltf</p>
-                                                        <p className="text-[10px] text-gray-400 group-hover:text-clay-500">Required before the product can be listed as Active.</p>
+                                                <label className="flex items-center gap-3 p-4 border-2 border-dashed border-stone-200 rounded-xl cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition group">
+                                                    <div className="w-10 h-10 shrink-0 bg-white rounded-full shadow-sm border border-stone-100 flex items-center justify-center group-hover:scale-105 transition-transform"><Cuboid size={18} className="text-stone-400 group-hover:text-stone-900 transition-colors" /></div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-bold text-stone-800">Upload .glb / .gltf</p>
+                                                        <p className="text-[10px] font-medium text-stone-400 group-hover:text-stone-600 transition-colors truncate">Required for Active listing.</p>
                                                     </div>
                                                     <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
                                                 </label>
@@ -1454,37 +1404,30 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                          <button type="button" onClick={closeProductModal} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button>
-                          
-                          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-                            {activeFormTab !== 'Essentials' && (
-                                <button 
-                                    type="button" 
-                                    onClick={() => setActiveFormTab(activeFormTab === 'Media' ? 'Details' : 'Essentials')}
-                                    className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition"
-                                >
-                                    Previous
-                                </button>
+                    <div className="shrink-0 border-t border-stone-200/60 bg-stone-50/80 px-6 py-4 flex items-center justify-between sticky bottom-0 z-20">
+                        <button type="button" onClick={closeProductModal} className="px-5 py-2.5 rounded-xl text-sm font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-200/50 transition-colors">
+                            Cancel
+                        </button>
+                        <div className="flex items-center gap-3">
+                            {processing && progress && (
+                                <div className="hidden sm:flex items-center gap-2 mr-2">
+                                    <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">{progress.percentage ?? 0}%</span>
+                                    <div className="w-24 h-1.5 bg-stone-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-stone-900 transition-all duration-300" style={{ width: `${progress.percentage ?? 0}%` }} />
+                                    </div>
+                                </div>
                             )}
-                            
-                            {activeFormTab === 'Media' ? (
-                                <PrimaryButton type="submit" className="px-8 py-2.5 rounded-xl shadow-lg shadow-clay-500/20" disabled={!canEditProducts || processing}>
-                                    {processing ? 'Saving...' : (data.id ? 'Save Changes' : 'Publish Product')}
-                                </PrimaryButton>
-                            ) : (
-                                <button 
-                                    type="button" 
-                                    onClick={() => setActiveFormTab(activeFormTab === 'Essentials' ? 'Details' : 'Media')}
-                                    className="px-6 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-500/20"
-                                >
-                                    Next Step
-                                </button>
-                            )}
+                            <button 
+                                type="submit" 
+                                disabled={!canEditProducts || processing}
+                                className="flex items-center justify-center px-8 py-2.5 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-black active:scale-95 transition-all shadow-md disabled:opacity-50 disabled:hover:scale-100"
+                            >
+                                {processing ? 'Saving...' : (data.id ? 'Save Changes' : 'Publish Product')}
+                            </button>
                         </div>
                     </div>
                 </form>

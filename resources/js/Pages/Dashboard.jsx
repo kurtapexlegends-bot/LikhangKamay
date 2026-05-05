@@ -17,9 +17,9 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
+import CompactPagination from '@/Components/CompactPagination';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
 const COLORS = ['#c07251', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
 
@@ -29,20 +29,20 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
     let growthPrefix = '';
 
     if (growth > 0) {
-        growthColor = 'text-green-600';
+        growthColor = 'text-emerald-600';
         GrowthIcon = TrendingUp;
         growthPrefix = '+';
     } else if (growth < 0) {
-        growthColor = 'text-red-600';
+        growthColor = 'text-rose-600';
         GrowthIcon = TrendingDown;
         growthPrefix = ''; // The negative sign is inherently part of the number
     }
     
     return (
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow group">
             <div>
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{value}</h3>
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
+                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">{value}</h3>
                 
                 {growth !== undefined && (
                     <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>
@@ -61,13 +61,13 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
 
 const StatusBadge = ({ status }) => {
     const styles = {
-        'Pending': 'bg-amber-100 text-amber-700 border-amber-200',
-        'Accepted': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-        'Shipped': 'bg-blue-100 text-blue-700 border-blue-200',
-        'Delivered': 'bg-teal-100 text-teal-700 border-teal-200',
-        'Completed': 'bg-green-100 text-green-700 border-green-200',
-        'Rejected': 'bg-red-100 text-red-700 border-red-200',
-        'Cancelled': 'bg-gray-100 text-gray-600 border-gray-200',
+        'Pending': 'bg-amber-50 text-amber-700 border-amber-100',
+        'Accepted': 'bg-clay-50 text-clay-700 border-clay-100',
+        'Shipped': 'bg-blue-50 text-blue-700 border-blue-100',
+        'Delivered': 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        'Rejected': 'bg-rose-50 text-rose-700 border-rose-100',
+        'Cancelled': 'bg-stone-100 text-stone-600 border-stone-200',
     };
     return (
         <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${styles[status] || 'bg-gray-100'}`}>
@@ -173,32 +173,32 @@ export default function Dashboard({ auth }) {
                                     value={`₱${Number(metrics.revenue).toLocaleString()}`} 
                                     growth={metrics.revenue_growth} 
                                     icon={DollarSign} 
-                                    bg="bg-blue-100" 
-                                    text="text-blue-600" 
+                                    bg="bg-emerald-50" 
+                                    text="text-emerald-600" 
                                 />
                                 <MetricCard 
                                     title="Total Orders" 
                                     value={metrics.orders} 
                                     growth={metrics.orders_growth} 
                                     icon={ShoppingBag} 
-                                    bg="bg-purple-100" 
-                                    text="text-purple-600" 
+                                    bg="bg-clay-50" 
+                                    text="text-clay-600" 
                                 />
                                 <MetricCard 
                                     title="Total Customers" 
                                     value={metrics.customers} 
                                     growth={metrics.customers_growth} 
                                     icon={Users} 
-                                    bg="bg-red-100" 
-                                    text="text-red-600" 
+                                    bg="bg-rose-50" 
+                                    text="text-rose-600" 
                                 />
                                 <MetricCard 
                                     title="Avg. Order Value" 
                                     value={`₱${Number(metrics.avg_value).toLocaleString()}`} 
                                     growth={metrics.avg_growth} 
                                     icon={CreditCard} 
-                                    bg="bg-amber-100" 
-                                    text="text-amber-600" 
+                                    bg="bg-stone-100" 
+                                    text="text-stone-600" 
                                 />
                             </>
                         )}
@@ -429,8 +429,13 @@ export default function Dashboard({ auth }) {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-8 text-center text-gray-400">
-                                                No orders found.
+                                            <td colSpan="6" className="px-6 py-12">
+                                                <WorkspaceEmptyState
+                                                    icon={ShoppingBag}
+                                                    title={search || status !== 'All' ? "No matching orders" : "No orders yet"}
+                                                    description={search || status !== 'All' ? "Try adjusting your filters to find what you're looking for." : "When customers buy your products, they will appear here."}
+                                                    action={null}
+                                                />
                                             </td>
                                         </tr>
                                     )}
@@ -440,31 +445,13 @@ export default function Dashboard({ auth }) {
 
                         {/* Pagination Links */}
                         {recentOrders.total > 0 && (
-                            <div className="bg-gray-50/50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
-                                <p className="text-xs text-gray-500">
-                                    Showing <span className="font-bold text-gray-900">{recentOrders.data.length}</span> of <span className="font-bold text-gray-900">{recentOrders.total}</span> orders
-                                </p>
-                                <div className="flex gap-1">
-                                    {recentOrders.links.map((link, i) => (
-                                        <button
-                                            key={i}
-                                            disabled={!link.url}
-                                            onClick={() => link.url && router.get(link.url, {}, {
-                                                preserveState: true,
-                                                preserveScroll: true,
-                                                replace: true,
-                                                only: ['recentOrders', 'filters'],
-                                            })}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 ${
-                                                link.active 
-                                                    ? 'bg-clay-600 text-white shadow-sm' 
-                                                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                                            } ${!link.url ? 'opacity-50 cursor-not-allowed hidden' : ''}`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
+                            <CompactPagination 
+                                links={recentOrders.links}
+                                total={recentOrders.total}
+                                currentCount={recentOrders.data.length}
+                                label="orders"
+                                only={['recentOrders', 'filters']}
+                            />
                         )}
                     </div>
 

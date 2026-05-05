@@ -137,7 +137,10 @@ class DashboardController extends Controller
                     $q->where('artisan_id', $userId)->where('status', 'Completed');
                 })
                 ->join('products', 'order_items.product_id', '=', 'products.id')
-                ->select(DB::raw('COALESCE(products.category, "Uncategorized") as name'), DB::raw('SUM(order_items.quantity) as value'))
+                ->select([
+                    DB::raw('COALESCE(products.category, "Uncategorized") as name'),
+                    DB::raw('SUM(order_items.quantity) as value')
+                ])
                 ->groupBy('products.category')
                 ->get()
                 ->map(function ($item) {

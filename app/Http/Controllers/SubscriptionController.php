@@ -30,6 +30,7 @@ class SubscriptionController extends Controller
 
     public function __construct(
         private readonly PayMongoService $payMongoService,
+        private readonly \App\Services\SubscriptionService $subscriptionService,
     ) {
     }
 
@@ -533,52 +534,7 @@ class SubscriptionController extends Controller
      */
     private function applySuccessfulSubscriptionPayment(SubscriptionTransaction $transaction, array $session): string
     {
-        $resolution = 'applied';
-
-        DB::transaction(function () use ($transaction, $session, &$resolution) {
-            $lockedTransaction = SubscriptionTransaction::query()->lockForUpdate()->findOrFail($transaction->id);
-
-            if ($lockedTransaction->status === SubscriptionTransaction::STATUS_PAID) {
-                $resolution = 'already_paid';
-
-                return;
-            }
-
-            $user = $lockedTransaction->user()->firstOrFail();
-            $currentPlan = $this->normalizeTier($user->premium_tier);
-            $targetPlan = $this->normalizeTier($lockedTransaction->to_plan);
-            $currentLevel = $this->getTierLevel($currentPlan);
-            $targetLevel = $this->getTierLevel($targetPlan);
-
-            if ($targetLevel > $currentLevel) {
-                UserTierLog::create([
-                    'user_id' => $user->id,
-                    'previous_tier' => $currentPlan,
-                    'new_tier' => $targetPlan,
-                ]);
-
-                $user->update(['premium_tier' => $targetPlan]);
-                $this->clearPlanBasedStaffSuspension($user);
-                $resolution = 'applied';
-            } elseif ($targetLevel === $currentLevel) {
-                $resolution = 'already_active';
-            } else {
-                $resolution = 'higher_plan_active';
-            }
-
-            $lockedTransaction->update([
-                'status' => SubscriptionTransaction::STATUS_PAID,
-                'paid_at' => $lockedTransaction->paid_at ?? now(),
-                'metadata' => array_filter([
-                    ...($lockedTransaction->metadata ?? []),
-                    'payment_status' => $session['attributes']['payment_status'] ?? null,
-                    'session_status' => $session['attributes']['status'] ?? null,
-                    'plan_change_result' => $resolution,
-                ], fn ($value) => $value !== null),
-            ]);
-        });
-
-        return $resolution;
+        return $this->subscriptionService->activateSubscription($transaction, $session);
     }
 
     private function normalizeTier(?string $tier): string

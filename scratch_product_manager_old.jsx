@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
@@ -142,13 +142,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     // --- MODAL STATES ---
     const [productModalOpen, setProductModalOpen] = useState(false);
-    const [activeFormTab, setActiveFormTab] = useState('Essentials');
     const [restockModalOpen, setRestockModalOpen] = useState(false);
     const [archiveModalOpen, setArchiveModalOpen] = useState(false);
     const [limitModalOpen, setLimitModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [restockAmount, setRestockAmount] = useState('');
-
+    const [activeFormTab, setActiveFormTab] = useState('Essentials');
 
     // --- FORM SETUP ---
     const { data, setData, post, processing, progress, errors, reset, clearErrors, hasErrors } = useForm({
@@ -355,7 +354,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         setSelectedProduct(null);
         reset(); 
         clearErrors();
-
+        setActiveFormTab('Essentials');
         setPreviews({ cover: null, gallery: [] });
         setData({
             ...data,
@@ -376,7 +375,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             model_3d_path: null,
             track_as_supply: false,
         });
-        setActiveFormTab('Essentials');
         setProductModalOpen(true);
     };
 
@@ -385,7 +383,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
         cleanupPreviews();
         setSelectedProduct(product);
         clearErrors();
-
+        setActiveFormTab('Essentials');
         setData({
             ...product,
             category: categories.includes(product.category) ? product.category : defaultCategory,
@@ -404,7 +402,6 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
             cover: product.img, 
             gallery: product.gallery_paths ? product.gallery_paths.map(path => `/storage/${path}`) : [] 
         });
-        setActiveFormTab('Essentials');
         setProductModalOpen(true);
     };
 
@@ -547,6 +544,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
     const handleStatusChange = (nextStatus) => {
         if (nextStatus === 'Active' && !activationReadiness.canActivate) {
+            setActiveFormTab('Media');
             addToast(`Add ${activationReadiness.missingLabels.join(', ')} before listing this product as Active.`, 'info');
             return;
         }
@@ -690,7 +688,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 )}
             />
 
-                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">
+                <main className="mx-auto flex-1 w-full max-w-[1400px] overflow-y-auto p-4 sm:p-6 space-y-6">
                     {isProductsReadOnly && (
                         <ReadOnlyCapabilityNotice label="Products is read only for your account. Add, edit, stock, and bulk actions are disabled." />
                     )}
@@ -1062,6 +1060,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             <InputError message={deductForm.errors.reason} className="mt-2" />
                         </div>
                     </div>
+
                     <div className="flex justify-end gap-3 border-t border-gray-100 px-5 py-4 sm:px-6">
                         <button type="button" onClick={() => setDeductModalOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button>
                         <PrimaryButton disabled={!canEditProducts || deductForm.processing} className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50">
@@ -1070,7 +1069,8 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                     </div>
                 </form>
             </Modal>
-            {/* --- ADD/EDIT PRODUCT MODAL --- */}
+
+            {/* --- ADD/EDIT MODAL --- */}
             <Modal show={productModalOpen} onClose={closeProductModal} maxWidth="2xl">
                 <form onSubmit={submitProduct} className="flex max-h-[85vh] flex-col">
                     <div className="shrink-0 border-b border-gray-100 px-5 py-5 sm:px-6">
@@ -1171,7 +1171,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                     </div>
 
                                     <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
-                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Inventory & Pricing</h3>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Inventory & Pricing</h3>
+                                            
+
+                                        </div>
+
                                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                                             <div>
                                                 <InputLabel value="Price (₱) *" />
@@ -1198,6 +1203,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                         placeholder="0.00"
                                                     />
                                                 </div>
+                                                <p className="mt-1 text-[10px] text-gray-400">Internal use only.</p>
                                             </div>
                                             <div>
                                                 <InputLabel value="Stock *" />
@@ -1263,6 +1269,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         {activeFormTab === 'Media' && (
                             <div className="space-y-6 animate-fadeIn">
                                 <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden mb-6">
+                                    {/* Header */}
                                     <div className={`px-6 py-5 border-b ${activationReadiness.canActivate ? 'bg-emerald-50/50 border-emerald-100' : 'bg-stone-50/50 border-stone-100'}`}>
                                         <div className="flex items-center justify-between">
                                             <div>
@@ -1281,6 +1288,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                             </div>
                                         </div>
                                         
+                                        {/* Progress Bar */}
                                         {!activationReadiness.canActivate && (
                                             <div className="mt-5">
                                                 <div className="flex justify-between text-[10px] font-bold text-stone-500 mb-1.5">
@@ -1297,6 +1305,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         )}
                                     </div>
 
+                                    {/* Checklist Items */}
                                     <div className="p-4 sm:p-6 bg-white">
                                         <div className="grid gap-3 sm:grid-cols-3">
                                             {activationReadiness.items.map((item) => (
@@ -1333,6 +1342,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                             ))}
                                         </div>
                                     </div>
+                                </div>
+
+                                <div className="mb-6 flex gap-3 rounded-xl border border-sky-100 bg-sky-50/50 p-4">
+                                    <ImageIcon className="text-sky-500 shrink-0" size={20} />
+                                    <p className="text-xs text-sky-700 leading-relaxed">
+                                        Use clear, well-lit photos with a simple background.
+                                    </p>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1410,10 +1426,13 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                     </label>
                                                 )}
                                             </div>
+                                            <p className="text-[10px] text-gray-400 mt-2 text-right">{previews.gallery.length} images selected</p>
                                         </div>
 
                                         <div className="pt-6 border-t border-gray-100">
                                             <InputLabel value="3D Model" className="mb-2" />
+                                            
+                                            {/* Case 1: New File Selected */}
                                             {data.model_3d ? (
                                                 <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
                                                     <div className="flex items-center gap-3">
@@ -1423,32 +1442,76 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                             <p className="text-[10px] text-emerald-600">Ready to upload</p>
                                                         </div>
                                                     </div>
-                                                    <button type="button" onClick={() => setData('model_3d', null)} className="text-emerald-600 hover:text-emerald-800"><X size={16}/></button>
-                                                </div>
-                                            ) : data.model_3d_path ? (
-                                                <div className="flex items-center justify-between p-3 bg-sky-50 border border-sky-100 rounded-xl">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-white rounded-lg text-sky-600 shadow-sm"><Cuboid size={16} /></div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-sky-800">Current Model</p>
-                                                            <p className="text-[10px] text-sky-600">Replace it with a new file.</p>
-                                                        </div>
-                                                    </div>
-                                                    <label className="cursor-pointer text-xs font-bold text-sky-600 hover:underline">
-                                                        Replace
-                                                        <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
-                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setData('model_3d', null);
+                                                            setData('model_3d_assets', []);
+                                                            setData('model_3d_asset_paths', []);
+                                                        }}
+                                                        className="text-emerald-600 hover:text-emerald-800"
+                                                    >
+                                                        <X size={16}/>
+                                                    </button>
                                                 </div>
                                             ) : (
-                                                <label className="flex items-center gap-3 p-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-clay-400 hover:bg-gray-50 transition group">
-                                                    <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:shadow-sm transition"><Cuboid size={20} className="text-gray-400 group-hover:text-clay-600" /></div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-bold text-gray-700">Upload .glb / .gltf</p>
-                                                        <p className="text-[10px] text-gray-400 group-hover:text-clay-500">Required before the product can be listed as Active.</p>
+                                                // Case 2: Existing Model (Edit Mode)
+                                                data.model_3d_path ? (
+                                                    <div className="flex items-center justify-between p-3 bg-sky-50 border border-sky-100 rounded-xl">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-white rounded-lg text-sky-600 shadow-sm"><Cuboid size={16} /></div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-sky-800">Current Model</p>
+                                                                <p className="text-[10px] text-sky-600">Keep it or replace it with a new file.</p>
+                                                            </div>
+                                                        </div>
+                                                        <label className="cursor-pointer text-xs font-bold text-sky-600 hover:underline">
+                                                            Replace
+                                                            <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
+                                                        </label>
                                                     </div>
-                                                    <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
-                                                </label>
+                                                ) : (
+                                                    // Case 3: No Model (Show Upload)
+                                                    <label className="flex items-center gap-3 p-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-clay-400 hover:bg-gray-50 transition group">
+                                                        <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:shadow-sm transition"><Cuboid size={20} className="text-gray-400 group-hover:text-clay-600" /></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-bold text-gray-700">Upload .glb / .gltf</p>
+                                                            <p className="text-[10px] text-gray-400 group-hover:text-clay-500">Required before the product can be listed as Active.</p>
+                                                        </div>
+                                                        <input type="file" className="hidden" accept=".glb,.gltf" onChange={(e) => handleFileChange(e, 'model_3d')} />
+                                                    </label>
+                                                )
                                             )}
+                                            {data.model_3d?.name?.toLowerCase().endsWith('.gltf') && (
+                                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-xs font-bold text-amber-800">GLTF companion files</p>
+                                                            <p className="mt-1 text-[11px] text-amber-700">
+                                                                Upload the matching asset folder too if this file uses external <code>.bin</code> files or textures.
+                                                            </p>
+                                                        </div>
+                                                        <label className="cursor-pointer rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition">
+                                                            Upload Asset Folder
+                                                            <input
+                                                                type="file"
+                                                                className="hidden"
+                                                                multiple
+                                                                webkitdirectory=""
+                                                                directory=""
+                                                                onChange={handleModelAssetFolderChange}
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    <p className="mt-2 text-[11px] font-medium text-amber-800">
+                                                        {data.model_3d_assets?.length
+                                                            ? `${data.model_3d_assets.length} companion file${data.model_3d_assets.length > 1 ? 's' : ''} ready for upload.`
+                                                            : 'Skip this only if the .gltf is fully embedded.'}
+                                                    </p>
+                                                    <InputError message={errors.model_3d_assets} className="mt-2" />
+                                                </div>
+                                            )}
+                                            <External3DToolLink />
                                             <InputError message={errors.model_3d} className="mt-2" />
                                         </div>
                                     </div>
@@ -1457,11 +1520,24 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                         )}
                     </div>
 
-                    {/* Footer */}
-                    <div className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    {/* FOOTER ACTIONS */}
+                    <div className="flex shrink-0 flex-col gap-3 border-t border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                           <button type="button" onClick={closeProductModal} className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50">Cancel</button>
                           
                           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+                              {activeFormTab === 'Media' && processing && progress && (
+                                  <div className="hidden min-w-[180px] items-center gap-2 sm:flex">
+                                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-clay-100">
+                                        <div
+                                            className="h-full rounded-full bg-clay-600 transition-all"
+                                            style={{ width: `${progress.percentage ?? 0}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-[11px] font-bold text-clay-700">
+                                        {progress.percentage ?? 0}%
+                                    </span>
+                                </div>
+                            )}
                             {activeFormTab !== 'Essentials' && (
                                 <button 
                                     type="button" 
@@ -1473,14 +1549,16 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                             )}
                             
                             {activeFormTab === 'Media' ? (
-                                <PrimaryButton type="submit" className="px-8 py-2.5 rounded-xl shadow-lg shadow-clay-500/20" disabled={!canEditProducts || processing}>
-                                    {processing ? 'Saving...' : (data.id ? 'Save Changes' : 'Publish Product')}
+                                <PrimaryButton type="submit" className="px-8 py-2.5 rounded-xl" disabled={!canEditProducts || processing}>
+                                    {processing
+                                        ? (progress ? `Uploading ${progress.percentage ?? 0}%` : 'Saving...')
+                                        : (data.id ? 'Save Changes' : 'Publish Product')}
                                 </PrimaryButton>
                             ) : (
                                 <button 
                                     type="button" 
                                     onClick={() => setActiveFormTab(activeFormTab === 'Essentials' ? 'Details' : 'Media')}
-                                    className="px-6 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-500/20"
+                                    className="px-6 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition"
                                 >
                                     Next Step
                                 </button>

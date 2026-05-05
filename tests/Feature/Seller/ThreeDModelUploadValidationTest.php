@@ -41,7 +41,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHasNoErrors(['model_3d']);
+        $response->assertSessionDoesntHaveErrors(['model_3d']);
 
         $product = Product::where('sku', 'LK-GLB1')->firstOrFail();
 
@@ -81,7 +81,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHasNoErrors(['model_3d']);
+        $response->assertSessionDoesntHaveErrors(['model_3d']);
 
         $product->refresh();
 
@@ -115,7 +115,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHasNoErrors(['model']);
+        $response->assertSessionDoesntHaveErrors(['model']);
 
         $product->refresh();
 

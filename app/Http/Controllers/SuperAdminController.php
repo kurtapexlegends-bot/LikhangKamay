@@ -9,11 +9,15 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewDispute;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use App\Models\SponsorshipRequest;
@@ -1350,7 +1354,7 @@ class SuperAdminController extends Controller
         }
 
         try {
-            \Illuminate\Support\Facades\Cache::has('test');
+            Cache::has('test');
         } catch (\Exception $e) {
             $cacheStatus = 'Offline';
         }
@@ -1385,8 +1389,8 @@ class SuperAdminController extends Controller
 
     public function purgeCache()
     {
-        \Illuminate\Support\Facades\Artisan::call('cache:clear');
-        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('view:clear');
         
         \App\Models\PlatformActivity::create([
             'user_id' => Auth::id(),

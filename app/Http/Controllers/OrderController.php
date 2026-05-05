@@ -25,12 +25,16 @@ use App\Notifications\ReplacementResolutionNotification;
 use App\Support\StructuredAddress;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Mailable;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -310,7 +314,7 @@ class OrderController extends Controller
     /**
      * SELLER: Update order status (Accept, Ship, Deliver, Reject, etc.)
      */
-    public function update(Request $request, $id, OrderFinanceService $orderFinanceService)
+    public function update(Request $request, string $id, OrderFinanceService $orderFinanceService)
     {
         $order = Order::where('order_number', $id)
             ->where('artisan_id', $this->sellerOwnerId())
@@ -539,7 +543,7 @@ class OrderController extends Controller
     /**
      * SELLER: Approve return request
      */
-    public function approveReturn(Request $request, $id, OrderFinanceService $orderFinanceService, OrderLogisticsService $orderLogisticsService)
+    public function approveReturn(Request $request, string $id, OrderFinanceService $orderFinanceService, OrderLogisticsService $orderLogisticsService)
     {
         $order = Order::where('order_number', $id)
             ->where('artisan_id', $this->sellerOwnerId())
@@ -722,7 +726,7 @@ class OrderController extends Controller
     /**
      * SELLER: Update payment status (mark as paid/refunded)
      */
-    public function updatePaymentStatus(Request $request, $id)
+    public function updatePaymentStatus(Request $request, string $id)
     {
         $order = Order::where('order_number', $id)
             ->where('artisan_id', $this->sellerOwnerId())
@@ -1165,7 +1169,7 @@ class OrderController extends Controller
     /**
      * BUYER: Confirm order received - triggers 1-day warranty window
      */
-    public function buyerReceiveOrder($id, OrderFinanceService $orderFinanceService)
+    public function buyerReceiveOrder(string $id, OrderFinanceService $orderFinanceService)
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
@@ -1265,7 +1269,7 @@ class OrderController extends Controller
     /**
      * BUYER: Request return/refund (within warranty period)
      */
-    public function buyerRequestReturn(Request $request, $id)
+    public function buyerRequestReturn(Request $request, string $id)
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
@@ -1336,7 +1340,7 @@ class OrderController extends Controller
     /**
      * BUYER: Cancel Return Request -> Mark as Completed
      */
-    public function buyerCancelReturn($id, OrderFinanceService $orderFinanceService)
+    public function buyerCancelReturn(string $id, OrderFinanceService $orderFinanceService)
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
@@ -1356,7 +1360,7 @@ class OrderController extends Controller
     /**
      * BUYER: Cancel pending order
      */
-    public function buyerCancelOrder($id)
+    public function buyerCancelOrder(string $id)
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
@@ -1391,7 +1395,7 @@ class OrderController extends Controller
     /**
      * BUYER: Download order receipt as printable HTML
      */
-    public function downloadReceipt($id)
+    public function downloadReceipt(string $id)
     {
         $order = Order::with(['items' => function ($query) {
             // BUG-L1 Fix: Only select safe fields from items
@@ -1407,7 +1411,7 @@ class OrderController extends Controller
     /**
      * SELLER: Download receipt for one of the seller's own orders
      */
-    public function sellerDownloadReceipt($id)
+    public function sellerDownloadReceipt(string $id)
     {
         $order = Order::with(['items' => function ($query) {
             $query->select('id', 'order_id', 'product_id', 'product_name', 'variant', 'quantity', 'price', 'product_img');
