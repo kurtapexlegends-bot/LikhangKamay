@@ -7,7 +7,7 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
     Heart, ChevronRight, Check, Pin, Flag,
-    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2, History
+    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2, History, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 import { getRecentlyViewedProducts, isProductWishlisted, rememberViewedProduct, toggleWishlistedProduct } from '@/utils/buyerSignals';
@@ -17,7 +17,64 @@ import StickyActionBar from '@/Components/StickyActionBar';
 
 const ProductViewer3D = lazy(() => import('@/Components/ProductViewer3D'));
 
+const ProductImageMagnifier = ({ src, alt, id }) => {
+    const [position, setPosition] = useState({ x: 50, y: 50 });
+    const [isMagnifying, setIsMagnifying] = useState(false);
+    const [zoomLevel, setZoomLevel] = useState(2.5);
 
+    const handleMouseMove = (e) => {
+        if (!isMagnifying) return;
+        const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+        const x = ((e.clientX - left) / width) * 100;
+        const y = ((e.clientY - top) / height) * 100;
+        setPosition({ x, y });
+    };
+
+    const handleWheel = (e) => {
+        if (!isMagnifying) return;
+        e.preventDefault();
+        setZoomLevel(prev => {
+            // Adjust zoom level between 1.5 and 4.0
+            const newZoom = prev - e.deltaY * 0.005;
+            return Math.min(Math.max(newZoom, 1.5), 5.0);
+        });
+    };
+
+    return (
+        <div 
+            className={`w-full h-full relative overflow-hidden group ${isMagnifying ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+            onMouseMove={handleMouseMove}
+            onWheel={handleWheel}
+            onClick={() => setIsMagnifying(!isMagnifying)}
+            onMouseLeave={() => setIsMagnifying(false)}
+        >
+            <img
+                id={id}
+                src={src}
+                alt={alt}
+                loading="lazy"
+                onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                className={`w-full h-full object-cover transition-transform duration-200 ease-out`}
+                style={{
+                    transform: isMagnifying ? `scale(${zoomLevel})` : 'scale(1)',
+                    transformOrigin: `${position.x}% ${position.y}%`
+                }}
+            />
+            {/* Overlay Hint */}
+            <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg transition-opacity duration-300 flex items-center gap-1.5 ${isMagnifying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                {isMagnifying ? (
+                    <>
+                        <ZoomOut size={12} /> Click to close • Scroll to zoom
+                    </>
+                ) : (
+                    <>
+                        <ZoomIn size={12} /> Click to magnify
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
 
 export default function ProductShow({ product, relatedProducts = [], auth }) {
     const { addToast } = useToast();
@@ -145,8 +202,60 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
         });
     };
 
-    const addToCart = () => {
+    const addToCart = (e) => {
+        if (!auth?.user) {
+            router.visit(route('login'));
+            return;
+        }
+
         setIsAddingToCart(true);
+
+        // Fly to Cart Animation Logic
+        const button = e.currentTarget;
+        const mainImage = document.getElementById('main-product-image');
+        const cartIcon = document.getElementById('navbar-cart-icon');
+
+        if (mainImage && cartIcon && window.innerWidth >= 768) {
+            const imgRect = mainImage.getBoundingClientRect();
+            const cartRect = cartIcon.getBoundingClientRect();
+
+            const clone = mainImage.cloneNode();
+            clone.className = 'flying-product-thumbnail';
+            
+            // Start styles
+            clone.style.width = `${imgRect.width}px`;
+            clone.style.height = `${imgRect.height}px`;
+            clone.style.top = `${imgRect.top}px`;
+            clone.style.left = `${imgRect.left}px`;
+            clone.style.objectFit = 'cover';
+            clone.style.borderRadius = '12px'; // Match product image corner rounding
+
+            document.body.appendChild(clone);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // End styles
+                    clone.style.top = `${cartRect.top}px`;
+                    clone.style.left = `${cartRect.left}px`;
+                    clone.style.width = '24px';
+                    clone.style.height = '24px';
+                    clone.style.opacity = '0.5';
+                    clone.style.transform = 'scale(0.2)';
+                });
+            });
+
+            setTimeout(() => {
+                if (document.body.contains(clone)) {
+                    document.body.removeChild(clone);
+                }
+                window.dispatchEvent(new CustomEvent('cart-add-animate', { detail: { quantity } }));
+            }, 800);
+        } else if (cartIcon && window.innerWidth < 768) {
+            // Just shake the cart icon immediately on mobile
+            window.dispatchEvent(new CustomEvent('cart-add-animate', { detail: { quantity } }));
+        }
+
+
         router.post(route('cart.store'), { 
             product_id: product.id,
             quantity: quantity 
@@ -167,6 +276,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     };
 
     const handleBuyNow = () => {
+        if (!auth?.user) {
+            router.visit(route('login'));
+            return;
+        }
+
         router.visit(route('checkout.create'), {
             data: { 
                 product_id: product.id,
@@ -244,11 +358,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             {/* Main Image */}
                             <div className="relative aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3">
                                 {viewMode === 'image' ? (
-                                    <img
-                                        src={gallery[activeImageIndex] || '/images/no-image.png'}
-                                        alt={product.name}
-                                        onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                        className="w-full h-full object-cover"
+                                    <ProductImageMagnifier 
+                                        id="main-product-image"
+                                        src={gallery[activeImageIndex] || '/images/no-image.png'} 
+                                        alt={product.name} 
                                     />
                                 ) : (
                                     <Suspense fallback={<div className="flex h-full items-center justify-center bg-gradient-to-b from-gray-50 to-white text-sm font-medium text-gray-500">Loading 3D view...</div>}>
@@ -903,7 +1016,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         ) : (
                             <div className="flex gap-2.5">
                                 <button
-                                    onClick={addToCart}
+                                    onClick={(e) => addToCart(e)}
                                     disabled={product.stock === 0 || isAddingToCart}
                                     className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 px-4 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
                                         addedToCart

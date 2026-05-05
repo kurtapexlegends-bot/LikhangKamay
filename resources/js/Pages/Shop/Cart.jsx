@@ -313,8 +313,8 @@ export default function Cart({ cart }) {
                         </div>
 
                         {/* ========== RIGHT: ORDER SUMMARY ========== */}
-                        <div className="lg:col-span-4">
-                            <div className="bg-white rounded-lg border border-gray-100 shadow-sm lg:sticky lg:top-20">
+                        <div className="lg:col-span-4 self-start lg:sticky lg:top-24">
+                            <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
                                 <div className="px-4 py-3 border-b border-gray-100">
                                     <h2 className="text-base font-semibold text-gray-900">Order Summary</h2>
                                 </div>

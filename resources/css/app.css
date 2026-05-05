@@ -97,3 +97,28 @@ body.has-sticky-action-bar .mobile-dock {
     text-transform: uppercase;
 }
 }
+
+/* Fly to Cart Animation */
+.flying-product-thumbnail {
+    position: fixed;
+    z-index: 9999;
+    border-radius: 50%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transition: top 0.8s cubic-bezier(0.5, 0, 0.5, 1), left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s ease-in, opacity 0.8s ease-in, width 0.8s ease-in, height 0.8s ease-in;
+}
+
+@keyframes cart-shake {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-15deg) scale(1.2); }
+    50% { transform: rotate(15deg) scale(1.2); }
+    75% { transform: rotate(-10deg) scale(1.1); }
+}
+
+.animate-cart-shake {
+    animation: cart-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.animate-badge-pop {
+    transform: scale(1.4);
+}

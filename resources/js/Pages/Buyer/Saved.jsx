@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
+import axios from 'axios';
 import ShopLayout from '@/Layouts/ShopLayout';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import UserAvatar from '@/Components/UserAvatar';
@@ -7,15 +8,9 @@ import { getFollowedShops, getRecentlyViewedProducts, getWishlistedProducts, tog
 import { useToast } from '@/Components/ToastContext';
 import CompactPagination from '@/Components/CompactPagination';
 import Modal from '@/Components/Modal';
-import { Heart, History, Store, ArrowRight, UserMinus, ShoppingBag, X, Search, Edit2, Trash2, CheckSquare } from 'lucide-react';
+import { Heart, History, Store, ArrowRight, UserMinus, ShoppingBag, ShoppingCart, X, Search, Edit2, Trash2, CheckSquare, Package } from 'lucide-react';
 
-const tabButtonClass = (active) => (
-    `inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
-        active
-            ? 'border-clay-200 bg-clay-50 text-clay-700'
-            : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-    }`
-);
+
 
 const formatPrice = (value) => Number(value || 0).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
@@ -34,6 +29,7 @@ export default function Saved() {
     const [selectedIds, setSelectedIds] = useState([]);
     const [wishlistPage, setWishlistPage] = useState(1);
     const [quickViewProduct, setQuickViewProduct] = useState(null);
+    const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
     useEffect(() => {
         const syncSignals = () => {
@@ -103,6 +99,58 @@ export default function Saved() {
         addToast(`Removed ${selectedIds.length} items from wishlist`, 'success');
     };
 
+    const handleBulkAddToCart = async () => {
+        if (!selectedIds.length) return;
+        setIsProcessingBulk(true);
+        
+        try {
+            // We'll add them to the cart session via axios
+            const promises = selectedIds.map(id => 
+                axios.post(route('cart.store'), {
+                    product_id: id,
+                    quantity: 1,
+                    variant: 'Standard'
+                })
+            );
+            
+            await Promise.all(promises);
+            
+            addToast(`Added ${selectedIds.length} items to your cart`, 'success');
+            setSelectedIds([]);
+            setIsBulkEdit(false);
+            
+            // Refresh the page state to update cart counts if any
+            router.reload({ only: ['cart'] });
+        } catch (error) {
+            addToast('Failed to add items to cart. Some might be out of stock.', 'error');
+        } finally {
+            setIsProcessingBulk(false);
+        }
+    };
+
+    const handleBulkCheckout = async () => {
+        if (!selectedIds.length) return;
+        setIsProcessingBulk(true);
+        
+        try {
+            const promises = selectedIds.map(id => 
+                axios.post(route('cart.store'), {
+                    product_id: id,
+                    quantity: 1,
+                    variant: 'Standard'
+                })
+            );
+            
+            await Promise.all(promises);
+            
+            // Redirect to cart to begin checkout process
+            router.visit(route('cart.index'));
+        } catch (error) {
+            addToast('Failed to prepare checkout. Some items might be unavailable.', 'error');
+            setIsProcessingBulk(false);
+        }
+    };
+
     const ProductCard = ({ product, showHeart }) => {
         const isSelected = selectedIds.includes(product.id);
         
@@ -165,191 +213,258 @@ export default function Saved() {
     );
     };
 
+    const handleClearAll = () => {
+        if (activeTab === 'wishlist') {
+            if (confirm('Are you sure you want to clear your entire wishlist?')) {
+                clearWishlistedProducts();
+                setWishlistedProducts([]);
+                addToast('Wishlist cleared', 'success');
+            }
+        } else if (activeTab === 'following') {
+            if (confirm('Are you sure you want to unfollow all shops?')) {
+                clearFollowedShops();
+                setFollowedShops([]);
+                addToast('All shops unfollowed', 'success');
+            }
+        } else if (activeTab === 'recent') {
+            if (confirm('Are you sure you want to clear your recently viewed history?')) {
+                clearRecentlyViewedProducts();
+                setRecentlyViewed([]);
+                addToast('History cleared', 'success');
+            }
+        }
+    };
+
     return (
         <ShopLayout>
             <Head title="Saved Items" />
 
-            <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="mb-10">
-                    <h1 className="text-2xl font-bold tracking-tight text-stone-900">Saved</h1>
-                    <p className="mt-1 text-sm text-stone-500">
-                        Your wishlist, followed shops, and recently viewed items.
-                    </p>
-                </div>
-
-                {/* Navigation Tabs */}
-                <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex flex-wrap gap-2">
-                        <button 
-                            type="button"
-                            onClick={() => setActiveTab('wishlist')} 
-                            className={tabButtonClass(activeTab === 'wishlist')}
-                        >
-                            <Heart size={15} className={activeTab === 'wishlist' ? 'fill-clay-700 text-clay-700' : ''} /> 
-                            <span>Wishlist</span>
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={() => setActiveTab('following')} 
-                            className={tabButtonClass(activeTab === 'following')}
-                        >
-                            <Store size={15} /> 
-                            <span>Followed Shops</span>
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={() => setActiveTab('recent')} 
-                            className={tabButtonClass(activeTab === 'recent')}
-                        >
-                            <History size={15} /> 
-                            <span>Recently Viewed</span>
-                        </button>
-                    </div>
-                    {activeTab === 'wishlist' && wishlistedProducts.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="relative">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search wishlist..." 
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-48 rounded-lg border-stone-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-stone-600 shadow-sm focus:border-clay-500 focus:ring-clay-500"
-                                />
-                            </div>
-                            <select 
-                                value={sortOrder} 
-                                onChange={(e) => setSortOrder(e.target.value)}
-                                className="rounded-lg border-stone-200 bg-white py-1.5 pl-3 pr-8 text-xs font-bold text-stone-600 shadow-sm focus:border-clay-500 focus:ring-clay-500 cursor-pointer"
-                            >
-                                <option value="recent">Recently Added</option>
-                                <option value="price_asc">Price: Low to High</option>
-                                <option value="price_desc">Price: High to Low</option>
-                            </select>
-                            
-                            {isBulkEdit ? (
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={handleBulkRemove}
-                                        disabled={!selectedIds.length}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-rose-600 disabled:opacity-50"
-                                    >
-                                        <Trash2 size={14} /> Remove ({selectedIds.length})
-                                    </button>
-                                    <button 
-                                        onClick={() => { setIsBulkEdit(false); setSelectedIds([]); }}
-                                        className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 transition hover:bg-stone-50"
-                                    >
-                                        Cancel
-                                    </button>
+            <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-7 mt-4">
+                    <div className="space-y-4 lg:col-span-2">
+                        {/* Navigation Header */}
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5 animate-in fade-in duration-500">
+                            {/* Row 1: Title + Pill Tabs */}
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-2.5 text-stone-900">
+                                    <Package size={17} className="text-clay-600 shrink-0" />
+                                    <h2 className="text-base font-bold tracking-tight">Collections</h2>
                                 </div>
-                            ) : (
-                                <button 
-                                    onClick={() => setIsBulkEdit(true)}
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 transition hover:bg-stone-50"
-                                >
-                                    <CheckSquare size={14} /> Manage
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Content */}
-                <div className="min-h-[400px]">
-                    {activeTab === 'wishlist' && (
-                        paginatedWishlist.length > 0 ? (
-                            <div className="flex flex-col gap-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                    {paginatedWishlist.map((product) => (
-                                        <ProductCard key={product.id} product={product} showHeart={!isBulkEdit} />
+                                <div className="flex items-center gap-1.5 rounded-xl bg-stone-100/80 p-1">
+                                    {[
+                                        { key: 'wishlist', label: 'Wishlist', icon: Heart, count: wishlistedProducts.length, fill: true },
+                                        { key: 'following', label: 'Shops', icon: Store, count: followedShops.length },
+                                        { key: 'recent', label: 'Recent', icon: History, count: recentlyViewed.length },
+                                    ].map(({ key, label, icon: Icon, count, fill }) => (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => { setActiveTab(key); setIsBulkEdit(false); setSelectedIds([]); }}
+                                            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[13px] font-bold transition-all ${
+                                                activeTab === key
+                                                    ? 'bg-white text-clay-700 shadow-sm ring-1 ring-stone-200/80'
+                                                    : 'text-stone-500 hover:text-stone-700'
+                                            }`}
+                                        >
+                                            <Icon size={14} className={activeTab === key && fill ? 'fill-clay-700' : ''} />
+                                            <span className="hidden sm:inline">{label}</span>
+                                            {count > 0 && (
+                                                <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                                                    activeTab === key ? 'bg-clay-100 text-clay-700' : 'bg-stone-200/80 text-stone-500'
+                                                }`}>
+                                                    {count}
+                                                </span>
+                                            )}
+                                        </button>
                                     ))}
                                 </div>
-                                {totalWishlistPages > 1 && (
-                                    <div className="flex justify-center border-t border-stone-100 pt-6">
-                                        <CompactPagination
-                                            currentPage={wishlistPage}
-                                            totalPages={totalWishlistPages}
-                                            totalItems={filteredAndSortedWishlist.length}
-                                            itemsPerPage={ITEMS_PER_PAGE}
-                                            itemLabel="items"
-                                            onPageChange={setWishlistPage}
+                            </div>
+
+                            {/* Row 2: Search + Sort + Manage (Wishlist only) */}
+                            {activeTab === 'wishlist' && wishlistedProducts.length > 0 && (
+                                <div className="mt-4 pt-3.5 border-t border-stone-100 flex flex-wrap items-center gap-2.5">
+                                    <div className="relative flex-1 min-w-[180px]">
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search wishlist..." 
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full rounded-lg border-stone-200 bg-stone-50/80 py-2 pl-9 pr-3 text-sm text-stone-600 transition-colors focus:bg-white focus:border-clay-500 focus:ring-clay-500/20 focus:ring-4"
                                         />
                                     </div>
-                                )}
-                            </div>
-                        ) : (
-                            <WorkspaceEmptyState
-                                icon={Heart}
-                                title="No wishlisted products"
-                                description="Save products from any product page and they will appear here."
-                                actionLabel="Browse Shop"
-                                actionHref={route('shop.index')}
-                                className="py-16"
-                            />
-                        )
-                    )}
-
-                    {activeTab === 'following' && (
-                        followedShops.length > 0 ? (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {followedShops.map((shop) => (
-                                    <Link
-                                        key={shop.id}
-                                        href={route('shop.seller', shop.slug)}
-                                        className="group relative rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-stone-300 hover:shadow-md"
+                                    <select 
+                                        value={sortOrder} 
+                                        onChange={(e) => setSortOrder(e.target.value)}
+                                        className="rounded-lg border-stone-200 bg-stone-50/80 py-2 pl-3 pr-8 text-sm font-medium text-stone-600 transition-colors focus:bg-white focus:border-clay-500 focus:ring-clay-500/20 focus:ring-4 cursor-pointer"
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <UserAvatar user={{ ...shop, shop_name: shop.name, name: shop.name }} className="h-14 w-14 border border-stone-200" />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold text-stone-900 pr-8">{shop.name}</p>
-                                                <p className="text-xs text-stone-500">{shop.location}</p>
-                                                {shop.joinedAt && (
-                                                    <p className="mt-1 text-[11px] text-stone-400">Joined {shop.joinedAt}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={(e) => handleUnfollowShop(e, shop)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-2 text-stone-400 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100"
-                                            title="Unfollow Shop"
-                                        >
-                                            <UserMinus size={16} />
-                                        </button>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <WorkspaceEmptyState
-                                icon={Store}
-                                title="No followed shops"
-                                description="Use Follow Shop on a seller page to keep that shop here."
-                                actionLabel="Browse Shops"
-                                actionHref={route('shop.index')}
-                                className="py-16"
-                            />
-                        )
-                    )}
+                                        <option value="recent">Recently Added</option>
+                                        <option value="price_asc">Price: Low → High</option>
+                                        <option value="price_desc">Price: High → Low</option>
+                                    </select>
+                                    
+                                    <button 
+                                        onClick={() => { 
+                                            if (isBulkEdit) { setIsBulkEdit(false); setSelectedIds([]); }
+                                            else setIsBulkEdit(true);
+                                        }}
+                                        className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold transition-all ${
+                                            isBulkEdit 
+                                                ? 'bg-clay-600 text-white hover:bg-clay-700' 
+                                                : 'border border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                                        }`}
+                                    >
+                                        <CheckSquare size={14} /> {isBulkEdit ? `Select Items` : 'Manage'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
 
-                    {activeTab === 'recent' && (
-                        recentlyViewed.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {recentlyViewed.map((product) => (
-                                    <ProductCard key={product.id} product={product} showHeart={false} />
-                                ))}
+                        {/* Content Card */}
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5 min-h-[400px]">
+                            {activeTab === 'wishlist' && (
+                                paginatedWishlist.length > 0 ? (
+                                    <div className="flex flex-col gap-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                                            {paginatedWishlist.map((product) => (
+                                                <ProductCard key={product.id} product={product} showHeart={!isBulkEdit} />
+                                            ))}
+                                        </div>
+                                        {totalWishlistPages > 1 && (
+                                            <div className="flex justify-center border-t border-stone-100 pt-6">
+                                                <CompactPagination
+                                                    currentPage={wishlistPage}
+                                                    totalPages={totalWishlistPages}
+                                                    totalItems={filteredAndSortedWishlist.length}
+                                                    itemsPerPage={ITEMS_PER_PAGE}
+                                                    itemLabel="items"
+                                                    onPageChange={setWishlistPage}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <WorkspaceEmptyState
+                                        icon={Heart}
+                                        title="No wishlisted products"
+                                        description="Save products from any product page and they will appear here."
+                                        actionLabel="Browse Shop"
+                                        actionHref={route('shop.index')}
+                                        className="py-16"
+                                    />
+                                )
+                            )}
+
+                            {activeTab === 'following' && (
+                                followedShops.length > 0 ? (
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        {followedShops.map((shop) => (
+                                            <Link
+                                                key={shop.id}
+                                                href={route('shop.seller', shop.slug)}
+                                                className="group relative rounded-2xl border border-stone-200 bg-stone-50 p-4 shadow-sm transition hover:border-stone-300 hover:shadow-md animate-in fade-in duration-500"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <UserAvatar user={{ ...shop, shop_name: shop.name, name: shop.name }} className="h-14 w-14 border border-stone-200" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-semibold text-stone-900 pr-8">{shop.name}</p>
+                                                        <p className="text-xs text-stone-500">{shop.location}</p>
+                                                        {shop.joinedAt && (
+                                                            <p className="mt-1 text-[11px] text-stone-400">Joined {shop.joinedAt}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={(e) => handleUnfollowShop(e, shop)}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-2 text-stone-400 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100"
+                                                    title="Unfollow Shop"
+                                                >
+                                                    <UserMinus size={16} />
+                                                </button>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <WorkspaceEmptyState
+                                        icon={Store}
+                                        title="No followed shops"
+                                        description="Use Follow Shop on a seller page to keep that shop here."
+                                        actionLabel="Browse Shops"
+                                        actionHref={route('shop.index')}
+                                        className="py-16"
+                                    />
+                                )
+                            )}
+
+                            {activeTab === 'recent' && (
+                                recentlyViewed.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                                        {recentlyViewed.map((product) => (
+                                            <ProductCard key={product.id} product={product} showHeart={false} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <WorkspaceEmptyState
+                                        icon={History}
+                                        title="No recently viewed products"
+                                        description="Products you open will appear here for faster return visits."
+                                        actionLabel="Browse Shop"
+                                        actionHref={route('shop.index')}
+                                        className="py-16"
+                                    />
+                                )
+                            )}
+                        </div>
+                    </div>
+
+                    {/* SIDEBAR */}
+                    <div className="lg:col-span-1 self-start lg:sticky lg:top-24 space-y-5">
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+                            <h3 className="mb-4 text-base font-bold text-gray-900">Your Activity</h3>
+                            <div className="space-y-4 text-sm text-gray-600">
+                                <div className="flex justify-between items-center border-b border-stone-100 pb-3">
+                                    <span className="flex items-center gap-2"><Heart size={16} className="text-rose-500"/> Wishlisted Items</span>
+                                    <span className="font-bold text-stone-900">{wishlistedProducts.length}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-stone-100 pb-3">
+                                    <span className="flex items-center gap-2"><Store size={16} className="text-clay-600"/> Followed Shops</span>
+                                    <span className="font-bold text-stone-900">{followedShops.length}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b border-stone-100 pb-3">
+                                    <span className="flex items-center gap-2"><History size={16} className="text-blue-500"/> Recently Viewed</span>
+                                    <span className="font-bold text-stone-900">{recentlyViewed.length}</span>
+                                </div>
                             </div>
-                        ) : (
-                            <WorkspaceEmptyState
-                                icon={History}
-                                title="No recently viewed products"
-                                description="Products you open will appear here for faster return visits."
-                                actionLabel="Browse Shop"
-                                actionHref={route('shop.index')}
-                                className="py-16"
-                            />
-                        )
-                    )}
+                            
+                            <div className="mt-6 pt-2">
+                                <Link 
+                                    href={route('shop.index')} 
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-clay-700"
+                                >
+                                    <ShoppingBag size={18} /> Continue Shopping
+                                </Link>
+                                <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400">
+                                    Find more artisan pieces
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Contextual Actions */}
+                        {((activeTab === 'wishlist' && wishlistedProducts.length > 0) || 
+                          (activeTab === 'following' && followedShops.length > 0) || 
+                          (activeTab === 'recent' && recentlyViewed.length > 0)) && (
+                            <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4 shadow-sm sm:p-5">
+                                <h3 className="mb-3 text-sm font-bold text-stone-900 uppercase tracking-wide">Quick Actions</h3>
+                                <button
+                                    onClick={handleClearAll}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-600 shadow-sm transition hover:bg-rose-50"
+                                >
+                                    <Trash2 size={16} /> 
+                                    {activeTab === 'wishlist' ? 'Clear Wishlist' : activeTab === 'following' ? 'Unfollow All Shops' : 'Clear History'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -394,6 +509,46 @@ export default function Saved() {
                     </div>
                 )}
             </Modal>
+
+            {/* Floating Bulk Action Bar */}
+            {isBulkEdit && (
+                <div className="fixed bottom-0 inset-x-0 z-50 animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="mx-auto max-w-2xl px-4 pb-5">
+                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/95 px-5 py-3.5 shadow-2xl shadow-stone-900/10 backdrop-blur-lg">
+                            <p className="text-sm font-bold text-stone-700 shrink-0">
+                                {selectedIds.length > 0 
+                                    ? <><span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-clay-100 text-clay-700 text-xs font-bold mr-1.5">{selectedIds.length}</span> selected</>
+                                    : 'Tap items to select'
+                                }
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={handleBulkAddToCart}
+                                    disabled={!selectedIds.length || isProcessingBulk}
+                                    className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-4 py-2.5 text-[13px] font-bold text-white transition-all hover:bg-clay-700 disabled:opacity-40"
+                                >
+                                    <ShoppingCart size={15} /> <span className="hidden sm:inline">Add to Cart</span>
+                                </button>
+                                <button 
+                                    onClick={handleBulkCheckout}
+                                    disabled={!selectedIds.length || isProcessingBulk}
+                                    className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2.5 text-[13px] font-bold text-white transition-all hover:bg-black disabled:opacity-40"
+                                >
+                                    <ShoppingBag size={15} /> <span className="hidden sm:inline">Checkout</span>
+                                </button>
+                                <button 
+                                    onClick={handleBulkRemove}
+                                    disabled={!selectedIds.length || isProcessingBulk}
+                                    className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white p-2.5 text-rose-500 transition-all hover:bg-rose-50 disabled:opacity-40"
+                                    title="Remove selected"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </ShopLayout>
     );
 }

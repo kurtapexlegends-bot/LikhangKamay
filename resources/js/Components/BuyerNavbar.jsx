@@ -27,14 +27,53 @@ export default function BuyerNavbar() {
     const params = new URLSearchParams(window.location.search);
     const [term, setTerm] = useState(params.get('search') || '');
     const [isScrolled, setIsScrolled] = useState(false);
+    const [localCartCount, setLocalCartCount] = useState(cartCount || 0);
+
+    useEffect(() => {
+        setLocalCartCount(cartCount || 0);
+    }, [cartCount]);
 
     useEffect(() => {
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
+            setIsScrolled((prev) => {
+                if (!prev && window.scrollY > 60) return true;
+                if (prev && window.scrollY < 20) return false;
+                return prev;
+            });
         };
         window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll(); // Initialize on mount
-        return () => window.removeEventListener('scroll', handleScroll);
+        
+        // Initialize based on current scroll position
+        if (window.scrollY > 60) {
+            setIsScrolled(true);
+        }
+
+        const handleCartAnimate = (e) => {
+            const addedQty = e.detail?.quantity || 1;
+            setLocalCartCount(prev => prev + addedQty);
+
+            const icon = document.querySelector('.cart-icon-svg');
+            const badge = document.querySelector('.cart-badge');
+            
+            if (icon) {
+                icon.classList.remove('animate-cart-shake');
+                void icon.offsetWidth; // trigger reflow
+                icon.classList.add('animate-cart-shake');
+            }
+            if (badge) {
+                badge.classList.remove('animate-badge-pop');
+                void badge.offsetWidth;
+                badge.classList.add('animate-badge-pop');
+                setTimeout(() => badge.classList.remove('animate-badge-pop'), 300);
+            }
+        };
+
+        window.addEventListener('cart-add-animate', handleCartAnimate);
+        
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('cart-add-animate', handleCartAnimate);
+        };
     }, []);
 
     const handleSearch = (e) => {
@@ -92,16 +131,17 @@ export default function BuyerNavbar() {
                                     </Link>
                                 )}
 
-                                {/* FIX: Changed <button> to <Link> pointing to cart.index */}
+                                {/* Cart Icon */}
                                 <Link 
+                                    id="navbar-cart-icon"
                                     href={route('cart.index')} 
-                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group"
+                                    className="p-2 md:p-2.5 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group relative"
                                 >
                                     <div className="relative inline-flex">
-                                        <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
-                                        {cartCount > 0 && (
-                                            <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
-                                                {cartCount}
+                                        <ShoppingCart size={20} className="group-hover:scale-110 transition-transform cart-icon-svg" />
+                                        {localCartCount > 0 && (
+                                            <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm transition-transform duration-300 cart-badge">
+                                                {localCartCount}
                                             </span>
                                         )}
                                     </div>

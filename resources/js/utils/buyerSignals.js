@@ -193,6 +193,21 @@ export const toggleFollowedShop = (shop) => {
 
 export const getRecentlyViewedProducts = () => readJson(RECENTLY_VIEWED_KEY, []);
 
+export const clearRecentlyViewedProducts = () => {
+    writeJson(RECENTLY_VIEWED_KEY, []);
+    window.dispatchEvent(new Event('storage'));
+};
+
+export const clearWishlistedProducts = () => {
+    writeJson(WISHLIST_KEY, []);
+    window.dispatchEvent(new Event('storage'));
+};
+
+export const clearFollowedShops = () => {
+    writeJson(FOLLOWED_SHOPS_KEY, []);
+    window.dispatchEvent(new Event('storage'));
+};
+
 export const rememberViewedProduct = (product) => {
     const sanitizedProduct = sanitizeRecentlyViewedProduct(product);
 

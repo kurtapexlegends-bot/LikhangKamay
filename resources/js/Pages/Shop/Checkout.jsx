@@ -6,6 +6,7 @@ import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import StickyActionBar from '@/Components/StickyActionBar';
 
 const TYPES = [
     { value: 'home', label: 'Home' },
@@ -647,8 +648,8 @@ export default function Checkout({ auth, pricing }) {
                         </div>
                     </div>
 
-                    <div className="lg:col-span-1">
-                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm lg:sticky lg:top-24 sm:p-5">
+                    <div className="lg:col-span-1 self-start lg:sticky lg:top-24">
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                             <h3 className="mb-4 text-base font-bold text-gray-900">Order Summary</h3>
                             <div className="mb-5 max-h-80 space-y-5 overflow-y-auto pr-1.5">
                                 {summary.groups.map((group) => (
