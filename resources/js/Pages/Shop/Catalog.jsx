@@ -457,7 +457,7 @@ export default function Catalog(props) {
                             </div>
                         ) : (
                             /* Empty State */
-                            <div className="space-y-4 rounded-xl border border-gray-100 bg-white py-10">
+                            <div className="font-normal space-y-4 rounded-xl border border-gray-100 bg-white py-10">
                                 <WorkspaceEmptyState
                                     icon={Search}
                                     title="No products found"

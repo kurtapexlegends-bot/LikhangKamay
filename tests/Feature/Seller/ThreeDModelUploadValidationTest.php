@@ -28,6 +28,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         Storage::fake('public');
 
         $seller = User::factory()->artisanApproved()->create();
+        \App\Models\Category::create(['name' => 'Vases & Jars', 'slug' => 'vases-jars']);
 
         $response = $this->actingAs($seller)->post(route('products.store'), [
             'sku' => 'LK-GLB1',
@@ -53,6 +54,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         Storage::fake('public');
 
         $seller = User::factory()->artisanApproved()->create();
+        \App\Models\Category::create(['name' => 'Vases & Jars', 'slug' => 'vases-jars']);
 
         $product = Product::create([
             'user_id' => $seller->id,
@@ -92,6 +94,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         Storage::fake('public');
 
         $seller = User::factory()->artisanApproved()->create();
+        \App\Models\Category::create(['name' => 'Vases & Jars', 'slug' => 'vases-jars']);
 
         $product = Product::create([
             'user_id' => $seller->id,

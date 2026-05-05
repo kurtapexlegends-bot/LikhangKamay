@@ -41,9 +41,9 @@ class DiscoveryExperienceTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Shop/Catalog')
                 ->where('filters.search', 'Heritage Clay')
-                ->where('products.0.seller', 'Heritage Clay Studio')
-                ->where('products.0.name', 'Ivory Vase')
-                ->has('products', 2)
+                ->where('products.data.0.seller', 'Heritage Clay Studio')
+                ->where('products.data.0.name', 'Ivory Vase')
+                ->has('products.data', 2)
             );
     }
 

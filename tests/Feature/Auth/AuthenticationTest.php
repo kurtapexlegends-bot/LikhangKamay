@@ -131,11 +131,11 @@ class AuthenticationTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('orders.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('artisan.pending'));
 
         $this->actingAs($user)
             ->get(route('seller.subscription'))
-            ->assertForbidden();
+            ->assertRedirect(route('artisan.pending'));
     }
 
     public function test_artisan_owners_without_completed_setup_cannot_access_seller_workspace_or_owner_only_seller_routes(): void
@@ -165,6 +165,7 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_logout(): void
     {
+        /** @var User $user */
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->post('/logout');

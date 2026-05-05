@@ -13,8 +13,8 @@ class ApprovalConsentSourceTest extends TestCase
         $this->assertNotFalse($source);
         $this->assertStringContainsString("route('admin.artisan.documents.viewed', viewingArtisan.id)", $source);
         $this->assertStringContainsString('disabled={processing || !allSubmittedDocumentsViewed}', $source);
-        $this->assertStringContainsString('submitted documents previewed', $source);
-        $this->assertStringContainsString('Preview All Documents First', $source);
+        $this->assertStringContainsString('Verification Progress', $source);
+        $this->assertStringContainsString('Ready for approval', $source);
         $this->assertStringContainsString('Preview all submitted files first', $source);
         $this->assertStringNotContainsString('setApprovingArtisan', $source);
     }

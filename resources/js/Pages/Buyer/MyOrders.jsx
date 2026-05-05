@@ -1249,8 +1249,8 @@ export default function MyOrders({ auth, orders }) {
                                             </button>
                                         )}
 
-                                        {/* IN TRANSIT / READY / DELIVERED: Confirm Receipt */}
-                                        {(['Shipped', 'Ready for Pickup', 'Delivered'].includes(order.status) && !order.received_at) && (
+                                        {/* DELIVERED: Confirm Receipt */}
+                                        {(order.status === 'Delivered' && !order.received_at) && (
                                             <button 
                                                 onClick={() => openModal('receive', order.id)}
                                                 className={`inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-5 rounded-lg text-[12px] font-bold shadow-md transition-all hover:-translate-y-0.5 ${
