@@ -173,4 +173,18 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/');
     }
+
+    public function test_users_can_authenticate_with_remember_me(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+            'remember' => 'on',
+        ]);
+
+        $response->assertCookie(\Illuminate\Support\Facades\Auth::guard()->getRecallerName());
+        $this->assertAuthenticatedAs($user);
+    }
 }

@@ -180,21 +180,21 @@ export default function Checkout({ auth, pricing }) {
 
     const summary = useMemo(() => {
         const merchandiseSubtotal = sellerGroups.reduce((sum, group) => sum + group.subtotal, 0);
-        const convenienceFeeForSubtotal = (subtotal) => Number((subtotal * convenienceFeeRate).toFixed(2));
-        const convenienceFeeTotal = data.shipping_method === 'Delivery'
-            ? Number(sellerGroups.reduce((sum, group) => sum + convenienceFeeForSubtotal(group.subtotal), 0).toFixed(2))
+        const platformFeeForSubtotal = (subtotal) => Number((subtotal * convenienceFeeRate).toFixed(2));
+        const platformFeeTotal = data.shipping_method === 'Delivery'
+            ? Number(sellerGroups.reduce((sum, group) => sum + platformFeeForSubtotal(group.subtotal), 0).toFixed(2))
             : 0;
         const shippingFeeTotal = data.shipping_method === 'Delivery'
             ? Number(shippingQuote.totalShippingFee || 0)
             : 0;
         return {
             merchandiseSubtotal,
-            convenienceFeeTotal,
+            platformFeeTotal,
             shippingFeeTotal,
-            grandTotal: Number((merchandiseSubtotal + convenienceFeeTotal + shippingFeeTotal).toFixed(2)),
+            grandTotal: Number((merchandiseSubtotal + platformFeeTotal + shippingFeeTotal).toFixed(2)),
             groups: sellerGroups.map((group) => ({
                 ...group,
-                convenienceFee: data.shipping_method === 'Delivery' ? convenienceFeeForSubtotal(group.subtotal) : 0,
+                platformFee: data.shipping_method === 'Delivery' ? platformFeeForSubtotal(group.subtotal) : 0,
                 shippingFee: data.shipping_method === 'Delivery'
                     ? Number(shippingQuote.groups[String(group.sellerId)] || 0)
                     : 0,
@@ -438,7 +438,7 @@ export default function Checkout({ auth, pricing }) {
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.shipping_method === 'Delivery' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600' : 'border-gray-200 hover:border-clay-300'}`}>
                                     <input type="radio" name="shipping_method" value="Delivery" checked={data.shipping_method === 'Delivery'} onChange={(event) => setData((current) => ({ ...current, shipping_method: event.target.value }))} className="text-clay-600 focus:ring-clay-500" />
-                                    <div><p className="font-bold text-gray-900">Standard Delivery</p><p className="text-xs text-gray-500">3% fee per seller order subtotal.</p></div>
+                                    <div><p className="font-bold text-gray-900">Standard Delivery</p><p className="text-xs text-gray-500">Convenience fee applies per seller order subtotal.</p></div>
                                 </label>
                                 <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.shipping_method === 'Pick Up' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600' : 'border-gray-200 hover:border-clay-300'}`}>
                                     <input type="radio" name="shipping_method" value="Pick Up" checked={data.shipping_method === 'Pick Up'} onChange={(event) => setData((current) => ({ ...current, shipping_method: event.target.value, payment_method: 'COD' }))} className="text-clay-600 focus:ring-clay-500" />
@@ -621,7 +621,7 @@ export default function Checkout({ auth, pricing }) {
                             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
                                 <div className="flex items-start gap-3.5">
                                     <div className="rounded-full bg-blue-100 p-2.5 text-blue-600"><Store size={20} /></div>
-                                    <div><h3 className="text-base font-bold text-blue-900">Store Pick Up Selected</h3><p className="mt-1 text-sm text-blue-800">No address needed. Coordinate pickup in chat.</p><div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">No Convenience Fee</span><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">COD Only</span></div></div>
+                                    <div><h3 className="text-base font-bold text-blue-900">Store Pick Up Selected</h3><p className="mt-1 text-sm text-blue-800">No address needed. Coordinate pickup in chat.</p><div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">No Platform Fee</span><span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">COD Only</span></div></div>
                                 </div>
                             </div>
                         )}
@@ -665,7 +665,7 @@ export default function Checkout({ auth, pricing }) {
                                             {!showAggregateBreakdown && (
                                                 <>
                                                     <div className="flex justify-between"><span>Merchandise</span><span className="font-medium">{peso(group.subtotal)}</span></div>
-                                                    {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Convenience Fee (3%)</span><span className="font-medium">{peso(group.convenienceFee)}</span></div>}
+                                                    {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Platform Fee</span><span className="font-medium">{peso(group.platformFee)}</span></div>}
                                                     {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Shipping Fee</span><span className={shippingQuote.status !== 'ready' ? 'italic text-gray-400 font-normal' : 'font-medium'}>{shippingQuote.status === 'ready' ? peso(group.shippingFee) : (shippingQuote.status === 'error' ? 'Unavailable' : 'Calculating...')}</span></div>}
                                                 </>
                                             )}
@@ -683,7 +683,7 @@ export default function Checkout({ auth, pricing }) {
                                 {showAggregateBreakdown && (
                                     <>
                                         <div className="flex justify-between"><span>Merchandise Subtotal</span><span>{peso(summary.merchandiseSubtotal)}</span></div>
-                                        <div className="flex justify-between"><span>Convenience Fee (3%)</span><span>{peso(summary.convenienceFeeTotal)}</span></div>
+                                        <div className="flex justify-between"><span>Platform Fee ({Number(convenienceFeeRate * 100).toFixed(0)}%)</span><span>{peso(summary.platformFeeTotal)}</span></div>
                                         <div className="flex justify-between"><span>Shipping Fee</span><span className={data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready' ? 'text-xs italic text-gray-400' : ''}>{shippingFeeSummaryValue}</span></div>
                                     </>
                                 )}

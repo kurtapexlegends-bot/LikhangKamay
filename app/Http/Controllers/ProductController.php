@@ -118,8 +118,8 @@ class ProductController extends Controller
             'sku' => 'required|unique:products,sku',
             'name' => 'required|string|max:255',
             'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],
-            'price' => 'required|numeric',
-            'cost_price' => 'nullable|numeric',
+            'price' => 'required|numeric|min:0',
+            'cost_price' => 'required|numeric|min:0',
             'stock' => 'required|integer',
             'description' => 'nullable|string',
             'clay_type' => 'nullable|string',
@@ -278,8 +278,8 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string',
-            'price' => 'required|numeric',
-            'cost_price' => 'nullable|numeric',
+            'price' => 'required|numeric|min:0',
+            'cost_price' => 'required|numeric|min:0',
             'stock' => 'required|integer',
             'status' => 'required|string',
             'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],

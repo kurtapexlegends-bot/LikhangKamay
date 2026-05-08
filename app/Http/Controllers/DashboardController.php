@@ -80,7 +80,7 @@ class DashboardController extends Controller
                 return ['value' => $current, 'growth' => round($growth, 1)];
             };
 
-            $revenueData = $getMetricWithGrowth('total_amount', 'sum');
+            $revenueData = $getMetricWithGrowth('seller_net_amount', 'sum');
             $ordersData = $getMetricWithGrowth('id', 'count');
             $customersData = $getMetricWithGrowth('user_id', 'distinct');
             $avgValue = $ordersData['value'] > 0 ? $revenueData['value'] / $ordersData['value'] : 0;
@@ -88,7 +88,7 @@ class DashboardController extends Controller
             $prevRev = Order::where('artisan_id', $userId)
                 ->where('status', 'Completed')
                 ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
-                ->sum('total_amount');
+                ->sum('seller_net_amount');
             $prevOrd = Order::where('artisan_id', $userId)
                 ->where('status', 'Completed')
                 ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
@@ -106,7 +106,7 @@ class DashboardController extends Controller
             $monthlyRaw = Order::where('artisan_id', $userId)
                 ->where('status', 'Completed')
                 ->where('created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-                ->selectRaw("{$monthExpr} as month_num, SUM(total_amount) as value")
+                ->selectRaw("{$monthExpr} as month_num, SUM(seller_net_amount) as value")
                 ->groupByRaw($monthExpr)
                 ->orderByRaw($monthExpr)
                 ->get()
@@ -125,7 +125,7 @@ class DashboardController extends Controller
             $yearExpr = $this->yearNumberExpression('created_at');
             $yearlyData = Order::where('artisan_id', $userId)
                 ->where('status', 'Completed')
-                ->selectRaw("{$yearExpr} as year_num, SUM(total_amount) as value")
+                ->selectRaw("{$yearExpr} as year_num, SUM(seller_net_amount) as value")
                 ->groupByRaw($yearExpr)
                 ->orderByRaw($yearExpr)
                 ->get()
@@ -163,7 +163,25 @@ class DashboardController extends Controller
                 ])
                 ->sum('total_cost');
 
-            return compact('revenueData', 'ordersData', 'customersData', 'avgValue', 'avgGrowth', 'monthlyData', 'yearlyData', 'categoryData', 'pendingRequests', 'totalDeductions');
+            $pendingOrders = Order::where('artisan_id', $userId)
+                ->where('status', 'Pending')
+                ->count();
+
+            $stalledOrders = Order::where('artisan_id', $userId)
+                ->whereNotIn('status', ['Completed', 'Cancelled', 'Refunded', 'Replaced'])
+                ->where('created_at', '<=', Carbon::now()->subDays(3))
+                ->count();
+
+            $lowStockProducts = \App\Models\Product::where('user_id', $userId)
+                ->where('status', 'Active')
+                ->where('stock', '<=', 5)
+                ->count();
+
+            return compact(
+                'revenueData', 'ordersData', 'customersData', 'avgValue', 'avgGrowth', 
+                'monthlyData', 'yearlyData', 'categoryData', 'pendingRequests', 
+                'totalDeductions', 'pendingOrders', 'stalledOrders', 'lowStockProducts'
+            );
         });
 
         // Extract cached variables
@@ -203,7 +221,7 @@ class DashboardController extends Controller
                     'customer' => $order->customer_name,
                     'customer_avatar' => $order->user->avatar ?? null,
                     'date' => $order->created_at->format('M d, Y'),
-                    'amount' => $order->total_amount,
+                    'amount' => $order->seller_net_amount,
                     'status' => $order->status,
                     'img' => $order->items->first()->product_img ?? null,
                 ];
@@ -240,6 +258,9 @@ class DashboardController extends Controller
                 'avg_growth' => $avgGrowth,
                 'pending_requests' => $pendingRequests,
                 'total_deductions' => $totalDeductions,
+                'pending_orders' => $pendingOrders,
+                'stalled_orders' => $stalledOrders,
+                'low_stock_count' => $lowStockProducts,
             ],
             'subscription' => [
                 'plan' => $seller->premium_tier,

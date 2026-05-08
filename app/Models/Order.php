@@ -179,7 +179,7 @@ class Order extends Model
             return round((float) ($this->getAttribute('platform_commission_amount') ?? 0), 2);
         }
 
-        return round((float) $this->merchandise_subtotal * 0.05, 2);
+        return round((float) $this->merchandise_subtotal * \App\Services\OrderFinanceService::getPlatformCommissionRate(), 2);
     }
 
     public function getResolvedSellerNetAmount(): float

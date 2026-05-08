@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { motion, animate } from 'framer-motion';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
@@ -16,18 +17,49 @@ import CompactPagination from '@/Components/CompactPagination';
 import ExportButton from '@/Components/ExportButton';
 import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
 
-const KPICard = ({ title, value, icon: Icon, color, bg, trend }) => (
-    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-300">
+const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleString(), duration = 1.5 }) => {
+    const nodeRef = useRef(null);
+
+    useEffect(() => {
+        if (!nodeRef.current) return;
+        
+        const controls = animate(0, value, {
+            duration: duration,
+            onUpdate(value) {
+                nodeRef.current.textContent = formatter(value);
+            }
+        });
+
+        return () => controls.stop();
+    }, [value]);
+
+    return <span ref={nodeRef}>{formatter(0)}</span>;
+};
+
+const KPICard = ({ title, value, icon: Icon, color, bg }) => (
+    <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm transition-all hover:border-stone-200 hover:shadow-md group"
+    >
         <div className="flex items-center justify-between">
             <div>
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-stone-400">{title}</p>
-                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{value}</h3>
+                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
+                    {typeof value === 'number' ? (
+                        <AnimatedCounter value={value} />
+                    ) : value.includes('PHP') ? (
+                        <AnimatedCounter value={parseFloat(value.replace(/[^\d.]/g, ''))} formatter={(v) => `PHP ${Math.round(v).toLocaleString()}`} />
+                    ) : (
+                        value
+                    )}
+                </h3>
             </div>
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${color}`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${color} group-hover:scale-110 transition-transform`}>
                 <Icon size={20} />
             </div>
         </div>
-    </div>
+    </motion.div>
 );
 
 const Tab = ({ label, count, active, onClick, color = 'clay' }) => (
@@ -66,9 +98,10 @@ const StatusBadge = ({ status }) => {
     };
     
     const { bg, text, border, icon: Icon } = config[status] || config['Pending'];
+    const isUrgent = ['Pending', 'Refund/Return'].includes(status);
 
     return (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${bg} ${text} ${border}`}>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${bg} ${text} ${border} ${isUrgent ? 'animate-pulse shadow-sm shadow-current/20' : ''}`}>
             <Icon size={12} />
             {status}
         </span>
@@ -977,7 +1010,7 @@ export default function OrderManager({ auth, orders = [] }) {
                             <Tab label="Pending" count={getCount('Pending')} active={activeTab === 'Pending'} onClick={() => setActiveTab('Pending')} />
                             <Tab label="Processing" count={getCount('Accepted')} active={activeTab === 'Processing'} onClick={() => setActiveTab('Processing')} />
                             <Tab label="Shipped" count={getCount('Shipped')} active={activeTab === 'Shipped'} onClick={() => setActiveTab('Shipped')} />
-                            <Tab label="To Pickup" count={getCount('Ready for Pickup')} active={activeTab === 'To Pickup'} onClick={() => setActiveTab('To Pickup')} />
+                            <Tab label="To Pickup" count={getCount('Ready for Pickup')} active={activeTab === 'Ready for Pickup'} onClick={() => setActiveTab('Ready for Pickup')} />
                             <Tab label="Delivered" count={getCount('Delivered')} active={activeTab === 'Delivered'} onClick={() => setActiveTab('Delivered')} />
                             <Tab label="Returns" count={getCount('Refund/Return')} active={activeTab === 'Returns'} onClick={() => setActiveTab('Returns')} />
                             <Tab label="Completed" count={getCount('Completed')} active={activeTab === 'Completed'} onClick={() => setActiveTab('Completed')} />
@@ -1089,36 +1122,48 @@ export default function OrderManager({ auth, orders = [] }) {
                         {/* Order List */}
                         <div className="space-y-3 p-3 sm:space-y-0 sm:p-0 sm:divide-y sm:divide-gray-100">
                             {paginatedOrders.length > 0 ? (
-                                paginatedOrders.map((order) => {
+                                paginatedOrders.map((order, idx) => {
                                     const issueSummary = sellerIssueSummary(order);
-
                                     return (
-                                    <div key={order.id} className="group rounded-2xl border border-stone-200 bg-white px-3.5 py-3 shadow-sm transition-colors hover:bg-gray-50/50 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-4 sm:py-3 sm:shadow-none">
-                                        
-                                        {/* Order Header */}
-                                        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                                            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-                                                <div>
-                                                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">Order</span>
-                                                    <h3 className="font-bold text-gray-900 text-sm">{order.id}</h3>
+                                        <motion.div 
+                                            key={order.id}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            className="group relative mb-4 rounded-2xl border border-stone-100 bg-white p-4 shadow-sm transition-all hover:border-stone-200 hover:shadow-md sm:p-6"
+                                        >
+                                            {/* Order Header */}
+                                            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                                                <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                                                    <div>
+                                                        <span className="text-[10px] text-gray-400 uppercase tracking-wide">Order</span>
+                                                        <h3 className="font-bold text-gray-900 text-sm">{order.id}</h3>
+                                                    </div>
+                                                    <div className="hidden sm:block h-6 w-px bg-gray-200" />
+                                                    <div className="flex items-center gap-1.5 text-gray-500">
+                                                        <Clock size={12} />
+                                                        <span className="text-xs font-medium">{order.date}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-gray-700">
+                                                        <User size={12} />
+                                                        <span className="text-xs font-semibold">{order.customer}</span>
+                                                        {canAccessMessages && (
+                                                            <button 
+                                                                onClick={() => openChat(order.user_id)}
+                                                                className="ml-1 p-1 text-stone-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-colors"
+                                                                title="Chat with customer"
+                                                                type="button"
+                                                            >
+                                                                <MessageCircle size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="hidden sm:block h-6 w-px bg-gray-200" />
-                                                <div className="flex items-center gap-1.5 text-gray-500">
-                                                    <Clock size={12} />
-                                                    <span className="text-xs font-medium">{order.date}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-gray-700">
-                                                    <User size={12} />
-                                                    <span className="text-xs font-semibold">{order.customer}</span>
+                                                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+                                                    <PaymentStatusBadge status={order.payment_status} method={order.payment_method} />
+                                                    <StatusBadge status={order.status} />
                                                 </div>
                                             </div>
-                                            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                                                <PaymentStatusBadge status={order.payment_status} method={order.payment_method} />
-                                                <StatusBadge status={order.status} />
-                                            </div>
-                                        </div>
-
-                                        {/* Info Badges */}
                                         <div className="mb-3 flex flex-wrap gap-1.5 sm:gap-2">
                                             {order.payment_status === 'pending' && order.payment_method === 'COD' && ['Pending', 'Accepted', 'Shipped', 'Ready for Pickup', 'Delivered'].includes(order.status) && (
                                                 <button
@@ -1193,9 +1238,34 @@ export default function OrderManager({ auth, orders = [] }) {
 
                                             {/* Action Panel */}
                                             <div className="border-t border-gray-100 pt-3 lg:w-64 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-                                                <div className="mb-3 rounded-xl bg-stone-50 px-3 py-2 text-left lg:bg-transparent lg:px-0 lg:py-0 lg:text-right">
-                                                    <p className="text-[11px] font-medium text-gray-400">Total</p>
-                                                    <p className="text-xl font-bold text-clay-700">PHP {order.total}</p>
+                                                <div className="mb-4 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+                                                    <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-2">
+                                                        <div>
+                                                            <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">Buyer Total</p>
+                                                            <p className="text-sm font-bold text-stone-800">PHP {order.total}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Your Net</p>
+                                                            <p className="text-sm font-bold text-emerald-600">PHP {Number(order.seller_net_amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-1.5 text-[10px]">
+                                                        <div className="flex justify-between text-stone-500 border-b border-stone-50 pb-1 mb-1">
+                                                            <span>Merchandise:</span>
+                                                            <span className="font-semibold text-stone-700">{Number(order.merchandise_subtotal).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                                        </div>
+                                                        
+                                                        {/* Transaction context */}
+                                                        <div className="flex justify-between text-stone-400 pt-0.5">
+                                                            <span>Shipping (Paid by Buyer):</span>
+                                                            <span className="font-medium text-stone-600">{Number(order.shipping_fee_amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-stone-400">
+                                                            <span>Platform Fee (Paid by Buyer):</span>
+                                                            <span className="font-medium text-stone-600">{Number(order.convenience_fee_amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 
                                                 {/* Status-specific Actions */}
@@ -1577,8 +1647,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
+                                            </motion.div>
+                                        );
                                 })
                             ) : (
                                 <div className="py-20 text-center">

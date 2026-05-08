@@ -1,0 +1,9 @@
+{
+  "appId": "com.likhangkamay.app",
+  "appName": "LikhangKamay",
+  "webDir": "mobile_build",
+  "server": {
+    "url": "https://likhangkamay.app",
+    "cleartext": true
+  }
+}

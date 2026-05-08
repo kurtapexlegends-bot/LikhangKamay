@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LikhangKamay</string>
+    <string name="title_activity_main">LikhangKamay</string>
+    <string name="package_name">com.likhangkamay.app</string>
+    <string name="custom_url_scheme">com.likhangkamay.app</string>
+</resources>

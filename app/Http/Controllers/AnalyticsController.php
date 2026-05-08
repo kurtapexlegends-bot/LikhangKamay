@@ -64,53 +64,39 @@ class AnalyticsController extends Controller
             'profit' => $this->calculatePercentage($current['profit'], $previous['profit']),
         ];
 
-        $pendingOrders = Order::where('artisan_id', $sellerId)
-            ->where('status', 'Pending')
-            ->count();
-
-        $completedOrdersCount = Order::where('artisan_id', $sellerId)
-            ->where('status', 'Completed')
-            ->count();
-
-        $stalledOrders = Order::query()
-            ->where('artisan_id', $sellerId)
-            ->whereNotIn('status', ['Completed', 'Cancelled', 'Refunded', 'Replaced'])
-            ->where('created_at', '<=', now()->subDays(3))
-            ->count();
-
-        $lowStockProducts = Product::query()
-            ->where('user_id', $sellerId)
-            ->where('status', 'Active')
-            ->where('stock', '<=', 5)
-            ->orderBy('stock')
-            ->orderBy('name')
-            ->take(5)
-            ->get(['id', 'name', 'stock', 'sold', 'slug'])
-            ->map(fn (Product $product) => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'stock' => (int) $product->stock,
-                'sold' => (int) ($product->sold ?? 0),
-                'slug' => $product->slug,
-            ]);
-
-        $repeatBuyers = Order::query()
+        // Phase 2: VIP & Customer Intelligence
+        $customerStatsRaw = Order::query()
             ->join('users', 'orders.user_id', '=', 'users.id')
             ->where('orders.artisan_id', $sellerId)
             ->where('orders.status', 'Completed')
-            ->selectRaw('orders.user_id, users.name, COUNT(*) as orders_count, SUM(orders.total_amount) as total_spend')
-            ->groupBy('orders.user_id', 'users.name')
-            ->havingRaw('COUNT(*) >= 2')
-            ->orderByDesc('orders_count')
-            ->orderByDesc('total_spend')
-            ->take(5)
-            ->get()
-            ->map(fn ($buyer) => [
-                'id' => (int) $buyer->user_id,
-                'name' => $buyer->name,
-                'orders_count' => (int) $buyer->orders_count,
-                'total_spend' => (float) $buyer->total_spend,
-            ]);
+            ->selectRaw('
+                orders.user_id, 
+                users.name, 
+                users.email, 
+                users.avatar, 
+                COUNT(*) as orders_count, 
+                SUM(orders.seller_net_amount) as clv,
+                MIN(orders.created_at) as first_purchase_at,
+                MAX(orders.created_at) as last_purchase_at
+            ')
+            ->groupBy('orders.user_id', 'users.name', 'users.email', 'users.avatar')
+            ->get();
+
+        $vipCustomers = $customerStatsRaw->sortByDesc('clv')->take(10)->map(fn ($buyer) => [
+            'id' => (int) $buyer->user_id,
+            'name' => $buyer->name,
+            'email' => $buyer->email,
+            'avatar' => $buyer->avatar,
+            'orders_count' => (int) $buyer->orders_count,
+            'clv' => (float) $buyer->clv,
+            'last_active' => Carbon::parse($buyer->last_purchase_at)->diffForHumans(),
+        ])->values();
+
+        $loyaltyStats = [
+            'new' => $customerStatsRaw->filter(fn($c) => $c->orders_count === 1)->count(),
+            'returning' => $customerStatsRaw->filter(fn($c) => $c->orders_count > 1)->count(),
+            'total_unique' => $customerStatsRaw->count(),
+        ];
 
         $chartBaseQuery = function () use ($sellerId, $categoryFilter) {
             $query = OrderItem::query()
@@ -129,7 +115,7 @@ class AnalyticsController extends Controller
         $monthExpr = $this->monthNumberExpression('orders.created_at');
         $monthlyRaw = $chartBaseQuery()
             ->where('orders.created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->selectRaw("{$monthExpr} as month_num, SUM(order_items.price * order_items.quantity) as value")
+            ->selectRaw("{$monthExpr} as month_num, SUM(orders.seller_net_amount) as value")
             ->groupByRaw($monthExpr)
             ->orderByRaw($monthExpr)
             ->get()
@@ -147,7 +133,7 @@ class AnalyticsController extends Controller
 
         $yearExpr = $this->yearNumberExpression('orders.created_at');
         $yearlyData = $chartBaseQuery()
-            ->selectRaw("{$yearExpr} as year_num, SUM(order_items.price * order_items.quantity) as value")
+            ->selectRaw("{$yearExpr} as year_num, SUM(orders.seller_net_amount) as value")
             ->groupByRaw($yearExpr)
             ->orderByRaw($yearExpr)
             ->get()
@@ -163,13 +149,24 @@ class AnalyticsController extends Controller
                 ->where('status', 'Completed');
         })
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->select('products.category', DB::raw('SUM(order_items.quantity) as value'))
+            ->select(
+                'products.category', 
+                DB::raw('SUM(order_items.quantity) as volume'),
+                DB::raw('SUM(order_items.price * order_items.quantity) as revenue'),
+                DB::raw('SUM(order_items.cost * order_items.quantity) as cost')
+            )
             ->groupBy('products.category')
             ->get()
             ->map(function ($item) {
+                $profit = $item->revenue - $item->cost;
+                $margin = $item->revenue > 0 ? ($profit / $item->revenue) * 100 : 0;
+                
                 return [
                     'category' => $item->category,
-                    'value' => (int) $item->value,
+                    'value' => (int) $item->volume, // Keep 'value' for chart compatibility
+                    'revenue' => (float) $item->revenue,
+                    'profit' => (float) $profit,
+                    'margin' => round($margin, 1),
                 ];
             });
 
@@ -225,6 +222,55 @@ class AnalyticsController extends Controller
             ],
         ];
 
+        // Phase 3: Sales Intelligence
+        $salesHeatmap = Order::query()
+            ->where('artisan_id', $sellerId)
+            ->where('status', 'Completed')
+            ->selectRaw('
+                CASE 
+                    WHEN DAYOFWEEK(created_at) = 1 THEN "Sun"
+                    WHEN DAYOFWEEK(created_at) = 2 THEN "Mon"
+                    WHEN DAYOFWEEK(created_at) = 3 THEN "Tue"
+                    WHEN DAYOFWEEK(created_at) = 4 THEN "Wed"
+                    WHEN DAYOFWEEK(created_at) = 5 THEN "Thu"
+                    WHEN DAYOFWEEK(created_at) = 6 THEN "Fri"
+                    ELSE "Sat"
+                END as day,
+                HOUR(created_at) as hour,
+                COUNT(*) as count
+            ')
+            ->groupBy('day', 'hour')
+            ->get();
+
+        $velocityData = OrderItem::whereHas('order', function($q) use ($sellerId) {
+                $q->where('artisan_id', $sellerId)->where('status', 'Completed');
+            })
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->selectRaw('
+                products.name,
+                AVG(DATEDIFF(order_items.created_at, products.created_at)) as avg_days_to_sell
+            ')
+            ->groupBy('products.id', 'products.name')
+            ->having('avg_days_to_sell', '>', 0)
+            ->orderBy('avg_days_to_sell')
+            ->take(5)
+            ->get();
+
+        $slowMovers = Product::where('user_id', $sellerId)
+            ->where('status', 'Active')
+            ->whereDoesntHave('orderItems', function($q) {
+                $q->where('created_at', '>=', now()->subDays(30));
+            })
+            ->select('id', 'name', 'stock', 'created_at')
+            ->take(5)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'stock' => $p->stock,
+                'days_inactive' => Carbon::parse($p->created_at)->diffInDays(now()),
+            ]);
+
         $canViewSponsorshipAnalytics = $seller->isEliteTier();
         $sponsorshipAnalytics = $canViewSponsorshipAnalytics
             ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
@@ -235,24 +281,21 @@ class AnalyticsController extends Controller
                 'total_revenue' => $current['revenue'],
                 'gross_profit' => $current['profit'],
                 'profit_margin' => round($current['margin'], 1),
-                'total_orders' => $current['orders'],
-                'avg_order_value' => $current['avg'],
-                'pending_orders' => $pendingOrders,
-                'stalled_orders' => $stalledOrders,
                 'growth' => $growth,
                 'average_rating' => $reviewStats['average'],
                 'review_stats' => $reviewStats,
             ],
             'insights' => [
-                'low_stock_products' => $lowStockProducts,
-                'repeat_buyers' => $repeatBuyers,
-                'stalled_orders' => $stalledOrders,
+                'vip_customers' => $vipCustomers,
+                'loyalty_stats' => $loyaltyStats,
+                'sales_heatmap' => $salesHeatmap,
+                'sales_velocity' => $velocityData,
+                'slow_movers' => $slowMovers,
             ],
             'dataContext' => [
                 'generated_at' => now()->toIso8601String(),
-                'completed_orders_count' => $completedOrdersCount,
                 'category_filter' => $categoryFilter,
-                'source_label' => 'Completed orders, active products, and live review records.',
+                'source_label' => 'Historical order data and customer feedback records.',
             ],
             'chartData' => ['monthly' => $monthlyData, 'yearly' => $yearlyData],
             'categoryData' => $categoryData,

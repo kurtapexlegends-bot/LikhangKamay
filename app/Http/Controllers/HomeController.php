@@ -9,8 +9,17 @@ use Inertia\Inertia;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request, \App\Services\AuthRedirectService $authRedirectService)
     {
+        // Smart Landing: Redirect Artisans and Admins to their workspace if they land on the home page
+        if ($user = $request->user()) {
+            $landingPath = $authRedirectService->pathForVerifiedUser($user);
+            
+            if ($landingPath !== '/') {
+                return redirect()->to($landingPath);
+            }
+        }
+
         $sponsoredProducts = $this->getSponsoredProducts();
 
         return Inertia::render('Welcome', [

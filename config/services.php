@@ -76,4 +76,9 @@ return [
         'fallback_per_km' => env('CHECKOUT_SHIPPING_FALLBACK_PER_KM', 10),
     ],
 
+    'platform' => [
+        'commission_rate' => env('PLATFORM_COMMISSION_RATE', 0.0),
+        'convenience_fee_rate' => env('PLATFORM_CONVENIENCE_FEE_RATE', 0.03),
+    ],
+
 ];

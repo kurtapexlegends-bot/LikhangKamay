@@ -6,8 +6,26 @@ use App\Models\Order;
 
 class OrderFinanceService
 {
-    public const CONVENIENCE_FEE_RATE = 0.03;
-    public const PLATFORM_COMMISSION_RATE = 0.05;
+    public static function getPlatformCommissionRate(): float
+    {
+        return (float) config('services.platform.commission_rate', 0.0);
+    }
+
+    public static function getConvenienceFeeRate(): float
+    {
+        return (float) config('services.platform.convenience_fee_rate', 0.03);
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    public static function getPricingData(): array
+    {
+        return [
+            'commission_rate' => self::getPlatformCommissionRate(),
+            'convenience_fee_rate' => self::getConvenienceFeeRate(),
+        ];
+    }
 
     /**
      * @return array<string, float>
@@ -16,12 +34,12 @@ class OrderFinanceService
     {
         $normalizedSubtotal = $this->money($merchandiseSubtotal);
         $convenienceFee = $shippingMethod === 'Delivery'
-            ? $this->money($normalizedSubtotal * self::CONVENIENCE_FEE_RATE)
+            ? $this->money($normalizedSubtotal * self::getConvenienceFeeRate())
             : 0.00;
         $normalizedShippingFee = $shippingMethod === 'Delivery'
             ? $this->money($shippingFee)
             : 0.00;
-        $platformCommission = $this->money($normalizedSubtotal * self::PLATFORM_COMMISSION_RATE);
+        $platformCommission = $this->money($normalizedSubtotal * self::getPlatformCommissionRate());
         $sellerNet = $this->money($normalizedSubtotal - $platformCommission);
         $grandTotal = $this->money($normalizedSubtotal + $convenienceFee + $normalizedShippingFee);
 

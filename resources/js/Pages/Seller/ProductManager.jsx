@@ -207,6 +207,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 detail: hasThreeDReady ? '3D file ready' : 'Upload .glb or .gltf',
                 complete: hasThreeDReady,
             },
+            {
+                key: 'cost',
+                label: 'Cost price',
+                detail: data.cost_price ? 'Cost recorded' : 'Missing cost data',
+                complete: Boolean(data.cost_price) && !isNaN(parseFloat(data.cost_price)),
+            },
         ];
 
         return {
@@ -313,7 +319,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
 
             const galleryCount = Array.isArray(product.gallery_paths) ? product.gallery_paths.length : 0;
 
-            return !product.cover_photo_path || galleryCount < 3 || galleryCount > 5 || !product.model_3d_path;
+            return !product.cover_photo_path || galleryCount < 3 || galleryCount > 5 || !product.model_3d_path || !product.cost_price;
         }).length
     ), [products]);
     const lowStockCount = useMemo(() => products.filter((product) => product.stock < 10 && product.status !== 'Archived').length, [products]);
@@ -1187,12 +1193,12 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                 <InputError message={errors.price} className="mt-2" />
                                             </div>
                                             <div>
-                                                <InputLabel value="Cost Price (₱)" />
+                                                <InputLabel value="Cost Price (₱) *" />
                                                 <div className="relative mt-1">
                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₱</span>
                                                     <TextInput 
                                                         type="number" 
-                                                        className={`${modalFieldClass} border-gray-200 bg-gray-50 pl-7`} 
+                                                        className={`${modalFieldClass} pl-7`} 
                                                         value={data.cost_price} 
                                                         onChange={(e) => setData('cost_price', e.target.value)} 
                                                         placeholder="0.00"

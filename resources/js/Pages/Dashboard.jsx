@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
+import { motion, animate } from 'framer-motion';
 import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
@@ -21,6 +22,25 @@ import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
+const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleString(), duration = 1.5 }) => {
+    const nodeRef = useRef(null);
+
+    useEffect(() => {
+        if (!nodeRef.current) return;
+        
+        const controls = animate(0, value, {
+            duration: duration,
+            onUpdate(value) {
+                nodeRef.current.textContent = formatter(value);
+            }
+        });
+
+        return () => controls.stop();
+    }, [value]);
+
+    return <span ref={nodeRef}>{formatter(0)}</span>;
+};
+
 const COLORS = ['#c07251', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
 
 const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
@@ -39,10 +59,22 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
     }
     
     return (
-        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow group">
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow group"
+        >
             <div>
                 <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">{value}</h3>
+                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
+                    {typeof value === 'number' ? (
+                        <AnimatedCounter value={value} />
+                    ) : value.includes('₱') ? (
+                        <AnimatedCounter value={parseFloat(value.replace(/[^\d.]/g, ''))} formatter={(v) => `₱${Math.round(v).toLocaleString()}`} />
+                    ) : (
+                        value
+                    )}
+                </h3>
                 
                 {growth !== undefined && (
                     <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>
@@ -52,10 +84,10 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
                 )}
                 {growth === undefined && <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>}
             </div>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} ${text}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} ${text} group-hover:scale-110 transition-transform`}>
                 <Icon size={20} />
             </div>
-        </div>
+        </motion.div>
     );
 };
 
@@ -155,14 +187,18 @@ export default function Dashboard({ auth }) {
 
             <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
                 <SellerHeader
-                    title="Dashboard"
-                    subtitle="Overview of your shop's performance"
+                    title={(() => {
+                        const hour = new Date().getHours();
+                        if (hour < 12) return `Good morning, ${auth.user.name.split(' ')[0]}`;
+                        if (hour < 18) return `Good afternoon, ${auth.user.name.split(' ')[0]}`;
+                        return `Good evening, ${auth.user.name.split(' ')[0]}`;
+                    })()}
+                    subtitle="Here's what's happening with your shop today."
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
                 <main className="flex-1 p-6 overflow-y-auto space-y-6">
-                    
-                    {/* 1. KEY METRICS CARDS WITH REAL GROWTH DATA */}
+                    {/* 1. KEY METRICS CARDS (STRATEGIC PRIORITY) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {isLoading ? (
                             <ArtisanSkeleton variant="stat" count={4} />
@@ -203,6 +239,52 @@ export default function Dashboard({ auth }) {
                             </>
                         )}
                     </div>
+
+                    {/* 2. COMPACT SHOP HEALTH STRIP (OPERATIONAL INSIGHTS) */}
+                    {(metrics.pending_orders > 0 || metrics.stalled_orders > 0 || metrics.low_stock_count > 0) && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-wrap items-center gap-3 bg-white/40 backdrop-blur-md border border-stone-200/60 rounded-2xl p-3 px-4 shadow-sm"
+                        >
+                            <div className="flex items-center gap-2 pr-4 border-r border-stone-200">
+                                <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Shop Health</span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                {metrics.stalled_orders > 0 && (
+                                    <Link 
+                                        href={route('orders.index')}
+                                        className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-rose-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        <AlertCircle size={14} />
+                                        <span>{metrics.stalled_orders} Stalled Orders</span>
+                                    </Link>
+                                )}
+
+                                {metrics.pending_orders > 0 && (
+                                    <Link 
+                                        href={route('orders.index', { status: 'Pending' })}
+                                        className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        <ShoppingBag size={14} />
+                                        <span>{metrics.pending_orders} New Orders</span>
+                                    </Link>
+                                )}
+
+                                {metrics.low_stock_count > 0 && (
+                                    <Link 
+                                        href={route('products.index', { tab: 'Low Stock' })}
+                                        className="flex items-center gap-2 bg-clay-50 hover:bg-clay-100 text-clay-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-clay-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        <Box size={14} />
+                                        <span>{metrics.low_stock_count} Low Stock Items</span>
+                                    </Link>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* 2. REVENUE ANALYTICS CHART */}
@@ -249,6 +331,7 @@ export default function Dashboard({ auth }) {
                                             <Tooltip 
                                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                                 formatter={(value) => `₱${Number(value).toLocaleString()}`} 
+                                                cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }}
                                             />
                                             <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
                                         </AreaChart>
@@ -397,9 +480,15 @@ export default function Dashboard({ auth }) {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {recentOrders.data.length > 0 ? (
-                                        recentOrders.data.map((order) => (
-                                            <tr key={order.id} className="hover:bg-gray-50/50 transition">
+                                        {recentOrders.data.length > 0 ? (
+                                        recentOrders.data.map((order, index) => (
+                                            <motion.tr 
+                                                key={order.id} 
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: index * 0.05 }}
+                                                className="hover:bg-stone-50 transition-colors"
+                                            >
                                                 <td className="px-6 py-4 font-bold text-gray-900">{order.id}</td>
                                                 <td className="px-6 py-4 flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold text-xs overflow-hidden border border-clay-200">
@@ -425,7 +514,7 @@ export default function Dashboard({ auth }) {
                                                         Details <ArrowUpRight size={14} />
                                                     </Link>
                                                 </td>
-                                            </tr>
+                                            </motion.tr>
                                         ))
                                     ) : (
                                         <tr>

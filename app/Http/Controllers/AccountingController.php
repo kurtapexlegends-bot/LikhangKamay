@@ -313,7 +313,7 @@ class AccountingController extends Controller
 
         $totalRevenue = Order::where('artisan_id', $userId)
             ->where('status', 'Completed')
-            ->sum('total_amount');
+            ->sum('seller_net_amount');
 
         $stockExpenses = StockRequest::where('user_id', $userId)
             ->whereIn('status', [

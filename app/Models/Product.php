@@ -88,6 +88,11 @@ class Product extends Model
         return $this->hasMany(SponsorshipRequest::class);
     }
 
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     /**
      * Boot the model.
      */

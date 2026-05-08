@@ -73,6 +73,7 @@ class OrderController extends Controller
                     'payment_status' => $order->payment_status ?? 'pending',
                     'payment_method' => $order->payment_method,
                     'total' => number_format($order->total_amount, 2),
+                    'total_amount' => (float) $order->total_amount,
                     'merchandise_subtotal' => (float) $order->merchandise_subtotal,
                     'convenience_fee_amount' => (float) $order->convenience_fee_amount,
                     'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
@@ -236,9 +237,7 @@ class OrderController extends Controller
 
         return Inertia::render('Shop/Checkout', [
             'items' => $items,
-            'pricing' => [
-                'convenience_fee_rate' => OrderFinanceService::CONVENIENCE_FEE_RATE,
-            ],
+            'pricing' => OrderFinanceService::getPricingData(),
             'auth' => [
                 'user' => Auth::user()->load('addresses'),
             ]

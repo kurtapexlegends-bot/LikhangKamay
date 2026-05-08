@@ -59,8 +59,8 @@ class PaymentController extends Controller
             $lineItems[] = [
                 'currency' => 'PHP',
                 'amount' => (int) round(((float) $order->convenience_fee_amount) * 100),
-                'description' => 'Convenience fee (3%) for delivery order',
-                'name' => 'Convenience Fee (3%)',
+                'description' => 'Platform fee for order processing and delivery coordination',
+                'name' => 'Platform Fee',
                 'quantity' => 1,
             ];
 
