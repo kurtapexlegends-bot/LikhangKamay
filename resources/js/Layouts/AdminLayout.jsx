@@ -23,7 +23,8 @@ import {
     ShieldAlert,
     Activity,
     FolderTree,
-    Clock3
+    Clock3,
+    RotateCcw
 } from 'lucide-react';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
@@ -70,6 +71,7 @@ export default function AdminLayout({ title, children }) {
             title: 'Trust & Safety',
             items: [
                 { name: 'Moderation Queue', href: route('admin.moderation'), icon: ShieldAlert, current: route().current('admin.moderation') },
+                { name: 'Restoration Center', href: route('admin.trash'), icon: RotateCcw, current: route().current('admin.trash') },
                 { name: 'Global Alerts', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
             ]
         },

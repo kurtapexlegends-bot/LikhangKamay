@@ -338,6 +338,11 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     // System Diagnostics
     Route::get('/diagnostics', [SuperAdminController::class, 'diagnostics'])->name('admin.diagnostics');
     Route::post('/diagnostics/cache/purge', [SuperAdminController::class, 'purgeCache'])->name('admin.diagnostics.cache.purge');
+
+    // Restoration Center (Trash)
+    Route::get('/trash', [SuperAdminController::class, 'trash'])->name('admin.trash');
+    Route::post('/trash/restore', [SuperAdminController::class, 'restoreItem'])->name('admin.trash.restore');
+    Route::post('/trash/permanent-delete', [SuperAdminController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
     
     // Support Impersonation
     Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');

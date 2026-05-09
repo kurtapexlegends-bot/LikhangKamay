@@ -41,6 +41,7 @@ Schedule::command('orders:sync-lalamove')->everyFifteenMinutes();
 Schedule::command('orders:auto-cancel-failed-deliveries')->everyFifteenMinutes();
 Schedule::command('sponsorships:expire')->daily();
 Schedule::command('paymongo:verify')->everyFiveMinutes();
+Schedule::command('system:prune-trash')->daily();
 
 Artisan::command('notifications:showcase', function () {
     // Find the user ID from the active session

@@ -7,6 +7,8 @@ use App\Models\SellerActivityLog;
 use App\Models\User;
 use App\Http\Controllers\ProductController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -179,21 +181,30 @@ class ShopController extends Controller
                 break;
         }
 
-        // 4. Get available filter options for sidebar
-        $availableLocations = User::whereHas('products', function ($q) {
-            $q->where('status', 'Active');
-        })->whereNotNull('city')
-            ->distinct()
-            ->pluck('city')
-            ->filter()
-            ->values();
+        // 4. Get available filter options for sidebar (Cached for 1 hour)
+        $availableLocations = Cache::remember('catalog_locations', 3600, function () {
+            return User::whereHas('products', function ($q) {
+                $q->where('status', 'Active');
+            })->whereNotNull('city')
+                ->distinct()
+                ->pluck('city')
+                ->filter()
+                ->values();
+        });
 
-        $availableMaterials = Product::where('status', 'Active')
-            ->whereNotNull('clay_type')
-            ->distinct()
-            ->pluck('clay_type')
-            ->filter()
-            ->values();
+        $availableMaterials = Cache::remember('catalog_materials', 3600, function () {
+            return Product::where('status', 'Active')
+                ->whereNotNull('clay_type')
+                ->distinct()
+                ->pluck('clay_type')
+                ->filter()
+                ->values();
+        });
+
+        // 6. Categories list (Cached for 24 hours)
+        $categories = Cache::remember('catalog_categories', 86400, function () {
+            return ['All', ...\App\Models\Category::orderBy('name')->pluck('name')->toArray()];
+        });
 
         // 5. Fetch Products (Paginated)
         $paginator = $query->paginate(20);
@@ -223,9 +234,6 @@ class ShopController extends Controller
         $sponsoredResults = collect($paginator->items())->filter(function($p) {
             return $p['is_sponsored'];
         })->values();
-
-        // 6. Categories list
-        $categories = ['All', ...\App\Models\Category::pluck('name')->toArray()];
 
         return Inertia::render('Shop/Catalog', [
             'products' => $paginator,

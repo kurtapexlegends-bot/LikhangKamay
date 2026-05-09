@@ -25,6 +25,7 @@ use App\Mail\ArtisanApproved;
 use App\Mail\ArtisanRejected;
 use App\Models\ArtisanStatusLog;
 use App\Models\UserTierLog;
+use App\Models\Category;
 use App\Support\StructuredAddress;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -1510,20 +1511,44 @@ class SuperAdminController extends Controller
      */
     public function slaMonitoring()
     {
-        // 1. Artisan Approval SLA (Goal: 24h)
-        $approvedArtisans = User::where('role', 'artisan')
-            ->whereNotNull('approved_at')
-            ->whereNotNull('setup_completed_at')
-            ->get(['approved_at', 'setup_completed_at']);
+        // Cache metrics for 30 minutes to reduce DB load
+        $metrics = Cache::remember('admin_sla_metrics', 1800, function () {
+            // 1. Artisan Approval SLA (Goal: 24h)
+            // Use DB-level average for performance
+            $avgApprovalTime = User::where('role', 'artisan')
+                ->whereNotNull('approved_at')
+                ->whereNotNull('setup_completed_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, setup_completed_at, approved_at)) as avg_hours')
+                ->value('avg_hours') ?? 0;
 
-        $avgApprovalTime = $approvedArtisans->count() > 0
-            ? $approvedArtisans->avg(fn($u) => $u->approved_at->diffInHours($u->setup_completed_at))
-            : 0;
+            // 2. Dispute Resolution SLA (Goal: 48h)
+            $avgDisputeTime = ReviewDispute::where('status', 'resolved')
+                ->whereNotNull('resolved_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hours')
+                ->value('avg_hours') ?? 0;
 
+            // 3. Sponsorship SLA (Goal: 24h)
+            $avgSponsorshipTime = SponsorshipRequest::where('status', 'approved')
+                ->whereNotNull('approved_at')
+                ->whereNotNull('requested_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, requested_at, approved_at)) as avg_hours')
+                ->value('avg_hours') ?? 0;
+
+            return [
+                'avgArtisanApprovalHours' => round($avgApprovalTime, 1),
+                'avgDisputeResolutionHours' => round($avgDisputeTime, 1),
+                'avgSponsorshipApprovalHours' => round($avgSponsorshipTime, 1),
+                'artisanSLACompliance' => $avgApprovalTime <= 24 ? 100 : max(0, round(100 - (($avgApprovalTime - 24) * 2), 1)),
+                'disputeSLACompliance' => $avgDisputeTime <= 48 ? 100 : max(0, round(100 - (($avgDisputeTime - 48) * 1.5), 1)),
+            ];
+        });
+
+        // Get stale items (not cached as these need to be live for resolution)
         $staleArtisanApplications = User::where('role', 'artisan')
             ->where('artisan_status', 'pending')
             ->where('setup_completed_at', '<=', now()->subHours(48))
             ->orderBy('setup_completed_at', 'asc')
+            ->limit(50) // Limit to top 50 for performance
             ->get()
             ->map(fn($u) => [
                 'id' => $u->id,
@@ -1536,18 +1561,10 @@ class SuperAdminController extends Controller
                 'route' => route('admin.artisan.view', $u->id)
             ]);
 
-        // 2. Dispute Resolution SLA (Goal: 48h)
-        $resolvedDisputes = ReviewDispute::where('status', 'resolved')
-            ->whereNotNull('resolved_at')
-            ->get(['resolved_at', 'created_at']);
-
-        $avgDisputeTime = $resolvedDisputes->count() > 0
-            ? $resolvedDisputes->avg(fn($d) => $d->resolved_at->diffInHours($d->created_at))
-            : 0;
-
         $staleDisputes = ReviewDispute::where('status', 'under_review')
             ->where('created_at', '<=', now()->subHours(48))
             ->orderBy('created_at', 'asc')
+            ->limit(50)
             ->get()
             ->map(fn($d) => [
                 'id' => $d->id,
@@ -1560,19 +1577,10 @@ class SuperAdminController extends Controller
                 'route' => route('admin.review-moderation')
             ]);
 
-        // 3. Sponsorship SLA (Goal: 24h)
-        $approvedSponsorships = SponsorshipRequest::where('status', 'approved')
-            ->whereNotNull('approved_at')
-            ->whereNotNull('requested_at')
-            ->get(['approved_at', 'requested_at']);
-
-        $avgSponsorshipTime = $approvedSponsorships->count() > 0
-            ? $approvedSponsorships->avg(fn($s) => $s->approved_at->diffInHours($s->requested_at))
-            : 0;
-
         $staleSponsorships = SponsorshipRequest::where('status', 'pending')
             ->where('requested_at', '<=', now()->subHours(24))
             ->orderBy('requested_at', 'asc')
+            ->limit(50)
             ->get()
             ->map(fn($s) => [
                 'id' => $s->id,
@@ -1594,15 +1602,120 @@ class SuperAdminController extends Controller
             ->values();
 
         return Inertia::render('Admin/SLA', [
-            'metrics' => [
-                'avgArtisanApprovalHours' => round($avgApprovalTime, 1),
-                'avgDisputeResolutionHours' => round($avgDisputeTime, 1),
-                'avgSponsorshipApprovalHours' => round($avgSponsorshipTime, 1),
-                'totalStaleItems' => $staleQueue->count(),
-                'artisanSLACompliance' => $avgApprovalTime <= 24 ? 100 : max(0, round(100 - (($avgApprovalTime - 24) * 2), 1)),
-                'disputeSLACompliance' => $avgDisputeTime <= 48 ? 100 : max(0, round(100 - (($avgDisputeTime - 48) * 1.5), 1)),
-            ],
+            'metrics' => array_merge($metrics, ['totalStaleItems' => $staleQueue->count()]),
             'staleQueue' => $staleQueue,
         ]);
+    }
+
+    /**
+     * Restoration Center (Trash) - Platform Governance
+     */
+    public function trash()
+    {
+        // Use pagination for trash to handle large datasets efficiently
+        $deletedProducts = Product::onlyTrashed()
+            ->with('user:id,name,shop_name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100) // Performance safeguard
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'type' => 'Product',
+                'context' => $p->user->shop_name ?? $p->user->name,
+                'deleted_at' => $p->deleted_at->toIso8601String(),
+                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+
+        $deletedCategories = Category::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->get()
+            ->map(fn($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'type' => 'Category',
+                'context' => 'Global Taxonomy',
+                'deleted_at' => $c->deleted_at->toIso8601String(),
+                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+
+        $deletedOrders = Order::onlyTrashed()
+            ->with('user:id,name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($o) => [
+                'id' => $o->id,
+                'name' => "Order #{$o->order_number}",
+                'type' => 'Order',
+                'context' => $o->user->name ?? 'Unknown Customer',
+                'deleted_at' => $o->deleted_at->toIso8601String(),
+                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+
+        $trashQueue = collect([])
+            ->concat($deletedProducts)
+            ->concat($deletedCategories)
+            ->concat($deletedOrders)
+            ->sortByDesc('deleted_at')
+            ->values();
+
+        return Inertia::render('Admin/Trash', [
+            'trashQueue' => $trashQueue,
+            'stats' => [
+                'totalItems' => $trashQueue->count(),
+                'products' => Product::onlyTrashed()->count(),
+                'categories' => Category::onlyTrashed()->count(),
+                'orders' => Order::onlyTrashed()->count(),
+            ]
+        ]);
+    }
+
+    public function restoreItem(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required',
+            'type' => 'required|in:Product,Category,Order',
+        ]);
+
+        $model = match($validated['type']) {
+            'Product' => Product::class,
+            'Category' => Category::class,
+            'Order' => Order::class,
+            default => null
+        };
+
+        if (!$model) {
+            return back()->with('error', 'Invalid item type.');
+        }
+
+        $item = $model::onlyTrashed()->findOrFail($validated['id']);
+        $item->restore();
+
+        return back()->with('success', "{$validated['type']} restored successfully.");
+    }
+
+    public function permanentDeleteItem(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required',
+            'type' => 'required|in:Product,Category,Order',
+        ]);
+
+        $model = match($validated['type']) {
+            'Product' => Product::class,
+            'Category' => Category::class,
+            'Order' => Order::class,
+            default => null
+        };
+
+        if (!$model) {
+            return back()->with('error', 'Invalid item type.');
+        }
+
+        $item = $model::onlyTrashed()->findOrFail($validated['id']);
+        $item->forceDelete();
+
+        return back()->with('success', "{$validated['type']} permanently deleted.");
     }
 }
