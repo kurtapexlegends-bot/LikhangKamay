@@ -1,8 +1,8 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Users, Store, Search, Shield, Briefcase, ChevronDown, X, Filter, VenetianMask } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
+import { Users, Store, Search, Shield, Briefcase, ChevronDown, X, Filter, VenetianMask, User as UserIcon } from 'lucide-react';
 import CompactPagination from '@/Components/CompactPagination';
 import Dropdown from '@/Components/Dropdown';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -147,6 +147,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
     const [quickView, setQuickView] = useState('all');
     const [impersonateTarget, setImpersonateTarget] = useState(null);
     const [drawerArtisan, setDrawerArtisan] = useState(null);
+
     const [expandedRows, setExpandedRows] = useState(() => (
         filters.search ? getAutoExpandedRows(users.data || []) : {}
     ));
@@ -672,11 +673,15 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                                 </div>
                             </div>
                         </div>
+
+
                         
-                        <StaffMemberList
-                            staffMembers={drawerArtisan.staff_members || []}
-                            emptyMessage="No staff accounts linked to this shop."
-                        />
+                        <div className="min-h-[400px]">
+                            <StaffMemberList
+                                staffMembers={drawerArtisan.staff_members || []}
+                                emptyMessage="No staff accounts linked to this shop."
+                            />
+                        </div>
                     </div>
                 )}
             </SlideOverDrawer>
@@ -686,7 +691,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                 onClose={() => setImpersonateTarget(null)}
                 onConfirm={confirmImpersonation}
                 title="Support Impersonation"
-                message="Are you sure you want to securely log in as this user? You will temporarily leave your Super Admin session to view the platform exactly as they do. All actions you take will be logged under your audit trail."
+                message="Are you sure you want to securely log in as this user? You will temporarily leave your Super Admin session to view the platform exactly as they do."
                 icon={VenetianMask}
                 iconBg="bg-stone-100 text-stone-600"
                 confirmText="Login As User"

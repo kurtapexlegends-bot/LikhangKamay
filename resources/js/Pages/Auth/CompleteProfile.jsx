@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -7,7 +8,7 @@ import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import { Head, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertTriangle } from 'lucide-react';
 
 export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false }) {
     const suggestedNameParts = typeof suggestedName === 'string'
@@ -31,6 +32,36 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             ? { seller: false, sellerPrivacy: false }
             : { terms: false, privacy: false }
     );
+
+    );
+
+    // Real-time Shop Validation
+    const [isShopNameTaken, setIsShopNameTaken] = useState(false);
+    const [isValidatingShop, setIsValidatingShop] = useState(false);
+
+    useEffect(() => {
+        if (!isArtisan) return;
+        
+        const timeoutId = setTimeout(async () => {
+            if (data.shop_name.trim().length > 2) {
+                setIsValidatingShop(true);
+                try {
+                    // Simple slugification for validation
+                    const slug = data.shop_name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    const response = await axios.post(route('admin.artisan.check-slug'), { slug });
+                    setIsShopNameTaken(response.data.exists);
+                } catch (e) {
+                    console.error("Shop validation failed", e);
+                } finally {
+                    setIsValidatingShop(false);
+                }
+            } else {
+                setIsShopNameTaken(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [data.shop_name, isArtisan]);
 
     const submit = (e) => {
         e.preventDefault();
@@ -195,12 +226,28 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 id="shop_name"
                                 name="shop_name"
                                 value={data.shop_name}
-                                className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                className={`pl-10 pr-10 block w-full rounded-xl border ${isShopNameTaken ? 'border-rose-300 ring-rose-500/10' : 'border-stone-200 ring-clay-500/10'} bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 py-3 transition-all hover:border-stone-300`}
                                 autoComplete="organization"
                                 onChange={(e) => setData('shop_name', e.target.value)}
                                 placeholder="e.g. Silang Pottery"
                             />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                {isValidatingShop ? (
+                                    <Loader2 size={16} className="text-stone-400 animate-spin" />
+                                ) : data.shop_name.trim().length > 2 ? (
+                                    isShopNameTaken ? (
+                                        <XCircle size={16} className="text-rose-500" />
+                                    ) : (
+                                        <CheckCircle size={16} className="text-emerald-500" />
+                                    )
+                                ) : null}
+                            </div>
                         </div>
+                        {isShopNameTaken && (
+                            <p className="mt-1.5 text-[10px] font-bold text-rose-500 flex items-center gap-1 uppercase tracking-wider">
+                                <AlertTriangle size={10} /> This shop name is already taken.
+                            </p>
+                        )}
                         <InputError message={errors.shop_name} className="mt-2" />
                     </div>
                     <div>
@@ -365,7 +412,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 ? 'bg-gradient-to-r from-stone-800 to-stone-900 hover:from-stone-900 hover:to-black shadow-stone-900/25' 
                                 : 'bg-gradient-to-r from-clay-600 to-clay-500 hover:from-clay-700 hover:to-clay-600 shadow-clay-500/25'
                         }`}
-                        disabled={processing}
+                        disabled={processing || (isArtisan && isShopNameTaken)}
                     >
                         <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-20deg]"></div>
                         <span className={`relative flex items-center gap-2 ${isArtisan ? 'text-amber-50' : 'text-white'}`}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 
 import Dropdown from '@/Components/Dropdown';
@@ -40,6 +41,42 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
     const { flash, filters = {} } = usePage().props;
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [filterCategory, setFilterCategory] = useState('all');
+    const [isNavigating, setIsNavigating] = useState(false);
+
+    useEffect(() => {
+        const unbindStart = router.on('start', () => setIsNavigating(true));
+        const unbindFinish = router.on('finish', () => setIsNavigating(false));
+        return () => { unbindStart(); unbindFinish(); };
+    }, []);
+
+    const InventorySkeleton = () => (
+        <>
+            {[1, 2, 3, 4, 5].map(i => (
+                <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-xl bg-gray-100" />
+                            <div className="space-y-1">
+                                <div className="h-3 w-24 bg-gray-100 rounded" />
+                                <div className="h-2 w-32 bg-gray-50 rounded" />
+                            </div>
+                        </div>
+                    </td>
+                    <td className="px-4 py-3"><div className="h-2 w-16 bg-gray-100 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-2 w-12 bg-gray-100 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-2 w-16 bg-gray-100 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-2 w-20 bg-gray-100 rounded" /></td>
+                    <td className="px-4 py-3"><div className="h-5 w-20 bg-gray-100 rounded-full" /></td>
+                    <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                            <div className="h-7 w-7 bg-gray-100 rounded-lg" />
+                            <div className="h-7 w-7 bg-gray-100 rounded-lg" />
+                        </div>
+                    </td>
+                </tr>
+            ))}
+        </>
+    );
 
     // Sync search from URL (for Global Search support)
     useEffect(() => {
@@ -354,77 +391,87 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {filteredSupplies.length > 0 ? (
-                                        filteredSupplies.map((supply) => (
-                                            <tr key={supply.id} className="hover:bg-gray-50/50 transition duration-150">
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200">
-                                                            {supply.product && supply.product.img ? (
-                                                                <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
-                                                            ) : (
-                                                                <Package size={14} />
-                                                            )}
+                                    {isNavigating && filteredSupplies.length === 0 ? (
+                                        <InventorySkeleton />
+                                    ) : filteredSupplies.length > 0 ? (
+                                        <AnimatePresence initial={false}>
+                                            {filteredSupplies.map((supply) => (
+                                                <motion.tr 
+                                                    key={supply.id} 
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    exit={{ opacity: 0 }}
+                                                    className="hover:bg-gray-50/50 transition duration-150"
+                                                >
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200">
+                                                                {supply.product && supply.product.img ? (
+                                                                    <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
+                                                                ) : (
+                                                                    <Package size={14} />
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-gray-900 text-xs">{supply.name}</p>
+                                                                {supply.notes && <p className="text-[10px] text-gray-500">{supply.notes}</p>}
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <p className="font-bold text-gray-900 text-xs">{supply.name}</p>
-                                                            {supply.notes && <p className="text-[10px] text-gray-500">{supply.notes}</p>}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-[10px] text-gray-600">{supply.category}</td>
+                                                    <td className="px-4 py-3 font-bold text-gray-900 text-xs">
+                                                        {supply.quantity} {supply.unit}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-[10px] text-gray-600">
+                                                        {supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString()}` : '-'}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-[10px] text-gray-600">{supply.supplier || '-'}</td>
+                                                    <td className="px-4 py-3">
+                                                        {supply.quantity <= supply.min_stock ? (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
+                                                                <AlertTriangle size={10} /> Low Stock
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+                                                                In Stock
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                disabled={!canEditProcurement}
+                                                                onClick={() => openRestockModal(supply)}
+                                                                className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                                                title="Restock"
+                                                            >
+                                                                <RefreshCw size={14} />
+                                                            </button>
+                                                            <button
+                                                                disabled={!canEditStockRequests}
+                                                                onClick={() => {
+                                                                    setSupplyToRequest(supply);
+                                                                    setRequestQuantity(supply.min_stock * 2);
+                                                                    setShowConfirmRequest(true);
+                                                                }}
+                                                                className="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                                                title="Request Restock"
+                                                            >
+                                                                <Banknote size={14} />
+                                                            </button>
+                                                            <button
+                                                                disabled={!canEditProcurement}
+                                                                onClick={() => handleDelete(supply)}
+                                                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-[10px] text-gray-600">{supply.category}</td>
-                                                <td className="px-4 py-3 font-bold text-gray-900 text-xs">
-                                                    {supply.quantity} {supply.unit}
-                                                </td>
-                                                <td className="px-4 py-3 text-[10px] text-gray-600">
-                                                    {supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString()}` : '-'}
-                                                </td>
-                                                <td className="px-4 py-3 text-[10px] text-gray-600">{supply.supplier || '-'}</td>
-                                                <td className="px-4 py-3">
-                                                    {supply.quantity <= supply.min_stock ? (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                                                            <AlertTriangle size={10} /> Low Stock
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
-                                                            In Stock
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            disabled={!canEditProcurement}
-                                                            onClick={() => openRestockModal(supply)}
-                                                            className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                            title="Restock"
-                                                        >
-                                                            <RefreshCw size={14} />
-                                                        </button>
-                                                        <button
-                                                            disabled={!canEditStockRequests}
-                                                            onClick={() => {
-                                                                setSupplyToRequest(supply);
-                                                                setRequestQuantity(supply.min_stock * 2);
-                                                                setShowConfirmRequest(true);
-                                                            }}
-                                                            className="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                            title="Request Restock"
-                                                        >
-                                                            <Banknote size={14} />
-                                                        </button>
-                                                        <button
-                                                            disabled={!canEditProcurement}
-                                                            onClick={() => handleDelete(supply)}
-                                                            className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                                    </td>
+                                                </motion.tr>
+                                            ))}
+                                        </AnimatePresence>
                                     ) : (
                                         <tr>
                                             <td colSpan="7" className="px-6 py-20 text-center">

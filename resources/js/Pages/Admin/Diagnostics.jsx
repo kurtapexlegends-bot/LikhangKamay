@@ -4,7 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Server, Database, Activity, Mail, Truck, RefreshCw, HardDrive, ShieldAlert, Cpu } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 
-export default function Diagnostics({ systemHealth, memoryUsage, peakMemoryUsage }) {
+export default function Diagnostics({ systemHealth, queueStatus = {}, memoryUsage, peakMemoryUsage }) {
     const { addToast } = useToast();
 
     const handlePurgeCache = () => {
@@ -17,21 +17,30 @@ export default function Diagnostics({ systemHealth, memoryUsage, peakMemoryUsage
     };
 
     const StatusLight = ({ status }) => {
-        let colorClass = 'bg-stone-300 shadow-stone-200';
+        let colorClass = 'bg-stone-300';
+        let glowClass = 'bg-stone-200';
         let pulseClass = '';
+        
         if (status === 'Online' || status === 'Configured' || status === 'Secure') {
-            colorClass = 'bg-emerald-500 shadow-emerald-200';
-            pulseClass = 'animate-pulse';
+            colorClass = 'bg-emerald-500';
+            glowClass = 'bg-emerald-500';
+            pulseClass = 'animate-ping opacity-20';
         } else if (status === 'Offline' || status === 'Error' || status === 'Warning') {
-            colorClass = 'bg-red-500 shadow-red-200';
+            colorClass = 'bg-rose-500';
+            glowClass = 'bg-rose-500';
+            pulseClass = 'animate-pulse opacity-40';
         } else if (status === 'Unknown' || status === 'Unconfigured') {
-            colorClass = 'bg-amber-400 shadow-amber-200';
+            colorClass = 'bg-amber-400';
+            glowClass = 'bg-amber-400';
         }
 
         return (
-            <div className="relative flex items-center justify-center w-3 h-3">
-                <div className={`absolute w-full h-full rounded-full opacity-50 ${pulseClass} ${colorClass}`}></div>
-                <div className={`relative w-2 h-2 rounded-full shadow-sm ${colorClass}`}></div>
+            <div className="relative flex items-center justify-center w-4 h-4">
+                {pulseClass && (
+                    <div className={`absolute w-full h-full rounded-full ${pulseClass} ${glowClass}`}></div>
+                )}
+                <div className={`absolute w-3 h-3 rounded-full opacity-20 blur-[2px] ${glowClass}`}></div>
+                <div className={`relative w-2 h-2 rounded-full border border-white/20 shadow-sm ${colorClass}`}></div>
             </div>
         );
     };
@@ -96,6 +105,91 @@ export default function Diagnostics({ systemHealth, memoryUsage, peakMemoryUsage
                             >
                                 <RefreshCw size={14} /> Purge Application Cache
                             </button>
+                        </div>
+                    </div>
+                </section>
+
+                {/* --- BACKGROUND JOB INTELLIGENCE --- */}
+                <section>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Background Job Intelligence</h2>
+                        <div className="flex items-center gap-2 bg-stone-100 px-3 py-1 rounded-full border border-stone-200">
+                            <Activity size={12} className="text-stone-500" />
+                            <span className="text-[10px] font-bold text-stone-600 uppercase tracking-tight">Real-time Monitor</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <Mail size={18} />
+                                </div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${queueStatus.emails > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                    {queueStatus.emails > 0 ? 'Processing' : 'Idle'}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Queued Emails</p>
+                                <p className="text-2xl font-black text-stone-900 leading-none">{queueStatus.emails}</p>
+                            </div>
+                            <div className="pt-3 border-t border-stone-50">
+                                <p className="text-[10px] text-stone-500 font-medium">Transactional & Notifications</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                                    <RefreshCw size={18} />
+                                </div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${queueStatus.reports > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                    {queueStatus.reports > 0 ? 'Generating' : 'Idle'}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Report Generation</p>
+                                <p className="text-2xl font-black text-stone-900 leading-none">{queueStatus.reports}</p>
+                            </div>
+                            <div className="pt-3 border-t border-stone-50">
+                                <p className="text-[10px] text-stone-500 font-medium">BI & Analytics Exports</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                                    <HardDrive size={18} />
+                                </div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${queueStatus.images > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                    {queueStatus.images > 0 ? 'Optimizing' : 'Idle'}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Image Processing</p>
+                                <p className="text-2xl font-black text-stone-900 leading-none">{queueStatus.images}</p>
+                            </div>
+                            <div className="pt-3 border-t border-stone-50">
+                                <p className="text-[10px] text-stone-500 font-medium">CDN & Media Optimization</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                                    <ShieldAlert size={18} />
+                                </div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${queueStatus.failed_jobs > 0 ? 'bg-rose-100 text-rose-700' : 'bg-stone-100 text-stone-500'}`}>
+                                    {queueStatus.failed_jobs > 0 ? 'Attention' : 'Healthy'}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Failed Jobs</p>
+                                <p className="text-2xl font-black text-stone-900 leading-none">{queueStatus.failed_jobs}</p>
+                            </div>
+                            <div className="pt-3 border-t border-stone-50">
+                                <p className="text-[10px] text-stone-500 font-medium">Requires Admin Manual Retry</p>
+                            </div>
                         </div>
                     </div>
                 </section>

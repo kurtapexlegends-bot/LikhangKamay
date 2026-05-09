@@ -102,9 +102,31 @@ class ArtisanSetupController extends Controller
                 'tin_id' => [$user->tin_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
             ]);
 
-            $upload = function ($key) use ($request, $user) {
+            $documentFlags = [];
+            $upload = function ($key) use ($request, $user, &$documentFlags) {
                 if ($request->hasFile($key)) {
-                    return $request->file($key)->store('legal_docs', 'public');
+                    $file = $request->file($key);
+                    $flags = [];
+
+                    // Check file size (suspiciously small)
+                    if ($file->getSize() < 5120) { // < 5KB
+                        $flags[] = 'empty_or_corrupt';
+                    }
+
+                    // Check image resolution if it's an image
+                    if (str_starts_with($file->getMimeType(), 'image/')) {
+                        $dimensions = getimagesize($file->getRealPath());
+                        if ($dimensions) {
+                            $width = $dimensions[0];
+                            $height = $dimensions[1];
+                            if ($width < 300 || $height < 300) {
+                                $flags[] = 'low_resolution';
+                            }
+                        }
+                    }
+
+                    $documentFlags[$key] = $flags;
+                    return $file->store('legal_docs', 'public');
                 }
                 return $user->{$key};
             };
@@ -127,6 +149,7 @@ class ArtisanSetupController extends Controller
                 'dti_registration' => $upload('dti_registration'),
                 'valid_id' => $upload('valid_id'),
                 'tin_id' => $upload('tin_id'),
+                'document_flags' => $documentFlags,
                 'setup_completed_at' => now(),
                 'artisan_status' => 'pending',
                 'artisan_rejection_reason' => null,

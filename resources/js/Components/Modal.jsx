@@ -10,6 +10,7 @@ export default function Modal({
     show = false,
     maxWidth = '2xl',
     closeable = true,
+    bottomSheet = false,
     onClose = () => {},
     afterLeave = () => {},
 }) {
@@ -35,7 +36,7 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className="fixed inset-0 z-50 flex transform items-center overflow-y-auto px-3 py-3 transition-all sm:px-4 sm:py-4"
+                className={`fixed inset-0 z-50 flex transform transition-all p-0 sm:px-4 sm:py-4 ${bottomSheet ? 'items-end sm:items-center' : 'items-center overflow-y-auto px-3 py-3'}`}
                 onClose={close}
             >
                 <TransitionChild
@@ -46,20 +47,25 @@ export default function Modal({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" />
+                    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" />
                 </TransitionChild>
 
                 <TransitionChild
                     enter="ease-out duration-300"
-                    enterFrom="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
+                    enterFrom={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-8 sm:translate-y-0 sm:scale-95'}`}
                     enterTo="opacity-100 translate-y-0 sm:scale-100"
                     leave="ease-in duration-200"
                     leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                    leaveTo="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
+                    leaveTo={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-8 sm:translate-y-0 sm:scale-95'}`}
                 >
                     <DialogPanel
-                        className={`relative transform overflow-y-auto rounded-2xl bg-white shadow-2xl transition-all max-h-[85vh] sm:mx-auto sm:w-full ${maxWidthClass}`}
+                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[90vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${bottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'rounded-2xl'}`}
                     >
+                        {bottomSheet && (
+                            <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
+                                <div className="w-12 h-1.5 bg-stone-200 rounded-full" />
+                            </div>
+                        )}
                         {children}
                     </DialogPanel>
                 </TransitionChild>

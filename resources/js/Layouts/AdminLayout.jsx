@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Link, Head, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
@@ -127,34 +128,38 @@ export default function AdminLayout({ title, children }) {
                                 {group.title}
                             </p>
                             <div className="space-y-0.5">
-                                {group.items.map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        prefetch="hover"
-                                        className={`
-                                            flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200 active:scale-95
-                                            ${item.current
-                                                ? 'bg-clay-600 text-white shadow-md shadow-clay-200'
-                                                : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
-                                        `}
-                                    >
-                                        <div className="flex items-center gap-2.5">
-                                            <item.icon
-                                                size={16}
-                                                strokeWidth={2.5}
-                                                className={item.current ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'}
-                                            />
-                                            {item.name}
-                                        </div>
-                                        {item.badge && (
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${item.current ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
-                                                }`}>
-                                                {item.badge}
-                                            </span>
-                                        )}
-                                    </Link>
-                                ))}
+                                {group.items.map((item) => {
+                                    const MotionLink = motion(Link);
+                                    return (
+                                        <MotionLink
+                                            key={item.name}
+                                            href={item.href}
+                                            prefetch="hover"
+                                            whileTap={{ scale: 0.98, x: 2 }}
+                                            className={`
+                                                flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors duration-200
+                                                ${item.current
+                                                    ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
+                                                    : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
+                                            `}
+                                        >
+                                            <div className="flex items-center gap-2.5">
+                                                <item.icon
+                                                    size={16}
+                                                    strokeWidth={2.5}
+                                                    className={item.current ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'}
+                                                />
+                                                {item.name}
+                                            </div>
+                                            {item.badge && (
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${item.current ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
+                                                    }`}>
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </MotionLink>
+                                    );
+                                })}
                             </div>
                         </div>
                     ))}

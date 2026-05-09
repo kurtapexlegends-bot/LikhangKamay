@@ -90,6 +90,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'default_overtime',
         'base_funds',
         'premium_tier',
+        'document_flags',
     ];
 
     /**
@@ -121,6 +122,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'must_change_password' => 'boolean',
             'staff_plan_suspended_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'document_flags' => 'array',
         ];
     }
 

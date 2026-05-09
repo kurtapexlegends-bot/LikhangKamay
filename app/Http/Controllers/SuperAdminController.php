@@ -774,6 +774,7 @@ class SuperAdminController extends Controller
                     'documents_ready_for_approval' => count($submittedDocumentKeys) > 0
                         && count($submittedDocumentKeys) === count($viewedDocumentKeys),
                     'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
+                    'document_flags' => $user->document_flags ?? [],
                 ];
             });
 
@@ -1382,6 +1383,13 @@ class SuperAdminController extends Controller
                 'environment' => config('app.env'),
                 'debug_mode' => config('app.debug'),
             ],
+            'queueStatus' => [
+                'total_jobs' => DB::table('jobs')->count(),
+                'failed_jobs' => DB::table('failed_jobs')->count(),
+                'emails' => DB::table('jobs')->where('payload', 'like', '%Mail%')->orWhere('payload', 'like', '%Notification%')->count(),
+                'reports' => DB::table('jobs')->where('payload', 'like', '%Report%')->count(),
+                'images' => DB::table('jobs')->where('payload', 'like', '%Image%')->orWhere('payload', 'like', '%Process%')->count(),
+            ],
             'memoryUsage' => round(memory_get_usage(true) / 1024 / 1024, 2),
             'peakMemoryUsage' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
         ]);
@@ -1418,7 +1426,7 @@ class SuperAdminController extends Controller
             'name' => 'required|string|max:255|unique:categories,name'
         ]);
 
-        \App\Models\Category::create([
+        $category = \App\Models\Category::create([
             'name' => $validated['name'],
             'slug' => \Illuminate\Support\Str::slug($validated['name'])
         ]);
@@ -1452,8 +1460,48 @@ class SuperAdminController extends Controller
             return back()->with('error', 'Cannot delete a category that contains products. Please reassign the products first.');
         }
 
+        $name = $category->name;
+
+
         $category->delete();
 
         return back()->with('success', 'Category deleted successfully.');
+    }
+
+    public function bulkApproveArtisans(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        $artisans = User::whereIn('id', $ids)->where('artisan_status', 'pending')->get();
+
+        foreach ($artisans as $artisan) {
+            $artisan->update([
+                'artisan_status' => 'approved',
+                'approved_at' => now(),
+                'approved_by' => Auth::id(),
+            ]);
+
+        }
+
+        return back()->with('success', count($artisans) . ' artisans approved.');
+    }
+
+
+
+    public function checkCategoryName(Request $request)
+    {
+        $exists = \App\Models\Category::where('name', $request->name)
+            ->when($request->exclude_id, fn($q) => $q->where('id', '!=', $request->exclude_id))
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
+    }
+
+    public function checkArtisanSlug(Request $request)
+    {
+        $exists = User::where('shop_slug', $request->slug)
+            ->when($request->exclude_id, fn($q) => $q->where('id', '!=', $request->exclude_id))
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
     }
 }

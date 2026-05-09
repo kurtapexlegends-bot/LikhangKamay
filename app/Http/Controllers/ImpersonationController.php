@@ -29,14 +29,6 @@ class ImpersonationController extends Controller
         // Store the original admin ID in the session
         session(['impersonator_id' => $adminId]);
 
-        // Log the security event
-        PlatformActivity::create([
-            'user_id' => $adminId,
-            'action' => 'impersonation_started',
-            'description' => 'Admin initiated support impersonation for user ID ' . $user->id,
-            'metadata' => ['target_user_id' => $user->id]
-        ]);
-
         // Perform the login swap
         Auth::login($user);
 
@@ -65,14 +57,6 @@ class ImpersonationController extends Controller
 
         // Restore the admin session
         Auth::loginUsingId($adminId);
-
-        // Log the return
-        PlatformActivity::create([
-            'user_id' => $adminId,
-            'action' => 'impersonation_ended',
-            'description' => 'Admin ended support impersonation of user ID ' . $impersonatedUserId,
-            'metadata' => ['target_user_id' => $impersonatedUserId]
-        ]);
 
         return redirect()->route('admin.users')->with('success', 'Impersonation ended. You have been returned to your Admin account.');
     }

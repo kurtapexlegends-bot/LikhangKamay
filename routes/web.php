@@ -299,9 +299,16 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::delete('/review-moderation/{reviewDispute}', [SuperAdminController::class, 'destroyReviewModeration'])->name('admin.review-moderation.destroy');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
     Route::get('/pending-artisans/{id}', [SuperAdminController::class, 'viewArtisan'])->name('admin.artisan.view');
+    Route::post('/pending-artisans/bulk-approve', [SuperAdminController::class, 'bulkApproveArtisans'])->name('admin.artisan.bulk-approve');
     Route::post('/pending-artisans/{id}/documents/viewed', [SuperAdminController::class, 'markArtisanDocumentViewed'])->name('admin.artisan.documents.viewed');
     Route::post('/pending-artisans/{id}/approve', [SuperAdminController::class, 'approveArtisan'])->name('admin.artisan.approve');
     Route::post('/pending-artisans/{id}/reject', [SuperAdminController::class, 'rejectArtisan'])->name('admin.artisan.reject');
+    
+    // Real-time Validation
+    Route::post('/taxonomy/check-name', [SuperAdminController::class, 'checkCategoryName'])->name('admin.taxonomy.check-name');
+    Route::post('/artisan/check-slug', [SuperAdminController::class, 'checkArtisanSlug'])->name('admin.artisan.check-slug');
+
+
     
     // Sponsorship Approvals
     Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');

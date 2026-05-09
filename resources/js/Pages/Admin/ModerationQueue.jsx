@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { ShieldAlert, Check, X, AlertTriangle, Eye, ShieldOff, UserX } from 'lucide-react';
+import { ShieldAlert, Check, X, AlertTriangle, Eye, ShieldOff, UserX, Loader2 } from 'lucide-react';
 import CompactPagination from '@/Components/CompactPagination';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+
+const SkeletonModeration = () => (
+    <div className="divide-y divide-stone-100">
+        {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="p-4 space-y-3 animate-pulse">
+                <div className="flex justify-between">
+                    <div className="h-2 w-16 bg-stone-100 rounded" />
+                    <div className="h-2 w-12 bg-stone-100 rounded" />
+                </div>
+                <div className="h-4 w-3/4 bg-stone-100 rounded" />
+                <div className="h-2 w-1/2 bg-stone-100 rounded" />
+            </div>
+        ))}
+    </div>
+);
 
 export default function ModerationQueue({ flags }) {
     const [selectedFlag, setSelectedFlag] = useState(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
+
+    useEffect(() => {
+        const unbindStart = router.on('start', () => setIsNavigating(true));
+        const unbindFinish = router.on('finish', () => setIsNavigating(false));
+        return () => { unbindStart(); unbindFinish(); };
+    }, []);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024); // lg breakpoint
@@ -29,14 +52,17 @@ export default function ModerationQueue({ flags }) {
                 
                 {/* Left Pane: Inbox List */}
                 <div className={`w-full lg:w-1/3 bg-white border border-stone-200 rounded-2xl shadow-sm flex flex-col overflow-hidden ${selectedFlag ? 'hidden lg:flex' : 'flex'} h-full`}>
-                    <div className="p-4 border-b border-stone-100 bg-stone-50/50 shrink-0">
-                        <h3 className="font-bold text-stone-900 flex items-center gap-2">
+                    <div className="p-4 border-b border-stone-100 bg-stone-50/50 shrink-0 flex items-center justify-between">
+                        <h3 className="font-bold text-stone-900 flex items-center gap-2 text-sm sm:text-base">
                             <ShieldAlert size={16} className="text-amber-500" />
                             Pending Reports ({flags.total})
                         </h3>
+                        {isNavigating && <Loader2 size={14} className="animate-spin text-stone-400" />}
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        {flags.data.length === 0 ? (
+                        {isNavigating && flags.data.length === 0 ? (
+                            <SkeletonModeration />
+                        ) : flags.data.length === 0 ? (
                             <div className="p-10 text-center">
                                 <Check size={32} className="mx-auto mb-3 text-stone-300" />
                                 <p className="font-medium text-stone-500 text-sm">The queue is clean.</p>
@@ -44,11 +70,32 @@ export default function ModerationQueue({ flags }) {
                         ) : (
                             <ul className="divide-y divide-stone-100">
                                 {flags.data.map(flag => (
-                                    <li key={flag.id}>
-                                        <button 
+                                    <li key={flag.id} className="relative overflow-hidden group/item">
+                                        {/* Swipe Background Indicators */}
+                                        <div className="absolute inset-0 flex items-center justify-between px-6 pointer-events-none">
+                                            <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs opacity-0 group-drag-right:opacity-100 transition-opacity">
+                                                <Check size={18} strokeWidth={3} /> Dismiss
+                                            </div>
+                                            <div className="flex items-center gap-2 text-rose-600 font-bold text-xs opacity-0 group-drag-left:opacity-100 transition-opacity">
+                                                Take Action <X size={18} strokeWidth={3} />
+                                            </div>
+                                        </div>
+
+                                        <motion.div
+                                            drag="x"
+                                            dragConstraints={{ left: 0, right: 0 }}
+                                            dragElastic={0.7}
+                                            onDragEnd={(e, info) => {
+                                                if (info.offset.x > 100) handleAction(flag.id, 'dismiss');
+                                                if (info.offset.x < -100) handleAction(flag.id, 'action');
+                                            }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className={`relative w-full z-10 bg-white p-4 transition-colors hover:bg-stone-50 cursor-grab active:cursor-grabbing ${selectedFlag?.id === flag.id ? 'bg-amber-50/30' : ''}`}
                                             onClick={() => setSelectedFlag(flag)}
-                                            className={`w-full text-left p-4 transition-colors hover:bg-stone-50 ${selectedFlag?.id === flag.id ? 'bg-amber-50/50 border-l-4 border-amber-400' : 'border-l-4 border-transparent'}`}
                                         >
+                                            {selectedFlag?.id === flag.id && (
+                                                <div className="absolute inset-y-0 left-0 w-1 bg-amber-500" />
+                                            )}
                                             <div className="flex justify-between items-baseline mb-1">
                                                 <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
                                                     {flag.reportable_type.split('\\').pop()}
@@ -61,7 +108,7 @@ export default function ModerationQueue({ flags }) {
                                                 {flag.reportable ? (flag.reportable.name || flag.reportable.title || `ID: ${flag.reportable_id}`) : 'Content Deleted'}
                                             </p>
                                             <p className="text-xs text-stone-500 mt-1 line-clamp-1">"{flag.reason}"</p>
-                                        </button>
+                                        </motion.div>
                                     </li>
                                 ))}
                             </ul>
@@ -83,11 +130,13 @@ export default function ModerationQueue({ flags }) {
                 {/* Right Pane: Review & Action (Desktop Only / SlideOver for Mobile) */}
                 <div className="hidden lg:flex flex-1 bg-white border border-stone-200 rounded-2xl shadow-sm flex-col overflow-hidden h-full">
                     {selectedFlag ? (
-                        <ReviewContent 
-                            selectedFlag={selectedFlag} 
-                            handleAction={handleAction} 
-                            onClose={() => setSelectedFlag(null)} 
-                        />
+                        <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-2xl">
+                            <ReviewContent 
+                                selectedFlag={selectedFlag} 
+                                handleAction={handleAction} 
+                                onClose={() => setSelectedFlag(null)} 
+                            />
+                        </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-stone-50/30">
                             <div className="w-16 h-16 bg-white border border-stone-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">

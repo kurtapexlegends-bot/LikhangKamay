@@ -1,23 +1,64 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Modal from '@/Components/Modal';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
-import { FolderTree, Plus, Edit2, Trash2, Tag, AlertTriangle, Save, X } from 'lucide-react';
+import { FolderTree, Plus, Edit2, Trash2, Tag, AlertTriangle, Save, X, ChevronDown, Settings, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import axios from 'axios';
 
 export default function Taxonomy({ categories }) {
     const { addToast } = useToast();
-    
-    // State for Add Modal
+    const [localCategories, setLocalCategories] = useState(categories);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [isProcessingAdd, setIsProcessingAdd] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     // State for Edit
     const [editingCategory, setEditingCategory] = useState(null);
     const [editName, setEditName] = useState('');
     const [isProcessingEdit, setIsProcessingEdit] = useState(false);
+
+    // Real-time Validation
+    const [isNameTaken, setIsNameTaken] = useState(false);
+    const [isValidating, setIsValidating] = useState(false);
+
+    // Audit Log State
+    const [viewingAuditLog, setViewingAuditLog] = useState(null);
+
+    React.useEffect(() => {
+        const timeoutId = setTimeout(async () => {
+            if (newCategoryName.trim().length > 2) {
+                setIsValidating(true);
+                try {
+                    const response = await axios.post(route('admin.taxonomy.check-name'), { name: newCategoryName });
+                    setIsNameTaken(response.data.exists);
+                } catch (e) {
+                    console.error("Validation failed", e);
+                } finally {
+                    setIsValidating(false);
+                }
+            } else {
+                setIsNameTaken(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [newCategoryName]);
+
+    const pendingDeletes = React.useRef({});
+
+    React.useEffect(() => {
+        setLocalCategories(categories);
+    }, [categories]);
+
+    React.useEffect(() => {
+        return () => {
+            Object.values(pendingDeletes.current).forEach(timer => clearTimeout(timer));
+        };
+    }, []);
 
     const handleAddCategory = (e) => {
         e.preventDefault();
@@ -68,11 +109,40 @@ export default function Taxonomy({ categories }) {
             return;
         }
 
-        if (confirm(`Are you sure you want to permanently delete the category "${category.name}"?`)) {
-            router.delete(route('admin.taxonomy.destroy', category.id), {
-                preserveScroll: true,
-                onSuccess: () => addToast('Category deleted.', 'success')
+        const categoryId = category.id;
+        const originalCategories = [...localCategories];
+
+        try {
+            // SAFETY: Attempt to show toast FIRST. If this fails, the catch block will prevent data loss.
+            addToast(`Deleting "${category.name}"...`, 'info', 5000, () => {
+                if (pendingDeletes.current[categoryId]) {
+                    clearTimeout(pendingDeletes.current[categoryId]);
+                    setLocalCategories(originalCategories);
+                    delete pendingDeletes.current[categoryId];
+                }
             });
+
+            // OPTIMISTIC REMOVE (UI ONLY)
+            setLocalCategories(prev => prev.filter(c => c.id !== categoryId));
+
+            const timerId = setTimeout(() => {
+                router.delete(route('admin.taxonomy.destroy', categoryId), {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        addToast(`Category "${category.name}" permanently deleted.`, 'success');
+                        delete pendingDeletes.current[categoryId];
+                    },
+                    onError: () => {
+                        setLocalCategories(originalCategories);
+                        addToast('Deletion failed. Reverting...', 'error');
+                    }
+                });
+            }, 5000);
+
+            pendingDeletes.current[categoryId] = timerId;
+        } catch (e) {
+            console.error("Undo System Error: Deletion aborted to prevent data loss.", e);
+            setLocalCategories(originalCategories);
         }
     };
 
@@ -104,8 +174,8 @@ export default function Taxonomy({ categories }) {
                             </thead>
                             <tbody className="divide-y divide-stone-100">
                                 {categories.length > 0 ? (
-                                    categories.map((category) => (
-                                        <tr key={category.id} className="hover:bg-stone-50/50 transition-colors group">
+                                categories.map((category) => (
+                                        <tr key={category.id} className={`hover:bg-stone-50/50 transition-all group ${localCategories.find(c => c.id === category.id) ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
                                             <td className="px-6 py-4" data-label="Category Name">
                                                 {editingCategory === category.id ? (
                                                     <input
@@ -199,14 +269,79 @@ export default function Taxonomy({ categories }) {
                             <label className="block text-xs font-bold text-stone-700 uppercase tracking-widest mb-2">
                                 Category Name
                             </label>
-                            <input
-                                type="text"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                                placeholder="e.g., Ceramic Mugs"
-                                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:ring-2 focus:ring-clay-500/20 focus:border-clay-400 outline-none transition"
-                                autoFocus
-                            />
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    placeholder="e.g., Ceramic Mugs"
+                                    className={`w-full px-4 py-2.5 bg-stone-50 border ${isNameTaken ? 'border-rose-300 ring-rose-500/10' : 'border-stone-200 ring-clay-500/10'} rounded-xl text-sm focus:ring-4 focus:bg-white outline-none transition-all pr-10`}
+                                    autoFocus
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    {isValidating ? (
+                                        <Loader2 size={16} className="text-stone-400 animate-spin" />
+                                    ) : newCategoryName.trim().length > 2 ? (
+                                        isNameTaken ? (
+                                            <XCircle size={16} className="text-rose-500" />
+                                        ) : (
+                                            <CheckCircle2 size={16} className="text-emerald-500" />
+                                        )
+                                    ) : null}
+                                </div>
+                            </div>
+                            {isNameTaken && (
+                                <p className="mt-1.5 text-[10px] font-bold text-rose-500 flex items-center gap-1">
+                                    <AlertTriangle size={10} /> This name is already taken.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* ADVANCED PARAMETERS (Progressive Disclosure) */}
+                        <div className="mb-6">
+                            <button
+                                type="button"
+                                onClick={() => setShowAdvanced(!showAdvanced)}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-stone-400 hover:text-stone-600 transition-colors focus:outline-none"
+                            >
+                                <Settings size={12} className={showAdvanced ? 'text-clay-500' : ''} />
+                                Advanced Parameters
+                                <ChevronDown size={12} className={`transition-transform duration-300 ${showAdvanced ? 'rotate-180' : ''}`} />
+                            </button>
+                            
+                            <AnimatePresence>
+                                {showAdvanced && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="pt-4 space-y-4">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
+                                                    URL Slug (Optional)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="ceramic-mugs"
+                                                    className="w-full px-3 py-2 bg-stone-50/50 border border-stone-200 rounded-xl text-xs outline-none focus:border-clay-300 transition-colors"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
+                                                    Internal Priority
+                                                </label>
+                                                <select className="w-full px-3 py-2 bg-stone-50/50 border border-stone-200 rounded-xl text-xs outline-none focus:border-clay-300 transition-colors">
+                                                    <option>Standard</option>
+                                                    <option>High (Featured)</option>
+                                                    <option>Low (Archive)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
                         <div className="flex items-center justify-end gap-3 pt-2">
@@ -219,15 +354,18 @@ export default function Taxonomy({ categories }) {
                             </button>
                             <button
                                 type="submit"
-                                disabled={isProcessingAdd || !newCategoryName.trim()}
-                                className="bg-clay-600 hover:bg-clay-700 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                                disabled={isProcessingAdd || !newCategoryName.trim() || isNameTaken}
+                                className="bg-clay-600 hover:bg-clay-700 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center gap-2"
                             >
+                                {isProcessingAdd && <Loader2 size={16} className="animate-spin" />}
                                 {isProcessingAdd ? 'Saving...' : 'Add Category'}
                             </button>
                         </div>
                     </form>
                 </div>
             </Modal>
+
+
 
         </AdminLayout>
     );
