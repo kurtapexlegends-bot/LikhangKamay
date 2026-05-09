@@ -66,6 +66,8 @@ import {
     AlertCircle,
     Box,
     ShoppingBag,
+    Check,
+    FileDown,
     ChevronDown,
 } from "lucide-react";
 import { useToast } from "@/Components/ToastContext";
@@ -628,6 +630,24 @@ export default function OrderManager({ auth, orders = [] }) {
     );
     const [currentPage, setCurrentPage] = useState(1);
     const [bookingOrderId, setBookingOrderId] = useState(null);
+    const [selectedOrderIds, setSelectedOrderIds] = useState([]);
+    const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+    const toggleOrderSelection = (orderId) => {
+        setSelectedOrderIds((prev) =>
+            prev.includes(orderId)
+                ? prev.filter((id) => id !== orderId)
+                : [...prev, orderId],
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedOrderIds.length === paginatedOrders.length) {
+            setSelectedOrderIds([]);
+        } else {
+            setSelectedOrderIds(paginatedOrders.map((o) => o.id));
+        }
+    };
 
     const getCount = (status) => {
         if (!orders) return 0;
@@ -1223,6 +1243,51 @@ export default function OrderManager({ auth, orders = [] }) {
         router.visit(route("chat.index", { user_id: userId }));
     };
 
+    const handleBulkFulfill = () => {
+        if (!canEditOrders || selectedOrderIds.length === 0) return;
+
+        setConfirmModal({
+            isOpen: true,
+            title: `Batch Fulfillment (${selectedOrderIds.length} Orders)`,
+            message: `Are you sure you want to book Lalamove deliveries for all ${selectedOrderIds.length} selected orders? This will generate multiple delivery bookings.`,
+            isDestructive: false,
+            processing: false,
+            action: () => {
+                router.post(
+                    route("orders.bulk-lalamove"),
+                    { order_ids: selectedOrderIds },
+                    {
+                        preserveScroll: true,
+                        onStart: () =>
+                            setConfirmModal((current) => ({
+                                ...current,
+                                processing: true,
+                            })),
+                        onSuccess: () => {
+                            setSelectedOrderIds([]);
+                            setConfirmModal((current) => ({
+                                ...current,
+                                isOpen: false,
+                                processing: false,
+                            }));
+                        },
+                        onFinish: () =>
+                            setConfirmModal((current) => ({
+                                ...current,
+                                processing: false,
+                            })),
+                    },
+                );
+            },
+        });
+    };
+
+    const handleBulkPrintLabels = () => {
+        if (selectedOrderIds.length === 0) return;
+        const ids = selectedOrderIds.join(",");
+        window.open(route("orders.bulk-labels", { ids }), "_blank");
+    };
+
     // Get urgent count (pending + returns)
     const urgentCount = getCount("Pending") + getCount("Refund/Return");
 
@@ -1568,6 +1633,26 @@ export default function OrderManager({ auth, orders = [] }) {
                                 Return queue
                             </button>
                         )}
+
+                        <div className="ml-auto flex items-center gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <div 
+                                    onClick={toggleSelectAll}
+                                    className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
+                                        selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0
+                                            ? "border-clay-600 bg-clay-600 text-white"
+                                            : "border-stone-300 bg-white"
+                                    }`}
+                                >
+                                    {selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 && (
+                                        <Check size={14} strokeWidth={4} />
+                                    )}
+                                </div>
+                                <span className="text-[11px] font-bold text-stone-600 uppercase tracking-tight">
+                                    {selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 ? "Deselect All" : "Select All Page"}
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
                     {/* Order List */}
@@ -1581,8 +1666,23 @@ export default function OrderManager({ auth, orders = [] }) {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: idx * 0.05 }}
-                                        className="group relative mb-4 rounded-2xl border border-stone-100 bg-white p-4 shadow-sm transition-all hover:border-stone-200 hover:shadow-md sm:p-6"
+                                        className={`group relative mb-4 rounded-2xl border bg-white p-4 shadow-sm transition-all hover:shadow-md sm:p-6 ${
+                                            selectedOrderIds.includes(order.id)
+                                                ? "border-clay-300 ring-1 ring-clay-100"
+                                                : "border-stone-100"
+                                        }`}
                                     >
+                                        {/* Bulk Selection Checkbox */}
+                                        <div 
+                                            onClick={() => toggleOrderSelection(order.id)}
+                                            className={`absolute left-4 top-4 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border transition-all sm:left-auto sm:right-6 sm:top-6 ${
+                                                selectedOrderIds.includes(order.id)
+                                                    ? "border-clay-600 bg-clay-600 text-white shadow-sm"
+                                                    : "border-stone-200 bg-white text-transparent opacity-0 group-hover:opacity-100"
+                                            }`}
+                                        >
+                                            <Check size={14} strokeWidth={4} />
+                                        </div>
                                         {/* Order Header */}
                                         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                                             <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
@@ -3432,6 +3532,59 @@ export default function OrderManager({ auth, orders = [] }) {
                     </div>
                 </div>
             </Modal>
+
+            {/* Floating Bulk Actions Bar */}
+            {selectedOrderIds.length > 0 && (
+                <motion.div
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 100, opacity: 0 }}
+                    className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 rounded-2xl border border-clay-200 bg-white/90 p-4 shadow-2xl backdrop-blur-md sm:w-auto sm:px-6"
+                >
+                    <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-clay-600 text-white shadow-lg shadow-clay-200">
+                                <PackageCheck size={20} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-gray-900">
+                                    {selectedOrderIds.length} Orders Selected
+                                </p>
+                                <p className="text-[11px] font-medium text-gray-500">
+                                    Bulk actions for selected shipments
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedOrderIds([])}
+                                className="rounded-xl px-4 py-2 text-xs font-bold text-gray-500 transition hover:bg-gray-100"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleBulkPrintLabels}
+                                className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                            >
+                                <Printer size={14} />
+                                Print Labels
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleBulkFulfill}
+                                disabled={!canEditOrders}
+                                className="flex items-center gap-2 rounded-xl bg-clay-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700 disabled:opacity-50"
+                            >
+                                <Truck size={14} />
+                                Batch Fulfillment
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
         </>
     );
 }

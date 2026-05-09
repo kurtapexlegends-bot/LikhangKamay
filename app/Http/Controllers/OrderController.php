@@ -1923,4 +1923,37 @@ class OrderController extends Controller
             ]);
         }
     }
+
+    public function bulkLabels(Request $request)
+    {
+        $idsString = $request->query('ids', '');
+        if (empty($idsString)) {
+            return back()->with('error', 'No orders selected for printing.');
+        }
+
+        $ids = explode(',', $idsString);
+        $sellerId = $this->sellerOwnerId();
+
+        $orders = Order::where('artisan_id', $sellerId)
+            ->whereIn('order_number', $ids)
+            ->with(['items.product', 'user', 'delivery'])
+            ->get();
+
+        return Inertia::render('Seller/BulkLabels', [
+            'orders' => $orders->map(function ($order) {
+                return [
+                    'id' => $order->order_number,
+                    'customer' => $order->customer_name,
+                    'address' => $order->shipping_address,
+                    'phone' => $order->shipping_contact_phone,
+                    'items' => $order->items->map(fn($i) => [
+                        'name' => $i->product->name,
+                        'qty' => $i->quantity,
+                    ]),
+                    'shipping_method' => $order->shipping_method,
+                    'notes' => $order->shipping_notes,
+                ];
+            })
+        ]);
+    }
 }

@@ -135,11 +135,15 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/orders/{id}/approve-return', [OrderController::class, 'approveReturn'])->middleware('seller.module:orders')->name('orders.approve-return');
         Route::post('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus'])->middleware('seller.module:orders')->name('orders.payment-status');
         Route::post('/orders/{id}/lalamove', [LalamoveDeliveryController::class, 'store'])->middleware('seller.module:orders')->name('orders.lalamove.store');
+        Route::post('/orders/bulk-lalamove', [LalamoveDeliveryController::class, 'bulkStore'])->middleware('seller.module:orders')->name('orders.bulk-lalamove');
+        Route::get('/orders/bulk-labels', [OrderController::class, 'bulkLabels'])->middleware('seller.module:orders')->name('orders.bulk-labels');
         
         Route::get('/analytics', [AnalyticsController::class, 'index'])->middleware('seller.module:analytics')->name('analytics.index');
         Route::get('/analytics/export', [AnalyticsController::class, 'export'])->middleware('seller.module:analytics')->name('analytics.export'); // <--- Added
         
         Route::get('/products', [ProductController::class, 'index'])->middleware('seller.module:products')->name('products.index');
+        Route::get('/products/export-csv', [ProductController::class, 'exportCsv'])->middleware('seller.module:products')->name('products.export-csv');
+        Route::post('/products/import-csv', [ProductController::class, 'importCsv'])->middleware('seller.module:products')->name('products.import-csv');
         Route::post('/products', [ProductController::class, 'store'])->middleware('seller.module:products')->name('products.store');
         Route::post('/products/{id}/update', [ProductController::class, 'update'])->middleware('seller.module:products')->name('products.update'); 
         Route::post('/products/bulk-status', [ProductController::class, 'bulkUpdateStatus'])->middleware('seller.module:products')->name('products.bulk-status');
@@ -294,6 +298,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
+    Route::get('/sla', [SuperAdminController::class, 'slaMonitoring'])->name('admin.sla');
     Route::get('/review-moderation', [SuperAdminController::class, 'reviewModeration'])->name('admin.review-moderation');
     Route::patch('/review-moderation/{reviewDispute}', [SuperAdminController::class, 'updateReviewModeration'])->name('admin.review-moderation.update');
     Route::delete('/review-moderation/{reviewDispute}', [SuperAdminController::class, 'destroyReviewModeration'])->name('admin.review-moderation.destroy');

@@ -44,6 +44,8 @@ import {
     Trash2,
     Boxes,
     Settings,
+    FileDown,
+    Upload,
 } from "lucide-react";
 
 const KPICard = ({ title, value, icon: Icon, color, bg }) => (
@@ -902,14 +904,56 @@ export default function ProductManager({
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={
-                    <button
-                        onClick={openAddModal}
-                        disabled={!canEditProducts}
-                        className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        <Plus size={16} />
-                        <span className="hidden sm:inline">Add Product</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() =>
+                                (window.location.href = route(
+                                    "products.export-csv",
+                                ))
+                            }
+                            className="hidden lg:inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50"
+                        >
+                            <FileDown size={16} />
+                            Export CSV
+                        </button>
+                        <label className="hidden lg:inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 cursor-pointer">
+                            <Upload size={16} />
+                            Import CSV
+                            <input
+                                type="file"
+                                className="hidden"
+                                accept=".csv"
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const formData = new FormData();
+                                        formData.append("file", file);
+                                        router.post(
+                                            route("products.import-csv"),
+                                            formData,
+                                            {
+                                                onSuccess: () =>
+                                                    addToast(
+                                                        "Import successful",
+                                                        "success",
+                                                    ),
+                                            },
+                                        );
+                                    }
+                                }}
+                            />
+                        </label>
+                        <button
+                            onClick={openAddModal}
+                            disabled={!canEditProducts}
+                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <Plus size={16} />
+                            <span className="hidden sm:inline">
+                                Add Product
+                            </span>
+                        </button>
+                    </div>
                 }
             />
 

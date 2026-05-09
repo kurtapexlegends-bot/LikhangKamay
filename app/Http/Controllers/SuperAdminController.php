@@ -1504,4 +1504,105 @@ class SuperAdminController extends Controller
 
         return response()->json(['exists' => $exists]);
     }
+
+    /**
+     * SLA Monitoring - Platform Governance
+     */
+    public function slaMonitoring()
+    {
+        // 1. Artisan Approval SLA (Goal: 24h)
+        $approvedArtisans = User::where('role', 'artisan')
+            ->whereNotNull('approved_at')
+            ->whereNotNull('setup_completed_at')
+            ->get(['approved_at', 'setup_completed_at']);
+
+        $avgApprovalTime = $approvedArtisans->count() > 0
+            ? $approvedArtisans->avg(fn($u) => $u->approved_at->diffInHours($u->setup_completed_at))
+            : 0;
+
+        $staleArtisanApplications = User::where('role', 'artisan')
+            ->where('artisan_status', 'pending')
+            ->where('setup_completed_at', '<=', now()->subHours(48))
+            ->orderBy('setup_completed_at', 'asc')
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'shop_name' => $u->shop_name,
+                'submitted_at' => $u->setup_completed_at->toIso8601String(),
+                'hours_pending' => now()->diffInHours($u->setup_completed_at),
+                'type' => 'Artisan Application',
+                'priority' => now()->diffInHours($u->setup_completed_at) > 72 ? 'Critical' : 'High',
+                'route' => route('admin.artisan.view', $u->id)
+            ]);
+
+        // 2. Dispute Resolution SLA (Goal: 48h)
+        $resolvedDisputes = ReviewDispute::where('status', 'resolved')
+            ->whereNotNull('resolved_at')
+            ->get(['resolved_at', 'created_at']);
+
+        $avgDisputeTime = $resolvedDisputes->count() > 0
+            ? $resolvedDisputes->avg(fn($d) => $d->resolved_at->diffInHours($d->created_at))
+            : 0;
+
+        $staleDisputes = ReviewDispute::where('status', 'under_review')
+            ->where('created_at', '<=', now()->subHours(48))
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(fn($d) => [
+                'id' => $d->id,
+                'name' => "Dispute #{$d->id}: {$d->reason}",
+                'shop_name' => 'N/A',
+                'submitted_at' => $d->created_at->toIso8601String(),
+                'hours_pending' => now()->diffInHours($d->created_at),
+                'type' => 'Review Dispute',
+                'priority' => now()->diffInHours($d->created_at) > 96 ? 'Critical' : 'High',
+                'route' => route('admin.review-moderation')
+            ]);
+
+        // 3. Sponsorship SLA (Goal: 24h)
+        $approvedSponsorships = SponsorshipRequest::where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->whereNotNull('requested_at')
+            ->get(['approved_at', 'requested_at']);
+
+        $avgSponsorshipTime = $approvedSponsorships->count() > 0
+            ? $approvedSponsorships->avg(fn($s) => $s->approved_at->diffInHours($s->requested_at))
+            : 0;
+
+        $staleSponsorships = SponsorshipRequest::where('status', 'pending')
+            ->where('requested_at', '<=', now()->subHours(24))
+            ->orderBy('requested_at', 'asc')
+            ->get()
+            ->map(fn($s) => [
+                'id' => $s->id,
+                'name' => "Sponsorship Request #{$s->id}",
+                'shop_name' => $s->user->shop_name ?? $s->user->name,
+                'submitted_at' => $s->requested_at->toIso8601String(),
+                'hours_pending' => now()->diffInHours($s->requested_at),
+                'type' => 'Sponsorship',
+                'priority' => now()->diffInHours($s->requested_at) > 48 ? 'Critical' : 'High',
+                'route' => route('admin.sponsorships')
+            ]);
+
+        // 4. Combined Stale Queue
+        $staleQueue = collect([])
+            ->concat($staleArtisanApplications)
+            ->concat($staleDisputes)
+            ->concat($staleSponsorships)
+            ->sortByDesc('hours_pending')
+            ->values();
+
+        return Inertia::render('Admin/SLA', [
+            'metrics' => [
+                'avgArtisanApprovalHours' => round($avgApprovalTime, 1),
+                'avgDisputeResolutionHours' => round($avgDisputeTime, 1),
+                'avgSponsorshipApprovalHours' => round($avgSponsorshipTime, 1),
+                'totalStaleItems' => $staleQueue->count(),
+                'artisanSLACompliance' => $avgApprovalTime <= 24 ? 100 : max(0, round(100 - (($avgApprovalTime - 24) * 2), 1)),
+                'disputeSLACompliance' => $avgDisputeTime <= 48 ? 100 : max(0, round(100 - (($avgDisputeTime - 48) * 1.5), 1)),
+            ],
+            'staleQueue' => $staleQueue,
+        ]);
+    }
 }

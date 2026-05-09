@@ -22,7 +22,8 @@ import {
     BarChart2,
     ShieldAlert,
     Activity,
-    FolderTree
+    FolderTree,
+    Clock3
 } from 'lucide-react';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
@@ -41,6 +42,7 @@ export default function AdminLayout({ title, children }) {
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
+                { name: 'SLA Monitoring', href: route('admin.sla'), icon: Clock3, current: route().current('admin.sla') },
                 { name: 'Diagnostics', href: route('admin.diagnostics'), icon: Activity, current: route().current('admin.diagnostics') },
             ]
         },

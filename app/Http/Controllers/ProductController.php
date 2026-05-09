@@ -1151,4 +1151,95 @@ class ProductController extends Controller
             ->whereIn('name', $names->all())
             ->first();
     }
+
+    public function exportCsv()
+    {
+        $seller = $this->sellerOwner();
+        $products = Product::where('user_id', $seller->id)->get();
+
+        $filename = "products-export-" . now()->format('Y-m-d-His') . ".csv";
+        $headers = [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=\"$filename\"",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $columns = ['SKU', 'Name', 'Category', 'Price', 'Cost Price', 'Stock', 'Lead Time', 'Status'];
+
+        $callback = function() use ($products, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($products as $product) {
+                fputcsv($file, [
+                    $product->sku,
+                    $product->name,
+                    $product->category,
+                    $product->price,
+                    $product->cost_price,
+                    $product->stock,
+                    $product->lead_time,
+                    $product->status,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function importCsv(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+        $data = array_map('str_getcsv', file($path));
+        $header = array_shift($data);
+
+        $seller = $this->sellerOwner();
+        $count = 0;
+        $errors = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($data as $row) {
+                if (count($row) < 8) continue;
+                
+                $sku = $row[0];
+                $name = $row[1];
+                $category = $row[2];
+                $price = (float) $row[3];
+                $costPrice = (float) $row[4];
+                $stock = (int) $row[5];
+                $leadTime = (int) $row[6];
+                $status = $row[7];
+
+                $product = Product::updateOrCreate(
+                    ['user_id' => $seller->id, 'sku' => $sku],
+                    [
+                        'name' => $name,
+                        'category' => $category,
+                        'price' => $price,
+                        'cost_price' => $costPrice,
+                        'stock' => $stock,
+                        'lead_time' => $leadTime,
+                        'status' => $status,
+                    ]
+                );
+                $count++;
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error during import: ' . $e->getMessage());
+        }
+
+        return back()->with('success', "Successfully imported/updated $count products.");
+    }
 }
