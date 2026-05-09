@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // 1. REGISTER INERTIA MIDDLEWARE & OTHERS
         $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+            \App\Http\Middleware\XssSanitization::class,
             HandleInertiaRequests::class,
             \App\Http\Middleware\UpdateLastSeen::class, // <--- Added
         ]);

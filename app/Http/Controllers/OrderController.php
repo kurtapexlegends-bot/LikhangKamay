@@ -46,84 +46,107 @@ class OrderController extends Controller
     /**
      * SELLER: View all orders for the logged-in artisan
      */
-    public function index(OrderLogisticsService $orderLogisticsService)
+    public function index(Request $request, OrderLogisticsService $orderLogisticsService)
     {
         $sellerId = $this->sellerOwnerId();
         $seller = $this->sellerOwner();
         $seller?->loadMissing('addresses');
 
-        $ordersQuery = Order::where('artisan_id', $sellerId)
-            ->with(['items.product.recipes.supply', 'user', 'delivery.events']) // Load items, recipes, and supplies
-            ->orderBy('created_at', 'desc');
+        $query = Order::where('artisan_id', $sellerId)
+            ->with(['items.product.recipes.supply', 'user', 'delivery.events']);
 
-        $initialOrders = (clone $ordersQuery)->get();
-        $orderLogisticsService->syncVisibleDeliveries($initialOrders->pluck('delivery')->filter());
-
-        $orders = (clone $ordersQuery)->get()
-            ->map(function ($order) use ($seller) {
-                $bookingRequirements = $this->lalamoveBookingRequirements($order, $seller);
-
-                return [
-                    'id' => $order->order_number,
-                    'db_id' => $order->id,
-                    'date' => $order->created_at->format('M d, Y - h:i A'),
-                    'customer' => $order->customer_name,
-                    'user_id' => $order->user_id, // For chat linking
-                    'status' => $order->status,
-                    'payment_status' => $order->payment_status ?? 'pending',
-                    'payment_method' => $order->payment_method,
-                    'total' => number_format($order->total_amount, 2),
-                    'total_amount' => (float) $order->total_amount,
-                    'merchandise_subtotal' => (float) $order->merchandise_subtotal,
-                    'convenience_fee_amount' => (float) $order->convenience_fee_amount,
-                    'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
-                    'platform_commission_amount' => $order->getResolvedPlatformCommissionAmount(),
-                    'seller_net_amount' => $order->getResolvedSellerNetAmount(),
-                    'shipping_address' => $order->shipping_address,
-                    'shipping_address_type' => $order->shipping_address_type,
-                    'shipping_recipient_name' => $order->shipping_recipient_name,
-                    'shipping_contact_phone' => $order->shipping_contact_phone,
-                    'shipping_method' => $order->shipping_method, // New
-                    'shipping_notes' => $order->shipping_notes,
-                    'tracking_number' => $order->tracking_number,
-                    'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null, // New
-                    'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
-                    'cancellation_reason' => $order->cancellation_reason,
-                    'delivery' => $this->serializeDelivery($order->delivery),
-                    'timeline' => $this->buildOrderTimeline($order),
-                    'can_book_lalamove' => $order->status === 'Accepted'
-                        && $order->shipping_method === 'Delivery'
-                        && $order->delivery?->external_order_id === null,
-                    'lalamove_booking_ready' => empty($bookingRequirements),
-                    'lalamove_booking_requirements' => $bookingRequirements,
-                    'return_reason' => $order->return_reason,
-                    'return_proof_image' => $order->return_proof_image ? '/storage/' . $order->return_proof_image : null,
-                    'replacement_resolution_description' => $order->replacement_resolution_description,
-                    'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
-                    'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),
-                    'replacement_in_progress' => $order->replacement_started_at !== null && $order->replacement_resolved_at === null,
-                    'items' => $order->items->map(function ($item) {
-                        return [
-                            'name' => $item->product_name,
-                            'variant' => $item->variant ?? 'Standard',
-                            'qty' => $item->quantity,
-                            'price' => $item->price,
-                            'img' => str_starts_with($item->product_img, 'http') ? $item->product_img : ($item->product_img ? '/storage/' . $item->product_img : '/images/placeholder.svg'),
-                            'production_method' => $item->product?->production_method,
-                            'recipes' => $item->product?->recipes->map(fn($r) => [
-                                'supply_id' => $r->supply_id,
-                                'supply_name' => $r->supply?->name,
-                                'supply_unit' => $r->supply?->unit,
-                                'supply_quantity' => $r->supply?->quantity,
-                                'quantity_required' => $r->quantity_required,
-                            ]),
-                        ];
-                    }),
-                ];
+        // 1. Search Filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('tracking_number', 'like', "%{$search}%");
             });
+        }
+
+        // 2. Status Filter (Tab based)
+        if ($request->filled('status') && $request->status !== 'All') {
+            if ($request->status === 'Cancelled') {
+                $query->whereIn('status', ['Cancelled', 'Rejected']);
+            } elseif ($request->status === 'To Pickup') {
+                $query->where('status', 'Ready for Pickup');
+            } elseif ($request->status === 'Returns') {
+                $query->where('status', 'Refund/Return');
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        $paginator = $query->paginate(15)->withQueryString();
+        $orderLogisticsService->syncVisibleDeliveries($paginator->getCollection()->pluck('delivery')->filter());
+
+        $paginator->through(function ($order) use ($seller) {
+            $bookingRequirements = $this->lalamoveBookingRequirements($order, $seller);
+
+            return [
+                'id' => $order->order_number,
+                'db_id' => $order->id,
+                'date' => $order->created_at->format('M d, Y - h:i A'),
+                'customer' => $order->customer_name,
+                'user_id' => $order->user_id, // For chat linking
+                'status' => $order->status,
+                'payment_status' => $order->payment_status ?? 'pending',
+                'payment_method' => $order->payment_method,
+                'total' => number_format($order->total_amount, 2),
+                'total_amount' => (float) $order->total_amount,
+                'merchandise_subtotal' => (float) $order->merchandise_subtotal,
+                'convenience_fee_amount' => (float) $order->convenience_fee_amount,
+                'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
+                'platform_commission_amount' => $order->getResolvedPlatformCommissionAmount(),
+                'seller_net_amount' => $order->getResolvedSellerNetAmount(),
+                'shipping_address' => $order->shipping_address,
+                'shipping_address_type' => $order->shipping_address_type,
+                'shipping_recipient_name' => $order->shipping_recipient_name,
+                'shipping_contact_phone' => $order->shipping_contact_phone,
+                'shipping_method' => $order->shipping_method, // New
+                'shipping_notes' => $order->shipping_notes,
+                'tracking_number' => $order->tracking_number,
+                'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null, // New
+                'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
+                'cancellation_reason' => $order->cancellation_reason,
+                'delivery' => $this->serializeDelivery($order->delivery),
+                'timeline' => $this->buildOrderTimeline($order),
+                'can_book_lalamove' => $order->status === 'Accepted'
+                    && $order->shipping_method === 'Delivery'
+                    && $order->delivery?->external_order_id === null,
+                'lalamove_booking_ready' => empty($bookingRequirements),
+                'lalamove_booking_requirements' => $bookingRequirements,
+                'return_reason' => $order->return_reason,
+                'return_proof_image' => $order->return_proof_image ? '/storage/' . $order->return_proof_image : null,
+                'replacement_resolution_description' => $order->replacement_resolution_description,
+                'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
+                'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),
+                'replacement_in_progress' => $order->replacement_started_at !== null && $order->replacement_resolved_at === null,
+                'items' => $order->items->map(function ($item) {
+                    return [
+                        'name' => $item->product_name,
+                        'variant' => $item->variant ?? 'Standard',
+                        'qty' => $item->quantity,
+                        'price' => $item->price,
+                        'img' => str_starts_with($item->product_img, 'http') ? $item->product_img : ($item->product_img ? '/storage/' . $item->product_img : '/images/placeholder.svg'),
+                        'production_method' => $item->product?->production_method,
+                        'recipes' => $item->product?->recipes->map(fn($r) => [
+                            'supply_id' => $r->supply_id,
+                            'supply_name' => $r->supply?->name,
+                            'supply_unit' => $r->supply?->unit,
+                            'supply_quantity' => $r->supply?->quantity,
+                            'quantity_required' => $r->quantity_required,
+                        ]),
+                    ];
+                }),
+            ];
+        });
 
         return Inertia::render('Seller/OrderManager', [
-            'orders' => $orders
+            'orders' => $paginator
         ]);
     }
 
@@ -823,7 +846,7 @@ class OrderController extends Controller
                         $supply->decrement('quantity', $totalRequired);
                         
                         // Log the deduction
-                        \App\Models\SellerActivityLog::create([
+                        SellerActivityLog::create([
                             'user_id' => $order->artisan_id,
                             'action' => 'supply_deducted',
                             'description' => "Deducted {$totalRequired} {$supply->unit} of {$supply->name} for order #{$order->order_number}",

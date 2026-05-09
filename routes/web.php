@@ -41,7 +41,7 @@ use Inertia\Inertia;
 // --- PUBLIC ROUTES ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shop', [ShopController::class, 'index'])->middleware('throttle:marketplace.search')->name('shop.index');
 Route::get('/shop/{user:shop_slug}', [ShopController::class, 'seller'])->name('shop.seller');
 Route::get('/product/{product}', [ProductController::class, 'show'])->name('product.show');
 Route::post('/sponsorship-events/track', [\App\Http\Controllers\SponsorshipController::class, 'track'])
@@ -142,8 +142,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/analytics/export', [AnalyticsController::class, 'export'])->middleware('seller.module:analytics')->name('analytics.export'); // <--- Added
         
         Route::get('/products', [ProductController::class, 'index'])->middleware('seller.module:products')->name('products.index');
-        Route::get('/products/export-csv', [ProductController::class, 'exportCsv'])->middleware('seller.module:products')->name('products.export-csv');
-        Route::post('/products/import-csv', [ProductController::class, 'importCsv'])->middleware('seller.module:products')->name('products.import-csv');
+        Route::get('/products/export-csv', [ProductController::class, 'exportCsv'])->middleware('throttle:bulk.ops')->name('products.export-csv');
+        Route::post('/products/import-csv', [ProductController::class, 'importCsv'])->middleware('throttle:bulk.ops')->name('products.import-csv');
         Route::post('/products', [ProductController::class, 'store'])->middleware('seller.module:products')->name('products.store');
         Route::post('/products/{id}/update', [ProductController::class, 'update'])->middleware('seller.module:products')->name('products.update'); 
         Route::post('/products/bulk-status', [ProductController::class, 'bulkUpdateStatus'])->middleware('seller.module:products')->name('products.bulk-status');
@@ -336,8 +336,8 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/moderation-queue/{id}/dismiss', [SuperAdminController::class, 'dismissFlag'])->name('admin.moderation.dismiss');
 
     // System Diagnostics
-    Route::get('/diagnostics', [SuperAdminController::class, 'diagnostics'])->name('admin.diagnostics');
-    Route::post('/diagnostics/cache/purge', [SuperAdminController::class, 'purgeCache'])->name('admin.diagnostics.cache.purge');
+    Route::get('/diagnostics', [SuperAdminController::class, 'diagnostics'])->middleware('throttle:admin.heavy')->name('admin.diagnostics');
+    Route::post('/diagnostics/cache/purge', [SuperAdminController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
 
     // Restoration Center (Trash)
     Route::get('/trash', [SuperAdminController::class, 'trash'])->name('admin.trash');

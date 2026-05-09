@@ -23,10 +23,8 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         // Calculate total quantity from the Session Cart
-        $cartCount = Cache::remember("cart_count_" . session()->getId(), 300, function () {
-            $cart = Session::get('cart', []);
-            return (int) array_sum(array_column($cart, 'qty'));
-        });
+        $cart = Session::get('cart', []);
+        $cartCount = (int) array_sum(array_column($cart, 'qty'));
 
         $user = $request->user();
 

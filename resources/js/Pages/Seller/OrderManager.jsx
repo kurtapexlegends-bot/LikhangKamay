@@ -789,110 +789,64 @@ export default function OrderManager({ auth, orders = [] }) {
         return () => window.clearInterval(intervalId);
     }, [hasActiveCourierTracking]);
 
-    // --- FILTER LOGIC ---
-    const filteredOrders = useMemo(() => {
-        let result = orders;
+    // --- FILTER LOGIC (Server-Side) ---
+    const updateFilters = (newFilters) => {
+        const queryParams = {
+            search: searchQuery,
+            status: activeTab,
+            page: 1, // Reset to page 1 on filter change
+            ...newFilters,
+        };
 
-        // Status Filtering
-        if (activeTab === "Cancelled") {
-            result = result.filter((o) =>
-                ["Cancelled", "Rejected"].includes(o.status),
-            );
-        } else if (activeTab === "Shipped") {
-            result = result.filter((o) => o.status === "Shipped"); // Only Delivery
-        } else if (activeTab === "To Pickup") {
-            result = result.filter((o) => o.status === "Ready for Pickup");
-        } else if (activeTab === "Returns") {
-            result = result.filter((o) => o.status === "Refund/Return");
-        } else if (activeTab !== "All") {
-            result = result.filter((o) => o.status === activeTab);
+        router.get(route("orders.index"), queryParams, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ["orders"],
+        });
+    };
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        updateFilters({ status: tab });
+    };
+
+    const handleSearch = (query) => {
+        setSearchQuery(query);
+        updateFilters({ search: query });
+    };
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        router.get(route("orders.index"), {
+            search: searchQuery,
+            status: activeTab,
+            page: page
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ["orders"],
+        });
+    };
+
+    const applyQuickFilter = (qf, tab = "All") => {
+        setQuickFilter(qf);
+        setActiveTab(tab);
+        updateFilters({ status: tab, quick_filter: qf });
+    };
+
+    // paginator structure from backend
+    const paginatedOrders = orders.data || [];
+    const totalPages = orders.last_page || 1;
+    const totalItems = orders.total || 0;
+    const itemsPerPageForFilter = orders.per_page || 15;
+
+    useEffect(() => {
+        if (orders.current_page) {
+            setCurrentPage(orders.current_page);
         }
+    }, [orders.current_page]);
 
-        // Search Filtering
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (o) =>
-                    o.id.toLowerCase().includes(query) ||
-                    o.customer.toLowerCase().includes(query) ||
-                    o.items.some((i) => i.name.toLowerCase().includes(query)),
-            );
-        }
 
-        if (quickFilter !== "all") {
-            result = result.filter((order) => {
-                if (quickFilter === "urgent") {
-                    return ["Pending", "Refund/Return"].includes(order.status);
-                }
-
-                if (quickFilter === "payment_hold") {
-                    return (
-                        order.payment_method !== "COD" &&
-                        order.payment_status !== "paid" &&
-                        order.status === "Accepted"
-                    );
-                }
-
-                if (quickFilter === "returns") {
-                    return order.status === "Refund/Return";
-                }
-
-                if (quickFilter === "live_courier") {
-                    return (
-                        isLalamoveManagedOrder(order) &&
-                        ![
-                            "COMPLETED",
-                            "CANCELED",
-                            "EXPIRED",
-                            "REJECTED",
-                        ].includes(
-                            String(order?.delivery?.status || "").toUpperCase(),
-                        )
-                    );
-                }
-
-                return true;
-            });
-        }
-
-        // Date Filtering
-        if (dateRange.start || dateRange.end) {
-            result = result.filter((o) => {
-                const orderDateStr = o.date.split(" •")[0];
-                const orderDate = new Date(orderDateStr);
-                orderDate.setHours(0, 0, 0, 0);
-
-                let isAfterStart = true;
-                let isBeforeEnd = true;
-
-                if (dateRange.start) {
-                    const start = new Date(dateRange.start);
-                    start.setHours(0, 0, 0, 0);
-                    isAfterStart = orderDate >= start;
-                }
-                if (dateRange.end) {
-                    const end = new Date(dateRange.end);
-                    end.setHours(0, 0, 0, 0);
-                    isBeforeEnd = orderDate <= end;
-                }
-
-                return isAfterStart && isBeforeEnd;
-            });
-        }
-
-        return result;
-    }, [orders, activeTab, searchQuery, quickFilter, dateRange]);
-
-    // Pagination Logic
-    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-    const paginatedOrders = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return filteredOrders.slice(startIndex, startIndex + itemsPerPage);
-    }, [filteredOrders, currentPage]);
-
-    React.useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery, activeTab, quickFilter, dateRange]);
 
     useEffect(() => {
         if (typeof window === "undefined") {
@@ -909,13 +863,6 @@ export default function OrderManager({ auth, orders = [] }) {
             }),
         );
     }, [activeTab, searchQuery, quickFilter, dateRange]);
-
-    const applyQuickFilter = (filterKey, nextTab = activeTab) => {
-        setQuickFilter(filterKey);
-        setActiveTab(nextTab);
-        setSearchQuery("");
-        setCurrentPage(1);
-    };
 
     const resetSavedView = () => {
         setActiveTab("All");
@@ -1446,63 +1393,62 @@ export default function OrderManager({ auth, orders = [] }) {
                     >
                         <Tab
                             label="All"
-                            count={orders.length}
                             active={activeTab === "All"}
-                            onClick={() => setActiveTab("All")}
+                            onClick={() => handleTabChange("All")}
                         />
                         <Tab
                             label="Pending"
                             count={getCount("Pending")}
                             active={activeTab === "Pending"}
-                            onClick={() => setActiveTab("Pending")}
+                            onClick={() => handleTabChange("Pending")}
                         />
                         <Tab
                             label="Accepted"
                             count={getCount("Accepted")}
                             active={activeTab === "Accepted"}
-                            onClick={() => setActiveTab("Accepted")}
+                            onClick={() => handleTabChange("Accepted")}
                         />
                         <Tab
                             label="Processing"
                             count={getCount("Processing")}
                             active={activeTab === "Processing"}
-                            onClick={() => setActiveTab("Processing")}
+                            onClick={() => handleTabChange("Processing")}
                         />
                         <Tab
                             label="Shipped"
                             count={getCount("Shipped")}
                             active={activeTab === "Shipped"}
-                            onClick={() => setActiveTab("Shipped")}
+                            onClick={() => handleTabChange("Shipped")}
                         />
                         <Tab
                             label="To Pickup"
                             count={getCount("To Pickup")}
                             active={activeTab === "To Pickup"}
-                            onClick={() => setActiveTab("To Pickup")}
+                            onClick={() => handleTabChange("To Pickup")}
                         />
                         <Tab
                             label="Delivered"
                             count={getCount("Delivered")}
                             active={activeTab === "Delivered"}
-                            onClick={() => setActiveTab("Delivered")}
+                            onClick={() => handleTabChange("Delivered")}
                         />
                         <Tab
                             label="Returns"
                             count={getCount("Returns")}
                             active={activeTab === "Returns"}
-                            onClick={() => setActiveTab("Returns")}
+                            onClick={() => handleTabChange("Returns")}
                         />
                         <Tab
                             label="Completed"
                             count={getCount("Completed")}
                             active={activeTab === "Completed"}
-                            onClick={() => setActiveTab("Completed")}
+                            onClick={() => handleTabChange("Completed")}
                         />
                         <Tab
                             label="Cancelled"
                             count={getCount("Cancelled")}
                             active={activeTab === "Cancelled"}
-                            onClick={() => setActiveTab("Cancelled")}
+                            onClick={() => handleTabChange("Cancelled")}
                         />
                     </div>
 
@@ -1517,7 +1463,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                 type="text"
                                 placeholder="Search order, buyer, or item..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-medium transition-colors focus:border-clay-500 focus:ring-2 focus:ring-clay-200"
                             />
                         </div>
@@ -2940,9 +2886,9 @@ export default function OrderManager({ auth, orders = [] }) {
                         <CompactPagination
                             currentPage={currentPage}
                             totalPages={totalPages}
-                            totalItems={filteredOrders.length}
-                            itemsPerPage={itemsPerPage}
-                            onPageChange={setCurrentPage}
+                            totalItems={totalItems}
+                            itemsPerPage={itemsPerPageForFilter}
+                            onPageChange={handlePageChange}
                             itemLabel="orders"
                         />
                     )}

@@ -30,11 +30,11 @@ class ProductController extends Controller
     private const MIN_ACTIVE_GALLERY_IMAGES = 3;
     private const MAX_GALLERY_IMAGES = 5;
 
-    public function index()
+    public function index(Request $request)
     {
         $seller = $this->sellerOwner();
 
-        $products = Product::where('user_id', $seller->id)
+        $query = Product::where('user_id', $seller->id)
             ->select([
                 'id',
                 'sku',
@@ -63,52 +63,82 @@ class ProductController extends Controller
                 'created_at',
                 'updated_at',
             ])
-            ->with(['recipes.supply'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function (Product $product) {
-                return [
-                    'id' => $product->id,
-                    'sku' => $product->sku,
-                    'name' => $product->name,
-                    'description' => $product->description,
-                    'category' => $product->category,
-                    'status' => $product->status,
-                    'clay_type' => $product->clay_type,
-                    'glaze_type' => $product->glaze_type,
-                    'firing_method' => $product->firing_method,
-                    'food_safe' => (bool) $product->food_safe,
-                    'colors' => $product->colors ?? [],
-                    'height' => $product->height,
-                    'width' => $product->width,
-                    'weight' => $product->weight,
-                    'price' => $product->price,
-                    'cost_price' => $product->cost_price,
-                    'stock' => $product->stock,
-                    'lead_time' => $product->lead_time,
-                    'sold' => $product->sold,
-                    'cover_photo_path' => $product->cover_photo_path,
-                    'gallery_paths' => $product->gallery_paths ?? [],
-                    'model_3d_path' => $product->model_3d_path,
-                    'track_as_supply' => (bool) $product->track_as_supply,
-                    'production_method' => $product->production_method ?? 'resell',
-                    'recipes' => $product->recipes->map(fn($r) => [
-                        'id' => $r->id,
-                        'supply_id' => $r->supply_id,
-                        'supply_name' => $r->supply->name ?? 'Unknown Supply',
-                        'quantity_required' => $r->quantity_required,
-                        'unit' => $r->supply->unit ?? '',
-                    ]),
-                    'img' => $product->cover_photo_path
-                        ? '/storage/' . $product->cover_photo_path
-                        : '/images/placeholder.svg',
-                    'has3D' => filled($product->model_3d_path),
-                ];
-            })
-            ->values();
+            ->with(['recipes.supply']);
+
+        // 1. Search Filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Status Filter
+        if ($request->filled('status') && $request->status !== 'All') {
+            if ($request->status === 'Low Stock') {
+                $query->where('stock', '<', 10)->where('status', '!=', 'Archived');
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        // 3. Sorting
+        $sortKey = $request->input('sort_key', 'created_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+        
+        $allowedSortKeys = ['name', 'price', 'stock', 'sold', 'created_at', 'sku'];
+        if (in_array($sortKey, $allowedSortKeys)) {
+            $query->orderBy($sortKey, $sortDir);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $paginator = $query->paginate(20)->withQueryString();
+
+        $paginator->through(function (Product $product) {
+            return [
+                'id' => $product->id,
+                'sku' => $product->sku,
+                'name' => $product->name,
+                'description' => $product->description,
+                'category' => $product->category,
+                'status' => $product->status,
+                'clay_type' => $product->clay_type,
+                'glaze_type' => $product->glaze_type,
+                'firing_method' => $product->firing_method,
+                'food_safe' => (bool) $product->food_safe,
+                'colors' => $product->colors ?? [],
+                'height' => $product->height,
+                'width' => $product->width,
+                'weight' => $product->weight,
+                'price' => $product->price,
+                'cost_price' => $product->cost_price,
+                'stock' => $product->stock,
+                'lead_time' => $product->lead_time,
+                'sold' => $product->sold,
+                'cover_photo_path' => $product->cover_photo_path,
+                'gallery_paths' => $product->gallery_paths ?? [],
+                'model_3d_path' => $product->model_3d_path,
+                'track_as_supply' => (bool) $product->track_as_supply,
+                'production_method' => $product->production_method ?? 'resell',
+                'recipes' => $product->recipes->map(fn($r) => [
+                    'id' => $r->id,
+                    'supply_id' => $r->supply_id,
+                    'supply_name' => $r->supply->name ?? 'Unknown Supply',
+                    'quantity_required' => $r->quantity_required,
+                    'unit' => $r->supply->unit ?? '',
+                ]),
+                'img' => $product->cover_photo_path
+                    ? '/storage/' . $product->cover_photo_path
+                    : '/images/placeholder.svg',
+                'has3D' => filled($product->model_3d_path),
+            ];
+        });
 
         return Inertia::render('Seller/ProductManager', [
-            'products' => $products,
+            'products' => $paginator,
             'categories' => \App\Models\Category::pluck('name')->toArray(),
             'supplies' => Supply::where('user_id', $seller->id)->where('category', '!=', 'Finished Goods')->get(),
             'subscription' => [

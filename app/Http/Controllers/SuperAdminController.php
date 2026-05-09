@@ -24,8 +24,10 @@ use App\Models\SponsorshipRequest;
 use App\Mail\ArtisanApproved;
 use App\Mail\ArtisanRejected;
 use App\Models\ArtisanStatusLog;
-use App\Models\UserTierLog;
 use App\Models\Category;
+use App\Models\PlatformActivity;
+use App\Models\SystemAnnouncement;
+use App\Models\UserTierLog;
 use App\Support\StructuredAddress;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -172,7 +174,7 @@ class SuperAdminController extends Controller
             })
             ->values();
 
-        $activities = \App\Models\PlatformActivity::with('user:id,name,shop_name')->latest()->take(20)->get();
+        $activities = PlatformActivity::with('user:id,name,shop_name')->latest()->take(20)->get();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
@@ -827,7 +829,7 @@ class SuperAdminController extends Controller
             }
         } catch (\Exception $e) {
             // Log error but continue
-            \Illuminate\Support\Facades\Log::error('Failed to send approval email: ' . $e->getMessage());
+            Log::error('Failed to send approval email: ' . $e->getMessage());
         }
 
         return redirect()->back()->with('success', 'Artisan approved successfully!');
@@ -869,7 +871,7 @@ class SuperAdminController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send rejection email: ' . $e->getMessage());
+            Log::error('Failed to send rejection email: ' . $e->getMessage());
         }
 
         return redirect()->back()->with('success', 'Artisan application rejected.');
@@ -982,12 +984,17 @@ class SuperAdminController extends Controller
         $elitePrice   = 399;
 
         // ---- 1. REVENUE FORECASTING: last 6 months of estimated MRR ----
-        $mrrHistory = [];
+        $targetDates = [];
         for ($i = 5; $i >= 0; $i--) {
-            $targetDate = now()->subMonths($i)->endOfMonth();
-            $label      = $targetDate->format('M Y');
+            $targetDates[] = now()->subMonths($i)->endOfMonth();
+        }
 
-            $tierSnapshot = $this->getHistoricalTierSnapshot($targetDate);
+        $snapshots = $this->getHistoricalTierSnapshots($targetDates);
+        $mrrHistory = [];
+
+        foreach ($targetDates as $targetDate) {
+            $label = $targetDate->format('M Y');
+            $tierSnapshot = $snapshots[$label] ?? ['premium' => 0, 'super_premium' => 0];
             $premiumCount = $tierSnapshot['premium'];
             $eliteCount = $tierSnapshot['super_premium'];
 
@@ -1148,8 +1155,50 @@ class SuperAdminController extends Controller
     }
 
     /**
-     * @return array<string, int>
+     * @return array<string, array<string, int>>
      */
+    private function getHistoricalTierSnapshots(array $targetDates): array
+    {
+        $snapshots = [];
+        $artisanIds = $this->artisanIds();
+        
+        // Fetch all logs that could possibly affect the tiers for the given dates
+        $maxDate = collect($targetDates)->max();
+        $allLogs = UserTierLog::query()
+            ->whereIn('user_id', $artisanIds)
+            ->where('created_at', '<=', $maxDate)
+            ->orderBy('user_id')
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('user_id');
+
+        foreach ($targetDates as $date) {
+            $premiumCount = 0;
+            $eliteCount = 0;
+
+            foreach ($allLogs as $userId => $logs) {
+                // Find the latest log before or on the target date
+                /** @var \App\Models\UserTierLog|null $latestLog */
+                $latestLog = $logs->first(fn(UserTierLog $log) => $log->created_at <= $date);
+                
+                if ($latestLog) {
+                    if ($latestLog->new_tier === 'premium') {
+                        $premiumCount++;
+                    } elseif ($latestLog->new_tier === 'super_premium') {
+                        $eliteCount++;
+                    }
+                }
+            }
+
+            $snapshots[$date->format('M Y')] = [
+                'premium' => $premiumCount,
+                'super_premium' => $eliteCount,
+            ];
+        }
+
+        return $snapshots;
+    }
+
     private function getHistoricalTierSnapshot(\DateTimeInterface|string $targetDate): array
     {
         $tierLogs = UserTierLog::query()
@@ -1171,7 +1220,7 @@ class SuperAdminController extends Controller
     public function announcements()
     {
         return Inertia::render('Admin/Announcements', [
-            'announcements' => \App\Models\SystemAnnouncement::with('creator:id,name')->latest()->get(),
+            'announcements' => SystemAnnouncement::with('creator:id,name')->latest()->get(),
         ]);
     }
 
@@ -1196,15 +1245,15 @@ class SuperAdminController extends Controller
         $validated['created_by'] = Auth::id();
 
         if ($validated['is_active'] ?? false) {
-            \App\Models\SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
+            SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
         }
 
-        \App\Models\SystemAnnouncement::create($validated);
+        SystemAnnouncement::create($validated);
 
         return back()->with('success', 'Announcement created successfully.');
     }
 
-    public function updateAnnouncement(Request $request, \App\Models\SystemAnnouncement $announcement)
+    public function updateAnnouncement(Request $request, SystemAnnouncement $announcement)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -1223,7 +1272,7 @@ class SuperAdminController extends Controller
         ]);
 
         if ($validated['is_active'] ?? false) {
-            \App\Models\SystemAnnouncement::where('id', '!=', $announcement->id)->where('is_active', true)->update(['is_active' => false]);
+            SystemAnnouncement::where('id', '!=', $announcement->id)->where('is_active', true)->update(['is_active' => false]);
         }
 
         $announcement->update($validated);
@@ -1231,16 +1280,16 @@ class SuperAdminController extends Controller
         return back()->with('success', 'Announcement updated successfully.');
     }
 
-    public function destroyAnnouncement(\App\Models\SystemAnnouncement $announcement)
+    public function destroyAnnouncement(SystemAnnouncement $announcement)
     {
         $announcement->delete();
 
         return back()->with('success', 'Announcement deleted successfully.');
     }
 
-    public function broadcastAnnouncement(\App\Models\SystemAnnouncement $announcement)
+    public function broadcastAnnouncement(SystemAnnouncement $announcement)
     {
-        \App\Models\SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
+        SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
         $announcement->update([
             'is_active' => true,
             'broadcast_version' => ($announcement->broadcast_version ?? 0) + 1,
@@ -1249,7 +1298,7 @@ class SuperAdminController extends Controller
         return back()->with('success', 'Announcement is now live across the platform.');
     }
 
-    public function stopAnnouncement(\App\Models\SystemAnnouncement $announcement)
+    public function stopAnnouncement(SystemAnnouncement $announcement)
     {
         $announcement->update(['is_active' => false]);
 
@@ -1350,7 +1399,7 @@ class SuperAdminController extends Controller
         $paymongoStatus = 'Unknown';
         
         try {
-            \Illuminate\Support\Facades\DB::connection()->getPdo();
+            DB::connection()->getPdo();
         } catch (\Exception $e) {
             $dbStatus = 'Offline';
         }
@@ -1364,7 +1413,7 @@ class SuperAdminController extends Controller
         try {
             $secretKey = config('services.paymongo.secret_key');
             if ($secretKey) {
-                $response = \Illuminate\Support\Facades\Http::withToken($secretKey)
+                $response = Http::withToken($secretKey)
                     ->get('https://api.paymongo.com/v1/links?limit=1');
                 $paymongoStatus = $response->successful() ? 'Online' : 'Error';
             } else {
@@ -1401,7 +1450,7 @@ class SuperAdminController extends Controller
         Artisan::call('cache:clear');
         Artisan::call('view:clear');
         
-        \App\Models\PlatformActivity::create([
+        PlatformActivity::create([
             'user_id' => Auth::id(),
             'action' => 'system_cache_purged',
             'description' => 'Super Admin forcefully purged the application cache.',
@@ -1414,7 +1463,7 @@ class SuperAdminController extends Controller
 
     public function taxonomyIndex()
     {
-        $categories = \App\Models\Category::withCount('products')->orderBy('name')->get();
+        $categories = Category::withCount('products')->orderBy('name')->get();
 
         return Inertia::render('Admin/Taxonomy', [
             'categories' => $categories
@@ -1427,15 +1476,15 @@ class SuperAdminController extends Controller
             'name' => 'required|string|max:255|unique:categories,name'
         ]);
 
-        $category = \App\Models\Category::create([
+        $category = Category::create([
             'name' => $validated['name'],
-            'slug' => \Illuminate\Support\Str::slug($validated['name'])
+            'slug' => Str::slug($validated['name'])
         ]);
 
         return back()->with('success', 'Category created successfully.');
     }
 
-    public function taxonomyUpdate(Request $request, \App\Models\Category $category)
+    public function taxonomyUpdate(Request $request, Category $category)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id
@@ -1446,16 +1495,16 @@ class SuperAdminController extends Controller
 
         $category->update([
             'name' => $newName,
-            'slug' => \Illuminate\Support\Str::slug($newName)
+            'slug' => Str::slug($newName)
         ]);
 
         // Mass update existing products
-        \App\Models\Product::where('category', $oldName)->update(['category' => $newName]);
+        Product::where('category', $oldName)->update(['category' => $newName]);
 
         return back()->with('success', 'Category renamed and all associated products updated.');
     }
 
-    public function taxonomyDestroy(\App\Models\Category $category)
+    public function taxonomyDestroy(Category $category)
     {
         if ($category->products()->count() > 0) {
             return back()->with('error', 'Cannot delete a category that contains products. Please reassign the products first.');
@@ -1490,7 +1539,7 @@ class SuperAdminController extends Controller
 
     public function checkCategoryName(Request $request)
     {
-        $exists = \App\Models\Category::where('name', $request->name)
+        $exists = Category::where('name', $request->name)
             ->when($request->exclude_id, fn($q) => $q->where('id', '!=', $request->exclude_id))
             ->exists();
 

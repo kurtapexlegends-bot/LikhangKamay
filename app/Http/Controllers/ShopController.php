@@ -151,13 +151,7 @@ class ShopController extends Controller
         // Rating Filter (minimum rating)
         if ($request->filled('min_rating')) {
             $minRating = (float) $request->min_rating;
-            $query->where(function ($q) use ($minRating) {
-                // Products with avg rating >= min
-                $q->whereRaw(
-                    '(SELECT AVG(rating) FROM reviews WHERE reviews.product_id = products.id AND reviews.is_hidden_from_marketplace = 0) >= ?',
-                    [$minRating]
-                );
-            });
+            $query->having('reviews_avg_rating', '>=', $minRating);
         }
 
         // 3. Sorting
@@ -207,7 +201,7 @@ class ShopController extends Controller
         });
 
         // 5. Fetch Products (Paginated)
-        $paginator = $query->paginate(20);
+        $paginator = $query->paginate(20)->withQueryString();
         
         $paginator->through(function ($product) {
             return [
