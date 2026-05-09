@@ -229,7 +229,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             <Head title="Chat" />
             <SellerSidebar active="chat" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 h-screen transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 h-screen transition-all duration-300">
                 
                 {/* --- HEADER --- */}
                 <SellerHeader

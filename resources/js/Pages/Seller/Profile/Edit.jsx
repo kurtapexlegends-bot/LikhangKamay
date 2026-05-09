@@ -106,7 +106,7 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
             <Head title="My Profile" />
             <SellerSidebar active="" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-300">
                 <SellerHeader
                     title="Profile Settings"
                     subtitle="Manage your shop identity, security, and preferences"

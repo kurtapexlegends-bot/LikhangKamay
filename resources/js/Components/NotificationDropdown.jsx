@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote } from 'lucide-react';
+import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote, CheckCircle, Undo, Clock, ArchiveX } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { formatChatRelative } from '@/lib/chatTime';
 
@@ -14,7 +14,7 @@ const matchesNotificationFilter = (notification, filterKey) => {
     }
 
     if (filterKey === 'orders') {
-        return ['new_order', 'delivery_update', 'replacement_resolution'].includes(notification.type);
+        return ['new_order', 'delivery_update', 'replacement_resolution', 'payment_confirmed'].includes(notification.type);
     }
 
     if (filterKey === 'messages') {
@@ -22,7 +22,7 @@ const matchesNotificationFilter = (notification, filterKey) => {
     }
 
     if (filterKey === 'attention') {
-        return ['low_stock', 'accounting_rejected', 'artisan_application', 'sponsorship_status', 'review_moderation_status'].includes(notification.type);
+        return ['low_stock', 'supply_depleted', 'accounting_rejected', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline'].includes(notification.type);
     }
 
     return true;
@@ -146,6 +146,14 @@ export default function NotificationDropdown() {
                 return <Banknote size={16} className="text-emerald-500" />;
             case 'artisan_application':
                 return <Store size={16} className="text-clay-600" />;
+            case 'payment_confirmed':
+                return <CheckCircle size={16} className="text-emerald-500" />;
+            case 'refund_request':
+                return <Undo size={16} className="text-rose-500" />;
+            case 'shipment_deadline':
+                return <Clock size={16} className="text-amber-500" />;
+            case 'supply_depleted':
+                return <ArchiveX size={16} className="text-red-600" />;
             default:
                 return <Bell size={16} className="text-gray-500" />;
         }

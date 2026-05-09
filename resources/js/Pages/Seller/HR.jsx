@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -46,7 +46,7 @@ const FALLBACK_MODULES = [
     { key: 'shop_settings', label: 'Shop Settings', description: 'Seller storefront profile settings.' },
     { key: 'hr', label: 'People & Payroll', description: 'Employee records, payroll prep, and workspace access management.' },
     { key: 'accounting', label: 'Finance Approvals', description: 'Finance review, fund visibility, and payroll approval.' },
-    { key: 'procurement', label: 'Inventory Operations', description: 'Inventory tracking, supply management, and purchasing workflows.' },
+    { key: 'procurement', label: 'Inventory', description: 'Inventory tracking, supply management, and purchasing workflows.' },
     { key: 'stock_requests', label: 'Restock Requests', description: 'Restock request tracking.' },
 ];
 
@@ -118,7 +118,7 @@ const formatShortDate = (value) => value
         day: 'numeric',
         year: 'numeric',
       }).format(new Date(value))
-    : '—';
+    : 'â€”';
 
 const modalFieldClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 placeholder-stone-400 shadow-none transition focus:border-clay-500 focus:ring-clay-500';
 const modalFieldWithIconClass = `${modalFieldClass} pr-11`;
@@ -280,7 +280,7 @@ const formatAttendanceDateLabel = (value) => value
         day: 'numeric',
         year: 'numeric',
       }).format(new Date(`${value}T12:00:00`))
-    : '—';
+    : 'â€”';
 
 const formatWorkedHoursCount = (minutes) => {
     const hours = Number(minutes || 0) / 60;
@@ -315,7 +315,7 @@ const formatWorkedHoursLabel = (minutes) => {
     return `${hours}h ${remainingMinutes}m`;
 };
 
-const sanitizeLegacyPlaceholder = (value) => value === 'â€”' ? '-' : value;
+const sanitizeLegacyPlaceholder = (value) => value === 'Ã¢â‚¬â€' ? '-' : value;
 const formatShortDateSafe = (value) => sanitizeLegacyPlaceholder(formatShortDate(value));
 const formatAttendanceDateLabelSafe = (value) => sanitizeLegacyPlaceholder(formatAttendanceDateLabel(value));
 
@@ -591,7 +591,7 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
                         <div className="min-w-0">
                             <h2 className="text-lg font-bold tracking-tight text-gray-900 leading-none">Attendance Calendar</h2>
                             <p className="mt-1 truncate text-xs text-stone-500 font-medium">
-                                <span className="font-bold text-stone-700">{employee?.name}</span> · {employee?.attendance?.month_label || 'Current Month'}
+                                <span className="font-bold text-stone-700">{employee?.name}</span> Â· {employee?.attendance?.month_label || 'Current Month'}
                             </p>
                         </div>
                     </div>
@@ -665,7 +665,7 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
                                                 <p className={`text-[10px] font-semibold leading-tight mt-1 ${
                                                     day.has_hours ? 'text-emerald-700' : 'text-stone-400'
                                                 }`}>
-                                                    {day.has_hours ? day.worked_hours_label : '—'}
+                                                    {day.has_hours ? day.worked_hours_label : 'â€”'}
                                                 </p>
                                             </div>
                                         </button>
@@ -1316,7 +1316,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                             <p className="mt-1 text-sm font-medium text-stone-900">{audit.summary}</p>
                                             {audit.details?.changes?.length > 0 && (
                                                 <p className="mt-1 text-[12px] text-stone-500">
-                                                    {audit.details.changes.join(' • ')}
+                                                    {audit.details.changes.join(' â€¢ ')}
                                                 </p>
                                             )}
                                         </div>
@@ -1685,7 +1685,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     <p className="mt-1">Last review: <span className="font-medium text-stone-700">{formatShortDateSafe(payroll.updated_at)}</span></p>
                                                 )}
                                                 <p className="mt-1">
-                                                    Reason: <span className={payroll.rejection_reason ? 'font-medium text-red-600' : 'font-medium text-stone-400'}>{payroll.rejection_reason || '—'}</span>
+                                                    Reason: <span className={payroll.rejection_reason ? 'font-medium text-red-600' : 'font-medium text-stone-400'}>{payroll.rejection_reason || 'â€”'}</span>
                                                 </p>
                                             </div>
 
@@ -1757,7 +1757,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     <div className={`text-xs leading-relaxed ${
                                                         payroll.rejection_reason ? 'text-red-600' : 'text-gray-400'
                                                     }`}>
-                                                        {payroll.rejection_reason || '—'}
+                                                        {payroll.rejection_reason || 'â€”'}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">

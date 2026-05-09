@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 
 import Dropdown from '@/Components/Dropdown';
@@ -11,14 +11,14 @@ import {
     Package, AlertTriangle, TrendingUp, Plus, Search, ChevronDown, 
     User, LogOut, Building2, Edit2, Trash2, RefreshCw, Box, Menu, 
     Banknote, Check, Users, CheckCircle, AlertCircle, 
-    FileText, Clock, X // Added X
+    FileText, Clock, X 
 } from 'lucide-react';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
-import useFlashToast from '@/hooks/useFlashToast';
-import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import SellerHeader from '@/Components/SellerHeader';
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import useFlashToast from '@/hooks/useFlashToast';
 
 const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other']; // Phase 1: Removed Raw Materials
 const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
@@ -37,11 +37,17 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
     const [supplyToDelete, setSupplyToDelete] = useState(null);
     const [supplyToRequest, setSupplyToRequest] = useState(null);
     const [requestQuantity, setRequestQuantity] = useState(0);
-    const [searchTerm, setSearchTerm] = useState('');
+    const { flash, filters = {} } = usePage().props;
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [filterCategory, setFilterCategory] = useState('all');
 
-    // --- FLASH MESSAGE HANDLING ---
-    const { flash } = usePage().props;
+    // Sync search from URL (for Global Search support)
+    useEffect(() => {
+        if (filters.search && filters.search !== searchTerm) {
+            setSearchTerm(filters.search);
+        }
+    }, [filters.search]);
+
     useFlashToast(flash, addToast);
 
     // --- TABS & FINANCE STATE ---
@@ -140,78 +146,31 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
-            <Head title="Inventory Operations" />
+            <Head title="Inventory" />
 
             {/* MAIN CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-                
-                {/* --- HEADER (Standardized) --- */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
-                            <Menu size={24} />
+                <SellerHeader 
+                    title="Inventory"
+                    subtitle="Manage materials, stock levels, and restock actions"
+                    auth={auth}
+                    onMenuClick={openSidebar}
+                    badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
+                    actions={(
+                        <button 
+                            onClick={() => canEditProcurement && setShowAddModal(true)} 
+                            disabled={!canEditProcurement}
+                            className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-500 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Plus size={14} strokeWidth={3} /> Add Supply
                         </button>
-                        <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Inventory Operations</h1>
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
-                                    <Building2 size={10} className="text-blue-400" /> Enterprise
-                                </span>
-                            </div>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">
-                                Manage materials, stock levels, and restock actions
-                            </p>
-                        </div>
-                    </div>
+                    )}
+                />
 
-                                        
-                    <div className="flex items-center gap-2 sm:gap-6">
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <button 
-                                onClick={() => canEditProcurement && setShowAddModal(true)} 
-                                disabled={!canEditProcurement}
-                                className="flex items-center gap-2 px-4 py-2 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <Plus size={16} /> <span className="hidden sm:inline">Add Supply</span>
-                            </button>
-                            <NotificationDropdown />
-                        </div>
-
-                        {/* Divider */}
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-
-                        {/* Profile Dropdown */}
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="hidden lg:block">
-                                                <WorkspaceAccountSummary user={auth.user} />
-                                            </div>
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
-                                        <LogOut size={16} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
 
                 <main className="p-4 sm:p-6 space-y-6">
                     {isProcurementReadOnly && (
-                        <ReadOnlyCapabilityNotice label="Inventory operations are read only for your account. Supply updates are disabled." />
+                        <ReadOnlyCapabilityNotice label="Inventory are read only for your account. Supply updates are disabled." />
                     )}
 
                     {actionNotice && (

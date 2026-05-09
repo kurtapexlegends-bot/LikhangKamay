@@ -31,7 +31,9 @@ const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleStrin
         const controls = animate(0, value, {
             duration: duration,
             onUpdate(value) {
-                nodeRef.current.textContent = formatter(value);
+                if (nodeRef.current) {
+                    nodeRef.current.textContent = formatter(value);
+                }
             }
         });
 
@@ -185,7 +187,7 @@ export default function Dashboard({ auth }) {
             <Head title="Dashboard" />
             <SellerSidebar active="overview" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-300">
                 <SellerHeader
                     title={(() => {
                         const hour = new Date().getHours();

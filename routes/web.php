@@ -274,6 +274,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::patch('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update');
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
+    // GLOBAL SEARCH
+    Route::get('/api/global-search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])->name('api.global-search');
+
     // REPORTING
     Route::post('/report', [\App\Http\Controllers\FlaggedContentController::class, 'store'])->name('report.store');
 });

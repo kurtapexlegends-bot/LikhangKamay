@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
@@ -120,17 +120,23 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
     ), [serverCategories]);
     const defaultCategory = categories[0] || STANDARD_PRODUCT_CATEGORIES[0];
 
+    const { flash, filters = {} } = usePage().props;
     const [activeTab, setActiveTab] = useState(storedView?.activeTab || 'All');
-    const [searchQuery, setSearchQuery] = useState(storedView?.searchQuery || '');
+    const [searchQuery, setSearchQuery] = useState(filters.search || storedView?.searchQuery || '');
     const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || 'all');
     const [sortConfig, setSortConfig] = useState(storedView?.sortConfig || { key: 'name', direction: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
 
     const { addToast } = useToast();
 
-    // --- FLASH MESSAGE HANDLING ---
-    const { flash } = usePage().props;
+    // Sync search from URL (for Global Search support)
+    useEffect(() => {
+        if (filters.search && filters.search !== searchQuery) {
+            setSearchQuery(filters.search);
+        }
+    }, [filters.search]);
 
+    // --- FLASH MESSAGE HANDLING ---
     useEffect(() => {
         if (flash.success) {
             addToast(flash.success, 'success');
@@ -902,7 +908,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-5 py-3 font-bold text-gray-700 text-sm">₱{product.price}</td>
+                                                <td className="px-5 py-3 font-bold text-gray-700 text-sm">â‚±{product.price}</td>
                                                 <td className="px-5 py-3">
                                                     <div className="flex items-center gap-2">
                                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.stock < 10 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
@@ -1031,7 +1037,7 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                 <form onSubmit={handleDeduct} className="flex max-h-[85vh] flex-col">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-gray-900">Update Stock (Deduct)</h2>
-                        <button type="button" onClick={() => setDeductModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                        <button type="button" onClick={() => setDeductModalOpen(false)} className="text-gray-400 hover:text-gray-600">âœ•</button>
                     </div>
                     
                     <p className="text-sm text-gray-500 mb-4">
@@ -1180,9 +1186,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Inventory & Pricing</h3>
                                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                                             <div>
-                                                <InputLabel value="Price (₱) *" />
+                                                <InputLabel value="Price (â‚±) *" />
                                                 <div className="relative mt-1">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₱</span>
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">â‚±</span>
                                                     <TextInput 
                                                         type="number" 
                                                         className="w-full pl-7" 
@@ -1193,9 +1199,9 @@ export default function ProductManager({ auth, products: dbProducts = [], catego
                                                 <InputError message={errors.price} className="mt-2" />
                                             </div>
                                             <div>
-                                                <InputLabel value="Cost Price (₱) *" />
+                                                <InputLabel value="Cost Price (â‚±) *" />
                                                 <div className="relative mt-1">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₱</span>
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">â‚±</span>
                                                     <TextInput 
                                                         type="number" 
                                                         className={`${modalFieldClass} pl-7`} 

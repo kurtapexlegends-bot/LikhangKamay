@@ -180,15 +180,15 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-clay-100 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="relative flex shrink-0 items-center justify-between border-b border-gray-50 bg-white px-5 py-3">
-                    <div className="flex items-center gap-2.5">
+            <aside className={`fixed inset-y-0 left-0 z-50 w-52 bg-white border-r border-clay-100 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="relative flex shrink-0 items-center justify-between border-b border-gray-50 bg-white px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2">
                         <img 
                             src="/images/logo.png" 
                             alt="LikhangKamay" 
-                            className="w-7 h-7 object-contain"
+                            className="w-6 h-6 object-contain shrink-0"
                         />
-                        <span className="font-serif text-lg font-bold text-gray-900 tracking-tight">LikhangKamay</span>
+                        <span className="font-serif text-base font-bold text-gray-900 tracking-tight truncate">LikhangKamay</span>
                     </div>
 
                     <button onClick={onClose} aria-label="Close sidebar" className="lg:hidden rounded-lg p-1 text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30">
@@ -271,7 +271,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                     color="bg-blue-100 text-blue-600"
                                 />
                                 <ModuleToggle 
-                                    label="Inventory Operations" 
+                                    label="Inventory" 
                                     description={isElite ? "Always enabled in Elite." : "Required for inventory tracking and restock requests."}
                                     icon={Warehouse}
                                     enabled={modules.procurement} 
@@ -450,7 +450,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                     <div className="space-y-0.5">
                                         <p className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                            <ClipboardList size={11} /> Inventory Operations
+                                            <ClipboardList size={11} /> Inventory   
                                         </p>
                                         <div className="pl-2 space-y-0.5">
                                             {visibleModulesSet.has('procurement') && (

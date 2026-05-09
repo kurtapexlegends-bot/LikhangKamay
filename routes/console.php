@@ -41,3 +41,34 @@ Schedule::command('orders:sync-lalamove')->everyFifteenMinutes();
 Schedule::command('orders:auto-cancel-failed-deliveries')->everyFifteenMinutes();
 Schedule::command('sponsorships:expire')->daily();
 Schedule::command('paymongo:verify')->everyFiveMinutes();
+
+Artisan::command('notifications:showcase', function () {
+    // Find the user ID from the active session
+    $session = \DB::table('sessions')->whereNotNull('user_id')->orderBy('last_activity', 'desc')->first();
+    $userId = $session ? $session->user_id : \App\Models\User::where('role', 'artisan')->latest()->value('id');
+    
+    $user = \App\Models\User::find($userId);
+    
+    if (!$user) {
+        $this->error('No active user found to send notifications to.');
+        return;
+    }
+
+    $order = \App\Models\Order::where('artisan_id', $user->id)->latest()->first() ?? \App\Models\Order::latest()->first();
+    $supply = \App\Models\Supply::where('user_id', $user->id)->first() ?? \App\Models\Supply::latest()->first();
+
+    if (!$order) {
+        $this->error('No orders found to use for sample notifications.');
+        return;
+    }
+
+    // Fire the new notifications
+    $user->notify(new \App\Notifications\PaymentConfirmedNotification($order));
+    $user->notify(new \App\Notifications\RefundRequestNotification($order));
+    $user->notify(new \App\Notifications\ShipmentDeadlineNotification($order, 12));
+    if ($supply) {
+        $user->notify(new \App\Notifications\SupplyDepletedNotification($supply));
+    }
+
+    $this->info("Success! 4 operational notifications sent to {$user->name} (User ID: {$user->id}). Check your notification bell now.");
+})->purpose('Showcase the new strategic notifications');

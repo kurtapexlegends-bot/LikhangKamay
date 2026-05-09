@@ -875,7 +875,7 @@ class HRController extends Controller
             'shop_settings' => ['label' => 'Shop Settings', 'description' => 'Seller storefront profile settings.'],
             'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access management.'],
             'accounting' => ['label' => 'Finance Approvals', 'description' => 'Finance review, fund visibility, and payroll approval.'],
-            'procurement' => ['label' => 'Inventory Operations', 'description' => 'Inventory tracking, supply management, and purchasing workflows.'],
+            'procurement' => ['label' => 'Inventory', 'description' => 'Inventory tracking, supply management, and purchasing workflows.'],
             'stock_requests' => ['label' => 'Restock Requests', 'description' => 'Restock request tracking and approval flow.'],
         ];
 

@@ -176,7 +176,7 @@ export default function StaffDashboard({ auth, hub }) {
                 onClose={() => setSidebarOpen(false)}
             />
 
-            <div className="flex min-h-screen flex-col lg:ml-56">
+            <div className="flex min-h-screen flex-col lg:ml-52">
                 <SellerHeader
                     title={hub.title}
                     subtitle={`Focused workspace for ${emphasis}.`}

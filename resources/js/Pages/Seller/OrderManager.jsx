@@ -26,7 +26,9 @@ const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleStrin
         const controls = animate(0, value, {
             duration: duration,
             onUpdate(value) {
-                nodeRef.current.textContent = formatter(value);
+                if (nodeRef.current) {
+                    nodeRef.current.textContent = formatter(value);
+                }
             }
         });
 
@@ -418,18 +420,25 @@ export default function OrderManager({ auth, orders = [] }) {
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     const storedView = readStoredOrderManagerView();
+    const { flash, sellerSidebar, filters = {} } = usePage().props;
+    const canAccessMessages = sellerSidebar?.visibleModules?.includes('messages');
+    const { canEdit: canEditOrders, isReadOnly: isOrdersReadOnly } = useSellerModuleAccess('orders');
+    
     const [activeTab, setActiveTab] = useState(storedView?.activeTab || 'All');
-    const [searchQuery, setSearchQuery] = useState(storedView?.searchQuery || '');
+    const [searchQuery, setSearchQuery] = useState(filters.search || storedView?.searchQuery || '');
     const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || 'all');
     const [dateRange, setDateRange] = useState(storedView?.dateRange || { start: '', end: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const [bookingOrderId, setBookingOrderId] = useState(null);
     const itemsPerPage = 10;
 
-    // --- FLASH MESSAGE HANDLING ---
-    const { flash, sellerSidebar } = usePage().props;
-    const canAccessMessages = sellerSidebar?.visibleModules?.includes('messages');
-    const { canEdit: canEditOrders, isReadOnly: isOrdersReadOnly } = useSellerModuleAccess('orders');
+    // Sync search from URL (for Global Search support)
+    useEffect(() => {
+        if (filters.search && filters.search !== searchQuery) {
+            setSearchQuery(filters.search);
+        }
+    }, [filters.search]);
+
     useFlashToast(flash, addToast);
 
     // Confirmation Modal State

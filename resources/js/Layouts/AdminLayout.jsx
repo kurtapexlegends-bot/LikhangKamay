@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
+import GlobalSearch from '@/Components/GlobalSearch';
+
 export default function AdminLayout({ title, children }) {
     const { pendingArtisanCount, auth, globalAnnouncement } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -171,22 +173,37 @@ export default function AdminLayout({ title, children }) {
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
-                            <h1 className="truncate text-xl font-bold text-gray-900">{title}</h1>
-                            {title === 'Overview' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Overview of platform performance</p>}
-                            {title === 'Monetization' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track revenue and subscription metrics</p>}
-                            {title === 'Platform Insights' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Deep dive into revenue forecasts, category performance, and platform health</p>}
-                            {title === 'User Management' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage buyers, artisans, staff, and admins</p>}
-                            {title === 'Review Moderation' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Handle seller-submitted review moderation requests</p>}
-                            {title === 'Pending Artisans' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review artisan applications</p>}
-                            {title === 'Sponsorship Requests' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review and manage artisan product sponsorship requests</p>}
-                            {title === 'System Announcements' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage global alerts and messages across the marketplace.</p>}
-                            {title === 'Moderation Queue' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Review flagged products and user content.</p>}
-                            {title === 'Diagnostics Command Center' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Monitor platform memory, cache, and external API heartbeat.</p>}
-                            {title === 'Global Taxonomy Engine' && <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Manage the global list of product categories.</p>}
+                            <h1 className="truncate text-xl font-bold text-gray-900">
+                                {title === 'Platform Insights' ? 'Insights' :
+                                 title === 'Diagnostics Command Center' ? 'Diagnostics' :
+                                 title === 'User Management' ? 'User Directory' :
+                                 title === 'Pending Artisans' ? 'Artisan Applications' :
+                                 title === 'Global Taxonomy Engine' ? 'Taxonomy Engine' :
+                                 title === 'Sponsorship Requests' ? 'Sponsorships' :
+                                 title === 'System Announcements' ? 'Global Alerts' :
+                                 title === 'Monetization' ? 'Platform Revenue' :
+                                 title}
+                            </h1>
+                            
+                            <p className="text-[11px] text-gray-500 font-medium mt-0.5 hidden sm:block">
+                                {title === 'Overview' && "Overview of platform performance"}
+                                {title === 'Monetization' && "Track revenue and subscription metrics"}
+                                {title === 'Platform Insights' && "Revenue forecasts and performance analytics"}
+                                {title === 'User Management' && "Manage buyers, artisans, staff, and admins"}
+                                {title === 'Review Moderation' && "Handle seller-submitted review moderation requests"}
+                                {title === 'Pending Artisans' && "Review artisan applications"}
+                                {title === 'Sponsorship Requests' && "Manage artisan product sponsorship requests"}
+                                {title === 'System Announcements' && "Manage global alerts and messages"}
+                                {title === 'Moderation Queue' && "Review flagged products and user content"}
+                                {title === 'Diagnostics Command Center' && "Monitor system memory, cache, and heartbeats"}
+                                {title === 'Global Taxonomy Engine' && "Manage the global product category list"}
+                            </p>
                         </div>
                     </div>
 
                     <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-6">
+                        <GlobalSearch />
+                        
                         {/* Notifications */}
                         <div className="flex items-center gap-2">
                             <NotificationDropdown />

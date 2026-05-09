@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
@@ -18,6 +18,9 @@ import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import SellerHeader from '@/Components/SellerHeader';
+import { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
 
 const moderationStatusLabel = (status) => {
     if (status === 'resolved') return 'Request approved';
@@ -95,8 +98,11 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
 export default function Reviews({ auth, reviews, stats, flash }) {
     const { addToast } = useToast();
     const { canEdit: canEditReviews, isReadOnly: isReviewsReadOnly } = useSellerModuleAccess('reviews');
+    const { filters = {} } = usePage().props;
+    const { openSidebar } = useSellerWorkspaceShell();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [filter, setFilter] = useState('All');
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [confirmingDelete, setConfirmingDelete] = useState(null);
@@ -108,6 +114,14 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     const [submittingDispute, setSubmittingDispute] = useState(false);
     const [confirmingDisputeRemoval, setConfirmingDisputeRemoval] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+
+    // Sync search from URL (for Global Search support)
+    React.useEffect(() => {
+        if (filters.search && filters.search !== searchTerm) {
+            setSearchTerm(filters.search);
+        }
+    }, [filters.search]);
+
     useFlashToast(flash, addToast);
 
     const QUICK_REPLIES = [
@@ -116,11 +130,24 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         "Thank you for sharing your feedback. We are always striving to improve and your input is incredibly valuable to us."
     ];
 
-    const filteredReviews = filter === 'All'
-        ? reviews
-        : filter === 'Hidden'
-            ? reviews.filter((review) => review.is_hidden_from_marketplace)
-            : reviews.filter((review) => review.rating === parseInt(filter));
+    const filteredReviews = reviews.filter((review) => {
+        const matchesFilter = filter === 'All'
+            ? true
+            : filter === 'Hidden'
+                ? review.is_hidden_from_marketplace
+                : review.rating === parseInt(filter);
+
+        if (!matchesFilter) return false;
+
+        if (!searchTerm.trim()) return true;
+
+        const search = searchTerm.toLowerCase();
+        return (
+            review.customer?.toLowerCase().includes(search) ||
+            review.comment?.toLowerCase().includes(search) ||
+            review.product_name?.toLowerCase().includes(search)
+        );
+    });
 
     // Sort: pinned first, then by date (already sorted by latest from backend)
     const sortedReviews = [...filteredReviews].sort((a, b) => {
@@ -274,51 +301,13 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 onClose={() => setSidebarOpen(false)}
             />
 
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
-
-                {/* --- HEADER --- */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-stone-200 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-stone-500 hover:text-clay-600">
-                            <Menu size={24} />
-                        </button>
-                        <div className="min-w-0">
-                            <h1 className="truncate text-lg sm:text-xl font-bold text-stone-900">Customer Ratings</h1>
-                            <p className="text-xs text-stone-500 font-medium mt-0.5 hidden sm:block">Shop quality feedback & reviews</p>
-                        </div>
-                    </div>
-
-
-                    <div className="flex items-center gap-2 sm:gap-6">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <NotificationDropdown />
-                        </div>
-                        <div className="hidden sm:block h-8 w-px bg-stone-200"></div>
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-stone-500 bg-transparent hover:text-stone-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="hidden lg:block">
-                                                <WorkspaceAccountSummary user={auth.user} />
-                                            </div>
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-stone-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-rose-600 hover:text-rose-700">
-                                        <LogOut size={16} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
+            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:ml-52">
+                <SellerHeader 
+                    title="Customer Ratings"
+                    subtitle="Shop quality feedback & reviews"
+                    auth={auth}
+                    onMenuClick={openSidebar}
+                />
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                     {isReviewsReadOnly && (
@@ -371,9 +360,26 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     {/* Reviews List */}
                     <div className="bg-white rounded-2xl shadow-sm border border-stone-200 mt-4 relative z-10">
                         <div className="p-5 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
+                            <div className="flex-1 max-w-sm">
                                 <h3 className="text-base font-bold text-stone-900">Recent Customer Reviews</h3>
-                                <p className="text-xs text-stone-500 mt-0.5">Read what your customers are saying</p>
+                                <div className="mt-2 relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search reviews..." 
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-9 pr-10 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-all"
+                                    />
+                                    {searchTerm && (
+                                        <button 
+                                            onClick={() => setSearchTerm('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="flex bg-stone-100 p-1 rounded-lg overflow-x-auto">

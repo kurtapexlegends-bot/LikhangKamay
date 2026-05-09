@@ -46,6 +46,10 @@ class NotificationPresenter
             'review_moderation_status' => route('my-orders.index'),
             'sponsorship_status' => route('seller.sponsorships') . (isset($data['request_id']) ? '#request-' . $data['request_id'] : ''),
             'artisan_application' => route('admin.pending'),
+            'payment_confirmed' => route('orders.index'),
+            'refund_request' => route('orders.index'),
+            'shipment_deadline' => route('orders.index'),
+            'supply_depleted' => route('procurement.index'),
             default => $data['url'] ?? null,
         };
     }

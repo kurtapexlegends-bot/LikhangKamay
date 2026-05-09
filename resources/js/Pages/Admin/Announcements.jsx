@@ -6,6 +6,8 @@ import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { Plus, Edit2, Trash2, Megaphone, Info, AlertTriangle, AlertCircle, CheckCircle, Play, Square, Clock, Calendar, Gift, Star, Zap, Sparkles, Tag, ShoppingBag, Eye } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
+
 // Available Icons for the Custom Composer
 const AVAILABLE_ICONS = [
     { name: 'megaphone', icon: Megaphone, label: 'Megaphone' },
@@ -231,18 +233,16 @@ export default function Announcements({ announcements }) {
 
     return (
         <AdminLayout title="System Announcements">
-            <div className="z-30 mb-6 border-b border-stone-200 bg-white sm:sticky sm:top-20 sm:mb-8 rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-4 py-4 sm:px-6 flex justify-end">
-                    <button 
-                        onClick={openCreateModal}
-                        className="flex items-center gap-2 bg-stone-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-stone-800 transition-all hover:-translate-y-0.5 active:scale-95"
-                    >
-                        <Plus size={14} /> New Broadcast Draft
-                    </button>
-                </div>
-            </div>
+            <FloatingModuleActions actions={(
+                <button 
+                    onClick={openCreateModal}
+                    className="flex items-center gap-1.5 bg-stone-900 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-stone-800 active:scale-95 transition-all shadow-lg shadow-stone-900/20 whitespace-nowrap"
+                >
+                    <Plus size={14} strokeWidth={3} /> New Broadcast Draft
+                </button>
+            )} />
 
-            <div className="space-y-8">
+            <div className="space-y-8 mt-4">
                 {activeAnnouncement && (
                     <section>
                         <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-4">Currently Live</h2>

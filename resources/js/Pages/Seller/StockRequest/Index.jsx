@@ -1,7 +1,9 @@
-import React, { useDeferredValue, useState } from 'react';
+import React, { useDeferredValue, useState, useEffect } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import SellerHeader from '@/Components/SellerHeader';
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import { 
@@ -42,12 +44,22 @@ export default function StockRequestIndex({ auth, requests }) {
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     const { canEdit: canEditStockRequests, isReadOnly: isStockRequestsReadOnly } = useSellerModuleAccess('stock_requests');
+    const { flash, filters = {} } = usePage().props;
     const [activeTab, setActiveTab] = useState('all');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [actionNotice, setActionNotice] = useState(null);
     const [processingId, setProcessingId] = useState(null);
     const deferredSearch = useDeferredValue(searchTerm);
-    
+
+    // Sync search from URL (for Global Search support)
+    useEffect(() => {
+        if (filters.search && filters.search !== searchTerm) {
+            setSearchTerm(filters.search);
+        }
+    }, [filters.search]);
+
+    useFlashToast(flash, addToast);
+
     // Modal States
     const [receiveModal, setReceiveModal] = useState({ open: false, id: null, max: null });
     const [transferModal, setTransferModal] = useState({ open: false, id: null, max: null });
@@ -93,10 +105,6 @@ export default function StockRequestIndex({ auth, requests }) {
             .toLowerCase()
             .includes(normalizedSearch);
     });
-
-    // --- FLASH MESSAGE HANDLING ---
-    const { flash } = usePage().props;
-    useFlashToast(flash, addToast);
 
     // 1. Mark as Ordered
     const handleMarkAsOrdered = () => {
@@ -216,54 +224,14 @@ export default function StockRequestIndex({ auth, requests }) {
             <Head title="Restock Requests" />
 
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <button onClick={openSidebar} className="lg:hidden text-gray-500 hover:text-clay-600">
-                            <Menu size={24} />
-                        </button>
-                        <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="truncate text-lg sm:text-xl font-bold text-gray-900">Restock Requests</h1>
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-900 text-[10px] font-bold uppercase tracking-wider text-gray-300">
-                                    <Building2 size={10} className="text-clay-400" /> Enterprise
-                                </span>
-                            </div>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5 hidden sm:block">Track purchasing, receiving, and buffer transfers</p>
-                        </div>
-                    </div>
+                <SellerHeader 
+                    title="Restock Requests"
+                    subtitle="Track purchasing, receiving, and buffer transfers"
+                    auth={auth}
+                    onMenuClick={openSidebar}
+                    badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
+                />
 
-                                        
-                    <div className="flex items-center gap-2 sm:gap-6">
-                        <div className="flex items-center gap-3">
-                            <NotificationDropdown />
-                        </div>
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-                        <div className="relative">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-2 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            <div className="hidden lg:block">
-                                                <WorkspaceAccountSummary user={auth.user} />
-                                            </div>
-                                            <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
-                                        </button>
-                                    </span>
-                                </Dropdown.Trigger>
-
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
-                                        <User size={16} /> Profile
-                                    </Dropdown.Link>
-                                    <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
-                                        <LogOut size={16} /> Log Out
-                                    </WorkspaceLogoutLink>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    </div>
-                </header>
 
                 <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-4">
                     {isStockRequestsReadOnly && (

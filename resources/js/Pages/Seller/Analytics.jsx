@@ -45,7 +45,9 @@ const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleStrin
         const controls = animate(0, value, {
             duration: duration,
             onUpdate(value) {
-                nodeRef.current.textContent = formatter(value);
+                if (nodeRef.current) {
+                    nodeRef.current.textContent = formatter(value);
+                }
             }
         });
 

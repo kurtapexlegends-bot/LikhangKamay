@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Modal from '@/Components/Modal';
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import { FolderTree, Plus, Edit2, Trash2, Tag, AlertTriangle, Save, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
-import Modal from '@/Components/Modal';
 
 export default function Taxonomy({ categories }) {
     const { addToast } = useToast();
@@ -79,17 +80,16 @@ export default function Taxonomy({ categories }) {
         <AdminLayout title="Global Taxonomy Engine">
             <Head title="Taxonomy Engine" />
 
-            <div className="max-w-5xl">
+            <div className="max-w-5xl pt-4">
                 
-                {/* ACTION BAR */}
-                <div className="flex justify-end mb-6">
+                <FloatingModuleActions actions={(
                     <button 
                         onClick={() => setIsAddOpen(true)}
-                        className="bg-clay-600 hover:bg-clay-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 flex items-center gap-2"
+                        className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-700 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap"
                     >
-                        <Plus size={16} /> Add Category
+                        <Plus size={14} strokeWidth={3} /> Add Category
                     </button>
-                </div>
+                )} />
 
                 {/* CATEGORIES TABLE */}
                 <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
