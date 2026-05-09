@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -7,7 +7,7 @@ import SellerHeader from '@/Components/SellerHeader';
 import UserAvatar from '@/Components/UserAvatar';
 import { 
     Users, UserPlus, Trash2,
-    Briefcase, Search, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3, AlertCircle,
+    Briefcase, Search, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3, AlertCircle, Shield
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -118,7 +118,7 @@ const formatShortDate = (value) => value
         day: 'numeric',
         year: 'numeric',
       }).format(new Date(value))
-    : 'â€”';
+    : '-';
 
 const modalFieldClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 placeholder-stone-400 shadow-none transition focus:border-clay-500 focus:ring-clay-500';
 const modalFieldWithIconClass = `${modalFieldClass} pr-11`;
@@ -280,7 +280,7 @@ const formatAttendanceDateLabel = (value) => value
         day: 'numeric',
         year: 'numeric',
       }).format(new Date(`${value}T12:00:00`))
-    : 'â€”';
+    : '-';
 
 const formatWorkedHoursCount = (minutes) => {
     const hours = Number(minutes || 0) / 60;
@@ -315,9 +315,8 @@ const formatWorkedHoursLabel = (minutes) => {
     return `${hours}h ${remainingMinutes}m`;
 };
 
-const sanitizeLegacyPlaceholder = (value) => value === 'Ã¢â‚¬â€' ? '-' : value;
-const formatShortDateSafe = (value) => sanitizeLegacyPlaceholder(formatShortDate(value));
-const formatAttendanceDateLabelSafe = (value) => sanitizeLegacyPlaceholder(formatAttendanceDateLabel(value));
+const formatShortDateSafe = formatShortDate;
+const formatAttendanceDateLabelSafe = formatAttendanceDateLabel;
 
 const formatRelativeAuditTime = (value) => {
     if (!value) {
@@ -665,7 +664,7 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
                                                 <p className={`text-[10px] font-semibold leading-tight mt-1 ${
                                                     day.has_hours ? 'text-emerald-700' : 'text-stone-400'
                                                 }`}>
-                                                    {day.has_hours ? day.worked_hours_label : 'â€”'}
+                                                    {day.has_hours ? day.worked_hours_label : '-'}
                                                 </p>
                                             </div>
                                         </button>
@@ -742,6 +741,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [attendanceModalEmployee, setAttendanceModalEmployee] = useState(null);
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
+    const [activeTab, setActiveTab] = useState('directory');
     const { addToast } = useToast();
     const canEditHrRecords = staffProvisioning.canEditHrRecords ?? true;
     const canManageStaffAccounts = !!staffProvisioning.canManageStaffAccounts;
@@ -1239,23 +1239,32 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
 
                     {/* KPI CARDS */}
-                    <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2">
-                        <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
+                        <div className="flex items-center justify-between rounded-[1.25rem] border border-stone-200 bg-white p-5 shadow-sm hover:border-stone-300 transition-colors">
                             <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Total Active Staff</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Active Staff</p>
                                 <h3 className="text-2xl font-bold text-gray-900 mt-1">{staff.length}</h3>
                             </div>
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F8EEE6] text-clay-600">
-                                <Users size={20} />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FCF7F2] border border-[#E7D8C9] text-clay-600">
+                                <Users size={22} />
                             </div>
                         </div>
-                        <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                        <div className="flex items-center justify-between rounded-[1.25rem] border border-stone-200 bg-white p-5 shadow-sm hover:border-stone-300 transition-colors">
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Est. Monthly Payroll</p>
                                 <h3 className="text-2xl font-bold text-gray-900 mt-1">{formatPeso(staff.reduce((acc, curr) => acc + Number(curr.salary), 0))}</h3>
                             </div>
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
-                                <Briefcase size={20} />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-50 border border-stone-200 text-stone-700">
+                                <Briefcase size={22} />
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between rounded-[1.25rem] border border-stone-200 bg-white p-5 shadow-sm hover:border-stone-300 transition-colors">
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Pending Payrolls</p>
+                                <h3 className="text-2xl font-bold text-gray-900 mt-1">{pendingPayrollCount}</h3>
+                            </div>
+                            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${pendingPayrollCount > 0 ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}>
+                                <Banknote size={22} />
                             </div>
                         </div>
                     </div>
@@ -1285,7 +1294,42 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         )}
                     </div>
 
-                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
+                    {/* TABS NAVIGATION */}
+                    <div className="flex items-center gap-2 border-b border-stone-200 overflow-x-auto whitespace-nowrap hide-scrollbar">
+                        <button
+                            onClick={() => setActiveTab('directory')}
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors ${
+                                activeTab === 'directory'
+                                    ? 'border-clay-600 text-clay-700'
+                                    : 'border-transparent text-stone-500 hover:text-stone-700'
+                            }`}
+                        >
+                            <Users size={16} /> Directory
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('payroll')}
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors ${
+                                activeTab === 'payroll'
+                                    ? 'border-clay-600 text-clay-700'
+                                    : 'border-transparent text-stone-500 hover:text-stone-700'
+                            }`}
+                        >
+                            <Banknote size={16} /> Payroll History
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('access')}
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors ${
+                                activeTab === 'access'
+                                    ? 'border-clay-600 text-clay-700'
+                                    : 'border-transparent text-stone-500 hover:text-stone-700'
+                            }`}
+                        >
+                            <Shield size={16} /> Access Audit
+                        </button>
+                    </div>
+
+                    {activeTab === 'access' && (
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm animate-fade-in">
                         <div className="border-b border-stone-100 px-6 py-4 bg-[#FDFBF9]">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div>
@@ -1336,9 +1380,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             )}
                         </div>
                     </div>
+                    )}
 
                     {/* EMPLOYEE LIST TABLE */}
-                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col min-h-[400px]">
+                    {activeTab === 'directory' && (
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col min-h-[400px] animate-fade-in">
                         
                         {/* Table Header / Toolbar */}
                         <div className="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#FDFBF9]">
@@ -1638,9 +1684,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             </table>
                         </div>
                     </div>
+                    )}
 
                     {/* PAYROLL HISTORY TABLE */}
-                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col mt-8">
+                    {activeTab === 'payroll' && (
+                    <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col animate-fade-in">
                         <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between bg-[#FDFBF9]">
                             <h3 className="text-sm font-bold tracking-tight text-stone-900">Payroll Requests History</h3>
                         </div>
@@ -1685,7 +1733,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     <p className="mt-1">Last review: <span className="font-medium text-stone-700">{formatShortDateSafe(payroll.updated_at)}</span></p>
                                                 )}
                                                 <p className="mt-1">
-                                                    Reason: <span className={payroll.rejection_reason ? 'font-medium text-red-600' : 'font-medium text-stone-400'}>{payroll.rejection_reason || 'â€”'}</span>
+                                                    Reason: <span className={payroll.rejection_reason ? 'font-medium text-red-600' : 'font-medium text-stone-400'}>{payroll.rejection_reason || '-'}</span>
                                                 </p>
                                             </div>
 
@@ -1757,7 +1805,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     <div className={`text-xs leading-relaxed ${
                                                         payroll.rejection_reason ? 'text-red-600' : 'text-gray-400'
                                                     }`}>
-                                                        {payroll.rejection_reason || 'â€”'}
+                                                        {payroll.rejection_reason || '-'}
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right">
@@ -1806,6 +1854,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             />
                         )}
                     </div>
+                    )}
                 </main>
 
             <AttendanceCalendarModal

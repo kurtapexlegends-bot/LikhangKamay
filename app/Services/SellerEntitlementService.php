@@ -54,10 +54,10 @@ class SellerEntitlementService
     public function getRolePresetDefaults(): array
     {
         return [
-            'hr' => ['hr'],
-            'accounting' => ['accounting'],
-            'procurement' => ['procurement', 'stock_requests'],
-            'customer_support' => ['orders', 'messages', 'reviews'],
+            'shop_manager' => ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'hr', 'accounting', 'procurement', 'stock_requests'],
+            'accountant' => ['overview', 'analytics', 'hr', 'accounting'],
+            'stock_clerk' => ['overview', 'products', 'orders', 'procurement', 'stock_requests'],
+            'customer_support' => ['overview', 'orders', 'messages', 'reviews'],
             'custom' => [],
         ];
     }

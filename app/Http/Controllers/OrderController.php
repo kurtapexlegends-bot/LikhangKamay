@@ -53,7 +53,7 @@ class OrderController extends Controller
         $seller?->loadMissing('addresses');
 
         $ordersQuery = Order::where('artisan_id', $sellerId)
-            ->with(['items', 'user', 'delivery.events']) // Load items, buyer info, and courier events
+            ->with(['items.product.recipes.supply', 'user', 'delivery.events']) // Load items, recipes, and supplies
             ->orderBy('created_at', 'desc');
 
         $initialOrders = (clone $ordersQuery)->get();
@@ -108,7 +108,15 @@ class OrderController extends Controller
                             'variant' => $item->variant ?? 'Standard',
                             'qty' => $item->quantity,
                             'price' => $item->price,
-                            'img' => str_starts_with($item->product_img, 'http') ? $item->product_img : ($item->product_img ? '/storage/' . $item->product_img : '/images/placeholder.svg')
+                            'img' => str_starts_with($item->product_img, 'http') ? $item->product_img : ($item->product_img ? '/storage/' . $item->product_img : '/images/placeholder.svg'),
+                            'production_method' => $item->product?->production_method,
+                            'recipes' => $item->product?->recipes->map(fn($r) => [
+                                'supply_id' => $r->supply_id,
+                                'supply_name' => $r->supply?->name,
+                                'supply_unit' => $r->supply?->unit,
+                                'supply_quantity' => $r->supply?->quantity,
+                                'quantity_required' => $r->quantity_required,
+                            ]),
                         ];
                     }),
                 ];
@@ -324,7 +332,7 @@ class OrderController extends Controller
         $previousTrackingNumber = $order->tracking_number;
 
         $request->validate([
-            'status' => 'required|string|in:Accepted,Rejected,Shipped,Ready for Pickup,Delivered,Completed,Cancelled',
+            'status' => 'required|string|in:Accepted,Processing,Rejected,Shipped,Ready for Pickup,Delivered,Completed,Cancelled',
             'tracking_number' => 'nullable|string|max:100',
             'shipping_notes' => 'nullable|string|max:500',
             'proof_of_delivery' => 'nullable|image|max:5120' // 5MB Max
@@ -377,6 +385,13 @@ class OrderController extends Controller
         // Set timestamps based on status change
         if ($request->status === 'Accepted') {
             $updateData['accepted_at'] = now();
+        } elseif ($request->status === 'Processing') {
+            // BOM Deduction Trigger
+            try {
+                $this->deductSuppliesForOrder($order);
+            } catch (\Exception $e) {
+                return back()->with('error', $e->getMessage());
+            }
         } elseif ($request->status === 'Completed') {
             if ($order->payment_method === 'COD') {
                 $updateData['payment_status'] = 'paid';
@@ -412,6 +427,20 @@ class OrderController extends Controller
                         // Sync to linked Supply
                         if ($product->track_as_supply && $product->supply) {
                             $product->supply->update(['quantity' => $product->stock]);
+                        }
+                    }
+                }
+
+                // Restore BOM Supplies if it was Processing
+                if ($order->status === 'Processing') {
+                    foreach ($order->items as $item) {
+                        $product = Product::with('recipes.supply')->find($item->product_id);
+                        if ($product && $product->production_method === 'manufactured') {
+                            foreach ($product->recipes as $recipe) {
+                                if ($recipe->supply) {
+                                    $recipe->supply->increment('quantity', $recipe->quantity_required * $item->quantity);
+                                }
+                            }
                         }
                     }
                 }
@@ -528,7 +557,8 @@ class OrderController extends Controller
 
         return match ($order->status) {
             'Pending' => ['Accepted', 'Rejected'],
-            'Accepted' => $order->shipping_method === 'Pick Up'
+            'Accepted' => ['Processing', 'Rejected'],
+            'Processing' => $order->shipping_method === 'Pick Up'
                 ? ['Ready for Pickup']
                 : ['Shipped'],
             'Shipped' => ['Delivered'],
@@ -769,6 +799,44 @@ class OrderController extends Controller
         );
 
         return redirect()->back()->with('success', 'Payment status updated.');
+    }
+
+    /**
+     * BOM Engine: Deduct supplies based on product recipes
+     */
+    private function deductSuppliesForOrder(Order $order)
+    {
+        DB::transaction(function () use ($order) {
+            foreach ($order->items as $item) {
+                $product = Product::with('recipes.supply')->find($item->product_id);
+                if ($product && $product->production_method === 'manufactured') {
+                    foreach ($product->recipes as $recipe) {
+                        $supply = $recipe->supply;
+                        if (!$supply) continue;
+
+                        $totalRequired = $recipe->quantity_required * $item->quantity;
+                        
+                        if ($supply->quantity < $totalRequired) {
+                            throw new \Exception("Insufficient supply: {$supply->name}. Needed {$totalRequired} {$supply->unit}, but only {$supply->quantity} available.");
+                        }
+                        
+                        $supply->decrement('quantity', $totalRequired);
+                        
+                        // Log the deduction
+                        \App\Models\SellerActivityLog::create([
+                            'user_id' => $order->artisan_id,
+                            'action' => 'supply_deducted',
+                            'description' => "Deducted {$totalRequired} {$supply->unit} of {$supply->name} for order #{$order->order_number}",
+                            'metadata' => [
+                                'order_id' => $order->id,
+                                'supply_id' => $supply->id,
+                                'quantity' => $totalRequired
+                            ]
+                        ]);
+                    }
+                }
+            }
+        });
     }
 
     /**

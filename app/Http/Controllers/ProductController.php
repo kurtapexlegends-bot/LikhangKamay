@@ -59,9 +59,11 @@ class ProductController extends Controller
                 'gallery_paths',
                 'model_3d_path',
                 'track_as_supply',
+                'production_method',
                 'created_at',
                 'updated_at',
             ])
+            ->with(['recipes.supply'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function (Product $product) {
@@ -89,6 +91,14 @@ class ProductController extends Controller
                     'gallery_paths' => $product->gallery_paths ?? [],
                     'model_3d_path' => $product->model_3d_path,
                     'track_as_supply' => (bool) $product->track_as_supply,
+                    'production_method' => $product->production_method ?? 'resell',
+                    'recipes' => $product->recipes->map(fn($r) => [
+                        'id' => $r->id,
+                        'supply_id' => $r->supply_id,
+                        'supply_name' => $r->supply->name ?? 'Unknown Supply',
+                        'quantity_required' => $r->quantity_required,
+                        'unit' => $r->supply->unit ?? '',
+                    ]),
                     'img' => $product->cover_photo_path
                         ? '/storage/' . $product->cover_photo_path
                         : '/images/placeholder.svg',
@@ -100,6 +110,7 @@ class ProductController extends Controller
         return Inertia::render('Seller/ProductManager', [
             'products' => $products,
             'categories' => \App\Models\Category::pluck('name')->toArray(),
+            'supplies' => Supply::where('user_id', $seller->id)->where('category', '!=', 'Finished Goods')->get(),
             'subscription' => [
                 'plan' => $seller->premium_tier,
                 'activeCount' => $seller->products()->where('status', 'Active')->count(),
@@ -131,6 +142,10 @@ class ProductController extends Controller
             'weight' => 'nullable|numeric',
             'lead_time' => 'nullable|integer',
             'status' => 'required|string',
+            'production_method' => 'nullable|string|in:resell,manufactured',
+            'recipes' => 'nullable|array',
+            'recipes.*.supply_id' => 'required|exists:supplies,id',
+            'recipes.*.quantity_required' => 'required|numeric|min:0.01',
             'cover_photo' => 'nullable|image|max:10240',
             'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
             'gallery.*' => 'nullable|image|max:10240',
@@ -205,7 +220,17 @@ class ProductController extends Controller
                 'cover_photo_path' => $coverPath,
                 'gallery_paths' => $galleryPaths,
                 'track_as_supply' => true,
+                'production_method' => $validated['production_method'] ?? 'resell',
             ]);
+
+            if (($validated['production_method'] ?? 'resell') === 'manufactured' && !empty($validated['recipes'])) {
+                foreach ($validated['recipes'] as $recipe) {
+                    $product->recipes()->create([
+                        'supply_id' => $recipe['supply_id'],
+                        'quantity_required' => $recipe['quantity_required'],
+                    ]);
+                }
+            }
 
               Supply::create(Supply::filterSchemaCompatibleAttributes([
                 'user_id' => $sellerId,
@@ -282,6 +307,10 @@ class ProductController extends Controller
             'cost_price' => 'required|numeric|min:0',
             'stock' => 'required|integer',
             'status' => 'required|string',
+            'production_method' => 'nullable|string|in:resell,manufactured',
+            'recipes' => 'nullable|array',
+            'recipes.*.supply_id' => 'required|exists:supplies,id',
+            'recipes.*.quantity_required' => 'required|numeric|min:0.01',
             'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],
             'cover_photo' => 'nullable|image|max:10240',
             'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
@@ -366,11 +395,26 @@ class ProductController extends Controller
             'width' => $request->width,
             'weight' => $request->weight,
             'track_as_supply' => true,
+            'production_method' => $validated['production_method'] ?? $product->production_method,
         ]);
 
-          if ($request->hasFile('cover_photo') || $request->hasFile('model_3d')) {
-              $product->save();
-          }
+        if ($request->hasFile('cover_photo') || $request->hasFile('model_3d')) {
+            $product->save();
+        }
+
+        if (($validated['production_method'] ?? $product->production_method) === 'manufactured') {
+            $product->recipes()->delete();
+            if (!empty($validated['recipes'])) {
+                foreach ($validated['recipes'] as $recipe) {
+                    $product->recipes()->create([
+                        'supply_id' => $recipe['supply_id'],
+                        'quantity_required' => $recipe['quantity_required'],
+                    ]);
+                }
+            }
+        } else {
+            $product->recipes()->delete();
+        }
 
         $supply = $this->findSupplyForProduct($product, $sellerId, $existingSupplyLookupName);
 

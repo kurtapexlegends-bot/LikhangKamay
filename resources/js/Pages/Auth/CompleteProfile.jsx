@@ -33,8 +33,6 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             : { terms: false, privacy: false }
     );
 
-    );
-
     // Real-time Shop Validation
     const [isShopNameTaken, setIsShopNameTaken] = useState(false);
     const [isValidatingShop, setIsValidatingShop] = useState(false);

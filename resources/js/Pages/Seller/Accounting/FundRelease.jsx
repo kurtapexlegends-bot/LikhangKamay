@@ -31,7 +31,11 @@ const statusTone = (status) => {
 
     return 'bg-amber-50 text-amber-700 border-amber-100';
 };
-const typeTone = (type) => (type === 'payroll' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100');
+const typeTone = (type) => {
+    if (type === 'payroll') return 'bg-indigo-50 text-indigo-700 border-indigo-100';
+    if (type === 'sale') return 'bg-teal-50 text-teal-700 border-teal-100';
+    return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+};
 const reviewLabel = (status) => {
     const normalized = String(status || '').toLowerCase();
 
@@ -43,7 +47,7 @@ const reviewLabel = (status) => {
 
 const modalCloseButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-gray-300 hover:text-gray-700';
 
-export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], finances }) {
+export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [], history, payrollHistory = [], salesHistory = [], finances }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { flash } = usePage().props;
     const { addToast } = useToast();
@@ -68,10 +72,10 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
     ), [pendingPayrolls, pendingRequests]);
 
     const allHistory = useMemo(() => (
-        [...history, ...payrollHistory]
+        [...history, ...payrollHistory, ...salesHistory]
             .map((item) => ({ ...item, _date: new Date(item.updated_at || item.created_at || Date.now()) }))
             .sort((a, b) => b._date - a._date)
-    ), [history, payrollHistory]);
+    ), [history, payrollHistory, salesHistory]);
 
     const itemsPerPage = 10;
     const filterLedgerEntries = (items) => {
@@ -90,6 +94,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 item.id,
                 item.type,
                 item.month,
+                item.order_number,
                 item.requester?.name,
                 item.requester?.role,
                 item.supply?.name,
@@ -186,7 +191,95 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
     const selectedItem = reviewModal.item;
     const isPayroll = selectedItem?.type === 'payroll';
+    const isSale = selectedItem?.type === 'sale';
     const isPendingReview = reviewModal.source === 'pending';
+
+    const handlePrintStatement = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Financial Statement - ${selectedItem?.order_number}</title>
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1c1917; max-width: 800px; margin: 0 auto; }
+                        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #e7e5e4; padding-bottom: 20px; margin-bottom: 30px; }
+                        h1 { margin: 0; font-size: 24px; }
+                        .text-muted { color: #78716c; font-size: 14px; }
+                        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        .table th, .table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f5f5f4; }
+                        .table th { background: #fafaf9; font-size: 12px; text-transform: uppercase; color: #57534e; font-weight: bold; }
+                        .text-right { text-align: right !important; }
+                        .total-row { font-weight: bold; background: #fdfaf8; font-size: 16px; }
+                        .total-row td { border-top: 2px solid #e7e5e4; }
+                        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+                        @media print { body { padding: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <h1>Financial Settlement Statement</h1>
+                            <p class="text-muted">Statement generated on ${new Date().toLocaleDateString()}</p>
+                        </div>
+                        <div class="text-right">
+                            <h2 style="margin:0;font-size:18px;">${selectedItem?.order_number}</h2>
+                            <p class="text-muted">Order Completed: ${new Date(selectedItem?.updated_at || Date.now()).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div>
+                            <strong>Customer Name</strong>
+                            <p>${selectedItem?.requester?.name || 'Guest'}</p>
+                        </div>
+                        <div>
+                            <strong>Status</strong>
+                            <p>Settled & Payout Complete</p>
+                        </div>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Ledger Entry</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Gross Merchandise Sales</td>
+                                <td class="text-right">PHP ${Number(selectedItem?.financials?.gross_sales || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td>Shipping Paid by Customer</td>
+                                <td class="text-right">PHP ${Number(selectedItem?.financials?.shipping_fee || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td style="color:#ef4444;">Platform Commission Fee</td>
+                                <td class="text-right" style="color:#ef4444;">- PHP ${Number(selectedItem?.financials?.platform_fee || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td style="color:#ef4444;">Transaction / Convenience Fee</td>
+                                <td class="text-right" style="color:#ef4444;">- PHP ${Number(selectedItem?.financials?.convenience_fee || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>Net Payout to Shop</td>
+                                <td class="text-right" style="color:#059669;">PHP ${Number(selectedItem?.financials?.net_payout || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            // Optional: printWindow.close();
+        }, 250);
+    };
 
     return (
         <>
@@ -293,6 +386,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                     <div className="flex flex-wrap items-center gap-2">
                         {[
                             ['all', 'All entries'],
+                            ['sale', 'Sales Settlements'],
                             ['payroll', 'People & Payroll'],
                             ['stock_request', 'Inventory'],
                         ].map(([value, label]) => (
@@ -410,30 +504,30 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                 return (
                                     <div key={`${item.type}-${item.id}`} className="group px-6 py-4 transition-colors hover:bg-stone-50/50 lg:flex lg:items-center lg:justify-between lg:gap-4">
                                         <div className="flex items-start gap-4">
-                                            <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 ${item.type === 'payroll' ? 'border-stone-200 bg-stone-50 text-stone-500' : 'border-clay-200 bg-[#FCF7F2] text-clay-600'}`}>
-                                                {item.type === 'payroll' ? <Users size={18} strokeWidth={2.5} /> : <FileText size={18} strokeWidth={2.5} />}
+                                            <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 ${item.type === 'payroll' ? 'border-stone-200 bg-stone-50 text-stone-500' : item.type === 'sale' ? 'border-teal-200 bg-teal-50 text-teal-600' : 'border-clay-200 bg-[#FCF7F2] text-clay-600'}`}>
+                                                {item.type === 'payroll' ? <Users size={18} strokeWidth={2.5} /> : item.type === 'sale' ? <Banknote size={18} strokeWidth={2.5} /> : <FileText size={18} strokeWidth={2.5} />}
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${typeTone(item.type)}`}>{item.type === 'payroll' ? 'Finance Review' : 'Inventory Ops'}</span>
+                                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${typeTone(item.type)}`}>{item.type === 'payroll' ? 'Finance Review' : item.type === 'sale' ? 'Sale Payout' : 'Inventory Ops'}</span>
                                                     <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                                        #{item.id} &bull; {formatDate(item.activity?.requested_at || item.created_at)}
+                                                        #{item.order_number || item.id} &bull; {formatDate(item.activity?.requested_at || item.created_at)}
                                                     </span>
                                                     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${statusTone(item.status)}`}>
                                                         {String(item.status).replace(/_/g, ' ')}
                                                     </span>
                                                 </div>
                                                 
-                                                <h4 className="mt-1.5 text-[14px] font-bold leading-tight text-stone-900">{item.type === 'payroll' ? `Payroll for ${item.month}` : item.supply?.name}</h4>
+                                                <h4 className="mt-1.5 text-[14px] font-bold leading-tight text-stone-900">{item.type === 'payroll' ? `Payroll for ${item.month}` : item.type === 'sale' ? `Order Settlement` : item.supply?.name}</h4>
                                                 
                                                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-stone-500">
-                                                    <span>Requested by <strong className="font-bold text-stone-700">{item.requester?.name || 'Seller owner'}</strong></span>
+                                                    <span>{item.type === 'sale' ? 'Customer' : 'Requested by'} <strong className="font-bold text-stone-700">{item.requester?.name || 'Unknown'}</strong></span>
                                                     <span className="h-1 w-1 rounded-full bg-stone-300" />
-                                                    <span>{item.type === 'payroll' ? `${item.employee_count} Employees` : `${item.quantity} ${item.supply?.unit || ''}`}</span>
+                                                    <span>{item.type === 'payroll' ? `${item.employee_count} Employees` : item.type === 'sale' ? `Sales Revenue` : `${item.quantity} ${item.supply?.unit || ''}`}</span>
                                                     {item.activity?.last_reviewed_at && (
                                                         <>
                                                             <span className="h-1 w-1 rounded-full bg-stone-300" />
-                                                            <span>{reviewLabel(item.status)} {formatDate(item.activity.last_reviewed_at)}</span>
+                                                            <span>{item.type === 'sale' ? 'Settled' : reviewLabel(item.status)} {formatDate(item.activity.last_reviewed_at)}</span>
                                                         </>
                                                     )}
                                                 </div>
@@ -444,8 +538,8 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
                                         <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:flex-row sm:items-center sm:justify-end lg:self-auto min-w-[200px]">
                                             <div className="text-left sm:text-right">
-                                                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Action Amount</p>
-                                                <p className="text-lg font-bold tracking-tight text-stone-900">{isApproved ? '- ' : ''}{formatShortMoney(item.amount)}</p>
+                                                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">{item.type === 'sale' ? 'Net Payout' : 'Action Amount'}</p>
+                                                <p className={`text-lg font-bold tracking-tight ${item.type === 'sale' ? 'text-emerald-600' : 'text-stone-900'}`}>{isApproved && item.type !== 'sale' ? '- ' : item.type === 'sale' ? '+ ' : ''}{formatShortMoney(item.amount)}</p>
                                             </div>
                                             <button onClick={() => openReviewModal(item, 'history')} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-stone-700 shadow-sm transition hover:bg-stone-50 hover:text-stone-900 sm:w-auto">
                                                 <Eye size={14} strokeWidth={2.5} /> View
@@ -528,20 +622,20 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 </form>
             </Modal>
 
-            <Modal show={reviewModal.open} onClose={closeReviewModal} afterLeave={resetReviewModal} maxWidth={isPayroll ? '5xl' : '2xl'}>
+            <Modal show={reviewModal.open} onClose={closeReviewModal} afterLeave={resetReviewModal} maxWidth={isPayroll ? '5xl' : isSale ? '3xl' : '2xl'}>
                 <div className="flex max-h-[85vh] flex-col">
                     <div className="flex flex-col gap-2.5 border-b border-stone-100 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6 bg-[#FDFBF9]">
                         <div className="flex items-start gap-4">
-                            <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${isPayroll ? 'border-stone-200 bg-stone-50 text-stone-500' : 'border-clay-200 bg-[#FCF7F2] text-clay-600'}`}>
-                                {isPayroll ? <Users size={18} strokeWidth={2.5} /> : <FileText size={18} strokeWidth={2.5} />}
+                            <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${isPayroll ? 'border-stone-200 bg-stone-50 text-stone-500' : isSale ? 'border-teal-200 bg-teal-50 text-teal-600' : 'border-clay-200 bg-[#FCF7F2] text-clay-600'}`}>
+                                {isPayroll ? <Users size={18} strokeWidth={2.5} /> : isSale ? <Banknote size={18} strokeWidth={2.5} /> : <FileText size={18} strokeWidth={2.5} />}
                             </div>
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${isPayroll ? 'bg-stone-100 text-stone-700 border-stone-200' : 'bg-[#FCF7F2] text-clay-700 border-[#E7D8C9]'}`}>{isPayroll ? 'Payroll Review' : 'Inventory Review'}</span>
+                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${isPayroll ? 'bg-stone-100 text-stone-700 border-stone-200' : isSale ? 'bg-teal-50 text-teal-700 border-teal-100' : 'bg-[#FCF7F2] text-clay-700 border-[#E7D8C9]'}`}>{isPayroll ? 'Payroll Review' : isSale ? 'Settlement Review' : 'Inventory Review'}</span>
                                     {selectedItem?.status && <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${statusTone(selectedItem.status)}`}>{String(selectedItem.status).replace(/_/g, ' ')}</span>}
                                 </div>
-                                <h2 className="mt-1.5 text-[15px] font-bold leading-tight text-stone-900 sm:text-base">{isPayroll ? `Payroll Review for ${selectedItem?.month || ''}` : `Stock Request #${selectedItem?.id || ''}`}</h2>
-                                <p className="mt-1 text-[11px] font-medium text-stone-500 sm:text-[12px]">{isPendingReview ? 'Review the breakdown before approving or rejecting.' : 'Review the stored breakdown and any rejection reason.'}</p>
+                                <h2 className="mt-1.5 text-[15px] font-bold leading-tight text-stone-900 sm:text-base">{isPayroll ? `Payroll Review for ${selectedItem?.month || ''}` : isSale ? `Order Settlement Breakdown` : `Stock Request #${selectedItem?.id || ''}`}</h2>
+                                <p className="mt-1 text-[11px] font-medium text-stone-500 sm:text-[12px]">{isSale ? `Breakdown for ${selectedItem?.order_number}` : isPendingReview ? 'Review the breakdown before approving or rejecting.' : 'Review the stored breakdown and any rejection reason.'}</p>
                             </div>
                         </div>
                         {isPayroll && (
@@ -550,6 +644,11 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                 <p className="mt-0.5 text-xl font-bold tracking-tight text-clay-900">{formatMoney(selectedItem?.amount)}</p>
                             </div>
                         )}
+                        {isSale && (
+                            <button onClick={handlePrintStatement} className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-teal-700 self-center">
+                                <Download size={14} strokeWidth={2.5} /> Download PDF
+                            </button>
+                        )}
                         <button type="button" disabled={!!reviewProcessing} onClick={closeReviewModal} className={`${modalCloseButtonClass} sm:self-start disabled:cursor-not-allowed disabled:opacity-50`}>
                             <X size={18} strokeWidth={2.5} />
                         </button>
@@ -557,12 +656,14 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
 
                     {selectedItem && (
                         <div className="mt-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6 align-stretch">
-                            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 px-4 py-3 text-[11px] font-medium leading-relaxed text-stone-600">
-                                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Review flow</p>
-                                <p className="mt-1">{isPendingReview ? 'Approve to release it into the finance ledger, or reject it with a reason that the requester can review later.' : 'This record is already part of the stored finance trail, including the final review result.'}</p>
-                            </div>
+                            {!isSale && (
+                                <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 px-4 py-3 text-[11px] font-medium leading-relaxed text-stone-600">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Review flow</p>
+                                    <p className="mt-1">{isPendingReview ? 'Approve to release it into the finance ledger, or reject it with a reason that the requester can review later.' : 'This record is already part of the stored finance trail, including the final review result.'}</p>
+                                </div>
+                            )}
 
-                            {!isPayroll && (
+                            {!isPayroll && !isSale && (
                                 <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white shadow-sm">
                                     <div className="grid divide-y divide-stone-100 md:grid-cols-2 md:divide-x md:divide-y-0">
                                         <AuditSheet
@@ -609,6 +710,51 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                                                 { label: 'Capacity', value: selectedItem.supply?.available_capacity },
                                             ]}
                                         />
+                                    </div>
+                                </div>
+                            )}
+
+                            {isSale && (
+                                <div className="rounded-[1.5rem] border border-stone-200 bg-white shadow-sm overflow-hidden mt-2">
+                                    <div className="px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
+                                        <p className="text-[11px] font-bold uppercase tracking-widest text-stone-800">Financial Ledger Breakdown</p>
+                                        <p className="mt-1 text-[12px] font-medium text-stone-500">Gross Sales - Platform Fees - Shipping - Tax = Net Payout</p>
+                                    </div>
+                                    <div className="p-6 bg-white space-y-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Customer</p>
+                                                <p className="mt-1 font-bold text-stone-900 text-[14px]">{selectedItem.requester?.name || 'Guest'}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Settled On</p>
+                                                <p className="mt-1 font-bold text-stone-900 text-[14px]">{formatDateTime(selectedItem.activity?.last_reviewed_at)}</p>
+                                            </div>
+                                        </div>
+                                        <table className="w-full text-left border-collapse">
+                                            <tbody className="divide-y divide-stone-100 text-[14px] font-medium text-stone-700">
+                                                <tr>
+                                                    <td className="py-4">Gross Merchandise Sales</td>
+                                                    <td className="py-4 text-right font-bold text-stone-900">{formatMoney(selectedItem.financials?.gross_sales)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-4">Shipping Fee Paid</td>
+                                                    <td className="py-4 text-right font-bold text-stone-900">{formatMoney(selectedItem.financials?.shipping_fee)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-4 text-rose-500">Platform Commission Fee</td>
+                                                    <td className="py-4 text-right font-bold text-rose-600">- {formatMoney(selectedItem.financials?.platform_fee)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-4 text-rose-500">Transaction & Convenience Fee</td>
+                                                    <td className="py-4 text-right font-bold text-rose-600">- {formatMoney(selectedItem.financials?.convenience_fee)}</td>
+                                                </tr>
+                                                <tr className="bg-emerald-50/50">
+                                                    <td className="py-5 font-bold text-emerald-800 pl-4 rounded-l-xl">Net Payout to Shop</td>
+                                                    <td className="py-5 text-right font-bold text-emerald-700 text-lg pr-4 rounded-r-xl">{formatMoney(selectedItem.financials?.net_payout)}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             )}

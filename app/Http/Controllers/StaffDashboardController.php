@@ -89,12 +89,12 @@ class StaffDashboardController extends Controller
                 'eyebrow' => 'Staff Workspace',
                 'focus' => 'Human Resources',
                 'theme' => 'clay',
-                'stats' => [
+                'stats' => array_values(array_filter([
                     ['label' => 'Employees', 'value' => $employeeCount],
                     ['label' => 'Active Staff', 'value' => $activeEmployees],
-                    ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls],
+                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls] : null,
                     ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages],
-                ],
+                ])),
                 'highlights' => [
                     'Keep employee records accurate and payroll drafts ready for accounting review.',
                     'Use the team inbox to confirm staffing updates with the shop owner.',
@@ -106,12 +106,12 @@ class StaffDashboardController extends Controller
                 'eyebrow' => 'Staff Workspace',
                 'focus' => 'Accounting',
                 'theme' => 'emerald',
-                'stats' => [
+                'stats' => array_values(array_filter([
                     ['label' => 'Requests Awaiting Release', 'value' => $pendingReleases, 'tone' => 'emerald'],
-                    ['label' => 'Pending Payroll Approvals', 'value' => $pendingPayrolls, 'tone' => 'amber'],
+                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payroll Approvals', 'value' => $pendingPayrolls, 'tone' => 'amber'] : null,
                     ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky'],
-                    ['label' => 'Completed Orders', 'value' => Order::where('artisan_id', $sellerId)->where('status', 'Completed')->count(), 'tone' => 'violet'],
-                ],
+                    $user->hasStaffCapability(User::CAP_VIEW_REVENUE) ? ['label' => 'Completed Orders', 'value' => Order::where('artisan_id', $sellerId)->where('status', 'Completed')->count(), 'tone' => 'violet'] : null,
+                ])),
                 'highlights' => [
                     'Prioritize stock-request releases and payroll approvals that unblock operations.',
                     'Coordinate handoffs with HR and procurement without leaving the workspace.',

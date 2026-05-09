@@ -173,9 +173,46 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->isArtisan();
     }
 
-    public function isBuyer(): bool
+    /**
+     * Enterprise Staff Capability Constants
+     */
+    public const CAP_VIEW_REVENUE = 'finance.view_revenue';
+    public const CAP_MANAGE_PAYROLL = 'payroll.manage';
+    public const CAP_VIEW_PAYROLL = 'payroll.view';
+    public const CAP_MANAGE_INVENTORY = 'inventory.manage';
+    public const CAP_DISPATCH_ORDERS = 'orders.dispatch';
+    public const CAP_MANAGE_STAFF = 'staff.manage';
+
+    /**
+     * Check if the user has a specific granular capability within their shop.
+     */
+    public function hasStaffCapability(string $capability): bool
     {
-        return $this->role === 'buyer' || $this->role === null;
+        if ($this->isSellerOwner()) {
+            return true;
+        }
+
+        if (!$this->isStaff() || !$this->isWorkspaceAccessEnabled()) {
+            return false;
+        }
+
+        $permissions = (array) $this->staff_module_permissions;
+
+        // Shop Manager Level has all capabilities
+        if ($this->getStaffUserLevel() === self::STAFF_MANAGER_USER_LEVEL) {
+            return true;
+        }
+
+        // Check explicit capability mapping
+        return match ($capability) {
+            self::CAP_VIEW_REVENUE => (bool) data_get($permissions, 'accounting'),
+            self::CAP_VIEW_PAYROLL => (bool) data_get($permissions, 'hr'),
+            self::CAP_MANAGE_PAYROLL => $this->canEditSellerModule('hr'),
+            self::CAP_MANAGE_INVENTORY => $this->canEditSellerModule('products') || $this->canEditSellerModule('procurement'),
+            self::CAP_DISPATCH_ORDERS => $this->canEditSellerModule('orders'),
+            self::CAP_MANAGE_STAFF => $this->canManageStaffAccounts(),
+            default => false,
+        };
     }
 
     public function requiresStaffPasswordChange(): bool

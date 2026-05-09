@@ -841,10 +841,13 @@ class HRController extends Controller
     private function rolePresetOptions(SellerEntitlementService $entitlementService): array
     {
         $labels = [
-            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
-            'accounting' => ['label' => 'Finance Review', 'description' => 'Business funds, payroll approval, and finance visibility.'],
-            'procurement' => ['label' => 'Inventory & Restocking', 'description' => 'Supply tracking, stock requests, and purchasing coordination.'],
+            'shop_manager' => ['label' => 'Shop Manager', 'description' => 'Full administrative control. Can manage products, financials, and staff.'],
+            'accountant' => ['label' => 'Accountant', 'description' => 'Focus on financials. Can view revenue, manage payroll, and approve payouts.'],
+            'stock_clerk' => ['label' => 'Stock Clerk', 'description' => 'Operations focus. Can manage inventory, process orders, and request supplies.'],
             'customer_support' => ['label' => 'Customer Care', 'description' => 'Orders, buyer messages, team inbox, and customer review handling.'],
+            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
+            'accounting' => ['label' => 'Finance Review', 'description' => 'Legacy finance visibility role.'],
+            'procurement' => ['label' => 'Procurement', 'description' => 'Legacy inventory tracking role.'],
             'custom' => ['label' => 'Custom Capability Mix', 'description' => 'Start blank and choose the exact capabilities manually.'],
         ];
 

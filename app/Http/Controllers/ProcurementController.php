@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Payroll;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -183,7 +184,20 @@ class ProcurementController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $supply->update(Supply::filterSchemaCompatibleAttributes($validated));
+        DB::transaction(function () use ($supply, $validated) {
+            /** @var \App\Models\Supply $lockedSupply */
+            $lockedSupply = Supply::where('id', $supply->id)->lockForUpdate()->first();
+            $lockedSupply->update(Supply::filterSchemaCompatibleAttributes($validated));
+
+            // Sync to linked Product (Track as Supply)
+            if ($linkedProduct = $lockedSupply->product) {
+                /** @var \App\Models\Product $lockedProduct */
+                $lockedProduct = \App\Models\Product::where('id', $linkedProduct->id)->lockForUpdate()->first();
+                if ($lockedProduct) {
+                    $lockedProduct->update(['stock' => $lockedSupply->quantity]);
+                }
+            }
+        });
 
         return back()->with('success', 'Supply item updated!');
     }
@@ -199,12 +213,20 @@ class ProcurementController extends Controller
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $supply->increment('quantity', $validated['quantity']);
+        DB::transaction(function () use ($supply, $validated) {
+            /** @var \App\Models\Supply $lockedSupply */
+            $lockedSupply = Supply::where('id', $supply->id)->lockForUpdate()->first();
+            $lockedSupply->increment('quantity', $validated['quantity']);
 
-        // Sync to linked Product (Track as Supply)
-        if ($linkedProduct = $supply->product) {
-            $linkedProduct->update(['stock' => $supply->quantity]);
-        }
+            // Sync to linked Product (Track as Supply)
+            if ($linkedProduct = $lockedSupply->product) {
+                /** @var \App\Models\Product $lockedProduct */
+                $lockedProduct = \App\Models\Product::where('id', $linkedProduct->id)->lockForUpdate()->first();
+                if ($lockedProduct) {
+                    $lockedProduct->update(['stock' => $lockedSupply->quantity]);
+                }
+            }
+        });
 
         return back()->with('success', "Added {$validated['quantity']} {$supply->unit} to {$supply->name}!");
     }
@@ -276,14 +298,30 @@ class ProcurementController extends Controller
             return back()->with('error', 'Funds must be released by Accounting before receiving order.');
         }
 
-        // 1. Update Inventory
-        $supply = $stockRequest->supply;
-        if ($supply) {
-            $supply->increment('quantity', $stockRequest->quantity);
-        }
+        DB::transaction(function () use ($stockRequest) {
+            /** @var \App\Models\StockRequest $lockedRequest */
+            $lockedRequest = StockRequest::where('id', $stockRequest->id)->lockForUpdate()->first();
 
-        // 2. Mark Request as Completed
-        $stockRequest->update(['status' => StockRequest::STATUS_COMPLETED]);
+            // 1. Update Inventory
+            $supply = $lockedRequest->supply;
+            if ($supply) {
+                /** @var \App\Models\Supply $lockedSupply */
+                $lockedSupply = Supply::where('id', $supply->id)->lockForUpdate()->first();
+                $lockedSupply->increment('quantity', $lockedRequest->quantity);
+
+                // Sync to linked Product (Track as Supply)
+                if ($linkedProduct = $lockedSupply->product) {
+                    /** @var \App\Models\Product $lockedProduct */
+                    $lockedProduct = \App\Models\Product::where('id', $linkedProduct->id)->lockForUpdate()->first();
+                    if ($lockedProduct) {
+                        $lockedProduct->update(['stock' => $lockedSupply->quantity]);
+                    }
+                }
+            }
+
+            // 2. Mark Request as Completed
+            $lockedRequest->update(['status' => StockRequest::STATUS_COMPLETED]);
+        });
 
         return back()->with('success', 'Items received and inventory updated!');
     }

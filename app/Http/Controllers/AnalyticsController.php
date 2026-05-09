@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Review;
 use App\Services\SponsorshipAnalyticsService;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -276,15 +277,23 @@ class AnalyticsController extends Controller
             ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
             : null;
 
+        $canViewRevenue = $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE);
+
         return Inertia::render('Seller/Analytics', [
             'metrics' => [
-                'total_revenue' => $current['revenue'],
-                'gross_profit' => $current['profit'],
-                'profit_margin' => round($current['margin'], 1),
-                'growth' => $growth,
+                'total_revenue' => $canViewRevenue ? $current['revenue'] : 0,
+                'gross_profit' => $canViewRevenue ? $current['profit'] : 0,
+                'profit_margin' => $canViewRevenue ? round($current['margin'], 1) : 0,
+                'growth' => $canViewRevenue ? $growth : [
+                    'revenue' => 0,
+                    'orders' => $growth['orders'],
+                    'avg' => 0,
+                    'profit' => 0,
+                ],
                 'average_rating' => $reviewStats['average'],
                 'review_stats' => $reviewStats,
             ],
+            'financials_masked' => !$canViewRevenue,
             'insights' => [
                 'vip_customers' => $vipCustomers,
                 'loyalty_stats' => $loyaltyStats,

@@ -15,7 +15,7 @@ class Product extends Model
         'height', 'width', 'weight',
         'price', 'cost_price', 'stock', 'lead_time', 'sold',
         'cover_photo_path', 'gallery_paths', 'model_3d_path', 'slug',
-        'track_as_supply', 'is_sponsored', 'sponsored_until'
+        'track_as_supply', 'is_sponsored', 'sponsored_until', 'production_method'
     ];
 
     protected $casts = [
@@ -86,6 +86,11 @@ class Product extends Model
     public function sponsorshipRequests()
     {
         return $this->hasMany(SponsorshipRequest::class);
+    }
+
+    public function recipes()
+    {
+        return $this->hasMany(ProductRecipe::class);
     }
 
     public function orderItems()

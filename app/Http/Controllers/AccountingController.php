@@ -10,6 +10,7 @@ use App\Models\StockRequest;
 use App\Models\User;
 use App\Notifications\AccountingRejectedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AccountingController extends Controller
@@ -58,11 +59,20 @@ class AccountingController extends Controller
             ->get()
             ->map(fn (Payroll $payroll) => $this->serializePayroll($payroll, $seller, $financials['balance']));
 
+        $completedOrders = Order::query()
+            ->where('artisan_id', $seller->id)
+            ->where('status', 'Completed')
+            ->latest()
+            ->take(20)
+            ->get()
+            ->map(fn (Order $order) => $this->serializeOrder($order));
+
         return Inertia::render('Seller/Accounting/FundRelease', [
             'pendingRequests' => $pendingRelease,
             'pendingPayrolls' => $pendingPayrolls,
             'history' => $releasedHistory,
             'payrollHistory' => $payrollHistory,
+            'salesHistory' => $completedOrders,
             'finances' => [
                 'baseFunds' => $financials['base_funds'],
                 'revenue' => $financials['revenue'],
@@ -197,12 +207,22 @@ class AccountingController extends Controller
             return back()->with('error', 'Request is not pending.');
         }
 
-        $currentBalance = $this->buildFinancialSnapshot($this->sellerOwner())['balance'];
+        DB::transaction(function () use ($stockRequest) {
+            /** @var \App\Models\User $lockedUser */
+            $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
+            
+            if (!$lockedUser) {
+                throw new \Exception("Seller owner not found during fund release.");
+            }
 
-        if ($currentBalance < (float) $stockRequest->total_cost) {
-            return back()->with('error', 'Insufficient funds. Cannot release PHP '.number_format((float) $stockRequest->total_cost, 2));
-        }
-        $stockRequest->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
+            $currentBalance = $this->buildFinancialSnapshot($lockedUser)['balance'];
+
+            if ($currentBalance < (float) $stockRequest->total_cost) {
+                return back()->with('error', 'Insufficient funds. Cannot release PHP '.number_format((float) $stockRequest->total_cost, 2));
+            }
+
+            StockRequest::where('id', $stockRequest->id)->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
+        });
 
         return back()->with('success', 'Funds released. Procurement can now proceed.');
     }
@@ -250,13 +270,22 @@ class AccountingController extends Controller
             return back()->with('error', 'Payroll is not pending.');
         }
 
-        $currentBalance = $this->buildFinancialSnapshot($this->sellerOwner())['balance'];
+        DB::transaction(function () use ($payroll) {
+            /** @var \App\Models\User $lockedUser */
+            $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
+            
+            if (!$lockedUser) {
+                throw new \Exception("Seller owner not found during payroll approval.");
+            }
 
-        if ($currentBalance < (float) $payroll->total_amount) {
-            return back()->with('error', 'Insufficient funds. Cannot release payroll of PHP '.number_format((float) $payroll->total_amount, 2));
-        }
+            $currentBalance = $this->buildFinancialSnapshot($lockedUser)['balance'];
 
-        $payroll->update(['status' => 'Paid']);
+            if ($currentBalance < (float) $payroll->total_amount) {
+                return back()->with('error', 'Insufficient funds. Cannot release payroll of PHP '.number_format((float) $payroll->total_amount, 2));
+            }
+
+            Payroll::where('id', $payroll->id)->update(['status' => 'Paid']);
+        });
 
         return back()->with('success', 'Payroll approved and funds released.');
     }
@@ -300,7 +329,7 @@ class AccountingController extends Controller
             'base_funds' => 'required|numeric|min:0'
         ]);
 
-        \App\Models\User::where('id', $this->sellerOwnerId())->update([
+        User::where('id', $this->sellerOwnerId())->update([
             'base_funds' => $request->base_funds
         ]);
 
@@ -432,6 +461,36 @@ class AccountingController extends Controller
                     'net_pay' => (float) $item->net_pay,
                 ];
             })->values()->all(),
+        ];
+    }
+
+    private function serializeOrder(Order $order): array
+    {
+        return [
+            'id' => $order->id,
+            'type' => 'sale',
+            'order_number' => $order->order_number,
+            'status' => $order->status,
+            'created_at' => $order->created_at?->toIso8601String(),
+            'updated_at' => $order->updated_at?->toIso8601String(),
+            'amount' => (float) $order->seller_net_amount,
+            'requester' => [
+                'name' => $order->customer_name,
+                'role' => 'buyer',
+            ],
+            'financials' => [
+                'gross_sales' => (float) $order->merchandise_subtotal,
+                'shipping_fee' => (float) $order->shipping_fee_amount,
+                'platform_fee' => (float) $order->platform_commission_amount,
+                'convenience_fee' => (float) $order->convenience_fee_amount,
+                'net_payout' => (float) $order->seller_net_amount,
+                'total_charged' => (float) $order->total_amount,
+            ],
+            'activity' => [
+                'requested_at' => $order->created_at?->toIso8601String(),
+                'submitted_at' => $order->created_at?->toIso8601String(),
+                'last_reviewed_at' => $order->updated_at?->toIso8601String(),
+            ]
         ];
     }
 
