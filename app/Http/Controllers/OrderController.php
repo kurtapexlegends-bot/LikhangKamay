@@ -46,8 +46,9 @@ class OrderController extends Controller
     /**
      * SELLER: View all orders for the logged-in artisan
      */
-    public function index(Request $request, OrderLogisticsService $orderLogisticsService)
+    public function index(Request $request)
     {
+        $orderLogisticsService = app(OrderLogisticsService::class);
         $sellerId = $this->sellerOwnerId();
         $seller = $this->sellerOwner();
         $seller?->loadMissing('addresses');
