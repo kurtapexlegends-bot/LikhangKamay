@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -98,14 +99,19 @@ class ProfileController extends Controller
 
         // Handle Avatar Upload
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
-            if ($user->avatar) {
-                // simple check to avoid deleting default avatars if logic existed, but Storage::delete handles clean paths
-                 \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
-            }
+            try {
+                // Delete old avatar if exists
+                if ($user->avatar) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+                }
 
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $data['avatar'] = $path;
+                $path = $request->file('avatar')->store('avatars', 'public');
+                $data['avatar'] = $path;
+            } catch (\Exception $e) {
+                Log::error('Profile avatar upload failed (Vercel disk restriction?): ' . $e->getMessage());
+                // Don't crash the request, just notify that the image failed
+                Session::flash('error', 'Profile details updated, but your avatar could not be saved due to storage restrictions.');
+            }
         }
 
         $user->fill($data);
