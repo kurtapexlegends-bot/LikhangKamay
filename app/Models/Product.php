@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Traits\HasTransformableImages;
+
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasTransformableImages;
 
     protected $fillable = [
         'user_id', 'sku', 'name', 'description', 'category', 'status',
@@ -34,9 +36,14 @@ class Product extends Model
 
     public function getImgAttribute()
     {
-        return $this->cover_photo_path 
-            ? '/storage/' . $this->cover_photo_path 
-            : '/images/placeholder.svg';
+        if (!$this->cover_photo_path) return '/images/placeholder.svg';
+        
+        // Use Supabase Transformation to request a 600px width version
+        return $this->getTransformedUrl($this->cover_photo_path, [
+            'width' => 600,
+            'quality' => 80,
+            'format' => 'webp'
+        ]);
     }
 
     public function getHas3DAttribute()

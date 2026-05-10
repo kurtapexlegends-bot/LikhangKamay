@@ -457,6 +457,7 @@ class SubscriptionController extends Controller
             ->orderBy('id')
             ->get();
 
+        /** @var SubscriptionTransaction $transaction */
         foreach ($pendingTransactions as $transaction) {
             try {
                 $session = $this->payMongoService->retrieveCheckoutSession($transaction->paymongo_session_id);

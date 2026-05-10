@@ -54,6 +54,9 @@ Route::get('/artisan/register', function () {
 })->middleware('guest')->name('artisan.register');
 
 // Legal Pages
+// Webhooks (Exempt from CSRF in bootstrap/app.php)
+Route::post('/webhooks/qstash-handler', [\App\Http\Controllers\QStashWebhookController::class, 'handle']);
+
 Route::get('/terms', function () {
     return Inertia::render('Legal/TermsOfService');
 })->name('terms');

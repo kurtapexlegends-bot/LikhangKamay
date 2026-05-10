@@ -16,9 +16,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Schema;
 
+use App\Traits\HasTransformableImages;
+
 class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasTransformableImages;
 
     public const STAFF_WORKSPACE_ACCESS_FLAG = '__workspace_access_enabled';
     public const STAFF_USER_LEVEL_FLAG = '__staff_user_level';
@@ -33,6 +35,23 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public const STAFF_ACCESS_PERMISSION_FULL = 'can_edit';
 
     protected static ?bool $hasSplitNameColumns = null;
+
+    // Artisan Setup Fields
+    protected $appends = ['avatar_url'];
+
+    public function getAvatarUrlAttribute()
+    {
+        if (!$this->avatar) return null;
+        
+        // Use Supabase Transformation to request a 200px width version
+        return $this->getTransformedUrl($this->avatar, [
+            'width' => 200,
+            'height' => 200,
+            'resize' => 'cover',
+            'quality' => 80,
+            'format' => 'webp'
+        ]);
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -131,16 +150,25 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function sendEmailVerificationNotification(): void
     {
-        [$code, $expiresAt] = app(EmailVerificationCodeService::class)->issue($this);
-        $notification = new \App\Notifications\VerifyEmailNotification($code, $expiresAt);
-
-        if (app()->environment('production') && config('queue.default') !== 'sync') {
-            $this->notify($notification);
-
+        // If we are already in a QStash background process, send it directly.
+        if (request()->is('webhooks/qstash-handler')) {
+            [$code, $expiresAt] = app(EmailVerificationCodeService::class)->issue($this);
+            $this->notifyNow(new \App\Notifications\VerifyEmailNotification($code, $expiresAt));
             return;
         }
 
-        $this->notifyNow($notification);
+        // Otherwise, dispatch to QStash if available.
+        if (app()->environment('production')) {
+            $dispatched = app(\App\Services\QStashService::class)->dispatch('send_verification_email', [
+                'user_id' => $this->id
+            ]);
+
+            if ($dispatched) return;
+        }
+
+        // Fallback for local or if QStash fails
+        [$code, $expiresAt] = app(EmailVerificationCodeService::class)->issue($this);
+        $this->notifyNow(new \App\Notifications\VerifyEmailNotification($code, $expiresAt));
     }
 
     /**
@@ -148,7 +176,24 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+        // If we are already in a QStash background process, send it directly.
+        if (request()->is('webhooks/qstash-handler')) {
+            $this->notifyNow(new \App\Notifications\ResetPasswordNotification($token));
+            return;
+        }
+
+        // Otherwise, dispatch to QStash if available.
+        if (app()->environment('production')) {
+            $dispatched = app(\App\Services\QStashService::class)->dispatch('send_password_reset', [
+                'user_id' => $this->id,
+                'token' => $token
+            ]);
+
+            if ($dispatched) return;
+        }
+
+        // Fallback
+        $this->notifyNow(new \App\Notifications\ResetPasswordNotification($token));
     }
 
     // ========== ROLE HELPERS ==========

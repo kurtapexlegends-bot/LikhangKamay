@@ -29,10 +29,21 @@ use App\Models\PlatformActivity;
 use App\Models\SystemAnnouncement;
 use App\Models\UserTierLog;
 use App\Support\StructuredAddress;
+use App\Services\Admin\AdminMetricsService;
+use App\Services\Admin\AdminAnalyticsService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuperAdminController extends Controller
 {
+    protected AdminMetricsService $metrics;
+    protected AdminAnalyticsService $analytics;
+
+    public function __construct(AdminMetricsService $metrics, AdminAnalyticsService $analytics)
+    {
+        $this->metrics = $metrics;
+        $this->analytics = $analytics;
+    }
+
     private const ARTISAN_DOCUMENT_FIELDS = [
         'business_permit',
         'dti_registration',
@@ -43,47 +54,6 @@ class SuperAdminController extends Controller
     /**
      * Admin Dashboard - Platform overview
      */
-    /**
-     * Helper to calculate count and percentage growth
-     */
-    private function getMetric(string $model, array $conditions = [], string $dateColumn = 'created_at')
-    {
-        $query = $model::query();
-
-        foreach ($conditions as $field => $value) {
-            if ($value === null) {
-                $query->whereNull($field);
-            } else {
-                $query->where($field, $value);
-            }
-        }
-
-        $currentCount = $query->count();
-
-        // Calculate total count as of 30 days ago
-        $previousQuery = $model::query();
-        foreach ($conditions as $field => $value) {
-             if ($value === null) {
-                $previousQuery->whereNull($field);
-            } else {
-                $previousQuery->where($field, $value);
-            }
-        }
-        $previousCount = $previousQuery->where($dateColumn, '<=', now()->subDays(30))->count();
-
-        $growth = 0;
-        if ($previousCount > 0) {
-            $growth = (($currentCount - $previousCount) / $previousCount) * 100;
-        } elseif ($currentCount > 0) {
-            $growth = 100; // 0 to something is 100% growth (technically infinite, but 100% represents "new")
-        }
-
-        return [
-            'value' => $currentCount,
-            'growth' => round($growth, 1),
-            'trend' => $growth > 0 ? 'up' : ($growth < 0 ? 'down' : 'neutral')
-        ];
-    }
 
     /**
      * Admin Dashboard - Platform overview
@@ -91,7 +61,7 @@ class SuperAdminController extends Controller
     public function dashboard()
     {
         try {
-            $totalArtisans = $this->getMetric(User::class, ['role' => 'artisan']);
+            $totalArtisans = $this->metrics->getMetric(User::class, ['role' => 'artisan']);
             
             // Buyers (role is 'buyer' or null)
             $buyerCurrent = User::where(function($q) {
@@ -118,7 +88,7 @@ class SuperAdminController extends Controller
 
             // Pending Artisans (Accurate Historical Check)
             $currentPending = User::where('role', 'artisan')->where('artisan_status', 'pending')->count();
-            $previousPending = $this->getHistoricalStatusCount('pending', 30);
+            $previousPending = $this->metrics->getHistoricalStatusCount('pending', 30);
             $pendingGrowth = 0;
             if ($previousPending > 0) {
                 $pendingGrowth = (($currentPending - $previousPending) / $previousPending) * 100;
@@ -133,7 +103,7 @@ class SuperAdminController extends Controller
             
             // Approved Artisans (Accurate Historical Check)
             $currentApproved = User::where('role', 'artisan')->where('artisan_status', 'approved')->count();
-            $previousApproved = $this->getHistoricalStatusCount('approved', 30);
+            $previousApproved = $this->metrics->getHistoricalStatusCount('approved', 30);
             $approvedGrowth = 0;
             if ($previousApproved > 0) {
                 $approvedGrowth = (($currentApproved - $previousApproved) / $previousApproved) * 100;
@@ -225,8 +195,8 @@ class SuperAdminController extends Controller
             $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
 
             // Previous month's active subscriptions (estimated using exact historical log tables)
-            $previousPremiumUsersCount = $this->getHistoricalTierCount('premium', 30);
-            $previousEliteUsersCount = $this->getHistoricalTierCount('super_premium', 30);
+            $previousPremiumUsersCount = $this->metrics->getHistoricalTierCount('premium', 30);
+            $previousEliteUsersCount = $this->metrics->getHistoricalTierCount('super_premium', 30);
             $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
 
             $mrrGrowth = 0;
@@ -1038,7 +1008,7 @@ class SuperAdminController extends Controller
             $targetDates[] = now()->subMonths($i)->endOfMonth();
         }
 
-        $snapshots = $this->getHistoricalTierSnapshots($targetDates);
+        $snapshots = $this->metrics->getHistoricalTierSnapshots($targetDates);
         $mrrHistory = [];
 
         foreach ($targetDates as $targetDate) {
@@ -1161,108 +1131,9 @@ class SuperAdminController extends Controller
         ]);
     }
 
-    /**
-     * Get the accurate historical count of a premium tier at a specific point in time.
-     */
-    private function getHistoricalTierCount(string $tier, int $daysAgo = 30)
-    {
-        $snapshot = $this->getHistoricalTierSnapshot(now()->subDays($daysAgo));
 
-        return $snapshot[$tier] ?? 0;
-    }
 
-    /**
-     * Get the accurate historical count of an artisan status at a specific point in time.
-     */
-    private function getHistoricalStatusCount(string $status, int $daysAgo = 30)
-    {
-        $statusLogs = ArtisanStatusLog::query()
-            ->whereIn('user_id', $this->artisanIds())
-            ->where('created_at', '<=', now()->subDays($daysAgo))
-            ->orderBy('user_id')
-            ->orderByDesc('created_at')
-            ->get()
-            ->unique('user_id');
 
-        return $statusLogs->where('new_status', $status)->count();
-    }
-
-    /**
-     * @return \Illuminate\Support\Collection<int, int>
-     */
-    private function artisanIds(): Collection
-    {
-        static $artisanIds;
-
-        if ($artisanIds instanceof Collection) {
-            return $artisanIds;
-        }
-
-        $artisanIds = User::where('role', 'artisan')->pluck('id');
-
-        return $artisanIds;
-    }
-
-    /**
-     * @return array<string, array<string, int>>
-     */
-    private function getHistoricalTierSnapshots(array $targetDates): array
-    {
-        $snapshots = [];
-        $artisanIds = $this->artisanIds();
-        
-        // Fetch all logs that could possibly affect the tiers for the given dates
-        $maxDate = collect($targetDates)->max();
-        $allLogs = UserTierLog::query()
-            ->whereIn('user_id', $artisanIds)
-            ->where('created_at', '<=', $maxDate)
-            ->orderBy('user_id')
-            ->orderByDesc('created_at')
-            ->get()
-            ->groupBy('user_id');
-
-        foreach ($targetDates as $date) {
-            $premiumCount = 0;
-            $eliteCount = 0;
-
-            foreach ($allLogs as $userId => $logs) {
-                // Find the latest log before or on the target date
-                /** @var \App\Models\UserTierLog|null $latestLog */
-                $latestLog = $logs->first(fn(UserTierLog $log) => $log->created_at <= $date);
-                
-                if ($latestLog) {
-                    if ($latestLog->new_tier === 'premium') {
-                        $premiumCount++;
-                    } elseif ($latestLog->new_tier === 'super_premium') {
-                        $eliteCount++;
-                    }
-                }
-            }
-
-            $snapshots[$date->format('M Y')] = [
-                'premium' => $premiumCount,
-                'super_premium' => $eliteCount,
-            ];
-        }
-
-        return $snapshots;
-    }
-
-    private function getHistoricalTierSnapshot(\DateTimeInterface|string $targetDate): array
-    {
-        $tierLogs = UserTierLog::query()
-            ->whereIn('user_id', $this->artisanIds())
-            ->where('created_at', '<=', $targetDate)
-            ->orderBy('user_id')
-            ->orderByDesc('created_at')
-            ->get()
-            ->unique('user_id');
-
-        return [
-            'premium' => $tierLogs->where('new_tier', 'premium')->count(),
-            'super_premium' => $tierLogs->where('new_tier', 'super_premium')->count(),
-        ];
-    }
 
     // --- SYSTEM ANNOUNCEMENTS ---
 
@@ -1609,37 +1480,8 @@ class SuperAdminController extends Controller
      */
     public function slaMonitoring()
     {
-        // Cache metrics for 30 minutes to reduce DB load
-        $metrics = Cache::remember('admin_sla_metrics', 1800, function () {
-            // 1. Artisan Approval SLA (Goal: 24h)
-            // Use DB-level average for performance
-            $avgApprovalTime = User::where('role', 'artisan')
-                ->whereNotNull('approved_at')
-                ->whereNotNull('setup_completed_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, setup_completed_at, approved_at)) as avg_hours')
-                ->value('avg_hours') ?? 0;
-
-            // 2. Dispute Resolution SLA (Goal: 48h)
-            $avgDisputeTime = ReviewDispute::where('status', 'resolved')
-                ->whereNotNull('resolved_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hours')
-                ->value('avg_hours') ?? 0;
-
-            // 3. Sponsorship SLA (Goal: 24h)
-            $avgSponsorshipTime = SponsorshipRequest::where('status', 'approved')
-                ->whereNotNull('approved_at')
-                ->whereNotNull('requested_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, requested_at, approved_at)) as avg_hours')
-                ->value('avg_hours') ?? 0;
-
-            return [
-                'avgArtisanApprovalHours' => round($avgApprovalTime, 1),
-                'avgDisputeResolutionHours' => round($avgDisputeTime, 1),
-                'avgSponsorshipApprovalHours' => round($avgSponsorshipTime, 1),
-                'artisanSLACompliance' => $avgApprovalTime <= 24 ? 100 : max(0, round(100 - (($avgApprovalTime - 24) * 2), 1)),
-                'disputeSLACompliance' => $avgDisputeTime <= 48 ? 100 : max(0, round(100 - (($avgDisputeTime - 48) * 1.5), 1)),
-            ];
-        });
+        // Use Analytics Service to handle metrics and compliance logic.
+        $metrics = $this->analytics->getSLAMetrics();
 
         // Get stale items (not cached as these need to be live for resolution)
         $staleArtisanApplications = User::where('role', 'artisan')

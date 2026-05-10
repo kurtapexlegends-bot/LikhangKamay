@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
@@ -874,52 +874,13 @@ class ProductController extends Controller
     private function resizeAndSave($file, $path)
     {
         try {
-            if (!function_exists('imagecreatefromstring')) {
-                return $file->store($path, 'public');
-            }
-
-            $sourceImage = imagecreatefromstring(file_get_contents($file->getRealPath()));
-            if (!$sourceImage) {
-                return $file->store($path, 'public');
-            }
-
-            $width = imagesx($sourceImage);
-            $height = imagesy($sourceImage);
-            $maxDim = 1200;
-
-            if ($width <= $maxDim && $height <= $maxDim) {
-                imagedestroy($sourceImage);
-
-                return $file->store($path, 'public');
-            }
-
-            if ($width > $maxDim || $height > $maxDim) {
-                $ratio = $width / $height;
-                if ($width > $height) {
-                    $newWidth = $maxDim;
-                    $newHeight = $maxDim / $ratio;
-                } else {
-                    $newHeight = $maxDim;
-                    $newWidth = $maxDim * $ratio;
-                }
-                $newImage = imagescale($sourceImage, (int) $newWidth, (int) $newHeight);
-                $sourceImage = $newImage;
-            }
-
-            ob_start();
-            imagejpeg($sourceImage, null, 85);
-            $imageData = ob_get_clean();
-
-            $filename = $file->hashName();
-            $filename = pathinfo($filename, PATHINFO_FILENAME) . '.jpg';
-            $fullPath = $path . '/' . $filename;
-            Storage::disk('public')->put($fullPath, $imageData);
-            imagedestroy($sourceImage);
-
-            return $fullPath;
+            // Offload resizing to Supabase Transformations.
+            // We just store the original file to save server memory/CPU.
+            return $file->store($path, 'public');
         } catch (\Exception $e) {
-            Log::error("Failed to resize and save image to disk 'public': " . $e->getMessage());
-            return null;
+            Log::error("Image storage failed: " . $e->getMessage());
+            // Fallback: return the path where it WOULD have been stored if it failed silently
+            return $file->store($path, 'public');
         }
     }
 
