@@ -1,2 +1,6 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /staff
+Disallow: /seller
+Disallow: /login
+Disallow: /register

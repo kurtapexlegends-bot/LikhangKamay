@@ -29,34 +29,41 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         // 1. CACHE THE GLOBAL ANNOUNCEMENT (Expensive conditional query)
-        $globalAnnouncement = Cache::remember('global_announcement_' . ($user?->role ?? 'guest'), 600, function () use ($user) {
-            $announcementQuery = \App\Models\SystemAnnouncement::where('is_active', true)
-                ->where(function ($query) {
-                    $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-                })
-                ->where(function ($query) {
-                    $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                });
+        $globalAnnouncement = null;
+        try {
+            $globalAnnouncement = Cache::remember('global_announcement_' . ($user?->role ?? 'guest'), 600, function () use ($user) {
+                $announcementQuery = \App\Models\SystemAnnouncement::where('is_active', true)
+                    ->where(function ($query) {
+                        $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+                    })
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    });
 
-            $userRole = $user?->role;
-            if ($userRole) {
-                $announcementQuery->where(function ($query) use ($userRole) {
-                    $query->where('target_audience', 'all');
-                    if (in_array($userRole, ['artisan', 'staff'])) {
-                        $query->orWhere('target_audience', 'artisans');
-                    } elseif ($userRole === 'buyer') {
-                        $query->orWhere('target_audience', 'buyers');
-                    } elseif ($userRole === 'super_admin') {
-                        $query->orWhere('target_audience', 'artisans')
-                              ->orWhere('target_audience', 'buyers');
-                    }
-                });
-            } else {
-                $announcementQuery->where('target_audience', 'all');
+                $userRole = $user?->role;
+                if ($userRole) {
+                    $announcementQuery->where(function ($query) use ($userRole) {
+                        $query->where('target_audience', 'all');
+                        if (in_array($userRole, ['artisan', 'staff'])) {
+                            $query->orWhere('target_audience', 'artisans');
+                        } elseif ($userRole === 'buyer') {
+                            $query->orWhere('target_audience', 'buyers');
+                        } elseif ($userRole === 'super_admin') {
+                            $query->orWhere('target_audience', 'artisans')
+                                  ->orWhere('target_audience', 'buyers');
+                        }
+                    });
+                } else {
+                    $announcementQuery->where('target_audience', 'all');
+                }
+
+                return $announcementQuery->latest()->first();
+            });
+        } catch (\Exception $e) {
+            if (config('app.debug')) {
+                report($e);
             }
-
-            return $announcementQuery->latest()->first();
-        });
+        }
 
         // 2. PREPARE HEAVY PROPS AS LAZY (Only loaded when explicitly requested by Inertia)
         return [

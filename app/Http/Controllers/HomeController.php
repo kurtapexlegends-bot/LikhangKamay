@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class HomeController extends Controller
@@ -20,15 +21,32 @@ class HomeController extends Controller
             }
         }
 
-        $sponsoredProducts = $this->getSponsoredProducts();
+        try {
+            $sponsoredProducts = $this->getSponsoredProducts();
+            $featuredProducts = $this->getFeaturedProducts(collect($sponsoredProducts)->pluck('id')->all());
+            $topSellers = $this->getTopSellers();
+            $categories = Cache::remember('home_categories', 3600, function() {
+                return \App\Models\Category::pluck('name')->toArray();
+            });
+        } catch (\Exception $e) {
+            // Fallback for DB connection issues on Vercel
+            $sponsoredProducts = [];
+            $featuredProducts = [];
+            $topSellers = [];
+            $categories = [];
+            
+            if (config('app.debug')) {
+                report($e);
+            }
+        }
 
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
-            'featuredProducts' => $this->getFeaturedProducts(collect($sponsoredProducts)->pluck('id')->all()),
+            'featuredProducts' => $featuredProducts,
             'sponsoredProducts' => $sponsoredProducts,
-            'topSellers' => $this->getTopSellers(),
-            'categories' => \App\Models\Category::pluck('name')->toArray(),
+            'topSellers' => $topSellers,
+            'categories' => $categories,
         ]);
     }
 
