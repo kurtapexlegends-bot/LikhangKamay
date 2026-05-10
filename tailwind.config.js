@@ -13,8 +13,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
-                serif: ['Playfair Display', 'serif'], // Optional: Good for pottery vibes
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                serif: ['Playfair Display', 'serif'],
             },
             colors: {
                 // Custom Earthy Palette

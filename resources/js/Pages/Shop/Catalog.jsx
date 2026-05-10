@@ -230,13 +230,13 @@ export default function Catalog(props) {
             <ImpersonationBanner />
             <BuyerNavbar />
 
-            <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
+            <main className="flex-1 max-w-7xl mx-auto w-full px-4 lg:px-8 py-6">
                 
-                <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
                     
                     {/* --- LEFT SIDEBAR (Desktop) --- */}
                     <FilterSidebar 
-                        className="hidden lg:block w-60 flex-shrink-0 h-fit sticky top-20"
+                        className="hidden lg:block w-64 min-w-[16rem] flex-shrink-0 h-fit sticky top-24"
                         categories={categories}
                         availableLocations={availableLocations}
                         availableMaterials={availableMaterials}
