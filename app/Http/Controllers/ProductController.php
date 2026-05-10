@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
@@ -505,7 +506,7 @@ class ProductController extends Controller
             : 'Product updated successfully!');
     }
 
-      public function archive($id)
+    public function archive(string|int $id)
       {
           $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
           $product->update(['status' => 'Archived']);
@@ -537,14 +538,11 @@ class ProductController extends Controller
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer',
-            'status' => ['required', Rule::in(['Active', 'Draft', 'Archived'])],
+            'status' => ['required', \Illuminate\Validation\Rule::in(['Active', 'Draft', 'Archived'])],
         ]);
 
         $seller = $this->sellerOwner();
-        $selectedIds = collect($validated['ids'])
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
+        $selectedIds = collect($validated['ids'])->map(fn ($id) => (int) $id)->unique()->values();
 
         $products = Product::query()
             ->where('user_id', $seller->id)
@@ -552,150 +550,100 @@ class ProductController extends Controller
             ->get();
 
         if ($products->isEmpty()) {
-            return back()->with('error', 'No matching products were found for the selected bulk action.');
+            return back()->with('error', 'No matching products were found.');
         }
 
         $targetStatus = $validated['status'];
 
-          if ($targetStatus === 'Archived') {
-              Product::query()
-                  ->where('user_id', $seller->id)
-                  ->whereIn('id', $products->pluck('id'))
-                  ->update(['status' => 'Archived']);
+        return DB::transaction(function () use ($seller, $products, $targetStatus, $selectedIds) {
+            if ($targetStatus === 'Archived' || $targetStatus === 'Draft') {
+                Product::query()
+                    ->where('user_id', $seller->id)
+                    ->whereIn('id', $products->pluck('id'))
+                    ->update(['status' => $targetStatus]);
 
-              SellerActivityLog::recordEvent([
-                  'seller_owner_id' => $seller->id,
-                  'actor_user_id' => Auth::id(),
-                  'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-                  'category' => 'operations',
-                  'module' => 'products',
-                  'event_type' => 'product_bulk_status',
-                  'severity' => 'warning',
-                  'status' => 'archived',
-                  'title' => 'Bulk Product Status Applied',
-                  'summary' => "{$products->count()} product(s) were archived in one action.",
-                  'subject_label' => 'Bulk product update',
-                  'details' => [
-                      'lines' => ["Archived {$products->count()} selected product(s)."],
-                  ],
-                  'target_url' => route('products.index'),
-                  'target_label' => 'Open Products',
-              ]);
+                SellerActivityLog::recordEvent([
+                    'seller_owner_id' => $seller->id,
+                    'actor_user_id' => Auth::id(),
+                    'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+                    'category' => 'operations',
+                    'module' => 'products',
+                    'event_type' => 'product_bulk_status',
+                    'severity' => $targetStatus === 'Archived' ? 'warning' : 'info',
+                    'status' => strtolower($targetStatus),
+                    'title' => 'Bulk Product Status Applied',
+                    'summary' => "{$products->count()} product(s) were moved to {$targetStatus}.",
+                    'subject_label' => 'Bulk product update',
+                    'details' => [
+                        'lines' => ["Updated {$products->count()} selected product(s) to {$targetStatus}."],
+                    ],
+                    'target_url' => route('products.index'),
+                    'target_label' => 'Open Products',
+                ]);
 
-              return back()->with('success', $this->bulkStatusMessage($products->count(), 'archived'));
-          }
-
-          if ($targetStatus === 'Draft') {
-              Product::query()
-                  ->where('user_id', $seller->id)
-                  ->whereIn('id', $products->pluck('id'))
-                  ->update(['status' => 'Draft']);
-
-              SellerActivityLog::recordEvent([
-                  'seller_owner_id' => $seller->id,
-                  'actor_user_id' => Auth::id(),
-                  'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-                  'category' => 'operations',
-                  'module' => 'products',
-                  'event_type' => 'product_bulk_status',
-                  'severity' => 'info',
-                  'status' => 'draft',
-                  'title' => 'Bulk Product Status Applied',
-                  'summary' => "{$products->count()} product(s) were moved to Draft.",
-                  'subject_label' => 'Bulk product update',
-                  'details' => [
-                      'lines' => ["Saved {$products->count()} selected product(s) as Draft."],
-                  ],
-                  'target_url' => route('products.index'),
-                  'target_label' => 'Open Products',
-              ]);
-
-              return back()->with('success', $this->bulkStatusMessage($products->count(), 'saved as Draft'));
-          }
-
-        $remainingActivationSlots = max(0, $seller->getActiveProductLimit() - $seller->products()->where('status', 'Active')->count());
-        $activated = 0;
-        $draftedForMissingMedia = 0;
-        $skippedForLimit = 0;
-
-        foreach ($selectedIds as $selectedId) {
-            $product = $products->firstWhere('id', $selectedId);
-
-            if (!$product) {
-                continue;
+                return back()->with('success', $this->bulkStatusMessage($products->count(), strtolower($targetStatus)));
             }
 
-            if ($product->status === 'Active') {
-                continue;
+            // Handle Bulk Activation with Limits
+            $remainingActivationSlots = max(0, $seller->getActiveProductLimit() - $seller->products()->where('status', 'Active')->count());
+            $activated = 0;
+            $draftedForMissingMedia = 0;
+            $skippedForLimit = 0;
+
+            foreach ($selectedIds as $selectedId) {
+                $product = $products->firstWhere('id', $selectedId);
+                if (!$product || $product->status === 'Active') continue;
+
+                $activationReadiness = $this->evaluateActivationReadiness(
+                    filled($product->cover_photo_path),
+                    count($product->gallery_paths ?? []),
+                    filled($product->model_3d_path)
+                );
+
+                if (!$activationReadiness['canBeActive']) {
+                    $product->update(['status' => 'Draft']);
+                    $draftedForMissingMedia++;
+                    continue;
+                }
+
+                if ($remainingActivationSlots <= 0) {
+                    $skippedForLimit++;
+                    continue;
+                }
+
+                $product->update(['status' => 'Active']);
+                $remainingActivationSlots--;
+                $activated++;
             }
 
-            $activationReadiness = $this->evaluateActivationReadiness(
-                filled($product->cover_photo_path),
-                count($product->gallery_paths ?? []),
-                filled($product->model_3d_path)
-            );
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $seller->id,
+                'actor_user_id' => Auth::id(),
+                'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+                'category' => 'operations',
+                'module' => 'products',
+                'event_type' => 'product_bulk_status',
+                'severity' => $skippedForLimit > 0 || $draftedForMissingMedia > 0 ? 'warning' : 'info',
+                'status' => 'active',
+                'title' => 'Bulk Product Activation',
+                'summary' => "{$activated} product(s) were activated.",
+                'subject_label' => 'Bulk product update',
+                'details' => [
+                    'lines' => array_values(array_filter([
+                        "Activated {$activated} selected product(s).",
+                        $draftedForMissingMedia > 0 ? "{$draftedForMissingMedia} product(s) remained Draft due to missing media requirements." : null,
+                        $skippedForLimit > 0 ? "{$skippedForLimit} product(s) were skipped because your current plan limit is full." : null,
+                    ])),
+                ],
+                'target_url' => route('products.index'),
+                'target_label' => 'Open Products',
+            ]);
 
-            if (!$activationReadiness['canBeActive']) {
-                $product->update(['status' => 'Draft']);
-                $draftedForMissingMedia++;
-                continue;
-            }
-
-            if ($remainingActivationSlots <= 0) {
-                $skippedForLimit++;
-                continue;
-            }
-
-            $product->update(['status' => 'Active']);
-            $remainingActivationSlots--;
-            $activated++;
-        }
-
-          if ($activated === 0 && $draftedForMissingMedia === 0) {
-              return back()->with('error', 'No selected products were activated. Your active product limit has already been reached.');
-          }
-
-          SellerActivityLog::recordEvent([
-              'seller_owner_id' => $seller->id,
-              'actor_user_id' => Auth::id(),
-              'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-              'category' => 'operations',
-              'module' => 'products',
-              'event_type' => 'product_bulk_status',
-              'severity' => $skippedForLimit > 0 || $draftedForMissingMedia > 0 ? 'warning' : 'success',
-              'status' => 'active',
-              'title' => 'Bulk Product Activation Reviewed',
-              'summary' => 'Selected products were evaluated for activation.',
-              'subject_label' => 'Bulk product update',
-              'details' => [
-                  'lines' => array_values(array_filter([
-                      $activated > 0 ? "Activated {$activated} product(s)." : null,
-                      $draftedForMissingMedia > 0 ? "{$draftedForMissingMedia} product(s) stayed in Draft because required media was incomplete." : null,
-                      $skippedForLimit > 0 ? "{$skippedForLimit} product(s) were skipped because the active product limit was full." : null,
-                  ])),
-              ],
-              'target_url' => route('products.index'),
-              'target_label' => 'Open Products',
-          ]);
-
-        $parts = [];
-
-        if ($activated > 0) {
-            $parts[] = $this->bulkStatusMessage($activated, 'activated');
-        }
-
-        if ($draftedForMissingMedia > 0) {
-            $parts[] = $this->bulkStatusMessage($draftedForMissingMedia, 'kept in Draft because required media is incomplete');
-        }
-
-        if ($skippedForLimit > 0) {
-            $parts[] = $this->bulkStatusMessage($skippedForLimit, 'skipped because your active product limit is already full');
-        }
-
-        return back()->with('success', implode(' ', $parts));
+            return back()->with('success', $this->bulkActivationMessage($activated, $draftedForMissingMedia, $skippedForLimit));
+        });
     }
 
-      public function activate($id)
+    public function activate(string|int $id)
       {
           $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
           $seller = $this->sellerOwner();
@@ -739,7 +687,7 @@ class ProductController extends Controller
           return redirect()->back()->with('success', 'Product activated.');
       }
 
-    public function restock(Request $request, $id)
+    public function restock(Request $request, string|int $id)
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
         $validated = $request->validate([
@@ -1237,5 +1185,20 @@ class ProductController extends Controller
         }
 
         return back()->with('success', "Successfully imported/updated $count products.");
+    }
+
+    private function bulkActivationMessage(int $activated, int $drafted, int $skipped): string
+    {
+        $message = "Activated {$activated} product(s).";
+
+        if ($drafted > 0) {
+            $message .= " {$drafted} product(s) remained Draft due to missing media requirements.";
+        }
+
+        if ($skipped > 0) {
+            $message .= " {$skipped} product(s) were skipped due to plan limits.";
+        }
+
+        return $message;
     }
 }

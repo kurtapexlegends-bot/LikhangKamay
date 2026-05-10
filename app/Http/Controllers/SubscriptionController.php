@@ -199,25 +199,28 @@ class SubscriptionController extends Controller
              return back()->withErrors(['limit' => 'You selected too many products to keep active. The limit for this tier is ' . $newLimit]);
         }
 
-        // Verify that the requested IDs belong to the user
-        $validKeepIds = $user->products()->whereIn('id', $keepIds)->where('status', 'Active')->pluck('id')->toArray();
+        DB::transaction(function () use ($user, $previousTier, $newTier, $keepIds, $shouldSuspendStaffForPlan) {
+            // Verify that the requested IDs belong to the user
+            $validKeepIds = $user->products()->whereIn('id', $keepIds)->where('status', 'Active')->pluck('id')->toArray();
 
-        // Draft all active products NOT in the keep list
-        $user->products()
-            ->where('status', 'Active')
-            ->whereNotIn('id', $validKeepIds)
-            ->update(['status' => 'Draft']);
-        UserTierLog::create([
-            'user_id' => $user->id,
-            'previous_tier' => $previousTier,
-            'new_tier' => $newTier,
-        ]);
+            // Draft all active products NOT in the keep list
+            $user->products()
+                ->where('status', 'Active')
+                ->whereNotIn('id', $validKeepIds)
+                ->update(['status' => 'Draft']);
 
-        $user->update(['premium_tier' => $newTier]);
+            UserTierLog::create([
+                'user_id' => $user->id,
+                'previous_tier' => $previousTier,
+                'new_tier' => $newTier,
+            ]);
 
-        if ($shouldSuspendStaffForPlan) {
-            $this->suspendStaffForStandardDowngrade($user);
-        }
+            $user->update(['premium_tier' => $newTier]);
+
+            if ($shouldSuspendStaffForPlan) {
+                $this->suspendStaffForStandardDowngrade($user);
+            }
+        });
 
         $redirectTo = $this->getSafePostDowngradeRedirect($user, $previousUrl);
         $successMessage = $shouldSuspendStaffForPlan
