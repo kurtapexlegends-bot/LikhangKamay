@@ -66,6 +66,22 @@ class HandleInertiaRequests extends Middleware
         }
 
         // 2. PREPARE HEAVY PROPS AS LAZY (Only loaded when explicitly requested by Inertia)
+        $sellerSubscription = null;
+        $sellerSidebar = null;
+        $attendance = null;
+
+        if ($user) {
+            try {
+                $sellerSubscription = app(SellerEntitlementService::class)->getSubscriptionPayload($user);
+                $sellerSidebar = $user->getSellerSidebarEntitlements();
+                if ($user->isStaff()) {
+                    $attendance = app(StaffAttendanceService::class)->buildLogoutContext($user);
+                }
+            } catch (\Exception $e) {
+                // Fallback for DB connection issues
+            }
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -74,11 +90,9 @@ class HandleInertiaRequests extends Middleware
                 'effectiveSellerId' => $user?->getEffectiveSellerId(),
                 'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,
             ],
-            'sellerSubscription' => $user ? app(SellerEntitlementService::class)->getSubscriptionPayload($user) : null,
-            'sellerSidebar' => $user ? $user->getSellerSidebarEntitlements() : null,
-            'attendance' => $user?->isStaff()
-                ? app(StaffAttendanceService::class)->buildLogoutContext($user)
-                : null,
+            'sellerSubscription' => $sellerSubscription,
+            'sellerSidebar' => $sellerSidebar,
+            'attendance' => $attendance,
             
             // Global Variables
             'cartCount' => $cartCount,

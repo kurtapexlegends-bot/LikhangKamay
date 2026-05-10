@@ -22,29 +22,38 @@ class ProfileController extends Controller
      */
     public function edit(Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
-            return redirect()->route('artisan.pending');
-        }
+            if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
+                return redirect()->route('artisan.pending');
+            }
 
-        // Workspace profile shell for seller owners, seller staff, and super admins.
-        if (in_array($user->role, ['artisan', 'staff', 'super_admin'], true)) {
-            return Inertia::render('Seller/Profile/Edit', [
+            // Workspace profile shell for seller owners, seller staff, and super admins.
+            if (in_array($user->role, ['artisan', 'staff', 'super_admin'], true)) {
+                return Inertia::render('Seller/Profile/Edit', [
+                    'mustVerifyEmail' => $user instanceof MustVerifyEmail,
+                    'status' => session('status'),
+                    'addresses' => $user->addresses()->orderBy('is_default', 'desc')->get(),
+                    'profileMode' => $user->role === 'artisan' ? 'owner' : 'personal',
+                    'workspaceShell' => $user->role === 'super_admin' ? 'admin' : 'seller',
+                ]);
+            }
+
+            // Default view for Buyers using the Public Shop Layout
+            return Inertia::render('Profile/Edit', [
                 'mustVerifyEmail' => $user instanceof MustVerifyEmail,
                 'status' => session('status'),
                 'addresses' => $user->addresses()->orderBy('is_default', 'desc')->get(),
-                'profileMode' => $user->role === 'artisan' ? 'owner' : 'personal',
-                'workspaceShell' => $user->role === 'super_admin' ? 'admin' : 'seller',
+            ]);
+        } catch (Throwable $e) {
+            Log::error("Profile edit error: " . $e->getMessage());
+            return Inertia::render('Profile/Edit', [
+                'mustVerifyEmail' => false,
+                'status' => 'error',
+                'addresses' => [],
             ]);
         }
-
-        // Default view for Buyers using the Public Shop Layout
-        return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
-            'status' => session('status'),
-            'addresses' => $user->addresses()->orderBy('is_default', 'desc')->get(),
-        ]);
     }
 
     /**

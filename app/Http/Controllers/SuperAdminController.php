@@ -90,103 +90,118 @@ class SuperAdminController extends Controller
      */
     public function dashboard()
     {
-        $totalArtisans = $this->getMetric(User::class, ['role' => 'artisan']);
-        
-        // Buyers (role is 'buyer' or null)
-        // We handle the OR condition manually for the metric since simpler array conditions won't calculate it easily
-        $buyerCurrent = User::where(function($q) {
-            $q->where('role', 'buyer')->orWhereNull('role');
-        })->count();
-        
-        $buyerPrevious = User::where(function($q) {
-            $q->where('role', 'buyer')->orWhereNull('role');
-        })->where('created_at', '<=', now()->subDays(30))->count();
+        try {
+            $totalArtisans = $this->getMetric(User::class, ['role' => 'artisan']);
+            
+            // Buyers (role is 'buyer' or null)
+            $buyerCurrent = User::where(function($q) {
+                $q->where('role', 'buyer')->orWhereNull('role');
+            })->count();
+            
+            $buyerPrevious = User::where(function($q) {
+                $q->where('role', 'buyer')->orWhereNull('role');
+            })->where('created_at', '<=', now()->subDays(30))->count();
 
-        $buyerGrowth = 0;
-        if ($buyerPrevious > 0) {
-            $buyerGrowth = (($buyerCurrent - $buyerPrevious) / $buyerPrevious) * 100;
-        } elseif ($buyerCurrent > 0) {
-            $buyerGrowth = 100;
+            $buyerGrowth = 0;
+            if ($buyerPrevious > 0) {
+                $buyerGrowth = (($buyerCurrent - $buyerPrevious) / $buyerPrevious) * 100;
+            } elseif ($buyerCurrent > 0) {
+                $buyerGrowth = 100;
+            }
+            
+            $totalBuyers = [
+                'value' => $buyerCurrent,
+                'growth' => round($buyerGrowth, 1),
+                'trend' => $buyerGrowth > 0 ? 'up' : ($buyerGrowth < 0 ? 'down' : 'neutral')
+            ];
+
+
+            // Pending Artisans (Accurate Historical Check)
+            $currentPending = User::where('role', 'artisan')->where('artisan_status', 'pending')->count();
+            $previousPending = $this->getHistoricalStatusCount('pending', 30);
+            $pendingGrowth = 0;
+            if ($previousPending > 0) {
+                $pendingGrowth = (($currentPending - $previousPending) / $previousPending) * 100;
+            } elseif ($currentPending > 0) {
+                $pendingGrowth = 100;
+            }
+            $pendingArtisans = [
+                'value' => $currentPending,
+                'growth' => round($pendingGrowth, 1),
+                'trend' => $pendingGrowth > 0 ? 'up' : ($pendingGrowth < 0 ? 'down' : 'neutral')
+            ];
+            
+            // Approved Artisans (Accurate Historical Check)
+            $currentApproved = User::where('role', 'artisan')->where('artisan_status', 'approved')->count();
+            $previousApproved = $this->getHistoricalStatusCount('approved', 30);
+            $approvedGrowth = 0;
+            if ($previousApproved > 0) {
+                $approvedGrowth = (($currentApproved - $previousApproved) / $previousApproved) * 100;
+            } elseif ($currentApproved > 0) {
+                $approvedGrowth = 100;
+            }
+            $approvedArtisans = [
+                'value' => $currentApproved,
+                'growth' => round($approvedGrowth, 1),
+                'trend' => $approvedGrowth > 0 ? 'up' : ($approvedGrowth < 0 ? 'down' : 'neutral')
+            ];
+            
+            $rejectedArtisans = User::where('role', 'artisan')->where('artisan_status', 'rejected')->count();
+
+            // Recent registrations
+            $recentUsers = User::with('sellerOwner:id,name,shop_name')
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier', 'seller_owner_id', 'email_verified_at', 'must_change_password', 'staff_module_permissions'])
+                ->map(function (User $user) {
+                    [$accountState, $accountStateTone] = $this->resolveAdminAccountState($user);
+
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role ?? 'buyer',
+                        'role_label' => $this->resolveAdminRoleLabel($user),
+                        'artisan_status' => $user->artisan_status,
+                        'created_at' => $user->created_at->toIso8601String(),
+                        'shop_name' => $user->shop_name,
+                        'avatar' => $user->avatar,
+                        'premium_tier' => $user->premium_tier,
+                        'account_state' => $accountState,
+                        'account_state_tone' => $accountStateTone,
+                        'seller_shop_name' => $user->sellerOwner?->shop_name,
+                    ];
+                })
+                ->values();
+
+            $activities = PlatformActivity::with('user:id,name,shop_name')->latest()->take(20)->get();
+
+            return Inertia::render('Admin/Dashboard', [
+                'stats' => [
+                    'totalArtisans' => $totalArtisans,
+                    'totalBuyers' => $totalBuyers,
+                    'pendingArtisans' => $pendingArtisans,
+                    'approvedArtisans' => $approvedArtisans,
+                    'rejectedArtisans' => $rejectedArtisans,
+                ],
+                'recentUsers' => $recentUsers,
+                'activities' => $activities,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("SuperAdmin Dashboard error: " . $e->getMessage());
+            return Inertia::render('Admin/Dashboard', [
+                'stats' => [
+                    'totalArtisans' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'totalBuyers' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'pendingArtisans' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'approvedArtisans' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'rejectedArtisans' => 0,
+                ],
+                'recentUsers' => [],
+                'activities' => [],
+                'db_error' => true
+            ]);
         }
-        
-        $totalBuyers = [
-            'value' => $buyerCurrent,
-            'growth' => round($buyerGrowth, 1),
-            'trend' => $buyerGrowth > 0 ? 'up' : ($buyerGrowth < 0 ? 'down' : 'neutral')
-        ];
-
-
-        // Pending Artisans (Accurate Historical Check)
-        $currentPending = User::where('role', 'artisan')->where('artisan_status', 'pending')->count();
-        $previousPending = $this->getHistoricalStatusCount('pending', 30);
-        $pendingGrowth = 0;
-        if ($previousPending > 0) {
-            $pendingGrowth = (($currentPending - $previousPending) / $previousPending) * 100;
-        } elseif ($currentPending > 0) {
-            $pendingGrowth = 100;
-        }
-        $pendingArtisans = [
-            'value' => $currentPending,
-            'growth' => round($pendingGrowth, 1),
-            'trend' => $pendingGrowth > 0 ? 'up' : ($pendingGrowth < 0 ? 'down' : 'neutral')
-        ];
-        
-        // Approved Artisans (Accurate Historical Check)
-        $currentApproved = User::where('role', 'artisan')->where('artisan_status', 'approved')->count();
-        $previousApproved = $this->getHistoricalStatusCount('approved', 30);
-        $approvedGrowth = 0;
-        if ($previousApproved > 0) {
-            $approvedGrowth = (($currentApproved - $previousApproved) / $previousApproved) * 100;
-        } elseif ($currentApproved > 0) {
-            $approvedGrowth = 100;
-        }
-        $approvedArtisans = [
-            'value' => $currentApproved,
-            'growth' => round($approvedGrowth, 1),
-            'trend' => $approvedGrowth > 0 ? 'up' : ($approvedGrowth < 0 ? 'down' : 'neutral')
-        ];
-        
-        $rejectedArtisans = User::where('role', 'artisan')->where('artisan_status', 'rejected')->count();
-
-        // Recent registrations
-        $recentUsers = User::with('sellerOwner:id,name,shop_name')
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier', 'seller_owner_id', 'email_verified_at', 'must_change_password', 'staff_module_permissions'])
-            ->map(function (User $user) {
-                [$accountState, $accountStateTone] = $this->resolveAdminAccountState($user);
-
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role ?? 'buyer',
-                    'role_label' => $this->resolveAdminRoleLabel($user),
-                    'artisan_status' => $user->artisan_status,
-                    'created_at' => $user->created_at->toIso8601String(),
-                    'shop_name' => $user->shop_name,
-                    'avatar' => $user->avatar,
-                    'premium_tier' => $user->premium_tier,
-                    'account_state' => $accountState,
-                    'account_state_tone' => $accountStateTone,
-                    'seller_shop_name' => $user->sellerOwner?->shop_name,
-                ];
-            })
-            ->values();
-
-        $activities = PlatformActivity::with('user:id,name,shop_name')->latest()->take(20)->get();
-
-        return Inertia::render('Admin/Dashboard', [
-            'stats' => [
-                'totalArtisans' => $totalArtisans,
-                'totalBuyers' => $totalBuyers,
-                'pendingArtisans' => $pendingArtisans,
-                'approvedArtisans' => $approvedArtisans,
-                'rejectedArtisans' => $rejectedArtisans,
-            ],
-            'recentUsers' => $recentUsers,
-            'activities' => $activities,
-        ]);
     }
 
     /**
@@ -194,141 +209,156 @@ class SuperAdminController extends Controller
      */
     public function monetization()
     {
-        // Pricing constants based on system logic
-        $premiumPrice = 199;
-        $elitePrice = 399;
+        try {
+            // Pricing constants based on system logic
+            $premiumPrice = 199;
+            $elitePrice = 399;
 
-        // Current Active Subscriptions
-        $premiumUsersCount = User::where('role', 'artisan')->where('premium_tier', 'premium')->count();
-        $eliteUsersCount = User::where('role', 'artisan')->where('premium_tier', 'super_premium')->count();
-        $freeUsersCount = User::where('role', 'artisan')->where(function($q) {
-            $q->where('premium_tier', 'free')->orWhereNull('premium_tier');
-        })->count();
+            // Current Active Subscriptions
+            $premiumUsersCount = User::where('role', 'artisan')->where('premium_tier', 'premium')->count();
+            $eliteUsersCount = User::where('role', 'artisan')->where('premium_tier', 'super_premium')->count();
+            $freeUsersCount = User::where('role', 'artisan')->where(function($q) {
+                $q->where('premium_tier', 'free')->orWhereNull('premium_tier');
+            })->count();
 
-        // Projected plan MRR based on the current active artisan plan mix.
-        $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
+            // Projected plan MRR based on the current active artisan plan mix.
+            $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
 
-        // Previous month's active subscriptions (estimated using exact historical log tables)
-        $previousPremiumUsersCount = $this->getHistoricalTierCount('premium', 30);
-        $previousEliteUsersCount = $this->getHistoricalTierCount('super_premium', 30);
-        $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
+            // Previous month's active subscriptions (estimated using exact historical log tables)
+            $previousPremiumUsersCount = $this->getHistoricalTierCount('premium', 30);
+            $previousEliteUsersCount = $this->getHistoricalTierCount('super_premium', 30);
+            $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
 
-        $mrrGrowth = 0;
-        if ($previousProjectedMrr > 0) {
-            $mrrGrowth = (($projectedMrr - $previousProjectedMrr) / $previousProjectedMrr) * 100;
-        } elseif ($projectedMrr > 0) {
-            $mrrGrowth = 100;
-        }
+            $mrrGrowth = 0;
+            if ($previousProjectedMrr > 0) {
+                $mrrGrowth = (($projectedMrr - $previousProjectedMrr) / $previousProjectedMrr) * 100;
+            } elseif ($projectedMrr > 0) {
+                $mrrGrowth = 100;
+            }
 
-        $mrrMetric = [
-            'value' => $projectedMrr,
-            'growth' => round($mrrGrowth, 1),
-            'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral'),
-            'is_projected' => true,
-            'basis' => 'Based on current active artisan plan tiers.',
-        ];
+            $mrrMetric = [
+                'value' => $projectedMrr,
+                'growth' => round($mrrGrowth, 1),
+                'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral'),
+                'is_projected' => true,
+                'basis' => 'Based on current active artisan plan tiers.',
+            ];
 
-        // Sponsorships Metrics
-        // Note: Sponsorships use credits included in the Elite plan, so this isn't direct revenue, but usage tracking.
-        $activeSponsorships = SponsorshipRequest::where('status', 'approved')->count();
-        $pendingSponsorships = SponsorshipRequest::where('status', 'pending')->count();
-        
-        $previousActiveSponsorships = SponsorshipRequest::where('status', 'approved')
-            ->where('approved_at', '<', now()->subDays(30))
-            ->count();
-        
-        $sponsorshipGrowth = 0;
-        if ($previousActiveSponsorships > 0) {
-            $sponsorshipGrowth = (($activeSponsorships - $previousActiveSponsorships) / $previousActiveSponsorships) * 100;
-        } elseif ($activeSponsorships > 0) {
-            $sponsorshipGrowth = 100;
-        }
+            // Sponsorships Metrics
+            // Note: Sponsorships use credits included in the Elite plan, so this isn't direct revenue, but usage tracking.
+            $activeSponsorships = SponsorshipRequest::where('status', 'approved')->count();
+            $pendingSponsorships = SponsorshipRequest::where('status', 'pending')->count();
+            
+            $previousActiveSponsorships = SponsorshipRequest::where('status', 'approved')
+                ->where('approved_at', '<', now()->subDays(30))
+                ->count();
+            
+            $sponsorshipGrowth = 0;
+            if ($previousActiveSponsorships > 0) {
+                $sponsorshipGrowth = (($activeSponsorships - $previousActiveSponsorships) / $previousActiveSponsorships) * 100;
+            } elseif ($activeSponsorships > 0) {
+                $sponsorshipGrowth = 100;
+            }
 
-        $sponsorshipMetric = [
-            'value' => $activeSponsorships,
-            'growth' => round($sponsorshipGrowth, 1),
-            'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
-        ];
+            $sponsorshipMetric = [
+                'value' => $activeSponsorships,
+                'growth' => round($sponsorshipGrowth, 1),
+                'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
+            ];
 
-        // Recent plan changes backed by the subscription tier audit log.
-        $recentSubscribers = UserTierLog::query()
-            ->with('user:id,name,shop_name,avatar,premium_tier')
-            ->whereNotNull('new_tier')
-            ->latest()
-            ->limit(5)
-            ->get()
-            ->map(function($log) {
-                $user = $log->user;
+            // Recent plan changes backed by the subscription tier audit log.
+            $recentSubscribers = UserTierLog::query()
+                ->with('user:id,name,shop_name,avatar,premium_tier')
+                ->whereNotNull('new_tier')
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(function($log) {
+                    $user = $log->user;
 
-                if (!$user) {
-                    return null;
-                }
+                    if (!$user) {
+                        return null;
+                    }
 
-                $formatTierLabel = static function (?string $tier): string {
-                    return match ($tier) {
-                        'super_premium' => 'Elite',
-                        'premium' => 'Premium',
-                        'free', null, '' => 'Free',
-                        default => ucfirst(str_replace('_', ' ', (string) $tier)),
+                    $formatTierLabel = static function (?string $tier): string {
+                        return match ($tier) {
+                            'super_premium' => 'Elite',
+                            'premium' => 'Premium',
+                            'free', null, '' => 'Free',
+                            default => ucfirst(str_replace('_', ' ', (string) $tier)),
+                        };
                     };
-                };
 
-                $newTierLabel = $formatTierLabel($log->new_tier);
-                $previousTierLabel = $formatTierLabel($log->previous_tier);
-                $changeDirection = match ([$log->previous_tier, $log->new_tier]) {
-                    ['premium', 'super_premium'], ['free', 'premium'], ['free', 'super_premium'], [null, 'premium'], [null, 'super_premium'] => 'upgrade',
-                    ['super_premium', 'premium'], ['premium', 'free'], ['super_premium', 'free'] => 'downgrade',
-                    default => 'change',
-                };
+                    $newTierLabel = $formatTierLabel($log->new_tier);
+                    $previousTierLabel = $formatTierLabel($log->previous_tier);
+                    $changeDirection = match ([$log->previous_tier, $log->new_tier]) {
+                        ['premium', 'super_premium'], ['free', 'premium'], ['free', 'super_premium'], [null, 'premium'], [null, 'super_premium'] => 'upgrade',
+                        ['super_premium', 'premium'], ['premium', 'free'], ['super_premium', 'free'] => 'downgrade',
+                        default => 'change',
+                    };
 
-                return [
-                    'id' => $log->id,
-                    'user_id' => $user->id,
-                    'name' => $user->name,
-                    'shop_name' => $user->shop_name,
-                    'avatar' => $user->avatar,
-                    'premium_tier' => $log->new_tier,
-                    'previous_tier' => $log->previous_tier,
-                    'previous_tier_label' => $previousTierLabel,
-                    'tier' => $newTierLabel,
-                    'change_label' => "{$previousTierLabel} to {$newTierLabel}",
-                    'change_direction' => $changeDirection,
-                    'date' => $log->created_at->format('M d, Y h:i A'),
-                ];
-            })
-            ->filter()
-            ->values();
+                    return [
+                        'id' => $log->id,
+                        'user_id' => $user->id,
+                        'name' => $user->name,
+                        'shop_name' => $user->shop_name,
+                        'avatar' => $user->avatar,
+                        'premium_tier' => $log->new_tier,
+                        'previous_tier' => $log->previous_tier,
+                        'previous_tier_label' => $previousTierLabel,
+                        'tier' => $newTierLabel,
+                        'change_label' => "{$previousTierLabel} to {$newTierLabel}",
+                        'change_direction' => $changeDirection,
+                        'date' => $log->created_at->format('M d, Y h:i A'),
+                    ];
+                })
+                ->filter()
+                ->values();
 
-        // Recent Sponsorships
-        $recentSponsorships = SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function($req) {
-                return [
-                    'id' => $req->id,
-                    'user' => $req->user,
-                    'product_name' => $req->product->name,
-                    'status' => $req->status,
-                    'date' => $req->created_at->format('M d, Y h:i A')
-                ];
-            });
+            // Recent Sponsorships
+            $recentSponsorships = SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function($req) {
+                    return [
+                        'id' => $req->id,
+                        'user' => $req->user,
+                        'product_name' => $req->product->name ?? 'Unknown Product',
+                        'status' => $req->status,
+                        'date' => $req->created_at->format('M d, Y h:i A')
+                    ];
+                });
 
-        return Inertia::render('Admin/Monetization', [
-            'metrics' => [
-                'mrr' => $mrrMetric,
-                'sponsorships' => $sponsorshipMetric,
-                'subscribers' => [
-                    'free' => $freeUsersCount,
-                    'premium' => $premiumUsersCount,
-                    'elite' => $eliteUsersCount,
-                    'total_paid' => $premiumUsersCount + $eliteUsersCount,
+            return Inertia::render('Admin/Monetization', [
+                'metrics' => [
+                    'mrr' => $mrrMetric,
+                    'sponsorships' => $sponsorshipMetric,
+                    'subscribers' => [
+                        'free' => $freeUsersCount,
+                        'premium' => $premiumUsersCount,
+                        'elite' => $eliteUsersCount,
+                        'total_paid' => $premiumUsersCount + $eliteUsersCount,
+                    ],
+                    'pendingSponsorships' => $pendingSponsorships,
                 ],
-                'pendingSponsorships' => $pendingSponsorships,
-            ],
-            'recentSubscribers' => $recentSubscribers,
-            'recentSponsorships' => $recentSponsorships,
-        ]);
+                'recentSubscribers' => $recentSubscribers,
+                'recentSponsorships' => $recentSponsorships,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("SuperAdmin Monetization error: " . $e->getMessage());
+            return Inertia::render('Admin/Monetization', [
+                'metrics' => [
+                    'mrr' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'sponsorships' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'subscribers' => ['free' => 0, 'premium' => 0, 'elite' => 0, 'total_paid' => 0],
+                    'pendingSponsorships' => 0,
+                ],
+                'recentSubscribers' => [],
+                'recentSponsorships' => [],
+                'db_error' => true
+            ]);
+        }
     }
 
     /**
@@ -336,83 +366,102 @@ class SuperAdminController extends Controller
      */
     public function users(Request $request)
     {
-        $search = trim((string) $request->get('search', ''));
-        $roleFilter = $this->normalizeAdminUserRoleFilter((string) $request->get('role', 'all'));
+        try {
+            $search = trim((string) $request->get('search', ''));
+            $roleFilter = $this->normalizeAdminUserRoleFilter((string) $request->get('role', 'all'));
 
-        $query = User::query()
-            ->where(function ($primaryQuery) {
-                $primaryQuery->whereIn('role', ['artisan', 'buyer', 'super_admin'])
-                    ->orWhereNull('role');
-            })
-            ->withCount('staffMembers')
-            ->with([
-                'staffMembers' => function ($staffQuery) {
-                    $staffQuery
-                        ->select([
-                            'id',
-                            'name',
-                            'email',
-                            'avatar',
-                            'role',
-                            'seller_owner_id',
-                            'staff_role_preset_key',
-                            'staff_module_permissions',
-                            'must_change_password',
-                            'employee_id',
-                            'email_verified_at',
-                            'created_at',
-                        ])
-                        ->with('employee:id,name')
-                        ->orderBy('name');
-                },
-            ]);
+            $query = User::query()
+                ->where(function ($primaryQuery) {
+                    $primaryQuery->whereIn('role', ['artisan', 'buyer', 'super_admin'])
+                        ->orWhereNull('role');
+                })
+                ->withCount('staffMembers')
+                ->with([
+                    'staffMembers' => function ($staffQuery) {
+                        $staffQuery
+                            ->select([
+                                'id',
+                                'name',
+                                'email',
+                                'avatar',
+                                'role',
+                                'seller_owner_id',
+                                'staff_role_preset_key',
+                                'staff_module_permissions',
+                                'must_change_password',
+                                'employee_id',
+                                'email_verified_at',
+                                'created_at',
+                            ])
+                            ->with('employee:id,name')
+                            ->orderBy('name');
+                    },
+                ]);
 
-        // Filter by role
-        if ($roleFilter === 'artisan') {
-            $query->where('role', 'artisan');
-        } elseif ($roleFilter === 'buyer') {
-            $query->where(function($q) {
-                $q->where('role', 'buyer')->orWhereNull('role');
-            });
-        } elseif ($roleFilter === 'super_admin') {
-            $query->where('role', 'super_admin');
-        }
+            // Filter by role
+            if ($roleFilter === 'artisan') {
+                $query->where('role', 'artisan');
+            } elseif ($roleFilter === 'buyer') {
+                $query->where(function($q) {
+                    $q->where('role', 'buyer')->orWhereNull('role');
+                });
+            } elseif ($roleFilter === 'super_admin') {
+                $query->where('role', 'super_admin');
+            }
 
-        // Search
-        if ($search !== '') {
-            $likeSearch = "%{$search}%";
+            // Search
+            if ($search !== '') {
+                $likeSearch = "%{$search}%";
 
-            $query->where(function($q) use ($likeSearch) {
-                $q->where('name', 'like', $likeSearch)
-                  ->orWhere('email', 'like', $likeSearch)
-                  ->orWhere('shop_name', 'like', $likeSearch)
-                  ->orWhereHas('staffMembers', function ($staffQuery) use ($likeSearch) {
-                      $staffQuery->where(function ($nestedQuery) use ($likeSearch) {
-                          $nestedQuery->where('name', 'like', $likeSearch)
-                              ->orWhere('email', 'like', $likeSearch)
-                              ->orWhereHas('employee', function ($employeeQuery) use ($likeSearch) {
-                                  $employeeQuery->where('name', 'like', $likeSearch);
-                              });
+                $query->where(function($q) use ($likeSearch) {
+                    $q->where('name', 'like', $likeSearch)
+                      ->orWhere('email', 'like', $likeSearch)
+                      ->orWhere('shop_name', 'like', $likeSearch)
+                      ->orWhereHas('staffMembers', function ($staffQuery) use ($likeSearch) {
+                          $staffQuery->where(function ($nestedQuery) use ($likeSearch) {
+                              $nestedQuery->where('name', 'like', $likeSearch)
+                                  ->orWhere('email', 'like', $likeSearch)
+                                  ->orWhereHas('employee', function ($employeeQuery) use ($likeSearch) {
+                                      $employeeQuery->where('name', 'like', $likeSearch);
+                                  });
+                          });
                       });
-                  });
-            });
+                });
+            }
+
+            $users = $query->orderBy('created_at', 'desc')
+                ->paginate(10)
+                ->withQueryString()
+                ->through(function (User $user) use ($search) {
+                    return $this->mapAdminPrimaryAccount($user, $search);
+                });
+
+            return Inertia::render('Admin/Users', [
+                'users' => $users,
+                'filters' => [
+                    'role' => $roleFilter,
+                    'search' => $search ?? '',
+                ],
+                'unlinkedStaffGroup' => $this->buildUnlinkedStaffGroup($search, $roleFilter),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("SuperAdmin Users error: " . $e->getMessage());
+            return Inertia::render('Admin/Users', [
+                'users' => [
+                    'data' => [],
+                    'links' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'total' => 0
+                ],
+                'filters' => [
+                    'role' => 'all',
+                    'search' => '',
+                ],
+                'unlinkedStaffGroup' => null,
+                'db_error' => true
+            ]);
         }
-
-        $users = $query->orderBy('created_at', 'desc')
-            ->paginate(10)
-            ->withQueryString()
-            ->through(function (User $user) use ($search) {
-                return $this->mapAdminPrimaryAccount($user, $search);
-            });
-
-        return Inertia::render('Admin/Users', [
-            'users' => $users,
-            'filters' => [
-                'role' => $roleFilter,
-                'search' => $search ?? '',
-            ],
-            'unlinkedStaffGroup' => $this->buildUnlinkedStaffGroup($search, $roleFilter),
-        ]);
     }
 
     public function reviewModeration()
