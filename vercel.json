@@ -41,6 +41,7 @@
         "APP_SERVICES_CACHE": "/tmp/services.php",
         "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
         "SESSION_DRIVER": "cookie",
-        "CACHE_STORE": "array"
+        "CACHE_STORE": "array",
+        "PUBLIC_DISK_DRIVER": "s3"
     }
 }
