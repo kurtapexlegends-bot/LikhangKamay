@@ -152,6 +152,12 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        $seller = $request->user()->getEffectiveSeller();
+        
+        if (!$seller || !$seller->isApproved()) {
+            return back()->with('error', 'Your artisan account is not yet approved. You cannot list products.');
+        }
+
         $request->merge([
             'category' => trim((string) $request->input('category')),
         ]);

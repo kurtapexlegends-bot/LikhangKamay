@@ -13,7 +13,10 @@ class EnsureSellerWorkspaceAccess
         /** @var \App\Models\User|null $user */
         $user = $request->user();
 
-        if ($user && $user->isArtisan() && $user->isPendingApproval()) {
+        if ($user && $user->isArtisan() && !$user->isApproved()) {
+            if ($user->setup_completed_at === null || $user->isRejected()) {
+                return redirect()->route('artisan.setup.create');
+            }
             return redirect()->route('artisan.pending');
         }
 

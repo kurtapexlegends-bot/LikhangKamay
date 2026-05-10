@@ -97,6 +97,10 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'approved_at',
         'approved_by',
         'artisan_welcomed',
+        // Payout Details
+        'payout_method',
+        'payout_account_name',
+        'payout_account_number',
         // Social Auth Fields
         'social_provider',
         'social_id',

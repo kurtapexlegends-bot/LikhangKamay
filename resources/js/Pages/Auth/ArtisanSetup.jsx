@@ -16,6 +16,7 @@ import {
     LogOut,
     AlertTriangle,
     ChevronDown,
+    Banknote,
 } from 'lucide-react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -47,6 +48,9 @@ export default function ArtisanSetup({ auth }) {
         dti_registration: null,
         valid_id: null,
         tin_id: null,
+        payout_method: auth.user.payout_method || 'GCash',
+        payout_account_name: auth.user.payout_account_name || '',
+        payout_account_number: auth.user.payout_account_number || '',
     });
 
     const submit = (event) => {
@@ -60,7 +64,7 @@ export default function ArtisanSetup({ auth }) {
         post(route('artisan.setup.store'), {
             forceFormData: true,
             onSuccess: () => {
-                if (step < 2) {
+                if (step < 3) {
                     setStep(step + 1);
                     return;
                 }
@@ -123,6 +127,8 @@ export default function ArtisanSetup({ auth }) {
                             <StepPill number={1} label="Shop Info" active={step >= 1} current={step === 1} />
                             <div className={`h-0.5 w-8 ${step >= 2 ? 'bg-clay-500' : 'bg-gray-200'}`} />
                             <StepPill number={2} label="Documents" active={step >= 2} current={step === 2} />
+                            <div className={`h-0.5 w-8 ${step >= 3 ? 'bg-clay-500' : 'bg-gray-200'}`} />
+                            <StepPill number={3} label="Payments" active={step >= 3} current={step === 3} />
                             <div className="h-0.5 w-8 bg-gray-200" />
                             <StepPill icon={<Clock size={14} />} label="Review" active={false} current={false} />
                         </div>
@@ -293,9 +299,85 @@ export default function ArtisanSetup({ auth }) {
                                     <button
                                         type="submit"
                                         disabled={processing}
+                                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-clay-600 to-clay-700 px-8 py-3.5 font-bold text-white shadow-lg shadow-clay-200 transition hover:from-clay-700 hover:to-clay-800 disabled:opacity-50"
+                                    >
+                                        {processing ? 'Uploading...' : 'Continue to Payments'} <ArrowRight size={18} />
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
+                        {step === 3 && (
+                            <form onSubmit={submit} className="p-6 sm:p-10">
+                                <div className="mb-8">
+                                    <div className="mb-1 flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
+                                            <Banknote size={20} className="text-emerald-600" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-bold text-gray-900">Payment Details</h2>
+                                            <p className="text-sm text-gray-500">How would you like to receive your earnings?</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <InputLabel htmlFor="payout_method" value="Preferred Payout Method *" />
+                                        <select
+                                            id="payout_method"
+                                            value={data.payout_method}
+                                            onChange={(e) => setData('payout_method', e.target.value)}
+                                            className="mt-1 block w-full rounded-xl border-gray-300 py-3 text-sm focus:border-clay-500 focus:ring-clay-500"
+                                        >
+                                            <option value="GCash">GCash</option>
+                                            <option value="Maya">Maya</option>
+                                            <option value="Bank Transfer">Bank Transfer (BDO, BPI, etc.)</option>
+                                            <option value="Palawan Express">Palawan Express</option>
+                                        </select>
+                                        <InputError message={errors.payout_method} className="mt-2" />
+                                    </div>
+
+                                    <div>
+                                        <InputLabel htmlFor="payout_account_name" value="Account Name *" />
+                                        <TextInput
+                                            id="payout_account_name"
+                                            value={data.payout_account_name}
+                                            onChange={(e) => setData('payout_account_name', e.target.value)}
+                                            className="mt-1 block w-full rounded-xl py-3"
+                                            placeholder="Full name as shown in account"
+                                        />
+                                        <InputError message={errors.payout_account_name} className="mt-2" />
+                                    </div>
+
+                                    <div>
+                                        <InputLabel htmlFor="payout_account_number" value="Account/Phone Number *" />
+                                        <TextInput
+                                            id="payout_account_number"
+                                            value={data.payout_account_number}
+                                            onChange={(e) => setData('payout_account_number', e.target.value)}
+                                            className="mt-1 block w-full rounded-xl py-3"
+                                            placeholder="e.g. 0917 XXX XXXX or Bank Account No."
+                                        />
+                                        <InputError message={errors.payout_account_number} className="mt-2" />
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 flex items-center justify-between">
+                                    <button
+                                        type="button"
+                                        onClick={() => setStep(2)}
+                                        className="flex items-center gap-2 font-medium text-gray-500 transition hover:text-gray-700"
+                                    >
+                                        <ArrowLeft size={16} /> Back
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
                                         className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-8 py-3.5 font-bold text-white shadow-lg shadow-green-200 transition hover:from-green-700 hover:to-green-800 disabled:opacity-50"
                                     >
-                                        {processing ? 'Uploading...' : 'Submit for Review'} <CheckCircle2 size={18} />
+                                        {processing ? 'Submitting...' : 'Complete Application'} <CheckCircle2 size={18} />
                                     </button>
                                 </div>
                             </form>

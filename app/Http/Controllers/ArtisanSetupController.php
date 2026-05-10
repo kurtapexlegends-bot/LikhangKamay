@@ -131,6 +131,34 @@ class ArtisanSetupController extends Controller
                 return $user->{$key};
             };
 
+            $user->update([
+                'business_permit' => $upload('business_permit'),
+                'dti_registration' => $upload('dti_registration'),
+                'valid_id' => $upload('valid_id'),
+                'tin_id' => $upload('tin_id'),
+                'document_flags' => $documentFlags,
+            ]);
+
+            return back();
+        }
+
+        // --- STEP 3: PAYMENT DETAILS ---
+        if ($step == 3) {
+            $validated = $request->validate([
+                'payout_method' => 'required|string|max:50',
+                'payout_account_name' => 'required|string|max:100',
+                'payout_account_number' => 'required|string|max:100',
+            ]);
+
+            $user->update([
+                'payout_method' => $validated['payout_method'],
+                'payout_account_name' => $validated['payout_account_name'],
+                'payout_account_number' => $validated['payout_account_number'],
+                'setup_completed_at' => now(),
+                'artisan_status' => 'pending',
+                'artisan_rejection_reason' => null,
+            ]);
+
             ArtisanStatusLog::create([
                 'user_id' => $user->id,
                 'previous_status' => $user->artisan_status,
@@ -144,17 +172,6 @@ class ArtisanSetupController extends Controller
                 'metadata' => ['shop_name' => $user->shop_name]
             ]);
 
-            $user->update([
-                'business_permit' => $upload('business_permit'),
-                'dti_registration' => $upload('dti_registration'),
-                'valid_id' => $upload('valid_id'),
-                'tin_id' => $upload('tin_id'),
-                'document_flags' => $documentFlags,
-                'setup_completed_at' => now(),
-                'artisan_status' => 'pending',
-                'artisan_rejection_reason' => null,
-            ]);
-
             $emailResult = $this->sendApplicationEmails($user);
             
             if ($emailResult === 'failed_send') {
@@ -163,12 +180,6 @@ class ArtisanSetupController extends Controller
                     ->with('warning', 'Application submitted, but the admin notification email could not be sent.');
             }
             
-            if ($emailResult === 'no_recipients') {
-                return redirect()
-                    ->route('artisan.pending')
-                    ->with('warning', 'Application submitted, but no admin email recipient is configured.');
-            }
-
             return redirect()->route('artisan.pending');
         }
 
