@@ -16,218 +16,232 @@ class ShopController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Base Query - Include aggregates for rating and count
-        $query = Product::where('status', 'Active')
-            ->with(['user'])
-            ->withAvg('publicReviews as reviews_avg_rating', 'rating')
-            ->withCount('publicReviews as reviews_count');
+        try {
+            // 1. Base Query - Include aggregates for rating and count
+            $query = Product::where('status', 'Active')
+                ->with(['user'])
+                ->withAvg('publicReviews as reviews_avg_rating', 'rating')
+                ->withCount('publicReviews as reviews_count');
 
-        // 2. Filters
+            // 2. Filters
 
-        // Category Filter
-        if ($request->filled('category') && $request->category !== 'All') {
-            $query->where('category', $request->category);
-        }
+            // Category Filter
+            if ($request->filled('category') && $request->category !== 'All') {
+                $query->where('category', $request->category);
+            }
 
-        // Search Filter (Weighted)
-        if ($request->filled('search')) {
-            $search = trim((string) $request->search);
-            $likeSearch = "%{$search}%";
-            $normalizedSearch = Str::of($search)
-                ->lower()
-                ->replaceMatches('/[^[:alnum:]]+/u', ' ')
-                ->trim()
-                ->value();
-            $normalizedLike = $normalizedSearch !== '' ? "%{$normalizedSearch}%" : $likeSearch;
-            $slugSearch = Str::slug($search);
-            $slugLike = $slugSearch !== '' ? "%{$slugSearch}%" : $likeSearch;
-            $searchTerms = collect(preg_split('/\s+/', $normalizedSearch))
-                ->filter(fn ($term) => filled($term) && Str::length($term) >= 2)
-                ->unique()
-                ->take(5)
-                ->values();
+            // Search Filter (Weighted)
+            if ($request->filled('search')) {
+                $search = trim((string) $request->search);
+                $likeSearch = "%{$search}%";
+                $normalizedSearch = Str::of($search)
+                    ->lower()
+                    ->replaceMatches('/[^[:alnum:]]+/u', ' ')
+                    ->trim()
+                    ->value();
+                $normalizedLike = $normalizedSearch !== '' ? "%{$normalizedSearch}%" : $likeSearch;
+                $slugSearch = Str::slug($search);
+                $slugLike = $slugSearch !== '' ? "%{$slugSearch}%" : $likeSearch;
+                $searchTerms = collect(preg_split('/\s+/', $normalizedSearch))
+                    ->filter(fn ($term) => filled($term) && Str::length($term) >= 2)
+                    ->unique()
+                    ->take(5)
+                    ->values();
 
-            $query->where(function ($q) use ($search, $normalizedLike, $slugLike, $searchTerms) {
-                $q->where(function ($phraseQuery) use ($search, $normalizedLike, $slugLike) {
-                    $phraseQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                        ->orWhere('category', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', $slugLike)
-                        ->orWhereHas('user', function ($sellerQuery) use ($search, $normalizedLike, $slugLike) {
-                            $sellerQuery->where('shop_name', 'like', "%{$search}%")
-                                ->orWhere('name', 'like', "%{$search}%")
-                                ->orWhere('shop_slug', 'like', $slugLike)
-                                ->orWhereRaw('LOWER(REPLACE(COALESCE(shop_name, ""), "-", " ")) LIKE ?', [$normalizedLike])
-                                ->orWhereRaw('LOWER(REPLACE(COALESCE(name, ""), "-", " ")) LIKE ?', [$normalizedLike]);
-                        })
-                        ->orWhere(function ($sq) use ($search) {
-                            if (strtolower($search) === 'sponsored') {
-                                $sq->where('is_sponsored', true)
-                                    ->where('sponsored_until', '>=', now());
-                            }
-                        });
-                });
+                $query->where(function ($q) use ($search, $normalizedLike, $slugLike, $searchTerms) {
+                    $q->where(function ($phraseQuery) use ($search, $normalizedLike, $slugLike) {
+                        $phraseQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%")
+                            ->orWhere('category', 'like', "%{$search}%")
+                            ->orWhere('slug', 'like', $slugLike)
+                            ->orWhereHas('user', function ($sellerQuery) use ($search, $normalizedLike, $slugLike) {
+                                $sellerQuery->where('shop_name', 'like', "%{$search}%")
+                                    ->orWhere('name', 'like', "%{$search}%")
+                                    ->orWhere('shop_slug', 'like', $slugLike)
+                                    ->orWhereRaw("LOWER(REPLACE(COALESCE(shop_name, ''), '-', ' ')) LIKE ?", [$normalizedLike])
+                                    ->orWhereRaw("LOWER(REPLACE(COALESCE(name, ''), '-', ' ')) LIKE ?", [$normalizedLike]);
+                            })
+                            ->orWhere(function ($sq) use ($search) {
+                                if (strtolower($search) === 'sponsored') {
+                                    $sq->where('is_sponsored', true)
+                                        ->where('sponsored_until', '>=', now());
+                                }
+                            });
+                    });
 
-                if ($searchTerms->isNotEmpty()) {
-                    $q->orWhere(function ($tokenQuery) use ($searchTerms) {
-                        $searchTerms->each(function (string $term) use ($tokenQuery) {
-                            $tokenLike = "%{$term}%";
+                    if ($searchTerms->isNotEmpty()) {
+                        $q->orWhere(function ($tokenQuery) use ($searchTerms) {
+                            $searchTerms->each(function (string $term) use ($tokenQuery) {
+                                $tokenLike = "%{$term}%";
 
-                            $tokenQuery->where(function ($termQuery) use ($tokenLike) {
-                                $termQuery->where('name', 'like', $tokenLike)
-                                    ->orWhere('description', 'like', $tokenLike)
-                                    ->orWhere('category', 'like', $tokenLike)
-                                    ->orWhere('slug', 'like', $tokenLike)
-                                    ->orWhereHas('user', function ($sellerQuery) use ($tokenLike) {
-                                        $sellerQuery->where('shop_name', 'like', $tokenLike)
-                                            ->orWhere('name', 'like', $tokenLike)
-                                            ->orWhere('shop_slug', 'like', $tokenLike);
-                                    });
+                                $tokenQuery->where(function ($termQuery) use ($tokenLike) {
+                                    $termQuery->where('name', 'like', $tokenLike)
+                                        ->orWhere('description', 'like', $tokenLike)
+                                        ->orWhere('category', 'like', $tokenLike)
+                                        ->orWhere('slug', 'like', $tokenLike)
+                                        ->orWhereHas('user', function ($sellerQuery) use ($tokenLike) {
+                                            $sellerQuery->where('shop_name', 'like', $tokenLike)
+                                                ->orWhere('name', 'like', $tokenLike)
+                                                ->orWhere('shop_slug', 'like', $tokenLike);
+                                        });
+                                });
                             });
                         });
-                    });
-                }
+                    }
+                });
+
+                // Weighted ordering: direct product/shop hits first, then supporting matches.
+                $query->orderByRaw("
+                    CASE 
+                        WHEN LOWER(name) = LOWER(?) THEN 1
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM users
+                            WHERE users.id = products.user_id
+                              AND (
+                                  LOWER(COALESCE(users.shop_name, '')) = LOWER(?)
+                                  OR LOWER(users.name) = LOWER(?)
+                                  OR COALESCE(users.shop_slug, '') = ?
+                              )
+                        ) THEN 2
+                        WHEN name LIKE ? THEN 3
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM users
+                            WHERE users.id = products.user_id
+                              AND (
+                                  users.shop_name LIKE ?
+                                  OR users.name LIKE ?
+                                  OR users.shop_slug LIKE ?
+                              )
+                        ) THEN 4
+                        WHEN category LIKE ? THEN 5
+                        WHEN description LIKE ? THEN 6
+                        WHEN is_sponsored = true AND sponsored_until >= CURRENT_TIMESTAMP THEN 7
+                        ELSE 8 
+                    END
+                ", [$search, $search, $search, $slugSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch]);
+
+                $query->orderByDesc('sold')
+                    ->orderByDesc('reviews_avg_rating')
+                    ->latest();
+            }
+
+            // Price Range Filter
+            if ($request->filled('price_min')) {
+                $query->where('price', '>=', $request->price_min);
+            }
+            if ($request->filled('price_max')) {
+                $query->where('price', '<=', $request->price_max);
+            }
+
+            // Location/City Filter (based on seller's city)
+            if ($request->filled('locations')) {
+                $locations = explode(',', $request->locations);
+                $query->whereHas('user', function ($q) use ($locations) {
+                    $q->whereIn('city', $locations);
+                });
+            }
+
+            // Clay Type / Material Filter
+            if ($request->filled('materials')) {
+                $materials = explode(',', $request->materials);
+                $query->whereIn('clay_type', $materials);
+            }
+
+            // Rating Filter (minimum rating)
+            if ($request->filled('min_rating')) {
+                $minRating = (float) $request->min_rating;
+                $query->having('reviews_avg_rating', '>=', $minRating);
+            }
+
+            // 3. Sorting
+            switch ($request->sort) {
+                case 'price_low':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price_high':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'popular':
+                    $query->orderBy('sold', 'desc');
+                    break;
+                case 'rating':
+                    // Sort by average rating (products with reviews first)
+                    $query->orderByDesc('reviews_avg_rating');
+                    break;
+                case 'newest':
+                default:
+                    $query->latest();
+                    break;
+            }
+
+            // 4. Get available filter options for sidebar (Cached for 1 hour)
+            $availableLocations = Cache::remember('catalog_locations', 3600, function () {
+                return User::whereHas('products', function ($q) {
+                    $q->where('status', 'Active');
+                })->whereNotNull('city')
+                    ->distinct()
+                    ->pluck('city')
+                    ->filter()
+                    ->values();
             });
 
-            // Weighted ordering: direct product/shop hits first, then supporting matches.
-            $query->orderByRaw("
-                CASE 
-                    WHEN LOWER(name) = LOWER(?) THEN 1
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM users
-                        WHERE users.id = products.user_id
-                          AND (
-                              LOWER(COALESCE(users.shop_name, '')) = LOWER(?)
-                              OR LOWER(users.name) = LOWER(?)
-                              OR COALESCE(users.shop_slug, '') = ?
-                          )
-                    ) THEN 2
-                    WHEN name LIKE ? THEN 3
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM users
-                        WHERE users.id = products.user_id
-                          AND (
-                              users.shop_name LIKE ?
-                              OR users.name LIKE ?
-                              OR users.shop_slug LIKE ?
-                          )
-                    ) THEN 4
-                    WHEN category LIKE ? THEN 5
-                    WHEN description LIKE ? THEN 6
-                    WHEN is_sponsored = 1 AND sponsored_until >= CURRENT_TIMESTAMP THEN 7
-                    ELSE 8 
-                END
-            ", [$search, $search, $search, $slugSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch]);
-
-            $query->orderByDesc('sold')
-                ->orderByDesc('reviews_avg_rating')
-                ->latest();
-        }
-
-        // Price Range Filter
-        if ($request->filled('price_min')) {
-            $query->where('price', '>=', $request->price_min);
-        }
-        if ($request->filled('price_max')) {
-            $query->where('price', '<=', $request->price_max);
-        }
-
-        // Location/City Filter (based on seller's city)
-        if ($request->filled('locations')) {
-            $locations = explode(',', $request->locations);
-            $query->whereHas('user', function ($q) use ($locations) {
-                $q->whereIn('city', $locations);
+            $availableMaterials = Cache::remember('catalog_materials', 3600, function () {
+                return Product::where('status', 'Active')
+                    ->whereNotNull('clay_type')
+                    ->distinct()
+                    ->pluck('clay_type')
+                    ->filter()
+                    ->values();
             });
+
+            // 6. Categories list (Cached for 24 hours)
+            $categories = Cache::remember('catalog_categories', 86400, function () {
+                return ['All', ...\App\Models\Category::orderBy('name')->pluck('name')->toArray()];
+            });
+
+            // 5. Fetch Products (Paginated)
+            $paginator = $query->paginate(20)->withQueryString();
+            
+            $paginator->through(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'slug' => $product->slug,
+                    'name' => $product->name,
+                    'price' => number_format($product->price, 2),
+                    'raw_price' => $product->price,
+                    'category' => $product->category,
+                    'rating' => (float) ($product->reviews_avg_rating ?? 0),
+                    'reviews_count' => $product->reviews_count ?? 0,
+                    'sold' => $product->sold ?? 0,
+                    'image' => $product->img,
+                    'seller' => $product->user->shop_name ?? $product->user->name ?? 'LikhangKamay Artisan',
+                    'seller_slug' => $product->user->shop_slug,
+                    'location' => $product->user->city ?? 'Philippines',
+                    'clay_type' => $product->clay_type,
+                    'is_new' => $product->created_at->diffInDays(now()) < 7,
+                    'is_sponsored' => $product->is_sponsored && $product->sponsored_until && \Carbon\Carbon::parse($product->sponsored_until)->isFuture(),
+                ];
+            });
+
+            // 5b. Separate Sponsored Products for highlighting (if search is active)
+            $sponsoredResults = collect($paginator->items())->filter(function($p) {
+                return $p['is_sponsored'];
+            })->values();
+
+        } catch (\Exception $e) {
+            // Fallback for DB connection issues on Vercel
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+            $sponsoredResults = [];
+            $categories = ['All'];
+            $availableLocations = [];
+            $availableMaterials = [];
+            
+            if (config('app.debug')) {
+                report($e);
+            }
         }
-
-        // Clay Type / Material Filter
-        if ($request->filled('materials')) {
-            $materials = explode(',', $request->materials);
-            $query->whereIn('clay_type', $materials);
-        }
-
-        // Rating Filter (minimum rating)
-        if ($request->filled('min_rating')) {
-            $minRating = (float) $request->min_rating;
-            $query->having('reviews_avg_rating', '>=', $minRating);
-        }
-
-        // 3. Sorting
-        switch ($request->sort) {
-            case 'price_low':
-                $query->orderBy('price', 'asc');
-                break;
-            case 'price_high':
-                $query->orderBy('price', 'desc');
-                break;
-            case 'popular':
-                $query->orderBy('sold', 'desc');
-                break;
-            case 'rating':
-                // Sort by average rating (products with reviews first)
-                $query->orderByDesc('reviews_avg_rating');
-                break;
-            case 'newest':
-            default:
-                $query->latest();
-                break;
-        }
-
-        // 4. Get available filter options for sidebar (Cached for 1 hour)
-        $availableLocations = Cache::remember('catalog_locations', 3600, function () {
-            return User::whereHas('products', function ($q) {
-                $q->where('status', 'Active');
-            })->whereNotNull('city')
-                ->distinct()
-                ->pluck('city')
-                ->filter()
-                ->values();
-        });
-
-        $availableMaterials = Cache::remember('catalog_materials', 3600, function () {
-            return Product::where('status', 'Active')
-                ->whereNotNull('clay_type')
-                ->distinct()
-                ->pluck('clay_type')
-                ->filter()
-                ->values();
-        });
-
-        // 6. Categories list (Cached for 24 hours)
-        $categories = Cache::remember('catalog_categories', 86400, function () {
-            return ['All', ...\App\Models\Category::orderBy('name')->pluck('name')->toArray()];
-        });
-
-        // 5. Fetch Products (Paginated)
-        $paginator = $query->paginate(20)->withQueryString();
-        
-        $paginator->through(function ($product) {
-            return [
-                'id' => $product->id,
-                'slug' => $product->slug,
-                'name' => $product->name,
-                'price' => number_format($product->price, 2),
-                'raw_price' => $product->price,
-                'category' => $product->category,
-                'rating' => (float) ($product->reviews_avg_rating ?? 0),
-                'reviews_count' => $product->reviews_count ?? 0,
-                'sold' => $product->sold ?? 0,
-                'image' => $product->img,
-                'seller' => $product->user->shop_name ?? $product->user->name ?? 'LikhangKamay Artisan',
-                'seller_slug' => $product->user->shop_slug,
-                'location' => $product->user->city ?? 'Philippines',
-                'clay_type' => $product->clay_type,
-                'is_new' => $product->created_at->diffInDays(now()) < 7,
-                'is_sponsored' => $product->is_sponsored && $product->sponsored_until && \Carbon\Carbon::parse($product->sponsored_until)->isFuture(),
-            ];
-        });
-
-        // 5b. Separate Sponsored Products for highlighting (if search is active)
-        $sponsoredResults = collect($paginator->items())->filter(function($p) {
-            return $p['is_sponsored'];
-        })->values();
 
         return Inertia::render('Shop/Catalog', [
             'products' => $paginator,
