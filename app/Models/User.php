@@ -16,11 +16,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Schema;
 
+use App\Traits\Searchable;
 use App\Traits\HasTransformableImages;
 
 class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {
-    use HasFactory, Notifiable, HasTransformableImages;
+    use HasFactory, Notifiable, HasTransformableImages, Searchable;
 
     public const STAFF_WORKSPACE_ACCESS_FLAG = '__workspace_access_enabled';
     public const STAFF_USER_LEVEL_FLAG = '__staff_user_level';

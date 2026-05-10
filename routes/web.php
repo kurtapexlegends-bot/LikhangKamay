@@ -283,6 +283,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // GLOBAL SEARCH
     Route::get('/api/global-search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])->name('api.global-search');
+    Route::get('/api/search/suggestions', [\App\Http\Controllers\SearchController::class, 'suggestions'])->name('api.search.suggestions');
 
     // REPORTING
     Route::post('/report', [\App\Http\Controllers\FlaggedContentController::class, 'store'])->name('report.store');

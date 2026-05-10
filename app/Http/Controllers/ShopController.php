@@ -30,102 +30,20 @@ class ShopController extends Controller
                 $query->where('category', $request->category);
             }
 
-            // Search Filter (Weighted)
+            // Search Filter (Full-Text Search)
             if ($request->filled('search')) {
                 $search = trim((string) $request->search);
-                $likeSearch = "%{$search}%";
-                $normalizedSearch = Str::of($search)
-                    ->lower()
-                    ->replaceMatches('/[^[:alnum:]]+/u', ' ')
-                    ->trim()
-                    ->value();
-                $normalizedLike = $normalizedSearch !== '' ? "%{$normalizedSearch}%" : $likeSearch;
-                $slugSearch = Str::slug($search);
-                $slugLike = $slugSearch !== '' ? "%{$slugSearch}%" : $likeSearch;
-                $searchTerms = collect(preg_split('/\s+/', $normalizedSearch))
-                    ->filter(fn ($term) => filled($term) && Str::length($term) >= 2)
-                    ->unique()
-                    ->take(5)
-                    ->values();
+                
+                // Use the new Searchable scope for high-performance FTS
+                $query->search($search, ['name', 'description', 'category']);
 
-                $query->where(function ($q) use ($search, $normalizedLike, $slugLike, $searchTerms) {
-                    $q->where(function ($phraseQuery) use ($search, $normalizedLike, $slugLike) {
-                        $phraseQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('description', 'like', "%{$search}%")
-                            ->orWhere('category', 'like', "%{$search}%")
-                            ->orWhere('slug', 'like', $slugLike)
-                            ->orWhereHas('user', function ($sellerQuery) use ($search, $normalizedLike, $slugLike) {
-                                $sellerQuery->where('shop_name', 'like', "%{$search}%")
-                                    ->orWhere('name', 'like', "%{$search}%")
-                                    ->orWhere('shop_slug', 'like', $slugLike)
-                                    ->orWhereRaw("LOWER(REPLACE(COALESCE(shop_name, ''), '-', ' ')) LIKE ?", [$normalizedLike])
-                                    ->orWhereRaw("LOWER(REPLACE(COALESCE(name, ''), '-', ' ')) LIKE ?", [$normalizedLike]);
-                            })
-                            ->orWhere(function ($sq) use ($search) {
-                                if (strtolower($search) === 'sponsored') {
-                                    $sq->where('is_sponsored', true)
-                                        ->where('sponsored_until', '>=', now());
-                                }
-                            });
-                    });
-
-                    if ($searchTerms->isNotEmpty()) {
-                        $q->orWhere(function ($tokenQuery) use ($searchTerms) {
-                            $searchTerms->each(function (string $term) use ($tokenQuery) {
-                                $tokenLike = "%{$term}%";
-
-                                $tokenQuery->where(function ($termQuery) use ($tokenLike) {
-                                    $termQuery->where('name', 'like', $tokenLike)
-                                        ->orWhere('description', 'like', $tokenLike)
-                                        ->orWhere('category', 'like', $tokenLike)
-                                        ->orWhere('slug', 'like', $tokenLike)
-                                        ->orWhereHas('user', function ($sellerQuery) use ($tokenLike) {
-                                            $sellerQuery->where('shop_name', 'like', $tokenLike)
-                                                ->orWhere('name', 'like', $tokenLike)
-                                                ->orWhere('shop_slug', 'like', $tokenLike);
-                                        });
-                                });
-                            });
-                        });
-                    }
+                // Also allow matching artisan shop names in the same search
+                $query->orWhereHas('user', function ($q) use ($search) {
+                    $q->where('role', 'artisan')
+                      ->search($search, ['shop_name', 'name']);
                 });
-
-                // Weighted ordering: direct product/shop hits first, then supporting matches.
-                $query->orderByRaw("
-                    CASE 
-                        WHEN LOWER(name) = LOWER(?) THEN 1
-                        WHEN EXISTS (
-                            SELECT 1
-                            FROM users
-                            WHERE users.id = products.user_id
-                              AND (
-                                  LOWER(COALESCE(users.shop_name, '')) = LOWER(?)
-                                  OR LOWER(users.name) = LOWER(?)
-                                  OR COALESCE(users.shop_slug, '') = ?
-                              )
-                        ) THEN 2
-                        WHEN name LIKE ? THEN 3
-                        WHEN EXISTS (
-                            SELECT 1
-                            FROM users
-                            WHERE users.id = products.user_id
-                              AND (
-                                  users.shop_name LIKE ?
-                                  OR users.name LIKE ?
-                                  OR users.shop_slug LIKE ?
-                              )
-                        ) THEN 4
-                        WHEN category LIKE ? THEN 5
-                        WHEN description LIKE ? THEN 6
-                        WHEN is_sponsored = true AND sponsored_until >= CURRENT_TIMESTAMP THEN 7
-                        ELSE 8 
-                    END
-                ", [$search, $search, $search, $slugSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch]);
-
-                $query->orderByDesc('sold')
-                    ->orderByDesc('reviews_avg_rating')
-                    ->latest();
             }
+
 
             // Price Range Filter
             if ($request->filled('price_min')) {

@@ -9,9 +9,14 @@ const SellerWorkspaceShellContext = createContext({
     closeSidebar: () => {},
 });
 
+import { useRealtime } from '@/hooks/useRealtime';
+
 export default function SellerWorkspaceLayout({ active, children, sidebarUser = null }) {
     const { auth } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Enable Real-time synchronization
+    useRealtime();
 
     const shell = useMemo(() => ({
         openSidebar: () => setSidebarOpen(true),

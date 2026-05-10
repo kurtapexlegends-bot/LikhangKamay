@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Traits\Searchable;
 use App\Traits\HasTransformableImages;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, HasTransformableImages;
+    use HasFactory, SoftDeletes, HasTransformableImages, Searchable;
 
     protected $fillable = [
         'user_id', 'sku', 'name', 'description', 'category', 'status',

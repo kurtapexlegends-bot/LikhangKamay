@@ -6,9 +6,13 @@ import MobileDock from '@/Components/MobileDock';
 import { Link, usePage } from '@inertiajs/react';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
 import { useState } from 'react';
+import { useRealtime } from '@/hooks/useRealtime';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
+    
+    // Enable Real-time synchronization
+    useRealtime();
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);

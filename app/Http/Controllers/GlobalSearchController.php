@@ -31,9 +31,7 @@ class GlobalSearchController extends Controller
 
         if ($user->isAdmin()) {
             // Super Admin Search: Users, Shops, and Admin Sponsorships
-            $users = User::where('name', 'LIKE', "%{$query}%")
-                ->orWhere('email', 'LIKE', "%{$query}%")
-                ->orWhere('shop_name', 'LIKE', "%{$query}%")
+            $users = User::search($query, ['name', 'email', 'shop_name'])
                 ->limit(5)
                 ->get()
                 ->map(function ($u) {
@@ -48,7 +46,7 @@ class GlobalSearchController extends Controller
                 });
             
             $sponsorships = SponsorshipRequest::whereHas('product', function($q) use ($query) {
-                    $q->where('name', 'LIKE', "%{$query}%");
+                    $q->search($query, ['name']);
                 })
                 ->with('product', 'user')
                 ->limit(5)
@@ -65,7 +63,7 @@ class GlobalSearchController extends Controller
                 });
 
             // Category Search (Admin)
-            $adminCategories = Category::where('name', 'LIKE', "%{$query}%")
+            $adminCategories = Category::where('name', 'ILIKE', "%{$query}%")
                 ->limit(3)
                 ->get()
                 ->map(function ($c) {
@@ -80,7 +78,7 @@ class GlobalSearchController extends Controller
                 });
 
             // System Announcements (Admin)
-            $adminAnnouncements = SystemAnnouncement::where('title', 'LIKE', "%{$query}%")
+            $adminAnnouncements = SystemAnnouncement::where('title', 'ILIKE', "%{$query}%")
                 ->limit(3)
                 ->get()
                 ->map(function ($a) {
@@ -95,8 +93,8 @@ class GlobalSearchController extends Controller
                 });
 
             // Moderation Reports (Admin)
-            $adminReports = Report::where('reason', 'LIKE', "%{$query}%")
-                ->orWhere('status', 'LIKE', "%{$query}%")
+            $adminReports = Report::where('reason', 'ILIKE', "%{$query}%")
+                ->orWhere('status', 'ILIKE', "%{$query}%")
                 ->limit(3)
                 ->get()
                 ->map(function ($r) {
@@ -127,10 +125,7 @@ class GlobalSearchController extends Controller
 
             // Product Search
             $products = Product::where('user_id', $sellerId)
-                ->where(function ($q) use ($query) {
-                    $q->where('name', 'LIKE', "%{$query}%")
-                      ->orWhere('sku', 'LIKE', "%{$query}%");
-                })
+                ->search($query, ['name', 'sku'])
                 ->limit(5)
                 ->get()
                 ->map(function ($p) {
@@ -143,6 +138,7 @@ class GlobalSearchController extends Controller
                         'icon' => 'package',
                     ];
                 });
+
 
             // Order Search
             $orders = Order::where('artisan_id', $sellerId)

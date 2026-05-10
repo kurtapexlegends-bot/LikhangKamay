@@ -92,33 +92,8 @@ export default function NotificationDropdown() {
         return () => window.clearInterval(tick);
     }, []);
 
-    useEffect(() => {
-        let cancelled = false;
-
-        const refreshNotifications = () => {
-            if (cancelled || document.visibilityState !== 'visible') {
-                return;
-            }
-
-            router.reload({
-                only: ['notifications', 'unreadNotificationCount'],
-                preserveScroll: true,
-                preserveState: true,
-            });
-        };
-
-        refreshNotifications();
-        const interval = window.setInterval(refreshNotifications, 45000);
-        const handleVisibilityChange = () => refreshNotifications();
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            cancelled = true;
-            window.clearInterval(interval);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, []);
+    // We now use centralized Supabase Realtime in AuthenticatedLayout/MainLayout
+    // No more manual polling needed.
 
     const getIcon = (type) => {
         switch (type) {

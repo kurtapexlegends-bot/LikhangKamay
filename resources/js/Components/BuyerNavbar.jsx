@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
+import axios from 'axios';
 import Dropdown from '@/Components/Dropdown'; 
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
@@ -27,6 +28,30 @@ export default function BuyerNavbar() {
     const [term, setTerm] = useState(params.get('search') || '');
     const [isScrolled, setIsScrolled] = useState(false);
     const [localCartCount, setLocalCartCount] = useState(cartCount || 0);
+
+    // Search Suggestions State
+    const [suggestions, setSuggestions] = useState({ products: [], artisans: [] });
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    // Debounced search for suggestions
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (term.length >= 2) {
+                setIsLoadingSuggestions(true);
+                try {
+                    const response = await axios.get(route('api.search.suggestions'), { params: { q: term } });
+                    setSuggestions(response.data);
+                } catch (error) {
+                    console.error('Suggestions error:', error);
+                } finally {
+                    setIsLoadingSuggestions(false);
+                }
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [term]);
 
     useEffect(() => {
         setLocalCartCount(cartCount || 0);
@@ -96,7 +121,7 @@ export default function BuyerNavbar() {
                     </Link>
 
                     {/* SEARCH */}
-                    <div className="order-3 basis-full md:order-2 md:flex-1 md:max-w-3xl">
+                    <div className="order-3 basis-full md:order-2 md:flex-1 md:max-w-3xl relative">
                         <form onSubmit={handleSearch} className="relative group">
                             <input 
                                 type="text" 
@@ -104,13 +129,72 @@ export default function BuyerNavbar() {
                                 className={`w-full bg-gray-50 border border-gray-200 rounded-full text-sm focus:bg-white focus:border-clay-300 focus:ring-4 focus:ring-clay-100/50 transition-all duration-300 shadow-sm placeholder-gray-400 text-gray-800 ${isScrolled ? 'pl-10 pr-20 py-2 md:pl-10 md:pr-24 md:py-2 text-xs' : 'pl-10 pr-24 py-2.5 md:pl-12 md:pr-32 md:py-3'}`}
                                 value={term}
                                 onChange={(e) => setTerm(e.target.value)}
+                                onFocus={() => setShowSuggestions(true)}
+                                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                             />
                             <Search className={`absolute transition-all duration-300 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-600 ${isScrolled ? 'left-3.5 md:left-3.5 w-4 h-4' : 'left-3.5 md:left-4 w-5 h-5'}`} />
                             <button type="submit" className={`absolute right-1.5 top-1/2 -translate-y-1/2 bg-clay-600 text-white rounded-full font-bold hover:bg-clay-700 hover:shadow-md transition-all duration-300 active:scale-95 ${isScrolled ? 'px-3 md:px-4 py-1 text-[10px]' : 'px-4 md:px-6 py-2 text-xs'}`}>
                                 Search
                             </button>
                         </form>
+
+                        {/* Search Suggestions */}
+                        {showSuggestions && term.length >= 2 && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
+                                {isLoadingSuggestions ? (
+                                    <div className="p-4 flex items-center justify-center text-gray-400">
+                                        <div className="w-5 h-5 border-2 border-clay-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+                                        <span className="text-xs font-medium">Looking for matches...</span>
+                                    </div>
+                                ) : (suggestions.products.length > 0 || suggestions.artisans.length > 0) ? (
+                                    <div className="p-2 space-y-3">
+                                        {suggestions.products.length > 0 && (
+                                            <div>
+                                                <p className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Products</p>
+                                                {suggestions.products.map(p => (
+                                                    <Link key={p.id} href={route('product.show', p.slug)} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group">
+                                                        <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                                                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-sm font-bold text-gray-900 truncate group-hover:text-clay-600 transition-colors">{p.name}</p>
+                                                            <p className="text-[10px] text-gray-500 font-medium truncate">{p.seller} • ₱{p.price}</p>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {suggestions.artisans.length > 0 && (
+                                            <div>
+                                                <p className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Artisans</p>
+                                                {suggestions.artisans.map(a => (
+                                                    <Link key={a.id} href={route('shop.seller', a.slug)} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group">
+                                                        <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-100">
+                                                            <img src={a.avatar} alt={a.name} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-sm font-bold text-gray-900 truncate group-hover:text-clay-600 transition-colors">{a.name}</p>
+                                                            <p className="text-[10px] text-gray-500 font-medium truncate">{a.location}</p>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="p-8 text-center">
+                                        <p className="text-sm font-bold text-gray-900">No results found</p>
+                                        <p className="text-xs text-gray-500 mt-1">Try a different keyword</p>
+                                    </div>
+                                )}
+                                <div className="bg-gray-50 px-4 py-2 border-t border-gray-100 flex justify-between items-center">
+                                    <span className="text-[10px] text-gray-400 font-medium">Press ENTER to see all results</span>
+                                    <Link href={route('shop.index', { search: term })} className="text-[10px] font-bold text-clay-600 hover:underline">View Shop</Link>
+                                </div>
+                            </div>
+                        )}
                     </div>
+
 
                     {/* ACTIONS */}
                     <div className="order-2 ml-auto flex items-center gap-1.5 sm:gap-3 md:order-3 md:ml-0 md:gap-4 flex-shrink-0">
