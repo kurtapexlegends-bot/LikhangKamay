@@ -33,6 +33,7 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
 
         $query = Product::where('user_id', $seller->id)
@@ -152,6 +153,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User|null $seller */
         $seller = $request->user()->getEffectiveSeller();
         
         if (!$seller || !$seller->isApproved()) {
@@ -190,6 +192,7 @@ class ProductController extends Controller
             ...$this->threeDModelAssetRules(),
         ]);
 
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $activationReadiness = $this->evaluateActivationReadiness(
             $request->hasFile('cover_photo'),
@@ -325,6 +328,7 @@ class ProductController extends Controller
       public function update(Request $request, $id)
       {
           $sellerId = $this->sellerOwnerId();
+          /** @var \App\Models\Product $product */
           $product = Product::where('user_id', $sellerId)->findOrFail($id);
           $before = [
               'name' => $product->name,
@@ -357,6 +361,7 @@ class ProductController extends Controller
             ...$this->threeDModelAssetRules(),
         ]);
 
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $existingModelPath = $product->model_3d_path;
         $retainedGallery = $request->input('retained_gallery', []);
@@ -547,6 +552,7 @@ class ProductController extends Controller
             'status' => ['required', \Illuminate\Validation\Rule::in(['Active', 'Draft', 'Archived'])],
         ]);
 
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $selectedIds = collect($validated['ids'])->map(fn ($id) => (int) $id)->unique()->values();
 
@@ -597,6 +603,7 @@ class ProductController extends Controller
             $skippedForLimit = 0;
 
             foreach ($selectedIds as $selectedId) {
+                /** @var \App\Models\Product|null $product */
                 $product = $products->firstWhere('id', $selectedId);
                 if (!$product || $product->status === 'Active') continue;
 
@@ -652,7 +659,8 @@ class ProductController extends Controller
     public function activate(string|int $id)
       {
           $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
-          $seller = $this->sellerOwner();
+          /** @var \App\Models\User $seller */
+        $seller = $this->sellerOwner();
         $activationReadiness = $this->evaluateActivationReadiness(
             filled($product->cover_photo_path),
             count($product->gallery_paths ?? []),
@@ -1104,6 +1112,7 @@ class ProductController extends Controller
 
     public function exportCsv()
     {
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $products = Product::where('user_id', $seller->id)->get();
 
@@ -1152,6 +1161,7 @@ class ProductController extends Controller
         $data = array_map('str_getcsv', file($path));
         $header = array_shift($data);
 
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $count = 0;
         $errors = [];

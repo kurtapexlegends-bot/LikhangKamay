@@ -19,6 +19,45 @@ use Illuminate\Support\Facades\Schema;
 use App\Traits\Searchable;
 use App\Traits\HasTransformableImages;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string|null $first_name
+ * @property string|null $last_name
+ * @property string $email
+ * @property string $password
+ * @property string $role
+ * @property int|null $seller_owner_id
+ * @property string|null $shop_name
+ * @property string|null $bio
+ * @property string|null $avatar
+ * @property string|null $phone_number
+ * @property string|null $street_address
+ * @property string|null $city
+ * @property string|null $barangay
+ * @property string|null $region
+ * @property string|null $zip_code
+ * @property string|null $business_permit
+ * @property string|null $dti_registration
+ * @property string|null $valid_id
+ * @property string|null $tin_id
+ * @property string|null $artisan_status
+ * @property string|null $artisan_rejection_reason
+ * @property string|null $premium_tier
+ * @property string|null $payout_method
+ * @property string|null $payout_account_name
+ * @property string|null $payout_account_number
+ * @property \Illuminate\Support\Carbon|null $setup_completed_at
+ * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property bool $artisan_welcomed
+ * @property array|null $staff_module_permissions
+ * @property bool $must_change_password
+ * @property \Illuminate\Support\Carbon|null $staff_plan_suspended_at
+ * @property array|null $document_flags
+ * @property-read string|null $avatar_url
+ * @property-read \App\Models\User|null $sellerOwner
+ */
 class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {
     use HasFactory, Notifiable, HasTransformableImages, Searchable;
@@ -862,6 +901,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public function getPreferredCourierPickupAddress(): ?string
     {
+        /** @var \App\Models\UserAddress|null $defaultAddress */
         $defaultAddress = $this->getDefaultAddress();
         $address = trim((string) ($defaultAddress?->full_address ?? ''));
 
@@ -895,6 +935,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function getCourierPickupAddressCandidates(): array
     {
+        /** @var \App\Models\UserAddress|null $defaultAddress */
         $defaultAddress = $this->getDefaultAddress();
         $candidates = [];
         /** @var array<string, bool> $seen */

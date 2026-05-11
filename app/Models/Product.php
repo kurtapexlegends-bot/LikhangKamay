@@ -9,6 +9,38 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\Searchable;
 use App\Traits\HasTransformableImages;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string $sku
+ * @property string $name
+ * @property string|null $description
+ * @property string $category
+ * @property string $status
+ * @property string|null $clay_type
+ * @property string|null $glaze_type
+ * @property string|null $firing_method
+ * @property bool $food_safe
+ * @property array|null $colors
+ * @property float|null $height
+ * @property float|null $width
+ * @property float|null $weight
+ * @property float $price
+ * @property float|null $cost_price
+ * @property int $stock
+ * @property int|null $lead_time
+ * @property int $sold
+ * @property string|null $cover_photo_path
+ * @property array|null $gallery_paths
+ * @property string|null $model_3d_path
+ * @property string $slug
+ * @property bool $track_as_supply
+ * @property string|null $production_method
+ * @property-read string $img
+ * @property-read bool $has3D
+ * @property-read float $rating
+ * @property-read int $reviews_count
+ */
 class Product extends Model
 {
     use HasFactory, SoftDeletes, HasTransformableImages, Searchable;

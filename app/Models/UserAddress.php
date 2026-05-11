@@ -5,6 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string|null $label
+ * @property string $address_type
+ * @property string $recipient_name
+ * @property string $phone_number
+ * @property string $street_address
+ * @property string $region
+ * @property string $city
+ * @property string $barangay
+ * @property string|null $postal_code
+ * @property string|null $full_address
+ * @property bool $is_default
+ */
 class UserAddress extends Model
 {
     use HasFactory;

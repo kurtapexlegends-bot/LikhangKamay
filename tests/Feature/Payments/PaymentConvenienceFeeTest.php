@@ -15,7 +15,9 @@ class PaymentConvenienceFeeTest extends TestCase
 
     public function test_online_payment_session_includes_convenience_fee_line_item(): void
     {
+        /** @var \App\Models\User $buyer */
         $buyer = User::factory()->create();
+        /** @var \App\Models\User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $order = Order::create([
@@ -74,7 +76,9 @@ class PaymentConvenienceFeeTest extends TestCase
 
     public function test_online_payment_route_rejects_cod_orders_even_if_accessed_directly(): void
     {
+        /** @var \App\Models\User $buyer */
         $buyer = User::factory()->create();
+        /** @var \App\Models\User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $order = Order::create([
@@ -105,7 +109,9 @@ class PaymentConvenienceFeeTest extends TestCase
 
     public function test_success_callback_does_not_mark_non_payable_order_paid(): void
     {
+        /** @var \App\Models\User $buyer */
         $buyer = User::factory()->create();
+        /** @var \App\Models\User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $order = Order::create([
@@ -163,7 +169,9 @@ class PaymentConvenienceFeeTest extends TestCase
 
     public function test_guest_success_callback_can_finalize_a_paid_session_and_redirect_to_login(): void
     {
+        /** @var \App\Models\User $buyer */
         $buyer = User::factory()->create();
+        /** @var \App\Models\User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $order = Order::create([
@@ -220,7 +228,9 @@ class PaymentConvenienceFeeTest extends TestCase
 
     public function test_guest_success_callback_with_reference_mismatch_redirects_cleanly_to_login(): void
     {
+        /** @var \App\Models\User $buyer */
         $buyer = User::factory()->create();
+        /** @var \App\Models\User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $order = Order::create([
@@ -269,7 +279,9 @@ class PaymentConvenienceFeeTest extends TestCase
 
     public function test_my_orders_reconciles_a_paid_online_session_without_success_callback(): void
     {
+        /** @var \App\Models\User $buyer */
         $buyer = User::factory()->create();
+        /** @var \App\Models\User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $order = Order::create([
