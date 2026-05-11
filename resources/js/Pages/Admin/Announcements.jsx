@@ -119,6 +119,7 @@ export default function Announcements({ announcements }) {
     const handleDelete = (id) => {
         if (confirm("Are you sure you want to delete this draft?")) {
             router.delete(route('admin.announcements.destroy', id), {
+                only: ['announcements', 'flash'],
                 onSuccess: () => addToast('Draft deleted.', 'success')
             });
         }
@@ -126,6 +127,7 @@ export default function Announcements({ announcements }) {
 
     const handleBroadcast = (id) => {
         router.post(route('admin.announcements.broadcast', id), {}, {
+            only: ['announcements', 'globalAnnouncement', 'flash'],
             preserveScroll: true,
             onSuccess: () => addToast('Broadcast is now live!', 'success')
         });
@@ -133,6 +135,7 @@ export default function Announcements({ announcements }) {
 
     const handleStop = (id) => {
         router.post(route('admin.announcements.stop', id), {}, {
+            only: ['announcements', 'globalAnnouncement', 'flash'],
             preserveScroll: true,
             onSuccess: () => addToast('Broadcast stopped.', 'success')
         });

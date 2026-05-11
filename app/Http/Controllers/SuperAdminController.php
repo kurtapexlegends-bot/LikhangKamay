@@ -15,6 +15,7 @@ use App\Mail\ArtisanApproved;
 use App\Mail\ArtisanRejected;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
@@ -481,8 +482,18 @@ class SuperAdminController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        if ($request->boolean('is_active')) {
+            SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
+            $validated['starts_at'] = now();
+            $validated['broadcast_version'] = 1;
+        }
+
         $validated['created_by'] = Auth::id();
         SystemAnnouncement::create($validated);
+
+        if ($request->boolean('is_active')) {
+            $this->clearAnnouncementCache();
+        }
 
         return back()->with('success', 'Announcement created.');
     }
@@ -499,7 +510,14 @@ class SuperAdminController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        if ($request->boolean('is_active') && !$announcement->is_active) {
+            SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
+            $validated['starts_at'] = now();
+            $validated['broadcast_version'] = ($announcement->broadcast_version ?? 0) + 1;
+        }
+
         $announcement->update($validated);
+        $this->clearAnnouncementCache();
 
         return back()->with('success', 'Announcement updated.');
     }
@@ -508,19 +526,26 @@ class SuperAdminController extends Controller
     {
         $announcement = SystemAnnouncement::findOrFail($id);
         
+        // EXCLUSIVE BROADCAST: Deactivate all currently active announcements 
+        // to prevent overlapping or clashing global states.
+        SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
+        
         $announcement->update([
             'is_active' => true,
             'broadcast_version' => ($announcement->broadcast_version ?? 0) + 1,
             'starts_at' => now(),
         ]);
 
-        return back()->with('success', 'Announcement broadcasted successfully!');
+        $this->clearAnnouncementCache();
+
+        return back()->with('success', 'Announcement broadcasted successfully! All other active announcements have been paused.');
     }
 
     public function stopAnnouncement(int|string $id)
     {
         $announcement = SystemAnnouncement::findOrFail($id);
         $announcement->update(['is_active' => false]);
+        $this->clearAnnouncementCache();
 
         return back()->with('success', 'Announcement stopped.');
     }
@@ -529,8 +554,16 @@ class SuperAdminController extends Controller
     {
         $announcement = SystemAnnouncement::findOrFail($id);
         $announcement->delete();
+        $this->clearAnnouncementCache();
 
         return back()->with('success', 'Announcement deleted.');
+    }
+
+    private function clearAnnouncementCache()
+    {
+        foreach (['guest', 'artisan', 'staff', 'buyer', 'super_admin'] as $role) {
+            Cache::forget('global_announcement_' . $role);
+        }
     }
 
     public function viewArtisan(int|string $id)
