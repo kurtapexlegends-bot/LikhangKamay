@@ -4,7 +4,7 @@ use App\Http\Controllers\HRController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\PaymentController; // Added
 use App\Http\Controllers\LalamoveDeliveryController;
-use App\Http\Controllers\LalamoveWebhookController;
+use App\Http\Controllers\Webhooks\LalamoveWebhookController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController; // <--- Make sure this is imported
 
@@ -55,7 +55,7 @@ Route::get('/artisan/register', function () {
 
 // Legal Pages
 // Webhooks (Exempt from CSRF in bootstrap/app.php)
-Route::post('/webhooks/qstash-handler', [\App\Http\Controllers\QStashWebhookController::class, 'handle']);
+Route::post('/webhooks/qstash-handler', [\App\Http\Controllers\Webhooks\QStashWebhookController::class, 'handle']);
 
 Route::get('/terms', function () {
     return Inertia::render('Legal/TermsOfService');
@@ -294,7 +294,7 @@ Route::get('/payment/cancel', [PaymentController::class, 'cancel'])->name('payme
 Route::get('/subscription/payment/success', [SubscriptionController::class, 'success'])->middleware('signed')->name('seller.subscription.payment.success');
 Route::get('/subscription/payment/cancel', [SubscriptionController::class, 'cancel'])->middleware('signed')->name('seller.subscription.payment.cancel');
 Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
-Route::post('/webhooks/paymongo', [\App\Http\Controllers\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
+Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhooks\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
 
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {
