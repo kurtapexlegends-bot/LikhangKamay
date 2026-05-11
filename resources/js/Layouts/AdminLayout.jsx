@@ -106,14 +106,14 @@ export default function AdminLayout({ title, children }) {
             `}>
                 {/* Brand Header */}
                 <div className="px-5 py-3 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
+                    <Link href={route('admin.dashboard')} className="flex items-center gap-2.5 group">
                         <img
-                            src="/images/logo.png"
-                            alt="LikhangKamay"
-                            className="w-7 h-7 object-contain"
+                            src={usePage().props.platform.logo}
+                            alt={usePage().props.platform.name}
+                            className="w-7 h-7 object-contain transition-transform group-hover:scale-110"
                         />
-                        <span className="font-serif text-lg font-bold text-gray-900 tracking-tight">LikhangKamay</span>
-                    </div>
+                        <span className="font-serif text-lg font-bold text-gray-900 tracking-tight">{usePage().props.platform.name}</span>
+                    </Link>
 
                     {/* Mobile Close Button */}
                     <button

@@ -32,6 +32,9 @@ use App\Http\Controllers\TeamMessageController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\Admin\TaxonomyController;
+use App\Http\Controllers\Admin\ModerationController;
+use App\Http\Controllers\Admin\PlatformDiagnosticsController;
 use App\Models\Product;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -302,10 +305,10 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
-    Route::get('/sla', [SuperAdminController::class, 'slaMonitoring'])->name('admin.sla');
-    Route::get('/review-moderation', [SuperAdminController::class, 'reviewModeration'])->name('admin.review-moderation');
-    Route::patch('/review-moderation/{reviewDispute}', [SuperAdminController::class, 'updateReviewModeration'])->name('admin.review-moderation.update');
-    Route::delete('/review-moderation/{reviewDispute}', [SuperAdminController::class, 'destroyReviewModeration'])->name('admin.review-moderation.destroy');
+    Route::get('/sla', [PlatformDiagnosticsController::class, 'sla'])->name('admin.sla');
+    Route::get('/review-moderation', [ModerationController::class, 'reviewIndex'])->name('admin.review-moderation');
+    Route::patch('/review-moderation/{reviewDispute}', [ModerationController::class, 'updateReview'])->name('admin.review-moderation.update');
+    Route::delete('/review-moderation/{reviewDispute}', [ModerationController::class, 'destroyReview'])->name('admin.review-moderation.destroy');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
     Route::get('/pending-artisans/{id}', [SuperAdminController::class, 'viewArtisan'])->name('admin.artisan.view');
     Route::post('/pending-artisans/bulk-approve', [SuperAdminController::class, 'bulkApproveArtisans'])->name('admin.artisan.bulk-approve');
@@ -314,7 +317,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/pending-artisans/{id}/reject', [SuperAdminController::class, 'rejectArtisan'])->name('admin.artisan.reject');
     
     // Real-time Validation
-    Route::post('/taxonomy/check-name', [SuperAdminController::class, 'checkCategoryName'])->name('admin.taxonomy.check-name');
+    Route::post('/taxonomy/check-name', [TaxonomyController::class, 'checkCategoryName'])->name('admin.taxonomy.check-name');
     Route::post('/artisan/check-slug', [SuperAdminController::class, 'checkArtisanSlug'])->name('admin.artisan.check-slug');
 
 
@@ -333,29 +336,29 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/announcements/{announcement}/stop', [SuperAdminController::class, 'stopAnnouncement'])->name('admin.announcements.stop');
 
     // Moderation Queue
-    Route::get('/moderation-queue', [SuperAdminController::class, 'moderationQueue'])->name('admin.moderation');
-    Route::post('/moderation-queue/{id}/resolve', [SuperAdminController::class, 'resolveFlag'])->name('admin.moderation.resolve');
-    Route::post('/moderation-queue/{id}/takedown', [SuperAdminController::class, 'takedownProduct'])->name('admin.moderation.takedown');
-    Route::post('/moderation-queue/{id}/suspend', [SuperAdminController::class, 'suspendUser'])->name('admin.moderation.suspend');
-    Route::post('/moderation-queue/{id}/dismiss', [SuperAdminController::class, 'dismissFlag'])->name('admin.moderation.dismiss');
+    Route::get('/moderation-queue', [ModerationController::class, 'queue'])->name('admin.moderation');
+    Route::post('/moderation-queue/{id}/resolve', [ModerationController::class, 'resolveFlag'])->name('admin.moderation.resolve');
+    Route::post('/moderation-queue/{id}/takedown', [ModerationController::class, 'takedownProduct'])->name('admin.moderation.takedown');
+    Route::post('/moderation-queue/{id}/suspend', [ModerationController::class, 'suspendUser'])->name('admin.moderation.suspend');
+    Route::post('/moderation-queue/{id}/dismiss', [ModerationController::class, 'dismissFlag'])->name('admin.moderation.dismiss');
 
     // System Diagnostics
-    Route::get('/diagnostics', [SuperAdminController::class, 'diagnostics'])->middleware('throttle:admin.heavy')->name('admin.diagnostics');
-    Route::post('/diagnostics/cache/purge', [SuperAdminController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
+    Route::get('/diagnostics', [PlatformDiagnosticsController::class, 'index'])->middleware('throttle:admin.heavy')->name('admin.diagnostics');
+    Route::post('/diagnostics/cache/purge', [PlatformDiagnosticsController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
 
     // Restoration Center (Trash)
-    Route::get('/trash', [SuperAdminController::class, 'trash'])->name('admin.trash');
-    Route::post('/trash/restore', [SuperAdminController::class, 'restoreItem'])->name('admin.trash.restore');
-    Route::post('/trash/permanent-delete', [SuperAdminController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
+    Route::get('/trash', [PlatformDiagnosticsController::class, 'trash'])->name('admin.trash');
+    Route::post('/trash/restore', [PlatformDiagnosticsController::class, 'restoreItem'])->name('admin.trash.restore');
+    Route::post('/trash/permanent-delete', [PlatformDiagnosticsController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
     
     // Support Impersonation
     Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
 
     // Global Taxonomy Engine
-    Route::get('/taxonomy', [SuperAdminController::class, 'taxonomyIndex'])->name('admin.taxonomy.index');
-    Route::post('/taxonomy', [SuperAdminController::class, 'taxonomyStore'])->name('admin.taxonomy.store');
-    Route::patch('/taxonomy/{category}', [SuperAdminController::class, 'taxonomyUpdate'])->name('admin.taxonomy.update');
-    Route::delete('/taxonomy/{category}', [SuperAdminController::class, 'taxonomyDestroy'])->name('admin.taxonomy.destroy');
+    Route::get('/taxonomy', [TaxonomyController::class, 'index'])->name('admin.taxonomy.index');
+    Route::post('/taxonomy', [TaxonomyController::class, 'store'])->name('admin.taxonomy.store');
+    Route::patch('/taxonomy/{category}', [TaxonomyController::class, 'update'])->name('admin.taxonomy.update');
+    Route::delete('/taxonomy/{category}', [TaxonomyController::class, 'destroy'])->name('admin.taxonomy.destroy');
 });
 
 // Stop Impersonation Route (Protected by standard auth)

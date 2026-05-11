@@ -12,7 +12,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton('system.settings', function ($app) {
+            return new \App\Services\SystemSettingsService();
+        });
     }
 
     /**

@@ -22,16 +22,58 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        // Calculate total quantity from the Session Cart
-        $cart = Session::get('cart', []);
-        $cartCount = (int) array_sum(array_column($cart, 'qty'));
-
         $user = $request->user();
 
-        // 1. CACHE THE GLOBAL ANNOUNCEMENT (Expensive conditional query)
-        $globalAnnouncement = null;
+        return [
+            ...parent::share($request),
+            'auth' => [
+                'user' => $user ? $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'artisan_status']) : null,
+                'isStaff' => $user?->isStaff() ?? false,
+                'effectiveSellerId' => $user?->getEffectiveSellerId(),
+                'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,
+            ],
+            
+            // Lazy load subscription and sidebar to reduce DB overhead
+            'sellerSubscription' => Inertia::lazy(fn () => $user ? app(SellerEntitlementService::class)->getSubscriptionPayload($user) : null),
+            'sellerSidebar' => Inertia::lazy(fn () => $user ? $user->getSellerSidebarEntitlements() : null),
+            'attendance' => Inertia::lazy(fn () => ($user && $user->isStaff()) ? app(StaffAttendanceService::class)->buildLogoutContext($user) : null),
+            
+            // Cart count from session - lightweight but still good to keep accessible
+            'cartCount' => fn () => (int) array_sum(array_column(Session::get('cart', []), 'qty')),
+            
+            // Global Announcement with Cache
+            'globalAnnouncement' => Inertia::lazy(fn () => $this->getGlobalAnnouncement($user)),
+            
+            'isImpersonating' => fn () => Session::has('impersonator_id'),
+            
+            // LAZY LOADED: Notifications and Admin counts (reduces TTFB on every route)
+            'notifications' => Inertia::lazy(fn () => $user ? $user->notifications()->take(10)->get()->map(fn ($n) => NotificationPresenter::present($n, $user)) : []),
+            'unreadNotificationCount' => Inertia::lazy(fn () => $user ? $user->unreadNotifications()->count() : 0),
+            'unreadMessageCount' => Inertia::lazy(fn () => $user ? \App\Models\Message::where('receiver_id', $user->id)->where('is_read', false)->count() : 0),
+            'pendingArtisanCount' => Inertia::lazy(fn () => $user && $user->role === 'super_admin' 
+                ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
+                : 0),
+            
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
+            
+            // Platform branding via Settings Facade (Cached)
+            'platform' => [
+                'name' => \App\Facades\Settings::get('platform_name', 'LikhangKamay'),
+                'logo' => \App\Facades\Settings::get('platform_logo', '/images/logo.png'),
+            ],
+        ];
+    }
+
+    /**
+     * Helper to resolve global announcement with caching
+     */
+    private function getGlobalAnnouncement($user)
+    {
         try {
-            $globalAnnouncement = Cache::remember('global_announcement_' . ($user?->role ?? 'guest'), 600, function () use ($user) {
+            return Cache::remember('global_announcement_' . ($user?->role ?? 'guest'), 600, function () use ($user) {
                 $announcementQuery = \App\Models\SystemAnnouncement::where('is_active', true)
                     ->where(function ($query) {
                         $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
@@ -60,57 +102,8 @@ class HandleInertiaRequests extends Middleware
                 return $announcementQuery->latest()->first();
             });
         } catch (\Exception $e) {
-            if (config('app.debug')) {
-                report($e);
-            }
+            report($e);
+            return null;
         }
-
-        // 2. PREPARE HEAVY PROPS AS LAZY (Only loaded when explicitly requested by Inertia)
-        $sellerSubscription = null;
-        $sellerSidebar = null;
-        $attendance = null;
-
-        if ($user) {
-            try {
-                $sellerSubscription = app(SellerEntitlementService::class)->getSubscriptionPayload($user);
-                $sellerSidebar = $user->getSellerSidebarEntitlements();
-                if ($user->isStaff()) {
-                    $attendance = app(StaffAttendanceService::class)->buildLogoutContext($user);
-                }
-            } catch (\Exception $e) {
-                // Fallback for DB connection issues
-            }
-        }
-
-        return [
-            ...parent::share($request),
-            'auth' => [
-                'user' => $user ? $user->only(['id', 'name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar_url', 'artisan_status']) : null,
-                'isStaff' => $user?->isStaff() ?? false,
-                'effectiveSellerId' => $user?->getEffectiveSellerId(),
-                'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,
-            ],
-            'sellerSubscription' => $sellerSubscription,
-            'sellerSidebar' => $sellerSidebar,
-            'attendance' => $attendance,
-            
-            // Global Variables
-            'cartCount' => $cartCount,
-            'globalAnnouncement' => $globalAnnouncement,
-            'isImpersonating' => Session::has('impersonator_id'),
-            
-            // LAZY LOADED: Notifications and Admin counts (reduces TTFB on every route)
-            'notifications' => Inertia::lazy(fn () => $user ? $user->notifications()->take(10)->get()->map(fn ($n) => NotificationPresenter::present($n, $user)) : []),
-            'unreadNotificationCount' => Inertia::lazy(fn () => $user ? $user->unreadNotifications()->count() : 0),
-            'unreadMessageCount' => Inertia::lazy(fn () => $user ? \App\Models\Message::where('receiver_id', $user->id)->where('is_read', false)->count() : 0),
-            'pendingArtisanCount' => Inertia::lazy(fn () => $user && $user->role === 'super_admin' 
-                ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
-                : 0),
-            
-            'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
-            ],
-        ];
     }
 }

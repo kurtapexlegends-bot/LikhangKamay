@@ -108,9 +108,9 @@ class ProfileController extends Controller
                 $path = $request->file('avatar')->store('avatars', 'public');
                 $data['avatar'] = $path;
             } catch (\Exception $e) {
-                Log::error('Profile avatar upload failed (Vercel disk restriction?): ' . $e->getMessage());
+                \Illuminate\Support\Facades\Log::error('Profile avatar upload failed: ' . $e->getMessage());
                 // Don't crash the request, just notify that the image failed
-                Session::flash('error', 'Profile details updated, but your avatar could not be saved due to storage restrictions.');
+                \Illuminate\Support\Facades\Session::flash('error', 'Profile details updated, but your avatar could not be saved due to storage restrictions.');
             }
         }
 
@@ -122,6 +122,19 @@ class ProfileController extends Controller
         }
 
         $user->save();
+
+        // If Super Admin, handle platform branding updates
+        if ($user->role === 'super_admin') {
+            if ($request->has('platform_name')) {
+                \App\Facades\Settings::set('platform_name', $request->platform_name);
+            }
+
+            if ($request->hasFile('platform_logo')) {
+                $logoPath = $request->file('platform_logo')->store('branding', 'public');
+                $logoUrl = '/storage/' . $logoPath;
+                \App\Facades\Settings::set('platform_logo', $logoUrl);
+            }
+        }
 
         if ($emailChanged) {
             try {

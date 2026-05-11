@@ -25,6 +25,10 @@ export default function UpdateProfileInformation({
             email: user.email,
             avatar: null,
             preview_url: null,
+            // Platform Branding (Only for Super Admin)
+            platform_name: usePage().props.platform?.name || '',
+            platform_logo: null,
+            platform_logo_preview: null,
         });
 
     const submit = (e) => {
@@ -42,8 +46,11 @@ export default function UpdateProfileInformation({
     };
 
     useEffect(() => {
-        return () => revokePreview(data.preview_url);
-    }, [data.preview_url]);
+        return () => {
+            revokePreview(data.preview_url);
+            revokePreview(data.platform_logo_preview);
+        };
+    }, [data.preview_url, data.platform_logo_preview]);
 
     return (
         <section className={className}>
@@ -189,6 +196,85 @@ export default function UpdateProfileInformation({
                     </Transition>
                 </div>
             </form>
+
+            {user.role === 'super_admin' && (
+                <div className="mt-12 pt-12 border-t border-stone-200">
+                    <header className="mb-6">
+                        <h3 className="text-lg font-bold text-stone-900">Platform Branding</h3>
+                        <p className="mt-1 text-sm text-stone-500">
+                            Update the global platform name and logo displayed across the system.
+                        </p>
+                    </header>
+
+                    <div className="space-y-6">
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-stone-100">
+                            <div className="relative group">
+                                <div className="w-24 h-24 rounded-xl bg-stone-100 overflow-hidden border border-stone-200 flex items-center justify-center">
+                                    {data.platform_logo_preview || usePage().props.platform.logo ? (
+                                        <img 
+                                            src={data.platform_logo_preview || usePage().props.platform.logo} 
+                                            alt="Platform Logo" 
+                                            className="w-full h-full object-contain p-2"
+                                        />
+                                    ) : (
+                                        <span className="text-3xl font-bold text-stone-400">
+                                            L
+                                        </span>
+                                    )}
+                                </div>
+                                <label 
+                                    htmlFor="platform_logo" 
+                                    className="absolute inset-0 bg-stone-900/40 flex items-center justify-center rounded-xl opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity duration-200"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                        <circle cx="12" cy="13" r="4"></circle>
+                                    </svg>
+                                </label>
+                                <input id="platform_logo" type="file" className="hidden" accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            setData('platform_logo', file);
+                                            revokePreview(data.platform_logo_preview);
+                                            setData('platform_logo_preview', URL.createObjectURL(file));
+                                        }
+                                    }}
+                                />
+                            </div>
+
+                            <div className="flex-1 text-center sm:text-left">
+                                <h4 className="text-sm font-bold text-stone-900">Platform Logo</h4>
+                                <p className="text-xs text-stone-500 mb-3">This logo will appear in the sidebar and emails.</p>
+                                
+                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                                    <label htmlFor="platform_logo" className="px-3 py-1.5 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-50 transition-colors cursor-pointer">
+                                        Change Logo
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="platform_name" value="Platform Name" className="text-stone-700 font-bold" />
+                            <TextInput
+                                id="platform_name"
+                                className="mt-1 block w-full border-stone-200 bg-stone-50/30"
+                                value={data.platform_name}
+                                onChange={(e) => setData('platform_name', e.target.value)}
+                                required
+                            />
+                            <InputError className="mt-2" message={errors.platform_name} />
+                        </div>
+                        
+                        <div className="flex items-center gap-4 pt-4">
+                            <PrimaryButton onClick={submit} disabled={processing}>
+                                {processing ? 'Updating...' : 'Update Branding'}
+                            </PrimaryButton>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

@@ -184,7 +184,9 @@ class AuthenticationTest extends TestCase
             'remember' => 'on',
         ]);
 
-        $response->assertCookie(\Illuminate\Support\Facades\Auth::guard()->getRecallerName());
+        /** @var \Illuminate\Auth\SessionGuard $guard */
+        $guard = \Illuminate\Support\Facades\Auth::guard();
+        $response->assertCookie($guard->getRecallerName());
         $this->assertAuthenticatedAs($user);
     }
 }

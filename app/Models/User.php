@@ -257,6 +257,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->role === 'staff';
     }
 
+    public function isBuyer(): bool
+    {
+        return $this->role === 'buyer' || $this->role === null;
+    }
+
     public function isSellerOwner(): bool
     {
         return $this->isArtisan();
