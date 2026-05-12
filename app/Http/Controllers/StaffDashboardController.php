@@ -9,6 +9,7 @@ use App\Models\Payroll;
 use App\Models\Review;
 use App\Models\StockRequest;
 use App\Models\TeamMessage;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

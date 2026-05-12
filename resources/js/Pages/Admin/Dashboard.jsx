@@ -71,7 +71,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
     const pendingCount = typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans;
 
     return (
-        <AdminLayout title="Overview">
+        <>
             <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
                 <StatCard
                     title="Artisans"
@@ -246,7 +246,9 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
             <div className="lg:col-span-1 h-[500px]">
                 <ActivityTicker activities={activities} />
             </div>
-            </div>
-        </AdminLayout>
+        </div>
+    </>
     );
 }
+
+AdminDashboard.layout = page => <AdminLayout title="Overview">{page}</AdminLayout>;

@@ -206,7 +206,13 @@ class PlatformDiagnosticsController extends Controller
             ->values();
 
         return Inertia::render('Admin/Trash', [
-            'trashItems' => $trashQueue,
+            'trashQueue' => $trashQueue,
+            'stats' => [
+                'totalItems' => $trashQueue->count(),
+                'products' => count($deletedProducts),
+                'categories' => count($deletedCategories),
+                'orders' => count($deletedOrders),
+            ]
         ]);
     }
 

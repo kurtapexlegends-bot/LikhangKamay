@@ -27,84 +27,81 @@ class ProcurementController extends Controller
         $sellerId = $this->sellerOwnerId();
 
         $supplies = Supply::forUser($sellerId)
-            ->with('product') // Phase 1: Eager load product for images
+            ->with('product')
             ->orderBy('category')
             ->orderBy('name')
             ->get();
 
-        // Get counts for dashboard
-        $totalItems = $supplies->count();
-        $lowStockItems = $supplies->filter(fn(Supply $s) => $s->isLowStock())->count();
-        $totalValue = $supplies->sum(fn($s) => $s->quantity * ($s->unit_cost ?? 0));
-        
-        // Get unique categories
         $categories = $supplies->pluck('category')->unique()->values();
 
-        // Get Active Requests (Pending, Accounting Approved)
         $requests = StockRequest::with('supply')
             ->where('user_id', $sellerId)
             ->whereNotIn('status', [StockRequest::STATUS_COMPLETED, StockRequest::STATUS_REJECTED])
             ->latest()
             ->get();
 
-        // --- FINANCIAL DATA AGGREGATION ---
-        $userId = $sellerId;
+        $finances = $this->getProcurementFinances($sellerId, $actor);
+
+        return Inertia::render('Seller/Procurement/Index', [
+            'supplies' => $supplies,
+            'requests' => $requests,
+            'finances' => $finances,
+            'totalItems' => $supplies->count(),
+            'lowStockItems' => $supplies->filter(fn(Supply $s) => $s->isLowStock())->count(),
+            'totalValue' => $supplies->sum(fn($s) => $s->quantity * ($s->unit_cost ?? 0)),
+            'categories' => $categories,
+            'initTab' => request('tab', 'inventory'),
+        ]);
+    }
+
+    private function getProcurementFinances(int $sellerId, $actor): array
+    {
         $currentMonth = Carbon::now()->format('F Y');
         $canViewPayrollData = $actor->canViewSellerPayrollData();
 
-        // 1. Revenue
-        $revenue = Order::where('artisan_id', $userId)
+        $revenue = Order::where('artisan_id', $sellerId)
             ->where('status', 'Completed')
             ->sum('total_amount');
 
-        // 2. Expenses (Payroll History)
         $payrollExpenses = $canViewPayrollData
-            ? Payroll::where('user_id', $userId)->where('status', 'Paid')->sum('total_amount')
+            ? Payroll::where('user_id', $sellerId)->where('status', 'Paid')->sum('total_amount')
             : 0;
 
-        // 3. Pending Payroll
         $payrollExists = $canViewPayrollData
-            ? Payroll::where('user_id', $userId)
+            ? Payroll::where('user_id', $sellerId)
                 ->where('month', $currentMonth)
                 ->exists()
             : false;
 
         $monthlyPayroll = $canViewPayrollData
-            ? Employee::where('user_id', $userId)
+            ? Employee::where('user_id', $sellerId)
                 ->where('status', 'Active')
                 ->sum('salary')
             : 0;
 
-        // 4. Transactions
         $recentPayrolls = $canViewPayrollData
-            ? Payroll::where('user_id', $userId)
+            ? Payroll::where('user_id', $sellerId)
                 ->latest()
                 ->take(10)
                 ->get()
-                ->map(function ($p) {
-                    return [
-                        'id' => $p->id,
-                        'description' => 'Staff Payroll - ' . $p->month,
-                        'category' => 'Payroll',
-                        'date' => $p->created_at->format('M d, Y'),
-                        'amount' => $p->total_amount,
-                        'type' => 'expense'
-                    ];
-                })
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'description' => 'Staff Payroll - ' . $p->month,
+                    'category' => 'Payroll',
+                    'date' => $p->created_at->format('M d, Y'),
+                    'amount' => $p->total_amount,
+                    'type' => 'expense'
+                ])
             : collect();
 
-        // 5. Stock Requests (Pending Accounting Approval)
-        // Ensure we fetch requests that are SPECIFICALLY pending accounting approval or generally pending if that's the initial state
         $pendingRequests = StockRequest::with('supply')
-            ->where('user_id', $userId)
+            ->where('user_id', $sellerId)
             ->where('status', 'pending') 
             ->latest()
             ->get();
 
-        // Add approved stock requests to total expenses
-        $stockExpenses = StockRequest::where('user_id', $userId)
+        $stockExpenses = StockRequest::where('user_id', $sellerId)
             ->whereIn('status', [
-
                 StockRequest::STATUS_ACCOUNTING_APPROVED,
                 StockRequest::STATUS_ORDERED,
                 StockRequest::STATUS_RECEIVED,
@@ -114,7 +111,7 @@ class ProcurementController extends Controller
 
         $expenses = $stockExpenses + $payrollExpenses;
 
-        $finances = [
+        return [
             'balance' => $revenue - $expenses,
             'revenue' => $revenue,
             'expenses' => $expenses,
@@ -125,17 +122,6 @@ class ProcurementController extends Controller
             'transactions' => $recentPayrolls->values()->all(),
             'requests' => $pendingRequests
         ];
-
-        return Inertia::render('Seller/Procurement/Index', [
-            'supplies' => $supplies,
-            'requests' => $requests,
-            'finances' => $finances, // Added
-            'totalItems' => $totalItems,
-            'lowStockItems' => $lowStockItems,
-            'totalValue' => $totalValue,
-            'categories' => $categories,
-            'initTab' => request('tab', 'inventory'), // Support deep linking
-        ]);
     }
 
     /**

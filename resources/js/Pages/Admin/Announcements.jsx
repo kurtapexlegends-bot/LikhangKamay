@@ -235,7 +235,7 @@ export default function Announcements({ announcements }) {
     };
 
     return (
-        <AdminLayout title="System Announcements">
+        <>
             <FloatingModuleActions actions={(
                 <button 
                     onClick={openCreateModal}
@@ -301,9 +301,11 @@ export default function Announcements({ announcements }) {
                     />
                 </Modal>
             )}
-        </AdminLayout>
+        </>
     );
 }
+
+Announcements.layout = page => <AdminLayout title="System Announcements">{page}</AdminLayout>;
 
 const ComposerContent = ({ formData, setFormData, handleSubmit, processing, editingId, onClose, isMobile }) => {
     return (

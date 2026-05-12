@@ -63,6 +63,23 @@ class HandleInertiaRequests extends Middleware
             'platform' => [
                 'name' => \App\Facades\Settings::get('platform_name', 'LikhangKamay'),
                 'logo' => \App\Facades\Settings::get('platform_logo', '/images/logo.png'),
+                'favicon' => \App\Facades\Settings::get('favicon', '/favicon.ico'),
+                'primaryColor' => \App\Facades\Settings::get('primary_color', '#8B4513'),
+                'seo' => \App\Facades\Settings::get('seo_metadata', [
+                    'title' => 'Likhang Kamay | Artisan Marketplace',
+                    'description' => 'A premium marketplace for Filipino artisans and handmade crafts.',
+                    'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
+                ]),
+                'contact' => \App\Facades\Settings::get('contact_info', [
+                    'email' => 'support@likhangkamay.app',
+                    'phone' => '',
+                    'address' => '',
+                ]),
+                'socials' => \App\Facades\Settings::get('social_links', [
+                    'facebook' => '',
+                    'instagram' => '',
+                    'twitter' => '',
+                ]),
             ],
         ];
     }

@@ -79,6 +79,7 @@ export default function AdminLayout({ title, children }) {
             title: 'Business Config',
             items: [
                 { name: 'Platform Revenue', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
+                { name: 'System Settings', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
             ]
         }
     ];
@@ -191,6 +192,7 @@ export default function AdminLayout({ title, children }) {
                                  title === 'Sponsorship Requests' ? 'Sponsorships' :
                                  title === 'System Announcements' ? 'Global Alerts' :
                                  title === 'Monetization' ? 'Platform Revenue' :
+                                 title === 'System Settings' ? 'System Settings' :
                                  title}
                             </h1>
                             
@@ -206,6 +208,7 @@ export default function AdminLayout({ title, children }) {
                                 {title === 'Moderation Queue' && "Review flagged products and user content"}
                                 {title === 'Diagnostics Command Center' && "Monitor system memory, cache, and heartbeats"}
                                 {title === 'Global Taxonomy Engine' && "Manage the global product category list"}
+                                {title === 'System Settings' && "Manage platform identity, SEO, and branding"}
                             </p>
                         </div>
                     </div>

@@ -44,7 +44,7 @@ const SLACard = ({ title, value, unit, subtitle, icon: Icon, compliance, color }
 
 export default function SLA({ metrics, staleQueue }) {
     return (
-        <AdminLayout title="SLA Monitoring">
+        <>
             <Head title="SLA Monitoring" />
 
             <div className="space-y-6">
@@ -74,6 +74,7 @@ export default function SLA({ metrics, staleQueue }) {
                         unit="Hrs"
                         subtitle="Avg. Time to Approved"
                         icon={Award}
+                        compliance={metrics.sponsorshipSLACompliance}
                         color="text-amber-600"
                     />
                     <SLACard 
@@ -207,6 +208,8 @@ export default function SLA({ metrics, staleQueue }) {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+SLA.layout = page => <AdminLayout title="SLA Monitoring">{page}</AdminLayout>;

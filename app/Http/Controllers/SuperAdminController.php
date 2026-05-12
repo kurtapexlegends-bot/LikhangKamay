@@ -457,9 +457,7 @@ class SuperAdminController extends Controller
      */
     public function insights()
     {
-        return Inertia::render('Admin/Insights', [
-            // Analytics data...
-        ]);
+        return Inertia::render('Admin/Insights', $this->analytics->getInsightsData());
     }
 
     /**

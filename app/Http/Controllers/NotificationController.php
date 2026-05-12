@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\NotificationPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
@@ -17,7 +18,7 @@ class NotificationController extends Controller
         $user = Auth::user();
         
         $notifications = $user->notifications()->take(30)->get()->map(
-            fn ($notification) => \App\Support\NotificationPresenter::present($notification, $user)
+            fn ($notification) => NotificationPresenter::present($notification, $user)
         );
         $unreadCount = $user->unreadNotifications()->count();
 
@@ -28,7 +29,7 @@ class NotificationController extends Controller
             ]);
         }
 
-        return \Inertia\Inertia::render('Buyer/Notifications', [
+        return Inertia::render('Buyer/Notifications', [
             'notifications' => $notifications,
             'unreadNotificationCount' => $unreadCount,
         ]);

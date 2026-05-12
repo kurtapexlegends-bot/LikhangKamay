@@ -549,7 +549,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer',
-            'status' => ['required', \Illuminate\Validation\Rule::in(['Active', 'Draft', 'Archived'])],
+            'status' => ['required', Rule::in(['Active', 'Draft', 'Archived'])],
         ]);
 
         /** @var \App\Models\User $seller */

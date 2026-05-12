@@ -1151,7 +1151,6 @@ class OrderController extends Controller
     public function myOrders(PayMongoService $payMongoService, OrderLogisticsService $orderLogisticsService)
     {
         $userId = Auth::id();
-
         $this->reconcilePendingOnlinePaymentsForUser(Auth::user(), $payMongoService);
 
         $ordersQuery = Order::where('user_id', $userId)
@@ -1162,99 +1161,106 @@ class OrderController extends Controller
         $orderLogisticsService->syncVisibleDeliveries($initialOrders->pluck('delivery')->filter());
 
         $rawOrders = (clone $ordersQuery)->get();
+        $reviewsByProduct = $this->getBuyerReviewsByProduct($userId, $rawOrders);
 
-        $productIds = $rawOrders
+        $orders = $rawOrders->map(function ($order) use ($reviewsByProduct) {
+            return $this->serializeOrderForBuyer($order, $reviewsByProduct);
+        });
+
+        return Inertia::render('Buyer/MyOrders', [
+            'orders' => $orders,
+        ]);
+    }
+
+    private function getBuyerReviewsByProduct(int $userId, $orders): \Illuminate\Support\Collection
+    {
+        $productIds = $orders
             ->flatMap(fn ($order) => $order->items->pluck('product_id'))
             ->filter()
             ->unique()
             ->values();
 
-        $reviewsByProduct = Review::query()
+        return Review::query()
             ->where('user_id', $userId)
             ->whereIn('product_id', $productIds)
             ->get()
             ->keyBy('product_id');
+    }
 
-        $orders = $rawOrders->map(function ($order) use ($reviewsByProduct) {
-                // Calculate if return is allowed (within 1 day of received_at)
-                $canReturn = false;
-                if ($order->status === 'Completed' && $order->warranty_expires_at) {
-                    $canReturn = now()->lessThanOrEqualTo($order->warranty_expires_at);
-                }
+    private function serializeOrderForBuyer(Order $order, \Illuminate\Support\Collection $reviewsByProduct): array
+    {
+        $canReturn = false;
+        if ($order->status === 'Completed' && $order->warranty_expires_at) {
+            $canReturn = now()->lessThanOrEqualTo($order->warranty_expires_at);
+        }
 
-                $replacementInProgress = $order->replacement_started_at !== null && $order->replacement_resolved_at === null;
+        $replacementInProgress = $order->replacement_started_at !== null && $order->replacement_resolved_at === null;
+
+        return [
+            'id' => $order->id,
+            'order_number' => $order->order_number,
+            'date' => $order->created_at->format('M d, Y'),
+            'total' => number_format($order->total_amount, 2),
+            'status' => $order->status,
+            'payment_status' => $order->payment_status ?? 'pending',
+            'payment_method' => $order->payment_method,
+            'shipping_method' => $order->shipping_method,
+            'shipping_address' => $order->shipping_address,
+            'shipping_address_type' => $order->shipping_address_type,
+            'shipping_recipient_name' => $order->shipping_recipient_name,
+            'shipping_contact_phone' => $order->shipping_contact_phone,
+            'merchandise_subtotal' => number_format((float) $order->merchandise_subtotal, 2),
+            'convenience_fee_amount' => number_format((float) $order->convenience_fee_amount, 2),
+            'shipping_fee_amount' => number_format($order->getResolvedShippingFeeAmount(), 2),
+            'platform_commission_amount' => number_format($order->getResolvedPlatformCommissionAmount(), 2),
+            'seller_net_amount' => number_format($order->getResolvedSellerNetAmount(), 2),
+            'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null,
+            'seller_id' => $order->artisan_id,
+            'seller_name' => $order->artisan?->shop_name ?? $order->artisan?->name ?? 'Shop',
+            'tracking_number' => $order->tracking_number,
+            'shipping_notes' => $order->shipping_notes,
+            'delivery' => $this->serializeDelivery($order->delivery),
+            'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
+            'cancellation_reason' => $order->cancellation_reason,
+            'received_at' => $order->received_at?->format('M d, Y h:i A'),
+            'warranty_expires_at' => $order->warranty_expires_at?->format('M d, Y h:i A'),
+            'replacement_resolution_description' => $order->replacement_resolution_description,
+            'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
+            'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),
+            'replacement_in_progress' => $replacementInProgress,
+            'created_at_raw' => $order->created_at?->format('M d, Y h:i A'),
+            'accepted_at' => $order->accepted_at?->format('M d, Y h:i A'),
+            'shipped_at' => $order->shipped_at?->format('M d, Y h:i A'),
+            'delivered_at' => $order->delivered_at?->format('M d, Y h:i A'),
+            'items' => $order->items->map(function ($item) use ($reviewsByProduct) {
+                $existingReview = $reviewsByProduct->get($item->product_id);
 
                 return [
-                    'id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'date' => $order->created_at->format('M d, Y'),
-                    'total' => number_format($order->total_amount, 2),
-                    'status' => $order->status,
-                    'payment_status' => $order->payment_status ?? 'pending',
-                    'payment_method' => $order->payment_method,
-                    'shipping_method' => $order->shipping_method, // New
-                    'shipping_address' => $order->shipping_address, // New
-                    'shipping_address_type' => $order->shipping_address_type,
-                    'shipping_recipient_name' => $order->shipping_recipient_name,
-                    'shipping_contact_phone' => $order->shipping_contact_phone,
-                    'merchandise_subtotal' => number_format((float) $order->merchandise_subtotal, 2),
-                    'convenience_fee_amount' => number_format((float) $order->convenience_fee_amount, 2),
-                    'shipping_fee_amount' => number_format($order->getResolvedShippingFeeAmount(), 2),
-                    'platform_commission_amount' => number_format($order->getResolvedPlatformCommissionAmount(), 2),
-                    'seller_net_amount' => number_format($order->getResolvedSellerNetAmount(), 2),
-                    'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null, // New
-                    'seller_id' => $order->artisan_id,
-                    'seller_name' => $order->artisan?->shop_name ?? $order->artisan?->name ?? 'Shop',
-                    'tracking_number' => $order->tracking_number,
-                    'shipping_notes' => $order->shipping_notes,
-                    'delivery' => $this->serializeDelivery($order->delivery),
-                    'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
-                    'cancellation_reason' => $order->cancellation_reason,
-                    'received_at' => $order->received_at?->format('M d, Y h:i A'),
-                    'warranty_expires_at' => $order->warranty_expires_at?->format('M d, Y h:i A'),
-                    'replacement_resolution_description' => $order->replacement_resolution_description,
-                    'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
-                    'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),
-                    'replacement_in_progress' => $replacementInProgress,
-                    // Timeline timestamps
-                    'created_at_raw' => $order->created_at?->format('M d, Y h:i A'),
-                    'accepted_at' => $order->accepted_at?->format('M d, Y h:i A'),
-                    'shipped_at' => $order->shipped_at?->format('M d, Y h:i A'),
-                    'delivered_at' => $order->delivered_at?->format('M d, Y h:i A'),
-                    'items' => $order->items->map(function ($item) use ($reviewsByProduct) {
-                        $existingReview = $reviewsByProduct->get($item->product_id);
-
-                        return [
-                            'id' => $item->id,
-                            'product_id' => $item->product_id,
-                            'is_rated' => $existingReview !== null,
-                            'name' => $item->product_name,
-                            'img' => $item->product_img 
-                                ? (str_starts_with($item->product_img, 'http') ? $item->product_img : '/storage/' . $item->product_img)
-                                : '/images/placeholder.svg',
-                            'price' => $item->price,
-                            'qty' => $item->quantity,
-                            'variant' => $item->variant ?? 'Standard',
-                            'review' => $existingReview ? [
-                                'id' => $existingReview->id,
-                                'rating' => $existingReview->rating,
-                                'comment' => $existingReview->comment,
-                                'photos' => collect($existingReview->photos ?? [])
-                                    ->map(fn ($photo) => str_starts_with($photo, 'http') ? $photo : '/storage/' . $photo)
-                                    ->values()
-                                    ->all(),
-                                'can_manage_review' => true,
-                            ] : null,
-                        ];
-                    }),
-                    'can_return' => $canReturn,
-                    'can_cancel' => $order->status === 'Pending'
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'is_rated' => $existingReview !== null,
+                    'name' => $item->product_name,
+                    'img' => $item->product_img 
+                        ? (str_starts_with($item->product_img, 'http') ? $item->product_img : '/storage/' . $item->product_img)
+                        : '/images/placeholder.svg',
+                    'price' => $item->price,
+                    'qty' => $item->quantity,
+                    'variant' => $item->variant ?? 'Standard',
+                    'review' => $existingReview ? [
+                        'id' => $existingReview->id,
+                        'rating' => $existingReview->rating,
+                        'comment' => $existingReview->comment,
+                        'photos' => collect($existingReview->photos ?? [])
+                            ->map(fn ($photo) => str_starts_with($photo, 'http') ? $photo : '/storage/' . $photo)
+                            ->values()
+                            ->all(),
+                        'can_manage_review' => true,
+                    ] : null,
                 ];
-            });
-
-        return Inertia::render('Buyer/MyOrders', [
-            'orders' => $orders,
-        ]);
+            }),
+            'can_return' => $canReturn,
+            'can_cancel' => $order->status === 'Pending'
+        ];
     }
 
     /**

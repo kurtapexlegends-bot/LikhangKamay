@@ -214,7 +214,7 @@ class StaffAttendanceService
                 ->sortBy('clock_in_at')
                 ->first()?->clock_in_at;
             $dailyMinutes = $employeeSessions
-                ->groupBy(fn (StaffAttendanceSession $session) => $session->attendance_date->toDateString())
+                ->groupBy(fn (StaffAttendanceSession $session) => $session->attendance_date?->toDateString())
                 ->map(function (Collection $sessionsForDay) {
                     return $sessionsForDay->sum(function (StaffAttendanceSession $session) {
                         return $this->resolveWorkedMinutes($session);

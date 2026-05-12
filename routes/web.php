@@ -239,7 +239,6 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/accounting/payroll/{payroll}/reject', [AccountingController::class, 'rejectPayroll'])->middleware('seller.module:accounting')->name('accounting.rejectPayroll');
         
 
-        
         // Procurement Completion
         Route::post('/procurement/requests/{stockRequest}/receive', [ProcurementController::class, 'receiveOrder'])->middleware('seller.module:procurement')->name('procurement.receive');
     });
@@ -299,9 +298,16 @@ Route::get('/subscription/payment/cancel', [SubscriptionController::class, 'canc
 Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
 Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhooks\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
 
+Route::get('/img/proxy', [\App\Http\Controllers\ImageProxyController::class, 'proxy'])->name('img.proxy');
+
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
+    
+    // System Settings
+    Route::get('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('admin.settings.index');
+    Route::post('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'update'])->name('admin.settings.update');
+
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');

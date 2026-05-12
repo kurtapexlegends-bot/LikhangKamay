@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
-export default function Trash({ trashQueue, stats }) {
+export default function Trash({ trashQueue = [], stats = { totalItems: 0, products: 0, categories: 0, orders: 0 } }) {
     const [confirmingRestore, setConfirmingRestore] = React.useState(null);
     const [confirmingDelete, setConfirmingDelete] = React.useState(null);
 
@@ -41,16 +41,16 @@ export default function Trash({ trashQueue, stats }) {
     };
 
     return (
-        <AdminLayout title="Restoration Center">
+        <>
             <Head title="Restoration Center" />
 
             <div className="space-y-6">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard title="Total Trash" value={stats.totalItems} icon={Trash2} color="text-gray-600" />
-                    <StatCard title="Deleted Products" value={stats.products} icon={Package} color="text-clay-600" />
-                    <StatCard title="Deleted Categories" value={stats.categories} icon={FolderTree} color="text-indigo-600" />
-                    <StatCard title="Deleted Orders" value={stats.orders} icon={ShoppingBag} color="text-amber-600" />
+                    <StatCard title="Total Trash" value={stats?.totalItems || 0} icon={Trash2} color="text-gray-600" />
+                    <StatCard title="Deleted Products" value={stats?.products || 0} icon={Package} color="text-clay-600" />
+                    <StatCard title="Deleted Categories" value={stats?.categories || 0} icon={FolderTree} color="text-indigo-600" />
+                    <StatCard title="Deleted Orders" value={stats?.orders || 0} icon={ShoppingBag} color="text-amber-600" />
                 </div>
 
                 {/* Main Queue */}
@@ -173,9 +173,11 @@ export default function Trash({ trashQueue, stats }) {
                 confirmText="Permanently Delete"
                 confirmColor="bg-red-600 hover:bg-red-700"
             />
-        </AdminLayout>
+        </>
     );
 }
+
+Trash.layout = page => <AdminLayout title="Restoration Center">{page}</AdminLayout>;
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
     <div className="bg-white rounded-2xl border border-clay-100 p-6">

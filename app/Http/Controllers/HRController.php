@@ -29,150 +29,19 @@ class HRController extends Controller
     {
         $seller = $this->sellerOwner();
         $actor = $this->sellerActor();
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
-        $supportsMustChangePassword = Schema::hasColumn('users', 'must_change_password');
-        $supportsRolePresetKey = Schema::hasColumn('users', 'staff_role_preset_key');
-        $supportsStaffModulePermissions = Schema::hasColumn('users', 'staff_module_permissions');
-
-        $employeeQuery = Employee::query()
-            ->where('user_id', $seller->id)
-            ->orderBy('created_at', 'desc');
-
-        if ($supportsEmployeeLoginLinks) {
-            $loginAccountColumns = array_values(array_filter([
-                'id',
-                'name',
-                'email',
-                'role',
-                'avatar',
-                'updated_at',
-                'email_verified_at',
-                'employee_id',
-                'staff_plan_suspended_at',
-                $supportsMustChangePassword ? 'must_change_password' : null,
-                $supportsRolePresetKey ? 'staff_role_preset_key' : null,
-                $supportsStaffModulePermissions ? 'staff_module_permissions' : null,
-            ]));
-
-            $employeeQuery->with([
-                'loginAccount' => fn($query) => $query->select($loginAccountColumns),
-            ]);
-        }
-
-        $employeeRecords = $employeeQuery->get();
+        
+        $employeeRecords = $this->getEmployeeRecordsWithLogin($seller);
         $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller);
-
-        $employees = $employeeRecords
-            ->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
-                $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
-                $attendanceSummary = $attendanceSummaries[$employee->id] ?? [
-                    'current_state' => 'manual',
-                    'latest_action' => null,
-                    'today_first_clock_in' => null,
-                    'days_worked' => 0,
-                    'attended_days' => 0,
-                    'absences_days' => 0,
-                    'undertime_hours' => 0,
-                    'overtime_hours' => 0,
-                    'worked_minutes' => 0,
-                    'has_attendance_source' => false,
-                    'open_session' => false,
-                    'month_label' => $this->attendanceMonthLabel(),
-                    'calendar_days' => [],
-                ];
-
-                return [
-                    'id' => $employee->id,
-                    'name' => $employee->name,
-                    'role' => $employee->role,
-                    'salary' => $employee->salary,
-                    'status' => $employee->status,
-                    'join_date' => $employee->join_date,
-                    'has_login_account' => $supportsEmployeeLoginLinks && (bool) $loginAccount,
-                    'login_account' => $loginAccount ? [
-                        'id' => $loginAccount->id,
-                        'name' => $loginAccount->name,
-                        'email' => $loginAccount->email,
-                        'avatar' => $loginAccount->avatar,
-                        'updated_at' => $loginAccount->updated_at,
-                        'workspace_access_enabled' => $loginAccount->isWorkspaceAccessEnabled(),
-                        'plan_workspace_suspended' => $loginAccount->isPlanWorkspaceSuspended(),
-                        'is_verified' => (bool) $loginAccount->email_verified_at,
-                        'must_change_password' => $supportsMustChangePassword
-                            ? (bool) $loginAccount->must_change_password
-                            : false,
-                        'user_level' => $loginAccount->getStaffUserLevel(),
-                        'staff_access_permission_level' => $loginAccount->getStaffAccessPermissionLevel(),
-                        'role_preset_key' => $supportsRolePresetKey
-                            ? ($loginAccount->staff_role_preset_key ?: 'custom')
-                            : 'custom',
-                        'module_permissions' => $supportsStaffModulePermissions
-                            ? User::stripStaffControlFlags((array) $loginAccount->staff_module_permissions)
-                            : [],
-                    ] : null,
-                    'attendance' => [
-                        'current_state' => $attendanceSummary['current_state'],
-                        'latest_action' => $attendanceSummary['latest_action'],
-                        'today_first_clock_in' => $attendanceSummary['today_first_clock_in'],
-                        'days_worked' => $attendanceSummary['days_worked'],
-                        'worked_minutes' => $attendanceSummary['worked_minutes'],
-                        'has_attendance_source' => $attendanceSummary['has_attendance_source'],
-                        'open_session' => $attendanceSummary['open_session'],
-                        'month_label' => $attendanceSummary['month_label'],
-                        'calendar_days' => $attendanceSummary['calendar_days'],
-                    ],
-                    'payroll_prefill' => [
-                        'absences_days' => $attendanceSummary['absences_days'],
-                        'undertime_hours' => $attendanceSummary['undertime_hours'],
-                        'overtime_hours' => $attendanceSummary['overtime_hours'],
-                        'days_worked' => $attendanceSummary['days_worked'],
-                    ],
-                ];
-            });
+        $employees = $this->transformEmployeeRecords($employeeRecords, $attendanceSummaries);
 
         $payrolls = Payroll::with('requester:id,name')
             ->where('user_id', $seller->id)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
+
         $supportsProvisioning = $this->supportsStaffProvisioningSchema();
         $canEditHrRecords = $this->canEditHrRecords($actor);
-        $recentAccessAudits = $this->supportsStaffAccessAuditSchema()
-            ? StaffAccessAudit::query()
-                ->with([
-                    'actor:id,name,avatar',
-                    'staffUser:id,name,email,avatar',
-                    'employee:id,name,role',
-                ])
-                ->where('seller_owner_id', $seller->id)
-                ->latest()
-                ->limit(8)
-                ->get()
-                ->map(fn (StaffAccessAudit $audit) => [
-                    'id' => $audit->id,
-                    'event' => $audit->event,
-                    'summary' => $audit->summary,
-                    'details' => $audit->details ?? [],
-                    'created_at' => optional($audit->created_at)?->toIso8601String(),
-                    'actor' => $audit->actor ? [
-                        'id' => $audit->actor->id,
-                        'name' => $audit->actor->name,
-                        'avatar' => $audit->actor->avatar,
-                    ] : null,
-                    'staff_user' => $audit->staffUser ? [
-                        'id' => $audit->staffUser->id,
-                        'name' => $audit->staffUser->name,
-                        'email' => $audit->staffUser->email,
-                        'avatar' => $audit->staffUser->avatar,
-                    ] : null,
-                    'employee' => $audit->employee ? [
-                        'id' => $audit->employee->id,
-                        'name' => $audit->employee->name,
-                        'role' => $audit->employee->role,
-                    ] : null,
-                ])
-                ->values()
-                ->all()
-            : [];
+        $recentAccessAudits = $this->getRecentAccessAudits($seller);
 
         return Inertia::render('Seller/HR', [
             'staff' => $employees,
@@ -194,6 +63,149 @@ class HRController extends Controller
                 'requiresStaffSchemaUpdate' => !$supportsProvisioning,
             ],
         ]);
+    }
+
+    private function getEmployeeRecordsWithLogin($seller)
+    {
+        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $employeeQuery = Employee::query()
+            ->where('user_id', $seller->id)
+            ->orderBy('created_at', 'desc');
+
+        if ($supportsEmployeeLoginLinks) {
+            $loginAccountColumns = array_values(array_filter([
+                'id',
+                'name',
+                'email',
+                'role',
+                'avatar',
+                'updated_at',
+                'email_verified_at',
+                'employee_id',
+                'staff_plan_suspended_at',
+                Schema::hasColumn('users', 'must_change_password') ? 'must_change_password' : null,
+                Schema::hasColumn('users', 'staff_role_preset_key') ? 'staff_role_preset_key' : null,
+                Schema::hasColumn('users', 'staff_module_permissions') ? 'staff_module_permissions' : null,
+            ]));
+
+            $employeeQuery->with([
+                'loginAccount' => fn($query) => $query->select($loginAccountColumns),
+            ]);
+        }
+
+        return $employeeQuery->get();
+    }
+
+    private function transformEmployeeRecords($employeeRecords, $attendanceSummaries)
+    {
+        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $supportsMustChangePassword = Schema::hasColumn('users', 'must_change_password');
+        $supportsRolePresetKey = Schema::hasColumn('users', 'staff_role_preset_key');
+        $supportsStaffModulePermissions = Schema::hasColumn('users', 'staff_module_permissions');
+
+        return $employeeRecords->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
+            $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
+            $attendanceSummary = $attendanceSummaries[$employee->id] ?? [
+                'current_state' => 'manual',
+                'latest_action' => null,
+                'today_first_clock_in' => null,
+                'days_worked' => 0,
+                'attended_days' => 0,
+                'absences_days' => 0,
+                'undertime_hours' => 0,
+                'overtime_hours' => 0,
+                'worked_minutes' => 0,
+                'has_attendance_source' => false,
+                'open_session' => false,
+                'month_label' => $this->attendanceMonthLabel(),
+                'calendar_days' => [],
+            ];
+
+            return [
+                'id' => $employee->id,
+                'name' => $employee->name,
+                'role' => $employee->role,
+                'salary' => $employee->salary,
+                'status' => $employee->status,
+                'join_date' => $employee->join_date,
+                'has_login_account' => $supportsEmployeeLoginLinks && (bool) $loginAccount,
+                'login_account' => $loginAccount ? [
+                    'id' => $loginAccount->id,
+                    'name' => $loginAccount->name,
+                    'email' => $loginAccount->email,
+                    'avatar' => $loginAccount->avatar,
+                    'updated_at' => $loginAccount->updated_at,
+                    'workspace_access_enabled' => $loginAccount->isWorkspaceAccessEnabled(),
+                    'plan_workspace_suspended' => $loginAccount->isPlanWorkspaceSuspended(),
+                    'is_verified' => (bool) $loginAccount->email_verified_at,
+                    'must_change_password' => $supportsMustChangePassword ? (bool) $loginAccount->must_change_password : false,
+                    'user_level' => $loginAccount->getStaffUserLevel(),
+                    'staff_access_permission_level' => $loginAccount->getStaffAccessPermissionLevel(),
+                    'role_preset_key' => $supportsRolePresetKey ? ($loginAccount->staff_role_preset_key ?: 'custom') : 'custom',
+                    'module_permissions' => $supportsStaffModulePermissions ? User::stripStaffControlFlags((array) $loginAccount->staff_module_permissions) : [],
+                ] : null,
+                'attendance' => [
+                    'current_state' => $attendanceSummary['current_state'],
+                    'latest_action' => $attendanceSummary['latest_action'],
+                    'today_first_clock_in' => $attendanceSummary['today_first_clock_in'],
+                    'days_worked' => $attendanceSummary['days_worked'],
+                    'worked_minutes' => $attendanceSummary['worked_minutes'],
+                    'has_attendance_source' => $attendanceSummary['has_attendance_source'],
+                    'open_session' => $attendanceSummary['open_session'],
+                    'month_label' => $attendanceSummary['month_label'],
+                    'calendar_days' => $attendanceSummary['calendar_days'],
+                ],
+                'payroll_prefill' => [
+                    'absences_days' => $attendanceSummary['absences_days'],
+                    'undertime_hours' => $attendanceSummary['undertime_hours'],
+                    'overtime_hours' => $attendanceSummary['overtime_hours'],
+                    'days_worked' => $attendanceSummary['days_worked'],
+                ],
+            ];
+        });
+    }
+
+    private function getRecentAccessAudits($seller)
+    {
+        if (!$this->supportsStaffAccessAuditSchema()) {
+            return [];
+        }
+
+        return StaffAccessAudit::query()
+            ->with([
+                'actor:id,name,avatar',
+                'staffUser:id,name,email,avatar',
+                'employee:id,name,role',
+            ])
+            ->where('seller_owner_id', $seller->id)
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn (StaffAccessAudit $audit) => [
+                'id' => $audit->id,
+                'event' => $audit->event,
+                'summary' => $audit->summary,
+                'details' => $audit->details ?? [],
+                'created_at' => optional($audit->created_at)?->toIso8601String(),
+                'actor' => $audit->actor ? [
+                    'id' => $audit->actor->id,
+                    'name' => $audit->actor->name,
+                    'avatar' => $audit->actor->avatar,
+                ] : null,
+                'staff_user' => $audit->staffUser ? [
+                    'id' => $audit->staffUser->id,
+                    'name' => $audit->staffUser->name,
+                    'email' => $audit->staffUser->email,
+                    'avatar' => $audit->staffUser->avatar,
+                ] : null,
+                'employee' => $audit->employee ? [
+                    'id' => $audit->employee->id,
+                    'name' => $audit->employee->name,
+                    'role' => $audit->employee->role,
+                ] : null,
+            ])
+            ->values()
+            ->all();
     }
 
     protected function attendanceMonthLabel(): string

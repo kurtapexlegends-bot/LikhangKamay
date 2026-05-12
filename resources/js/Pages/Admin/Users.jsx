@@ -259,7 +259,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
     }, [quickView, users.data]);
 
     return (
-        <AdminLayout title="User Management">
+        <>
             <div className="z-30 mb-6 border-b border-stone-200 bg-white sm:sticky sm:top-20 sm:mb-8">
                 <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -697,6 +697,8 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                 confirmText="Login As User"
                 confirmColor="bg-stone-900 hover:bg-black focus-visible:ring-stone-900/30"
             />
-        </AdminLayout>
+        </>
     );
 }
+
+AdminUsers.layout = page => <AdminLayout title="User Management">{page}</AdminLayout>;

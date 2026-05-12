@@ -132,42 +132,46 @@ class AdminMetricsService
 
     public function getHistoricalTierSnapshots(array $targetDates): array
     {
-        $snapshots = [];
-        
-        // Fetch all logs that could possibly affect the tiers for the given dates
         $maxDate = collect($targetDates)->max();
-        $allLogs = UserTierLog::query()
-            ->whereIn('user_id', User::where('role', 'artisan')->pluck('id'))
-            ->where('created_at', '<=', $maxDate)
-            ->orderBy('user_id')
-            ->orderByDesc('created_at')
-            ->get()
-            ->groupBy('user_id');
+        $cacheKey = 'historical_tier_snapshots_' . $maxDate->format('Y-m-d_H');
 
-        foreach ($targetDates as $date) {
-            $premiumCount = 0;
-            $eliteCount = 0;
+        return Cache::remember($cacheKey, 3600, function () use ($targetDates, $maxDate) {
+            $snapshots = [];
+            
+            // Fetch all logs that could possibly affect the tiers for the given dates
+            $allLogs = UserTierLog::query()
+                ->whereIn('user_id', User::where('role', 'artisan')->pluck('id'))
+                ->where('created_at', '<=', $maxDate)
+                ->orderBy('user_id')
+                ->orderByDesc('created_at')
+                ->get()
+                ->groupBy('user_id');
 
-            foreach ($allLogs as $userId => $logs) {
-                // Find the latest log before or on the target date
-                /** @var \App\Models\UserTierLog|null $latestLog */
-                $latestLog = $logs->first(fn(UserTierLog $log) => $log->created_at <= $date);
-                
-                if ($latestLog) {
-                    if ($latestLog->new_tier === 'premium') {
-                        $premiumCount++;
-                    } elseif ($latestLog->new_tier === 'super_premium') {
-                        $eliteCount++;
+            foreach ($targetDates as $date) {
+                $premiumCount = 0;
+                $eliteCount = 0;
+
+                foreach ($allLogs as $userId => $logs) {
+                    // Find the latest log before or on the target date
+                    /** @var \App\Models\UserTierLog|null $latestLog */
+                    $latestLog = $logs->first(fn(UserTierLog $log) => $log->created_at <= $date);
+                    
+                    if ($latestLog) {
+                        if ($latestLog->new_tier === 'premium') {
+                            $premiumCount++;
+                        } elseif ($latestLog->new_tier === 'super_premium') {
+                            $eliteCount++;
+                        }
                     }
                 }
+
+                $snapshots[$date->format('M Y')] = [
+                    'premium' => $premiumCount,
+                    'super_premium' => $eliteCount,
+                ];
             }
 
-            $snapshots[$date->format('M Y')] = [
-                'premium' => $premiumCount,
-                'super_premium' => $eliteCount,
-            ];
-        }
-
-        return $snapshots;
+            return $snapshots;
+        });
     }
 }

@@ -96,11 +96,16 @@ const StatCard = ({ title, metric, icon: Icon, bg, text, growth, trend, subtitle
     );
 };
 
-export default function Insights({ revenue, churn, categories, health }) {
+export default function Insights({ 
+    revenue = { currentMRR: 0, forecastedMRR: 0, growthRate: 0, history: [] }, 
+    churn = { active: 0, atRisk: 0, churned: 0, atRiskList: [] }, 
+    categories = [], 
+    health = { completionRate: 0, aov: 0, reviewRate: 0, refundRate: 0 } 
+}) {
     const totalCategoryGmv = categories.reduce((sum, category) => sum + Number(category.gmv || 0), 0);
 
     return (
-        <AdminLayout title="Platform Insights">
+        <>
             <Head title="Insights - Admin" />
 
                 {/* ====================== SECTION 1 & 2: REVENUE FORECASTING & CATEGORY HEATMAP ====================== */}
@@ -351,7 +356,8 @@ export default function Insights({ revenue, churn, categories, health }) {
                         </div>
                     </div>
                 </section>
-                
-        </AdminLayout>
+        </>
     );
 }
+
+Insights.layout = page => <AdminLayout title="Platform Insights">{page}</AdminLayout>;

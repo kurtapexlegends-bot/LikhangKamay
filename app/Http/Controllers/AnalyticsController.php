@@ -26,6 +26,71 @@ class AnalyticsController extends Controller
         $filter = $request->input('filter', 'monthly');
         $categoryFilter = $request->input('category', 'All Categories');
 
+        $financials = $this->getFinancialMetrics($sellerId);
+        $customerInsights = $this->getCustomerInsights($sellerId);
+        $chartData = $this->getSalesChartData($sellerId, $categoryFilter);
+        $categoryPerformance = $this->getCategoryPerformance($sellerId);
+        $topProducts = $this->getTopProducts($sellerId);
+        $reviewStats = $this->getReviewStats($sellerId);
+        $intelligence = $this->getSalesIntelligence($sellerId);
+
+        $canViewSponsorshipAnalytics = $seller->isEliteTier();
+        $sponsorshipAnalytics = $canViewSponsorshipAnalytics
+            ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
+            : null;
+
+        $canViewRevenue = $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE);
+
+        return Inertia::render('Seller/Analytics', [
+            'metrics' => [
+                'total_revenue' => $canViewRevenue ? $financials['current']['revenue'] : 0,
+                'gross_profit' => $canViewRevenue ? $financials['current']['profit'] : 0,
+                'profit_margin' => $canViewRevenue ? round($financials['current']['margin'], 1) : 0,
+                'growth' => $canViewRevenue ? $financials['growth'] : [
+                    'revenue' => 0,
+                    'orders' => $financials['growth']['orders'],
+                    'avg' => 0,
+                    'profit' => 0,
+                ],
+                'average_rating' => $reviewStats['average'],
+                'review_stats' => $reviewStats,
+            ],
+            'financials_masked' => !$canViewRevenue,
+            'insights' => [
+                'vip_customers' => $customerInsights['vip_customers'],
+                'loyalty_stats' => $customerInsights['loyalty_stats'],
+                'sales_heatmap' => $intelligence['sales_heatmap'],
+                'sales_velocity' => $intelligence['sales_velocity'],
+                'slow_movers' => $intelligence['slow_movers'],
+            ],
+            'dataContext' => [
+                'generated_at' => now()->toIso8601String(),
+                'category_filter' => $categoryFilter,
+                'source_label' => 'Historical order data and customer feedback records.',
+            ],
+            'chartData' => $chartData,
+            'categoryData' => $categoryPerformance,
+            'topProducts' => $topProducts,
+            'categories' => $this->getCategoryList($sellerId),
+            'sponsorshipMetrics' => $sponsorshipAnalytics['summary'] ?? null,
+            'sponsorshipChartData' => $sponsorshipAnalytics['chartData'] ?? null,
+            'sponsorshipAnalyticsAvailability' => $sponsorshipAnalytics['availability'] ?? [
+                'is_available' => false,
+                'state' => 'not_allowed',
+                'message' => null,
+                'has_activity' => false,
+                'has_events_table' => false,
+                'has_order_snapshots' => false,
+            ],
+            'filters' => [
+                'time' => $filter,
+                'category' => $categoryFilter,
+            ],
+        ]);
+    }
+
+    private function getFinancialMetrics(int $sellerId): array
+    {
         $now = Carbon::now();
         $startOfThisMonth = $now->copy()->startOfMonth();
         $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
@@ -58,14 +123,19 @@ class AnalyticsController extends Controller
         $current = $getMetrics($startOfThisMonth, $now);
         $previous = $getMetrics($startOfLastMonth, $endOfLastMonth);
 
-        $growth = [
-            'revenue' => $this->calculatePercentage($current['revenue'], $previous['revenue']),
-            'orders' => $this->calculatePercentage($current['orders'], $previous['orders']),
-            'avg' => $this->calculatePercentage($current['avg'], $previous['avg']),
-            'profit' => $this->calculatePercentage($current['profit'], $previous['profit']),
+        return [
+            'current' => $current,
+            'growth' => [
+                'revenue' => $this->calculatePercentage($current['revenue'], $previous['revenue']),
+                'orders' => $this->calculatePercentage($current['orders'], $previous['orders']),
+                'avg' => $this->calculatePercentage($current['avg'], $previous['avg']),
+                'profit' => $this->calculatePercentage($current['profit'], $previous['profit']),
+            ]
         ];
+    }
 
-        // Phase 2: VIP & Customer Intelligence
+    private function getCustomerInsights(int $sellerId): array
+    {
         $customerStatsRaw = Order::query()
             ->join('users', 'orders.user_id', '=', 'users.id')
             ->where('orders.artisan_id', $sellerId)
@@ -93,12 +163,18 @@ class AnalyticsController extends Controller
             'last_active' => Carbon::parse($buyer->last_purchase_at)->diffForHumans(),
         ])->values();
 
-        $loyaltyStats = [
-            'new' => $customerStatsRaw->filter(fn($c) => $c->orders_count === 1)->count(),
-            'returning' => $customerStatsRaw->filter(fn($c) => $c->orders_count > 1)->count(),
-            'total_unique' => $customerStatsRaw->count(),
+        return [
+            'vip_customers' => $vipCustomers,
+            'loyalty_stats' => [
+                'new' => $customerStatsRaw->filter(fn($c) => $c->orders_count === 1)->count(),
+                'returning' => $customerStatsRaw->filter(fn($c) => $c->orders_count > 1)->count(),
+                'total_unique' => $customerStatsRaw->count(),
+            ]
         ];
+    }
 
+    private function getSalesChartData(int $sellerId, string $categoryFilter): array
+    {
         $chartBaseQuery = function () use ($sellerId, $categoryFilter) {
             $query = OrderItem::query()
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
@@ -145,7 +221,15 @@ class AnalyticsController extends Controller
                 ];
             });
 
-        $categoryData = OrderItem::whereHas('order', function ($query) use ($sellerId) {
+        return [
+            'monthly' => $monthlyData,
+            'yearly' => $yearlyData
+        ];
+    }
+
+    private function getCategoryPerformance(int $sellerId): \Illuminate\Support\Collection
+    {
+        return OrderItem::whereHas('order', function ($query) use ($sellerId) {
             $query->where('artisan_id', $sellerId)
                 ->where('status', 'Completed');
         })
@@ -164,14 +248,17 @@ class AnalyticsController extends Controller
                 
                 return [
                     'category' => $item->category,
-                    'value' => (int) $item->volume, // Keep 'value' for chart compatibility
+                    'value' => (int) $item->volume,
                     'revenue' => (float) $item->revenue,
                     'profit' => (float) $profit,
                     'margin' => round($margin, 1),
                 ];
             });
+    }
 
-        $topProducts = OrderItem::whereHas('order', function ($query) use ($sellerId) {
+    private function getTopProducts(int $sellerId): \Illuminate\Support\Collection
+    {
+        return OrderItem::whereHas('order', function ($query) use ($sellerId) {
             $query->where('artisan_id', $sellerId)
                 ->where('status', 'Completed');
         })
@@ -201,17 +288,17 @@ class AnalyticsController extends Controller
                         : null,
                 ];
             });
+    }
 
-        $categories = Product::where('user_id', $sellerId)
-            ->distinct()
-            ->pluck('category');
-
+    private function getReviewStats(int $sellerId): array
+    {
         $reviews = Review::whereHas('product', function ($query) use ($sellerId) {
             $query->where('user_id', $sellerId);
         })->get();
 
         $averageRating = $reviews->count() > 0 ? $reviews->avg('rating') : 0;
-        $reviewStats = [
+        
+        return [
             'total' => $reviews->count(),
             'average' => $averageRating ? round($averageRating, 1) : 0,
             'breakdown' => [
@@ -222,8 +309,10 @@ class AnalyticsController extends Controller
                 '1' => $reviews->where('rating', 1)->count(),
             ],
         ];
+    }
 
-        // Phase 3: Sales Intelligence
+    private function getSalesIntelligence(int $sellerId): array
+    {
         $salesHeatmap = Order::query()
             ->where('artisan_id', $sellerId)
             ->where('status', 'Completed')
@@ -272,59 +361,18 @@ class AnalyticsController extends Controller
                 'days_inactive' => Carbon::parse($p->created_at)->diffInDays(now()),
             ]);
 
-        $canViewSponsorshipAnalytics = $seller->isEliteTier();
-        $sponsorshipAnalytics = $canViewSponsorshipAnalytics
-            ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
-            : null;
+        return [
+            'sales_heatmap' => $salesHeatmap,
+            'sales_velocity' => $velocityData,
+            'slow_movers' => $slowMovers,
+        ];
+    }
 
-        $canViewRevenue = $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE);
-
-        return Inertia::render('Seller/Analytics', [
-            'metrics' => [
-                'total_revenue' => $canViewRevenue ? $current['revenue'] : 0,
-                'gross_profit' => $canViewRevenue ? $current['profit'] : 0,
-                'profit_margin' => $canViewRevenue ? round($current['margin'], 1) : 0,
-                'growth' => $canViewRevenue ? $growth : [
-                    'revenue' => 0,
-                    'orders' => $growth['orders'],
-                    'avg' => 0,
-                    'profit' => 0,
-                ],
-                'average_rating' => $reviewStats['average'],
-                'review_stats' => $reviewStats,
-            ],
-            'financials_masked' => !$canViewRevenue,
-            'insights' => [
-                'vip_customers' => $vipCustomers,
-                'loyalty_stats' => $loyaltyStats,
-                'sales_heatmap' => $salesHeatmap,
-                'sales_velocity' => $velocityData,
-                'slow_movers' => $slowMovers,
-            ],
-            'dataContext' => [
-                'generated_at' => now()->toIso8601String(),
-                'category_filter' => $categoryFilter,
-                'source_label' => 'Historical order data and customer feedback records.',
-            ],
-            'chartData' => ['monthly' => $monthlyData, 'yearly' => $yearlyData],
-            'categoryData' => $categoryData,
-            'topProducts' => $topProducts,
-            'categories' => $categories,
-            'sponsorshipMetrics' => $sponsorshipAnalytics['summary'] ?? null,
-            'sponsorshipChartData' => $sponsorshipAnalytics['chartData'] ?? null,
-            'sponsorshipAnalyticsAvailability' => $sponsorshipAnalytics['availability'] ?? [
-                'is_available' => false,
-                'state' => 'not_allowed',
-                'message' => null,
-                'has_activity' => false,
-                'has_events_table' => false,
-                'has_order_snapshots' => false,
-            ],
-            'filters' => [
-                'time' => $filter,
-                'category' => $categoryFilter,
-            ],
-        ]);
+    private function getCategoryList(int $sellerId): \Illuminate\Support\Collection
+    {
+        return Product::where('user_id', $sellerId)
+            ->distinct()
+            ->pluck('category');
     }
 
     private function calculatePercentage($current, $previous)

@@ -64,7 +64,7 @@ export default function Diagnostics({ systemHealth, queueStatus = {}, memoryUsag
     );
 
     return (
-        <AdminLayout title="Diagnostics Command Center">
+        <>
             <Head title="System Diagnostics" />
 
             <div className="space-y-8">
@@ -238,6 +238,8 @@ export default function Diagnostics({ systemHealth, queueStatus = {}, memoryUsag
                     </div>
                 </section>
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+Diagnostics.layout = page => <AdminLayout title="Diagnostics Command Center">{page}</AdminLayout>;

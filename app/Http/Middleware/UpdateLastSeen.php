@@ -20,13 +20,13 @@ class UpdateLastSeen
                 $user = Auth::user();
                 $cacheKey = 'user-is-online-' . $user->id;
 
-                // Update only if cache expired (expires every 2 minutes or so)
+                // Update only if cache expired (expires every 15 minutes or so)
                 if (!Cache::has($cacheKey)) {
                     $user->last_seen_at = now();
                     $user->save(); // Save to DB
 
-                    // Cache for 2 minutes to prevent DB spam
-                    Cache::put($cacheKey, true, now()->addMinutes(2));
+                    // Cache for 15 minutes to prevent DB spam
+                    Cache::put($cacheKey, true, now()->addMinutes(15));
                 }
             }
         } catch (\Exception $e) {
