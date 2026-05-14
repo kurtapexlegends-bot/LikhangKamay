@@ -16,10 +16,8 @@ class TaxonomyController extends Controller
      */
     public function index()
     {
-        $categories = Category::withCount('products')->orderBy('name')->get();
-
         return Inertia::render('Admin/Taxonomy', [
-            'categories' => $categories
+            'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get())
         ]);
     }
 

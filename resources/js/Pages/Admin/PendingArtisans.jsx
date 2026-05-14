@@ -300,7 +300,7 @@ export default function PendingArtisans({ artisans }) {
     }, []);
 
     return (
-        <AdminLayout title="Pending Artisans">
+        <>
 
             {artisans.length === 0 ? (
                 <div className="mt-6 rounded-3xl border border-stone-200 bg-white p-8 text-center sm:p-16">
@@ -316,7 +316,7 @@ export default function PendingArtisans({ artisans }) {
             ) : (
                 <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white">
                     <div className="flex flex-col gap-3 border-b border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                             <button
                                 type="button"
                                 onClick={() => setReviewFilter('all')}
@@ -766,7 +766,8 @@ export default function PendingArtisans({ artisans }) {
                     </button>
                 </ActionTooltip>
             </BulkActionPill>
-
-        </AdminLayout>
+        </>
     );
 }
+
+PendingArtisans.layout = page => <AdminLayout title="Pending Artisans">{page}</AdminLayout>;

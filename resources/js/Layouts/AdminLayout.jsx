@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, Head, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
@@ -30,12 +30,65 @@ import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
 import GlobalSearch from '@/Components/GlobalSearch';
 
+const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
+
+const resolveActiveGroup = (path) => {
+    if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics')) return 'Platform Pulse';
+    if (path.includes('users') || path.includes('pending')) return 'User Accounts';
+    if (path.includes('taxonomy') || path.includes('sponsorships')) return 'Product Catalog';
+    if (path.includes('moderation') || path.includes('trash') || path.includes('announcements')) return 'Trust & Safety';
+    if (path.includes('monetization') || path.includes('settings')) return 'Business Config';
+    return null;
+};
+
+const getInitialExpandedGroups = () => {
+    const defaultGroups = {
+        'Platform Pulse': true,
+        'User Accounts': true,
+        'Product Catalog': true,
+        'Trust & Safety': true,
+        'Business Config': true,
+    };
+
+    if (typeof window === 'undefined') return defaultGroups;
+
+    try {
+        const raw = window.localStorage.getItem(GROUPS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        
+        // Auto-expand group based on current URL
+        const activeGroup = resolveActiveGroup(window.location.pathname);
+
+        if (parsed && typeof parsed === 'object') {
+            return {
+                ...defaultGroups,
+                ...parsed,
+                ...(activeGroup ? { [activeGroup]: true } : {}),
+            };
+        }
+    } catch {
+        // Ignore invalid localStorage data
+    }
+
+    return defaultGroups;
+};
+
 export default function AdminLayout({ title, children }) {
     const { pendingArtisanCount, auth, globalAnnouncement } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
 
-    // ... navigationGroups omitted for brevity ...
-    // Note: I will only replace the top of the file up to isMobileMenuOpen, then I'll use another replace for the render part.
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(expandedGroups));
+    }, [expandedGroups]);
+
+    const toggleGroup = (title) => {
+        setExpandedGroups(prev => ({
+            ...prev,
+            [title]: !prev[title]
+        }));
+    };
 
     const navigationGroups = [
         {
@@ -101,7 +154,7 @@ export default function AdminLayout({ title, children }) {
 
             {/* Sidebar Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-56 bg-white border-r border-clay-100 transition-transform duration-300 ease-in-out
+                fixed inset-y-0 left-0 z-50 w-52 bg-white border-r border-clay-100 transition-transform duration-300 ease-in-out
                 lg:translate-x-0 flex flex-col
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
@@ -128,51 +181,32 @@ export default function AdminLayout({ title, children }) {
                 {/* Navigation Links */}
                 <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {navigationGroups.map((group, index) => (
-                        <div key={group.title} className={index > 0 ? 'mt-6' : 'mt-2'}>
-                            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                                {group.title}
-                            </p>
-                            <div className="space-y-0.5">
-                                {group.items.map((item) => {
-                                    const MotionLink = motion(Link);
-                                    return (
-                                        <MotionLink
-                                            key={item.name}
-                                            href={item.href}
-                                            prefetch="hover"
-                                            whileTap={{ scale: 0.98, x: 2 }}
-                                            className={`
-                                                flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors duration-200
-                                                ${item.current
-                                                    ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
-                                                    : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
-                                            `}
-                                        >
-                                            <div className="flex items-center gap-2.5">
-                                                <item.icon
-                                                    size={16}
-                                                    strokeWidth={2.5}
-                                                    className={item.current ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'}
-                                                />
-                                                {item.name}
-                                            </div>
-                                            {item.badge && (
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${item.current ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
-                                                    }`}>
-                                                    {item.badge}
-                                                </span>
-                                            )}
-                                        </MotionLink>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        <CategoryGroup
+                            key={group.title}
+                            title={group.title}
+                            open={!!expandedGroups[group.title]}
+                            onToggle={() => toggleGroup(group.title)}
+                            isFirst={index === 0}
+                        >
+                            {group.items.map((item) => (
+                                <NavItem
+                                    key={item.name}
+                                    href={item.href}
+                                    icon={item.icon}
+                                    active={item.current}
+                                    badge={item.badge}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    {item.name}
+                                </NavItem>
+                            ))}
+                        </CategoryGroup>
                     ))}
                 </nav>
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-56 transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-300">
                 {/* Header (Desktop & Mobile) */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-all duration-300">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -188,7 +222,7 @@ export default function AdminLayout({ title, children }) {
                                  title === 'Diagnostics Command Center' ? 'Diagnostics' :
                                  title === 'User Management' ? 'User Directory' :
                                  title === 'Pending Artisans' ? 'Artisan Applications' :
-                                 title === 'Global Taxonomy Engine' ? 'Taxonomy Engine' :
+                                 title === 'Global Taxonomy Engine' || title === 'Taxonomy Engine' ? 'Taxonomy Engine' :
                                  title === 'Sponsorship Requests' ? 'Sponsorships' :
                                  title === 'System Announcements' ? 'Global Alerts' :
                                  title === 'Monetization' ? 'Platform Revenue' :
@@ -197,18 +231,30 @@ export default function AdminLayout({ title, children }) {
                             </h1>
                             
                             <p className="text-[11px] text-gray-500 font-medium mt-0.5 hidden sm:block">
-                                {title === 'Overview' && "Overview of platform performance"}
-                                {title === 'Monetization' && "Track revenue and subscription metrics"}
-                                {title === 'Platform Insights' && "Revenue forecasts and performance analytics"}
-                                {title === 'User Management' && "Manage buyers, artisans, staff, and admins"}
-                                {title === 'Review Moderation' && "Handle seller-submitted review moderation requests"}
-                                {title === 'Pending Artisans' && "Review artisan applications"}
-                                {title === 'Sponsorship Requests' && "Manage artisan product sponsorship requests"}
-                                {title === 'System Announcements' && "Manage global alerts and messages"}
-                                {title === 'Moderation Queue' && "Review flagged products and user content"}
-                                {title === 'Diagnostics Command Center' && "Monitor system memory, cache, and heartbeats"}
-                                {title === 'Global Taxonomy Engine' && "Manage the global product category list"}
-                                {title === 'System Settings' && "Manage platform identity, SEO, and branding"}
+                                {{
+                                    'Overview': "Overview of platform performance",
+                                    'Monetization': "Track revenue and subscription metrics",
+                                    'Platform Revenue': "Track revenue and subscription metrics",
+                                    'Platform Insights': "Revenue forecasts and performance analytics",
+                                    'Insights': "Revenue forecasts and performance analytics",
+                                    'User Management': "Manage buyers, artisans, staff, and admins",
+                                    'User Directory': "Manage buyers, artisans, staff, and admins",
+                                    'Review Moderation': "Handle seller-submitted review moderation requests",
+                                    'Pending Artisans': "Review artisan applications",
+                                    'Artisan Applications': "Review artisan applications",
+                                    'Sponsorship Requests': "Manage artisan product sponsorship requests",
+                                    'Sponsorships': "Manage artisan product sponsorship requests",
+                                    'System Announcements': "Manage global alerts and messages",
+                                    'Global Alerts': "Manage global alerts and messages",
+                                    'Moderation Queue': "Review flagged products and user content",
+                                    'Diagnostics Command Center': "Monitor system memory, cache, and heartbeats",
+                                    'Diagnostics': "Monitor system memory, cache, and heartbeats",
+                                    'Global Taxonomy Engine': "Manage the global product category list",
+                                    'Taxonomy Engine': "Manage the global product category list",
+                                    'System Settings': "Manage platform identity, SEO, and branding",
+                                    'Restoration Center': "Restore or permanently delete removed items",
+                                    'SLA Monitoring': "Monitor service level agreement compliance and response times"
+                                }[title] || ""}
                             </p>
                         </div>
                     </div>
@@ -258,3 +304,68 @@ export default function AdminLayout({ title, children }) {
         </div>
     );
 }
+
+const CategoryGroup = ({ title, open, onToggle, isFirst, children }) => (
+    <div className={isFirst ? 'mt-1.5' : 'mt-2'}>
+        <motion.button
+            type="button"
+            onClick={onToggle}
+            whileTap={{ scale: 0.98, x: 1 }}
+            className="flex w-full items-center justify-between px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-all hover:text-gray-500 focus:outline-none"
+        >
+            <span>{title}</span>
+            <ChevronDown
+                size={12}
+                className={`transition-transform duration-300 ${open ? '' : '-rotate-90'}`}
+            />
+        </motion.button>
+        <AnimatePresence initial={false}>
+            {open && (
+                <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                    className="overflow-hidden space-y-0.5 pt-0.5"
+                >
+                    {children}
+                </motion.div>
+            )}
+        </AnimatePresence>
+    </div>
+);
+
+const NavItem = ({ href, icon: Icon, active, badge, onClick, children }) => {
+    const MotionLink = motion(Link);
+    return (
+        <MotionLink
+            href={href}
+            prefetch="hover"
+            preserveScroll
+            preserveState
+            onClick={onClick}
+            whileTap={{ scale: 0.98, x: 2 }}
+            className={`
+                flex items-center justify-between px-3 py-1 rounded-lg text-xs font-bold transition-colors duration-200
+                ${active
+                    ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
+                    : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
+            `}
+        >
+            <div className="flex items-center gap-2.5">
+                <Icon
+                    size={15}
+                    strokeWidth={2.5}
+                    className={active ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'}
+                />
+                {children}
+            </div>
+            {badge && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
+                    }`}>
+                    {badge}
+                </span>
+            )}
+        </MotionLink>
+    );
+};

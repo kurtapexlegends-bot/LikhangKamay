@@ -10,7 +10,8 @@ import axios from 'axios';
 
 export default function Taxonomy({ categories }) {
     const { addToast } = useToast();
-    const [localCategories, setLocalCategories] = useState(categories);
+    const isLoading = !categories;
+    const [localCategories, setLocalCategories] = useState(categories || []);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [isProcessingAdd, setIsProcessingAdd] = useState(false);
@@ -51,7 +52,9 @@ export default function Taxonomy({ categories }) {
     const pendingDeletes = React.useRef({});
 
     React.useEffect(() => {
-        setLocalCategories(categories);
+        if (categories) {
+            setLocalCategories(categories);
+        }
     }, [categories]);
 
     React.useEffect(() => {
@@ -147,10 +150,7 @@ export default function Taxonomy({ categories }) {
     };
 
     return (
-        <AdminLayout title="Global Taxonomy Engine">
-            <Head title="Taxonomy Engine" />
-
-            <div className="max-w-5xl pt-4">
+        <div className="max-w-5xl pt-4">
                 
                 <FloatingModuleActions actions={(
                     <button 
@@ -173,9 +173,29 @@ export default function Taxonomy({ categories }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-100">
-                                {categories.length > 0 ? (
-                                categories.map((category) => (
-                                        <tr key={category.id} className={`hover:bg-stone-50/50 transition-all group ${localCategories.find(c => c.id === category.id) ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+                                {isLoading ? (
+                                    [1, 2, 3, 4, 5].map(i => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="h-8 w-8 bg-stone-100 rounded-lg" />
+                                                    <div className="h-4 w-32 bg-stone-100 rounded" />
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="h-5 w-24 bg-stone-100 rounded-md" />
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <div className="h-8 w-8 bg-stone-100 rounded-lg" />
+                                                    <div className="h-8 w-8 bg-stone-100 rounded-lg" />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : localCategories.length > 0 ? (
+                                    localCategories.map((category) => (
+                                        <tr key={category.id} className={`hover:bg-stone-50/50 transition-all group opacity-100`}>
                                             <td className="px-6 py-4" data-label="Category Name">
                                                 {editingCategory === category.id ? (
                                                     <input
@@ -256,7 +276,6 @@ export default function Taxonomy({ categories }) {
                         </table>
                     </div>
                 </div>
-            </div>
 
             {/* ADD MODAL */}
             <Modal show={isAddOpen} onClose={() => setIsAddOpen(false)} maxWidth="sm">
@@ -367,6 +386,10 @@ export default function Taxonomy({ categories }) {
 
 
 
-        </AdminLayout>
+        </div>
     );
 }
+
+Taxonomy.layout = (page) => (
+    <AdminLayout title="Taxonomy Engine">{page}</AdminLayout>
+);

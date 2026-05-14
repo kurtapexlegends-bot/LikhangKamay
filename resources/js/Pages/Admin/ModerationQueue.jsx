@@ -47,7 +47,7 @@ export default function ModerationQueue({ flags }) {
     };
 
     return (
-        <AdminLayout title="Moderation Queue">
+        <>
             <div className="flex flex-col lg:flex-row gap-6 mt-6 h-auto lg:h-[calc(100vh-140px)]">
                 
                 {/* Left Pane: Inbox List */}
@@ -168,9 +168,13 @@ export default function ModerationQueue({ flags }) {
                     </div>
                 )}
             </SlideOverDrawer>
-        </AdminLayout>
+        </>
     );
 }
+
+ModerationQueue.layout = (page) => (
+    <AdminLayout title="Moderation Queue">{page}</AdminLayout>
+);
 
 const ReviewContent = ({ selectedFlag, handleAction, onClose, isMobile = false }) => {
     return (
@@ -191,7 +195,7 @@ const ReviewContent = ({ selectedFlag, handleAction, onClose, isMobile = false }
                 </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FDFBF9] no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FDFBF9]">
                 <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-4">Reported Content Details</h4>
                 {selectedFlag.reportable ? (
                     <div className="bg-white border border-stone-200 rounded-xl p-4 sm:p-5 shadow-sm">

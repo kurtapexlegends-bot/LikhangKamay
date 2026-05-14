@@ -321,7 +321,7 @@ const ComposerContent = ({ formData, setFormData, handleSubmit, processing, edit
             </div>
             
             <form onSubmit={handleSubmit} className={`flex-1 flex flex-col ${!isMobile ? 'space-y-6' : 'overflow-hidden'}`}>
-                <div className={`${isMobile ? 'flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar' : 'space-y-6'}`}>
+                <div className={`${isMobile ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'space-y-6'}`}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         {/* Left Column: Content */}

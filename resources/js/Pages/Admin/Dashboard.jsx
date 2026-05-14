@@ -24,6 +24,41 @@ const statusToneClasses = {
     warning: "bg-amber-100 text-amber-800 border-amber-200",
 };
 
+// Skeleton Loaders
+const StatSkeleton = () => (
+    <div className="flex items-start justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm animate-pulse">
+        <div className="space-y-3 w-full">
+            <div className="h-2 w-16 bg-stone-100 rounded" />
+            <div className="h-6 w-24 bg-stone-100 rounded" />
+            <div className="h-2 w-32 bg-stone-100 rounded mt-2" />
+        </div>
+        <div className="h-10 w-10 bg-stone-100 rounded-xl" />
+    </div>
+);
+
+const UserRowSkeleton = () => (
+    <tr className="flex flex-col sm:table-row p-4 sm:p-0 animate-pulse">
+        <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0">
+            <div className="flex items-center gap-3">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 bg-stone-100 rounded-full" />
+                <div className="space-y-2">
+                    <div className="h-3 w-24 bg-stone-100 rounded" />
+                    <div className="h-2 w-32 bg-stone-100 rounded" />
+                </div>
+            </div>
+        </td>
+        <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0 text-center">
+            <div className="h-5 w-16 bg-stone-100 rounded-full mx-auto" />
+        </td>
+        <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0 text-center">
+            <div className="h-5 w-20 bg-stone-100 rounded-full mx-auto" />
+        </td>
+        <td className="sm:px-6 sm:py-4">
+            <div className="h-3 w-20 bg-stone-100 rounded mx-auto sm:mx-0" />
+        </td>
+    </tr>
+);
+
 // Stat Card Component
 const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
     const value = typeof metric === "object" ? metric.value : metric;
@@ -68,46 +103,61 @@ const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
 };
 
 export default function AdminDashboard({ stats, recentUsers, activities }) {
-    const pendingCount = typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans;
+    const isLoadingStats = !stats;
+    const isLoadingUsers = !recentUsers;
+    const isLoadingActivities = !activities;
+
+    const pendingCount = !isLoadingStats ? (typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans) : 0;
 
     return (
         <>
             <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
-                <StatCard
-                    title="Artisans"
-                    metric={stats.totalArtisans}
-                    icon={Store}
-                    bg="bg-blue-50"
-                    text="text-blue-600"
-                    subtitle="Registered"
-                />
-                <StatCard
-                    title="Buyers"
-                    metric={stats.totalBuyers}
-                    icon={Users}
-                    bg="bg-purple-50"
-                    text="text-purple-600"
-                    subtitle="Customers"
-                />
-                <StatCard
-                    title="Pending"
-                    metric={stats.pendingArtisans}
-                    icon={Clock}
-                    bg="bg-amber-50"
-                    text="text-amber-600"
-                    subtitle="Reviews"
-                />
-                <StatCard
-                    title="Active"
-                    metric={stats.approvedArtisans}
-                    icon={CheckCircle}
-                    bg="bg-green-50"
-                    text="text-green-600"
-                    subtitle="Verified"
-                />
+                {isLoadingStats ? (
+                    <>
+                        <StatSkeleton />
+                        <StatSkeleton />
+                        <StatSkeleton />
+                        <StatSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <StatCard
+                            title="Artisans"
+                            metric={stats.totalArtisans}
+                            icon={Store}
+                            bg="bg-blue-50"
+                            text="text-blue-600"
+                            subtitle="Registered"
+                        />
+                        <StatCard
+                            title="Buyers"
+                            metric={stats.totalBuyers}
+                            icon={Users}
+                            bg="bg-purple-50"
+                            text="text-purple-600"
+                            subtitle="Customers"
+                        />
+                        <StatCard
+                            title="Pending"
+                            metric={stats.pendingArtisans}
+                            icon={Clock}
+                            bg="bg-amber-50"
+                            text="text-amber-600"
+                            subtitle="Reviews"
+                        />
+                        <StatCard
+                            title="Active"
+                            metric={stats.approvedArtisans}
+                            icon={CheckCircle}
+                            bg="bg-green-50"
+                            text="text-green-600"
+                            subtitle="Verified"
+                        />
+                    </>
+                )}
             </div>
 
-            {pendingCount > 0 && (
+            {!isLoadingStats && pendingCount > 0 && (
                 <div className="mb-8 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/50 shadow-sm transition hover:shadow-md">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -166,8 +216,17 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {recentUsers.map((user) => (
-                                <tr key={user.id} className="flex flex-col sm:table-row p-4 sm:p-0 transition hover:bg-stone-50">
+                            {isLoadingUsers ? (
+                                <>
+                                    <UserRowSkeleton />
+                                    <UserRowSkeleton />
+                                    <UserRowSkeleton />
+                                    <UserRowSkeleton />
+                                    <UserRowSkeleton />
+                                </>
+                            ) : (
+                                recentUsers.map((user) => (
+                                    <tr key={user.id} className="flex flex-col sm:table-row p-4 sm:p-0 transition hover:bg-stone-50">
                                     <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0">
                                         <div className="flex items-center gap-3">
                                             <UserAvatar user={user} className="h-9 w-9 sm:h-10 sm:w-10 border border-clay-200" />
@@ -236,16 +295,33 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )))}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* Live Activity Ticker */}
-            <div className="lg:col-span-1 h-[500px]">
-                <ActivityTicker activities={activities} />
-            </div>
+                {/* Live Activity Ticker */}
+                <div className="lg:col-span-1 h-[500px]">
+                    {isLoadingActivities ? (
+                        <div className="h-full bg-white border border-gray-100 rounded-2xl p-6 animate-pulse">
+                            <div className="h-4 w-32 bg-stone-100 rounded mb-6" />
+                            <div className="space-y-6">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="flex gap-4">
+                                        <div className="h-10 w-10 bg-stone-100 rounded-full shrink-0" />
+                                        <div className="space-y-2 flex-1">
+                                            <div className="h-3 w-full bg-stone-100 rounded" />
+                                            <div className="h-2 w-24 bg-stone-100 rounded" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <ActivityTicker activities={activities} />
+                    )}
+                </div>
         </div>
     </>
     );

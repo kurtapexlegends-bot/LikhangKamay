@@ -13,16 +13,30 @@
     }
 }
 
-/* Globally hide scrollbars but allow scrolling */
-html, body {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+/* Global custom scrollbar for premium feel */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
 }
 
-::-webkit-scrollbar {
-    width: 0px;
-    height: 0px;
-    background: transparent; /* Chrome/Safari/Webkit */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* For Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
 }
 
 /* Page content entrance — GPU-accelerated, non-blocking */

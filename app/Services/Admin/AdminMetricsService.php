@@ -63,20 +63,16 @@ class AdminMetricsService
         // 1. Current count
         $currentCount = User::where('role', 'artisan')->where('artisan_status', $status)->count();
 
-        // 2. Net change since target date
-        $changesSince = ArtisanStatusLog::where('created_at', '>', $targetDate)->get();
+        // 2. Calculate net change since target date using aggregates
+        $arrivals = ArtisanStatusLog::where('created_at', '>', $targetDate)
+            ->where('new_status', $status)
+            ->count();
+            
+        $departures = ArtisanStatusLog::where('created_at', '>', $targetDate)
+            ->where('previous_status', $status)
+            ->count();
 
-        $netChange = 0;
-        foreach ($changesSince as $log) {
-            if ($log->new_status === $status) {
-                $netChange++;
-            }
-            if ($log->old_status === $status) {
-                $netChange--;
-            }
-        }
-
-        return max(0, $currentCount - $netChange);
+        return max(0, $currentCount - ($arrivals - $departures));
     }
 
     public function getHistoricalTierCount(string $tier, int $daysAgo = 30): int
@@ -84,19 +80,16 @@ class AdminMetricsService
         $targetDate = now()->subDays($daysAgo);
 
         $currentCount = User::where('role', 'artisan')->where('premium_tier', $tier)->count();
-        $changesSince = UserTierLog::where('created_at', '>', $targetDate)->get();
+        
+        $arrivals = UserTierLog::where('created_at', '>', $targetDate)
+            ->where('new_tier', $tier)
+            ->count();
+            
+        $departures = UserTierLog::where('created_at', '>', $targetDate)
+            ->where('previous_tier', $tier)
+            ->count();
 
-        $netChange = 0;
-        foreach ($changesSince as $log) {
-            if ($log->new_tier === $tier) {
-                $netChange++;
-            }
-            if ($log->old_tier === $tier) {
-                $netChange--;
-            }
-        }
-
-        return max(0, $currentCount - $netChange);
+        return max(0, $currentCount - ($arrivals - $departures));
     }
 
     public function getHistoricalTierSnapshot($targetDate): array
@@ -117,9 +110,9 @@ class AdminMetricsService
             if ($log->new_tier === 'super_premium') $elite--;
 
             // Restore old tier
-            if ($log->old_tier === 'standard') $standard++;
-            if ($log->old_tier === 'premium') $premium++;
-            if ($log->old_tier === 'super_premium') $elite++;
+            if ($log->previous_tier === 'standard') $standard++;
+            if ($log->previous_tier === 'premium') $premium++;
+            if ($log->previous_tier === 'super_premium') $elite++;
         }
 
         return [

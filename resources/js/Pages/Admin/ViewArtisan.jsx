@@ -25,9 +25,6 @@ const documents = (artisan) => ([
 
 export default function ViewArtisan({ artisan }) {
     return (
-        <AdminLayout title="Artisan Review">
-            <Head title={artisan?.shop_name || artisan?.name || 'Artisan Review'} />
-
             <div className="mx-auto max-w-5xl space-y-6">
                 <div className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
@@ -80,6 +77,6 @@ export default function ViewArtisan({ artisan }) {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
     );
 }
+ViewArtisan.layout = page => <AdminLayout title="Artisan Review">{page}</AdminLayout>;

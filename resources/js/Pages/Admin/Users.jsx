@@ -265,7 +265,7 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
                         {/* Tab Segment for Role Filters */}
-                        <div className="flex w-full sm:w-auto items-center overflow-x-auto bg-stone-100/80 p-1 rounded-xl border border-stone-200/60 no-scrollbar">
+                        <div className="flex w-full sm:w-auto items-center overflow-x-auto bg-stone-100/80 p-1 rounded-xl border border-stone-200/60">
                             {roleTabs.map((role) => (
                                 <button
                                     key={role}

@@ -167,7 +167,7 @@ export default function ReviewModeration({ disputes = [] }) {
     };
 
     return (
-        <AdminLayout title="Review Moderation">
+        <>
             <div className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {[
@@ -452,6 +452,8 @@ export default function ReviewModeration({ disputes = [] }) {
                     </div>
                 </div>
             </Modal>
-        </AdminLayout>
+        </>
     );
 }
+
+ReviewModeration.layout = page => <AdminLayout title="Review Moderation">{page}</AdminLayout>;

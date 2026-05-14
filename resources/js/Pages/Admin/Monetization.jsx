@@ -31,6 +31,38 @@ const changeDirectionBadgeClasses = {
     change: 'bg-stone-100 text-stone-600 border-stone-200',
 };
 
+// Skeleton Loaders
+const StatSkeleton = () => (
+    <div className="flex items-start justify-between rounded-2xl border border-stone-200 bg-white p-5 animate-pulse">
+        <div className="space-y-3 w-full">
+            <div className="h-2 w-16 bg-stone-100 rounded" />
+            <div className="h-6 w-24 bg-stone-100 rounded" />
+            <div className="h-2 w-32 bg-stone-100 rounded mt-2" />
+        </div>
+        <div className="h-10 w-10 bg-stone-100 rounded-xl" />
+    </div>
+);
+
+const RowSkeleton = () => (
+    <tr className="animate-pulse">
+        <td className="px-6 py-4">
+            <div className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-stone-100 rounded-full" />
+                <div className="space-y-2">
+                    <div className="h-3 w-24 bg-stone-100 rounded" />
+                    <div className="h-2 w-16 bg-stone-100 rounded" />
+                </div>
+            </div>
+        </td>
+        <td className="px-6 py-4">
+            <div className="h-5 w-32 bg-stone-100 rounded-full mx-auto" />
+        </td>
+        <td className="px-6 py-4 text-right">
+            <div className="h-3 w-20 bg-stone-100 rounded ml-auto" />
+        </td>
+    </tr>
+);
+
 // Stat Card Component
 const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }) => {
     // Metric might be a simple number (fallback) or an object { value, growth }
@@ -77,9 +109,12 @@ const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }
 
 export default function Monetization({ metrics, recentSubscribers, recentSponsorships }) {
     const { flash } = usePage().props;
+    const isLoadingMetrics = !metrics;
+    const isLoadingSubscribers = !recentSubscribers;
+    const isLoadingSponsorships = !recentSponsorships;
 
     return (
-        <AdminLayout title="Monetization">
+        <>
             {(flash?.success || flash?.error) && (
                 <div className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-medium ${
                     flash?.success
@@ -92,40 +127,51 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-                <StatCard
-                    title="Plan MRR"
-                    metric={metrics.mrr}
-                    prefix="₱"
-                    icon={CircleDollarSign}
-                    bg="bg-emerald-50"
-                    text="text-emerald-600"
-                    subtitle={metrics.mrr?.basis}
-                />
-                <StatCard
-                    title="Paid Subs"
-                    metric={metrics.subscribers.total_paid}
-                    icon={Users}
-                    bg="bg-blue-50"
-                    text="text-blue-600"
-                    subtitle={`${metrics.subscribers.premium + metrics.subscribers.elite} active`}
-                />
-                <StatCard
-                    title="Elite Only"
-                    metric={metrics.subscribers.elite}
-                    icon={Star}
-                    bg="bg-fuchsia-50"
-                    text="text-fuchsia-600"
-                />
-                <StatCard
-                    title="Sponsored"
-                    metric={metrics.sponsorships}
-                    icon={Award}
-                    bg="bg-amber-50"
-                    text="text-amber-600"
-                />
+                {isLoadingMetrics ? (
+                    <>
+                        <StatSkeleton />
+                        <StatSkeleton />
+                        <StatSkeleton />
+                        <StatSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <StatCard
+                            title="Plan MRR"
+                            metric={metrics.mrr}
+                            prefix="₱"
+                            icon={CircleDollarSign}
+                            bg="bg-emerald-50"
+                            text="text-emerald-600"
+                            subtitle={metrics.mrr?.basis}
+                        />
+                        <StatCard
+                            title="Paid Subs"
+                            metric={metrics.subscribers.total_paid}
+                            icon={Users}
+                            bg="bg-blue-50"
+                            text="text-blue-600"
+                            subtitle={`${metrics.subscribers.premium + metrics.subscribers.elite} active`}
+                        />
+                        <StatCard
+                            title="Elite Only"
+                            metric={metrics.subscribers.elite}
+                            icon={Star}
+                            bg="bg-fuchsia-50"
+                            text="text-fuchsia-600"
+                        />
+                        <StatCard
+                            title="Sponsored"
+                            metric={metrics.sponsorships}
+                            icon={Award}
+                            bg="bg-amber-50"
+                            text="text-amber-600"
+                        />
+                    </>
+                )}
             </div>
 
-            <div className="mb-6 sm:mb-8 flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0" style={{ scrollbarWidth: 'none' }}>
+            <div className="mb-6 sm:mb-8 flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                 <Link
                     href={route("admin.sponsorships")}
                     className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[10px] sm:text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50"
@@ -140,14 +186,16 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                     <Users size={13} />
                     Review Plans
                 </Link>
-                <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[10px] sm:text-[11px] font-bold text-stone-500">
-                    <CircleDollarSign size={13} />
-                    {metrics.pendingSponsorships > 0 ? `${metrics.pendingSponsorships} pending` : 'No backlog'}
-                </span>
+                {!isLoadingMetrics && (
+                    <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[10px] sm:text-[11px] font-bold text-stone-500">
+                        <CircleDollarSign size={13} />
+                        {metrics.pendingSponsorships > 0 ? `${metrics.pendingSponsorships} pending` : 'No backlog'}
+                    </span>
+                )}
             </div>
 
             {/* Quick Actions (Pending Sponsorships) */}
-            {metrics.pendingSponsorships > 0 && (
+            {!isLoadingMetrics && metrics.pendingSponsorships > 0 && (
                 <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                     <div className="flex items-center gap-3 sm:gap-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-100 bg-white sm:h-14 sm:w-14">
@@ -204,7 +252,13 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {recentSubscribers.length > 0 ? recentSubscribers.map((user) => (
+                                {isLoadingSubscribers ? (
+                                    <>
+                                        <RowSkeleton />
+                                        <RowSkeleton />
+                                        <RowSkeleton />
+                                    </>
+                                ) : recentSubscribers.length > 0 ? recentSubscribers.map((user) => (
                                     <tr key={user.id} className="hover:bg-stone-50 transition">
                                         <td className="px-6 py-4" data-label="Artisan">
                                             <div className="flex items-center justify-center sm:justify-start gap-3">
@@ -290,7 +344,13 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {recentSponsorships.length > 0 ? recentSponsorships.map((req) => (
+                                {isLoadingSponsorships ? (
+                                    <>
+                                        <RowSkeleton />
+                                        <RowSkeleton />
+                                        <RowSkeleton />
+                                    </>
+                                ) : recentSponsorships.length > 0 ? recentSponsorships.map((req) => (
                                     <tr key={req.id} className="hover:bg-stone-50 transition">
                                         <td className="px-6 py-4" data-label="Artisan">
                                             <div className="flex items-center justify-center sm:justify-start gap-3">
@@ -346,6 +406,10 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                 </div>
             </div>
 
-        </AdminLayout>
+        </>
     );
 }
+
+Monetization.layout = (page) => (
+    <AdminLayout title="Monetization">{page}</AdminLayout>
+);

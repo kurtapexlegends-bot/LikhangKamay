@@ -112,7 +112,7 @@ export default function SystemSettings({ auth, settings }) {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 bg-stone-50 p-1.5 rounded-2xl border border-stone-100 overflow-x-auto no-scrollbar">
+                        <div className="flex items-center gap-3 bg-stone-50 p-1.5 rounded-2xl border border-stone-100 overflow-x-auto">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.id}
