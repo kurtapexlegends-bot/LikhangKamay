@@ -680,7 +680,7 @@ class HRController extends Controller
         abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $validated = $request->validate([
-            'action' => ['nullable', 'string', Rule::in(['draft', 'submit'])],
+            'action' => ['nullable', 'string', Rule::in(['draft', 'submit', 'dry_run'])],
             'month' => 'required|string',
             'pay_date' => 'nullable|date',
             'notes' => 'nullable|string|max:2000',
@@ -721,6 +721,53 @@ class HRController extends Controller
         if (empty($selectedItems)) {
             return redirect()->back()->withErrors([
                 'items' => 'Select at least one employee to generate payroll.',
+            ]);
+        }
+
+        // DRY RUN: Return calculated results without saving
+        if (($validated['action'] ?? 'submit') === 'dry_run') {
+            $seller = $this->sellerOwner();
+            $sellerId = $seller->id;
+            $otRate = $seller->overtime_rate ?? 50.00;
+            $workingDays = $seller->payroll_working_days ?? 22;
+            
+            $previewItems = [];
+            $totalAmount = 0;
+
+            foreach ($selectedItems as $item) {
+                $employee = Employee::where('user_id', $sellerId)->findOrFail($item['employee_id']);
+
+                $dailyRate = $employee->salary / $workingDays;
+                $hourlyRate = $dailyRate / 8;
+                $overtimePay = $item['overtime_hours'] * $otRate;
+                $absenceDeduction = $item['absences_days'] * $dailyRate;
+                $undertimeDeduction = $item['undertime_hours'] * $hourlyRate;
+                $netPay = max(0, $employee->salary + $overtimePay - $absenceDeduction - $undertimeDeduction);
+
+                $previewItems[] = [
+                    'employee_name' => $employee->name,
+                    'role' => $employee->role,
+                    'base_salary' => $employee->salary,
+                    'overtime_pay' => $overtimePay,
+                    'deductions' => $absenceDeduction + $undertimeDeduction,
+                    'net_pay' => $netPay,
+                    'meta' => [
+                        'absences' => $item['absences_days'],
+                        'overtime' => $item['overtime_hours'],
+                        'undertime' => $item['undertime_hours'],
+                    ]
+                ];
+                $totalAmount += $netPay;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'month' => $validated['month'],
+                    'total_amount' => $totalAmount,
+                    'employee_count' => count($previewItems),
+                    'items' => $previewItems,
+                ]
             ]);
         }
 

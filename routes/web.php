@@ -185,7 +185,12 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:messages'])->name('chat.index'); 
     Route::post('/chat/send', [ChatController::class, 'store'])->name('chat.store');
     Route::post('/chat/seen', [ChatController::class, 'markAsSeen'])->name('chat.seen');
-    Route::post('/chat/typing', [ChatController::class, 'signalTyping'])->name('chat.typing');
+    Route::post('/chat/signal-typing', [ChatController::class, 'signalTyping'])->name('chat.signal-typing');
+        
+    // Message Templates
+    Route::post('/chat/templates', [ChatController::class, 'storeTemplate'])->name('chat.templates.store');
+    Route::put('/chat/templates/{id}', [ChatController::class, 'updateTemplate'])->name('chat.templates.update');
+    Route::delete('/chat/templates/{id}', [ChatController::class, 'deleteTemplate'])->name('chat.templates.destroy');
     Route::get('/team-messages', [TeamMessageController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.index');
     Route::post('/team-messages/send', [TeamMessageController::class, 'store'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.store');
     Route::post('/team-messages/seen', [TeamMessageController::class, 'markAsSeen'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.seen');

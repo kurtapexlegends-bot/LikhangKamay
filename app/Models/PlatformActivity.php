@@ -20,6 +20,16 @@ class PlatformActivity extends Model
         'metadata' => 'array',
     ];
 
+    public static function log($action, $description, $metadata = [])
+    {
+        return self::create([
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'description' => $description,
+            'metadata' => $metadata,
+        ]);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

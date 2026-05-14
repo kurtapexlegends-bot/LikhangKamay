@@ -236,7 +236,55 @@ class ChatController extends Controller
             'activeMessages' => $messages,
             'currentChatUser' => $activeUser,
             'currentOrderContext' => $currentOrderContext,
+            'chatTemplates' => $sellerPerspective ? \App\Models\ChatMessageTemplate::where('user_id', $this->sellerOwnerId())->get() : [],
         ]);
+    }
+
+    public function storeTemplate(Request $request)
+    {
+        $this->authorizeChatActor($request->user(), true);
+        $this->ensureSellerMessagingWritable($request->user(), true);
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string|max:2000',
+        ]);
+
+        \App\Models\ChatMessageTemplate::create([
+            'user_id' => $this->sellerOwnerId(),
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+        ]);
+
+        return back()->with('success', 'Message template created.');
+    }
+
+    public function updateTemplate(Request $request, $id)
+    {
+        $this->authorizeChatActor($request->user(), true);
+        $this->ensureSellerMessagingWritable($request->user(), true);
+
+        $template = \App\Models\ChatMessageTemplate::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string|max:2000',
+        ]);
+
+        $template->update($validated);
+
+        return back()->with('success', 'Message template updated.');
+    }
+
+    public function deleteTemplate(Request $request, $id)
+    {
+        $this->authorizeChatActor($request->user(), true);
+        $this->ensureSellerMessagingWritable($request->user(), true);
+
+        $template = \App\Models\ChatMessageTemplate::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+        $template->delete();
+
+        return back()->with('success', 'Message template removed.');
     }
 
     private function resolveCurrentOrderContext(?User $actor, ?User $counterpart, bool $sellerPerspective): ?array

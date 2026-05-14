@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
+import axios from 'axios';
 import Modal from '@/Components/Modal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -741,6 +742,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [attendanceModalEmployee, setAttendanceModalEmployee] = useState(null);
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
+    const [dryRunResults, setDryRunResults] = useState(null);
+    const [isDryRunning, setIsDryRunning] = useState(false);
     const [activeTab, setActiveTab] = useState('directory');
     const { addToast } = useToast();
     const canEditHrRecords = staffProvisioning.canEditHrRecords ?? true;
@@ -1105,6 +1108,45 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         const newItems = [...payrollData.items];
         newItems[index][field] = value;
         setPayrollData('items', newItems);
+        // Clear dry run results if any item changes
+        if (dryRunResults) setDryRunResults(null);
+    };
+
+    const handleDryRun = () => {
+        if (!canEditHrRecords) {
+            showReadOnlyToast();
+            return;
+        }
+
+        const selectedItems = payrollData.items.filter(i => i.isSelected);
+        if (selectedItems.length === 0) {
+            addToast("Please select at least one employee.", "error");
+            return;
+        }
+
+        setIsDryRunning(true);
+        setDryRunResults(null);
+
+        axios.post(route('hr.generate'), {
+            action: 'dry_run',
+            month: payrollData.month,
+            items: selectedItems.map(i => ({
+                employee_id: i.employee_id,
+                absences_days: i.absences_days || 0,
+                undertime_hours: i.undertime_hours || 0,
+                overtime_hours: i.overtime_hours || 0
+            }))
+        })
+        .then(response => {
+            setDryRunResults(response.data);
+            addToast('Dry run calculation complete.', 'success');
+        })
+        .catch(error => {
+            addToast('Dry run failed. Please check inputs.', 'error');
+        })
+        .finally(() => {
+            setIsDryRunning(false);
+        });
     };
 
     const submitPayroll = (e) => {
@@ -2536,7 +2578,45 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </table>
                     </div>
 
-                    <div className="flex justify-between items-center bg-[#FCF7F2] border border-[#E7D8C9] px-6 py-5 rounded-[1.25rem]">
+                    {dryRunResults && (
+                        <div className="mt-6 animate-fade-in border-t border-stone-100 pt-6">
+                            <div className="mb-4 flex items-center justify-between">
+                                <div>
+                                    <h4 className="text-sm font-bold text-stone-900">Server-Verified Estimates</h4>
+                                    <p className="text-[11px] text-stone-500 font-medium">Calculated based on platform business rules and fixed rates.</p>
+                                </div>
+                                <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-700 border border-emerald-100">
+                                    Ready to Submit
+                                </div>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {dryRunResults.results.map(res => (
+                                    <div key={`dry-run-${res.employee_id}`} className="rounded-2xl border border-stone-200 bg-white p-3.5 shadow-sm">
+                                        <div className="flex items-center justify-between gap-2 border-b border-stone-50 pb-2 mb-2">
+                                            <span className="text-[12px] font-bold text-stone-800 truncate">{res.name}</span>
+                                            <span className="text-[12px] font-bold text-clay-700">{formatPrecisePeso(res.net_pay)}</span>
+                                        </div>
+                                        <div className="space-y-1.5 text-[10px] font-medium text-stone-500">
+                                            <div className="flex justify-between">
+                                                <span>Base Salary</span>
+                                                <span className="text-stone-700">{formatPeso(res.salary)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-red-600">
+                                                <span>Deductions</span>
+                                                <span>- {formatPrecisePeso(res.absences_deduction + res.undertime_deduction)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-emerald-600">
+                                                <span>OT Pay</span>
+                                                <span>+ {formatPrecisePeso(res.overtime_pay)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex justify-between items-center bg-[#FCF7F2] border border-[#E7D8C9] px-6 py-5 rounded-[1.25rem]">
                         <span className="text-clay-700 font-bold text-sm tracking-tight uppercase">Selected For Payment: {payrollData.items.filter(i => i.isSelected).length}</span>
                         <div className="text-right">
                             <span className="text-stone-500 font-bold text-[10px] uppercase tracking-widest mr-3">Total Payroll Estimate</span>
@@ -2548,8 +2628,18 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
 
                     <div className="flex flex-col-reverse gap-3 border-t border-stone-100 px-6 py-4 sm:flex-row sm:justify-end bg-[#FCF7F2]/50">
-                        <button type="button" onClick={() => setIsPayrollModalOpen(false)} className="rounded-xl px-5 py-2.5 text-[13px] font-bold text-stone-600 transition hover:text-stone-900">Cancel</button>
-                        <button type="submit" disabled={payrollProcessing || payrollData.items.filter(i => i.isSelected).length === 0 || !canEditHrRecords} className="rounded-xl bg-clay-700 px-6 py-2.5 text-[13px] font-bold text-white transition hover:bg-clay-800 disabled:opacity-70 disabled:cursor-not-allowed">
+                        <button type="button" onClick={() => { setIsPayrollModalOpen(false); setDryRunResults(null); }} className="rounded-xl px-5 py-2.5 text-[13px] font-bold text-stone-600 transition hover:text-stone-900">Cancel</button>
+                        
+                        <button 
+                            type="button" 
+                            onClick={handleDryRun}
+                            disabled={isDryRunning || payrollProcessing || payrollData.items.filter(i => i.isSelected).length === 0 || !canEditHrRecords}
+                            className="rounded-xl border border-clay-300 bg-white px-6 py-2.5 text-[13px] font-bold text-clay-700 transition hover:bg-[#FCF7F2] disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isDryRunning ? 'Calculating...' : 'Preview Calculations'}
+                        </button>
+
+                        <button type="submit" disabled={payrollProcessing || isDryRunning || payrollData.items.filter(i => i.isSelected).length === 0 || !canEditHrRecords} className="rounded-xl bg-clay-700 px-6 py-2.5 text-[13px] font-bold text-white transition hover:bg-clay-800 disabled:opacity-70 disabled:cursor-not-allowed">
                             Submit to Accounting
                         </button>
                     </div>

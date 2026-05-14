@@ -77,6 +77,21 @@ class SystemSettingsController extends Controller
             'paymongo_enabled' => 'required|boolean',
         ]);
 
+        // Audit Logging for critical changes
+        if ($this->settings->get('primary_color') !== $validated['primary_color']) {
+            \App\Models\PlatformActivity::log(
+                'BRANDING_UPDATE',
+                "Updated primary brand color from " . $this->settings->get('primary_color') . " to " . $validated['primary_color']
+            );
+        }
+
+        if ((float)$this->settings->get('commission_rate') !== (float)$validated['commission_rate']) {
+            \App\Models\PlatformActivity::log(
+                'COMMISSION_UPDATE',
+                "Changed site-wide commission from " . $this->settings->get('commission_rate') . "% to " . $validated['commission_rate'] . "%"
+            );
+        }
+
         $this->settings->set('platform_name', $validated['platform_name']);
         $this->settings->set('primary_color', $validated['primary_color']);
         $this->settings->set('seo_metadata', $validated['seo_metadata'], 'json');

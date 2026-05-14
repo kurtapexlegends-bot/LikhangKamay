@@ -21,12 +21,15 @@ import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatClock, formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
-export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
+export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, chatTemplates = [] }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showTemplateManager, setShowTemplateManager] = useState(false);
+    const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+    const templateSelectorRef = useRef(null);
     const [activeMedia, setActiveMedia] = useState(null);
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
@@ -62,6 +65,9 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         const handleClickOutside = (event) => {
             if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
                 setShowEmojiPicker(false);
+            }
+            if (templateSelectorRef.current && !templateSelectorRef.current.contains(event.target)) {
+                setShowTemplateSelector(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -201,6 +207,65 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         if (isMessagesReadOnly) return;
         setData('message', data.message + emojiObject.emoji);
         inputRef.current?.focus();
+    };
+
+    const injectTemplate = (content) => {
+        if (isMessagesReadOnly) return;
+        setData('message', content);
+        setShowTemplateSelector(false);
+        // Auto-resize textarea
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.style.height = 'auto';
+                inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
+                inputRef.current.focus();
+            }
+        }, 0);
+    };
+
+    const { data: templateData, setData: setTemplateData, post: postTemplate, put: putTemplate, delete: deleteTemplate, processing: templateProcessing, reset: resetTemplate, errors: templateErrors } = useForm({
+        id: null,
+        title: '',
+        content: ''
+    });
+
+    const [editingTemplateId, setEditingTemplateId] = useState(null);
+
+    const submitTemplate = (e) => {
+        e.preventDefault();
+        if (editingTemplateId) {
+            putTemplate(route('chat.templates.update', editingTemplateId), {
+                onSuccess: () => {
+                    setEditingTemplateId(null);
+                    resetTemplate();
+                    addToast('Template updated.', 'success');
+                }
+            });
+        } else {
+            postTemplate(route('chat.templates.store'), {
+                onSuccess: () => {
+                    resetTemplate();
+                    addToast('Template created.', 'success');
+                }
+            });
+        }
+    };
+
+    const handleEditTemplate = (template) => {
+        setEditingTemplateId(template.id);
+        setTemplateData({
+            id: template.id,
+            title: template.title,
+            content: template.content
+        });
+    };
+
+    const handleDeleteTemplate = (id) => {
+        if (confirm('Are you sure you want to delete this template?')) {
+            deleteTemplate(route('chat.templates.delete', id), {
+                onSuccess: () => addToast('Template deleted.', 'success')
+            });
+        }
     };
 
     const filteredContacts = conversations.filter(c => 
@@ -547,7 +612,61 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                         )}
                                         <div className="flex items-end gap-2 sm:gap-3 w-full">
                                         <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all overflow-hidden shadow-sm">
+                                            {/* Template Selector Dropdown */}
+                                            {showTemplateSelector && !isMessagesReadOnly && (
+                                                <div ref={templateSelectorRef} className="absolute bottom-full left-0 mb-2 z-50 w-72 max-h-80 overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-2 duration-200">
+                                                    <div className="p-3 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Message Templates</span>
+                                                        <button 
+                                                            onClick={() => { setShowTemplateSelector(false); setShowTemplateManager(true); }}
+                                                            className="text-[10px] font-bold text-clay-600 hover:text-clay-700 underline"
+                                                        >
+                                                            Manage
+                                                        </button>
+                                                    </div>
+                                                    <div className="p-1">
+                                                        {chatTemplates.length > 0 ? (
+                                                            chatTemplates.map((tpl) => (
+                                                                <button
+                                                                    key={tpl.id}
+                                                                    onClick={() => injectTemplate(tpl.content)}
+                                                                    className="w-full text-left p-3 hover:bg-clay-50 rounded-xl transition-all group"
+                                                                >
+                                                                    <p className="text-xs font-bold text-gray-900 mb-0.5 group-hover:text-clay-700 transition-colors">{tpl.title}</p>
+                                                                    <p className="text-[10px] text-gray-500 line-clamp-2">{tpl.content}</p>
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <div className="p-6 text-center">
+                                                                <p className="text-[11px] text-gray-400 font-medium">No templates found.</p>
+                                                                <button 
+                                                                    onClick={() => { setShowTemplateSelector(false); setShowTemplateManager(true); }}
+                                                                    className="mt-2 text-[11px] font-bold text-clay-600 hover:text-clay-700"
+                                                                >
+                                                                    Create your first template
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center gap-0.5 px-1">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => !isMessagesReadOnly && setShowTemplateSelector(!showTemplateSelector)}
+                                                    disabled={isMessagesReadOnly}
+                                                    className={`p-2 rounded-xl transition-all duration-200 ${
+                                                        isMessagesReadOnly
+                                                            ? 'cursor-not-allowed text-gray-300'
+                                                            : showTemplateSelector 
+                                                                ? 'bg-white text-clay-600 shadow-sm'
+                                                                : 'text-gray-400 hover:bg-white hover:text-clay-600'
+                                                    }`}
+                                                    title="Quick Templates"
+                                                >
+                                                    <MessageCircle size={20} />
+                                                </button>
                                                 <button 
                                                     type="button" 
                                                     onClick={() => imageInputRef.current?.click()}
@@ -744,6 +863,117 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                         onClose={() => setActiveMedia(null)} 
                     />
                 </Suspense>
+
+                {/* TEMPLATE MANAGER MODAL */}
+                <Modal show={showTemplateManager} onClose={() => { setShowTemplateManager(false); setEditingTemplateId(null); resetTemplate(); }} maxWidth="2xl">
+                    <div className="flex flex-col h-[80vh]">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">Message Templates</h3>
+                                <p className="text-xs text-gray-500">Create reusable responses for faster communication.</p>
+                            </div>
+                            <button onClick={() => { setShowTemplateManager(false); setEditingTemplateId(null); resetTemplate(); }} className="p-2 text-gray-400 hover:text-gray-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+                            {/* Template List */}
+                            <div className="w-full md:w-1/2 border-r border-gray-100 overflow-y-auto p-4 space-y-2">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Your Saved Templates</span>
+                                    <button 
+                                        onClick={() => { setEditingTemplateId(null); resetTemplate(); }}
+                                        className="text-[10px] font-bold text-clay-600 hover:text-clay-700"
+                                    >
+                                        + New Template
+                                    </button>
+                                </div>
+                                {chatTemplates.length > 0 ? (
+                                    chatTemplates.map((tpl) => (
+                                        <div 
+                                            key={tpl.id} 
+                                            className={`p-3 rounded-xl border transition-all ${
+                                                editingTemplateId === tpl.id 
+                                                ? 'bg-clay-50 border-clay-200 ring-2 ring-clay-100' 
+                                                : 'bg-white border-gray-100 hover:border-gray-200'
+                                            }`}
+                                        >
+                                            <div className="flex justify-between items-start gap-2 mb-1">
+                                                <h4 className="text-xs font-bold text-gray-900 truncate">{tpl.title}</h4>
+                                                <div className="flex gap-1 shrink-0">
+                                                    <button onClick={() => handleEditTemplate(tpl)} className="p-1 text-gray-400 hover:text-clay-600">
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                    <button onClick={() => handleDeleteTemplate(tpl.id)} className="p-1 text-gray-400 hover:text-red-600">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">{tpl.content}</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-12 text-center">
+                                        <MessageCircle size={32} className="text-gray-200 mx-auto mb-3" />
+                                        <p className="text-xs text-gray-400 font-medium">No templates saved yet.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Template Form */}
+                            <div className="flex-1 bg-gray-50/50 p-6 overflow-y-auto">
+                                <form onSubmit={submitTemplate} className="space-y-4">
+                                    <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                                        {editingTemplateId ? 'Edit Template' : 'Create New Template'}
+                                    </h4>
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase">Template Title</label>
+                                        <input 
+                                            type="text"
+                                            value={templateData.title}
+                                            onChange={e => setTemplateData('title', e.target.value)}
+                                            placeholder="e.g. Greeting, Shipping Update..."
+                                            className="w-full bg-white border-gray-200 rounded-xl text-sm focus:ring-clay-500 focus:border-clay-500 shadow-sm"
+                                            required
+                                        />
+                                        {templateErrors.title && <p className="mt-1 text-[10px] text-red-500 font-bold">{templateErrors.title}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase">Message Content</label>
+                                        <textarea 
+                                            rows={8}
+                                            value={templateData.content}
+                                            onChange={e => setTemplateData('content', e.target.value)}
+                                            placeholder="Type the message you want to reuse..."
+                                            className="w-full bg-white border-gray-200 rounded-xl text-sm focus:ring-clay-500 focus:border-clay-500 shadow-sm resize-none"
+                                            required
+                                        />
+                                        {templateErrors.content && <p className="mt-1 text-[10px] text-red-500 font-bold">{templateErrors.content}</p>}
+                                    </div>
+                                    <div className="pt-2">
+                                        <button 
+                                            type="submit" 
+                                            disabled={templateProcessing}
+                                            className="w-full py-3 bg-clay-600 text-white rounded-xl text-sm font-bold hover:bg-clay-700 transition shadow-lg shadow-clay-100 disabled:opacity-50"
+                                        >
+                                            {templateProcessing ? 'Saving...' : editingTemplateId ? 'Update Template' : 'Save Template'}
+                                        </button>
+                                        {editingTemplateId && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => { setEditingTemplateId(null); resetTemplate(); }}
+                                                className="w-full mt-2 py-2 text-[11px] font-bold text-gray-500 hover:text-gray-700 transition"
+                                            >
+                                                Cancel Editing
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
             </div>
         </div>
     );

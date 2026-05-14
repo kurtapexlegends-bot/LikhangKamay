@@ -5,6 +5,7 @@ import { ToastProvider } from '@/Components/ToastContext';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import ErrorBoundary from '@/Components/ErrorBoundary';
 
 import * as Sentry from "@sentry/react";
 
@@ -34,9 +35,11 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
-            <ToastProvider>
-                <App {...props} />
-            </ToastProvider>
+            <ErrorBoundary>
+                <ToastProvider>
+                    <App {...props} />
+                </ToastProvider>
+            </ErrorBoundary>
         );
     },
     progress: {

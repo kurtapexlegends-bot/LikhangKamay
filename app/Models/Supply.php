@@ -31,6 +31,19 @@ class Supply extends Model
         'min_stock' => 'integer',
     ];
 
+    protected static function booted()
+    {
+        static::updated(function (Supply $supply) {
+            if ($supply->wasChanged('quantity')) {
+                if ($supply->quantity == 0) {
+                    $supply->user->notify(new \App\Notifications\SupplyDepletedNotification($supply));
+                } elseif ($supply->quantity <= $supply->min_stock && $supply->getOriginal('quantity') > $supply->min_stock) {
+                    $supply->user->notify(new \App\Notifications\LowStockWarningNotification($supply));
+                }
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
