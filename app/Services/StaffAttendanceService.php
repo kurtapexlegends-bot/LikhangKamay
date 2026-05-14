@@ -205,90 +205,108 @@ class StaffAttendanceService
         $sessionsByEmployee = $sessions->groupBy('employee_id');
 
         return $employees->mapWithKeys(function ($employee) use ($sessionsByEmployee, $today, $workingDays, $period) {
-            $employeeSessions = $sessionsByEmployee->get($employee->id, collect());
-            $latestSession = $employeeSessions->last();
-            $todaySessions = $employeeSessions->filter(function (StaffAttendanceSession $session) use ($today) {
-                return $session->attendance_date?->toDateString() === $today;
-            });
-            $todayFirstClockIn = $todaySessions
-                ->sortBy('clock_in_at')
-                ->first()?->clock_in_at;
-            $dailyMinutes = $employeeSessions
-                ->groupBy(fn (StaffAttendanceSession $session) => $session->attendance_date?->toDateString())
-                ->map(function (Collection $sessionsForDay) {
-                    return $sessionsForDay->sum(function (StaffAttendanceSession $session) {
-                        return $this->resolveWorkedMinutes($session);
-                    });
-                });
-
-            $daysWorked = $dailyMinutes->filter(fn ($minutes) => $minutes > 0)->count();
-            $undertimeMinutes = $dailyMinutes
-                ->map(fn ($minutes) => max(0, self::STANDARD_WORKDAY_MINUTES - $minutes))
-                ->sum();
-            $overtimeMinutes = $dailyMinutes
-                ->map(fn ($minutes) => max(0, $minutes - self::STANDARD_WORKDAY_MINUTES))
-                ->sum();
-            $calendarDays = [];
-            $cursor = $period->copy()->startOfMonth();
-            $periodEnd = $period->copy()->endOfMonth();
-
-            while ($cursor->lte($periodEnd)) {
-                $dateKey = $cursor->toDateString();
-                $workedMinutes = (int) ($dailyMinutes->get($dateKey, 0) ?? 0);
-
-                $calendarDays[] = [
-                    'date' => $dateKey,
-                    'day_number' => (int) $cursor->format('j'),
-                    'weekday_short' => $cursor->format('D'),
-                    'weekday_index' => (int) $cursor->dayOfWeek,
-                    'worked_minutes' => $workedMinutes,
-                    'worked_hours_decimal' => round($workedMinutes / 60, 2),
-                    'worked_hours_label' => $this->formatWorkedHoursLabel($workedMinutes),
-                    'has_hours' => $workedMinutes > 0,
-                    'is_today' => $dateKey === $today,
-                ];
-
-                $cursor->addDay();
-            }
-
-            $hasLinkedStaffLogin = (bool) optional($employee->loginAccount)->id;
-            $latestAction = null;
-            $currentState = 'manual';
-
-            if ($hasLinkedStaffLogin) {
-                if ($latestSession && !$latestSession->clock_out_at) {
-                    $latestAction = 'Clocked in';
-                    $currentState = 'clocked_in';
-                } elseif ($latestSession?->close_mode === self::MODE_PAUSED) {
-                    $latestAction = 'Paused';
-                    $currentState = 'paused';
-                } elseif ($latestSession?->close_mode === self::MODE_CLOCKED_OUT) {
-                    $latestAction = 'Clocked out';
-                    $currentState = 'clocked_out';
-                } else {
-                    $latestAction = 'No attendance yet';
-                    $currentState = 'no_record';
-                }
-            }
-
             return [
-                $employee->id => [
-                    'current_state' => $currentState,
-                    'latest_action' => $latestAction,
-                    'today_first_clock_in' => $todayFirstClockIn ? Carbon::parse($todayFirstClockIn)->toIso8601String() : null,
-                    'days_worked' => $daysWorked,
-                    'attended_days' => $daysWorked,
-                    'absences_days' => $hasLinkedStaffLogin ? max(0, $workingDays - $daysWorked) : 0,
-                    'undertime_hours' => round($undertimeMinutes / 60, 2),
-                    'overtime_hours' => round($overtimeMinutes / 60, 2),
-                    'worked_minutes' => (int) $dailyMinutes->sum(),
-                    'has_attendance_source' => $hasLinkedStaffLogin,
-                    'open_session' => $latestSession && !$latestSession->clock_out_at,
-                    'month_label' => $period->format('F Y'),
-                    'calendar_days' => $calendarDays,
-                ],
+                $employee->id => $this->buildEmployeeSummary(
+                    $employee,
+                    $sessionsByEmployee->get($employee->id, collect()),
+                    $today,
+                    $workingDays,
+                    $period
+                )
             ];
         })->all();
+    }
+
+    /**
+     * @param \App\Models\Employee $employee
+     * @param \Illuminate\Support\Collection<int, \App\Models\StaffAttendanceSession> $employeeSessions
+     * @return array<string, mixed>
+     */
+    private function buildEmployeeSummary($employee, Collection $employeeSessions, string $today, int $workingDays, CarbonInterface $period): array
+    {
+        $latestSession = $employeeSessions->last();
+        $todaySessions = $employeeSessions->filter(function (StaffAttendanceSession $session) use ($today) {
+            return $session->attendance_date?->toDateString() === $today;
+        });
+        
+        $todayFirstClockIn = $todaySessions
+            ->sortBy('clock_in_at')
+            ->first()?->clock_in_at;
+
+        $dailyMinutes = $employeeSessions
+            ->groupBy(fn (StaffAttendanceSession $session) => $session->attendance_date?->toDateString())
+            ->map(function (Collection $sessionsForDay) {
+                return $sessionsForDay->sum(function (StaffAttendanceSession $session) {
+                    return $this->resolveWorkedMinutes($session);
+                });
+            });
+
+        $daysWorked = $dailyMinutes->filter(fn ($minutes) => $minutes > 0)->count();
+        $undertimeMinutes = $dailyMinutes
+            ->map(fn ($minutes) => max(0, self::STANDARD_WORKDAY_MINUTES - $minutes))
+            ->sum();
+        $overtimeMinutes = $dailyMinutes
+            ->map(fn ($minutes) => max(0, $minutes - self::STANDARD_WORKDAY_MINUTES))
+            ->sum();
+        
+        $calendarDays = [];
+        $cursor = $period->copy()->startOfMonth();
+        $periodEnd = $period->copy()->endOfMonth();
+
+        while ($cursor->lte($periodEnd)) {
+            $dateKey = $cursor->toDateString();
+            $workedMinutes = (int) ($dailyMinutes->get($dateKey, 0) ?? 0);
+
+            $calendarDays[] = [
+                'date' => $dateKey,
+                'day_number' => (int) $cursor->format('j'),
+                'weekday_short' => $cursor->format('D'),
+                'weekday_index' => (int) $cursor->dayOfWeek,
+                'worked_minutes' => $workedMinutes,
+                'worked_hours_decimal' => round($workedMinutes / 60, 2),
+                'worked_hours_label' => $this->formatWorkedHoursLabel($workedMinutes),
+                'has_hours' => $workedMinutes > 0,
+                'is_today' => $dateKey === $today,
+            ];
+
+            $cursor->addDay();
+        }
+
+        $hasLinkedStaffLogin = (bool) optional($employee->loginAccount)->id;
+        $latestAction = null;
+        $currentState = 'manual';
+
+        if ($hasLinkedStaffLogin) {
+            if ($latestSession && !$latestSession->clock_out_at) {
+                $latestAction = 'Clocked in';
+                $currentState = 'clocked_in';
+            } elseif ($latestSession?->close_mode === self::MODE_PAUSED) {
+                $latestAction = 'Paused';
+                $currentState = 'paused';
+            } elseif ($latestSession?->close_mode === self::MODE_CLOCKED_OUT) {
+                $latestAction = 'Clocked out';
+                $currentState = 'clocked_out';
+            } else {
+                $latestAction = 'No attendance yet';
+                $currentState = 'no_record';
+            }
+        }
+
+        return [
+            'current_state' => $currentState,
+            'latest_action' => $latestAction,
+            'today_first_clock_in' => $todayFirstClockIn ? Carbon::parse($todayFirstClockIn)->toIso8601String() : null,
+            'days_worked' => $daysWorked,
+            'attended_days' => $daysWorked,
+            'absences_days' => $hasLinkedStaffLogin ? max(0, $workingDays - $daysWorked) : 0,
+            'undertime_hours' => round($undertimeMinutes / 60, 2),
+            'overtime_hours' => round($overtimeMinutes / 60, 2),
+            'worked_minutes' => (int) $dailyMinutes->sum(),
+            'has_attendance_source' => $hasLinkedStaffLogin,
+            'open_session' => $latestSession && !$latestSession->clock_out_at,
+            'month_label' => $period->format('F Y'),
+            'calendar_days' => $calendarDays,
+        ];
     }
 
     /**

@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import { ShieldAlert, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShieldAlert, LogOut, ChevronLeft, ChevronRight, Loader2, ShieldCheck } from 'lucide-react';
 
 export default function ImpersonationBanner() {
     const { isImpersonating, auth } = usePage().props;
     const [isCollapsed, setIsCollapsed] = useState(true);
+    const [isLeaving, setIsLeaving] = useState(false);
 
     if (!isImpersonating) return null;
 
     const leaveImpersonation = () => {
-        router.post(route('impersonation.leave'));
+        setIsLeaving(true);
+        router.post(route('impersonation.leave'), {}, {
+            onError: () => setIsLeaving(false),
+            // We don't set setIsLeaving(false) on finish because 
+            // the server returns Inertia::location() which triggers a full reload.
+        });
     };
 
     return (
@@ -75,6 +81,22 @@ export default function ImpersonationBanner() {
                 <div className="absolute bottom-full right-0 mb-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                     <div className="bg-stone-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg border border-stone-800 shadow-xl">
                         Support Mode: <span className="text-amber-400">{auth.user.name}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Exit Overlay */}
+            {isLeaving && (
+                <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-stone-900/60 backdrop-blur-xl animate-in fade-in duration-700">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <ShieldCheck size={24} className="text-amber-400 animate-pulse" />
+                        </div>
+                        <Loader2 className="h-24 w-24 animate-spin text-amber-400/20" strokeWidth={1.5} />
+                    </div>
+                    <div className="mt-8 text-center">
+                        <h3 className="text-xl font-black tracking-[0.2em] text-white uppercase italic">Returning to Admin</h3>
+                        <p className="mt-2 text-[10px] font-bold text-amber-400/60 uppercase tracking-[0.3em]">Restoring administrative privileges...</p>
                     </div>
                 </div>
             )}

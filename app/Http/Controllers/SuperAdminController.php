@@ -313,29 +313,7 @@ class SuperAdminController extends Controller
             $search = trim((string) $request->get('search', ''));
             $roleFilter = in_array($request->get('role'), ['all', 'artisan', 'buyer', 'super_admin']) ? $request->get('role') : 'all';
 
-            $query = User::query()
-                ->where(function($q) {
-                    $q->whereIn('role', ['artisan', 'buyer', 'super_admin'])->orWhereNull('role');
-                })
-                ->withCount('staffMembers')
-                ->with(['staffMembers' => function($q) {
-                    $q->with('employee');
-                }]);
-
-            if ($roleFilter === 'artisan') $query->where('role', 'artisan');
-            elseif ($roleFilter === 'buyer') $query->where(fn($q) => $q->where('role', 'buyer')->orWhereNull('role'));
-            elseif ($roleFilter === 'super_admin') $query->where('role', 'super_admin');
-
-            if ($search !== '') {
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('shop_name', 'like', "%{$search}%")
-                        ->orWhereHas('staffMembers', function($sq) use ($search) {
-                            $sq->where('name', 'like', "%{$search}%");
-                        });
-                });
-            }
+            $query = $this->buildUserQuery($roleFilter, $search);
 
             $users = $query->orderBy('created_at', 'desc')->paginate(10)->through(fn($user) => $this->mapAdminPrimaryAccount($user, $search));
 
@@ -431,6 +409,13 @@ class SuperAdminController extends Controller
 
         $this->clearViewedArtisanDocumentKeys($id);
 
+        // Log Activity
+        PlatformActivity::log(
+            'artisan_approved',
+            "Approved artisan application for: {$artisan->shop_name} ({$artisan->name})",
+            ['artisan_id' => $artisan->id, 'shop_name' => $artisan->shop_name]
+        );
+
         try {
             if ($artisan->email) Mail::to($artisan->email)->send(new ArtisanApproved($artisan));
         } catch (\Exception $e) { Log::error('Email failed: ' . $e->getMessage()); }
@@ -447,6 +432,13 @@ class SuperAdminController extends Controller
         $artisan->update(['artisan_status' => 'rejected', 'artisan_rejection_reason' => $request->reason]);
 
         $this->clearViewedArtisanDocumentKeys($id);
+
+        // Log Activity
+        PlatformActivity::log(
+            'artisan_rejected',
+            "Rejected artisan application for: {$artisan->name}",
+            ['artisan_id' => $artisan->id, 'reason' => $request->reason]
+        );
 
         try {
             if ($artisan->email) Mail::to($artisan->email)->send(new ArtisanRejected($artisan));
@@ -717,5 +709,41 @@ class SuperAdminController extends Controller
             }
         }
         return $keys;
+    }
+
+    /**
+     * Build the base query for user management.
+     */
+    private function buildUserQuery(string $roleFilter, string $search)
+    {
+        $query = User::query()
+            ->where(function ($q) {
+                $q->whereIn('role', ['artisan', 'buyer', 'super_admin'])->orWhereNull('role');
+            })
+            ->withCount('staffMembers')
+            ->with(['staffMembers' => function ($q) {
+                $q->with('employee');
+            }]);
+
+        if ($roleFilter === 'artisan') {
+            $query->where('role', 'artisan');
+        } elseif ($roleFilter === 'buyer') {
+            $query->where(fn($q) => $q->where('role', 'buyer')->orWhereNull('role'));
+        } elseif ($roleFilter === 'super_admin') {
+            $query->where('role', 'super_admin');
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('shop_name', 'like', "%{$search}%")
+                    ->orWhereHas('staffMembers', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return $query;
     }
 }

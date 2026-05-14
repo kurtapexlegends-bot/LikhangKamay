@@ -32,7 +32,7 @@ export default function Modal({
     }[maxWidth];
 
     return (
-        <Transition show={show} leave="duration-200" afterLeave={afterLeave}>
+        <Transition show={show} leave="duration-300 ease-in" afterLeave={afterLeave}>
             <Dialog
                 as="div"
                 id="modal"
@@ -40,30 +40,30 @@ export default function Modal({
                 onClose={close}
             >
                 <TransitionChild
-                    enter="ease-out duration-300"
+                    enter="ease-out duration-500"
                     enterFrom="opacity-0"
                     enterTo="opacity-100"
-                    leave="ease-in duration-200"
+                    leave="ease-in duration-300"
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" />
+                    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-md transition-opacity" />
                 </TransitionChild>
 
                 <TransitionChild
-                    enter="ease-out duration-300"
-                    enterFrom={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-8 sm:translate-y-0 sm:scale-95'}`}
+                    enter="ease-out duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
+                    enterFrom={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
                     enterTo="opacity-100 translate-y-0 sm:scale-100"
-                    leave="ease-in duration-200"
+                    leave="ease-in duration-300 cubic-bezier(0.7, 0, 0.84, 0)"
                     leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                    leaveTo={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-8 sm:translate-y-0 sm:scale-95'}`}
+                    leaveTo={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
                 >
                     <DialogPanel
-                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[90vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${bottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'rounded-2xl'}`}
+                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${bottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'rounded-2xl'}`}
                     >
                         {bottomSheet && (
                             <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
-                                <div className="w-12 h-1.5 bg-stone-200 rounded-full" />
+                                <div className="w-12 h-1.5 bg-stone-200/60 rounded-full" />
                             </div>
                         )}
                         {children}

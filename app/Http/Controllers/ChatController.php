@@ -259,7 +259,7 @@ class ChatController extends Controller
         return back()->with('success', 'Message template created.');
     }
 
-    public function updateTemplate(Request $request, $id)
+    public function updateTemplate(Request $request, int|string $id)
     {
         $this->authorizeChatActor($request->user(), true);
         $this->ensureSellerMessagingWritable($request->user(), true);
@@ -276,7 +276,7 @@ class ChatController extends Controller
         return back()->with('success', 'Message template updated.');
     }
 
-    public function deleteTemplate(Request $request, $id)
+    public function deleteTemplate(Request $request, int|string $id)
     {
         $this->authorizeChatActor($request->user(), true);
         $this->ensureSellerMessagingWritable($request->user(), true);
@@ -379,7 +379,7 @@ class ChatController extends Controller
 
     private function authorizeChatActor(?User $actor, bool $sellerPerspective = false): void
     {
-        abort_unless($actor, 403, 'Authentication required.');
+        abort_unless($actor !== null, 403, 'Authentication required.');
 
         if ($sellerPerspective) {
             abort_unless(

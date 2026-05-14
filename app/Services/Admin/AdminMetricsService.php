@@ -92,7 +92,7 @@ class AdminMetricsService
         return max(0, $currentCount - ($arrivals - $departures));
     }
 
-    public function getHistoricalTierSnapshot($targetDate): array
+    public function getHistoricalTierSnapshot(\Carbon\CarbonInterface|string $targetDate): array
     {
         $date = is_string($targetDate) ? \Carbon\Carbon::parse($targetDate) : $targetDate;
         

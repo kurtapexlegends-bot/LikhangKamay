@@ -48,68 +48,100 @@ class AdminAnalyticsService
     public function getInsightsData(): array
     {
         return Cache::remember('admin_insights_data', 3600, function () {
-            // --- 1. REVENUE & FORECASTING ---
-            $premiumPrice = 199;
-            $elitePrice = 399;
+            $revenue = $this->getRevenueForecastData();
+            $churn = $this->getChurnData();
+            $categories = $this->getCategoryPerformanceData();
+            $health = $this->getPlatformHealthData();
 
-            $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->endOfMonth());
-            $snapshots = app(\App\Services\Admin\AdminMetricsService::class)->getHistoricalTierSnapshots($months->toArray());
+            return [
+                'revenue' => $revenue,
+                'churn' => $churn,
+                'categories' => $categories,
+                'health' => $health,
+            ];
+        });
+    }
 
-            $history = [];
-            foreach ($snapshots as $monthLabel => $counts) {
-                $history[] = [
-                    'month' => $monthLabel,
-                    'mrr' => ($counts['premium'] * $premiumPrice) + ($counts['super_premium'] * $elitePrice),
-                ];
-            }
+    protected function getRevenueForecastData(): array
+    {
+        $premiumPrice = 199;
+        $elitePrice = 399;
 
-            $currentMRR = end($history)['mrr'];
-            $previousMRR = count($history) > 1 ? $history[count($history) - 2]['mrr'] : 0;
-            
-            $growthRate = 0;
-            if ($previousMRR > 0) {
-                $growthRate = round((($currentMRR - $previousMRR) / $previousMRR) * 100, 1);
-            }
+        $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->endOfMonth());
+        $snapshots = app(\App\Services\Admin\AdminMetricsService::class)->getHistoricalTierSnapshots($months->toArray());
 
-            // Simple forecast: current MRR * (1 + growth rate)
-            $forecastedMRR = round($currentMRR * (1 + ($growthRate / 100)));
+        $history = [];
+        foreach ($snapshots as $monthLabel => $counts) {
+            $history[] = [
+                'month' => $monthLabel,
+                'mrr' => ($counts['premium'] * $premiumPrice) + ($counts['super_premium'] * $elitePrice),
+            ];
+        }
 
-            // --- 2. ARTISAN CHURN ---
-            $activeThreshold = now()->subDays(30);
-            $atRiskThreshold = now()->subDays(60);
+        $currentMRR = end($history)['mrr'] ?? 0;
+        $previousMRR = count($history) > 1 ? $history[count($history) - 2]['mrr'] : 0;
 
-            $activeCount = User::where('role', 'artisan')->where('last_seen_at', '>=', $activeThreshold)->count();
-            $atRiskCount = User::where('role', 'artisan')
-                ->where('last_seen_at', '<', $activeThreshold)
-                ->where('last_seen_at', '>=', $atRiskThreshold)
-                ->count();
-            $churnedCount = User::where('role', 'artisan')
-                ->where(function($q) use ($atRiskThreshold) {
-                    $q->where('last_seen_at', '<', $atRiskThreshold)->orWhereNull('last_seen_at');
-                })
-                ->count();
+        $growthRate = 0;
+        if ($previousMRR > 0) {
+            $growthRate = round((($currentMRR - $previousMRR) / $previousMRR) * 100, 1);
+        }
 
-            $atRiskList = User::where('role', 'artisan')
-                ->where('last_seen_at', '<', $activeThreshold)
-                ->where('last_seen_at', '>=', $atRiskThreshold)
-                ->limit(5)
-                ->get()
-                ->map(fn($u) => [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'shop_name' => $u->shop_name,
-                    'avatar' => $u->avatar,
-                    'premium_tier' => $u->premium_tier,
-                    'last_seen' => $u->last_seen_at?->diffForHumans() ?? 'Never',
-                ]);
+        $forecastedMRR = round($currentMRR * (1 + ($growthRate / 100)));
 
-            // --- 3. CATEGORY PERFORMANCE ---
-            $categories = \App\Models\Category::withCount(['products as gmv' => function($query) {
-                $query->join('order_items', 'products.id', '=', 'order_items.product_id')
-                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                    ->where('orders.status', '!=', 'cancelled')
-                    ->select(\Illuminate\Support\Facades\DB::raw('SUM(order_items.price * order_items.quantity)'));
-            }])
+        return [
+            'currentMRR' => number_format($currentMRR),
+            'forecastedMRR' => number_format($forecastedMRR),
+            'growthRate' => $growthRate,
+            'history' => $history,
+        ];
+    }
+
+    protected function getChurnData(): array
+    {
+        $activeThreshold = now()->subDays(30);
+        $atRiskThreshold = now()->subDays(60);
+
+        $activeCount = User::where('role', 'artisan')->where('last_seen_at', '>=', $activeThreshold)->count();
+        $atRiskCount = User::where('role', 'artisan')
+            ->where('last_seen_at', '<', $activeThreshold)
+            ->where('last_seen_at', '>=', $atRiskThreshold)
+            ->count();
+        $churnedCount = User::where('role', 'artisan')
+            ->where(function ($q) use ($atRiskThreshold) {
+                $q->where('last_seen_at', '<', $atRiskThreshold)->orWhereNull('last_seen_at');
+            })
+            ->count();
+
+        $atRiskList = User::where('role', 'artisan')
+            ->where('last_seen_at', '<', $activeThreshold)
+            ->where('last_seen_at', '>=', $atRiskThreshold)
+            ->limit(5)
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'shop_name' => $u->shop_name,
+                'avatar' => $u->avatar,
+                'premium_tier' => $u->premium_tier,
+                'last_seen' => $u->last_seen_at?->diffForHumans() ?? 'Never',
+            ]);
+
+        return [
+            'active' => $activeCount,
+            'atRisk' => $atRiskCount,
+            'churned' => $churnedCount,
+            'atRiskList' => $atRiskList,
+        ];
+    }
+
+    protected function getCategoryPerformanceData(): array
+    {
+        return \App\Models\Category::withCount(['products as gmv' => function ($query) {
+            $query->join('order_items', 'products.id', '=', 'order_items.product_id')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->where('orders.status', '!=', 'cancelled')
+                ->select(\Illuminate\Support\Facades\DB::raw('SUM(order_items.price * order_items.quantity)'));
+        }])
             ->orderByDesc('gmv')
             ->limit(6)
             ->get()
@@ -119,41 +151,27 @@ class AdminAnalyticsService
             ])
             ->values()
             ->toArray();
+    }
 
-            // --- 4. PLATFORM HEALTH ---
-            $totalOrders = \App\Models\Order::count();
-            $completedOrders = \App\Models\Order::where('status', 'delivered')->count();
-            $completionRate = $totalOrders > 0 ? round(($completedOrders / $totalOrders) * 100, 1) : 0;
+    protected function getPlatformHealthData(): array
+    {
+        $totalOrders = \App\Models\Order::count();
+        $completedOrders = \App\Models\Order::where('status', 'delivered')->count();
+        $completionRate = $totalOrders > 0 ? round(($completedOrders / $totalOrders) * 100, 1) : 0;
 
-            $aov = \App\Models\Order::where('status', '!=', 'cancelled')->avg('total_amount') ?? 0;
-            
-            $totalReviews = \App\Models\Review::count();
-            $reviewRate = $totalOrders > 0 ? round(($totalReviews / $totalOrders) * 100, 1) : 0;
+        $aov = \App\Models\Order::where('status', '!=', 'cancelled')->avg('total_amount') ?? 0;
 
-            $refundedOrders = \App\Models\Order::where('status', 'refunded')->count();
-            $refundRate = $totalOrders > 0 ? round(($refundedOrders / $totalOrders) * 100, 1) : 0;
+        $totalReviews = \App\Models\Review::count();
+        $reviewRate = $totalOrders > 0 ? round(($totalReviews / $totalOrders) * 100, 1) : 0;
 
-            return [
-                'revenue' => [
-                    'currentMRR' => number_format($currentMRR),
-                    'forecastedMRR' => number_format($forecastedMRR),
-                    'growthRate' => $growthRate,
-                    'history' => $history,
-                ],
-                'churn' => [
-                    'active' => $activeCount,
-                    'atRisk' => $atRiskCount,
-                    'churned' => $churnedCount,
-                    'atRiskList' => $atRiskList,
-                ],
-                'categories' => $categories,
-                'health' => [
-                    'completionRate' => $completionRate,
-                    'aov' => round($aov, 2),
-                    'reviewRate' => $reviewRate,
-                    'refundRate' => $refundRate,
-                ]
-            ];
-        });
+        $refundedOrders = \App\Models\Order::where('status', 'refunded')->count();
+        $refundRate = $totalOrders > 0 ? round(($refundedOrders / $totalOrders) * 100, 1) : 0;
+
+        return [
+            'completionRate' => $completionRate,
+            'aov' => round($aov, 2),
+            'reviewRate' => $reviewRate,
+            'refundRate' => $refundRate,
+        ];
     }
 }

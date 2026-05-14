@@ -8,12 +8,14 @@ class OrderFinanceService
 {
     public static function getPlatformCommissionRate(): float
     {
-        return (float) config('services.platform.commission_rate', 0.0);
+        return (float) \App\Facades\Settings::get('commission_rate', 5.0) / 100;
     }
 
     public static function getConvenienceFeeRate(): float
     {
-        return (float) config('services.platform.convenience_fee_rate', 0.03);
+        // The setting 'convenience_fee' is a flat PHP amount, not a rate.
+        // Let's check how it's used in calculateAmounts.
+        return (float) \App\Facades\Settings::get('convenience_fee', 15.0);
     }
 
     /**
@@ -34,7 +36,7 @@ class OrderFinanceService
     {
         $normalizedSubtotal = $this->money($merchandiseSubtotal);
         $convenienceFee = $shippingMethod === 'Delivery'
-            ? $this->money($normalizedSubtotal * self::getConvenienceFeeRate())
+            ? $this->money(self::getConvenienceFeeRate())
             : 0.00;
         $normalizedShippingFee = $shippingMethod === 'Delivery'
             ? $this->money($shippingFee)

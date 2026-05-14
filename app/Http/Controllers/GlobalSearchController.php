@@ -41,7 +41,23 @@ class GlobalSearchController extends Controller
 
     private function adminSearch(string $query): array
     {
-        $results = [];
+        // Administrative Activity Logs (Audit Trail)
+        $activities = \App\Models\PlatformActivity::where('description', 'ILIKE', "%{$query}%")
+            ->orWhere('action', 'ILIKE', "%{$query}%")
+            ->with('user')
+            ->latest()
+            ->limit(3)
+            ->get()
+            ->map(function ($a) {
+                return [
+                    'id' => "admin-log-{$a->id}",
+                    'title' => "Audit: {$a->description}",
+                    'subtitle' => "Actor: " . ($a->user->name ?? 'System') . " • " . $a->created_at->diffForHumans(),
+                    'type' => 'Activity Log',
+                    'url' => route('admin.activity.index', ['search' => $a->description]),
+                    'icon' => 'activity',
+                ];
+            });
 
         // Super Admin Search: Users, Shops, and Admin Sponsorships
         $users = User::search($query, ['name', 'email', 'shop_name'])
@@ -85,7 +101,7 @@ class GlobalSearchController extends Controller
                     'title' => $c->name,
                     'subtitle' => "Category Management",
                     'type' => 'Category',
-                    'url' => route('admin.taxonomy', ['search' => $c->name]),
+                    'url' => route('admin.taxonomy.index', ['search' => $c->name]),
                     'icon' => 'folder',
                 ];
             });
@@ -122,7 +138,7 @@ class GlobalSearchController extends Controller
             });
 
         return array_merge(
-            $results, 
+            $activities->toArray(),
             $users->toArray(), 
             $sponsorships->toArray(),
             $adminCategories->toArray(),
@@ -134,7 +150,6 @@ class GlobalSearchController extends Controller
     private function sellerSearch(User $user, string $query): array
     {
         $sellerId = $user->getEffectiveSellerId();
-        $results = [];
 
         // Product Search
         $products = Product::where('user_id', $sellerId)
@@ -156,9 +171,9 @@ class GlobalSearchController extends Controller
         // Order Search
         $orders = Order::where('artisan_id', $sellerId)
             ->where(function ($q) use ($query) {
-                $q->where('order_number', 'LIKE', "%{$query}%")
-                    ->orWhere('customer_name', 'LIKE', "%{$query}%")
-                    ->orWhere('tracking_number', 'LIKE', "%{$query}%");
+                $q->where('order_number', 'ILIKE', "%{$query}%")
+                    ->orWhere('customer_name', 'ILIKE', "%{$query}%")
+                    ->orWhere('tracking_number', 'ILIKE', "%{$query}%");
             })
             ->limit(5)
             ->get()
@@ -175,7 +190,7 @@ class GlobalSearchController extends Controller
 
         // Inventory (Supply) Search
         $supplies = Supply::where('user_id', $sellerId)
-            ->where('name', 'LIKE', "%{$query}%")
+            ->where('name', 'ILIKE', "%{$query}%")
             ->limit(5)
             ->get()
             ->map(function ($s) {
@@ -192,7 +207,7 @@ class GlobalSearchController extends Controller
         // Stock Request Search
         $stockRequests = StockRequest::where('user_id', $sellerId)
             ->whereHas('supply', function($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%");
+                $q->where('name', 'ILIKE', "%{$query}%");
             })
             ->with('supply')
             ->limit(5)
@@ -213,9 +228,9 @@ class GlobalSearchController extends Controller
                 $q->where('user_id', $sellerId);
             })
             ->where(function ($q) use ($query) {
-                $q->where('comment', 'LIKE', "%{$query}%")
+                $q->where('comment', 'ILIKE', "%{$query}%")
                     ->orWhereHas('user', function($uq) use ($query) {
-                        $uq->where('name', 'LIKE', "%{$query}%");
+                        $uq->where('name', 'ILIKE', "%{$query}%");
                     });
             })
             ->with(['product', 'user'])
@@ -235,7 +250,7 @@ class GlobalSearchController extends Controller
         // Sponsorship Search (Seller)
         $sellerSponsorships = SponsorshipRequest::where('user_id', $sellerId)
             ->whereHas('product', function($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%");
+                $q->where('name', 'ILIKE', "%{$query}%");
             })
             ->limit(2)
             ->get()
@@ -250,21 +265,11 @@ class GlobalSearchController extends Controller
                 ];
             });
 
-        $results = array_merge(
-            $results, 
-            $products->toArray(), 
-            $orders->toArray(), 
-            $supplies->toArray(), 
-            $stockRequests->toArray(),
-            $reviews->toArray(),
-            $sellerSponsorships->toArray()
-        );
-
         // Employee (HR) Search
         $employees = Employee::where('user_id', $sellerId)
             ->where(function ($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%")
-                    ->orWhere('role', 'LIKE', "%{$query}%");
+                $q->where('name', 'ILIKE', "%{$query}%")
+                    ->orWhere('role', 'ILIKE', "%{$query}%");
             })
             ->limit(3)
             ->get()
@@ -281,7 +286,7 @@ class GlobalSearchController extends Controller
 
         // Payroll Search
         $payrolls = Payroll::where('user_id', $sellerId)
-            ->where('month', 'LIKE', "%{$query}%")
+            ->where('month', 'ILIKE', "%{$query}%")
             ->limit(2)
             ->get()
             ->map(function ($p) {
@@ -295,6 +300,57 @@ class GlobalSearchController extends Controller
                 ];
             });
 
-        return array_merge($results, $employees->toArray(), $payrolls->toArray());
+        // Seller Activity Logs
+        $sellerLogs = \App\Models\SellerActivityLog::where('user_id', $sellerId)
+            ->where(function ($q) use ($query) {
+                $q->where('description', 'ILIKE', "%{$query}%")
+                  ->orWhere('action', 'ILIKE', "%{$query}%");
+            })
+            ->latest()
+            ->limit(3)
+            ->get()
+            ->map(function ($l) {
+                return [
+                    'id' => "seller-log-{$l->id}",
+                    'title' => "Log: {$l->description}",
+                    'subtitle' => $l->created_at->diffForHumans(),
+                    'type' => 'Activity Log',
+                    'url' => route('audit-log.index', ['search' => $l->description]),
+                    'icon' => 'activity',
+                ];
+            });
+
+        // Staff Access Audits
+        $staffAudits = \App\Models\StaffAccessAudit::where('seller_owner_id', $sellerId)
+            ->where(function ($q) use ($query) {
+                $q->where('summary', 'ILIKE', "%{$query}%")
+                  ->orWhere('event', 'ILIKE', "%{$query}%");
+            })
+            ->latest()
+            ->limit(3)
+            ->get()
+            ->map(function ($sa) {
+                return [
+                    'id' => "staff-audit-{$sa->id}",
+                    'title' => "Security: {$sa->summary}",
+                    'subtitle' => "Event: {$sa->event} • " . $sa->created_at->diffForHumans(),
+                    'type' => 'Staff Audit',
+                    'url' => route('audit-log.index', ['search' => $sa->summary]),
+                    'icon' => 'shield',
+                ];
+            });
+
+        return array_merge(
+            $products->toArray(), 
+            $orders->toArray(), 
+            $supplies->toArray(), 
+            $stockRequests->toArray(),
+            $reviews->toArray(),
+            $sellerSponsorships->toArray(),
+            $employees->toArray(), 
+            $payrolls->toArray(),
+            $sellerLogs->toArray(),
+            $staffAudits->toArray()
+        );
     }
 }

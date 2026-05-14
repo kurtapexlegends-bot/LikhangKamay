@@ -20,7 +20,7 @@ class PlatformActivity extends Model
         'metadata' => 'array',
     ];
 
-    public static function log($action, $description, $metadata = [])
+    public static function log(string $action, string $description, array $metadata = [])
     {
         return self::create([
             'user_id' => auth()->id(),

@@ -27,6 +27,10 @@ class PaymentController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
+        if (!\App\Facades\Settings::get('paymongo_enabled', true)) {
+            return redirect()->back()->with('error', 'Online payments are currently disabled for maintenance. Please try again later or contact support.');
+        }
+
         if ($order->payment_status === 'paid') {
             return redirect()->route('my-orders.index')->with('success', 'Order is already paid.');
         }

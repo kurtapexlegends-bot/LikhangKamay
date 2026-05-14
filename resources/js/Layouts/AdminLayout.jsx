@@ -24,7 +24,9 @@ import {
     Activity,
     FolderTree,
     Clock3,
-    RotateCcw
+    RotateCcw,
+    Lock,
+    Loader2
 } from 'lucide-react';
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
@@ -77,6 +79,13 @@ export default function AdminLayout({ title, children }) {
     const { pendingArtisanCount, auth, globalAnnouncement } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
+    const [isImpersonating, setIsImpersonating] = useState(false);
+
+    useEffect(() => {
+        const handleStartImpersonation = () => setIsImpersonating(true);
+        window.addEventListener('start-impersonation-loading', handleStartImpersonation);
+        return () => window.removeEventListener('start-impersonation-loading', handleStartImpersonation);
+    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -138,7 +147,7 @@ export default function AdminLayout({ title, children }) {
     ];
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-gray-800">
+        <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-stone-800">
             <ImpersonationBanner />
             <AnnouncementBanner announcement={globalAnnouncement} />
             <div className="flex-1 flex">
@@ -147,39 +156,39 @@ export default function AdminLayout({ title, children }) {
                 {/* Mobile Sidebar Overlay */}
                 {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+                    className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
             )}
 
             {/* Sidebar Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-52 bg-white border-r border-clay-100 transition-transform duration-300 ease-in-out
+                fixed inset-y-0 left-0 z-50 w-52 bg-white border-r border-clay-100 transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)
                 lg:translate-x-0 flex flex-col
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
                 {/* Brand Header */}
-                <div className="px-5 py-3 border-b border-gray-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
+                <div className="px-5 py-4 border-b border-stone-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
                     <Link href={route('admin.dashboard')} className="flex items-center gap-2.5 group">
                         <img
                             src={usePage().props.platform.logo}
                             alt={usePage().props.platform.name}
-                            className="w-7 h-7 object-contain transition-transform group-hover:scale-110"
+                            className="w-7 h-7 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
                         />
-                        <span className="font-serif text-lg font-bold text-gray-900 tracking-tight">{usePage().props.platform.name}</span>
+                        <span className="font-serif text-lg font-bold text-stone-900 tracking-tight">{usePage().props.platform.name}</span>
                     </Link>
 
                     {/* Mobile Close Button */}
                     <button
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="lg:hidden text-gray-400 hover:text-gray-600 transition-all active:scale-95"
+                        className="lg:hidden text-stone-400 hover:text-stone-600 transition-all active:scale-95"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="flex-1 px-3 py-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                <nav className="flex-1 px-3 py-4 overflow-y-auto no-scrollbar">
                     {navigationGroups.map((group, index) => (
                         <CategoryGroup
                             key={group.title}
@@ -206,18 +215,18 @@ export default function AdminLayout({ title, children }) {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-500 ease-in-out">
                 {/* Header (Desktop & Mobile) */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-all duration-300">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-stone-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-all duration-300">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
-                            className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-all active:scale-95 lg:hidden"
+                            className="p-2 -ml-2 text-stone-500 hover:bg-stone-100 rounded-lg transition-all active:scale-95 lg:hidden"
                         >
                             <Menu size={24} />
                         </button>
                         <div className="min-w-0">
-                            <h1 className="truncate text-xl font-bold text-gray-900">
+                            <h1 className="truncate text-xl font-bold text-stone-900 tracking-tight">
                                 {title === 'Platform Insights' ? 'Insights' :
                                  title === 'Diagnostics Command Center' ? 'Diagnostics' :
                                  title === 'User Management' ? 'User Directory' :
@@ -230,7 +239,7 @@ export default function AdminLayout({ title, children }) {
                                  title}
                             </h1>
                             
-                            <p className="text-[11px] text-gray-500 font-medium mt-0.5 hidden sm:block">
+                            <p className="text-[11px] text-stone-500 font-medium mt-0.5 hidden sm:block">
                                 {{
                                     'Overview': "Overview of platform performance",
                                     'Monetization': "Track revenue and subscription metrics",
@@ -268,17 +277,17 @@ export default function AdminLayout({ title, children }) {
                         </div>
 
                         {/* Divider */}
-                        <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
+                        <div className="h-8 w-px bg-stone-200 hidden sm:block"></div>
 
                         {/* User Profile Dropdown */}
                         <div className="relative">
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">
-                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                        <button type="button" className="inline-flex items-center gap-3 px-1 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-stone-500 bg-transparent hover:text-stone-700 focus:outline-none transition ease-in-out duration-150">
                                             <WorkspaceAccountSummary user={auth.user} className="hidden lg:block text-right" />
                                             <UserAvatar user={auth.user} />
-                                            <ChevronDown size={16} className="text-gray-400" />
+                                            <ChevronDown size={16} className="text-stone-400" />
                                         </button>
                                     </span>
                                 </Dropdown.Trigger>
@@ -301,32 +310,49 @@ export default function AdminLayout({ title, children }) {
                 </main>
             </div>
             </div>
+
+            {/* GLOBAL IMPERSONATION OVERLAY (TRULY FULL SCREEN) */}
+            {isImpersonating && (
+                <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-stone-900/60 backdrop-blur-xl animate-in fade-in duration-700">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Lock size={24} className="text-stone-400 animate-pulse" />
+                        </div>
+                        <Loader2 className="h-24 w-24 animate-spin text-stone-400/20" strokeWidth={1.5} />
+                    </div>
+                    
+                    <div className="mt-8 text-center">
+                        <h3 className="text-xl font-black tracking-[0.2em] text-white uppercase italic">Securing Session</h3>
+                        <p className="mt-2 text-[10px] font-bold text-stone-400/60 uppercase tracking-[0.3em]">Synchronizing marketplace identity...</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
 const CategoryGroup = ({ title, open, onToggle, isFirst, children }) => (
-    <div className={isFirst ? 'mt-1.5' : 'mt-2'}>
+    <div className={isFirst ? 'mt-1.5' : 'mt-4'}>
         <motion.button
             type="button"
             onClick={onToggle}
             whileTap={{ scale: 0.98, x: 1 }}
-            className="flex w-full items-center justify-between px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-all hover:text-gray-500 focus:outline-none"
+            className="flex w-full items-center justify-between px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400 transition-all hover:text-stone-600 focus:outline-none"
         >
             <span>{title}</span>
             <ChevronDown
                 size={12}
-                className={`transition-transform duration-300 ${open ? '' : '-rotate-90'}`}
+                className={`transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${open ? '' : '-rotate-90'}`}
             />
         </motion.button>
         <AnimatePresence initial={false}>
             {open && (
                 <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                    className="overflow-hidden space-y-0.5 pt-0.5"
+                    initial={{ height: 0, opacity: 0, y: -4 }}
+                    animate={{ height: 'auto', opacity: 1, y: 0 }}
+                    exit={{ height: 0, opacity: 0, y: -4 }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    className="overflow-hidden space-y-1 pt-1.5"
                 >
                     {children}
                 </motion.div>
@@ -344,24 +370,24 @@ const NavItem = ({ href, icon: Icon, active, badge, onClick, children }) => {
             preserveScroll
             preserveState
             onClick={onClick}
-            whileTap={{ scale: 0.98, x: 2 }}
+            whileTap={{ scale: 0.97, x: 2 }}
             className={`
-                flex items-center justify-between px-3 py-1 rounded-lg text-xs font-bold transition-colors duration-200
+                flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300
                 ${active
-                    ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
-                    : 'text-gray-500 hover:bg-clay-50 hover:text-clay-700 group'}
+                    ? 'bg-clay-600 text-white shadow-[0_8px_20px_rgba(182,107,76,0.3)] ring-1 ring-clay-500/50'
+                    : 'text-stone-500 hover:bg-clay-50 hover:text-clay-700 group hover:translate-x-1'}
             `}
         >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
                 <Icon
-                    size={15}
+                    size={16}
                     strokeWidth={2.5}
-                    className={active ? 'text-white' : 'text-gray-400 group-hover:text-clay-600'}
+                    className={`transition-colors duration-300 ${active ? 'text-white' : 'text-stone-400 group-hover:text-clay-600'}`}
                 />
                 {children}
             </div>
             {badge && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? 'bg-white text-clay-600' : 'bg-clay-100 text-clay-600'
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors duration-300 ${active ? 'bg-white/20 text-white ring-1 ring-white/30' : 'bg-clay-100 text-clay-700'
                     }`}>
                     {badge}
                 </span>

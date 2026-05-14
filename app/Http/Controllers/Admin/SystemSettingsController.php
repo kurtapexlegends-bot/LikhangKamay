@@ -92,6 +92,22 @@ class SystemSettingsController extends Controller
             );
         }
 
+        if ((bool)$this->settings->get('maintenance_mode') !== (bool)$validated['maintenance_mode']) {
+            $status = $validated['maintenance_mode'] ? 'ENABLED' : 'DISABLED';
+            \App\Models\PlatformActivity::log(
+                'MAINTENANCE_TOGGLE',
+                "Maintenance mode was {$status} by the administrator."
+            );
+        }
+
+        if ((bool)$this->settings->get('paymongo_enabled') !== (bool)$validated['paymongo_enabled']) {
+            $status = $validated['paymongo_enabled'] ? 'ONLINE' : 'OFFLINE';
+            \App\Models\PlatformActivity::log(
+                'GATEWAY_STATUS_CHANGE',
+                "PayMongo gateway status changed to {$status}."
+            );
+        }
+
         $this->settings->set('platform_name', $validated['platform_name']);
         $this->settings->set('primary_color', $validated['primary_color']);
         $this->settings->set('seo_metadata', $validated['seo_metadata'], 'json');

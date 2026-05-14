@@ -16,6 +16,7 @@ import {
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
+import Skeleton from "@/Components/Skeleton";
 
 const formatMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -33,13 +34,13 @@ const changeDirectionBadgeClasses = {
 
 // Skeleton Loaders
 const StatSkeleton = () => (
-    <div className="flex items-start justify-between rounded-2xl border border-stone-200 bg-white p-5 animate-pulse">
+    <div className="flex items-start justify-between rounded-2xl border border-stone-200 bg-white p-5">
         <div className="space-y-3 w-full">
-            <div className="h-2 w-16 bg-stone-100 rounded" />
-            <div className="h-6 w-24 bg-stone-100 rounded" />
-            <div className="h-2 w-32 bg-stone-100 rounded mt-2" />
+            <Skeleton className="h-2 w-16" />
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-2 w-32 mt-2 opacity-60" />
         </div>
-        <div className="h-10 w-10 bg-stone-100 rounded-xl" />
+        <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
     </div>
 );
 
@@ -47,18 +48,22 @@ const RowSkeleton = () => (
     <tr className="animate-pulse">
         <td className="px-6 py-4">
             <div className="flex items-center gap-3">
-                <div className="h-8 w-8 bg-stone-100 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
                 <div className="space-y-2">
-                    <div className="h-3 w-24 bg-stone-100 rounded" />
-                    <div className="h-2 w-16 bg-stone-100 rounded" />
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-2 w-16 opacity-60" />
                 </div>
             </div>
         </td>
         <td className="px-6 py-4">
-            <div className="h-5 w-32 bg-stone-100 rounded-full mx-auto" />
+            <div className="flex justify-center">
+                <Skeleton className="h-5 w-32 rounded-full" />
+            </div>
         </td>
-        <td className="px-6 py-4 text-right">
-            <div className="h-3 w-20 bg-stone-100 rounded ml-auto" />
+        <td className="px-6 py-4">
+            <div className="flex justify-end">
+                <Skeleton className="h-3 w-20" />
+            </div>
         </td>
     </tr>
 );
@@ -75,17 +80,17 @@ const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }
     return (
         <div className="flex items-start justify-between rounded-2xl border border-stone-200 bg-white p-5 transition hover:border-stone-300">
             <div>
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
                     {title}
                 </p>
-                <h3 className="text-2xl font-bold tracking-tight text-gray-900">
+                <h3 className="text-2xl font-bold tracking-tight text-stone-900">
                     {prefix}{value !== undefined ? value.toLocaleString() : '0'}
                 </h3>
                 
                 {growth !== undefined && (
                     <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${
-                        derivedTrend === 'up' ? 'text-green-600' : 
-                        derivedTrend === 'down' ? 'text-red-600' : 'text-gray-400'
+                        derivedTrend === 'up' ? 'text-emerald-600' : 
+                        derivedTrend === 'down' ? 'text-rose-600' : 'text-stone-400'
                     }`}>
                         {derivedTrend === 'up' && <TrendingUp size={12}/>}
                         {derivedTrend === 'down' && <TrendingDown size={12}/>}
@@ -94,10 +99,10 @@ const StatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, subtitle }
                     </div>
                 )}
                 {subtitle && (
-                    <p className="text-[10px] font-medium text-gray-400 mt-1">{subtitle}</p>
+                    <p className="text-[10px] font-medium text-stone-400 mt-1">{subtitle}</p>
                 )}
                 {!subtitle && growth === undefined && (
-                    <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>
+                    <p className="text-[10px] font-medium text-stone-400 mt-1">Real-time status</p>
                 )}
             </div>
             <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${text}`}>
@@ -205,10 +210,10 @@ export default function Monetization({ metrics, recentSubscribers, recentSponsor
                             />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900 text-sm sm:text-lg">
+                            <h3 className="font-bold text-stone-900 text-sm sm:text-lg">
                                 Pending Sponsorships
                             </h3>
-                            <p className="text-xs text-gray-600 mt-0.5 sm:text-sm">
+                            <p className="text-xs text-stone-600 mt-0.5 sm:text-sm">
                                 <span className="font-bold text-amber-700">{metrics.pendingSponsorships}</span> request{metrics.pendingSponsorships > 1 ? "s" : ""} awaiting approval.
                             </p>
                         </div>

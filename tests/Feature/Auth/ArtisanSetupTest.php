@@ -29,6 +29,7 @@ class ArtisanSetupTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
+        /** @var User $user */
         $user = User::factory()->create([
             'role' => 'artisan',
             'email_verified_at' => now(),
@@ -63,6 +64,7 @@ class ArtisanSetupTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
+        /** @var User $user */
         $user = User::factory()->create([
             'role' => 'artisan',
             'email_verified_at' => now(),
@@ -103,6 +105,7 @@ class ArtisanSetupTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
+        /** @var User $user */
         $user = User::factory()->create([
             'role' => 'artisan',
             'email_verified_at' => now(),

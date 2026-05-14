@@ -11,7 +11,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Components/MobileDock';
 
 export default function BuyerNavbar() {
-    const { auth, cartCount, sellerSidebar, unreadMessageCount } = usePage().props;
+    const { auth, cartCount, sellerSidebar, unreadMessageCount, platform } = usePage().props;
     const user = auth?.user;
     const rawBuyerName = user?.name?.trim()
         || [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
@@ -113,9 +113,9 @@ export default function BuyerNavbar() {
                     
                     {/* LOGO */}
                     <Link href="/" className="order-1 flex min-w-0 items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
-                        <img src="/images/logo.png" alt="Logo" className={`object-contain transition-all duration-300 ${isScrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-9 h-9 sm:w-10 sm:h-10'}`} />
+                        <img src={platform.logo} alt="Logo" className={`object-contain transition-all duration-300 ${isScrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-9 h-9 sm:w-10 sm:h-10'}`} />
                         <div className={`flex min-w-0 flex-col transition-all duration-300 ${isScrolled ? 'opacity-0 w-0 overflow-hidden sm:opacity-100 sm:w-auto' : 'opacity-100 w-auto'}`}>
-                            <span className={`truncate font-serif font-bold text-gray-900 leading-none tracking-tight transition-all duration-300 ${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`}>LikhangKamay</span>
+                            <span className={`truncate font-serif font-bold text-gray-900 leading-none tracking-tight transition-all duration-300 ${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`}>{platform.name}</span>
                             <span className={`hidden sm:block font-bold tracking-widest uppercase mt-0.5 text-clay-600 transition-all duration-300 ${isScrolled ? 'text-[8px]' : 'text-[10px]'}`}>Artisan Marketplace</span>
                         </div>
                     </Link>

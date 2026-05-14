@@ -34,7 +34,7 @@ class PlatformAuditCommand extends Command
         $this->info("\nAudit completed. Check findings above.");
     }
 
-    protected function header($title)
+    protected function header(string $title)
     {
         $len = strlen($title) + 4;
         $this->line(str_repeat('=', $len));

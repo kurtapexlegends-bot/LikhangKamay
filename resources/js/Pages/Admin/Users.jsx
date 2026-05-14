@@ -2,12 +2,13 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
-import { Users, Store, Search, Shield, Briefcase, ChevronDown, X, Filter, VenetianMask, User as UserIcon } from 'lucide-react';
+import { Users, Store, Search, Shield, Briefcase, ChevronDown, X, Filter, VenetianMask, User as UserIcon, Loader2, Lock } from 'lucide-react';
 import CompactPagination from '@/Components/CompactPagination';
 import Dropdown from '@/Components/Dropdown';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import { TableSkeleton } from '@/Components/Skeleton';
 
 const roleTabs = ['all', 'artisan', 'buyer', 'super_admin'];
 
@@ -209,8 +210,14 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
 
     const confirmImpersonation = () => {
         if (impersonateTarget) {
+            window.dispatchEvent(new CustomEvent('start-impersonation-loading'));
             router.post(`/admin/users/${impersonateTarget}/impersonate`, {}, {
-                onFinish: () => setImpersonateTarget(null),
+                onStart: () => setImpersonateTarget(null),
+                onError: () => {
+                    // Force a reload if it fails to clear the global loader, 
+                    // though real production should have a cleaner way to stop it.
+                    window.location.reload();
+                },
             });
         }
     };
@@ -442,18 +449,24 @@ export default function AdminUsers({ users, filters, unlinkedStaffGroup = null }
 
                 <div className="hidden overflow-x-auto md:block">
                     <table className="w-full min-w-[960px]">
-                        <thead className="bg-[#FAF9F7] border-b border-stone-200">
+                        <thead className="bg-stone-50 border-b border-stone-200">
                             <tr>
-                                <th className="px-5 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-stone-500">Primary Identity</th>
-                                <th className="px-5 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-stone-500">Workspace / Setup</th>
-                                <th className="px-5 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-stone-500">Role</th>
-                                <th className="px-5 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-stone-500">Account State</th>
-                                <th className="px-5 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-stone-500">Join Date</th>
-                                <th className="px-5 py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-stone-500">Actions</th>
+                                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-stone-500">Primary Identity</th>
+                                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-stone-500">Workspace / Setup</th>
+                                <th className="px-5 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-stone-500">Role</th>
+                                <th className="px-5 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-stone-500">Account State</th>
+                                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-stone-500">Join Date</th>
+                                <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-stone-500">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                            {filteredAccounts.length === 0 && (
+                            {deferredSearch !== search.trim() ? (
+                                <tr>
+                                    <td colSpan={6} className="px-0">
+                                        <TableSkeleton rows={8} />
+                                    </td>
+                                </tr>
+                            ) : filteredAccounts.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center justify-center text-stone-400 gap-3">

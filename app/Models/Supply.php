@@ -61,19 +61,19 @@ class Supply extends Model
     }
 
     // Scope: Get supplies for a specific user
-    public function scopeForUser($query, $userId)
+    public function scopeForUser(\Illuminate\Database\Eloquent\Builder $query, int|string $userId)
     {
         return $query->where('user_id', $userId);
     }
 
     // Scope: Low stock items
-    public function scopeLowStock($query)
+    public function scopeLowStock(\Illuminate\Database\Eloquent\Builder $query)
     {
         return $query->whereColumn('quantity', '<=', 'min_stock');
     }
 
     // Scope: By category
-    public function scopeByCategory($query, string $category)
+    public function scopeByCategory(\Illuminate\Database\Eloquent\Builder $query, string $category)
     {
         return $query->where('category', $category);
     }
@@ -84,7 +84,7 @@ class Supply extends Model
     }
 
     // Accessor: Default max_stock to 500 if null
-    public function getMaxStockAttribute($value)
+    public function getMaxStockAttribute(?int $value)
     {
         return $value ?? 500;
     }

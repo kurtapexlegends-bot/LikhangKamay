@@ -1,17 +1,19 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 export default function Footer() {
+    const { platform } = usePage().props;
+
     return (
         <footer className="bg-white border-t border-gray-100 py-6 mt-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-4 gap-6 text-sm">
                 <div className="col-span-1 md:col-span-2 text-center md:text-left">
                     <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                         <img src="/images/logo.png" className="h-8 w-auto" alt="Small Logo" />
-                         <span className="font-serif text-xl font-bold text-gray-900">LikhangKamay</span>
+                         <img src={platform.logo} className="h-8 w-auto" alt="Small Logo" />
+                         <span className="font-serif text-xl font-bold text-gray-900">{platform.name}</span>
                     </div>
                     <p className="text-gray-500 max-w-xs leading-relaxed mx-auto md:mx-0">
-                        A digital home for Cavite’s pottery community. Connecting artisans with admirers through technology and tradition.
+                        {platform.seo.description}
                     </p>
                 </div>
                 <div className="text-center md:text-left">
@@ -32,7 +34,7 @@ export default function Footer() {
                 </div>
             </div>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 pt-6 border-t border-gray-50 text-center text-xs text-gray-400">
-                © {new Date().getFullYear()} LikhangKamay. All rights reserved.
+                © {new Date().getFullYear()} {platform.name}. All rights reserved.
             </div>
         </footer>
     );

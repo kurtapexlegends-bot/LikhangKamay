@@ -32,12 +32,22 @@ class ImpersonationController extends Controller
         // Perform the login swap
         Auth::login($user);
 
-        // Redirect based on the target user's role
-        if ($user->role === 'artisan') {
-            return redirect()->route('dashboard');
+        // Log the activity
+        PlatformActivity::log(
+            'user_impersonation',
+            "Admin started impersonating user: {$user->name} (ID: {$user->id})",
+            ['target_user_id' => $user->id, 'target_user_role' => $user->role]
+        );
+
+        $targetRoute = $user->role === 'artisan' ? route('dashboard') : route('home');
+
+        // Force a hard redirect for Inertia to prevent it from trying to refresh 
+        // the current admin page with the new (restricted) session.
+        if ($request->header('X-Inertia')) {
+            return \Inertia\Inertia::location($targetRoute);
         }
 
-        return redirect()->route('home');
+        return redirect()->to($targetRoute);
     }
 
     /**
@@ -58,6 +68,12 @@ class ImpersonationController extends Controller
         // Restore the admin session
         Auth::loginUsingId($adminId);
 
-        return redirect()->route('admin.users')->with('success', 'Impersonation ended. You have been returned to your Admin account.');
+        $targetRoute = route('admin.users');
+
+        if ($request->header('X-Inertia')) {
+            return \Inertia\Inertia::location($targetRoute);
+        }
+
+        return redirect()->to($targetRoute)->with('success', 'Impersonation ended. You have been returned to your Admin account.');
     }
 }

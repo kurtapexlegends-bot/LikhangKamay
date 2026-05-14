@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
+import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -12,50 +12,54 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        // You could log the error to an external service here
-        console.error("Uncaught error:", error, errorInfo);
+        // You could log the error to a service like Sentry here
+        console.error("Platform Error Boundary caught an error:", error, errorInfo);
     }
 
     render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen bg-[#FDFBF9] flex items-center justify-center p-4 font-sans">
-                    <div className="max-w-md w-full bg-white rounded-3xl border border-clay-100 p-8 shadow-xl text-center space-y-6 animate-in fade-in zoom-in duration-300">
-                        <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mx-auto shadow-inner">
-                            <AlertTriangle size={40} />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Something went wrong</h2>
-                            <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                                A critical component encountered an error. Our team has been notified.
-                            </p>
-                        </div>
-
-                        <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100 text-left">
-                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Error Trace</p>
-                            <p className="text-xs font-mono text-red-500 line-clamp-3 leading-tight">
-                                {this.state.error?.toString() || 'Unknown runtime error'}
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="flex items-center justify-center gap-2 px-6 py-3 bg-clay-600 text-white rounded-xl font-bold text-sm hover:bg-clay-700 transition-all active:scale-95 shadow-lg shadow-clay-600/20"
-                            >
-                                <RefreshCcw size={16} />
-                                Reload
-                            </button>
-                            <a
-                                href="/"
-                                className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all active:scale-95"
-                            >
-                                <Home size={16} />
-                                Home
-                            </a>
-                        </div>
+                <div className="flex min-h-screen flex-col items-center justify-center bg-stone-50 px-4 py-12 text-center">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-rose-50 text-rose-600 shadow-sm border border-rose-100">
+                        <AlertCircle size={40} />
                     </div>
+                    
+                    <h1 className="mb-2 text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl">
+                        Something went wrong
+                    </h1>
+                    
+                    <p className="mb-8 max-w-md text-stone-600 font-medium leading-relaxed">
+                        The application encountered an unexpected error. Don't worry, your data is safe. Try refreshing the page or returning home.
+                    </p>
+
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-6 py-3 text-sm font-bold text-white transition hover:bg-black hover:scale-105 active:scale-95"
+                        >
+                            <RefreshCw size={16} /> Refresh Page
+                        </button>
+                        
+                        <a
+                            href="/"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-6 py-3 text-sm font-bold text-stone-600 transition hover:bg-stone-50 hover:border-stone-300 active:scale-95"
+                        >
+                            <Home size={16} /> Return Home
+                        </a>
+                    </div>
+
+                    {process.env.NODE_ENV === 'development' && (
+                        <div className="mt-12 w-full max-w-2xl overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm">
+                            <div className="border-b border-stone-100 bg-stone-50 px-4 py-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Developer Diagnostics</p>
+                            </div>
+                            <div className="p-4">
+                                <pre className="overflow-x-auto text-xs text-rose-600 font-mono leading-relaxed">
+                                    {this.state.error?.toString()}
+                                </pre>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }

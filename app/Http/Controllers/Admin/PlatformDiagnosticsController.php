@@ -91,7 +91,26 @@ class PlatformDiagnosticsController extends Controller
     {
         $metrics = $this->analytics->getSLAMetrics();
 
-        $staleArtisanApplications = User::where('role', 'artisan')
+        $staleArtisanApplications = $this->getStaleArtisanApplications();
+        $staleDisputes = $this->getStaleDisputes();
+        $staleSponsorships = $this->getStaleSponsorships();
+
+        $staleQueue = collect([])
+            ->concat($staleArtisanApplications)
+            ->concat($staleDisputes)
+            ->concat($staleSponsorships)
+            ->sortByDesc('hours_pending')
+            ->values();
+
+        return Inertia::render('Admin/SLA', [
+            'metrics' => array_merge($metrics, ['totalStaleItems' => $staleQueue->count()]),
+            'staleQueue' => $staleQueue,
+        ]);
+    }
+
+    protected function getStaleArtisanApplications()
+    {
+        return User::where('role', 'artisan')
             ->where('artisan_status', 'pending')
             ->where('setup_completed_at', '<=', now()->subHours(48))
             ->orderBy('setup_completed_at', 'asc')
@@ -107,8 +126,11 @@ class PlatformDiagnosticsController extends Controller
                 'priority' => now()->diffInHours($u->setup_completed_at) > 72 ? 'Critical' : 'High',
                 'route' => route('admin.artisan.view', $u->id)
             ]);
+    }
 
-        $staleDisputes = ReviewDispute::where('status', 'under_review')
+    protected function getStaleDisputes()
+    {
+        return ReviewDispute::where('status', 'under_review')
             ->where('created_at', '<=', now()->subHours(48))
             ->orderBy('created_at', 'asc')
             ->limit(50)
@@ -123,8 +145,11 @@ class PlatformDiagnosticsController extends Controller
                 'priority' => now()->diffInHours($d->created_at) > 96 ? 'Critical' : 'High',
                 'route' => route('admin.review-moderation')
             ]);
+    }
 
-        $staleSponsorships = SponsorshipRequest::where('status', 'pending')
+    protected function getStaleSponsorships()
+    {
+        return SponsorshipRequest::where('status', 'pending')
             ->where('requested_at', '<=', now()->subHours(24))
             ->orderBy('requested_at', 'asc')
             ->limit(50)
@@ -139,18 +164,6 @@ class PlatformDiagnosticsController extends Controller
                 'priority' => now()->diffInHours($s->requested_at) > 48 ? 'Critical' : 'High',
                 'route' => route('admin.sponsorships')
             ]);
-
-        $staleQueue = collect([])
-            ->concat($staleArtisanApplications)
-            ->concat($staleDisputes)
-            ->concat($staleSponsorships)
-            ->sortByDesc('hours_pending')
-            ->values();
-
-        return Inertia::render('Admin/SLA', [
-            'metrics' => array_merge($metrics, ['totalStaleItems' => $staleQueue->count()]),
-            'staleQueue' => $staleQueue,
-        ]);
     }
 
     /**
@@ -158,45 +171,9 @@ class PlatformDiagnosticsController extends Controller
      */
     public function trash()
     {
-        $deletedProducts = Product::onlyTrashed()
-            ->with('user:id,name,shop_name')
-            ->orderBy('deleted_at', 'desc')
-            ->limit(100)
-            ->get()
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'type' => 'Product',
-                'context' => $p->user->shop_name ?? $p->user->name,
-                'deleted_at' => $p->deleted_at->toIso8601String(),
-                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
-            ]);
-
-        $deletedCategories = Category::onlyTrashed()
-            ->orderBy('deleted_at', 'desc')
-            ->get()
-            ->map(fn($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'type' => 'Category',
-                'context' => 'Global Taxonomy',
-                'deleted_at' => $c->deleted_at->toIso8601String(),
-                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
-            ]);
-
-        $deletedOrders = Order::onlyTrashed()
-            ->with('user:id,name')
-            ->orderBy('deleted_at', 'desc')
-            ->limit(100)
-            ->get()
-            ->map(fn($o) => [
-                'id' => $o->id,
-                'name' => "Order #{$o->order_number}",
-                'type' => 'Order',
-                'context' => $o->user->name ?? 'Unknown Customer',
-                'deleted_at' => $o->deleted_at->toIso8601String(),
-                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
-            ]);
+        $deletedProducts = $this->getDeletedProducts();
+        $deletedCategories = $this->getDeletedCategories();
+        $deletedOrders = $this->getDeletedOrders();
 
         $trashQueue = collect([])
             ->concat($deletedProducts)
@@ -216,6 +193,55 @@ class PlatformDiagnosticsController extends Controller
         ]);
     }
 
+    protected function getDeletedProducts()
+    {
+        return Product::onlyTrashed()
+            ->with('user:id,name,shop_name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'type' => 'Product',
+                'context' => $p->user->shop_name ?? $p->user->name,
+                'deleted_at' => $p->deleted_at->toIso8601String(),
+                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    protected function getDeletedCategories()
+    {
+        return Category::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->get()
+            ->map(fn($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'type' => 'Category',
+                'context' => 'Global Taxonomy',
+                'deleted_at' => $c->deleted_at->toIso8601String(),
+                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    protected function getDeletedOrders()
+    {
+        return Order::onlyTrashed()
+            ->with('user:id,name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($o) => [
+                'id' => $o->id,
+                'name' => "Order #{$o->order_number}",
+                'type' => 'Order',
+                'context' => $o->user->name ?? 'Unknown Customer',
+                'deleted_at' => $o->deleted_at->toIso8601String(),
+                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
     /**
      * Purge all system caches
      */
@@ -231,5 +257,58 @@ class PlatformDiagnosticsController extends Controller
         ]);
 
         return back()->with('success', 'System cache successfully purged. Memory is clear.');
+    }
+
+    /**
+     * Platform-wide Administrative Audit Log
+     */
+    public function activity(Request $request)
+    {
+        $search = $request->input('search');
+        $actionType = $request->input('action_type');
+
+        $activities = PlatformActivity::query()
+            ->with('user:id,name,role,avatar')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('description', 'like', "%{$search}%")
+                      ->orWhere('action', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($uq) use ($search) {
+                          $uq->where('name', 'like', "%{$search}%");
+                      });
+                });
+            })
+            ->when($actionType, function ($query, $actionType) {
+                $query->where('action', $actionType);
+            })
+            ->latest()
+            ->paginate(50)
+            ->withQueryString()
+            ->through(fn($a) => [
+                'id' => $a->id,
+                'action' => $a->action,
+                'description' => $a->description,
+                'metadata' => $a->metadata,
+                'created_at' => $a->created_at->toIso8601String(),
+                'user' => [
+                    'name' => $a->user->name ?? 'System',
+                    'role' => $a->user->role ?? 'N/A',
+                    'avatar' => $a->user->avatar ?? null,
+                ]
+            ]);
+
+        // Get unique actions for the filter dropdown
+        $availableActions = Cache::remember('platform_activity_actions', 3600, function () {
+            return PlatformActivity::select('action')
+                ->distinct()
+                ->pluck('action')
+                ->all();
+        });
+
+        return Inertia::render('Admin/ActivityLog', [
+            'activities' => $activities,
+            'filters' => $request->only(['search', 'action_type']),
+            'availableActions' => $availableActions,
+        ]);
     }
 }

@@ -14,37 +14,9 @@ import {
 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useToast } from '@/Components/ToastContext';
+import { TableSkeleton } from '@/Components/Skeleton';
 
 
-const TableSkeleton = () => (
-    <div className="divide-y divide-stone-100/80">
-        {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="grid grid-cols-12 gap-4 px-6 py-4 animate-pulse">
-                <div className="col-span-4 flex items-center gap-3">
-                    <div className="h-4 w-4 bg-stone-100 rounded" />
-                    <div className="h-10 w-10 bg-stone-100 rounded-xl" />
-                    <div className="space-y-2">
-                        <div className="h-3 w-32 bg-stone-100 rounded" />
-                        <div className="h-2 w-24 bg-stone-50 rounded" />
-                    </div>
-                </div>
-                <div className="col-span-3 space-y-2">
-                    <div className="h-2 w-28 bg-stone-100 rounded" />
-                    <div className="h-2 w-20 bg-stone-100 rounded" />
-                </div>
-                <div className="col-span-2">
-                    <div className="h-12 w-full bg-stone-50 rounded-xl" />
-                </div>
-                <div className="col-span-2 flex justify-center">
-                    <div className="h-5 w-16 bg-stone-100 rounded-md" />
-                </div>
-                <div className="col-span-1 flex justify-end">
-                    <div className="h-8 w-16 bg-stone-100 rounded-lg" />
-                </div>
-            </div>
-        ))}
-    </div>
-);
 
 const ARTISAN_DOCUMENTS = [
     { key: 'business_permit', label: 'Business Permit', icon: FileText },
@@ -381,7 +353,7 @@ export default function PendingArtisans({ artisans }) {
                     </div>
                     <div className="divide-y divide-stone-100/80">
                         {searchQuery !== deferredSearchQuery ? (
-                            <TableSkeleton />
+                            <TableSkeleton rows={ITEMS_PER_PAGE} />
                         ) : filteredArtisans.length === 0 ? (
                             <div className="px-6 py-10 text-center">
                                 <WorkspaceEmptyState

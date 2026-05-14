@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
+use App\Facades\Settings;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -108,9 +109,9 @@ class ProfileController extends Controller
                 $path = $request->file('avatar')->store('avatars', 'public');
                 $data['avatar'] = $path;
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Profile avatar upload failed: ' . $e->getMessage());
+                Log::error('Profile avatar upload failed: ' . $e->getMessage());
                 // Don't crash the request, just notify that the image failed
-                \Illuminate\Support\Facades\Session::flash('error', 'Profile details updated, but your avatar could not be saved due to storage restrictions.');
+                Session::flash('error', 'Profile details updated, but your avatar could not be saved due to storage restrictions.');
             }
         }
 

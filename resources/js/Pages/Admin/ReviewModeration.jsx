@@ -176,18 +176,18 @@ export default function ReviewModeration({ disputes = [] }) {
                         ['Under Review', disputes.filter((item) => item.status === 'under_review').length, 'blue'],
                         ['Closed', disputes.filter((item) => ['resolved', 'rejected'].includes(item.status)).length, 'emerald'],
                     ].map(([label, value]) => (
-                        <div key={label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{label}</p>
+                        <div key={label} className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">{label}</p>
                             <p className="mt-2 text-3xl font-black text-stone-900">{value}</p>
                         </div>
                     ))}
                 </div>
 
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-                    <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="rounded-2xl border border-stone-100 bg-white shadow-sm overflow-hidden">
+                    <div className="flex flex-col gap-3 border-b border-stone-100 bg-[#FDFBF9] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                         <div>
-                            <h2 className="text-lg font-bold text-stone-900">Moderation Queue</h2>
-                            <p className="text-sm text-stone-500">Seller-submitted review disputes arrive here for admin review.</p>
+                            <h2 className="text-lg font-bold text-stone-900 tracking-tight">Moderation Queue</h2>
+                            <p className="text-xs font-medium text-stone-500 mt-0.5">Seller-submitted review disputes arrive here for admin review.</p>
                         </div>
                         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                             <div className="relative w-full sm:w-72">

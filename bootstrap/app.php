@@ -21,7 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\XssSanitization::class,
             HandleInertiaRequests::class,
-            \App\Http\Middleware\UpdateLastSeen::class, // <--- Added
+            \App\Http\Middleware\CheckMaintenanceMode::class, // <--- Added
+            \App\Http\Middleware\UpdateLastSeen::class,
         ]);
 
         // 2. MIDDLEWARE ALIASES
