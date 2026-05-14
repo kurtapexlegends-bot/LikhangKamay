@@ -1,19 +1,26 @@
 import React from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Server, Database, Activity, Mail, Truck, RefreshCw, HardDrive, ShieldAlert, Cpu } from 'lucide-react';
+import { Server, Database, Activity, Mail, Truck, RefreshCw, HardDrive, ShieldAlert, Cpu, Trash2 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import ConfirmationModal from '@/Components/ConfirmationModal';
+import { useState } from 'react';
 
 export default function Diagnostics({ systemHealth, queueStatus = {}, memoryUsage, peakMemoryUsage }) {
     const { addToast } = useToast();
 
+    const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+
     const handlePurgeCache = () => {
-        if (confirm('Are you sure you want to purge the entire system cache? This may cause a temporary spike in database load.')) {
-            router.post(route('admin.diagnostics.cache.purge'), {}, {
-                preserveScroll: true,
-                onSuccess: () => addToast('System cache purged successfully.', 'success'),
-            });
-        }
+        setIsPurgeModalOpen(true);
+    };
+
+    const confirmPurge = () => {
+        setIsPurgeModalOpen(false);
+        router.post(route('admin.diagnostics.cache.purge'), {}, {
+            preserveScroll: true,
+            onSuccess: () => addToast('System cache purged successfully.', 'success'),
+        });
     };
 
     const StatusLight = ({ status }) => {
@@ -238,6 +245,18 @@ export default function Diagnostics({ systemHealth, queueStatus = {}, memoryUsag
                     </div>
                 </section>
             </div>
+
+            <ConfirmationModal
+                isOpen={isPurgeModalOpen}
+                onClose={() => setIsPurgeModalOpen(false)}
+                onConfirm={confirmPurge}
+                title="Purge Application Cache"
+                message="Are you sure you want to purge the entire system cache? This may cause a temporary spike in database load until the cache is repopulated."
+                icon={Trash2}
+                iconBg="bg-rose-50 text-rose-600"
+                confirmText="Purge Cache"
+                confirmColor="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600/30"
+            />
         </>
     );
 }

@@ -6,6 +6,7 @@ import Modal from '@/Components/Modal';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import { FolderTree, Plus, Edit2, Trash2, Tag, AlertTriangle, Save, X, ChevronDown, Settings, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import axios from 'axios';
 
 export default function Taxonomy({ categories }) {
@@ -28,6 +29,9 @@ export default function Taxonomy({ categories }) {
 
     // Audit Log State
     const [viewingAuditLog, setViewingAuditLog] = useState(null);
+
+    // Confirmation State
+    const [confirmingUpdate, setConfirmingUpdate] = useState(null);
 
     React.useEffect(() => {
         const timeoutId = setTimeout(async () => {
@@ -88,11 +92,12 @@ export default function Taxonomy({ categories }) {
             return;
         }
 
-        if (!confirm(`Are you sure you want to rename "${category.name}" to "${editName}"? This will instantly update ${category.products_count} existing products.`)) {
-            return;
-        }
+        setConfirmingUpdate(category);
+    };
 
-        setIsProcessingEdit(true);
+    const submitUpdateCategory = () => {
+        const category = confirmingUpdate;
+        setConfirmingUpdate(null);
         router.patch(route('admin.taxonomy.update', category.id), { name: editName }, {
             preserveScroll: true,
             onSuccess: () => {
@@ -384,8 +389,17 @@ export default function Taxonomy({ categories }) {
                 </div>
             </Modal>
 
-
-
+            <ConfirmationModal
+                isOpen={!!confirmingUpdate}
+                onClose={() => setConfirmingUpdate(null)}
+                onConfirm={submitUpdateCategory}
+                title="Rename Category"
+                message={`Are you sure you want to rename "${confirmingUpdate?.name}" to "${editName}"? This will instantly update ${confirmingUpdate?.products_count || 0} existing products across the marketplace.`}
+                icon={Edit2}
+                iconBg="bg-clay-50 text-clay-600"
+                confirmText="Rename Category"
+                confirmColor="bg-clay-600 hover:bg-clay-700 focus-visible:ring-clay-600/30"
+            />
         </div>
     );
 }

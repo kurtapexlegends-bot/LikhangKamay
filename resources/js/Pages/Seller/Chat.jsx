@@ -13,6 +13,7 @@ import {
 import OrderContextCard, { SellerOrderActionBar } from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import { lazy, Suspense } from 'react';
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
@@ -230,6 +231,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     });
 
     const [editingTemplateId, setEditingTemplateId] = useState(null);
+    const [deletingTemplateId, setDeletingTemplateId] = useState(null);
 
     const submitTemplate = (e) => {
         e.preventDefault();
@@ -261,11 +263,15 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     };
 
     const handleDeleteTemplate = (id) => {
-        if (confirm('Are you sure you want to delete this template?')) {
-            deleteTemplate(route('chat.templates.delete', id), {
-                onSuccess: () => addToast('Template deleted.', 'success')
-            });
-        }
+        setDeletingTemplateId(id);
+    };
+
+    const confirmDeleteTemplate = () => {
+        const id = deletingTemplateId;
+        setDeletingTemplateId(null);
+        deleteTemplate(route('chat.templates.delete', id), {
+            onSuccess: () => addToast('Template deleted.', 'success')
+        });
     };
 
     const filteredContacts = conversations.filter(c => 
@@ -974,6 +980,18 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                         </div>
                     </div>
                 </Modal>
+
+                <ConfirmationModal
+                    isOpen={!!deletingTemplateId}
+                    onClose={() => setDeletingTemplateId(null)}
+                    onConfirm={confirmDeleteTemplate}
+                    title="Delete Chat Template"
+                    message="Are you sure you want to permanently delete this chat template? This will remove it from your quick-access list."
+                    icon={Trash2}
+                    iconBg="bg-rose-50 text-rose-600"
+                    confirmText="Delete Template"
+                    confirmColor="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600/30"
+                />
             </div>
         </div>
     );

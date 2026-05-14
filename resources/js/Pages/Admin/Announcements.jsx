@@ -5,6 +5,7 @@ import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { Plus, Edit2, Trash2, Megaphone, Info, AlertTriangle, AlertCircle, CheckCircle, Play, Square, Clock, Calendar, Gift, Star, Zap, Sparkles, Tag, ShoppingBag, Eye } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 
@@ -42,6 +43,7 @@ export default function Announcements({ announcements }) {
     });
     const [processing, setProcessing] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -117,12 +119,16 @@ export default function Announcements({ announcements }) {
     };
 
     const handleDelete = (id) => {
-        if (confirm("Are you sure you want to delete this draft?")) {
-            router.delete(route('admin.announcements.destroy', id), {
-                only: ['announcements', 'flash'],
-                onSuccess: () => addToast('Draft deleted.', 'success')
-            });
-        }
+        setDeletingId(id);
+    };
+
+    const confirmDelete = () => {
+        const id = deletingId;
+        setDeletingId(null);
+        router.delete(route('admin.announcements.destroy', id), {
+            only: ['announcements', 'flash'],
+            onSuccess: () => addToast('Draft deleted.', 'success')
+        });
     };
 
     const handleBroadcast = (id) => {
@@ -301,6 +307,18 @@ export default function Announcements({ announcements }) {
                     />
                 </Modal>
             )}
+
+            <ConfirmationModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Announcement Draft"
+                message="Are you sure you want to permanently delete this broadcast draft? This action cannot be undone."
+                icon={Trash2}
+                iconBg="bg-rose-50 text-rose-600"
+                confirmText="Delete Draft"
+                confirmColor="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600/30"
+            />
         </>
     );
 }

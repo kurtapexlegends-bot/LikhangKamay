@@ -9,6 +9,7 @@ import { useToast } from '@/Components/ToastContext';
 import CompactPagination from '@/Components/CompactPagination';
 import Modal from '@/Components/Modal';
 import { Heart, History, Store, ArrowRight, UserMinus, ShoppingBag, ShoppingCart, X, Search, Edit2, Trash2, CheckSquare, Package } from 'lucide-react';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
 
 
@@ -30,6 +31,7 @@ export default function Saved() {
     const [wishlistPage, setWishlistPage] = useState(1);
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+    const [clearAction, setClearAction] = useState(null); // { type, title, message }
 
     useEffect(() => {
         const syncSignals = () => {
@@ -215,23 +217,42 @@ export default function Saved() {
 
     const handleClearAll = () => {
         if (activeTab === 'wishlist') {
-            if (confirm('Are you sure you want to clear your entire wishlist?')) {
-                clearWishlistedProducts();
-                setWishlistedProducts([]);
-                addToast('Wishlist cleared', 'success');
-            }
+            setClearAction({
+                type: 'wishlist',
+                title: 'Clear Wishlist',
+                message: 'Are you sure you want to clear your entire wishlist? This action cannot be undone.'
+            });
         } else if (activeTab === 'following') {
-            if (confirm('Are you sure you want to unfollow all shops?')) {
-                clearFollowedShops();
-                setFollowedShops([]);
-                addToast('All shops unfollowed', 'success');
-            }
+            setClearAction({
+                type: 'following',
+                title: 'Unfollow All Shops',
+                message: 'Are you sure you want to unfollow all shops in your collection?'
+            });
         } else if (activeTab === 'recent') {
-            if (confirm('Are you sure you want to clear your recently viewed history?')) {
-                clearRecentlyViewedProducts();
-                setRecentlyViewed([]);
-                addToast('History cleared', 'success');
-            }
+            setClearAction({
+                type: 'recent',
+                title: 'Clear History',
+                message: 'Are you sure you want to clear your recently viewed history?'
+            });
+        }
+    };
+
+    const confirmClearAll = () => {
+        const type = clearAction.type;
+        setClearAction(null);
+        
+        if (type === 'wishlist') {
+            clearWishlistedProducts();
+            setWishlistedProducts([]);
+            addToast('Wishlist cleared', 'success');
+        } else if (type === 'following') {
+            clearFollowedShops();
+            setFollowedShops([]);
+            addToast('All shops unfollowed', 'success');
+        } else if (type === 'recent') {
+            clearRecentlyViewedProducts();
+            setRecentlyViewed([]);
+            addToast('History cleared', 'success');
         }
     };
 
@@ -549,6 +570,18 @@ export default function Saved() {
                     </div>
                 </div>
             )}
+
+            <ConfirmationModal
+                isOpen={!!clearAction}
+                onClose={() => setClearAction(null)}
+                onConfirm={confirmClearAll}
+                title={clearAction?.title || ''}
+                message={clearAction?.message || ''}
+                icon={Trash2}
+                iconBg="bg-rose-50 text-rose-600"
+                confirmText={clearAction?.title || 'Confirm'}
+                confirmColor="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600/30"
+            />
         </ShopLayout>
     );
 }
