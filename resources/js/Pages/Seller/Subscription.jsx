@@ -1,5 +1,6 @@
-﻿import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { useToast } from '@/Components/ToastContext';
 import SellerHeader from '@/Components/SellerHeader';
 import { AlertCircle, ArrowRight, CheckCircle2, ChevronRight, Clock3, Crown, Package, ShieldCheck, Sparkles, X, Users, XCircle } from 'lucide-react';
 import Modal from '@/Components/Modal';
@@ -89,20 +90,29 @@ const PLAN_CONFIG = [
 export default function Subscription({ auth, currentPlan, activeProductsCount, limit, activeProducts, linkedStaffCount = 0, pendingUpgrade = null, recentTransactions = [] }) {
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [targetPlan, setTargetPlan] = useState(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
-
-    const { post, processing, reset } = useForm({
-        plan: '',
-    });
 
     const isCurrentPlan = (plan) => currentPlan === plan;
 
     const submitSubscriptionChange = (url, payload, options = {}) => {
-        post(url, {
-            data: payload,
+        setIsProcessing(true);
+        router.post(url, payload, {
             preserveScroll: true,
-            preserveState: 'errors',
-            replace: true,
+            onSuccess: () => {
+                setIsProcessing(false);
+                options.onSuccess?.();
+            },
+            onError: (err) => {
+                setIsProcessing(false);
+                const errorMsg = Object.values(err)[0] || 'An error occurred. Please try again.';
+                addToast(errorMsg, 'error');
+                options.onError?.(err);
+            },
+            onFinish: () => {
+                setIsProcessing(false);
+            },
             ...options,
         });
     };
@@ -114,13 +124,11 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     const initiateDowngrade = (planValue, newLimit) => {
         setTargetPlan({ value: planValue, limit: newLimit });
         setFinalDowngradeModalOpen(true);
-        reset();
     };
 
     const closeDowngradeFlow = () => {
         setFinalDowngradeModalOpen(false);
         setTargetPlan(null);
-        reset();
     };
 
     const confirmDowngrade = () => {
@@ -132,6 +140,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             {
                 onSuccess: () => {
                     closeDowngradeFlow();
+                    addToast('Plan downgraded successfully.', 'success');
                 },
                 onError: () => {
                     setFinalDowngradeModalOpen(true);
@@ -347,10 +356,11 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                                         <button
                                                             type="button"
                                                             onClick={() => (isPendingPlan ? window.location.assign(pendingUpgrade.checkoutUrl) : handleUpgrade(plan.id))}
-                                                            className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 ${upgradeButtonClass}`}
+                                                            disabled={isProcessing}
+                                                            className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
                                                         >
-                                                            {isPendingPlan ? 'Continue Payment' : `Upgrade to ${plan.name}`}
-                                                            <ArrowRight className="h-[15px] w-[15px]" />
+                                                            {isProcessing ? 'Processing...' : isPendingPlan ? 'Continue Payment' : `Upgrade to ${plan.name}`}
+                                                            {!isProcessing && <ArrowRight className="h-[15px] w-[15px]" />}
                                                         </button>
                                                     ) : isDowngrade ? (
                                                         <button
@@ -552,14 +562,14 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                         </button>
                         <button
                             onClick={confirmDowngrade}
-                            disabled={processing}
+                            disabled={isProcessing}
                             className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors ${
-                                processing
+                                isProcessing
                                     ? 'bg-stone-300 cursor-not-allowed'
                                     : 'bg-orange-600 hover:bg-orange-700'
                             }`}
                         >
-                            {processing ? 'Processing...' : 'Yes, downgrade now'}
+                            {isProcessing ? 'Processing...' : 'Yes, downgrade now'}
                         </button>
                     </div>
                 </div>

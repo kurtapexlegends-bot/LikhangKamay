@@ -353,7 +353,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto">
                     <button onClick={() => setActiveTab('pending')} className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'pending' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
                         <AlertCircle size={16} /> Pending Approvals
                         {filteredPending.length > 0 && <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-600">{filteredPending.length}</span>}

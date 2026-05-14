@@ -23,7 +23,7 @@ export default function CompactPagination({
                 Showing <span className="font-bold text-stone-900">{from}</span> to <span className="font-bold text-stone-900">{to}</span> of <span className="font-bold text-stone-900">{totalItems}</span> {itemLabel}
             </span>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                 <button
                     type="button"
                     disabled={currentPage === 1}

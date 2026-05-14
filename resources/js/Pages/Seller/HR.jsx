@@ -760,9 +760,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     }, {});
     const showReadOnlyToast = () => addToast('Read-only people access can only view records.', 'error');
     const accessAuditEntries = useMemo(() => staffAccessAudits.slice(0, 6), [staffAccessAudits]);
-    const pendingPayrollCount = useMemo(() => (
-        Array.isArray(payrolls?.data) ? payrolls.data.filter((payroll) => payroll.status === 'Pending').length : 0
+    
+    const paginatedPayrolls = useMemo(() => (
+        Array.isArray(payrolls) ? payrolls : (payrolls?.data || [])
     ), [payrolls]);
+
+    const pendingPayrollCount = useMemo(() => (
+        paginatedPayrolls.filter((payroll) => payroll.status === 'Pending').length
+    ), [paginatedPayrolls]);
     const hrAccessSummary = useMemo(() => {
         if (!canEditHrRecords) {
             return {
@@ -1295,7 +1300,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     </div>
 
                     {/* TABS NAVIGATION */}
-                    <div className="flex items-center gap-2 border-b border-stone-200 overflow-x-auto whitespace-nowrap hide-scrollbar">
+                    <div className="flex items-center gap-2 border-b border-stone-200 overflow-x-auto whitespace-nowrap">
                         <button
                             onClick={() => setActiveTab('directory')}
                             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors ${
@@ -1693,9 +1698,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             <h3 className="text-sm font-bold tracking-tight text-stone-900">Payroll Requests History</h3>
                         </div>
                         <div className="flex-1 md:hidden">
-                            {payrolls.data && payrolls.data.length > 0 ? (
+                            {paginatedPayrolls.length > 0 ? (
                                 <div className="divide-y divide-gray-100">
-                                    {payrolls.data.map((payroll) => (
+                                    {paginatedPayrolls.map((payroll) => (
                                         <div key={payroll.id} className="p-4 space-y-3">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
@@ -1768,8 +1773,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-stone-100">
-                                    {payrolls.data && payrolls.data.length > 0 ? (
-                                        payrolls.data.map((payroll) => (
+                                    {paginatedPayrolls.length > 0 ? (
+                                        paginatedPayrolls.map((payroll) => (
                                             <tr key={payroll.id} className="hover:bg-gray-50/50 transition duration-150 relative">
                                                 <td className="px-5 py-4">
                                                     <div className="font-bold text-gray-900 text-sm">{formatShortDateSafe(payroll.created_at)}</div>

@@ -15,8 +15,8 @@
 
 /* Global custom scrollbar for premium feel */
 ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -24,19 +24,28 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
+    background: transparent;
     border-radius: 20px;
-    transition: background 0.2s;
+}
+
+/* Show thumb on hover of the scrollable element */
+*:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.25) !important;
 }
 
-/* For Firefox */
+/* For Firefox - using a similar approach */
 * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s;
+}
+
+*:hover {
+    scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
 }
 
 /* Page content entrance — GPU-accelerated, non-blocking */

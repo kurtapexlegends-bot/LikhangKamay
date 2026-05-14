@@ -157,13 +157,15 @@ export default function ProductManager({
     categories: serverCategories = [],
     supplies = [],
     subscription,
+    metrics = {},
 }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { canEdit: canEditProducts, isReadOnly: isProductsReadOnly } =
         useSellerModuleAccess("products");
-    const [products, setProducts] = useState(dbProducts);
+    const paginatedProducts = dbProducts?.data || (Array.isArray(dbProducts) ? dbProducts : []);
+    const [products, setProducts] = useState(paginatedProducts);
     useEffect(() => {
-        setProducts(dbProducts);
+        setProducts(paginatedProducts);
     }, [dbProducts]);
     const [selectedProductIds, setSelectedProductIds] = useState([]);
     const storedView = readStoredProductManagerView();
@@ -375,7 +377,7 @@ export default function ProductManager({
     };
 
     // paginator structure from backend: data, current_page, last_page, total, per_page
-    const paginatedProducts = dbProducts.data || [];
+    // We already have paginatedProducts defined at the top from dbProducts
     const totalPages = dbProducts.last_page || 1;
     const totalItems = dbProducts.total || 0;
     const itemsPerPage = dbProducts.per_page || 20;
@@ -391,8 +393,12 @@ export default function ProductManager({
 
     // Stats are now just counts from the full (not necessarily filtered) list
     // Actually, we might want stats from the server too if they become heavy
-    const incompleteDraftCount = useMemo(() => 0, []); // Simplified or could be passed from server
-    const lowStockCount = useMemo(() => 0, []); // Simplified or could be passed from server
+    const incompleteDraftCount = metrics.incompleteDraftCount || 0;
+    const lowStockCount = metrics.lowStockCount || 0;
+
+    const remainingActivationSlots = useMemo(() => {
+        return Math.max(0, (subscription?.limit || 0) - (subscription?.activeCount || 0));
+    }, [subscription?.limit, subscription?.activeCount]);
 
     useEffect(() => {
         // Sync local current page with server state
@@ -424,7 +430,7 @@ export default function ProductManager({
     }, [currentPage, totalPages]);
 
     useEffect(() => {
-        const validIds = new Set(products.map((product) => product.id));
+        const validIds = new Set((products || []).map((product) => product.id));
         setSelectedProductIds((current) =>
             current.filter((id) => validIds.has(id)),
         );

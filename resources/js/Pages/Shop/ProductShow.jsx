@@ -733,7 +733,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                                 
                                                 {/* Photos Grid - Horizontal Scroll on Mobile */}
                                                 {review.photos && review.photos.length > 0 && (
-                                                    <div className="flex gap-2 mt-2 overflow-x-auto pb-1 -mx-2 px-2 scrollbar-hide">
+                                                    <div className="flex gap-2 mt-2 overflow-x-auto pb-1 -mx-2 px-2">
                                                         {review.photos.map((photo, i) => (
                                                             <div key={i} className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition shadow-sm">
                                                                 <img 
@@ -927,7 +927,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         <History size={16} className="text-clay-600" />
                         <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-stone-500">Recently Viewed</h2>
                     </div>
-                    <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 snap-x hide-scrollbar sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0">
+                    <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 snap-x sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0">
                         {recentlyViewed.map((entry) => (
                             <Link
                                 key={entry.id}
@@ -960,7 +960,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-clay-500">Related Pieces</span>
                         You Might Also Like
                     </h2>
-                    <div className="flex overflow-x-auto lg:grid lg:grid-cols-4 gap-4 sm:gap-6 mt-8 pb-4 lg:pb-0 snap-x snap-mandatory hide-scrollbar">
+                    <div className="flex overflow-x-auto lg:grid lg:grid-cols-4 gap-4 sm:gap-6 mt-8 pb-4 lg:pb-0 snap-x snap-mandatory">
                         {relatedProducts.map((related) => (
                             <Link 
                                 href={route('product.show', related.slug)} 

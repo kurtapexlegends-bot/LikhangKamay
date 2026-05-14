@@ -381,7 +381,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                 />
 
                                 {/* Messages Feed */}
-                                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-[#FDFBF9] custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-[#FDFBF9]">
 
                                     {Object.keys(groupedMessages).length > 0 ? (
                                         Object.entries(groupedMessages).map(([date, messages]) => (
@@ -588,7 +588,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                                 }}
                                                 placeholder={isMessagesReadOnly ? 'Read-only access for this capability.' : 'Type your message here...'} 
                                                 disabled={isMessagesReadOnly}
-                                                className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[120px] custom-scrollbar leading-relaxed"
+                                                className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[120px] leading-relaxed"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter' && !e.shiftKey) {
                                                         e.preventDefault();

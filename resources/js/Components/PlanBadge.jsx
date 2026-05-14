@@ -274,7 +274,9 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                             transform: isAnimating && hoveredPlan !== plan.id
                                                 ? 'translateY(0px)'
                                                 : hoveredPlan === plan.id ? 'translateY(-4px)' : 'translateY(20px)',
-                                            transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                                            transitionProperty: 'all',
+                                            transitionDuration: '0.5s',
+                                            transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                                         }}
                                     >
                                         {isCurrent && (

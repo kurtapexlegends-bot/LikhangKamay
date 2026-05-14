@@ -610,6 +610,7 @@ const readStoredOrderManagerView = () => {
 // --- MAIN COMPONENT ---
 export default function OrderManager({ auth, orders = [] }) {
     const { addToast } = useToast();
+    const paginatedOrders = Array.isArray(orders) ? orders : (orders?.data || []);
     const { openSidebar } = useSellerWorkspaceShell();
     const storedView = readStoredOrderManagerView();
     const { flash, sellerSidebar, filters = {} } = usePage().props;
@@ -650,16 +651,16 @@ export default function OrderManager({ auth, orders = [] }) {
     };
 
     const getCount = (status) => {
-        if (!orders) return 0;
+        if (!paginatedOrders) return 0;
         if (status === "Cancelled")
-            return orders.filter((o) =>
+            return paginatedOrders.filter((o) =>
                 ["Cancelled", "Rejected"].includes(o.status),
             ).length;
         if (status === "To Pickup")
-            return orders.filter((o) => o.status === "Ready for Pickup").length;
+            return paginatedOrders.filter((o) => o.status === "Ready for Pickup").length;
         if (status === "Returns")
-            return orders.filter((o) => o.status === "Refund/Return").length;
-        return orders.filter((o) => o.status === status).length;
+            return paginatedOrders.filter((o) => o.status === "Refund/Return").length;
+        return paginatedOrders.filter((o) => o.status === status).length;
     };
 
     const getBOMWarning = (order) => {
@@ -740,7 +741,7 @@ export default function OrderManager({ auth, orders = [] }) {
     const [returnActionKey, setReturnActionKey] = useState(null);
 
     const hasActiveCourierTracking = useMemo(() => {
-        return orders.some((order) => {
+        return paginatedOrders.some((order) => {
             if (!isLalamoveManagedOrder(order)) {
                 return false;
             }
@@ -749,24 +750,24 @@ export default function OrderManager({ auth, orders = [] }) {
                 String(order?.delivery?.status || "").toUpperCase(),
             );
         });
-    }, [orders]);
+    }, [paginatedOrders]);
     const paymentHoldCount = useMemo(
         () =>
-            orders.filter(
+            paginatedOrders.filter(
                 (order) =>
                     order.payment_method !== "COD" &&
                     order.payment_status !== "paid" &&
                     order.status === "Accepted",
             ).length,
-        [orders],
+        [paginatedOrders],
     );
     const returnQueueCount = useMemo(
-        () => orders.filter((order) => order.status === "Refund/Return").length,
-        [orders],
+        () => paginatedOrders.filter((order) => order.status === "Refund/Return").length,
+        [paginatedOrders],
     );
     const pendingQueueCount = useMemo(
-        () => orders.filter((order) => order.status === "Pending").length,
-        [orders],
+        () => paginatedOrders.filter((order) => order.status === "Pending").length,
+        [paginatedOrders],
     );
 
     useEffect(() => {
@@ -835,7 +836,6 @@ export default function OrderManager({ auth, orders = [] }) {
     };
 
     // paginator structure from backend
-    const paginatedOrders = orders.data || [];
     const totalPages = orders.last_page || 1;
     const totalItems = orders.total || 0;
     const itemsPerPageForFilter = orders.per_page || 15;
@@ -889,7 +889,7 @@ export default function OrderManager({ auth, orders = [] }) {
             message = "Are you sure you want to reject this order?";
             isDestructive = true;
         } else if (newStatus === "Completed") {
-            const order = orders.find((o) => o.id === orderId);
+            const order = paginatedOrders.find((o) => o.id === orderId);
             if (order && order.status === "Refund/Return") {
                 title = "Reject Return Request";
                 message =
@@ -1389,7 +1389,6 @@ export default function OrderManager({ auth, orders = [] }) {
                     {/* Tabs */}
                     <div
                         className="flex overflow-x-auto border-b border-gray-100 px-3 sm:px-4"
-                        style={{ scrollbarWidth: "none" }}
                     >
                         <Tab
                             label="All"
@@ -2951,7 +2950,7 @@ export default function OrderManager({ auth, orders = [] }) {
 
             {/* --- FULFILLMENT COMPOSER MODAL --- */}
             {(() => {
-                const orderToShip = orders.find(
+                const orderToShip = paginatedOrders.find(
                     (o) => o.id === shippingModal.orderId,
                 );
                 return (

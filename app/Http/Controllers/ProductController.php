@@ -148,6 +148,17 @@ class ProductController extends Controller
                 'activeCount' => $seller->products()->where('status', 'Active')->count(),
                 'limit' => $seller->getActiveProductLimit(),
             ],
+            'metrics' => [
+                'lowStockCount' => $seller->products()->where('stock', '<', 10)->where('status', '!=', 'Archived')->count(),
+                'incompleteDraftCount' => $seller->products()->where('status', 'Draft')
+                    ->where(function($q) {
+                        $q->whereNull('cover_photo_path')
+                          ->orWhereNull('model_3d_path')
+                          ->orWhere(function($sq) {
+                              $sq->whereJsonLength('gallery_paths', '<', 3);
+                          });
+                    })->count(),
+            ],
         ]);
     }
 
