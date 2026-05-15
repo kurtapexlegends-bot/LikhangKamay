@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
+import axios from 'axios';
 
 import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
@@ -12,7 +13,7 @@ import {
     Package, AlertTriangle, TrendingUp, Plus, Search, ChevronDown, 
     User, LogOut, Building2, Edit2, Trash2, RefreshCw, Box, Menu, 
     Banknote, Check, Users, CheckCircle, AlertCircle, 
-    FileText, Clock, X 
+    FileText, Clock, X, Loader2
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerHeader from '@/Components/SellerHeader';
@@ -108,7 +109,34 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         unit_cost: '',
         supplier: '',
         notes: '',
+        sku: '',
     });
+
+    const [skuValidation, setSkuValidation] = useState({ isValid: null, message: '' });
+
+    useEffect(() => {
+        if (!data.sku) {
+            setSkuValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'supply_sku_uniqueness',
+                    value: data.sku
+                });
+                setSkuValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("SKU validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [data.sku]);
 
     // Restock form
     const restockForm = useForm({ quantity: 0 });
@@ -511,6 +539,37 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
+                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Item SKU</label>
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        className={`w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition pr-10 ${skuValidation.isValid === false ? 'border-red-300 bg-red-50' : ''}`} 
+                                        placeholder="e.g., CLAY-TER-01"
+                                        value={data.sku} 
+                                        onChange={e => setData('sku', e.target.value)} 
+                                        required 
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                                        {data.sku && (
+                                            skuValidation.isValid === null ? (
+                                                <Loader2 size={14} className="animate-spin text-gray-400" />
+                                            ) : skuValidation.isValid ? (
+                                                <CheckCircle size={14} className="text-emerald-500" />
+                                            ) : (
+                                                <AlertCircle size={14} className="text-red-500" />
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                                {skuValidation.isValid === false && (
+                                    <p className="mt-1 text-[10px] font-bold text-red-600 uppercase tracking-tight">
+                                        {skuValidation.message}
+                                    </p>
+                                )}
+                                {errors.sku && <p className="mt-1 text-xs text-red-500 font-medium">{errors.sku}</p>}
+                            </div>
+
+                            <div className="md:col-span-2">
                                 <label className="block text-[10px] font-bold text-gray-700 mb-1">Item Name</label>
                                 <input 
                                     type="text" 
@@ -520,6 +579,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     onChange={e => setData('name', e.target.value)} 
                                     required 
                                 />
+                                {errors.name && <p className="mt-1 text-xs text-red-500 font-medium">{errors.name}</p>}
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-700 mb-1">Category</label>

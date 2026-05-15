@@ -38,8 +38,11 @@ export default function Taxonomy({ categories }) {
             if (newCategoryName.trim().length > 2) {
                 setIsValidating(true);
                 try {
-                    const response = await axios.post(route('admin.taxonomy.check-name'), { name: newCategoryName });
-                    setIsNameTaken(response.data.exists);
+                    const response = await axios.post(route('api.validate-constraint'), { 
+                        type: 'category_name_availability',
+                        value: newCategoryName 
+                    });
+                    setIsNameTaken(!response.data.valid);
                 } catch (e) {
                     console.error("Validation failed", e);
                 } finally {

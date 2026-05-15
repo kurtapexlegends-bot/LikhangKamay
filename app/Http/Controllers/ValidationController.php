@@ -28,6 +28,15 @@ class ValidationController extends Controller
             case 'shop_name_availability':
                 return $this->checkShopNameAvailability($value);
 
+            case 'employee_id_uniqueness':
+                return $this->checkEmployeeIdUniqueness($value, $context['employee_id'] ?? null);
+
+            case 'supply_sku_uniqueness':
+                return $this->checkSupplySkuUniqueness($value, $context['supply_id'] ?? null);
+
+            case 'category_name_availability':
+                return $this->checkCategoryNameAvailability($value, $context['category_id'] ?? null);
+
             default:
                 return response()->json(['valid' => false, 'message' => 'Invalid validation type.'], 400);
         }
@@ -79,6 +88,63 @@ class ValidationController extends Controller
         return response()->json([
             'valid' => !$exists,
             'message' => $exists ? 'This shop name is already taken.' : 'Shop name is available.'
+        ]);
+    }
+
+    private function checkEmployeeIdUniqueness($idNumber, $employeeId = null)
+    {
+        if (empty($idNumber)) {
+            return response()->json(['valid' => false, 'message' => 'Employee ID cannot be empty.']);
+        }
+
+        $query = \App\Models\Employee::where('employee_id', $idNumber);
+        if ($employeeId) {
+            $query->where('id', '!=', $employeeId);
+        }
+
+        $exists = $query->exists();
+
+        return response()->json([
+            'valid' => !$exists,
+            'message' => $exists ? 'This Employee ID is already assigned.' : 'Employee ID is unique.'
+        ]);
+    }
+
+    private function checkSupplySkuUniqueness($sku, $supplyId = null)
+    {
+        if (empty($sku)) {
+            return response()->json(['valid' => false, 'message' => 'Supply SKU cannot be empty.']);
+        }
+
+        $query = \App\Models\Supply::where('sku', $sku);
+        if ($supplyId) {
+            $query->where('id', '!=', $supplyId);
+        }
+
+        $exists = $query->exists();
+
+        return response()->json([
+            'valid' => !$exists,
+            'message' => $exists ? 'This Supply SKU is already in use.' : 'Supply SKU is unique.'
+        ]);
+    }
+
+    private function checkCategoryNameAvailability($name, $categoryId = null)
+    {
+        if (empty($name) || strlen($name) < 2) {
+            return response()->json(['valid' => false, 'message' => 'Category name is too short.']);
+        }
+
+        $query = \App\Models\Category::where('name', 'ILIKE', $name);
+        if ($categoryId) {
+            $query->where('id', '!=', $categoryId);
+        }
+
+        $exists = $query->exists();
+
+        return response()->json([
+            'valid' => !$exists,
+            'message' => $exists ? 'A category with this name already exists.' : 'Category name is available.'
         ]);
     }
 }

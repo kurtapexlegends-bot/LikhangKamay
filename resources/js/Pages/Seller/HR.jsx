@@ -834,6 +834,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     // FORM: Employee record + optional staff login provisioning
     const { data, setData, post, processing, reset, errors } = useForm({
+        employee_id: '',
         name: '',
         role: DEFAULT_EMPLOYEE_ROLE,
         salary: '',
@@ -843,6 +844,33 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         staff_role_preset_key: initialPresetKey,
         module_overrides: buildModuleSelection(initialPresetKey),
     });
+
+    const [employeeIdValidation, setEmployeeIdValidation] = useState({ isValid: null, message: '' });
+
+    React.useEffect(() => {
+        if (!data.employee_id) {
+            setEmployeeIdValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'employee_id_uniqueness',
+                    value: data.employee_id,
+                    context: { employee_id: editingEmployee?.id }
+                });
+                setEmployeeIdValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("Employee ID validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [data.employee_id]);
 
     const getPresetRoleLabel = (presetKey) => presetLabelByKey[presetKey] || 'Custom';
     const getFlashSuccessMessage = (page, fallback) => page?.props?.flash?.success || fallback;
@@ -928,7 +956,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const [editManualEmployeeRole, setEditManualEmployeeRole] = useState(DEFAULT_EMPLOYEE_ROLE);
+    const [editEmployeeIdValidation, setEditEmployeeIdValidation] = useState({ isValid: null, message: '' });
+
     const { data: editData, setData: setEditData, patch, processing: editProcessing, reset: resetEdit, errors: editErrors } = useForm({
+        employee_id: '',
         name: '',
         role: DEFAULT_EMPLOYEE_ROLE,
         salary: '',
@@ -938,6 +969,31 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         staff_role_preset_key: initialPresetKey,
         module_overrides: buildModuleSelection(initialPresetKey),
     });
+
+    React.useEffect(() => {
+        if (!editData.employee_id) {
+            setEditEmployeeIdValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'employee_id_uniqueness',
+                    value: editData.employee_id,
+                    context: { employee_id: editingEmployee?.id }
+                });
+                setEditEmployeeIdValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("Employee ID validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [editData.employee_id, editingEmployee]);
 
     const handleEditManualRoleChange = (value) => {
         setEditManualEmployeeRole(value);
@@ -994,6 +1050,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         setShowEditPassword(false);
         setEditManualEmployeeRole(employee.role || DEFAULT_EMPLOYEE_ROLE);
         setEditData({
+            employee_id: employee.employee_id || '',
             name: employee.name || '',
             role: hasLoginAccount ? getPresetRoleLabel(presetKey) : (employee.role || DEFAULT_EMPLOYEE_ROLE),
             salary: employee.salary ?? '',
@@ -1970,7 +2027,38 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         )}
 
                         <div className="grid gap-5 md:grid-cols-2">
-                            <div className="md:col-span-2">
+                            <div>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Employee ID</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        className={`${modalFieldWithIconClass} ${employeeIdValidation.isValid === false ? 'border-red-300 bg-red-50 focus:ring-red-500' : ''}`}
+                                        placeholder="e.g. EMP-001"
+                                        value={data.employee_id}
+                                        onChange={e => setData('employee_id', e.target.value)}
+                                        required
+                                    />
+                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        {data.employee_id && (
+                                            employeeIdValidation.isValid === null ? (
+                                                <Loader2 size={16} className="animate-spin text-stone-400" />
+                                            ) : employeeIdValidation.isValid ? (
+                                                <CheckCircle2 size={16} className="text-emerald-500" />
+                                            ) : (
+                                                <AlertTriangle size={16} className="text-red-500" />
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                                {employeeIdValidation.isValid === false && (
+                                    <p className="mt-1 text-[10px] font-bold text-red-600 uppercase tracking-tight flex items-center gap-1">
+                                        {employeeIdValidation.message}
+                                    </p>
+                                )}
+                                {errors.employee_id && <p className="mt-1 text-xs text-red-500 font-medium">{errors.employee_id}</p>}
+                            </div>
+
+                            <div>
                                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Legal Full Name</label>
                                 <input
                                     type="text"
@@ -2245,7 +2333,38 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         )}
 
                         <div className="grid gap-5 md:grid-cols-2">
-                            <div className="md:col-span-2">
+                            <div>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Employee ID</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        className={`${modalFieldWithIconClass} ${editEmployeeIdValidation.isValid === false ? 'border-red-300 bg-red-50 focus:ring-red-500' : ''}`}
+                                        placeholder="e.g. EMP-001"
+                                        value={editData.employee_id}
+                                        onChange={e => setEditData('employee_id', e.target.value)}
+                                        required
+                                    />
+                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        {editData.employee_id && (
+                                            editEmployeeIdValidation.isValid === null ? (
+                                                <Loader2 size={16} className="animate-spin text-stone-400" />
+                                            ) : editEmployeeIdValidation.isValid ? (
+                                                <CheckCircle2 size={16} className="text-emerald-500" />
+                                            ) : (
+                                                <AlertTriangle size={16} className="text-red-500" />
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                                {editEmployeeIdValidation.isValid === false && (
+                                    <p className="mt-1 text-[10px] font-bold text-red-600 uppercase tracking-tight flex items-center gap-1">
+                                        {editEmployeeIdValidation.message}
+                                    </p>
+                                )}
+                                {editErrors.employee_id && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.employee_id}</p>}
+                            </div>
+
+                            <div>
                                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Legal Full Name</label>
                                 <input
                                     type="text"

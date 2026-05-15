@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Head, useForm, router, usePage, Link } from "@inertiajs/react";
+import axios from "axios";
 import { useToast } from "@/Components/ToastContext";
 import Modal from "@/Components/Modal";
 import TextInput from "@/Components/TextInput";
@@ -46,6 +47,8 @@ import {
     Settings,
     FileDown,
     Upload,
+    Loader2,
+    CheckCircle2,
 } from "lucide-react";
 
 const KPICard = ({ title, value, icon: Icon, color, bg }) => (
@@ -1696,13 +1699,33 @@ export default function ProductManager({
                                             ? "Edit Product"
                                             : "New Product"}
                                     </h2>
-                                    <div className="mt-1 flex items-center gap-2">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                                            SKU:
-                                        </span>
-                                        <span className="rounded border border-gray-200 bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-600">
-                                            {data.sku}
-                                        </span>
+                                    <div className="mt-2 flex flex-col gap-1.5">
+                                        <div className="relative max-w-[200px]">
+                                            <input
+                                                type="text"
+                                                className={`w-full rounded-lg border-gray-300 bg-white px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-gray-700 shadow-none focus:border-clay-500 focus:ring-clay-500 ${skuValidation.isValid === false ? 'border-red-300 bg-red-50' : ''}`}
+                                                value={data.sku}
+                                                onChange={(e) => setData("sku", e.target.value.toUpperCase())}
+                                                placeholder="LK-XXXX"
+                                            />
+                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                                {data.sku && (
+                                                    skuValidation.isValid === null ? (
+                                                        <Loader2 size={12} className="animate-spin text-stone-400" />
+                                                    ) : skuValidation.isValid ? (
+                                                        <CheckCircle2 size={12} className="text-emerald-500" />
+                                                    ) : (
+                                                        <AlertTriangle size={12} className="text-red-500" />
+                                                    )
+                                                )}
+                                            </div>
+                                        </div>
+                                        {skuValidation.isValid === false && (
+                                            <p className="text-[10px] font-bold text-red-600 uppercase tracking-tight">
+                                                {skuValidation.message}
+                                            </p>
+                                        )}
+                                        {errors.sku && <p className="text-[10px] text-red-500 font-medium">{errors.sku}</p>}
                                     </div>
                                 </div>
                                 <button
