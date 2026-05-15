@@ -266,6 +266,33 @@ export default function ProductManager({
         reason: "Physical Store Sale",
     });
 
+    const [skuValidation, setSkuValidation] = useState({ isValid: null, message: '' });
+
+    useEffect(() => {
+        if (!data.sku || data.id) { // Don't check for existing products unless SKU changed (simplified)
+            setSkuValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'sku_uniqueness',
+                    value: data.sku,
+                    context: { product_id: data.id }
+                });
+                setSkuValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("SKU validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [data.sku]);
+
     const [previews, setPreviews] = useState({ cover: null, gallery: [] });
     const hasThreeDReady = Boolean(data.model_3d || data.model_3d_path);
     const activationReadiness = useMemo(() => {

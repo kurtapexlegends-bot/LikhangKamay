@@ -33,6 +33,32 @@ export default function Register() {
         };
     }, []);
 
+    const [emailValidation, setEmailValidation] = useState({ isValid: null, message: '' });
+
+    useEffect(() => {
+        if (!data.email || data.email.length < 5) {
+            setEmailValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'email_availability',
+                    value: data.email
+                });
+                setEmailValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("Email validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [data.email]);
+
     const submit = (e) => {
         e.preventDefault();
         post(route('register'));
@@ -176,6 +202,16 @@ export default function Register() {
                             floatingLabel="Email Address"
                             withIcon={true}
                         />
+                        {emailValidation.isValid !== null && (
+                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium px-1 animate-in fade-in slide-in-from-top-1 duration-300 ${emailValidation.isValid ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                {emailValidation.isValid ? (
+                                    <CheckCircle size={14} className="shrink-0" />
+                                ) : (
+                                    <AlertCircle size={14} className="shrink-0" />
+                                )}
+                                <span>{emailValidation.message}</span>
+                            </div>
+                        )}
                     </div>
                     <InputError message={errors.email} className="mt-2" />
                 </div>
@@ -229,6 +265,29 @@ export default function Register() {
                     </div>
                 </div>
                 <InputError message={errors.password} className="mt-2" />
+
+                {data.password && (
+                    <div className="mt-2 p-3 bg-stone-50 rounded-xl border border-stone-100 animate-in fade-in zoom-in-95 duration-300">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Password Strength</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                                (data.password.length < 8) ? 'text-rose-500' : 
+                                (data.password.length < 12) ? 'text-amber-500' : 'text-emerald-500'
+                            }`}>
+                                {data.password.length < 8 ? 'Weak' : data.password.length < 12 ? 'Fair' : 'Strong'}
+                            </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-stone-200 rounded-full overflow-hidden flex gap-0.5">
+                            <div className={`h-full transition-all duration-500 ${data.password.length >= 4 ? (data.password.length < 8 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                            <div className={`h-full transition-all duration-500 ${data.password.length >= 8 ? (data.password.length < 12 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                            <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                            <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && data.password.length >= 8 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                        </div>
+                        <p className="mt-2 text-[10px] text-stone-500 leading-tight">
+                            Use 8+ characters with a mix of letters, numbers & symbols for maximum security.
+                        </p>
+                    </div>
+                )}
 
                 <div className="block mt-4">
                     <div className="flex items-start bg-stone-50/50 p-4 rounded-xl border border-stone-100">

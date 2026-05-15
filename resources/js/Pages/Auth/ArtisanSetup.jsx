@@ -53,6 +53,32 @@ export default function ArtisanSetup({ auth }) {
         payout_account_number: auth.user.payout_account_number || '',
     });
 
+    const [shopNameValidation, setShopNameValidation] = React.useState({ isValid: null, message: '' });
+
+    React.useEffect(() => {
+        if (!data.shop_name || data.shop_name.length < 3) {
+            setShopNameValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'shop_name_availability',
+                    value: data.shop_name
+                });
+                setShopNameValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("Shop name validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [data.shop_name]);
+
     const submit = (event) => {
         event.preventDefault();
 
@@ -189,9 +215,19 @@ export default function ArtisanSetup({ auth }) {
                                                 className="w-full rounded-xl py-3 pl-12"
                                                 placeholder="e.g. Silang Pottery Works"
                                             />
-                                        </div>
-                                        <InputError message={errors.shop_name} className="mt-2" />
-                                    </div>
+                                         </div>
+                                         {shopNameValidation.isValid !== null && (
+                                             <div className={`mt-2 flex items-center gap-1.5 text-xs font-medium px-1 animate-in fade-in slide-in-from-top-1 duration-300 ${shopNameValidation.isValid ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                                 {shopNameValidation.isValid ? (
+                                                     <CheckCircle2 size={14} className="shrink-0" />
+                                                 ) : (
+                                                     <AlertTriangle size={14} className="shrink-0" />
+                                                 )}
+                                                 <span>{shopNameValidation.message}</span>
+                                             </div>
+                                         )}
+                                         <InputError message={errors.shop_name} className="mt-2" />
+                                     </div>
 
                                     <div>
                                         <InputLabel htmlFor="phone_number" value="Contact Number *" />

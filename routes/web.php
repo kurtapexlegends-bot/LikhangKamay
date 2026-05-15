@@ -51,6 +51,10 @@ Route::post('/sponsorship-events/track', [\App\Http\Controllers\SponsorshipContr
     ->middleware('throttle:120,1')
     ->name('sponsorships.track');
 
+Route::post('/validate-constraint', [\App\Http\Controllers\ValidationController::class, 'validateConstraint'])
+    ->middleware('throttle:60,1')
+    ->name('api.validate-constraint');
+
 // --- AUTHENTICATION ---
 Route::get('/artisan/register', function () {
     return Inertia::render('Auth/ArtisanRegister');
