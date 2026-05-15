@@ -18,6 +18,8 @@ import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useFlashToast from '@/hooks/useFlashToast';
+import TextInput from '@/Components/TextInput';
+import InputLabel from '@/Components/InputLabel';
 import KPICard from '@/Components/KPICard';
 import { TableBodySkeleton } from '@/Components/Skeleton';
 
@@ -504,7 +506,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Item SKU</label>
+                                <InputLabel value="Item SKU" />
                                 <div className="relative">
                                     <input 
                                         type="text" 
@@ -535,7 +537,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             </div>
 
                             <div className="md:col-span-2">
-                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Item Name</label>
+                                <InputLabel value="Item Name" />
                                 <input 
                                     type="text" 
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
@@ -547,7 +549,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 {errors.name && <p className="mt-1 text-xs text-red-500 font-medium">{errors.name}</p>}
                             </div>
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Category</label>
+                                <InputLabel value="Category" />
                                 <select 
                                     disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
@@ -561,7 +563,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Quantity</label>
+                                <InputLabel value="Quantity" />
                                 <input 
                                     type="number" 
                                     disabled={!canEditProcurement}
@@ -573,7 +575,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Unit</label>
+                                <InputLabel value="Unit" />
                                 <select 
                                     disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
@@ -587,7 +589,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Unit Cost (₱)</label>
+                                <InputLabel value="Unit Cost (₱)" />
                                 <input 
                                     type="number" 
                                     step="0.01"
@@ -599,7 +601,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-700 mb-1">Supplier</label>
+                                <InputLabel value="Supplier" />
                                 <input 
                                     type="text" 
                                     disabled={!canEditProcurement}
@@ -612,7 +614,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-bold text-gray-700 mb-1">Notes</label>
+                            <InputLabel value="Notes" />
                             <textarea 
                                 disabled={!canEditProcurement}
                                 className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition resize-none" 
@@ -648,7 +650,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     </p>
 
                     <div>
-                        <label className="block text-[10px] font-bold text-gray-700 mb-1">Quantity to Add</label>
+                        <InputLabel value="Quantity to Add" />
                         <input 
                             type="number" 
                             disabled={!canEditProcurement}
@@ -689,7 +691,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         </p>
 
                         <div className="mb-4 text-left">
-                            <label className="block text-[10px] font-bold text-gray-700 mb-1">Quantity to Request</label>
+                            <InputLabel value="Quantity to Request" />
                             <div className="relative">
                                 <input 
                                     type="number" 

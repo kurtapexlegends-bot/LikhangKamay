@@ -12,8 +12,10 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import {
     UploadCloud, Cuboid, Rotate3d, Trash2, Search,
-    X, Check, Package, AlertTriangle,
+    X, Check, Package, AlertTriangle, AlertCircle
 } from 'lucide-react';
+import InputLabel from '@/Components/InputLabel';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
 function Loader() {
     const { progress } = useProgress();
@@ -350,22 +352,14 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-64 text-center px-6">
-                                        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 border border-gray-100 rotate-12">
-                                            <Cuboid size={32} className="text-gray-300" />
-                                        </div>
-                                        <p className="text-sm font-bold text-gray-900">No 3D models found</p>
-                                        <p className="text-[10px] text-gray-400 mt-1 max-w-[150px] leading-relaxed">
-                                            Upload .glb or .gltf files to showcase your products in 3D
-                                        </p>
-                                        <button
-                                            onClick={() => canEditThreeD && setShowUploadModal(true)}
-                                            disabled={!canEditThreeD}
-                                            className="mt-4 px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-clay-200 hover:bg-clay-700 transition disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                            Upload Asset
-                                        </button>
-                                    </div>
+                                <WorkspaceEmptyState
+                                    icon={Cuboid}
+                                    title="No 3D models found"
+                                    description="Upload .glb or .gltf files to showcase your products in 3D"
+                                    actionLabel="Upload Asset"
+                                    onAction={() => canEditThreeD && setShowUploadModal(true)}
+                                    compact={true}
+                                />
                                 )}
                             </div>
                         </div>
@@ -387,7 +381,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
 
                     <form onSubmit={handleUpload} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Select Product</label>
+                            <InputLabel value="Select Product" />
                             <select
                                 value={data.product_id}
                                 disabled={!canEditThreeD}
@@ -411,7 +405,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5">3D Model File (.glb or .gltf)</label>
+                            <InputLabel value="3D Model File (.glb or .gltf)" />
                             <div
                                 className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 ${
                                     dragActive ? 'border-clay-500 bg-clay-50' : 'border-gray-200 hover:border-clay-300'

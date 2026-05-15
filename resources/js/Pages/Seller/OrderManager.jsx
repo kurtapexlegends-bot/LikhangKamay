@@ -11,6 +11,8 @@ import SellerWorkspaceLayout, {
 import SellerHeader from "@/Components/SellerHeader";
 import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
 import KPICard from "@/Components/KPICard";
+import InputLabel from "@/Components/InputLabel";
+import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
 import {
     Download,
     ChevronRight,
@@ -2808,17 +2810,11 @@ export default function OrderManager({ auth, orders = [] }) {
                                 );
                             })
                         ) : (
-                            <div className="py-20 text-center">
-                                <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                    <Box size={32} className="text-gray-300" />
-                                </div>
-                                <p className="text-sm font-bold text-gray-600">
-                                    No orders found
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    Try adjusting your search or filter
-                                </p>
-                            </div>
+                            <WorkspaceEmptyState
+                                icon={Box}
+                                title="No orders found"
+                                description="Try adjusting your search or filter"
+                            />
                         )}
                     </div>
 
@@ -3124,13 +3120,13 @@ export default function OrderManager({ auth, orders = [] }) {
 
                                             {shippingModal.allowTracking && (
                                                 <div className="mb-6">
-                                                    <label className="block text-sm font-bold text-stone-700 mb-2">
+                                                    <InputLabel>
                                                         <Hash
                                                             size={14}
                                                             className="inline mr-1 text-stone-400"
                                                         />{" "}
                                                         Tracking Number
-                                                    </label>
+                                                    </InputLabel>
                                                     <TextInput
                                                         disabled={
                                                             !canEditOrders
@@ -3153,7 +3149,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                             )}
 
                                             <div className="mb-6">
-                                                <label className="flex items-center justify-between text-sm font-bold text-stone-700 mb-2">
+                                                <InputLabel className="flex items-center justify-between">
                                                     <span>
                                                         {
                                                             shippingModal.proofLabel
@@ -3164,7 +3160,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             Required
                                                         </span>
                                                     )}
-                                                </label>
+                                                </InputLabel>
                                                 <div className="relative w-full border-2 border-dashed border-stone-300 rounded-xl p-4 text-center cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition group overflow-hidden bg-stone-50/30">
                                                     <input
                                                         type="file"
@@ -3261,12 +3257,12 @@ export default function OrderManager({ auth, orders = [] }) {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-bold text-stone-700 mb-2">
+                                                <InputLabel>
                                                     {shippingModal.noteLabel}{" "}
                                                     <span className="text-stone-400 font-normal text-xs">
                                                         (Optional)
                                                     </span>
-                                                </label>
+                                                </InputLabel>
                                                 <textarea
                                                     disabled={!canEditOrders}
                                                     value={
@@ -3371,9 +3367,7 @@ export default function OrderManager({ auth, orders = [] }) {
                     </div>
 
                     <div className="mt-4">
-                        <label className="mb-2 block text-sm font-bold text-gray-700">
-                            Compensation / Resolution Description
-                        </label>
+                        <InputLabel value="Compensation / Resolution Description" />
                         <textarea
                             rows={4}
                             disabled={!canEditOrders}

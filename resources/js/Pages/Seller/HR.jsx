@@ -8,8 +8,9 @@ import SellerHeader from '@/Components/SellerHeader';
 import UserAvatar from '@/Components/UserAvatar';
 import { 
     Users, UserPlus, Trash2,
-    Briefcase, Search, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3, AlertCircle, Shield
+    Briefcase, Search, Banknote, Settings as SettingsIcon, X, Pencil, Eye, EyeOff, CalendarDays, Clock3, AlertCircle, AlertTriangle, Shield
 } from 'lucide-react';
+import InputLabel from '@/Components/InputLabel';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import CompactPagination from '@/Components/CompactPagination';
@@ -1380,7 +1381,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         </span>
                         {requiresStaffSchemaUpdate && (
                             <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-bold text-red-700">
-                                <AlertCircle size={13} />
+                                <AlertTriangle size={13} />
                                 Staff login schema update needed
                             </span>
                         )}
@@ -2778,7 +2779,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     
                     <div className="space-y-4 overflow-y-auto px-6 py-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Fixed Overtime Rate (PHP/hr)</label>
+                            <InputLabel value="Fixed Overtime Rate (PHP/hr)" />
                             <input 
                                 type="number" 
                                 className="w-full rounded-xl border-gray-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500" 
@@ -2788,7 +2789,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Standard Work Days / Month</label>
+                            <InputLabel value="Standard Work Days / Month" />
                             <input 
                                 type="number" 
                                 className="w-full rounded-xl border-gray-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500" 

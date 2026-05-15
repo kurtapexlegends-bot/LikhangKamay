@@ -8,8 +8,10 @@ import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import {
     Star, MessageSquare, Image as ImageIcon, Search, Filter, Pin, PinOff,
     Send, Bold, Italic, X, ChevronDown,
-    CheckCircle, AlertCircle, Edit2, Trash2, Zap, Reply, ShieldAlert
+    ShieldAlert, Search, MessageSquare, Send, Check, AlertTriangle
 } from 'lucide-react';
+import InputLabel from '@/Components/InputLabel';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import UserAvatar from '@/Components/UserAvatar';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -622,13 +624,12 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                                     </div>
                                 ))
                             ) : (
-                                <div className="p-12 text-center flex flex-col items-center justify-center">
-                                    <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-4 border border-stone-100">
-                                        <MessageSquare size={24} className="text-stone-400" />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-stone-900 mb-1">No reviews found</h3>
-                                    <p className="text-stone-500">There are no reviews matching your current filter.</p>
-                                </div>
+                                <WorkspaceEmptyState
+                                    icon={MessageSquare}
+                                    title="No reviews found"
+                                    description="There are no reviews matching your current filter."
+                                    compact={true}
+                                />
                             )}
                         </div>
 
@@ -675,7 +676,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             </div>
                         )}
                         <div>
-                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Reason</label>
+                            <InputLabel value="Reason" />
                             <select
                                 value={disputeReason}
                                 onChange={(event) => setDisputeReason(event.target.value)}
@@ -691,7 +692,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                             )}
                         </div>
                         <div>
-                            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Details</label>
+                            <InputLabel value="Details" />
                             <textarea
                                 value={disputeDetails}
                                 onChange={(event) => setDisputeDetails(event.target.value)}
@@ -763,7 +764,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
             <Modal show={confirmingDelete !== null} onClose={() => setConfirmingDelete(null)} maxWidth="sm">
                 <div className="p-6">
                     <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 mb-4 mx-auto">
-                        <AlertCircle className="w-6 h-6 text-rose-600" />
+                        <AlertTriangle className="w-6 h-6 text-rose-600" />
                     </div>
                     <h2 className="text-lg font-bold text-stone-900 text-center mb-2">Delete Reply?</h2>
                     <p className="text-sm text-stone-500 text-center mb-6">

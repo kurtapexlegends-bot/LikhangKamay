@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { 
-    Award, TrendingUp, Clock, AlertCircle, 
-    CheckCircle2, XCircle, Search, Package
+    Award, TrendingUp, Clock, AlertCircle, AlertTriangle, 
+    CheckCircle2, XCircle, Search, Package, X
 } from 'lucide-react';
+import InputLabel from '@/Components/InputLabel';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -127,7 +128,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                 </div>
                             ) : creditsAvailable <= 0 ? (
                                 <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3">
-                                    <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
+                                    <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={20} />
                                     <div>
                                         <h3 className="text-sm font-bold text-red-800">No Credits Remaining</h3>
                                         <p className="text-xs text-red-700 mt-1">
@@ -138,9 +139,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                             ) : (
                                 <form onSubmit={submitRequest} className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
-                                            Select an Active Product
-                                        </label>
+                                        <InputLabel value="Select an Active Product" />
                                         <select
                                             className="w-full border-gray-200 rounded-xl text-sm focus:ring-clay-500 focus:border-clay-500 shadow-sm transition"
                                             value={data.product_id}

@@ -1491,7 +1491,7 @@ export default function ProductManager({
                                                 </span>
                                                 {product.stock < 10 && (
                                                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600">
-                                                        <AlertCircle
+                                                        <AlertTriangle
                                                             size={10}
                                                         />{" "}
                                                         Low Stock
