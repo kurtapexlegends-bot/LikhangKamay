@@ -18,6 +18,33 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
     // Enable Real-time synchronization
     useRealtime();
 
+    // Gesture-based sidebar reveal (Swipe from left edge)
+    React.useEffect(() => {
+        let touchStartX = 0;
+        const edgeThreshold = 40; // Sensitivity area from left edge
+        const swipeThreshold = 60; // Minimum distance to trigger open
+
+        const handleTouchStart = (e) => {
+            touchStartX = e.touches[0].clientX;
+        };
+
+        const handleTouchEnd = (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            // Only trigger if starting from the far left edge and swiping right
+            if (touchStartX < edgeThreshold && touchEndX - touchStartX > swipeThreshold) {
+                setSidebarOpen(true);
+            }
+        };
+
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        return () => {
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, []);
+
     const shell = useMemo(() => ({
         openSidebar: () => setSidebarOpen(true),
         closeSidebar: () => setSidebarOpen(false),

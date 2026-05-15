@@ -4,6 +4,7 @@ import { Head, useForm, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
 import Modal from '@/Components/Modal';
+import QuickRestock from '@/Components/QuickRestock';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import { 
@@ -162,6 +163,22 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         setShowRestockModal(true);
     };
 
+    const handleQuickRestock = (supply, amount) => {
+        if (!canEditProcurement) return;
+        
+        router.post(route('supplies.restock', supply.id), { 
+            quantity: amount 
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                addToast(`Added ${amount} ${supply.unit} to ${supply.name}`, 'success');
+            },
+            onError: () => {
+                addToast('Failed to update stock', 'error');
+            }
+        });
+    };
+
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
             <Head title="Inventory" />
@@ -298,7 +315,15 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                         <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 text-xs">
                                             <div>
                                                 <p className="font-bold uppercase tracking-wide text-gray-400">Stock</p>
-                                                <p className="mt-1 font-semibold text-gray-700">{supply.quantity} {supply.unit}</p>
+                                                <div className="mt-1">
+                                                    <QuickRestock 
+                                                        item={supply}
+                                                        canEdit={canEditProcurement}
+                                                        onRestock={handleQuickRestock}
+                                                        unit={supply.unit}
+                                                        type="supply"
+                                                    />
+                                                </div>
                                             </div>
                                             <div>
                                                 <p className="font-bold uppercase tracking-wide text-gray-400">Unit Cost</p>
@@ -311,14 +336,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                         </div>
 
                                         <div className="mt-3 flex items-center justify-end gap-2">
-                                            <button
-                                                disabled={!canEditProcurement}
-                                                onClick={() => openRestockModal(supply)}
-                                                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                title="Restock"
-                                            >
-                                                <RefreshCw size={14} />
-                                            </button>
+
                                             <button
                                                 disabled={!canEditStockRequests}
                                                 onClick={() => {
@@ -394,8 +412,14 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-[10px] text-gray-600">{supply.category}</td>
-                                                    <td className="px-4 py-3 font-bold text-gray-900 text-xs">
-                                                        {supply.quantity} {supply.unit}
+                                                    <td className="px-4 py-3">
+                                                        <QuickRestock 
+                                                            item={supply}
+                                                            canEdit={canEditProcurement}
+                                                            onRestock={handleQuickRestock}
+                                                            unit={supply.unit}
+                                                            type="supply"
+                                                        />
                                                     </td>
                                                     <td className="px-4 py-3 text-[10px] text-gray-600">
                                                         {supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString()}` : '-'}
@@ -414,14 +438,6 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                disabled={!canEditProcurement}
-                                                                onClick={() => openRestockModal(supply)}
-                                                                className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                                title="Restock"
-                                                            >
-                                                                <RefreshCw size={14} />
-                                                            </button>
                                                             <button
                                                                 disabled={!canEditStockRequests}
                                                                 onClick={() => {

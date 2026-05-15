@@ -3,6 +3,8 @@ import { Head, useForm, router, usePage, Link } from "@inertiajs/react";
 import axios from "axios";
 import { useToast } from "@/Components/ToastContext";
 import Modal from "@/Components/Modal";
+import QuickRestock from "@/Components/QuickRestock";
+import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react';
 import TextInput from "@/Components/TextInput";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
@@ -108,6 +110,8 @@ const readStoredProductManagerView = () => {
         return null;
     }
 };
+
+
 
 export default function ProductManager({
     auth,
@@ -817,6 +821,20 @@ export default function ProductManager({
         });
     };
 
+    const handleQuickRestock = (product, amount) => {
+        if (!canEditProducts) return;
+        router.post(
+            route("products.restock", product.id),
+            { amount },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    addToast(`Restocked ${amount} units for ${product.name}`, "success");
+                },
+            }
+        );
+    };
+
     return (
         <>
             <Head title="Product Manager" />
@@ -1243,11 +1261,13 @@ export default function ProductManager({
                                             </td>
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span
-                                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.stock < 10 ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}
-                                                    >
-                                                        {product.stock} units
-                                                    </span>
+                                                    <QuickRestock 
+                                                        item={product}
+                                                        canEdit={canEditProducts}
+                                                        onRestock={handleQuickRestock}
+                                                        unit="units"
+                                                        type="product"
+                                                    />
                                                     {product.stock < 10 && (
                                                         <AlertCircle
                                                             size={12}
@@ -2707,7 +2727,7 @@ export default function ProductManager({
                             )}
                         </div>
 
-                        <div className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                        <div className="shrink-0 sticky bottom-0 z-20 border-t border-gray-100 bg-white/80 backdrop-blur-md px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                             <button
                                 type="button"
                                 onClick={closeProductModal}

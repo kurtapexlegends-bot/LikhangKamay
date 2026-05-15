@@ -22,8 +22,8 @@ function Loader() {
     return (
         <Html center>
             <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 border-3 border-clay-200 border-t-clay-600 rounded-full animate-spin"></div>
-                <span className="text-xs font-bold text-gray-500">{progress.toFixed(0)}%</span>
+                <div className="w-8 h-8 border-3 border-clay-100 border-t-clay-600 rounded-full animate-spin"></div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">{progress.toFixed(0)}%</span>
             </div>
         </Html>
     );
@@ -229,14 +229,14 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         <ReadOnlyCapabilityNotice label="3D assets are read only for your account. Upload and delete actions are disabled." />
                     )}
                     <div className="flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
-                    <div className="flex-1 bg-gradient-to-b from-gray-50 to-gray-100 rounded-3xl border border-gray-200 relative overflow-hidden shadow-inner flex flex-col group">
+                    <div className="flex-1 bg-gradient-to-b from-stone-50 to-stone-100 rounded-3xl border border-stone-200 relative overflow-hidden shadow-inner flex flex-col group">
                         {selectedModel ? (
-                            <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-gray-200 text-xs font-bold text-gray-600 flex items-center gap-2 shadow-sm">
-                                <div className={`w-2 h-2 rounded-full ${selectedModel.status === 'Active' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`}></div>
+                            <div className="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-600 flex items-center gap-2 shadow-sm">
+                                <div className={`w-2 h-2 rounded-full ${selectedModel.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
                                 {selectedModel.name}
                             </div>
                         ) : (
-                            <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-gray-200 text-xs font-bold text-gray-400 shadow-sm">
+                            <div className="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-400 shadow-sm">
                                 No Model Selected
                             </div>
                         )}
@@ -246,7 +246,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                 type="button"
                                 onClick={() => handleDelete(selectedModel.id)}
                                 disabled={!canEditThreeD}
-                                className="absolute top-4 right-4 z-10 p-2 bg-white/90 backdrop-blur border border-gray-200 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-500 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                                className="absolute top-4 right-4 z-10 p-2 bg-white/70 backdrop-blur-md border border-stone-200 rounded-xl text-stone-600 hover:bg-rose-50 hover:text-rose-500 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                 title="Delete Asset"
                             >
                                 <Trash2 size={18} />
@@ -288,26 +288,26 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                     </div>
 
                     <div className="w-full lg:w-[320px] flex flex-col gap-4">
-                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Storage</span>
-                                <span className="text-[10px] font-bold text-clay-600">{storage.used} / {storage.max}</span>
+                                <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Storage</span>
+                                <span className="text-[10px] font-black text-clay-600 uppercase tracking-widest">{storage.used} / {storage.max}</span>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
                                 <div className="bg-clay-500 h-full rounded-full transition-all duration-500" style={{ width: `${storage.percent}%` }}></div>
                             </div>
                         </div>
 
-                        <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
-                            <div className="p-3 border-b border-gray-50 bg-gray-50/50">
+                        <div className="flex-1 bg-white rounded-2xl border border-stone-100 shadow-sm flex flex-col overflow-hidden">
+                            <div className="p-3 border-b border-stone-50 bg-stone-50/50">
                                 <div className="relative">
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                                     <input
                                         type="text"
                                         placeholder="Search assets..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-medium focus:ring-2 focus:ring-clay-100 focus:border-clay-300 transition-all shadow-sm"
+                                        className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-xl text-[10px] font-bold focus:ring-2 focus:ring-clay-100 focus:border-clay-300 transition-all shadow-sm placeholder:text-stone-300"
                                     />
                                 </div>
                             </div>
@@ -328,15 +328,15 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                                 onClick={() => setSelectedModelId(model.id)}
                                                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
                                             >
-                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${selectedModelId === model.id ? 'bg-white text-clay-600 shadow-sm' : 'bg-gray-100 text-gray-400 group-hover:bg-white group-hover:shadow-sm'}`}>
+                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${selectedModelId === model.id ? 'bg-white text-clay-600 shadow-sm' : 'bg-stone-100 text-stone-400 group-hover:bg-white group-hover:shadow-sm'}`}>
                                                     <Cuboid size={16} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className={`text-xs font-bold truncate ${selectedModelId === model.id ? 'text-gray-900' : 'text-gray-700'}`}>{model.name}</h4>
+                                                    <h4 className={`text-xs font-bold truncate ${selectedModelId === model.id ? 'text-stone-900' : 'text-stone-700'}`}>{model.name}</h4>
                                                     <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className="text-[9px] text-gray-400">{model.size || '0MB'}</span>
-                                                        <span className="text-[9px] text-gray-300">&bull;</span>
-                                                        <span className="text-[9px] text-gray-400">{model.date}</span>
+                                                        <span className="text-[9px] font-bold text-stone-400">{model.size || '0MB'}</span>
+                                                        <span className="text-[9px] text-stone-300">&bull;</span>
+                                                        <span className="text-[9px] font-bold text-stone-400">{model.date}</span>
                                                     </div>
                                                 </div>
                                                 {selectedModelId === model.id && (
@@ -371,10 +371,10 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-lg font-bold text-gray-900">Upload 3D Model</h3>
-                            <p className="text-xs text-gray-500 mt-0.5">Attach a .glb or .gltf file to one of your products</p>
+                            <h3 className="text-lg font-bold text-stone-900">Upload 3D Model</h3>
+                            <p className="text-xs text-stone-500 mt-0.5 font-medium">Attach a .glb or .gltf file to one of your products</p>
                         </div>
-                        <button onClick={closeUploadModal} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+                        <button onClick={closeUploadModal} className="p-2 hover:bg-stone-100 rounded-lg text-stone-400 transition-colors">
                             <X size={16} />
                         </button>
                     </div>
@@ -527,11 +527,11 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                             <External3DToolLink />
                         </div>
 
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
                             <button
                                 type="button"
                                 onClick={closeUploadModal}
-                                className="px-4 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+                                className="px-4 py-2.5 text-sm font-bold text-stone-600 hover:bg-stone-100 rounded-xl transition"
                             >
                                 Cancel
                             </button>
@@ -558,18 +558,18 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
 
             <Modal show={deleteCandidate !== null} onClose={() => setDeleteCandidate(null)} maxWidth="sm">
                 <div className="p-6 text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
                         <AlertTriangle size={22} />
                     </div>
-                    <h2 className="text-lg font-bold text-gray-900">Remove 3D model?</h2>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <h2 className="text-lg font-bold text-stone-900">Remove 3D model?</h2>
+                    <p className="mt-2 text-sm text-stone-500 font-medium">
                         This will remove the saved 3D model from the selected product.
                     </p>
                     <div className="mt-6 flex justify-center gap-3">
                         <button
                             type="button"
                             onClick={() => setDeleteCandidate(null)}
-                            className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 transition"
+                            className="rounded-xl border border-stone-200 px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 transition"
                         >
                             Cancel
                         </button>
@@ -584,7 +584,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                 });
                             }}
                             disabled={!canEditThreeD}
-                            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 transition disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700 transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Remove
                         </button>

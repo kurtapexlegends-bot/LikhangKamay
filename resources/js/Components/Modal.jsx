@@ -1,3 +1,4 @@
+import React from 'react';
 import {
     Dialog,
     DialogPanel,
@@ -20,6 +21,18 @@ export default function Modal({
         }
     };
 
+    // Auto-enable bottomSheet on mobile for better ergonomics
+    const [isMobile, setIsMobile] = React.useState(false);
+    
+    React.useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const effectiveBottomSheet = bottomSheet || isMobile;
+
     const maxWidthClass = {
         sm: 'sm:max-w-sm',
         md: 'sm:max-w-md',
@@ -36,7 +49,7 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className={`fixed inset-0 z-50 flex transform transition-all p-0 sm:px-4 sm:py-4 ${bottomSheet ? 'items-end sm:items-center' : 'items-center overflow-y-auto px-3 py-3'}`}
+                className={`fixed inset-0 z-50 flex transform transition-all p-0 sm:px-4 sm:py-4 ${effectiveBottomSheet ? 'items-end sm:items-center' : 'items-center overflow-y-auto px-3 py-3'}`}
                 onClose={close}
             >
                 <TransitionChild
@@ -52,16 +65,16 @@ export default function Modal({
 
                 <TransitionChild
                     enter="ease-out duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
-                    enterFrom={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
+                    enterFrom={`opacity-0 ${effectiveBottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
                     enterTo="opacity-100 translate-y-0 sm:scale-100"
                     leave="ease-in duration-300 cubic-bezier(0.7, 0, 0.84, 0)"
                     leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                    leaveTo={`opacity-0 ${bottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
+                    leaveTo={`opacity-0 ${effectiveBottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
                 >
                     <DialogPanel
-                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${bottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'rounded-2xl'}`}
+                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'rounded-2xl'}`}
                     >
-                        {bottomSheet && (
+                        {effectiveBottomSheet && (
                             <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
                                 <div className="w-12 h-1.5 bg-stone-200/60 rounded-full" />
                             </div>

@@ -92,6 +92,25 @@ export default function Analytics({
     const completedOrdersCount = Number(dataContext?.completed_orders_count || 0);
     const selectedCategoryLabel = dataContext?.category_filter || 'All Categories';
 
+    const revenueTrend = useMemo(() => {
+        return (chartData.monthly || []).slice(-7).map(d => d.revenue);
+    }, [chartData.monthly]);
+
+    const profitTrend = useMemo(() => {
+        return (chartData.monthly || []).slice(-7).map(d => d.profit || (d.revenue * 0.4));
+    }, [chartData.monthly]);
+
+    const revenueBreakdown = useMemo(() => {
+        const result = {};
+        (categoryData || []).forEach(item => {
+            const label = item.name || item.category || 'Other';
+            if (label !== 'Other' || item.value > 0) {
+                result[label] = item.value;
+            }
+        });
+        return result;
+    }, [categoryData]);
+
     const generatedRelativeLabel = useMemo(() => {
         if (!analyticsGeneratedAt) {
             return 'freshly generated';
@@ -193,8 +212,25 @@ export default function Analytics({
                             <ArtisanSkeleton variant="stat" count={4} />
                         ) : (
                             <>
-                                <KPICard title="Total Revenue" value={metrics.total_revenue} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-stone-50" color="text-clay-600" />
-                                <KPICard title="Gross Profit" value={metrics.gross_profit} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" />
+                                <KPICard 
+                                    title="Total Revenue" 
+                                    value={metrics.total_revenue} 
+                                    growth={metrics.growth.revenue} 
+                                    trendData={revenueTrend}
+                                    breakdown={Object.keys(revenueBreakdown).length > 0 ? revenueBreakdown : null}
+                                    icon={DollarSign} 
+                                    bg="bg-stone-50" 
+                                    color="text-clay-600" 
+                                />
+                                <KPICard 
+                                    title="Gross Profit" 
+                                    value={metrics.gross_profit} 
+                                    growth={metrics.growth.profit} 
+                                    trendData={profitTrend}
+                                    icon={TrendingUp} 
+                                    bg="bg-emerald-50" 
+                                    color="text-emerald-600" 
+                                />
                                 <KPICard title="Profit Margin" value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} icon={Activity} bg="bg-emerald-50" color="text-emerald-600" />
                                 <KPICard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-amber-50" color="text-amber-600" formatter={(v) => v.toFixed(1)} />
                             </>
