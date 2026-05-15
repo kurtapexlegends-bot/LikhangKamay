@@ -8,7 +8,7 @@ import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import {
     Star, MessageSquare, Image as ImageIcon, Search, Filter, Pin, PinOff,
     Send, Bold, Italic, X, ChevronDown,
-    ShieldAlert, Search, MessageSquare, Send, Check, AlertTriangle
+    ShieldAlert, Check, AlertTriangle, Edit2, Trash2, AlertCircle, Reply, Zap
 } from 'lucide-react';
 import InputLabel from '@/Components/InputLabel';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
