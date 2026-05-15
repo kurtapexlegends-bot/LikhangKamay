@@ -13,11 +13,12 @@ import CompactPagination from "@/Components/CompactPagination";
 import External3DToolLink from "@/Components/External3DToolLink";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
 import ReadOnlyCapabilityNotice from "@/Components/ReadOnlyCapabilityNotice";
+import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+import useConstraintValidation from '@/hooks/useConstraintValidation';
 import SellerWorkspaceLayout, {
     useSellerWorkspaceShell,
 } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Components/SellerHeader";
-import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
 import KPICard from "@/Components/KPICard";
 import SortableHeader from "@/Components/SortableHeader";
 import {
@@ -223,32 +224,12 @@ export default function ProductManager({
         reason: "Physical Store Sale",
     });
 
-    const [skuValidation, setSkuValidation] = useState({ isValid: null, message: '' });
-
-    useEffect(() => {
-        if (!data.sku || data.id) { // Don't check for existing products unless SKU changed (simplified)
-            setSkuValidation({ isValid: null, message: '' });
-            return;
-        }
-
-        const timer = setTimeout(async () => {
-            try {
-                const response = await axios.post(route('api.validate-constraint'), {
-                    type: 'sku_uniqueness',
-                    value: data.sku,
-                    context: { product_id: data.id }
-                });
-                setSkuValidation({ 
-                    isValid: response.data.valid, 
-                    message: response.data.message 
-                });
-            } catch (error) {
-                console.error("SKU validation failed", error);
-            }
-        }, 600);
-
-        return () => clearTimeout(timer);
-    }, [data.sku]);
+    const skuValidation = useConstraintValidation(
+        'sku_uniqueness', 
+        data.sku, 
+        { product_id: data.id }, 
+        !data.id // Only validate for new products
+    );
 
     const [previews, setPreviews] = useState({ cover: null, gallery: [] });
     const hasThreeDReady = Boolean(data.model_3d || data.model_3d_path);

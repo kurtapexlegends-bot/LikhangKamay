@@ -14,6 +14,7 @@ import InputLabel from '@/Components/InputLabel';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import CompactPagination from '@/Components/CompactPagination';
+import useConstraintValidation from '@/hooks/useConstraintValidation';
 
 const FALLBACK_ROLE_PRESETS = [
     { key: 'hr', label: 'People & Payroll', description: 'Employee records, payroll prep, and workspace access coordination.', modules: ['hr'] },
@@ -846,32 +847,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         module_overrides: buildModuleSelection(initialPresetKey),
     });
 
-    const [employeeIdValidation, setEmployeeIdValidation] = useState({ isValid: null, message: '' });
-
-    React.useEffect(() => {
-        if (!data.employee_id) {
-            setEmployeeIdValidation({ isValid: null, message: '' });
-            return;
-        }
-
-        const timer = setTimeout(async () => {
-            try {
-                const response = await axios.post(route('api.validate-constraint'), {
-                    type: 'employee_id_uniqueness',
-                    value: data.employee_id,
-                    context: { employee_id: editingEmployee?.id }
-                });
-                setEmployeeIdValidation({ 
-                    isValid: response.data.valid, 
-                    message: response.data.message 
-                });
-            } catch (error) {
-                console.error("Employee ID validation failed", error);
-            }
-        }, 600);
-
-        return () => clearTimeout(timer);
-    }, [data.employee_id]);
+    const employeeIdValidation = useConstraintValidation(
+        'employee_id_uniqueness', 
+        data.employee_id, 
+        { employee_id: editingEmployee?.id }
+    );
 
     const getPresetRoleLabel = (presetKey) => presetLabelByKey[presetKey] || 'Custom';
     const getFlashSuccessMessage = (page, fallback) => page?.props?.flash?.success || fallback;
@@ -957,7 +937,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const [editManualEmployeeRole, setEditManualEmployeeRole] = useState(DEFAULT_EMPLOYEE_ROLE);
-    const [editEmployeeIdValidation, setEditEmployeeIdValidation] = useState({ isValid: null, message: '' });
 
     const { data: editData, setData: setEditData, patch, processing: editProcessing, reset: resetEdit, errors: editErrors } = useForm({
         employee_id: '',
@@ -971,30 +950,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         module_overrides: buildModuleSelection(initialPresetKey),
     });
 
-    React.useEffect(() => {
-        if (!editData.employee_id) {
-            setEditEmployeeIdValidation({ isValid: null, message: '' });
-            return;
-        }
-
-        const timer = setTimeout(async () => {
-            try {
-                const response = await axios.post(route('api.validate-constraint'), {
-                    type: 'employee_id_uniqueness',
-                    value: editData.employee_id,
-                    context: { employee_id: editingEmployee?.id }
-                });
-                setEditEmployeeIdValidation({ 
-                    isValid: response.data.valid, 
-                    message: response.data.message 
-                });
-            } catch (error) {
-                console.error("Employee ID validation failed", error);
-            }
-        }, 600);
-
-        return () => clearTimeout(timer);
-    }, [editData.employee_id, editingEmployee]);
+    const editEmployeeIdValidation = useConstraintValidation(
+        'employee_id_uniqueness', 
+        editData.employee_id, 
+        { employee_id: editingEmployee?.id }
+    );
 
     const handleEditManualRoleChange = (value) => {
         setEditManualEmployeeRole(value);

@@ -16,6 +16,7 @@ import { useToast } from '@/Components/ToastContext';
 import SellerHeader from '@/Components/SellerHeader';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+import useConstraintValidation from '@/hooks/useConstraintValidation';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useFlashToast from '@/hooks/useFlashToast';
 import TextInput from '@/Components/TextInput';
@@ -85,31 +86,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         sku: '',
     });
 
-    const [skuValidation, setSkuValidation] = useState({ isValid: null, message: '' });
-
-    useEffect(() => {
-        if (!data.sku) {
-            setSkuValidation({ isValid: null, message: '' });
-            return;
-        }
-
-        const timer = setTimeout(async () => {
-            try {
-                const response = await axios.post(route('api.validate-constraint'), {
-                    type: 'supply_sku_uniqueness',
-                    value: data.sku
-                });
-                setSkuValidation({ 
-                    isValid: response.data.valid, 
-                    message: response.data.message 
-                });
-            } catch (error) {
-                console.error("SKU validation failed", error);
-            }
-        }, 600);
-
-        return () => clearTimeout(timer);
-    }, [data.sku]);
+    const skuValidation = useConstraintValidation('supply_sku_uniqueness', data.sku);
 
     // Restock form
     const restockForm = useForm({ quantity: 0 });
