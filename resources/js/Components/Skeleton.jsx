@@ -29,4 +29,33 @@ export const TableSkeleton = ({ rows = 5, columns = [4, 3, 2, 2, 1] }) => {
     );
 };
 
+/**
+ * A skeleton component specifically for <tbody> elements.
+ * Renders <tr> and <td> tags to maintain table structure.
+ */
+export const TableBodySkeleton = ({ rows = 5, cols = 5, hasIcon = true }) => {
+    return (
+        <>
+            {[...Array(rows)].map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            {hasIcon && <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />}
+                            <div className="w-full space-y-2">
+                                <Skeleton className="h-3 w-32" />
+                                <Skeleton className="h-2 w-24 opacity-60" />
+                            </div>
+                        </div>
+                    </td>
+                    {[...Array(cols - 1)].map((_, j) => (
+                        <td key={j} className="px-6 py-4">
+                            <Skeleton className="h-3 w-20" />
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+};
+
 export default Skeleton;

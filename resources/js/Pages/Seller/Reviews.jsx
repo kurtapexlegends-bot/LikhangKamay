@@ -2,18 +2,15 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import CompactPagination from '@/Components/CompactPagination';
 import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import {
     Star, MessageSquare, Image as ImageIcon, Search, Filter, Pin, PinOff,
-    Menu, ChevronDown, User, LogOut, Send, Bold, Italic, X,
+    Send, Bold, Italic, X, ChevronDown,
     CheckCircle, AlertCircle, Edit2, Trash2, Zap, Reply, ShieldAlert
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';

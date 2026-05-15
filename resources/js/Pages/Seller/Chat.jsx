@@ -2,17 +2,14 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import SellerSidebar from '@/Components/SellerSidebar';
 import SellerHeader from '@/Components/SellerHeader';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
 import EmojiPicker from 'emoji-picker-react';
 import { 
     Search, Send, Paperclip, Info, 
-    Image as ImageIcon, ChevronDown, User, LogOut,
-    MessageCircle, CheckCheck, Check, Clock, Smile, ShoppingBag, ArrowLeft, Menu, MapPin, Phone, X, FileIcon
+    Image as ImageIcon, ChevronDown, 
+    MessageCircle, CheckCheck, Check, Clock, Smile, ShoppingBag, ArrowLeft, MapPin, Phone, X, FileIcon
 } from 'lucide-react';
 import OrderContextCard, { SellerOrderActionBar } from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { lazy, Suspense } from 'react';
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));

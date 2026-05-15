@@ -1,18 +1,13 @@
 import React, { useDeferredValue, useState, useEffect } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
 import SellerHeader from '@/Components/SellerHeader';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import { 
     FileQuestion, CheckCircle, Clock, XCircle, AlertTriangle, 
-    Search, ChevronDown, Menu, User, LogOut, Banknote, ShoppingBag, Truck, Package, ArrowRight, Building2,
+    Search, ChevronDown, Banknote, ShoppingBag, Truck, Package, ArrowRight, 
     ClipboardList, Timer, BadgeCheck, PackageCheck, RotateCcw, Inbox
 } from 'lucide-react';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';

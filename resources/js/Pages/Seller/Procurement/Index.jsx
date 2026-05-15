@@ -3,15 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
-import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Modal from '@/Components/Modal';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
 import { 
     Package, AlertTriangle, TrendingUp, Plus, Search, ChevronDown, 
-    User, LogOut, Building2, Edit2, Trash2, RefreshCw, Box, Menu, 
+    Edit2, Trash2, RefreshCw, Box, 
     Banknote, Check, Users, CheckCircle, AlertCircle, 
     FileText, Clock, X, Loader2
 } from 'lucide-react';
@@ -21,6 +18,8 @@ import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useFlashToast from '@/hooks/useFlashToast';
+import KPICard from '@/Components/KPICard';
+import { TableBodySkeleton } from '@/Components/Skeleton';
 
 const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other']; // Phase 1: Removed Raw Materials
 const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
@@ -50,34 +49,6 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         return () => { unbindStart(); unbindFinish(); };
     }, []);
 
-    const InventorySkeleton = () => (
-        <>
-            {[1, 2, 3, 4, 5].map(i => (
-                <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-xl bg-gray-100" />
-                            <div className="space-y-1">
-                                <div className="h-3 w-24 bg-gray-100 rounded" />
-                                <div className="h-2 w-32 bg-gray-50 rounded" />
-                            </div>
-                        </div>
-                    </td>
-                    <td className="px-4 py-3"><div className="h-2 w-16 bg-gray-100 rounded" /></td>
-                    <td className="px-4 py-3"><div className="h-2 w-12 bg-gray-100 rounded" /></td>
-                    <td className="px-4 py-3"><div className="h-2 w-16 bg-gray-100 rounded" /></td>
-                    <td className="px-4 py-3"><div className="h-2 w-20 bg-gray-100 rounded" /></td>
-                    <td className="px-4 py-3"><div className="h-5 w-20 bg-gray-100 rounded-full" /></td>
-                    <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                            <div className="h-7 w-7 bg-gray-100 rounded-lg" />
-                            <div className="h-7 w-7 bg-gray-100 rounded-lg" />
-                        </div>
-                    </td>
-                </tr>
-            ))}
-        </>
-    );
 
     // Sync search from URL (for Global Search support)
     useEffect(() => {
@@ -256,33 +227,27 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
                     {/* KPI CARDS */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Items</p>
-                                <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalItems}</h3>
-                            </div>
-                            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                                <Box size={20} />
-                            </div>
-                        </div>
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Low Stock Alerts</p>
-                                <h3 className={`text-2xl font-bold mt-1 ${lowStockItems > 0 ? 'text-red-600' : 'text-green-600'}`}>{lowStockItems}</h3>
-                            </div>
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${lowStockItems > 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                                <AlertTriangle size={20} />
-                            </div>
-                        </div>
-                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Value</p>
-                                <h3 className="text-2xl font-bold text-gray-900 mt-1">₱{parseFloat(totalValue).toLocaleString()}</h3>
-                            </div>
-                            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                                <TrendingUp size={20} />
-                            </div>
-                        </div>
+                        <KPICard 
+                            title="Total Items"
+                            value={totalItems}
+                            icon={Box}
+                            bg="bg-blue-50"
+                            color="text-blue-600"
+                        />
+                        <KPICard 
+                            title="Low Stock Alerts"
+                            value={lowStockItems}
+                            icon={AlertTriangle}
+                            bg={lowStockItems > 0 ? 'bg-red-50' : 'bg-green-50'}
+                            color={lowStockItems > 0 ? 'text-red-600' : 'text-green-600'}
+                        />
+                        <KPICard 
+                            title="Total Value"
+                            value={`₱${parseFloat(totalValue).toLocaleString()}`}
+                            icon={TrendingUp}
+                            bg="bg-emerald-50"
+                            color="text-emerald-600"
+                        />
                     </div>
 
                     {/* SUPPLIES TABLE */}
@@ -420,7 +385,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
                                     {isNavigating && filteredSupplies.length === 0 ? (
-                                        <InventorySkeleton />
+                                        <TableBodySkeleton rows={5} cols={7} />
                                     ) : filteredSupplies.length > 0 ? (
                                         <AnimatePresence initial={false}>
                                             {filteredSupplies.map((supply) => (

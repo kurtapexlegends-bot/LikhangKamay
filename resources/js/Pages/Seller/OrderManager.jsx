@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import { motion, animate } from "framer-motion";
+import { motion } from "framer-motion";
 import Modal from "@/Components/Modal";
 import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
@@ -10,6 +10,7 @@ import SellerWorkspaceLayout, {
 } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Components/SellerHeader";
 import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
+import KPICard from "@/Components/KPICard";
 import {
     Download,
     ChevronRight,
@@ -76,65 +77,6 @@ import CompactPagination from "@/Components/CompactPagination";
 import ExportButton from "@/Components/ExportButton";
 import ArtisanSkeleton from "@/Components/ArtisanSkeleton";
 
-const AnimatedCounter = ({
-    value,
-    formatter = (v) => Math.round(v).toLocaleString(),
-    duration = 1.5,
-}) => {
-    const nodeRef = useRef(null);
-
-    useEffect(() => {
-        if (!nodeRef.current) return;
-
-        const controls = animate(0, value, {
-            duration: duration,
-            onUpdate(value) {
-                if (nodeRef.current) {
-                    nodeRef.current.textContent = formatter(value);
-                }
-            },
-        });
-
-        return () => controls.stop();
-    }, [value]);
-
-    return <span ref={nodeRef}>{formatter(0)}</span>;
-};
-
-const KPICard = ({ title, value, icon: Icon, color, bg }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm transition-all hover:border-stone-200 hover:shadow-md group"
-    >
-        <div className="flex items-center justify-between">
-            <div>
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-stone-400">
-                    {title}
-                </p>
-                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
-                    {typeof value === "number" ? (
-                        <AnimatedCounter value={value} />
-                    ) : value.includes("PHP") ? (
-                        <AnimatedCounter
-                            value={parseFloat(value.replace(/[^\d.]/g, ""))}
-                            formatter={(v) =>
-                                `PHP ${Math.round(v).toLocaleString()}`
-                            }
-                        />
-                    ) : (
-                        value
-                    )}
-                </h3>
-            </div>
-            <div
-                className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${color} group-hover:scale-110 transition-transform`}
-            >
-                <Icon size={20} />
-            </div>
-        </div>
-    </motion.div>
-);
 
 const Tab = ({ label, count, active, onClick, color = "clay" }) => (
     <button

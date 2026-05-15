@@ -18,6 +18,8 @@ import SellerWorkspaceLayout, {
 } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Components/SellerHeader";
 import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
+import KPICard from "@/Components/KPICard";
+import SortableHeader from "@/Components/SortableHeader";
 import {
     Package,
     Search,
@@ -28,8 +30,6 @@ import {
     Tag,
     Image as ImageIcon,
     AlertTriangle,
-    ChevronUp,
-    ChevronDown,
     MoreVertical,
     RotateCcw,
     Check,
@@ -51,52 +51,6 @@ import {
     CheckCircle2,
 } from "lucide-react";
 
-const KPICard = ({ title, value, icon: Icon, color, bg }) => (
-    <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-300">
-        <div>
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-stone-400">
-                {title}
-            </p>
-            <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
-                {value}
-            </h3>
-        </div>
-        <div
-            className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${color}`}
-        >
-            <Icon size={20} />
-        </div>
-    </div>
-);
-
-// --- HELPER: SORTABLE HEADER ---
-const SortableHeader = ({ label, sortKey, currentSort, onSort }) => {
-    const isSorted = currentSort.key === sortKey;
-    const isAsc = currentSort.direction === "asc";
-
-    return (
-        <th
-            className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition group select-none"
-            onClick={() => onSort(sortKey)}
-        >
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-xs uppercase tracking-wider">
-                <span>{label}</span>
-                <div className="flex flex-col -space-y-1.5">
-                    <ChevronUp
-                        size={12}
-                        strokeWidth={4}
-                        className={`transition-all ${isSorted && isAsc ? "text-clay-600 opacity-100" : "text-gray-300 opacity-50 group-hover:opacity-100"}`}
-                    />
-                    <ChevronDown
-                        size={12}
-                        strokeWidth={4}
-                        className={`transition-all ${isSorted && !isAsc ? "text-clay-600 opacity-100" : "text-gray-300 opacity-50 group-hover:opacity-100"}`}
-                    />
-                </div>
-            </div>
-        </th>
-    );
-};
 
 const STANDARD_PRODUCT_CATEGORIES = [
     "Tableware",

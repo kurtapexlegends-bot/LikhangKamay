@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
     Award, TrendingUp, Clock, AlertCircle, 
-    CheckCircle2, XCircle, Search, Package,
-    User, LogOut, Menu, ChevronDown, X
+    CheckCircle2, XCircle, Search, Package
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
-import UserAvatar from '@/Components/UserAvatar';
-import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';

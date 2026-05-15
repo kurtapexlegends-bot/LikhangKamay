@@ -4,6 +4,7 @@ import { motion, useSpring, useTransform, animate } from 'framer-motion';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Components/SellerHeader';
+import KPICard from '@/Components/KPICard';
 import {
     Package,
     ShoppingBag,
@@ -35,74 +36,6 @@ import {
 import ExportButton from '@/Components/ExportButton';
 import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
 
-const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleString(), duration = 2 }) => {
-    const nodeRef = useRef(null);
-    const [hasAnimated, setHasAnimated] = useState(false);
-
-    useEffect(() => {
-        if (!nodeRef.current) return;
-        
-        const controls = animate(0, value, {
-            duration: duration,
-            onUpdate(value) {
-                if (nodeRef.current) {
-                    nodeRef.current.textContent = formatter(value);
-                }
-            }
-        });
-
-        return () => controls.stop();
-    }, [value, hasAnimated]);
-
-    return <span ref={nodeRef}>{formatter(0)}</span>;
-};
-
-const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
-    let growthColor = 'text-stone-500';
-    let GrowthIcon = Minus;
-    let growthPrefix = '';
-
-    if (growth > 0) {
-        growthColor = 'text-emerald-600';
-        GrowthIcon = TrendingUp;
-        growthPrefix = '+';
-    } else if (growth < 0) {
-        growthColor = 'text-rose-600';
-        GrowthIcon = TrendingDown;
-        growthPrefix = ''; // The negative sign is inherently part of the number
-    }
-
-    return (
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow group"
-        >
-            <div>
-                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
-                    {typeof value === 'number' ? (
-                        <AnimatedCounter value={value} formatter={(v) => title.includes('Rating') ? v.toFixed(1) : Math.round(v).toLocaleString()} />
-                    ) : value.includes('₱') ? (
-                        <AnimatedCounter value={parseFloat(value.replace(/[^\d.]/g, ''))} formatter={(v) => `₱${Math.round(v).toLocaleString()}`} />
-                    ) : (
-                        value
-                    )}
-                </h3>
-
-                {growth !== undefined && (
-                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>
-                        <GrowthIcon size={12} />
-                        <span>{growthPrefix}{growth}% vs last month</span>
-                    </div>
-                )}
-            </div>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} ${text} group-hover:scale-110 transition-transform`}>
-                <Icon size={20} />
-            </div>
-        </motion.div>
-    );
-};
 
 const COLORS = ['#c07251', '#d97706', '#059669', '#57534e', '#e11d48', '#8c5a44']; // Clay, Amber, Emerald, Stone, Rose, Earth
 
@@ -258,10 +191,10 @@ export default function Analytics({
                             <ArtisanSkeleton variant="stat" count={4} />
                         ) : (
                             <>
-                                <MetricCard title="Total Revenue" value={formatPeso(metrics.total_revenue)} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-stone-50" text="text-clay-600" />
-                                <MetricCard title="Gross Profit" value={formatPeso(metrics.gross_profit)} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-emerald-50" text="text-emerald-600" />
-                                <MetricCard title="Profit Margin" value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} growth={metrics.growth.profit} icon={Activity} bg="bg-emerald-50" text="text-emerald-600" />
-                                <MetricCard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-amber-50" text="text-amber-600" />
+                                <KPICard title="Total Revenue" value={metrics.total_revenue} growth={metrics.growth.revenue} icon={DollarSign} bg="bg-stone-50" color="text-clay-600" />
+                                <KPICard title="Gross Profit" value={metrics.gross_profit} growth={metrics.growth.profit} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" />
+                                <KPICard title="Profit Margin" value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} icon={Activity} bg="bg-emerald-50" color="text-emerald-600" />
+                                <KPICard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-amber-50" color="text-amber-600" formatter={(v) => v.toFixed(1)} />
                             </>
                         )}
                     </div>
@@ -685,10 +618,10 @@ export default function Analytics({
                                     <div className="space-y-8">
                                         {/* Metrics Row */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                                            <MetricCard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" text="text-clay-600" />
-                                            <MetricCard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" text="text-amber-600" />
-                                            <MetricCard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" text="text-emerald-600" />
-                                            <MetricCard title="Ad Revenue" value={formatPeso(sponsorshipMetrics?.sponsored_revenue || 0)} icon={DollarSign} bg="bg-clay-50" text="text-clay-600" />
+                                            <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" />
+                                            <KPICard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" color="text-amber-600" />
+                                            <KPICard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" />
+                                            <KPICard title="Ad Revenue" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" />
                                         </div>
 
                                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
