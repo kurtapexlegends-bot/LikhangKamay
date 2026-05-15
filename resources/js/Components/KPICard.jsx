@@ -80,6 +80,7 @@ const KPICard = ({
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all hover:border-stone-300 hover:shadow-md"
+                style={{ boxShadow: 'inset 0 1px 1px 0 rgba(255,255,255,0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
             >
                 {content}
             </motion.div>
@@ -87,7 +88,10 @@ const KPICard = ({
     }
 
     return (
-        <div className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all hover:border-stone-300 hover:shadow-md">
+        <div 
+            className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all hover:border-stone-300 hover:shadow-md"
+            style={{ boxShadow: 'inset 0 1px 1px 0 rgba(255,255,255,0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+        >
             {content}
         </div>
     );

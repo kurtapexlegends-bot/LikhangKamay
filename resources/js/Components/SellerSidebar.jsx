@@ -181,8 +181,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-50 w-52 bg-white border-r border-clay-100 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="relative flex shrink-0 items-center justify-between border-b border-gray-50 bg-white px-4 py-3">
+            <aside className={`fixed inset-y-0 left-0 z-50 w-52 bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="relative flex shrink-0 items-center justify-between border-b border-clay-100/30 bg-transparent px-4 py-3">
                     <div className="flex min-w-0 items-center gap-2">
                         <img 
                             src="/images/logo.png" 
@@ -293,7 +293,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
                 {showPlanPanel && (
                     <>
-                        <div className="border-b border-gray-50 bg-stone-50/30 px-5 py-3 flex-shrink-0">
+                        <div className="border-b border-clay-100/30 bg-stone-50/10 px-5 py-3 flex-shrink-0">
                             <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
                                 <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
                                     {isElite ? (

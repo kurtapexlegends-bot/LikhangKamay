@@ -26,7 +26,13 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
     return (
         <SellerWorkspaceShellContext.Provider value={shell}>
             <ImpersonationBanner />
-            <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800">
+            <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800 relative">
+                {/* Subtle Gradient Mesh Background */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-40">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-clay-100 blur-[120px] animate-pulse" />
+                    <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] rounded-full bg-amber-50 blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
+                </div>
+
                 <SellerSidebar
                     active={active}
                     user={sidebarUser ?? auth?.user}
