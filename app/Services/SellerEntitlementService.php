@@ -56,6 +56,7 @@ class SellerEntitlementService
         return [
             'shop_manager' => ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'hr', 'accounting', 'procurement', 'stock_requests'],
             'accountant' => ['overview', 'analytics', 'hr', 'accounting'],
+            'hr' => ['overview', 'hr'],
             'stock_clerk' => ['overview', 'products', 'orders', 'procurement', 'stock_requests'],
             'customer_support' => ['overview', 'orders', 'messages', 'reviews'],
             'custom' => [],

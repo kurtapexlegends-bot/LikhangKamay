@@ -48,7 +48,7 @@ class SuperAdminController extends Controller
     {
         try {
             return Inertia::render('Admin/Dashboard', [
-                'stats' => Inertia::defer(function() {
+                'stats' => (function() {
                     $totalArtisans = $this->metrics->getMetric(User::class, ['role' => 'artisan']);
                     
                     // Buyers
@@ -112,8 +112,8 @@ class SuperAdminController extends Controller
                         'approvedArtisans' => $approvedArtisans,
                         'rejectedArtisans' => $rejectedArtisans,
                     ];
-                }),
-                'recentUsers' => Inertia::defer(function() {
+                })(),
+                'recentUsers' => (function() {
                     return User::with('sellerOwner:id,name,shop_name')
                         ->orderBy('created_at', 'desc')
                         ->limit(10)
@@ -138,10 +138,10 @@ class SuperAdminController extends Controller
                             ];
                         })
                         ->values();
-                }),
-                'activities' => Inertia::defer(function() {
+                })(),
+                'activities' => (function() {
                     return PlatformActivity::with('user:id,name,shop_name')->latest()->take(20)->get();
-                }),
+                })(),
             ]);
         } catch (\Throwable $e) {
             Log::error("SuperAdmin Dashboard error: " . $e->getMessage());
@@ -167,7 +167,7 @@ class SuperAdminController extends Controller
     {
         try {
             return Inertia::render('Admin/Monetization', [
-                'metrics' => Inertia::defer(function() {
+                'metrics' => (function() {
                     $premiumPrice = 199;
                     $elitePrice = 399;
 
@@ -227,8 +227,8 @@ class SuperAdminController extends Controller
                         ],
                         'pendingSponsorships' => $pendingSponsorships,
                     ];
-                }),
-                'recentSubscribers' => Inertia::defer(function() {
+                })(),
+                'recentSubscribers' => (function() {
                     return UserTierLog::query()
                         ->with('user:id,name,shop_name,avatar,premium_tier')
                         ->whereNotNull('new_tier')
@@ -271,7 +271,7 @@ class SuperAdminController extends Controller
                         })
                         ->filter()
                         ->values();
-                }),
+                })(),
                 'recentSponsorships' => Inertia::defer(function() {
                     return SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
                         ->orderBy('created_at', 'desc')

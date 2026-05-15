@@ -2587,12 +2587,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                         </div>
                                                     )}
 
-                                                    {order.status ===
-                                                        "Delivered" &&
-                                                        !order.replacement_in_progress &&
-                                                        !isLalamoveManagedOrder(
-                                                            order,
-                                                        ) && (
+                                                    {order.status === 'Delivered' && !order.replacement_in_progress && !isLalamoveManagedOrder(order) && (
                                                             <div className="space-y-2">
                                                                 <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-2.5 py-2">
                                                                     <CheckCircle2
@@ -2639,12 +2634,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                             </div>
                                                         )}
 
-                                                    {order.status ===
-                                                        "Delivered" &&
-                                                        !order.replacement_in_progress &&
-                                                        isLalamoveManagedOrder(
-                                                            order,
-                                                        ) && (
+                                                    {order.status === 'Delivered' && !order.replacement_in_progress && isLalamoveManagedOrder(order) && (
                                                             <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2">
                                                                 <CheckCircle2
                                                                     size={13}
@@ -2675,12 +2665,7 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                     className="text-teal-500 shrink-0"
                                                                 />
                                                                 <div className="min-w-0">
-                                                                    <p className="text-[11px] font-bold text-teal-700">
-                                                                        Waiting
-                                                                        for
-                                                                        Buyer
-                                                                        Confirmation
-                                                                    </p>
+                                                                    <p className="text-[11px] font-bold text-teal-700">Waiting for Buyer Confirmation</p>
                                                                     <p className="text-[9px] text-teal-600">
                                                                         Replacement
                                                                         unresolved

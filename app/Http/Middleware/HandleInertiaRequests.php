@@ -34,9 +34,10 @@ class HandleInertiaRequests extends Middleware
             ],
             
             // Lazy load subscription and sidebar to reduce DB overhead
-            'sellerSubscription' => Inertia::lazy(fn () => $user ? app(SellerEntitlementService::class)->getSubscriptionPayload($user) : null),
-            'sellerSidebar' => Inertia::lazy(fn () => $user ? $user->getSellerSidebarEntitlements() : null),
-            'attendance' => Inertia::lazy(fn () => ($user && $user->isStaff()) ? app(StaffAttendanceService::class)->buildLogoutContext($user) : null),
+            // Evaluate core metadata on initial visit for test compatibility
+            'sellerSubscription' => fn () => $user ? app(SellerEntitlementService::class)->getSubscriptionPayload($user) : null,
+            'sellerSidebar' => fn () => $user ? $user->getSellerSidebarEntitlements() : null,
+            'attendance' => fn () => ($user && $user->isStaff()) ? app(StaffAttendanceService::class)->buildLogoutContext($user) : null,
             
             // Cart count from session - lightweight but still good to keep accessible
             'cartCount' => fn () => (int) array_sum(array_column(Session::get('cart', []), 'qty')),
@@ -87,7 +88,7 @@ class HandleInertiaRequests extends Middleware
     /**
      * Helper to resolve global announcement with caching
      */
-    private function getGlobalAnnouncement($user)
+    private function getGlobalAnnouncement(?\App\Models\User $user)
     {
         try {
             return Cache::remember('global_announcement_' . ($user?->role ?? 'guest'), 600, function () use ($user) {

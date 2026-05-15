@@ -331,7 +331,7 @@ class ProductController extends Controller
             : 'Product created successfully!');
     }
 
-      public function update(Request $request, $id)
+      public function update(Request $request, int|string $id)
       {
           $sellerId = $this->sellerOwnerId();
           /** @var \App\Models\Product $product */
@@ -658,7 +658,8 @@ class ProductController extends Controller
                 'target_label' => 'Open Products',
             ]);
 
-            return back()->with('success', $this->bulkActivationMessage($activated, $draftedForMissingMedia, $skippedForLimit));
+            $sessionKey = ($activated === 0 && ($draftedForMissingMedia > 0 || $skippedForLimit > 0)) ? 'error' : 'success';
+            return back()->with($sessionKey, $this->bulkActivationMessage($activated, $draftedForMissingMedia, $skippedForLimit));
         });
     }
 
@@ -1211,16 +1212,30 @@ class ProductController extends Controller
 
     private function bulkActivationMessage(int $activated, int $drafted, int $skipped): string
     {
-        $message = "Activated {$activated} product(s).";
+        if ($activated === 0 && $skipped > 0 && $drafted === 0) {
+            return "No selected products were activated. Your active product limit has already been reached.";
+        }
+
+        $message = "{$activated} product(s) were activated.";
+        if ($activated === 1) {
+            $message = "1 product was activated.";
+        } elseif ($activated > 1) {
+            $message = "{$activated} products were activated.";
+        }
 
         if ($drafted > 0) {
-            $message .= " {$drafted} product(s) remained Draft due to missing media requirements.";
+            $productWord = $drafted === 1 ? 'product' : 'products';
+            $message .= " {$drafted} {$productWord} was kept in Draft because required media is incomplete.";
+            if ($drafted > 1) {
+                $message = str_replace('was kept in Draft', 'were kept in Draft', $message);
+            }
         }
 
         if ($skipped > 0) {
-            $message .= " {$skipped} product(s) were skipped due to plan limits.";
+            $productWord = $skipped === 1 ? 'product' : 'products';
+            $message .= " {$skipped} {$productWord} were skipped due to plan limits.";
         }
 
-        return $message;
+        return trim($message);
     }
 }

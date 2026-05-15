@@ -52,10 +52,16 @@ class StaffDashboardController extends Controller
      * @param  array<int, string>  $visibleModules
      * @return array<string, mixed>
      */
-    private function buildHubPayload($user, $seller, array $visibleModules, int $unreadTeamMessages): array
+    private function buildHubPayload(User $user, User $seller, array $visibleModules, int $unreadTeamMessages): array
     {
         $presetKey = $user->staff_role_preset_key ?: 'custom';
-        $variant = in_array($presetKey, ['customer_support', 'custom'], true) ? 'crm' : $presetKey;
+        $variant = match ($presetKey) {
+            'customer_support', 'custom' => 'crm',
+            'stock_clerk' => 'procurement',
+            'accountant' => 'accounting',
+            'shop_manager' => 'crm',
+            default => $presetKey,
+        };
         $sellerId = $seller->id;
 
         $employeeCount = Employee::where('user_id', $sellerId)->count();

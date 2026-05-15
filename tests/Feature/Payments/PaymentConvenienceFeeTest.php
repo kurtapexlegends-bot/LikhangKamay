@@ -53,7 +53,7 @@ class PaymentConvenienceFeeTest extends TestCase
                 $this->assertSame($order->order_number, $data['reference_number']);
                 $this->assertCount(2, $data['line_items']);
                 $this->assertSame('Payment Test Item', $data['line_items'][0]['name']);
-                $this->assertSame('Convenience Fee (3%)', $data['line_items'][1]['name']);
+                $this->assertSame('Platform Fee', $data['line_items'][1]['name']);
                 $this->assertSame(1500, $data['line_items'][1]['amount']);
                 return true;
             }))

@@ -55,7 +55,7 @@ class HrStaffProvisioningTest extends TestCase
             'email' => 'jose.reyes@gmail.com',
             'default_password' => 'password',
             'staff_user_level' => 'standard',
-            'staff_role_preset_key' => 'accounting',
+            'staff_role_preset_key' => 'accountant',
             'module_overrides' => [
                 'accounting' => true,
                 'overview' => true,
@@ -77,7 +77,7 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertSame($owner->id, $staff->created_by_user_id);
         $this->assertSame('standard', $staff->getStaffUserLevel());
         $this->assertSame(User::STAFF_ACCESS_PERMISSION_READ_ONLY, $staff->getStaffAccessPermissionLevel());
-        $this->assertSame('accounting', $staff->staff_role_preset_key);
+        $this->assertSame('accountant', $staff->staff_role_preset_key);
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'accounting'));
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'overview'));
         $this->assertFalse((bool) $staff->email_verified_at);
@@ -279,7 +279,7 @@ class HrStaffProvisioningTest extends TestCase
             'email' => 'blocked.user@gmail.com',
             'default_password' => 'password',
             'staff_user_level' => 'standard',
-            'staff_role_preset_key' => 'procurement',
+            'staff_role_preset_key' => 'stock_clerk',
             'module_overrides' => [
                 'procurement' => true,
             ],
@@ -568,7 +568,7 @@ class HrStaffProvisioningTest extends TestCase
             'email' => 'linked.updated@gmail.com',
             'default_password' => 'password',
             'staff_user_level' => 'manager',
-            'staff_role_preset_key' => 'accounting',
+            'staff_role_preset_key' => 'accountant',
             'module_overrides' => [
                 'accounting' => true,
                 'overview' => true,
@@ -592,7 +592,7 @@ class HrStaffProvisioningTest extends TestCase
         ]);
         $this->assertSame('linked.updated@gmail.com', $linkedLogin->email);
         $this->assertSame('manager', $linkedLogin->getStaffUserLevel());
-        $this->assertSame('accounting', $linkedLogin->staff_role_preset_key);
+        $this->assertSame('accountant', $linkedLogin->staff_role_preset_key);
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'accounting'));
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'overview'));
         $this->assertFalse((bool) data_get($linkedLogin->staff_module_permissions, 'hr'));
@@ -625,7 +625,7 @@ class HrStaffProvisioningTest extends TestCase
             'email' => 'provision.later@gmail.com',
             'default_password' => 'password',
             'staff_user_level' => 'manager',
-            'staff_role_preset_key' => 'procurement',
+            'staff_role_preset_key' => 'stock_clerk',
             'module_overrides' => [
                 'procurement' => true,
                 'stock_requests' => true,
@@ -640,7 +640,7 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertNotNull($staff);
         $this->assertSame('provision.later@gmail.com', $staff->email);
         $this->assertSame('manager', $staff->getStaffUserLevel());
-        $this->assertSame('procurement', $staff->staff_role_preset_key);
+        $this->assertSame('stock_clerk', $staff->staff_role_preset_key);
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'procurement'));
         $this->assertTrue((bool) data_get($staff->staff_module_permissions, 'stock_requests'));
 
@@ -732,7 +732,7 @@ class HrStaffProvisioningTest extends TestCase
             'email' => 'restore.access@gmail.com',
             'default_password' => '',
             'staff_user_level' => 'manager',
-            'staff_role_preset_key' => 'accounting',
+            'staff_role_preset_key' => 'accountant',
             'module_overrides' => [
                 'accounting' => true,
                 'overview' => true,
@@ -746,7 +746,7 @@ class HrStaffProvisioningTest extends TestCase
 
         $this->assertTrue($linkedLogin->isWorkspaceAccessEnabled());
         $this->assertSame('manager', $linkedLogin->getStaffUserLevel());
-        $this->assertSame('accounting', $linkedLogin->staff_role_preset_key);
+        $this->assertSame('accountant', $linkedLogin->staff_role_preset_key);
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'accounting'));
         $this->assertTrue((bool) data_get($linkedLogin->staff_module_permissions, 'overview'));
     }
@@ -991,10 +991,11 @@ class HrStaffProvisioningTest extends TestCase
                         && data_get($module, 'label') === 'Messages'
                 ))
                 ->has('staffProvisioning.rolePresets', fn (Assert $presets) => $presets
-                    ->where('3.key', 'customer_support')
-                    ->where('3.modules.0', 'orders')
-                    ->where('3.modules.1', 'messages')
-                    ->where('3.modules.2', 'reviews')
+                    ->where('4.key', 'customer_support')
+                    ->where('4.modules.0', 'overview')
+                    ->where('4.modules.1', 'orders')
+                    ->where('4.modules.2', 'messages')
+                    ->where('4.modules.3', 'reviews')
                     ->etc()
                 )
         );

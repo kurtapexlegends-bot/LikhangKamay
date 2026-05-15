@@ -444,7 +444,7 @@ export default function PendingArtisans({ artisans }) {
                                                     <p className={`mt-2 text-[9px] font-bold leading-tight ${isReady ? 'text-emerald-600' : 'text-stone-400'}`}>
                                                         {isReady
                                                             ? 'Ready for approval'
-                                                            : 'Preview all files first'}
+                                                            : 'Preview all submitted files first'}
                                                     </p>
                                                 </div>
                                             </div>

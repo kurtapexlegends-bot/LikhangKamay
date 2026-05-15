@@ -40,7 +40,7 @@ class StaffDashboardTest extends TestCase
     public function test_accounting_staff_lands_on_accounting_hub(): void
     {
         $owner = $this->createPremiumOwner(['accounting' => true]);
-        $staff = $this->createStaff($owner, 'accounting');
+        $staff = $this->createStaff($owner, 'accountant');
 
         $this->actingAs($staff)
             ->get(route('staff.dashboard'))
@@ -55,7 +55,7 @@ class StaffDashboardTest extends TestCase
     public function test_procurement_staff_lands_on_procurement_hub(): void
     {
         $owner = $this->createPremiumOwner(['procurement' => true]);
-        $staff = $this->createStaff($owner, 'procurement');
+        $staff = $this->createStaff($owner, 'stock_clerk');
 
         $this->actingAs($staff)
             ->get(route('staff.dashboard'))

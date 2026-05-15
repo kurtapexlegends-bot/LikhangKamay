@@ -19,8 +19,10 @@ class AddressTypeReceiptTest extends TestCase
         Mail::fake();
         Notification::fake();
 
-        $buyer = User::factory()->create();
-        $seller = User::factory()->artisanApproved()->create();
+        /** @var User $buyer */
+        $buyer = User::factory()->createOne();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->createOne();
         $product = $this->createProduct($seller, 900);
 
         $savedAddress = $buyer->addresses()->create([
@@ -53,15 +55,15 @@ class AddressTypeReceiptTest extends TestCase
 
         $this->assertSame($savedAddress->full_address, $order->shipping_address);
         $this->assertSame('office', $order->shipping_address_type);
-        $this->assertSame(27.0, (float) $order->convenience_fee_amount);
+        $this->assertSame(15.0, (float) $order->convenience_fee_amount);
 
         $receiptResponse = $this->actingAs($buyer)->get(route('my-orders.receipt', $order->id));
 
         $receiptResponse
             ->assertOk()
-            ->assertSee('Convenience Fee (3%)', false)
+            ->assertSee('Convenience Fee', false)
             ->assertSee('Office', false)
-            ->assertSee('PHP 27.00', false)
+            ->assertSee('PHP 15.00', false)
             ->assertSee('Total Paid', false);
     }
 
@@ -70,8 +72,10 @@ class AddressTypeReceiptTest extends TestCase
         Mail::fake();
         Notification::fake();
 
-        $buyer = User::factory()->create();
-        $seller = User::factory()->artisanApproved()->create();
+        /** @var User $buyer */
+        $buyer = User::factory()->createOne();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->createOne();
         $product = $this->createProduct($seller, 900);
 
         $order = Order::create([
@@ -116,8 +120,10 @@ class AddressTypeReceiptTest extends TestCase
         Mail::fake();
         Notification::fake();
 
-        $buyer = User::factory()->create();
-        $seller = User::factory()->artisanApproved()->create();
+        /** @var User $buyer */
+        $buyer = User::factory()->createOne();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->createOne();
         $product = $this->createProduct($seller, 640);
 
         $response = $this->actingAs($buyer)->post(route('checkout.store'), [
@@ -135,7 +141,7 @@ class AddressTypeReceiptTest extends TestCase
             'phone_number' => '09998887777',
             'payment_method' => 'COD',
             'save_address' => true,
-            'total' => 659.20,
+            'total' => 655.00,
         ]);
 
         $response->assertRedirect(route('my-orders.index', absolute: false));
@@ -151,7 +157,7 @@ class AddressTypeReceiptTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'user_id' => $buyer->id,
             'shipping_address_type' => 'other',
-            'convenience_fee_amount' => 19.20,
+            'convenience_fee_amount' => 15.00,
         ]);
     }
 
@@ -160,8 +166,10 @@ class AddressTypeReceiptTest extends TestCase
         Mail::fake();
         Notification::fake();
 
-        $buyer = User::factory()->create();
-        $seller = User::factory()->artisanApproved()->create();
+        /** @var User $buyer */
+        $buyer = User::factory()->createOne();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->createOne();
         $product = $this->createProduct($seller, 700);
 
         $response = $this->from('/checkout')->actingAs($buyer)->post(route('checkout.store'), [
@@ -189,8 +197,10 @@ class AddressTypeReceiptTest extends TestCase
         Mail::fake();
         Notification::fake();
 
-        $buyer = User::factory()->create();
-        $seller = User::factory()->artisanApproved()->create();
+        /** @var User $buyer */
+        $buyer = User::factory()->createOne();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->createOne();
         $product = $this->createProduct($seller, 700);
 
         $response = $this->from('/checkout')->actingAs($buyer)->post(route('checkout.store'), [

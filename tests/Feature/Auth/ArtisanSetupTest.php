@@ -37,11 +37,10 @@ class ArtisanSetupTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->post(route('artisan.setup.store'), [
-            'current_step' => 2,
-            'business_permit' => UploadedFile::fake()->image('business-permit.jpg'),
-            'dti_registration' => UploadedFile::fake()->image('dti-registration.jpg'),
-            'valid_id' => UploadedFile::fake()->image('valid-id.jpg'),
-            'tin_id' => UploadedFile::fake()->image('tin-id.jpg'),
+            'current_step' => 3,
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'John Doe',
+            'payout_account_number' => '09123456789',
         ]);
 
         $response->assertRedirect(route('artisan.pending', absolute: false));
@@ -72,11 +71,10 @@ class ArtisanSetupTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->post(route('artisan.setup.store'), [
-            'current_step' => 2,
-            'business_permit' => UploadedFile::fake()->image('business-permit.jpg'),
-            'dti_registration' => UploadedFile::fake()->image('dti-registration.jpg'),
-            'valid_id' => UploadedFile::fake()->image('valid-id.jpg'),
-            'tin_id' => UploadedFile::fake()->image('tin-id.jpg'),
+            'current_step' => 3,
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'John Doe',
+            'payout_account_number' => '09123456789',
         ]);
 
         $response->assertRedirect(route('artisan.pending', absolute: false));
@@ -113,11 +111,10 @@ class ArtisanSetupTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->post(route('artisan.setup.store'), [
-            'current_step' => 2,
-            'business_permit' => UploadedFile::fake()->image('business-permit.jpg'),
-            'dti_registration' => UploadedFile::fake()->image('dti-registration.jpg'),
-            'valid_id' => UploadedFile::fake()->image('valid-id.jpg'),
-            'tin_id' => UploadedFile::fake()->image('tin-id.jpg'),
+            'current_step' => 3,
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'John Doe',
+            'payout_account_number' => '09123456789',
         ]);
 
         $response->assertRedirect(route('artisan.pending', absolute: false));

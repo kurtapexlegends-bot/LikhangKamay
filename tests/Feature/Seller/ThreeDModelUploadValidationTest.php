@@ -33,8 +33,10 @@ class ThreeDModelUploadValidationTest extends TestCase
         $response = $this->actingAs($seller)->post(route('products.store'), [
             'sku' => 'LK-GLB1',
             'name' => 'Test Vase',
+            'description' => 'A test vase for GLB upload.',
             'category' => 'Vases & Jars',
             'price' => 200,
+            'cost_price' => 100,
             'stock' => 10,
             'status' => 'Active',
             'model_3d' => UploadedFile::fake()->create('test-model.glb', 100, 'application/octet-stream'),

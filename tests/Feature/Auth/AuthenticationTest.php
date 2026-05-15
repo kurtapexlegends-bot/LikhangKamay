@@ -144,11 +144,11 @@ class AuthenticationTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('products.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('artisan.setup'));
 
         $this->actingAs($user)
             ->get(route('seller.subscription'))
-            ->assertForbidden();
+            ->assertRedirect(route('artisan.setup'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

@@ -72,10 +72,6 @@ class Order extends Model
         parent::boot();
 
         static::saving(function (self $order) {
-            foreach (static::filterSchemaCompatibleAttributes($order->attributes) as $key => $value) {
-                $order->attributes[$key] = $value;
-            }
-
             if (!static::supportsShippingFeeAmountColumn()) {
                 unset($order->attributes['shipping_fee_amount']);
             }
@@ -87,7 +83,6 @@ class Order extends Model
             if (!static::supportsSellerNetAmountColumn()) {
                 unset($order->attributes['seller_net_amount']);
             }
-
         });
     }
 

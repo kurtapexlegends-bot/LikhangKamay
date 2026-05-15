@@ -25,6 +25,11 @@ class ManualDeliveryProofFlowTest extends TestCase
             'payment_status' => 'pending',
         ]);
 
+        // First transition to Processing
+        $this->actingAs($seller)->post(route('orders.update', $order->order_number), [
+            'status' => 'Processing',
+        ])->assertRedirect();
+
         $response = $this->actingAs($seller)->post(route('orders.update', $order->order_number), [
             'status' => 'Shipped',
             'tracking_number' => 'MANUAL-TRACK-1001',

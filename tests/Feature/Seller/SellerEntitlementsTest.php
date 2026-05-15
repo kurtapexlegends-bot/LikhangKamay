@@ -103,7 +103,7 @@ class SellerEntitlementsTest extends TestCase
             'hr' => true,
             'procurement' => true,
         ]);
-        $staff = $this->createCompletedStaff($owner, 'procurement', ['procurement' => true, 'stock_requests' => true], 'manager');
+        $staff = $this->createCompletedStaff($owner, 'stock_clerk', ['procurement' => true, 'stock_requests' => true], 'manager');
 
         $response = $this->actingAs($staff)->get(route('procurement.index'));
 
@@ -152,7 +152,7 @@ class SellerEntitlementsTest extends TestCase
             'status' => 'Paid',
         ]);
 
-        $staff = $this->createCompletedStaff($owner, 'procurement');
+        $staff = $this->createCompletedStaff($owner, 'stock_clerk');
 
         $response = $this->actingAs($staff)->get(route('procurement.index'));
 

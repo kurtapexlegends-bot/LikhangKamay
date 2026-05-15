@@ -234,12 +234,12 @@ class AnalyticsController extends Controller
                 ->where('status', 'Completed');
         })
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->select(
+            ->select([
                 'products.category', 
                 DB::raw('SUM(order_items.quantity) as volume'),
                 DB::raw('SUM(order_items.price * order_items.quantity) as revenue'),
                 DB::raw('SUM(order_items.cost * order_items.quantity) as cost')
-            )
+            ])
             ->groupBy('products.category')
             ->get()
             ->map(function ($item) {
@@ -262,13 +262,13 @@ class AnalyticsController extends Controller
             $query->where('artisan_id', $sellerId)
                 ->where('status', 'Completed');
         })
-            ->select(
+            ->select([
                 'product_name',
                 DB::raw('SUM(quantity) as total_sold'),
                 DB::raw('SUM(price * quantity) as revenue'),
                 DB::raw('SUM(cost * quantity) as total_cost'),
                 DB::raw('MAX(product_img) as img')
-            )
+            ])
             ->groupBy('product_name')
             ->orderByDesc('total_sold')
             ->limit(5)
@@ -313,22 +313,13 @@ class AnalyticsController extends Controller
 
     private function getSalesIntelligence(int $sellerId): array
     {
+        $dayExpr = $this->dayOfWeekExpression('created_at');
+        $hourExpr = $this->hourExpression('created_at');
+
         $salesHeatmap = Order::query()
             ->where('artisan_id', $sellerId)
             ->where('status', 'Completed')
-            ->selectRaw('
-                CASE 
-                    WHEN DAYOFWEEK(created_at) = 1 THEN "Sun"
-                    WHEN DAYOFWEEK(created_at) = 2 THEN "Mon"
-                    WHEN DAYOFWEEK(created_at) = 3 THEN "Tue"
-                    WHEN DAYOFWEEK(created_at) = 4 THEN "Wed"
-                    WHEN DAYOFWEEK(created_at) = 5 THEN "Thu"
-                    WHEN DAYOFWEEK(created_at) = 6 THEN "Fri"
-                    ELSE "Sat"
-                END as day,
-                HOUR(created_at) as hour,
-                COUNT(*) as count
-            ')
+            ->selectRaw("{$dayExpr} as day, {$hourExpr} as hour, COUNT(*) as count")
             ->groupBy('day', 'hour')
             ->get();
 
@@ -336,10 +327,10 @@ class AnalyticsController extends Controller
                 $q->where('artisan_id', $sellerId)->where('status', 'Completed');
             })
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->selectRaw('
+            ->selectRaw("
                 products.name,
-                AVG(DATEDIFF(order_items.created_at, products.created_at)) as avg_days_to_sell
-            ')
+                AVG({$this->dateDiffExpression('order_items.created_at', 'products.created_at')}) as avg_days_to_sell
+            ")
             ->groupBy('products.id', 'products.name')
             ->having('avg_days_to_sell', '>', 0)
             ->orderBy('avg_days_to_sell')
@@ -351,7 +342,7 @@ class AnalyticsController extends Controller
             ->whereDoesntHave('orderItems', function($q) {
                 $q->where('created_at', '>=', now()->subDays(30));
             })
-            ->select('id', 'name', 'stock', 'created_at')
+            ->select(['id', 'name', 'stock', 'created_at'])
             ->take(5)
             ->get()
             ->map(fn($p) => [
@@ -375,7 +366,7 @@ class AnalyticsController extends Controller
             ->pluck('category');
     }
 
-    private function calculatePercentage($current, $previous)
+    private function calculatePercentage(float|int $current, float|int $previous)
     {
         if ($previous == 0) {
             return $current > 0 ? 100 : 0;
@@ -399,6 +390,51 @@ class AnalyticsController extends Controller
             'sqlite' => "CAST(strftime('%Y', {$column}) AS INTEGER)",
             'pgsql' => "EXTRACT(YEAR FROM {$column})",
             default => "YEAR({$column})",
+        };
+    }
+
+    private function dayOfWeekExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "
+                CASE CAST(strftime('%w', {$column}) AS INTEGER)
+                    WHEN 0 THEN 'Sun'
+                    WHEN 1 THEN 'Mon'
+                    WHEN 2 THEN 'Tue'
+                    WHEN 3 THEN 'Wed'
+                    WHEN 4 THEN 'Thu'
+                    WHEN 5 THEN 'Fri'
+                    ELSE 'Sat'
+                END",
+            'pgsql' => "to_char({$column}, 'Dy')",
+            default => "
+                CASE DAYOFWEEK({$column})
+                    WHEN 1 THEN 'Sun'
+                    WHEN 2 THEN 'Mon'
+                    WHEN 3 THEN 'Tue'
+                    WHEN 4 THEN 'Wed'
+                    WHEN 5 THEN 'Thu'
+                    WHEN 6 THEN 'Fri'
+                    ELSE 'Sat'
+                END",
+        };
+    }
+
+    private function hourExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%H', {$column}) AS INTEGER)",
+            'pgsql' => "EXTRACT(HOUR FROM {$column})",
+            default => "HOUR({$column})",
+        };
+    }
+
+    private function dateDiffExpression(string $column1, string $column2): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "(julianday({$column1}) - julianday({$column2}))",
+            'pgsql' => "({$column1}::date - {$column2}::date)",
+            default => "DATEDIFF({$column1}, {$column2})",
         };
     }
 
@@ -447,12 +483,12 @@ class AnalyticsController extends Controller
             $query->where('artisan_id', $sellerId)
                 ->where('status', 'Completed');
         })
-            ->select(
+            ->select([
                 'product_name',
                 DB::raw('SUM(quantity) as total_sold'),
                 DB::raw('SUM(price * quantity) as total_revenue'),
                 DB::raw('SUM(cost * quantity) as total_cost')
-            )
+            ])
             ->groupBy('product_name')
             ->orderByDesc('total_sold')
             ->limit(10)
