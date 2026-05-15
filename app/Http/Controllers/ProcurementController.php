@@ -50,6 +50,8 @@ class ProcurementController extends Controller
             'lowStockItems' => $supplies->filter(fn(Supply $s) => $s->isLowStock())->count(),
             'totalValue' => $supplies->sum(fn($s) => $s->quantity * ($s->unit_cost ?? 0)),
             'categories' => $categories,
+            'availableCategories' => Supply::CATEGORIES,
+            'availableUnits' => Supply::UNITS,
             'initTab' => request('tab', 'inventory'),
         ]);
     }
@@ -131,7 +133,7 @@ class ProcurementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'required|string|in:Finished Goods,Tools,Packaging,Glazes,Other', // Phase 1: Standardized
+            'category' => 'required|string|in:' . implode(',', Supply::CATEGORIES), 
             'quantity' => 'required|integer|min:0',
             'unit' => 'required|string|max:20',
             'min_stock' => 'required|integer|min:0',
@@ -160,7 +162,7 @@ class ProcurementController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'category' => 'sometimes|string|in:Finished Goods,Tools,Packaging,Glazes,Other',
+            'category' => 'sometimes|string|in:' . implode(',', Supply::CATEGORIES),
             'quantity' => 'sometimes|integer|min:0',
             'unit' => 'sometimes|string|max:20',
             'min_stock' => 'sometimes|integer|min:0',

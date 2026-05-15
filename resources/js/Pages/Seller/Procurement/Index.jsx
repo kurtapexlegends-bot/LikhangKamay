@@ -24,10 +24,10 @@ import InputLabel from '@/Components/InputLabel';
 import KPICard from '@/Components/KPICard';
 import { TableBodySkeleton } from '@/Components/Skeleton';
 
-const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other']; // Phase 1: Removed Raw Materials
-const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
+const FALLBACK_CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other'];
+const FALLBACK_UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
 
-export default function ProcurementIndex({ auth, supplies, requests, finances, totalItems, lowStockItems, totalValue, categories, initTab }) {
+export default function ProcurementIndex({ auth, supplies, requests, finances, totalItems, lowStockItems, totalValue, categories, initTab, availableCategories = [], availableUnits = [] }) {
     const { addToast } = useToast();
     const { canEdit: canEditProcurement, isReadOnly: isProcurementReadOnly } = useSellerModuleAccess('procurement');
     const { canEdit: canEditStockRequests } = useSellerModuleAccess('stock_requests');
@@ -85,6 +85,9 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         notes: '',
         sku: '',
     });
+
+    const categoriesList = availableCategories.length > 0 ? availableCategories : FALLBACK_CATEGORIES;
+    const unitsList = availableUnits.length > 0 ? availableUnits : FALLBACK_UNITS;
 
     const skuValidation = useConstraintValidation('supply_sku_uniqueness', data.sku);
 
@@ -533,7 +536,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     value={data.category} 
                                     onChange={e => setData('category', e.target.value)}
                                 >
-                                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                    {categoriesList.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -559,7 +562,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     value={data.unit} 
                                     onChange={e => setData('unit', e.target.value)}
                                 >
-                                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                    {unitsList.map(u => <option key={u} value={u}>{u}</option>)}
                                 </select>
                             </div>
                         </div>

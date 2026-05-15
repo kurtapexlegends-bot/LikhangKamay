@@ -11,6 +11,9 @@ class Supply extends Model
     protected static ?bool $supportsMaxStockColumn = null;
     protected static ?bool $supportsProductIdColumn = null;
 
+    public const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other'];
+    public const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
+
     protected $fillable = [
         'user_id',
         'product_id',
