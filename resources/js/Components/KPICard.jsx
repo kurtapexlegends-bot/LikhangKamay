@@ -75,10 +75,19 @@ const KPICard = ({
     );
 
     if (animate) {
+        const itemVariants = {
+            hidden: { opacity: 0, y: 15 },
+            show: { 
+                opacity: 1, 
+                y: 0,
+                transition: { type: "spring", bounce: 0.3, duration: 0.6 }
+            }
+        };
         return (
             <motion.div 
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
+                variants={itemVariants}
+                // We don't set initial/animate here so it can inherit from StaggerContainer
+                // If it's used standalone, the user can still pass initial="hidden" animate="show"
                 className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all hover:border-stone-300 hover:shadow-md"
                 style={{ boxShadow: 'inset 0 1px 1px 0 rgba(255,255,255,0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
             >
@@ -86,6 +95,7 @@ const KPICard = ({
             </motion.div>
         );
     }
+
 
     return (
         <div 

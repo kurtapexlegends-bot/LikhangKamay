@@ -1623,6 +1623,18 @@ export default function ProductManager({
             >
                 <form
                     onSubmit={submitProduct}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+                            e.preventDefault();
+                            if (activeFormTab !== "Media") {
+                                const tabs = ["Essentials", "Details", "Production", "Media"];
+                                const currentIndex = tabs.indexOf(activeFormTab);
+                                setActiveFormTab(tabs[currentIndex + 1]);
+                            } else {
+                                submitProduct(e);
+                            }
+                        }
+                    }}
                     className="flex max-h-[85vh] flex-col"
                 >
                     <>

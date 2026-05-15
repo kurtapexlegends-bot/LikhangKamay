@@ -5,6 +5,8 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Components/SellerHeader';
 import KPICard from '@/Components/KPICard';
+import StaggerContainer from '@/Components/StaggerContainer';
+import ContentTransition from '@/Components/ContentTransition';
 import {
     Package,
     ShoppingBag,
@@ -186,7 +188,7 @@ export default function Analytics({
             />
 
                 <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                         {isLoading ? (
                             <ArtisanSkeleton variant="stat" count={4} />
                         ) : (
@@ -197,18 +199,22 @@ export default function Analytics({
                                 <KPICard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-amber-50" color="text-amber-600" formatter={(v) => v.toFixed(1)} />
                             </>
                         )}
-                    </div>
+                    </StaggerContainer>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                         <div className="min-w-0 lg:col-span-2 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-100 flex flex-col relative overflow-hidden">
-                            {isLoading && (
-                                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
-                                    <div className="h-full w-full relative overflow-hidden bg-stone-50/30">
-                                        <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                            <ContentTransition
+                                isShowingPlaceholder={isLoading}
+                                placeholder={
+                                    <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
+                                        <div className="h-full w-full relative overflow-hidden bg-stone-50/30">
+                                            <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
+                                }
+                            >
+                                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
+
                                 <div>
                                     <h3 className="text-lg font-bold text-stone-900">Revenue Analytics</h3>
                                     <p className="text-sm text-stone-500">Income over time</p>
@@ -260,6 +266,7 @@ export default function Analytics({
                                     </div>
                                 )}
                             </div>
+                            </ContentTransition>
                         </div>
 
                         <div className="min-w-0 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-stone-100 flex flex-col">
@@ -617,12 +624,12 @@ export default function Analytics({
                                 ) : (
                                     <div className="space-y-8">
                                         {/* Metrics Row */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                                             <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" />
                                             <KPICard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" color="text-amber-600" />
                                             <KPICard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" />
                                             <KPICard title="Ad Revenue" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" />
-                                        </div>
+                                        </StaggerContainer>
 
                                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
                                             {/* Chart Panel */}

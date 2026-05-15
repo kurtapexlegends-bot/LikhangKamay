@@ -18,13 +18,43 @@ export default function FloatingModuleActions({ actions }) {
 
     useEffect(() => {
         setMounted(true);
-        return () => setMounted(false);
-    }, []);
+        
+        let lastScrollY = window.scrollY;
+        
+        const handleScroll = () => {
+            if (window.scrollY > 50 && window.scrollY > lastScrollY && !isCollapsed) {
+                // Auto collapse when scrolling down
+                setIsCollapsed(true);
+            }
+            lastScrollY = window.scrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        
+        // Also listen to the main scroll region if it's not the window
+        const scrollRegion = document.querySelector('[scroll-region="true"]');
+        if (scrollRegion) {
+            scrollRegion.addEventListener('scroll', () => {
+                if (scrollRegion.scrollTop > 50 && scrollRegion.scrollTop > lastScrollY && !isCollapsed) {
+                    setIsCollapsed(true);
+                }
+                lastScrollY = scrollRegion.scrollTop;
+            }, { passive: true });
+        }
+
+        return () => {
+            setMounted(false);
+            window.removeEventListener('scroll', handleScroll);
+            if (scrollRegion) {
+                scrollRegion.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [isCollapsed]);
 
     if (!actions || !mounted) return null;
 
     const content = (
-        <div className="fixed bottom-6 right-6 z-[250] flex items-end justify-end group pointer-events-none">
+        <div className="fixed bottom-6 right-6 z-40 flex items-end justify-end group pointer-events-none">
             <div 
                 className={`
                     flex items-center gap-2.5 px-1 py-1 rounded-2xl shadow-xl transition-all duration-500 ease-out pointer-events-auto

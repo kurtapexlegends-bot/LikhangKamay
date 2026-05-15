@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Check, X, Info, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const ToastContext = createContext();
 
@@ -54,7 +55,31 @@ function ToastItem({ toast, onRemove }) {
     };
 
     const icons = {
-        success: <Check size={18} className="text-white" />,
+        success: (
+            <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", bounce: 0.5, duration: 0.5 }}
+                className="relative flex items-center justify-center w-5 h-5"
+            >
+                <motion.svg className="absolute inset-0 w-full h-full text-white" viewBox="0 0 50 50">
+                    <motion.circle
+                        cx="25" cy="25" r="20"
+                        fill="none" stroke="currentColor" strokeWidth="4"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                    />
+                </motion.svg>
+                <motion.div
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                >
+                    <Check size={14} className="text-white relative z-10" strokeWidth={3} />
+                </motion.div>
+            </motion.div>
+        ),
         error: <X size={18} className="text-white" />,
         info: <Info size={18} className="text-white" />,
         warning: <AlertTriangle size={18} className="text-white" />,
