@@ -14,9 +14,8 @@ class LocalImageTransformer
 
     public function __construct()
     {
-        // Intervention Image v3/v4 syntax
-        /** @var \Intervention\Image\ImageManager $this->manager */
-        $this->manager = new ImageManager(new Driver());
+        // Intervention Image v3/v4 static factory
+        $this->manager = ImageManager::gd();
     }
 
     /**
@@ -38,7 +37,10 @@ class LocalImageTransformer
             }
         }
 
-        $image = $this->manager->read($fullPath);
+        /** @var \Intervention\Image\ImageManager $manager */
+        $manager = $this->manager;
+        /** @var \Intervention\Image\Image $image */
+        $image = $manager->read($fullPath);
 
         $width = $params['w'] ?? null;
         $height = $params['h'] ?? null;

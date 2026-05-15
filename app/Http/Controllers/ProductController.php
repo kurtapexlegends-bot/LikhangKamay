@@ -69,12 +69,7 @@ class ProductController extends Controller
 
         // 1. Search Filter
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('category', 'like', "%{$search}%");
-            });
+            $query->search($request->search, ['name', 'sku', 'category', 'description']);
         }
 
         // 2. Status Filter
@@ -844,7 +839,7 @@ class ProductController extends Controller
         return implode(', ', $requirements) . ', and ' . $lastRequirement;
     }
 
-    private function resizeAndSave($file, $path)
+    private function resizeAndSave(\Illuminate\Http\UploadedFile $file, string $path)
     {
         try {
             // Offload resizing to Supabase Transformations.
@@ -911,7 +906,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function manualDeduct(Request $request, $id)
+    public function manualDeduct(Request $request, int|string $id)
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
 

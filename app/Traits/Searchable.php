@@ -20,18 +20,35 @@ trait Searchable
             return $query;
         }
 
-        // Clean the search query
         $search = trim($search);
-        
-        // Use websearch_to_tsquery for "human-like" search behavior (supports quotes, minus for exclusion)
-        $columnsString = implode(", ' ', ", array_map(fn($col) => "COALESCE($col, '')", $columns));
-        
-        return $query->whereRaw(
-            "to_tsvector('english', CONCAT($columnsString)) @@ websearch_to_tsquery('english', ?)",
-            [$search]
-        )->orderByRaw(
-            "ts_rank(to_tsvector('english', CONCAT($columnsString)), websearch_to_tsquery('english', ?)) DESC",
-            [$search]
-        );
+        /** @var \Illuminate\Database\Connection $connection */
+        $connection = $query->getConnection();
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'pgsql') {
+            // High-performance PostgreSQL Full-Text Search
+            $columnsString = implode(", ' ', ", array_map(fn($col) => "COALESCE($col, '')", $columns));
+            
+            return $query->whereRaw(
+                "to_tsvector('english', CONCAT($columnsString)) @@ websearch_to_tsquery('english', ?)",
+                [$search]
+            )->orderByRaw(
+                "ts_rank(to_tsvector('english', CONCAT($columnsString)), websearch_to_tsquery('english', ?)) DESC",
+                [$search]
+            );
+        }
+
+        if ($driver === 'mysql') {
+            // MySQL Full-Text Search fallback
+            $columnsList = implode(',', $columns);
+            return $query->whereRaw("MATCH($columnsList) AGAINST(? IN BOOLEAN MODE)", [$search]);
+        }
+
+        // Generic fallback for SQLite or other drivers
+        return $query->where(function ($q) use ($search, $columns) {
+            foreach ($columns as $column) {
+                $q->orWhere($column, 'like', "%{$search}%");
+            }
+        });
     }
 }

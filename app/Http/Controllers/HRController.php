@@ -726,47 +726,15 @@ class HRController extends Controller
 
         // DRY RUN: Return calculated results without saving
         if (($validated['action'] ?? 'submit') === 'dry_run') {
-            $seller = $this->sellerOwner();
-            $sellerId = $seller->id;
-            $otRate = $seller->overtime_rate ?? 50.00;
-            $workingDays = $seller->payroll_working_days ?? 22;
+            $calcResults = $this->calculatePayrollItems($selectedItems);
             
-            $previewItems = [];
-            $totalAmount = 0;
-
-            foreach ($selectedItems as $item) {
-                $employee = Employee::where('user_id', $sellerId)->findOrFail($item['employee_id']);
-
-                $dailyRate = $employee->salary / $workingDays;
-                $hourlyRate = $dailyRate / 8;
-                $overtimePay = $item['overtime_hours'] * $otRate;
-                $absenceDeduction = $item['absences_days'] * $dailyRate;
-                $undertimeDeduction = $item['undertime_hours'] * $hourlyRate;
-                $netPay = max(0, $employee->salary + $overtimePay - $absenceDeduction - $undertimeDeduction);
-
-                $previewItems[] = [
-                    'employee_name' => $employee->name,
-                    'role' => $employee->role,
-                    'base_salary' => $employee->salary,
-                    'overtime_pay' => $overtimePay,
-                    'deductions' => $absenceDeduction + $undertimeDeduction,
-                    'net_pay' => $netPay,
-                    'meta' => [
-                        'absences' => $item['absences_days'],
-                        'overtime' => $item['overtime_hours'],
-                        'undertime' => $item['undertime_hours'],
-                    ]
-                ];
-                $totalAmount += $netPay;
-            }
-
             return response()->json([
                 'success' => true,
                 'data' => [
                     'month' => $validated['month'],
-                    'total_amount' => $totalAmount,
-                    'employee_count' => count($previewItems),
-                    'items' => $previewItems,
+                    'total_amount' => $calcResults['total_amount'],
+                    'employee_count' => count($calcResults['items']),
+                    'items' => $calcResults['items'],
                 ]
             ]);
         }
@@ -1236,6 +1204,47 @@ class HRController extends Controller
                 'net_pay' => (float) $lineItems->sum('net_pay'),
             ],
             'line_items' => $lineItems->all(),
+        ];
+    }
+    private function calculatePayrollItems(array $selectedItems): array
+    {
+        $seller = $this->sellerOwner();
+        $sellerId = $seller->id;
+        $otRate = $seller->overtime_rate ?? 50.00;
+        $workingDays = $seller->payroll_working_days ?? 22;
+        
+        $items = [];
+        $totalAmount = 0;
+
+        foreach ($selectedItems as $item) {
+            $employee = Employee::where('user_id', $sellerId)->findOrFail($item['employee_id']);
+
+            $dailyRate = $employee->salary / $workingDays;
+            $hourlyRate = $dailyRate / 8;
+            $overtimePay = $item['overtime_hours'] * $otRate;
+            $absenceDeduction = $item['absences_days'] * $dailyRate;
+            $undertimeDeduction = $item['undertime_hours'] * $hourlyRate;
+            $netPay = max(0, $employee->salary + $overtimePay - $absenceDeduction - $undertimeDeduction);
+
+            $items[] = [
+                'employee_name' => $employee->name,
+                'role' => $employee->role,
+                'base_salary' => $employee->salary,
+                'overtime_pay' => $overtimePay,
+                'deductions' => $absenceDeduction + $undertimeDeduction,
+                'net_pay' => $netPay,
+                'meta' => [
+                    'absences' => $item['absences_days'],
+                    'overtime' => $item['overtime_hours'],
+                    'undertime' => $item['undertime_hours'],
+                ]
+            ];
+            $totalAmount += $netPay;
+        }
+
+        return [
+            'items' => $items,
+            'total_amount' => $totalAmount,
         ];
     }
 }
