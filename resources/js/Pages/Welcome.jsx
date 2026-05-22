@@ -98,7 +98,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                 >
                                     <div className="relative bg-gray-50 overflow-hidden aspect-square">
                                         <img
-                                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'}
+                                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') || product.img.startsWith('/img') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'}
                                             alt={product.name}
                                             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                                             onError={(e) => { e.target.src = '/images/no-image.png'; }}
@@ -192,7 +192,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                     <div className="aspect-square relative bg-gray-100 overflow-hidden">
                                         <img 
                                             loading="lazy"
-                                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
+                                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') || product.img.startsWith('/img') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
                                             alt={product.name} 
                                             className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                                             onError={(e) => { e.target.src = '/images/no-image.png'; }}
@@ -305,7 +305,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                 >
                                                     <div className={`w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 relative shadow-md transition-all duration-500 active:scale-[0.96] group-hover:shadow-2xl group-hover:shadow-stone-900/10 group-hover:-translate-y-1.5 ${isFirst ? 'border-amber-300 shadow-amber-100/50 group-hover:border-amber-400' : 'border-clay-200 group-hover:border-clay-400'}`}>
                                                         <img 
-                                                            src={store.products[0].img ? (store.products[0].img.startsWith('http') || store.products[0].img.startsWith('/storage') ? store.products[0].img : `/storage/${store.products[0].img}`) : '/images/no-image.png'}
+                                                            src={store.products[0].img ? (store.products[0].img.startsWith('http') || store.products[0].img.startsWith('/storage') || store.products[0].img.startsWith('/img') ? store.products[0].img : `/storage/${store.products[0].img}`) : '/images/no-image.png'}
                                                             alt={store.products[0].name}
                                                             className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                                                             onError={(e) => { e.target.src = '/images/no-image.png'; }}
@@ -337,7 +337,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                     >
                                                         <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
                                                             <img 
-                                                                src={store.products[1].img ? (store.products[1].img.startsWith('http') || store.products[1].img.startsWith('/storage') ? store.products[1].img : `/storage/${store.products[1].img}`) : '/images/no-image.png'}
+                                                                src={store.products[1].img ? (store.products[1].img.startsWith('http') || store.products[1].img.startsWith('/storage') || store.products[1].img.startsWith('/img') ? store.products[1].img : `/storage/${store.products[1].img}`) : '/images/no-image.png'}
                                                                 alt={store.products[1].name}
                                                                 className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
@@ -360,7 +360,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                     >
                                                         <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
                                                             <img 
-                                                                src={store.products[2].img ? (store.products[2].img.startsWith('http') || store.products[2].img.startsWith('/storage') ? store.products[2].img : `/storage/${store.products[2].img}`) : '/images/no-image.png'}
+                                                                src={store.products[2].img ? (store.products[2].img.startsWith('http') || store.products[2].img.startsWith('/storage') || store.products[2].img.startsWith('/img') ? store.products[2].img : `/storage/${store.products[2].img}`) : '/images/no-image.png'}
                                                                 alt={store.products[2].name}
                                                                 className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}

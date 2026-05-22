@@ -99,7 +99,7 @@ class ShopController extends Controller
         return $query;
     }
 
-    private function applyCatalogSorting($query, ?string $sort)
+    private function applyCatalogSorting(\Illuminate\Database\Eloquent\Builder $query, ?string $sort)
     {
         switch ($sort) {
             case 'price_low':
@@ -152,7 +152,7 @@ class ShopController extends Controller
         ];
     }
 
-    private function serializeCatalogProduct($product): array
+    private function serializeCatalogProduct(Product $product): array
     {
         return [
             'id' => $product->id,
@@ -188,54 +188,64 @@ class ShopController extends Controller
             abort(404);
         }
 
-        $productsQuery = Product::query()
-            ->where('user_id', $seller->id)
-            ->where('status', 'Active')
-            ->latest();
-            
-        $activeProducts = $productsQuery->get();
-
-        $products = $activeProducts->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'slug' => $product->slug,
-                    'name' => $product->name,
-                    'price' => number_format((float) $product->price, 2),
-                    'category' => $product->category,
-                    'rating' => $product->rating ?? 0,
-                    'sold' => $product->sold ?? 0,
-                    'image' => $product->img,
-                    'is_new' => $product->created_at ? $product->created_at->diffInDays(now()) < 7 : false,
-                ];
-            });
+        $products = Cache::remember("seller_{$seller->id}_products", 1800, function() use ($seller) {
+            return Product::query()
+                ->where('user_id', $seller->id)
+                ->where('status', 'Active')
+                ->withAvg('publicReviews as computed_rating', 'rating')
+                ->latest()
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'slug' => $product->slug,
+                        'name' => $product->name,
+                        'price' => number_format((float) $product->price, 2),
+                        'category' => $product->category,
+                        'rating' => $product->computed_rating ? round($product->computed_rating, 1) : 0,
+                        'sold' => $product->sold ?? 0,
+                        'image' => $product->img,
+                        'is_new' => $product->created_at ? $product->created_at->diffInDays(now()) < 7 : false,
+                    ];
+                });
+        });
 
         // DSS: Store-Specific Best Sellers (top 5)
-        $bestSellersQuery = Product::query()
-            ->where('user_id', $seller->id)
-            ->where('status', 'Active')
-            ->where('sold', '>', 0)
-            ->orderByDesc('sold')
-            ->take(5);
-            
-        $topProducts = $bestSellersQuery->get();
-
-        $bestSellers = $topProducts->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'slug' => $product->slug,
-                    'name' => $product->name,
-                    'price' => number_format((float) $product->price, 2),
-                    'rating' => $product->rating ?? 0,
-                    'sold' => $product->sold ?? 0,
-                    'image' => $product->img,
-                ];
-            });
+        $bestSellers = Cache::remember("seller_{$seller->id}_best_sellers", 1800, function() use ($seller) {
+            return Product::query()
+                ->where('user_id', $seller->id)
+                ->where('status', 'Active')
+                ->where('sold', '>', 0)
+                ->withAvg('publicReviews as computed_rating', 'rating')
+                ->orderByDesc('sold')
+                ->take(5)
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'slug' => $product->slug,
+                        'name' => $product->name,
+                        'price' => number_format((float) $product->price, 2),
+                        'rating' => $product->computed_rating ? round($product->computed_rating, 1) : 0,
+                        'sold' => $product->sold ?? 0,
+                        'image' => $product->img,
+                    ];
+                });
+        });
 
         // Calculate Stats
-        $totalSales = $products->sum('sold');
-        $avgRating = \App\Models\Review::whereHas('product', function ($q) use ($seller) {
-            $q->where('user_id', $seller->id);
-        })->visibleToMarketplace()->avg('rating') ?? 0;
+        $stats = Cache::remember("seller_{$seller->id}_stats", 1800, function() use ($seller, $products) {
+            $totalSales = $products->sum('sold');
+            $avgRating = \App\Models\Review::whereHas('product', function ($q) use ($seller) {
+                $q->where('user_id', $seller->id);
+            })->visibleToMarketplace()->avg('rating') ?? 0;
+
+            return [
+                'products' => $products->count(),
+                'sales' => $totalSales,
+                'rating' => number_format($avgRating, 1),
+            ];
+        });
 
         return Inertia::render('Shop/SellerProfile', [
             'seller' => [
@@ -251,11 +261,7 @@ class ShopController extends Controller
             ],
             'products' => $products,
             'bestSellers' => $bestSellers,
-            'stats' => [
-                'products' => $products->count(),
-                'sales' => $totalSales,
-                'rating' => number_format($avgRating, 1),
-            ]
+            'stats' => $stats
         ]);
     }
 
@@ -264,9 +270,9 @@ class ShopController extends Controller
         $user = $request->user()->getEffectiveSeller();
         abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
 
-        $user->load(['products' => fn($q) => $q->where('status', 'Active')]);
+        $user->loadCount(['products' => fn($q) => $q->where('status', 'Active')]);
+        $user->loadSum(['products as total_sales' => fn($q) => $q->where('status', 'Active')], 'sold');
 
-        $totalSales = $user->products->sum('sold');
         $avgRating  = \App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
             ->visibleToMarketplace()
             ->avg('rating') ?? 0;
@@ -274,8 +280,8 @@ class ShopController extends Controller
         return Inertia::render('Seller/ShopSettings', [
             'user'  => $user,
             'stats' => [
-                'products' => $user->products->count(),
-                'sales'    => $totalSales,
+                'products' => $user->products_count ?? 0,
+                'sales'    => $user->total_sales ?? 0,
                 'rating'   => number_format($avgRating, 1),
             ],
         ]);

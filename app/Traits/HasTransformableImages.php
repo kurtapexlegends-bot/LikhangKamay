@@ -24,21 +24,21 @@ trait HasTransformableImages
         $disk = Storage::disk('public');
         $baseUrl = $disk->url($path);
 
-        // Only apply transformations if using S3 (Supabase)
-        if (config('filesystems.disks.public.driver') === 's3' && !empty($options)) {
-            // Supabase transformation format: 
-            // https://[ref].supabase.co/storage/v1/render/image/public/[bucket]/[path]?width=200...
-            
-            $endpoint = config('filesystems.disks.public.endpoint');
-            $bucket = config('filesystems.disks.public.bucket');
-            
-            // Convert S3 API endpoint to Transformation endpoint
-            // From: https://ref.supabase.co/storage/v1/s3
-            // To:   https://ref.supabase.co/storage/v1/render/image/public/bucket/path
-            $transformBase = str_replace('/s3', '/render/image/public', $endpoint);
-            $queryString = http_build_query($options);
-            
-            return "{$transformBase}/{$bucket}/{$path}?{$queryString}";
+        if (!empty($options)) {
+            if (config('filesystems.disks.public.driver') === 's3') {
+                // Supabase transformation format
+                $endpoint = config('filesystems.disks.public.endpoint');
+                $bucket = config('filesystems.disks.public.bucket');
+                
+                $transformBase = str_replace('/s3', '/render/image/public', $endpoint);
+                $queryString = http_build_query($options);
+                
+                return "{$transformBase}/{$bucket}/{$path}?{$queryString}";
+            } else {
+                // Use local Image Proxy Controller with absolute URL
+                $options['src'] = $path;
+                return route('img.proxy', $options, true);
+            }
         }
 
         return $baseUrl;

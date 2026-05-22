@@ -22,10 +22,10 @@ class HomeController extends Controller
         }
 
         try {
-            $sponsoredProducts = $this->getSponsoredProducts();
-            $featuredProducts = $this->getFeaturedProducts(collect($sponsoredProducts)->pluck('id')->all());
-            $topSellers = $this->getTopSellers();
-            $categories = Cache::remember('home_categories', 3600, function() {
+            $sponsoredProducts = Cache::remember('home_sponsored_products', 1800, fn() => $this->getSponsoredProducts());
+            $featuredProducts = Cache::remember('home_featured_products', 1800, fn() => $this->getFeaturedProducts(collect($sponsoredProducts)->pluck('id')->all()));
+            $topSellers = Cache::remember('home_top_sellers', 1800, fn() => $this->getTopSellers());
+            $categories = Cache::remember('home_categories', 86400, function() {
                 return \App\Models\Category::pluck('name')->toArray();
             });
         } catch (\Exception $e) {
@@ -64,15 +64,14 @@ class HomeController extends Controller
         }
 
         $storeIds = $topStores->pluck('user_id')->all();
-        $sellers = \App\Models\User::whereIn('id', $storeIds)
+        $sellers = \App\Models\User::with(['products' => function ($q) {
+                $q->where('status', 'Active')
+                  ->orderByDesc('sold')
+                  ->take(3);
+            }])
+            ->whereIn('id', $storeIds)
             ->get()
             ->keyBy('id');
-        $productsBySeller = Product::with('user')
-            ->whereIn('user_id', $storeIds)
-            ->where('status', 'Active')
-            ->orderByDesc('sold')
-            ->get()
-            ->groupBy('user_id');
 
         $topSellers = [];
         foreach ($topStores as $rank => $store) {
@@ -80,8 +79,7 @@ class HomeController extends Controller
             $seller = $sellers->get($userId);
             if (!$seller) continue;
 
-            $products = ($productsBySeller->get($userId) ?? collect())
-                ->take(3)
+            $products = $seller->products
                 ->map(fn($product) => $this->formatProductForHome($product, true))
                 ->values();
 
@@ -92,7 +90,7 @@ class HomeController extends Controller
                 'store_avatar' => $seller->avatar,
                 'premium_tier' => $seller->premium_tier,
                 'total_sold' => (int) $store->total_sold,
-                'products' => $products,
+                'products' => $products->all(),
             ];
         }
 
@@ -162,7 +160,7 @@ class HomeController extends Controller
             ->all();
     }
 
-    private function formatProductForHome($product, bool $shortMode = false, bool $isSponsored = false): array
+    private function formatProductForHome(Product $product, bool $shortMode = false, bool $isSponsored = false): array
     {
         $data = [
             'id' => $product->id,
