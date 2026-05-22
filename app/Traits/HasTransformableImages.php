@@ -27,7 +27,7 @@ trait HasTransformableImages
         if (!empty($options)) {
             if (config('filesystems.disks.public.driver') === 's3') {
                 // Supabase transformation format
-                $endpoint = config('filesystems.disks.public.endpoint');
+                $endpoint = (string) config('filesystems.disks.public.endpoint', '');
                 $bucket = config('filesystems.disks.public.bucket');
                 
                 $transformBase = str_replace('/s3', '/render/image/public', $endpoint);
@@ -35,9 +35,9 @@ trait HasTransformableImages
                 
                 return "{$transformBase}/{$bucket}/{$path}?{$queryString}";
             } else {
-                // Use local Image Proxy Controller with absolute URL
-                $options['src'] = $path;
-                return route('img.proxy', $options, true);
+                // OPTIMIZATION: Bypassing the proxy locally because concurrent image 
+                // requests clog the single-threaded PHP dev server and block Inertia navigation.
+                return $baseUrl;
             }
         }
 
