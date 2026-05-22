@@ -985,8 +985,6 @@ class ProductController extends Controller
             ->where('id', '!=', $product->id)
             ->where('category', $product->category)
             ->with('user')
-            ->withAvg('publicReviews as reviews_avg_rating', 'rating')
-            ->withCount('publicReviews as reviews_count')
             ->orderByRaw("
                 CASE
                     WHEN user_id = ? THEN 1
@@ -1002,7 +1000,7 @@ class ProductController extends Controller
                 $product->firing_method,
             ])
             ->orderByDesc('sold')
-            ->orderByDesc('reviews_avg_rating')
+            ->orderByDesc('rating')
             ->orderByDesc('reviews_count')
             ->latest()
             ->take(4)
@@ -1016,8 +1014,6 @@ class ProductController extends Controller
                 ->where('id', '!=', $product->id)
                 ->whereNotIn('id', $preferredMatches->pluck('id'))
                 ->with('user')
-                ->withAvg('publicReviews as reviews_avg_rating', 'rating')
-                ->withCount('publicReviews as reviews_count')
                 ->orderByRaw("
                     CASE
                         WHEN category = ? THEN 1
@@ -1026,7 +1022,7 @@ class ProductController extends Controller
                     END
                 ", [$product->category, $product->user_id])
                 ->orderByDesc('sold')
-                ->orderByDesc('reviews_avg_rating')
+                ->orderByDesc('rating')
                 ->orderByDesc('reviews_count')
                 ->latest()
                 ->take(4 - $preferredMatches->count())
@@ -1043,7 +1039,7 @@ class ProductController extends Controller
                     'slug' => $relatedProduct->slug,
                     'price' => $relatedProduct->price,
                     'image' => $relatedProduct->img,
-                    'rating' => (float) ($relatedProduct->reviews_avg_rating ?? $relatedProduct->rating ?? 0),
+                    'rating' => (float) ($relatedProduct->rating ?? 0),
                     'sold' => $relatedProduct->sold,
                     'location' => $relatedProduct->user->city ?? 'PH',
                 ];

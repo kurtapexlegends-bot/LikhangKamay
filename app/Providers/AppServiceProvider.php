@@ -35,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
         
         Vite::prefetch(concurrency: 3);
 
+        \App\Models\Review::observe(\App\Observers\ReviewObserver::class);
+
         // --- RATE LIMITERS ---
         
         // 1. Marketplace Search (Prevent scraping/DOS)

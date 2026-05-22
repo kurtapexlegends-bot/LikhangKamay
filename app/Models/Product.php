@@ -65,7 +65,7 @@ class Product extends Model
     ];
 
     // Helper to check if it has a 3D model (for Frontend)
-    protected $appends = ['img', 'has3D', 'rating', 'reviews_count'];
+    protected $appends = ['img', 'has3D'];
 
     public function getImgAttribute()
     {
@@ -82,22 +82,6 @@ class Product extends Model
     public function getHas3DAttribute()
     {
         return !empty($this->model_3d_path);
-    }
-
-    public function getRatingAttribute()
-    {
-        if ($this->relationLoaded('publicReviews')) {
-            return $this->publicReviews->avg('rating') ? round($this->publicReviews->avg('rating'), 1) : 0;
-        }
-        return round($this->publicReviews()->avg('rating'), 1) ?? 0;
-    }
-
-    public function getReviewsCountAttribute()
-    {
-        if ($this->relationLoaded('publicReviews')) {
-            return $this->publicReviews->count();
-        }
-        return $this->publicReviews()->count();
     }
 
     public function user()

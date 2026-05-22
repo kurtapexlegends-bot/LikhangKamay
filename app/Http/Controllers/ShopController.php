@@ -57,9 +57,7 @@ class ShopController extends Controller
     private function buildCatalogQuery(Request $request)
     {
         $query = Product::where('status', 'Active')
-            ->with(['user'])
-            ->withAvg('publicReviews as reviews_avg_rating', 'rating')
-            ->withCount('publicReviews as reviews_count');
+            ->with(['user']);
 
         if ($request->filled('category') && $request->category !== 'All') {
             $query->where('category', $request->category);
@@ -91,7 +89,7 @@ class ShopController extends Controller
         }
 
         if ($request->filled('min_rating')) {
-            $query->having('reviews_avg_rating', '>=', (float) $request->min_rating);
+            $query->where('rating', '>=', (float) $request->min_rating);
         }
 
         $this->applyCatalogSorting($query, $request->sort);
@@ -112,7 +110,7 @@ class ShopController extends Controller
                 $query->orderBy('sold', 'desc');
                 break;
             case 'rating':
-                $query->orderByDesc('reviews_avg_rating');
+                $query->orderByDesc('rating');
                 break;
             case 'newest':
             default:
@@ -161,7 +159,7 @@ class ShopController extends Controller
             'price' => number_format($product->price, 2),
             'raw_price' => $product->price,
             'category' => $product->category,
-            'rating' => (float) ($product->reviews_avg_rating ?? 0),
+            'rating' => (float) ($product->rating ?? 0),
             'reviews_count' => $product->reviews_count ?? 0,
             'sold' => $product->sold ?? 0,
             'image' => $product->img,
@@ -192,7 +190,6 @@ class ShopController extends Controller
             return Product::query()
                 ->where('user_id', $seller->id)
                 ->where('status', 'Active')
-                ->withAvg('publicReviews as computed_rating', 'rating')
                 ->latest()
                 ->get()
                 ->map(function ($product) {
@@ -202,7 +199,7 @@ class ShopController extends Controller
                         'name' => $product->name,
                         'price' => number_format((float) $product->price, 2),
                         'category' => $product->category,
-                        'rating' => $product->computed_rating ? round($product->computed_rating, 1) : 0,
+                        'rating' => $product->rating ? round($product->rating, 1) : 0,
                         'sold' => $product->sold ?? 0,
                         'image' => $product->img,
                         'is_new' => $product->created_at ? $product->created_at->diffInDays(now()) < 7 : false,
@@ -216,7 +213,6 @@ class ShopController extends Controller
                 ->where('user_id', $seller->id)
                 ->where('status', 'Active')
                 ->where('sold', '>', 0)
-                ->withAvg('publicReviews as computed_rating', 'rating')
                 ->orderByDesc('sold')
                 ->take(5)
                 ->get()
@@ -226,7 +222,7 @@ class ShopController extends Controller
                         'slug' => $product->slug,
                         'name' => $product->name,
                         'price' => number_format((float) $product->price, 2),
-                        'rating' => $product->computed_rating ? round($product->computed_rating, 1) : 0,
+                        'rating' => $product->rating ? round($product->rating, 1) : 0,
                         'sold' => $product->sold ?? 0,
                         'image' => $product->img,
                     ];

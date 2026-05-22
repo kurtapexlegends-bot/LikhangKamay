@@ -6,6 +6,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import ErrorBoundary from '@/Components/ErrorBoundary';
+import { AnimatePresence } from 'framer-motion';
 
 import * as Sentry from "@sentry/react";
 
@@ -37,7 +38,9 @@ createInertiaApp({
         root.render(
             <ErrorBoundary>
                 <ToastProvider>
-                    <App {...props} />
+                    <AnimatePresence mode="wait" initial={false}>
+                        <App {...props} />
+                    </AnimatePresence>
                 </ToastProvider>
             </ErrorBoundary>
         );

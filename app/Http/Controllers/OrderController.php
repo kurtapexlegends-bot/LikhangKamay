@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Http\Requests\CheckoutRequest;
 
 
 class OrderController extends Controller
@@ -267,11 +268,14 @@ class OrderController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
         return Inertia::render('Shop/Checkout', [
             'items' => $items,
             'pricing' => OrderFinanceService::getPricingData(),
             'auth' => [
-                'user' => Auth::user()->load('addresses'),
+                'user' => $user?->load('addresses'),
             ]
         ]);
     }
@@ -867,33 +871,12 @@ class OrderController extends Controller
      * BUYER: Place a new order
      */
     public function store(
-        Request $request,
+        CheckoutRequest $request,
         SponsorshipAnalyticsService $sponsorshipAnalytics,
         OrderFinanceService $orderFinanceService,
         CheckoutShippingService $checkoutShippingService
     )
     {
-        $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.id' => 'required|integer|exists:products,id',
-            'items.*.qty' => 'required|integer|min:1',
-            'items.*.variant' => 'nullable|string|max:255',
-            'shipping_method' => 'required|string|in:Delivery,Pick Up',
-            'selected_address_id' => 'nullable',
-            'shipping_address' => 'nullable|string',
-            'shipping_address_type' => 'nullable|string|in:home,office,other',
-            'shipping_street_address' => 'nullable|string|max:255',
-            'shipping_barangay' => 'nullable|string|max:255',
-            'shipping_city' => 'nullable|string|max:255',
-            'shipping_region' => 'nullable|string|max:255',
-            'shipping_postal_code' => 'nullable|string|max:20',
-            'recipient_name' => 'nullable|string|max:100',
-            'phone_number' => 'nullable|string|max:20',
-            'payment_method' => 'required|string|in:COD,GCash',
-            'total' => 'required|numeric',
-            'shipping_notes' => 'nullable|string',
-            'save_address' => 'nullable|boolean',
-        ]);
 
         /** @var User $buyer */
         $buyer = $request->user();
@@ -1172,7 +1155,7 @@ class OrderController extends Controller
         ]);
     }
 
-    private function getBuyerReviewsByProduct(int $userId, $orders): \Illuminate\Support\Collection
+    private function getBuyerReviewsByProduct(int $userId, \Illuminate\Support\Collection $orders): \Illuminate\Support\Collection
     {
         $productIds = $orders
             ->flatMap(fn ($order) => $order->items->pluck('product_id'))

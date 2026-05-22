@@ -272,8 +272,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // --- CART ROUTES (MISSING PART) ---
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-    Route::post('/cart/add', [CartController::class, 'store'])->name('cart.store');
-    Route::patch('/cart/update', [CartController::class, 'update'])->name('cart.update');
+    Route::post('/cart/add', [CartController::class, 'store'])->middleware('throttle:60,1')->name('cart.store');
+    Route::patch('/cart/update', [CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
     Route::delete('/cart/remove', [CartController::class, 'destroy'])->name('cart.destroy');
     Route::post('/cart/buy-again/{id}', [CartController::class, 'buyAgain'])->name('cart.buy-again'); // New
 
