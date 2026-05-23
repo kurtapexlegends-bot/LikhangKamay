@@ -6,7 +6,7 @@ import Dropdown from '@/Components/Dropdown';
 import Modal from '@/Components/Modal';
 import RatingModal from '@/Components/RatingModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
-import { Clock, Store, MapPin, Search, ShoppingBag, AlertCircle, AlertTriangle, MessageCircle, ExternalLink, Hash, CheckCircle, PackageCheck, Truck, RotateCcw, XCircle, CreditCard, Star, Activity, Printer, UploadCloud } from 'lucide-react';
+import { Clock, Store, MapPin, Search, ShoppingBag, AlertCircle, AlertTriangle, MessageCircle, ExternalLink, Hash, CheckCircle, PackageCheck, Truck, RotateCcw, XCircle, CreditCard, Star, Activity, Printer, UploadCloud, ChevronDown, ChevronRight } from 'lucide-react';
 
 // --- RETURN REQUEST MODAL COMPONENT ---
 const ReturnRequestModal = ({ isOpen, onClose, order }) => {
@@ -678,6 +678,14 @@ export default function MyOrders({ auth, orders }) {
     const [ratingModal, setRatingModal] = useState({ isOpen: false, order: null });
     const [returnModalState, setReturnModalState] = useState({ isOpen: false, order: null });
     const [expandedOrders, setExpandedOrders] = useState(new Set());
+    const [expandedCourierTrackings, setExpandedCourierTrackings] = useState(new Set());
+
+    const toggleCourierTrackingExpansion = (orderId) => {
+        const newSet = new Set(expandedCourierTrackings);
+        if (newSet.has(orderId)) newSet.delete(orderId);
+        else newSet.add(orderId);
+        setExpandedCourierTrackings(newSet);
+    };
 
     const toggleOrderExpansion = (orderId) => {
         const newSet = new Set(expandedOrders);
@@ -1024,74 +1032,97 @@ export default function MyOrders({ auth, orders }) {
 
                                             {/* Courier tracking card */}
                                             {order.delivery && (
-                                                <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2] p-3 shadow-sm transition-colors hover:border-clay-300 mt-3">
-                                                    <div className="mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                                                <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2] p-2 shadow-sm transition-colors hover:border-clay-300 mt-3">
+                                                    <div 
+                                                        onClick={() => toggleCourierTrackingExpansion(order.id)}
+                                                        className={`flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-clay-50/50 p-1 -m-1 rounded transition-colors ${
+                                                            expandedCourierTrackings.has(order.id) ? "mb-1" : ""
+                                                        }`}
+                                                    >
                                                         <div className="flex items-center gap-1.5">
                                                             <Truck size={12} className="text-clay-600" />
                                                             <p className="text-[10px] font-extrabold uppercase tracking-wide text-clay-700">Courier Tracking</p>
                                                         </div>
-                                                        {order.delivery.share_link && (
-                                                            <a
-                                                                href={order.delivery.share_link}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1 rounded-md border border-clay-200 bg-white px-2 py-1 text-[10px] font-bold text-clay-700 hover:bg-clay-50 hover:text-clay-800 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all"
-                                                            >
-                                                                Live Track <ExternalLink size={10} />
-                                                            </a>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                                                        {order.delivery.flow_type === 'replacement_exchange' && (
-                                                            <span className="inline-flex rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[10px] font-bold tracking-tight text-teal-700 shadow-sm">
-                                                                {order.delivery.flow_label}
-                                                            </span>
-                                                        )}
-                                                        <div className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold shadow-sm ${buyerCourierTrackingState(order).tone}`}>
-                                                            {buyerCourierTrackingState(order).label}
+                                                        <div className="flex items-center gap-1.5">
+                                                            {!expandedCourierTrackings.has(order.id) && (
+                                                                <div className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-bold shadow-sm ${buyerCourierTrackingState(order).tone}`}>
+                                                                    {buyerCourierTrackingState(order).label}
+                                                                </div>
+                                                            )}
+                                                            {expandedCourierTrackings.has(order.id) ? (
+                                                                <ChevronDown size={12} className="text-clay-500" />
+                                                            ) : (
+                                                                <ChevronRight size={12} className="text-clay-500" />
+                                                            )}
                                                         </div>
                                                     </div>
 
-                                                    <p className="text-[11px] leading-relaxed text-stone-600 mb-2.5 font-medium">{buyerCourierTrackingState(order).detail}</p>
-
-                                                    {order.delivery.flow_type === 'replacement_exchange' && order.delivery.route_legs?.length > 0 && (
-                                                        <div className="mb-2.5 flex flex-col gap-1 rounded-lg bg-white/60 p-2 border border-stone-100/50">
-                                                            {order.delivery.route_legs.map((leg) => (
-                                                                <div key={`${leg.label}-${leg.from}-${leg.to}`} className="flex items-start gap-2">
-                                                                    <div className="mt-1 h-1 w-1 shrink-0 rounded-full bg-teal-400" />
-                                                                    <p className="text-[10px] text-stone-700 font-medium">
-                                                                        <span className="font-bold text-teal-800">{leg.label}:</span> {leg.from} <span className="mx-0.5 text-stone-400">→</span> {leg.to}
-                                                                    </p>
+                                                    {expandedCourierTrackings.has(order.id) && (
+                                                        <div className="space-y-2 mt-1 pt-1.5 border-t border-clay-100/30">
+                                                            <div className="flex items-center justify-between gap-3 mb-2">
+                                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                                    {order.delivery.flow_type === 'replacement_exchange' && (
+                                                                        <span className="inline-flex rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[10px] font-bold tracking-tight text-teal-700 shadow-sm">
+                                                                            {order.delivery.flow_label}
+                                                                        </span>
+                                                                    )}
+                                                                    <div className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold shadow-sm ${buyerCourierTrackingState(order).tone}`}>
+                                                                        {buyerCourierTrackingState(order).label}
+                                                                    </div>
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {(order.delivery.external_order_id || order.delivery.last_updated_at) && (
-                                                        <div className="flex flex-wrap gap-1.5 mt-2 pt-2.5 border-t border-stone-200/50">
-                                                            {order.delivery.external_order_id && (
-                                                                <div className="flex items-center gap-1 px-1.5 text-[9px]">
-                                                                    <Hash size={10} className="text-stone-400" />
-                                                                    <span className="font-bold text-stone-600">ID: {order.delivery.external_order_id}</span>
-                                                                </div>
-                                                            )}
-                                                            {order.delivery.last_updated_at && (
-                                                                <div className="flex items-center gap-1 px-1.5 text-[9px] text-stone-500 border-l border-stone-300/50">
-                                                                    <Clock size={10} className="text-stone-400" />
-                                                                    <span>{order.delivery.last_updated_at}</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {order.delivery.pending_auto_cancel && (
-                                                        <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2 text-red-700 shadow-sm">
-                                                            <AlertTriangle size={12} className="shrink-0 mt-0.5" />
-                                                            <div className="text-[10px]">
-                                                                <span className="font-bold">Return-to-sender Hold</span>
-                                                                <p className="mt-0.5">Auto-cancel after {order.delivery.cancel_hold_ends_at} if unresolved.</p>
+                                                                {order.delivery.share_link && (
+                                                                    <a
+                                                                        href={order.delivery.share_link}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-1 rounded-md border border-clay-200 bg-white px-2 py-1 text-[10px] font-bold text-clay-700 hover:bg-clay-50 hover:text-clay-800 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all shrink-0"
+                                                                    >
+                                                                        Live Track <ExternalLink size={10} />
+                                                                    </a>
+                                                                )}
                                                             </div>
+
+                                                            <p className="text-[11px] leading-relaxed text-stone-600 mb-2.5 font-medium">{buyerCourierTrackingState(order).detail}</p>
+
+                                                            {order.delivery.flow_type === 'replacement_exchange' && order.delivery.route_legs?.length > 0 && (
+                                                                <div className="mb-2.5 flex flex-col gap-1 rounded-lg bg-white/60 p-2 border border-stone-100/50">
+                                                                    {order.delivery.route_legs.map((leg) => (
+                                                                        <div key={`${leg.label}-${leg.from}-${leg.to}`} className="flex items-start gap-2">
+                                                                            <div className="mt-1 h-1 w-1 shrink-0 rounded-full bg-teal-400" />
+                                                                            <p className="text-[10px] text-stone-700 font-medium">
+                                                                                <span className="font-bold text-teal-800">{leg.label}:</span> {leg.from} <span className="mx-0.5 text-stone-400">→</span> {leg.to}
+                                                                            </p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {(order.delivery.external_order_id || order.delivery.last_updated_at) && (
+                                                                <div className="flex flex-wrap gap-1.5 mt-2 pt-2.5 border-t border-stone-200/50">
+                                                                    {order.delivery.external_order_id && (
+                                                                        <div className="flex items-center gap-1 px-1.5 text-[9px]">
+                                                                            <Hash size={10} className="text-stone-400" />
+                                                                            <span className="font-bold text-stone-600">ID: {order.delivery.external_order_id}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {order.delivery.last_updated_at && (
+                                                                        <div className="flex items-center gap-1 px-1.5 text-[9px] text-stone-500 border-l border-stone-300/50">
+                                                                            <Clock size={10} className="text-stone-400" />
+                                                                            <span>{order.delivery.last_updated_at}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                            {order.delivery.pending_auto_cancel && (
+                                                                <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2 text-red-700 shadow-sm">
+                                                                    <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+                                                                    <div className="text-[10px]">
+                                                                        <span className="font-bold">Return-to-sender Hold</span>
+                                                                        <p className="mt-0.5">Auto-cancel after {order.delivery.cancel_hold_ends_at} if unresolved.</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>

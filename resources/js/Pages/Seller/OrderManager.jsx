@@ -394,14 +394,6 @@ const sellerDeliverySummary = (order) => {
             };
         }
 
-        if (order.status === "Ready for Pickup") {
-            return {
-                tone: "border-sky-200 bg-sky-50 text-sky-700",
-                title: "Waiting for buyer pickup",
-                detail: "Mark the order as picked up once the handover is complete.",
-            };
-        }
-
         return null;
     }
 
@@ -416,14 +408,6 @@ const sellerDeliverySummary = (order) => {
             tone: "border-blue-200 bg-blue-50 text-blue-700",
             title: "Choose a delivery path",
             detail: "Manual shipping needs shipment proof. Lalamove will handle courier status updates automatically.",
-        };
-    }
-
-    if (order.status === "Shipped") {
-        return {
-            tone: "border-sky-200 bg-sky-50 text-sky-700",
-            title: "Manual shipment in progress",
-            detail: "Keep the shipment proof visible to the buyer, then upload final delivery proof when the parcel arrives.",
         };
     }
 
@@ -579,6 +563,46 @@ export default function OrderManager({ auth, orders = [] }) {
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [isBulkProcessing, setIsBulkProcessing] = useState(false);
     const [isPrintingSlips, setIsPrintingSlips] = useState(false);
+    const [expandedTimelines, setExpandedTimelines] = useState(new Set());
+    const [expandedCourierTrackings, setExpandedCourierTrackings] = useState(new Set());
+    const [expandedPricingDetails, setExpandedPricingDetails] = useState(new Set());
+
+    const toggleTimelineExpansion = (orderId) => {
+        setExpandedTimelines((prev) => {
+            const next = new Set(prev);
+            if (next.has(orderId)) {
+                next.delete(orderId);
+            } else {
+                next.add(orderId);
+            }
+            return next;
+        });
+    };
+
+    const toggleCourierTrackingExpansion = (orderId) => {
+        setExpandedCourierTrackings((prev) => {
+            const next = new Set(prev);
+            if (next.has(orderId)) {
+                next.delete(orderId);
+            } else {
+                next.add(orderId);
+            }
+            return next;
+        });
+    };
+
+    const togglePricingDetailsExpansion = (orderId) => {
+        setExpandedPricingDetails((prev) => {
+            const next = new Set(prev);
+            if (next.has(orderId)) {
+                next.delete(orderId);
+            } else {
+                next.add(orderId);
+            }
+            return next;
+        });
+    };
+
 
     const toggleOrderSelection = (orderId) => {
         setSelectedOrderIds((prev) =>
@@ -1805,86 +1829,99 @@ export default function OrderManager({ auth, orders = [] }) {
 
                                             {/* Action Panel */}
                                             <div className="border-t border-gray-100 pt-3 lg:w-64 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-                                                <div className="mb-4 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
-                                                    <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-2">
+                                                <div className="mb-4 rounded-xl border border-stone-200 bg-white p-2 shadow-sm">
+                                                    <div 
+                                                        onClick={() => togglePricingDetailsExpansion(order.id)}
+                                                        className={`flex items-center justify-between cursor-pointer select-none hover:bg-stone-50/50 p-1 -m-1 rounded transition-colors ${
+                                                            expandedPricingDetails.has(order.id) ? "border-b border-stone-100 pb-2" : ""
+                                                        }`}
+                                                    >
                                                         <div>
                                                             <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
                                                                 Buyer Total
                                                             </p>
                                                             <p className="text-sm font-bold text-stone-800">
-                                                                PHP{" "}
-                                                                {order.total}
+                                                                PHP {order.total}
                                                             </p>
                                                         </div>
-                                                        <div className="text-right">
-                                                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">
-                                                                Your Net
-                                                            </p>
-                                                            <p className="text-sm font-bold text-emerald-600">
-                                                                PHP{" "}
-                                                                {Number(
-                                                                    order.seller_net_amount,
-                                                                ).toLocaleString(
-                                                                    undefined,
-                                                                    {
-                                                                        minimumFractionDigits: 2,
-                                                                    },
-                                                                )}
-                                                            </p>
+                                                        <div className="flex items-center gap-1.5 text-right">
+                                                            <div>
+                                                                <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">
+                                                                    Your Net
+                                                                </p>
+                                                                <p className="text-sm font-bold text-emerald-600">
+                                                                    PHP{" "}
+                                                                    {Number(
+                                                                        order.seller_net_amount,
+                                                                    ).toLocaleString(
+                                                                        undefined,
+                                                                        {
+                                                                            minimumFractionDigits: 2,
+                                                                        },
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                            {expandedPricingDetails.has(order.id) ? (
+                                                                <ChevronDown size={12} className="text-stone-400 self-end mb-1" />
+                                                            ) : (
+                                                                <ChevronRight size={12} className="text-stone-400 self-end mb-1" />
+                                                            )}
                                                         </div>
                                                     </div>
 
-                                                    <div className="space-y-1.5 text-[10px]">
-                                                        <div className="flex justify-between text-stone-500 border-b border-stone-50 pb-1 mb-1">
-                                                            <span>
-                                                                Merchandise:
-                                                            </span>
-                                                            <span className="font-semibold text-stone-700">
-                                                                {Number(
-                                                                    order.merchandise_subtotal,
-                                                                ).toLocaleString(
-                                                                    undefined,
-                                                                    {
-                                                                        minimumFractionDigits: 2,
-                                                                    },
-                                                                )}
-                                                            </span>
-                                                        </div>
+                                                    {expandedPricingDetails.has(order.id) && (
+                                                        <div className="space-y-1.5 text-[10px] mt-2">
+                                                            <div className="flex justify-between text-stone-500 border-b border-stone-50 pb-1 mb-1">
+                                                                <span>
+                                                                    Merchandise:
+                                                                </span>
+                                                                <span className="font-semibold text-stone-700">
+                                                                    {Number(
+                                                                        order.merchandise_subtotal,
+                                                                    ).toLocaleString(
+                                                                        undefined,
+                                                                        {
+                                                                            minimumFractionDigits: 2,
+                                                                        },
+                                                                    )}
+                                                                </span>
+                                                            </div>
 
-                                                        {/* Transaction context */}
-                                                        <div className="flex justify-between text-stone-400 pt-0.5">
-                                                            <span>
-                                                                Shipping (Paid
-                                                                by Buyer):
-                                                            </span>
-                                                            <span className="font-medium text-stone-600">
-                                                                {Number(
-                                                                    order.shipping_fee_amount,
-                                                                ).toLocaleString(
-                                                                    undefined,
-                                                                    {
-                                                                        minimumFractionDigits: 2,
-                                                                    },
-                                                                )}
-                                                            </span>
+                                                            {/* Transaction context */}
+                                                            <div className="flex justify-between text-stone-400 pt-0.5">
+                                                                <span>
+                                                                    Shipping (Paid
+                                                                    by Buyer):
+                                                                </span>
+                                                                <span className="font-medium text-stone-600">
+                                                                    {Number(
+                                                                        order.shipping_fee_amount,
+                                                                    ).toLocaleString(
+                                                                        undefined,
+                                                                        {
+                                                                            minimumFractionDigits: 2,
+                                                                        },
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex justify-between text-stone-400">
+                                                                <span>
+                                                                    Platform Fee
+                                                                    (Paid by Buyer):
+                                                                </span>
+                                                                <span className="font-medium text-stone-600">
+                                                                    {Number(
+                                                                        order.convenience_fee_amount,
+                                                                    ).toLocaleString(
+                                                                        undefined,
+                                                                        {
+                                                                            minimumFractionDigits: 2,
+                                                                        },
+                                                                    )}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex justify-between text-stone-400">
-                                                            <span>
-                                                                Platform Fee
-                                                                (Paid by Buyer):
-                                                            </span>
-                                                            <span className="font-medium text-stone-600">
-                                                                {Number(
-                                                                    order.convenience_fee_amount,
-                                                                ).toLocaleString(
-                                                                    undefined,
-                                                                    {
-                                                                        minimumFractionDigits: 2,
-                                                                    },
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Status-specific Actions */}
@@ -1913,196 +1950,201 @@ export default function OrderManager({ auth, orders = [] }) {
                                                     )}
 
                                                     {order.delivery && (
-                                                        <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2] p-3 shadow-sm transition-colors hover:border-clay-300">
-                                                            <div className="mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Truck
-                                                                        size={
-                                                                            12
-                                                                        }
-                                                                        className="text-clay-600"
-                                                                    />
-                                                                    <p className="text-[10px] font-extrabold uppercase tracking-wide text-clay-700">
-                                                                        Courier
-                                                                        Tracking
-                                                                    </p>
-                                                                </div>
-                                                                {order.delivery
-                                                                    .share_link && (
-                                                                    <a
-                                                                        href={
-                                                                            order
-                                                                                .delivery
-                                                                                .share_link
-                                                                        }
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="inline-flex items-center gap-1 rounded-md border border-clay-200 bg-white px-2 py-1 text-[10px] font-bold text-clay-700 hover:bg-clay-50 hover:text-clay-800 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all"
-                                                                    >
-                                                                        Live
-                                                                        Track{" "}
-                                                                        <ExternalLink
-                                                                            size={
-                                                                                10
-                                                                            }
-                                                                        />
-                                                                    </a>
-                                                                )}
-                                                            </div>
+                                                         <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2] p-2 shadow-sm transition-colors hover:border-clay-300">
+                                                             <div 
+                                                                 onClick={() => toggleCourierTrackingExpansion(order.id)}
+                                                                 className={`flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-clay-50/50 p-1 -m-1 rounded transition-colors ${
+                                                                    expandedCourierTrackings.has(order.id) ? "mb-1" : ""
+                                                                }`}
+                                                             >
+                                                                 <div className="flex items-center gap-1.5">
+                                                                     <Truck
+                                                                         size={
+                                                                             12
+                                                                         }
+                                                                         className="text-clay-600"
+                                                                     />
+                                                                     <p className="text-[10px] font-extrabold uppercase tracking-wide text-clay-700">
+                                                                         Courier Tracking
+                                                                     </p>
+                                                                 </div>
+                                                                 <div className="flex items-center gap-1.5">
+                                                                     {!expandedCourierTrackings.has(order.id) && (
+                                                                         <div
+                                                                             className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-bold shadow-sm ${sellerCourierTrackingState(order).tone}`}
+                                                                         >
+                                                                             {sellerCourierTrackingState(order).label}
+                                                                         </div>
+                                                                     )}
+                                                                     {expandedCourierTrackings.has(order.id) ? (
+                                                                         <ChevronDown size={12} className="text-clay-500" />
+                                                                     ) : (
+                                                                         <ChevronRight size={12} className="text-clay-500" />
+                                                                     )}
+                                                                 </div>
+                                                             </div>
+                                                             {expandedCourierTrackings.has(order.id) && (
+                                                                 <div className="space-y-2 mt-1 pt-1.5 border-t border-clay-100/30">
+                                                                      <div className="flex items-center justify-between gap-3 mb-2">
+                                                                          <div className="flex flex-wrap items-center gap-1.5">
+                                                                              {order.delivery.flow_type === "replacement_exchange" && (
+                                                                                  <span className="inline-flex rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[10px] font-bold tracking-tight text-teal-700 shadow-sm">
+                                                                                      {order.delivery.flow_label}
+                                                                                  </span>
+                                                                              )}
+                                                                              <div
+                                                                                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold shadow-sm ${sellerCourierTrackingState(order).tone}`}
+                                                                              >
+                                                                                  {sellerCourierTrackingState(order).label}
+                                                                              </div>
+                                                                          </div>
+                                                                          {order.delivery.share_link && (
+                                                                              <a
+                                                                                  href={order.delivery.share_link}
+                                                                                  target="_blank"
+                                                                                  rel="noopener noreferrer"
+                                                                                  className="inline-flex items-center gap-1 rounded-md border border-clay-200 bg-white px-2 py-1 text-[10px] font-bold text-clay-700 hover:bg-clay-50 hover:text-clay-800 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all shrink-0"
+                                                                              >
+                                                                                  Live Track <ExternalLink size={10} />
+                                                                              </a>
+                                                                          )}
+                                                                      </div>
 
-                                                            <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                                                                {order.delivery
-                                                                    .flow_type ===
-                                                                    "replacement_exchange" && (
-                                                                    <span className="inline-flex rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[10px] font-bold tracking-tight text-teal-700 shadow-sm">
-                                                                        {
-                                                                            order
-                                                                                .delivery
-                                                                                .flow_label
-                                                                        }
-                                                                    </span>
-                                                                )}
-                                                                <div
-                                                                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold shadow-sm ${sellerCourierTrackingState(order).tone}`}
-                                                                >
-                                                                    {
-                                                                        sellerCourierTrackingState(
-                                                                            order,
-                                                                        ).label
-                                                                    }
-                                                                </div>
-                                                            </div>
+                                                                     <p className="text-[11px] leading-relaxed text-stone-600 mb-2.5 font-medium">
+                                                                         {
+                                                                             sellerCourierTrackingState(
+                                                                                 order,
+                                                                             ).detail
+                                                                         }
+                                                                     </p>
 
-                                                            <p className="text-[11px] leading-relaxed text-stone-600 mb-2.5 font-medium">
-                                                                {
-                                                                    sellerCourierTrackingState(
-                                                                        order,
-                                                                    ).detail
-                                                                }
-                                                            </p>
+                                                                     {order.delivery
+                                                                         .flow_type ===
+                                                                         "replacement_exchange" &&
+                                                                         order.delivery
+                                                                             .route_legs
+                                                                             ?.length >
+                                                                             0 && (
+                                                                             <div className="mb-2.5 flex flex-col gap-1 rounded-lg bg-white/60 p-2 border border-stone-100/50">
+                                                                                 {order.delivery.route_legs.map(
+                                                                                     (
+                                                                                         leg,
+                                                                                     ) => (
+                                                                                         <div
+                                                                                             key={`${leg.label}-${leg.from}-${leg.to}`}
+                                                                                             className="flex items-start gap-2"
+                                                                                         >
+                                                                                             <div className="mt-1 h-1 w-1 shrink-0 rounded-full bg-teal-400" />
+                                                                                             <p className="text-[10px] text-stone-700 font-medium">
+                                                                                                 <span className="font-bold text-teal-800">
+                                                                                                     {
+                                                                                                         leg.label
+                                                                                                     }
+                                                                                                     :
+                                                                                                 </span>{" "}
+                                                                                                 {
+                                                                                                     leg.from
+                                                                                                 }{" "}
+                                                                                                 <span className="mx-0.5 text-stone-400">
+                                                                                                     →
+                                                                                                 </span>{" "}
+                                                                                                 {
+                                                                                                     leg.to
+                                                                                                 }
+                                                                                             </p>
+                                                                                         </div>
+                                                                                     ),
+                                                                                 )}
+                                                                             </div>
+                                                                         )}
 
-                                                            {order.delivery
-                                                                .flow_type ===
-                                                                "replacement_exchange" &&
-                                                                order.delivery
-                                                                    .route_legs
-                                                                    ?.length >
-                                                                    0 && (
-                                                                    <div className="mb-2.5 flex flex-col gap-1 rounded-lg bg-white/60 p-2 border border-stone-100/50">
-                                                                        {order.delivery.route_legs.map(
-                                                                            (
-                                                                                leg,
-                                                                            ) => (
-                                                                                <div
-                                                                                    key={`${leg.label}-${leg.from}-${leg.to}`}
-                                                                                    className="flex items-start gap-2"
-                                                                                >
-                                                                                    <div className="mt-1 h-1 w-1 shrink-0 rounded-full bg-teal-400" />
-                                                                                    <p className="text-[10px] text-stone-700 font-medium">
-                                                                                        <span className="font-bold text-teal-800">
-                                                                                            {
-                                                                                                leg.label
-                                                                                            }
-                                                                                            :
-                                                                                        </span>{" "}
-                                                                                        {
-                                                                                            leg.from
-                                                                                        }{" "}
-                                                                                        <span className="mx-0.5 text-stone-400">
-                                                                                            →
-                                                                                        </span>{" "}
-                                                                                        {
-                                                                                            leg.to
-                                                                                        }
-                                                                                    </p>
-                                                                                </div>
-                                                                            ),
-                                                                        )}
-                                                                    </div>
-                                                                )}
+                                                                     {(order.delivery
+                                                                         .external_order_id ||
+                                                                         order.delivery
+                                                                             .last_updated_at) && (
+                                                                         <div className="flex flex-wrap gap-1.5 mt-2 pt-2.5 border-t border-stone-200/50">
+                                                                             {order
+                                                                                 .delivery
+                                                                                 .external_order_id && (
+                                                                                 <div className="flex items-center gap-1 px-1.5 text-[9px]">
+                                                                                     <Hash
+                                                                                         size={
+                                                                                             10
+                                                                                         }
+                                                                                         className="text-stone-400"
+                                                                                     />
+                                                                                     <span className="font-bold text-stone-600">
+                                                                                         ID:{" "}
+                                                                                         {
+                                                                                             order
+                                                                                                 .delivery
+                                                                                                 .external_order_id
+                                                                                         }
+                                                                                     </span>
+                                                                                 </div>
+                                                                             )}
+                                                                             {order
+                                                                                 .delivery
+                                                                                 .last_updated_at && (
+                                                                                 <div className="flex items-center gap-1 px-1.5 text-[9px] text-stone-500 border-l border-stone-300/50">
+                                                                                     <Clock
+                                                                                         size={
+                                                                                             10
+                                                                                         }
+                                                                                         className="text-stone-400"
+                                                                                     />
+                                                                                     <span>
+                                                                                         {
+                                                                                             order
+                                                                                                 .delivery
+                                                                                                 .last_updated_at
+                                                                                         }
+                                                                                     </span>
+                                                                                 </div>
+                                                                             )}
+                                                                         </div>
+                                                                     )}
 
-                                                            {(order.delivery
-                                                                .external_order_id ||
-                                                                order.delivery
-                                                                    .last_updated_at) && (
-                                                                <div className="flex flex-wrap gap-1.5 mt-2 pt-2.5 border-t border-stone-200/50">
-                                                                    {order
-                                                                        .delivery
-                                                                        .external_order_id && (
-                                                                        <div className="flex items-center gap-1 px-1.5 text-[9px]">
-                                                                            <Hash
-                                                                                size={
-                                                                                    10
-                                                                                }
-                                                                                className="text-stone-400"
-                                                                            />
-                                                                            <span className="font-bold text-stone-600">
-                                                                                ID:{" "}
-                                                                                {
-                                                                                    order
-                                                                                        .delivery
-                                                                                        .external_order_id
-                                                                                }
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                    {order
-                                                                        .delivery
-                                                                        .last_updated_at && (
-                                                                        <div className="flex items-center gap-1 px-1.5 text-[9px] text-stone-500 border-l border-stone-300/50">
-                                                                            <Clock
-                                                                                size={
-                                                                                    10
-                                                                                }
-                                                                                className="text-stone-400"
-                                                                            />
-                                                                            <span>
-                                                                                {
-                                                                                    order
-                                                                                        .delivery
-                                                                                        .last_updated_at
-                                                                                }
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-
-                                                            {order.delivery
-                                                                .pending_auto_cancel && (
-                                                                <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2 text-red-700 shadow-sm">
-                                                                    <AlertTriangle
-                                                                        size={
-                                                                            12
-                                                                        }
-                                                                        className="shrink-0 mt-0.5"
-                                                                    />
-                                                                    <div className="text-[10px]">
-                                                                        <span className="font-bold">
-                                                                            Return-to-sender
-                                                                            Hold
-                                                                        </span>
-                                                                        <p className="mt-0.5">
-                                                                            Auto-cancel
-                                                                            after{" "}
-                                                                            {
-                                                                                order
-                                                                                    .delivery
-                                                                                    .cancel_hold_ends_at
-                                                                            }{" "}
-                                                                            if
-                                                                            unresolved.
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                                     {order.delivery
+                                                                         .pending_auto_cancel && (
+                                                                         <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2 text-red-700 shadow-sm">
+                                                                             <AlertTriangle
+                                                                                 size={
+                                                                                     12
+                                                                                 }
+                                                                                 className="shrink-0 mt-0.5"
+                                                                             />
+                                                                             <div className="text-[10px]">
+                                                                                 <span className="font-bold">
+                                                                                     Return-to-sender
+                                                                                     Hold
+                                                                                 </span>
+                                                                                 <p className="mt-0.5">
+                                                                                     Auto-cancel
+                                                                                     after{" "}
+                                                                                     {
+                                                                                         order
+                                                                                             .delivery
+                                                                                             .cancel_hold_ends_at
+                                                                                     }{" "}
+                                                                                     if
+                                                                                     unresolved.
+                                                                                 </p>
+                                                                             </div>
+                                                                         </div>
+                                                                     )}
+                                                                 </div>
+                                                             )}
+                                                         </div>
+                                                     )}
 
                                                     {order.timeline?.length >
                                                         0 && (
-                                                        <div className="rounded-xl border border-stone-200/80 bg-white p-3 shadow-sm transition-colors hover:border-clay-200 flex flex-col">
-                                                            <div className="mb-3 flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
+                                                        <div className="rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm transition-colors hover:border-clay-200 flex flex-col">
+                                                            <div 
+                                                                onClick={() => toggleTimelineExpansion(order.id)}
+                                                                className="flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-stone-50/50 p-1 -m-1 rounded transition-colors"
+                                                            >
                                                                 <div className="flex items-center gap-1.5">
                                                                     <Activity
                                                                         size={
@@ -2111,82 +2153,85 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                         className="text-stone-400"
                                                                     />
                                                                     <p className="text-[10px] font-extrabold uppercase tracking-wide text-stone-500">
-                                                                        Recent
-                                                                        Activity
+                                                                        Recent Activity
                                                                     </p>
                                                                 </div>
-                                                                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9px] font-bold text-stone-500">
-                                                                    {
-                                                                        order
-                                                                            .timeline
-                                                                            .length
-                                                                    }{" "}
-                                                                    events
-                                                                </span>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9px] font-bold text-stone-500">
+                                                                        {order.timeline.length} events
+                                                                    </span>
+                                                                    {expandedTimelines.has(order.id) ? (
+                                                                        <ChevronDown size={12} className="text-stone-400" />
+                                                                    ) : (
+                                                                        <ChevronRight size={12} className="text-stone-400" />
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                            <div className="space-y-3 pl-1">
-                                                                {order.timeline
-                                                                    .slice(0, 4)
-                                                                    .map(
-                                                                        (
-                                                                            entry,
-                                                                            i,
-                                                                        ) => (
-                                                                            <div
-                                                                                key={
-                                                                                    entry.key
-                                                                                }
-                                                                                className="relative flex items-start gap-3"
-                                                                            >
-                                                                                {i !==
-                                                                                    order.timeline.slice(
-                                                                                        0,
-                                                                                        4,
-                                                                                    )
-                                                                                        .length -
-                                                                                        1 && (
-                                                                                    <div className="absolute left-[3px] top-[14px] bottom-[-14px] w-[2px] bg-stone-100" />
-                                                                                )}
-                                                                                <div className="relative mt-1 h-2 w-2 shrink-0 rounded-full bg-clay-500 ring-4 ring-white shadow-sm" />
-                                                                                <div className="min-w-0 flex-1 bg-stone-50/50 rounded-lg p-2 border border-stone-100/50">
-                                                                                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                                                                                        <p className="text-[11px] font-bold text-stone-800">
-                                                                                            {
-                                                                                                entry.label
-                                                                                            }
-                                                                                        </p>
-                                                                                        <span
-                                                                                            className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider shadow-sm ${timelineSourceTone(entry.source)}`}
-                                                                                        >
-                                                                                            {
-                                                                                                entry.source
-                                                                                            }
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    {entry.description && (
-                                                                                        <p className="mt-1 text-[10px] leading-relaxed text-stone-600">
-                                                                                            {
-                                                                                                entry.description
-                                                                                            }
-                                                                                        </p>
+                                                            {expandedTimelines.has(order.id) && (
+                                                                <div className="space-y-3 pl-1 mt-3 border-t border-stone-100 pt-3">
+                                                                    {order.timeline
+                                                                        .slice(0, 4)
+                                                                        .map(
+                                                                            (
+                                                                                entry,
+                                                                                i,
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={
+                                                                                        entry.key
+                                                                                    }
+                                                                                    className="relative flex items-start gap-3"
+                                                                                >
+                                                                                    {i !==
+                                                                                        order.timeline.slice(
+                                                                                            0,
+                                                                                            4,
+                                                                                        )
+                                                                                            .length -
+                                                                                            1 && (
+                                                                                        <div className="absolute left-[3px] top-[14px] bottom-[-14px] w-[2px] bg-stone-100" />
                                                                                     )}
-                                                                                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-medium text-stone-400">
-                                                                                        <Clock
-                                                                                            size={
-                                                                                                10
-                                                                                            }
-                                                                                        />
-                                                                                        <span>
-                                                                                            {formatTimelineStamp(
-                                                                                                entry.timestamp,
-                                                                                            )}
-                                                                                        </span>
+                                                                                    <div className="relative mt-1 h-2 w-2 shrink-0 rounded-full bg-clay-500 ring-4 ring-white shadow-sm" />
+                                                                                    <div className="min-w-0 flex-1 bg-stone-50/50 rounded-lg p-2 border border-stone-100/50">
+                                                                                        <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                                                                            <p className="text-[11px] font-bold text-stone-800">
+                                                                                                {
+                                                                                                    entry.label
+                                                                                                }
+                                                                                            </p>
+                                                                                            <span
+                                                                                                className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider shadow-sm ${timelineSourceTone(entry.source)}`}
+                                                                                            >
+                                                                                                {
+                                                                                                    entry.source
+                                                                                                }
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        {entry.description && (
+                                                                                            <p className="mt-1 text-[10px] leading-relaxed text-stone-600">
+                                                                                                {
+                                                                                                    entry.description
+                                                                                                }
+                                                                                            </p>
+                                                                                        )}
+                                                                                        <div className="mt-1.5 flex items-center gap-1 text-[9px] font-medium text-stone-400">
+                                                                                            <Clock
+                                                                                                size={
+                                                                                                    10
+                                                                                                }
+                                                                                            />
+                                                                                            <span>
+                                                                                                {formatTimelineStamp(
+                                                                                                    entry.timestamp,
+                                                                                                )}
+                                                                                            </span>
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
-                                                                            </div>
-                                                                        ),
-                                                                    )}
-                                                            </div>
+                                                                            ),
+                                                                        )}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -2579,8 +2624,8 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                     <p className="text-[9px] text-blue-500">
                                                                         {order.status ===
                                                                         "Ready for Pickup"
-                                                                            ? "Mark it as picked up once the buyer receives it."
-                                                                            : "Mark it as delivered once the buyer has the parcel."}
+                                                                            ? "Confirm handover and mark the order as picked up once the buyer receives the items."
+                                                                            : "Keep shipment proof visible, and upload final delivery proof when the parcel arrives."}
                                                                     </p>
                                                                 </div>
                                                             </div>
