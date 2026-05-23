@@ -147,6 +147,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/orders/{id}/lalamove', [LalamoveDeliveryController::class, 'store'])->middleware('seller.module:orders')->name('orders.lalamove.store');
         Route::post('/orders/bulk-lalamove', [LalamoveDeliveryController::class, 'bulkStore'])->middleware('seller.module:orders')->name('orders.bulk-lalamove');
         Route::get('/orders/bulk-labels', [OrderController::class, 'bulkLabels'])->middleware('seller.module:orders')->name('orders.bulk-labels');
+        Route::post('/orders/bulk-packing-slips', [\App\Http\Controllers\OrderPrintController::class, 'bulkPackingSlips'])->middleware('seller.module:orders')->name('orders.bulk-packing-slips');
         
         Route::get('/analytics', [AnalyticsController::class, 'index'])->middleware('seller.module:analytics')->name('analytics.index');
         Route::get('/analytics/export', [AnalyticsController::class, 'export'])->middleware('seller.module:analytics')->name('analytics.export'); // <--- Added

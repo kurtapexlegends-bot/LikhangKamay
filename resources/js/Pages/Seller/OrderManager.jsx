@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import axios from "axios";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { motion } from "framer-motion";
 import Modal from "@/Components/Modal";
@@ -577,6 +578,7 @@ export default function OrderManager({ auth, orders = [] }) {
     const [bookingOrderId, setBookingOrderId] = useState(null);
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+    const [isPrintingSlips, setIsPrintingSlips] = useState(false);
 
     const toggleOrderSelection = (orderId) => {
         setSelectedOrderIds((prev) =>
@@ -1179,6 +1181,28 @@ export default function OrderManager({ auth, orders = [] }) {
         window.open(route("orders.bulk-labels", { ids }), "_blank");
     };
 
+    const handleBulkPrintPackingSlips = () => {
+        if (selectedOrderIds.length === 0) return;
+        setIsPrintingSlips(true);
+        axios.post(route("orders.bulk-packing-slips"), { order_ids: selectedOrderIds }, { responseType: 'blob' })
+            .then((response) => {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'Packing_Slips.pdf');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            })
+            .catch((error) => {
+                console.error("Print Error", error);
+                alert("Failed to generate packing slips.");
+            })
+            .finally(() => {
+                setIsPrintingSlips(false);
+            });
+    };
+
     // Get urgent count (pending + returns)
     const urgentCount = getCount("Pending") + getCount("Refund/Return");
 
@@ -1191,13 +1215,15 @@ export default function OrderManager({ auth, orders = [] }) {
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={
-                    <ExportButton
-                        href={route("orders.export")}
-                        icon={Printer}
-                        variant="primary"
-                    >
-                        Export
-                    </ExportButton>
+                    selectedOrderIds.length > 0 ? null : (
+                        <ExportButton
+                            href={route("orders.export")}
+                            icon={Printer}
+                            variant="primary"
+                        >
+                            Export
+                        </ExportButton>
+                    )
                 }
             />
 
@@ -3401,55 +3427,63 @@ export default function OrderManager({ auth, orders = [] }) {
 
             {/* Floating Bulk Actions Bar */}
             {selectedOrderIds.length > 0 && (
-                <motion.div
-                    initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 100, opacity: 0 }}
-                    className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 rounded-2xl border border-clay-200 bg-white/90 p-4 shadow-2xl backdrop-blur-md sm:w-auto sm:px-6"
-                >
-                    <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-clay-600 text-white shadow-lg shadow-clay-200">
-                                <PackageCheck size={20} />
+                <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center pointer-events-none px-4">
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        className="pointer-events-auto flex flex-col items-center gap-2.5 rounded-2xl border border-stone-200 bg-white/95 px-3 py-2 shadow-2xl backdrop-blur-xl w-full max-w-[540px] sm:flex-row sm:justify-between sm:gap-4 sm:px-4 sm:py-2.5"
+                    >
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-clay-50 border border-clay-100 text-clay-700 shadow-sm">
+                                <PackageCheck size={14} />
                             </div>
-                            <div>
-                                <p className="text-sm font-bold text-gray-900">
-                                    {selectedOrderIds.length} Orders Selected
-                                </p>
-                                <p className="text-[11px] font-medium text-gray-500">
-                                    Bulk actions for selected shipments
-                                </p>
-                            </div>
+                            <span className="text-xs font-extrabold tracking-tight text-stone-900 whitespace-nowrap">
+                                {selectedOrderIds.length} Selected
+                            </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
                             <button
                                 type="button"
                                 onClick={() => setSelectedOrderIds([])}
-                                className="rounded-xl px-4 py-2 text-xs font-bold text-gray-500 transition hover:bg-gray-100"
+                                className="rounded-lg px-2 py-1 text-[11px] font-bold text-stone-500 hover:text-stone-800 transition hover:bg-stone-50 active:scale-95 whitespace-nowrap flex-shrink-0"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={handleBulkPrintLabels}
-                                className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                                className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-[11px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 active:scale-95 whitespace-nowrap flex-shrink-0"
                             >
-                                <Printer size={14} />
+                                <Printer size={12} />
                                 Print Labels
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleBulkPrintPackingSlips}
+                                disabled={isPrintingSlips}
+                                className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-[11px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 disabled:opacity-50 active:scale-95 whitespace-nowrap flex-shrink-0"
+                            >
+                                {isPrintingSlips ? (
+                                    <LoaderCircle className="animate-spin" size={12} />
+                                ) : (
+                                    <FileDown size={12} />
+                                )}
+                                Packing Slips
                             </button>
                             <button
                                 type="button"
                                 onClick={handleBulkFulfill}
                                 disabled={!canEditOrders}
-                                className="flex items-center gap-2 rounded-xl bg-clay-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700 disabled:opacity-50"
+                                className="flex items-center gap-1 rounded-lg bg-clay-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition hover:bg-clay-700 disabled:opacity-50 active:scale-95 whitespace-nowrap flex-shrink-0"
                             >
-                                <Truck size={14} />
-                                Batch Fulfillment
+                                <Truck size={12} />
+                                Fulfill
                             </button>
                         </div>
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </div>
             )}
         </>
     );
