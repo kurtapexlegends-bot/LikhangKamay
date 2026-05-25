@@ -131,11 +131,9 @@ class ChatController extends Controller
         $activeChatId = (int) $request->query('user_id');
 
         // A. GET CONVERSATION LIST
-        $contactIds = Message::where('sender_id', $userId)
-            ->orWhere('receiver_id', $userId)
-            ->selectRaw('CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id', [$userId])
-            ->distinct()
-            ->pluck('contact_id');
+        $sentTo = Message::where('sender_id', $userId)->distinct()->pluck('receiver_id');
+        $receivedFrom = Message::where('receiver_id', $userId)->distinct()->pluck('sender_id');
+        $contactIds = $sentTo->merge($receivedFrom)->unique()->values();
 
         $contacts = User::whereIn('id', $contactIds)
             ->get()
