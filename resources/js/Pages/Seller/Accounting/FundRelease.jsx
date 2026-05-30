@@ -349,25 +349,26 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 </div>
 
                 <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <label className="relative block w-full sm:max-w-sm">
-                        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <div className="relative w-full sm:max-w-sm">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
-                            placeholder={activeTab === 'pending' ? 'Search requester, supply, payroll month, or request ID' : 'Search ledger entries, requester, supply, or request ID'}
-                            className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-10 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:border-clay-400 focus:ring-clay-400"
+                            placeholder={activeTab === 'pending' ? 'Search requester, supply, payroll month...' : 'Search ledger entries, requester...'}
+                            className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
                         />
                         {searchTerm && (
                             <button
                                 type="button"
                                 onClick={() => setSearchTerm('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 transition hover:text-stone-700"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                                title="Clear search"
                             >
-                                Clear
+                                <X size={12} />
                             </button>
                         )}
-                    </label>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                         {[
                             ['all', 'All entries'],

@@ -1019,19 +1019,20 @@ export default function ProductManager({
                         <div className="relative flex-1 sm:w-64">
                             <Search
                                 size={14}
-                                className="absolute left-3 top-2.5 text-gray-400"
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                             />
                             <input
                                 type="text"
                                 placeholder="Search product, category, or SKU"
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
-                                className="w-full rounded-lg border-none bg-gray-50 py-2 pl-9 pr-6 text-xs focus:ring-2 focus:ring-clay-500/20"
+                                className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => handleSearch("")}
-                                    className="absolute right-3 top-2.5 rounded text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                                    title="Clear search"
                                 >
                                     <X size={12} />
                                 </button>

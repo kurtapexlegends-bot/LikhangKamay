@@ -1457,10 +1457,19 @@ export default function OrderManager({ auth, orders = [] }) {
                                 placeholder="Search order, buyer, or item..."
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
-                                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-medium transition-colors focus:border-clay-500 focus:ring-2 focus:ring-clay-200"
+                                className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
                             />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => handleSearch("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                                    title="Clear search"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
                         </div>
-                        <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 transition-colors focus-within:border-clay-500 focus-within:ring-2 focus-within:ring-clay-200 md:w-auto">
+                        <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 transition-shadow focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500 md:w-auto">
                             <Calendar className="text-gray-400" size={14} />
                             <div className="flex flex-wrap items-center gap-2">
                                 <input

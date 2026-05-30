@@ -1455,15 +1455,24 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         <div className="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#FDFBF9]">
                             <h3 className="text-sm font-bold tracking-tight text-stone-900">Employee Directory</h3>
                             <div className="relative w-full sm:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} strokeWidth={2.5} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                 <input 
                                     type="text" 
                                     placeholder="Search name or role..." 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-[11px] font-medium focus:ring-clay-500 focus:border-clay-500 transition-shadow shadow-sm"
+                                    className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow shadow-sm"
                                 />
-                                {searchTerm && <button onClick={() => setSearchTerm('')} aria-label="Clear employee search" className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"><X size={12} strokeWidth={2.5} /></button>}
+                                {searchTerm && (
+                                    <button 
+                                        onClick={() => setSearchTerm('')} 
+                                        aria-label="Clear employee search" 
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                                        title="Clear search"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
                             </div>
                         </div>
 

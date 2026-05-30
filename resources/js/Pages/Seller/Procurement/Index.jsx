@@ -253,13 +253,13 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
                         
                         {/* Table Header / Toolbar */}
-                        <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/30">
+                        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/30">
                             <div className="flex items-center gap-3">
-                                <h3 className="font-bold text-gray-900 text-sm">Supply Inventory</h3>
+                                <h3 className="font-bold text-gray-900 text-xs">Supply Inventory</h3>
                                 <select 
                                     value={filterCategory}
                                     onChange={e => setFilterCategory(e.target.value)}
-                                    className="text-[10px] border-gray-200 rounded-lg focus:ring-clay-500 focus:border-clay-500 py-1"
+                                    className="text-[11px] font-bold border border-gray-200 bg-white rounded-xl focus:ring-clay-500 focus:border-clay-500 px-3 py-1.5 text-gray-600 transition-colors cursor-pointer"
                                 >
                                     <option value="all">All Categories</option>
                                     {categoriesList.map(cat => (
@@ -275,8 +275,18 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     placeholder="Search supplies..." 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
+                                    className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
                                 />
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                                        title="Clear search"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
