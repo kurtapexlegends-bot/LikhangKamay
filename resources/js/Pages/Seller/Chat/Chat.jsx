@@ -6,11 +6,13 @@ import EmojiPicker from 'emoji-picker-react';
 import { 
     Search, Send, Paperclip, Info, 
     Image as ImageIcon, ChevronDown, 
-    MessageCircle, CheckCheck, Check, Clock, Smile, ShoppingBag, ArrowLeft, MapPin, Phone, X, FileIcon
+    MessageCircle, CheckCheck, Check, Clock, Smile, ShoppingBag, ArrowLeft, MapPin, Phone, X, FileIcon,
+    Pencil, Trash2, User
 } from 'lucide-react';
 import OrderContextCard, { SellerOrderActionBar } from '@/Components/Chat/OrderContextCard';
 import UserAvatar from '@/Components/UserAvatar';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import Modal from '@/Components/Modal';
 import { lazy, Suspense } from 'react';
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';

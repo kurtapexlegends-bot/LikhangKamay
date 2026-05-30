@@ -20,6 +20,7 @@ class SponsorshipWorkflowTest extends TestCase
 
     public function test_admin_reject_requires_reason(): void
     {
+        /** @var User $admin */
         $admin = User::factory()->superAdmin()->create();
         $seller = $this->createEliteSeller();
         $product = $this->createProduct($seller);
@@ -47,6 +48,7 @@ class SponsorshipWorkflowTest extends TestCase
     {
         Notification::fake();
 
+        /** @var User $admin */
         $admin = User::factory()->superAdmin()->create();
         $seller = $this->createEliteSeller();
         $product = $this->createProduct($seller);
@@ -81,6 +83,7 @@ class SponsorshipWorkflowTest extends TestCase
     {
         Notification::fake();
 
+        /** @var User $admin */
         $admin = User::factory()->superAdmin()->create();
         $seller = $this->createEliteSeller();
         $product = $this->createProduct($seller, [
@@ -191,7 +194,7 @@ class SponsorshipWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Analytics/Analytics')
+            ->component('Seller/Performance/Performance')
             ->where('sellerSubscription.canRequestSponsorships', true)
             ->where('sponsorshipMetrics.impressions', 1)
             ->where('sponsorshipMetrics.clicks', 1)
@@ -213,7 +216,7 @@ class SponsorshipWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Analytics/Analytics')
+            ->component('Seller/Performance/Performance')
             ->where('sellerSubscription.canRequestSponsorships', false)
             ->where('sponsorshipMetrics', null)
             ->where('sponsorshipChartData', null)
@@ -228,6 +231,7 @@ class SponsorshipWorkflowTest extends TestCase
         Notification::fake();
 
         $seller = $this->createEliteSeller();
+        /** @var User $buyer */
         $buyer = User::factory()->create();
         $product = $this->createProduct($seller, [
             'price' => 1450,

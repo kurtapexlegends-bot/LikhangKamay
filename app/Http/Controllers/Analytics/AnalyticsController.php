@@ -43,7 +43,7 @@ class AnalyticsController extends Controller
 
         $canViewRevenue = $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE);
 
-        return Inertia::render('Seller/Analytics/Analytics', [
+        return Inertia::render('Seller/Performance/Performance', [
             'metrics' => [
                 'total_revenue' => $canViewRevenue ? $financials['current']['revenue'] : 0,
                 'gross_profit' => $canViewRevenue ? $financials['current']['profit'] : 0,

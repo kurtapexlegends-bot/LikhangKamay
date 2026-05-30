@@ -262,7 +262,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     className="text-[10px] border-gray-200 rounded-lg focus:ring-clay-500 focus:border-clay-500 py-1"
                                 >
                                     <option value="all">All Categories</option>
-                                    {CATEGORIES.map(cat => (
+                                    {categoriesList.map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
                                     ))}
                                 </select>
