@@ -302,21 +302,6 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                     <ReadOnlyCapabilityNotice label="Finance review is read only for your account. Approval and fund actions are disabled." />
                 )}
 
-                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-amber-700">
-                        <AlertCircle size={13} />
-                        Pending requests stay here until reviewed
-                    </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
-                        <CheckCircle size={13} />
-                        Approved releases post to the finance ledger
-                    </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-stone-600">
-                        <History size={13} />
-                        Rejections keep the reviewer note
-                    </span>
-                </div>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     <div className="rounded-2xl border border-stone-200 bg-white p-5">
                         <div className="mb-3 flex items-start justify-between">
