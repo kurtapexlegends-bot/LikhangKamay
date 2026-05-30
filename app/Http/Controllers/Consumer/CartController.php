@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Consumer;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -123,7 +125,7 @@ class CartController extends Controller
             }
         }
 
-        return Inertia::render('Shop/Cart', [
+        return Inertia::render('Consumer/Shop/Cart', [
             'cart' => $cart
         ]);
     }

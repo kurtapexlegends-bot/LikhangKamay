@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
-import SellerHeader from '@/Components/SellerHeader';
-import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import SellerSidebar from '@/Layouts/SellerSidebar';
+import SellerHeader from '@/Layouts/SellerHeader';
+import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import {
     ArrowRight,
     Briefcase,

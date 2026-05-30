@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Core;
+
+use App\Http\Controllers\Controller;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Support\PersonName;
@@ -43,14 +45,14 @@ class ProfileController extends Controller
             }
 
             // Default view for Buyers using the Public Shop Layout
-            return Inertia::render('Profile/Edit', [
+            return Inertia::render('Consumer/Profile/Edit', [
                 'mustVerifyEmail' => $user instanceof MustVerifyEmail,
                 'status' => session('status'),
                 'addresses' => $user->addresses()->orderBy('is_default', 'desc')->get(),
             ]);
         } catch (Throwable $e) {
             Log::error("Profile edit error: " . $e->getMessage());
-            return Inertia::render('Profile/Edit', [
+            return Inertia::render('Consumer/Profile/Edit', [
                 'mustVerifyEmail' => false,
                 'status' => 'error',
                 'addresses' => [],

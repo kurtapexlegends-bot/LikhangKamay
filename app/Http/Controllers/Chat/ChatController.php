@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Chat;
+
+use App\Http\Controllers\Controller;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Message;
@@ -18,13 +20,13 @@ class ChatController extends Controller
     // 1. SELLER VIEW
     public function index(Request $request)
     {
-        return $this->getChatData($request, 'Seller/Chat', true);
+        return $this->getChatData($request, 'Seller/Chat/Chat', true);
     }
 
     // 2. BUYER VIEW
     public function buyerIndex(Request $request)
     {
-        return $this->getChatData($request, 'Buyer/Chat', false);
+        return $this->getChatData($request, 'Consumer/Buyer/Chat', false);
     }
 
     // 3. SEND MESSAGE (Shared)

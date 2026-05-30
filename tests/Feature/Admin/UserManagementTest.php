@@ -33,7 +33,7 @@ class UserManagementTest extends TestCase
             ->get(route('admin.users'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Users')
+                ->component('Admin/Compliance/Users')
                 ->where('users.data', function ($users) use ($owner, $staff, $employee) {
                     $topLevelIds = collect($users)->pluck('id');
                     $ownerRow = collect($users)->firstWhere('id', $owner->id);
@@ -65,7 +65,7 @@ class UserManagementTest extends TestCase
             ->get(route('admin.users', ['role' => 'super_admin']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Users')
+                ->component('Admin/Compliance/Users')
                 ->where('filters.role', 'super_admin')
                 ->where('users.data', function ($users) use ($admin, $otherAdmin) {
                     $ids = collect($users)->pluck('id')->sort()->values()->all();
@@ -89,7 +89,7 @@ class UserManagementTest extends TestCase
             ->get(route('admin.users', ['role' => 'buyer']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Users')
+                ->component('Admin/Compliance/Users')
                 ->where('filters.role', 'buyer')
                 ->where('users.data', function ($users) use ($buyer, $secondBuyer) {
                     $ids = collect($users)->pluck('id')->sort()->values()->all();
@@ -122,7 +122,7 @@ class UserManagementTest extends TestCase
             ->get(route('admin.users', ['search' => 'Heritage Clay']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Users')
+                ->component('Admin/Compliance/Users')
                 ->where('filters.role', 'all')
                 ->where('filters.search', 'Heritage Clay')
                 ->where('users.data', function ($users) use ($owner, $staff) {
@@ -158,7 +158,7 @@ class UserManagementTest extends TestCase
             ->get(route('admin.users', ['role' => 'artisan', 'search' => 'Alice Ledger']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Users')
+                ->component('Admin/Compliance/Users')
                 ->where('filters.role', 'artisan')
                 ->where('filters.search', 'Alice Ledger')
                 ->where('users.data', function ($users) use ($owner, $matchingStaff, $otherStaff) {
@@ -190,7 +190,7 @@ class UserManagementTest extends TestCase
             ->get(route('admin.users'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Users')
+                ->component('Admin/Compliance/Users')
                 ->where('unlinkedStaffGroup.staff_count', 1)
                 ->where('unlinkedStaffGroup.staff_members', function ($staffMembers) use ($orphanedStaff) {
                     return count($staffMembers) === 1

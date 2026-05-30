@@ -33,7 +33,7 @@ class HomepageMerchandisingTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Welcome')
+                ->component('Consumer/Welcome')
                 ->where('sponsoredProducts', function ($products) use ($sponsoredProduct) {
                     return collect($products)->pluck('id')->contains($sponsoredProduct->id);
                 })
@@ -60,7 +60,7 @@ class HomepageMerchandisingTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Welcome')
+                ->component('Consumer/Welcome')
                 ->where('sponsoredProducts', function ($products) use ($onlyProduct) {
                     return collect($products)->pluck('id')->contains($onlyProduct->id);
                 })

@@ -21,7 +21,7 @@ class ProfileTest extends TestCase
             ->get('/profile');
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page->component('Profile/Edit'));
+        $response->assertInertia(fn (Assert $page) => $page->component('Consumer/Profile/Edit'));
     }
 
     public function test_artisan_owner_profile_page_uses_seller_profile_shell_in_owner_mode(): void

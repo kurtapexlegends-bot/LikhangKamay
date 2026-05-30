@@ -87,7 +87,7 @@ class SubscriptionTierEnforcementTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Subscription')
+            ->component('Seller/Settings/Subscription')
             ->where('currentPlan', 'super_premium')
             ->where('linkedStaffCount', 2)
         );
@@ -303,7 +303,7 @@ class SubscriptionTierEnforcementTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Subscription')
+            ->component('Seller/Settings/Subscription')
             ->where('currentPlan', 'premium')
             ->where('pendingUpgrade', null)
         );
@@ -349,7 +349,7 @@ class SubscriptionTierEnforcementTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Subscription')
+            ->component('Seller/Settings/Subscription')
             ->where('currentPlan', 'free')
             ->where('pendingUpgrade', null)
         );

@@ -28,7 +28,7 @@ class SellerEntitlementsTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard')
+            ->component('Seller/Layout/Dashboard')
             ->where('sellerSidebar.actorType', 'owner')
             ->where('sellerSidebar.showPlanPanel', true)
             ->where('sellerSubscription.showPlanPanel', true)
@@ -58,7 +58,7 @@ class SellerEntitlementsTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/HR')
+            ->component('Seller/HR/HR')
             ->where('sellerSidebar.actorType', 'staff')
             ->where('sellerSidebar.showPlanPanel', false)
             ->where('sellerSubscription.showPlanPanel', false)
@@ -89,7 +89,7 @@ class SellerEntitlementsTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/HR')
+            ->component('Seller/HR/HR')
             ->where('sellerSidebar.actorType', 'staff')
             ->where('sellerSidebar.canManageStaffAccounts', true)
             ->where('sellerSidebar.staffUserLevel', 'manager')
@@ -178,7 +178,7 @@ class SellerEntitlementsTest extends TestCase
         $this->actingAs($staff)
             ->get(route('orders.index'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Seller/OrderManager'));
+            ->assertInertia(fn (Assert $page) => $page->component('Seller/Orders/OrderManager'));
 
         $this->actingAs($staff)
             ->get(route('analytics.index'))

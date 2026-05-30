@@ -188,7 +188,7 @@ export default function NotificationDropdown() {
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label={isOpen ? 'Close notifications' : 'Open notifications'}
-                className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-clay-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 group"
+                className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-clay-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 group"
             >
                 <div className="relative inline-flex">
                     <Bell size={20} className="group-hover:scale-110 transition-transform" />

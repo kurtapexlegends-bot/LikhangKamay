@@ -8,7 +8,7 @@ class HomepageMerchandisingSourceTest extends TestCase
 {
     public function test_homepage_sections_use_the_required_source_order(): void
     {
-        $source = file_get_contents(base_path('resources/js/Pages/Welcome.jsx'));
+        $source = file_get_contents(base_path('resources/js/Pages/Consumer/Welcome.jsx'));
 
         $this->assertNotFalse($source);
 
@@ -29,7 +29,7 @@ class HomepageMerchandisingSourceTest extends TestCase
 
     public function test_homepage_gives_sponsored_products_visual_priority(): void
     {
-        $source = file_get_contents(base_path('resources/js/Pages/Welcome.jsx'));
+        $source = file_get_contents(base_path('resources/js/Pages/Consumer/Welcome.jsx'));
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString('Sponsored Collection', $source);

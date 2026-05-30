@@ -64,9 +64,9 @@ class ReviewObserver
             ->selectRaw('COUNT(*) as count, ROUND(AVG(rating), 2) as avg')
             ->first();
 
-        $product->update([
+        $product->forceFill([
             'rating' => $stats->avg ?? 0,
             'reviews_count' => $stats->count ?? 0,
-        ]);
+        ])->save();
     }
 }

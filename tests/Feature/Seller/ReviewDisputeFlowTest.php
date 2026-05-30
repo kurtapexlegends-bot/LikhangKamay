@@ -61,7 +61,7 @@ class ReviewDisputeFlowTest extends TestCase
             ->get(route('reviews.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/Reviews')
+                ->component('Seller/Chat/Reviews')
                 ->where('reviews.0.dispute.status', 'pending')
                 ->where('reviews.0.dispute.reason', 'Misleading review')
             );

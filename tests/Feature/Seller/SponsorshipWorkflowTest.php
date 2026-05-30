@@ -129,7 +129,7 @@ class SponsorshipWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Sponsorships')
+            ->component('Seller/Settings/Sponsorships')
             ->where('requests.0.status', 'rejected')
             ->where('requests.0.rejection_reason', 'Please improve the primary image contrast.')
         );
@@ -191,7 +191,7 @@ class SponsorshipWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Analytics')
+            ->component('Seller/Analytics/Analytics')
             ->where('sellerSubscription.canRequestSponsorships', true)
             ->where('sponsorshipMetrics.impressions', 1)
             ->where('sponsorshipMetrics.clicks', 1)
@@ -213,7 +213,7 @@ class SponsorshipWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Analytics')
+            ->component('Seller/Analytics/Analytics')
             ->where('sellerSubscription.canRequestSponsorships', false)
             ->where('sponsorshipMetrics', null)
             ->where('sponsorshipChartData', null)

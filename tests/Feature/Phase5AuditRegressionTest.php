@@ -95,7 +95,7 @@ class Phase5AuditRegressionTest extends TestCase
             ->get(route('hr.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/HR')
+                ->component('Seller/HR/HR')
                 ->where('staff.0.attendance.today_first_clock_in', $clockIn->toIso8601String())
                 ->where('staff.0.attendance.current_state', 'clocked_in')
             );

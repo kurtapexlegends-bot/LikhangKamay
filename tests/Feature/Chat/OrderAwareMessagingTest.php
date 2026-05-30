@@ -44,7 +44,7 @@ class OrderAwareMessagingTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Chat')
+            ->component('Seller/Chat/Chat')
             ->where('currentOrderContext.orderNumber', $activeOrder->order_number)
             ->where('currentOrderContext.status', 'Pending')
             ->where('currentOrderContext.customerName', 'Checkout Snapshot Buyer')
@@ -77,7 +77,7 @@ class OrderAwareMessagingTest extends TestCase
             ->get(route('chat.index', ['user_id' => $buyer->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/Chat')
+                ->component('Seller/Chat/Chat')
                 ->where('currentOrderContext.orderNumber', $pendingOrder->order_number)
                 ->where('currentOrderContext.status', 'Pending')
                 ->where('currentOrderContext.canRespond', true)
@@ -118,7 +118,7 @@ class OrderAwareMessagingTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Buyer/Chat')
+            ->component('Consumer/Buyer/Chat')
             ->where('currentOrderContext.orderNumber', $order->order_number)
             ->where('currentOrderContext.customerName', 'Checkout Name Snapshot')
             ->where('currentOrderContext.shippingAddress', '456 Snapshot Avenue, Makati')
@@ -171,7 +171,7 @@ class OrderAwareMessagingTest extends TestCase
             ->get(route('chat.index', ['user_id' => $buyer->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/Chat')
+                ->component('Seller/Chat/Chat')
                 ->where('currentOrderContext.orderNumber', $order->order_number)
                 ->where('currentOrderContext.lineItemsCount', 3)
                 ->where('currentOrderContext.itemsCount', 3)
@@ -209,7 +209,7 @@ class OrderAwareMessagingTest extends TestCase
             ->get(route('chat.index', ['user_id' => $buyer->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/Chat')
+                ->component('Seller/Chat/Chat')
                 ->where('currentOrderContext.orderNumber', $pendingOrder->order_number)
                 ->where('currentOrderContext.activeOrdersCount', 3)
                 ->where('currentOrderContext.otherActiveOrdersCount', 2)
@@ -233,7 +233,7 @@ class OrderAwareMessagingTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/Chat')
+            ->component('Seller/Chat/Chat')
             ->where('currentOrderContext', null)
         );
     }
@@ -264,7 +264,7 @@ class OrderAwareMessagingTest extends TestCase
             ->get(route('chat.index', ['user_id' => $buyer->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/Chat')
+                ->component('Seller/Chat/Chat')
                 ->where('currentOrderContext.orderNumber', $order->order_number)
                 ->where('currentOrderContext.status', 'Accepted')
                 ->where('currentOrderContext.canRespond', false)

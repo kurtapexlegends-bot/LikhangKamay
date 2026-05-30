@@ -136,7 +136,7 @@ class AuditLogCenterTest extends TestCase
             ->get(route('audit-log.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/AuditLog')
+                ->component('Seller/Profile/AuditLog')
                 ->where('auditLog.summary.operations_events', 1)
                 ->where('auditLog.summary.staff_events', 1)
                 ->where('auditLog.summary.finance_events', 2)

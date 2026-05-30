@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Consumer;
+
+use App\Http\Controllers\Controller;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
@@ -39,7 +41,7 @@ class ReviewController extends Controller
                 ]
             ]);
 
-        return Inertia::render('Buyer/Reviews', [
+        return Inertia::render('Consumer/Buyer/Reviews', [
             'reviews' => $reviews
         ]);
     }
@@ -96,7 +98,7 @@ class ReviewController extends Controller
             ],
         ];
 
-        return Inertia::render('Seller/Reviews', [
+        return Inertia::render('Seller/Chat/Reviews', [
             'reviews' => $reviews,
             'stats' => $stats,
         ]);

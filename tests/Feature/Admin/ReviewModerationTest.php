@@ -58,7 +58,7 @@ class ReviewModerationTest extends TestCase
             ->get(route('admin.review-moderation'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/ReviewModeration')
+                ->component('Admin/Compliance/ReviewModeration')
                 ->where('disputes.0.shop_name', 'Clay House')
                 ->where('disputes.0.product_name', 'Studio Vase')
                 ->where('disputes.0.status', 'pending')
@@ -133,7 +133,7 @@ class ReviewModerationTest extends TestCase
         $this->get(route('product.show', $product->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Shop/ProductShow')
+                ->component('Consumer/Shop/ProductShow')
                 ->has('product.reviews', 0)
                 ->where('product.reviews_count', 0)
                 ->where('product.rating', 0)
@@ -200,7 +200,7 @@ class ReviewModerationTest extends TestCase
         $this->get(route('product.show', $product->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Shop/ProductShow')
+                ->component('Consumer/Shop/ProductShow')
                 ->has('product.reviews', 1)
                 ->where('product.reviews.0.comment', 'Helpful review that should stay visible.')
                 ->where('product.reviews_count', 1)
@@ -267,7 +267,7 @@ class ReviewModerationTest extends TestCase
         $this->get(route('product.show', $product->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Shop/ProductShow')
+                ->component('Consumer/Shop/ProductShow')
                 ->has('product.reviews', 1)
                 ->where('product.reviews.0.comment', 'Review hidden by moderation.')
             );

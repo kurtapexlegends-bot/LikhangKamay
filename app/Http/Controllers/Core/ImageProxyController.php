@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Core;
+
+use App\Http\Controllers\Controller;
 
 use App\Services\LocalImageTransformer;
 use Illuminate\Http\Request;

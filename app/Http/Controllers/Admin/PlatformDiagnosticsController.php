@@ -62,7 +62,7 @@ class PlatformDiagnosticsController extends Controller
             $paymongoStatus = 'Offline';
         }
 
-        return Inertia::render('Admin/Diagnostics', [
+        return Inertia::render('Admin/Layout/Diagnostics', [
             'systemHealth' => [
                 'database' => $dbStatus,
                 'cache' => $cacheStatus,
@@ -102,7 +102,7 @@ class PlatformDiagnosticsController extends Controller
             ->sortByDesc('hours_pending')
             ->values();
 
-        return Inertia::render('Admin/SLA', [
+        return Inertia::render('Admin/Analytics/SLA', [
             'metrics' => array_merge($metrics, ['totalStaleItems' => $staleQueue->count()]),
             'staleQueue' => $staleQueue,
         ]);
@@ -182,7 +182,7 @@ class PlatformDiagnosticsController extends Controller
             ->sortByDesc('deleted_at')
             ->values();
 
-        return Inertia::render('Admin/Trash', [
+        return Inertia::render('Admin/Compliance/Trash', [
             'trashQueue' => $trashQueue,
             'stats' => [
                 'totalItems' => $trashQueue->count(),
@@ -305,7 +305,7 @@ class PlatformDiagnosticsController extends Controller
                 ->all();
         });
 
-        return Inertia::render('Admin/ActivityLog', [
+        return Inertia::render('Admin/Layout/ActivityLog', [
             'activities' => $activities,
             'filters' => $request->only(['search', 'action_type']),
             'availableActions' => $availableActions,

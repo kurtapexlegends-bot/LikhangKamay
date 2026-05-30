@@ -2,9 +2,9 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import MobileDock from '@/Components/MobileDock';
+import MobileDock from '@/Layouts/MobileDock';
 import { Link, usePage } from '@inertiajs/react';
-import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import { useState } from 'react';
 import { useRealtime } from '@/hooks/useRealtime';
 

@@ -22,7 +22,7 @@ class MonetizationTest extends TestCase
             ->get(route('admin.monetization'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Monetization')
+                ->component('Admin/Analytics/Monetization')
                 ->where('metrics.mrr.value', 598)
                 ->where('metrics.mrr.is_projected', true)
                 ->where('metrics.mrr.basis', 'Based on current active artisan plan tiers.')
@@ -50,7 +50,7 @@ class MonetizationTest extends TestCase
             ->get(route('admin.monetization'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Monetization')
+                ->component('Admin/Analytics/Monetization')
                 ->where('recentSubscribers.0.id', $log->id)
                 ->where('recentSubscribers.0.user_id', $artisan->id)
                 ->where('recentSubscribers.0.name', 'Cavite Potter')

@@ -1,10 +1,10 @@
 import React from 'react';
 import { usePage } from '@inertiajs/react';
-import BuyerNavbar from '@/Components/BuyerNavbar';
-import AnnouncementBanner from '@/Components/AnnouncementBanner';
-import Footer from '@/Components/Footer';
-import ImpersonationBanner from '@/Components/ImpersonationBanner';
-import MobileDock from '@/Components/MobileDock';
+import BuyerNavbar from '@/Layouts/BuyerNavbar';
+import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
+import Footer from '@/Layouts/Footer';
+import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
+import MobileDock from '@/Layouts/MobileDock';
 
 export default function ShopLayout({ children }) {
     const { globalAnnouncement } = usePage().props;

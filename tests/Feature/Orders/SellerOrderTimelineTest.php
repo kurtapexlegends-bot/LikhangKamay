@@ -99,7 +99,7 @@ class SellerOrderTimelineTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Seller/OrderManager')
+                ->component('Seller/Orders/OrderManager')
                 ->where('orders.data.0.timeline', function ($timeline) {
                     $labels = collect($timeline)->pluck('label')->all();
 

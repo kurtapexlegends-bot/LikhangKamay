@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Core;
+
+use App\Http\Controllers\Controller;
 
 use App\Support\NotificationPresenter;
 use Illuminate\Http\Request;
@@ -29,7 +31,7 @@ class NotificationController extends Controller
             ]);
         }
 
-        return Inertia::render('Buyer/Notifications', [
+        return Inertia::render('Consumer/Buyer/Notifications', [
             'notifications' => $notifications,
             'unreadNotificationCount' => $unreadCount,
         ]);

@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Consumer;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -40,7 +42,7 @@ class HomeController extends Controller
             }
         }
 
-        return Inertia::render('Welcome', [
+        return Inertia::render('Consumer/Welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'featuredProducts' => $featuredProducts,

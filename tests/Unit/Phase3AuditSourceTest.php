@@ -8,7 +8,7 @@ class Phase3AuditSourceTest extends TestCase
 {
     public function test_buyer_order_receive_action_only_shows_after_delivery(): void
     {
-        $source = file_get_contents(base_path('resources/js/Pages/Buyer/MyOrders.jsx'));
+        $source = file_get_contents(base_path('resources/js/Pages/Consumer/Buyer/MyOrders.jsx'));
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString("(order.status === 'Delivered' && !order.received_at)", $source);
@@ -17,7 +17,7 @@ class Phase3AuditSourceTest extends TestCase
 
     public function test_seller_order_manager_waits_for_buyer_confirmation_on_delivered_replacements(): void
     {
-        $source = file_get_contents(base_path('resources/js/Pages/Seller/OrderManager.jsx'));
+        $source = file_get_contents(base_path('resources/js/Pages/Seller/Orders/OrderManager.jsx'));
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString("order.status === 'Delivered' && !order.replacement_in_progress", $source);

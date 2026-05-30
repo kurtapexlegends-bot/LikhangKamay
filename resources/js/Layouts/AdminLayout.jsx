@@ -5,7 +5,7 @@ import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import NotificationDropdown from '@/Components/NotificationDropdown';
-import AnnouncementBanner from '@/Components/AnnouncementBanner';
+import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
 import {
     LayoutDashboard,
     Users,
@@ -28,9 +28,9 @@ import {
     Lock,
     Loader2
 } from 'lucide-react';
-import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 
-import GlobalSearch from '@/Components/GlobalSearch';
+import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 
 const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 

@@ -26,7 +26,7 @@ class DashboardRecentUsersTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Dashboard')
+                ->component('Admin/Layout/Dashboard')
                 ->where('recentUsers', function ($recentUsers) use ($staff, $owner) {
                     $staffEntry = collect($recentUsers)->firstWhere('id', $staff->id);
 

@@ -18,10 +18,10 @@ return new class extends Migration
 
         // Backfill existing ratings and counts from the reviews table
         \Illuminate\Support\Facades\DB::statement("
-            UPDATE products p
+            UPDATE products
             SET 
-                rating = COALESCE((SELECT ROUND(AVG(r.rating), 2) FROM reviews r WHERE r.product_id = p.id AND r.is_hidden_from_marketplace = 0), 0),
-                reviews_count = COALESCE((SELECT COUNT(*) FROM reviews r WHERE r.product_id = p.id AND r.is_hidden_from_marketplace = 0), 0)
+                rating = COALESCE((SELECT ROUND(AVG(r.rating), 2) FROM reviews r WHERE r.product_id = products.id AND r.is_hidden_from_marketplace = 0), 0),
+                reviews_count = COALESCE((SELECT COUNT(*) FROM reviews r WHERE r.product_id = products.id AND r.is_hidden_from_marketplace = 0), 0)
         ");
     }
 

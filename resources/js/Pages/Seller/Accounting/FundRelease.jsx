@@ -1,11 +1,11 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import SellerHeader from '@/Components/SellerHeader';
+import SellerHeader from '@/Layouts/SellerHeader';
 import Modal from '@/Components/Modal';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
-import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
+import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { AlertCircle, Banknote, Building2, CheckCircle, ClipboardList, Download, Eye, FileText, History, LoaderCircle, Pencil, Search, Users, X } from 'lucide-react';

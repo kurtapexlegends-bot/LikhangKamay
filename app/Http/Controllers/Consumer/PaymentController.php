@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Consumer;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Order;
 use App\Services\PayMongoService;

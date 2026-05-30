@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion, useSpring, useTransform, animate } from 'framer-motion';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
-import SellerHeader from '@/Components/SellerHeader';
+import SellerHeader from '@/Layouts/SellerHeader';
 import KPICard from '@/Components/KPICard';
 import StaggerContainer from '@/Components/StaggerContainer';
 import ContentTransition from '@/Components/ContentTransition';
@@ -36,7 +36,7 @@ import {
     Cell,
 } from 'recharts';
 import ExportButton from '@/Components/ExportButton';
-import ArtisanSkeleton from '@/Components/ArtisanSkeleton';
+import ArtisanSkeleton from '@/Components/Consumer/ArtisanSkeleton';
 
 
 const COLORS = ['#c07251', '#d97706', '#059669', '#57534e', '#e11d48', '#8c5a44']; // Clay, Amber, Emerald, Stone, Rose, Earth

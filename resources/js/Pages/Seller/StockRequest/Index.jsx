@@ -1,6 +1,6 @@
 import React, { useDeferredValue, useState, useEffect } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
-import SellerHeader from '@/Components/SellerHeader';
+import SellerHeader from '@/Layouts/SellerHeader';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import Modal from '@/Components/Modal';
 import { 
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
-import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
+import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 

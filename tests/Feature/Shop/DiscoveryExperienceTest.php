@@ -39,7 +39,7 @@ class DiscoveryExperienceTest extends TestCase
         $this->get(route('shop.index', ['search' => 'Heritage Clay']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Shop/Catalog')
+                ->component('Consumer/Shop/Catalog')
                 ->where('filters.search', 'Heritage Clay')
                 ->where('products.data.0.seller', 'Heritage Clay Studio')
                 ->where('products.data.0.name', 'Ivory Vase')
@@ -101,7 +101,7 @@ class DiscoveryExperienceTest extends TestCase
         $this->get(route('product.show', $product->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Shop/ProductShow')
+                ->component('Consumer/Shop/ProductShow')
                 ->where('relatedProducts.0.slug', $closeMatch->slug)
                 ->where('relatedProducts.1.slug', $sameCategory->slug)
                 ->where('relatedProducts.2.slug', $differentCategory->slug)

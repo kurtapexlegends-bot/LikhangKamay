@@ -8,7 +8,7 @@ class BuyerNotificationNavbarSourceTest extends TestCase
 {
     public function test_buyer_navbar_includes_notification_access_near_cart_area(): void
     {
-        $source = file_get_contents(base_path('resources/js/Components/BuyerNavbar.jsx'));
+        $source = file_get_contents(base_path('resources/js/Layouts/BuyerNavbar.jsx'));
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString("import NotificationDropdown from '@/Components/NotificationDropdown';", $source);

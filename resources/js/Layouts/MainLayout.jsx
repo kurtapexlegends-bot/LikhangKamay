@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import Footer from '@/Components/Footer';
-import MobileDock from '@/Components/MobileDock';
-import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import Footer from '@/Layouts/Footer';
+import MobileDock from '@/Layouts/MobileDock';
+import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 
 export default function MainLayout({ children, auth }) {
     const { sellerSidebar } = usePage().props;

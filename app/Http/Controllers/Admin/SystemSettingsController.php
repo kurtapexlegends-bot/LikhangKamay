@@ -19,7 +19,7 @@ class SystemSettingsController extends Controller
 
     public function index()
     {
-        return Inertia::render('Admin/SystemSettings', [
+        return Inertia::render('Admin/Layout/SystemSettings', [
             'settings' => [
                 'platform_name' => $this->settings->get('platform_name', 'Likhang Kamay'),
                 'platform_logo' => $this->settings->get('platform_logo'),

@@ -40,7 +40,7 @@ class StaffAttendancePayrollTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Seller/HR')
+            ->component('Seller/HR/HR')
             ->where('sellerSettings.attendance_month_label', now(config('app.timezone'))->format('F Y'))
             ->has('staff', 1)
             ->where('staff.0.id', $employee->id)

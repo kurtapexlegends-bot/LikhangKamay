@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Components/SellerSidebar';
-import AnnouncementBanner from '@/Components/AnnouncementBanner';
-import ImpersonationBanner from '@/Components/ImpersonationBanner';
+import SellerSidebar from '@/Layouts/SellerSidebar';
+import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
+import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 
 const SellerWorkspaceShellContext = createContext({
     openSidebar: () => {},

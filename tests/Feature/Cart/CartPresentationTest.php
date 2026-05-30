@@ -160,7 +160,7 @@ class CartPresentationTest extends TestCase
 
         $response->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Shop/Checkout')
+                ->component('Consumer/Shop/Checkout')
                 ->has('items', 1)
                 ->where('items.0.cart_key', "{$product->id}:matte sand")
                 ->where('items.0.variant', 'Matte Sand')

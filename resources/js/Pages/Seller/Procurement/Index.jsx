@@ -4,9 +4,9 @@ import { Head, useForm, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
 import Modal from '@/Components/Modal';
-import QuickRestock from '@/Components/QuickRestock';
+import QuickRestock from '@/Components/Seller/Shared/QuickRestock';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import ReadOnlyCapabilityNotice from '@/Components/ReadOnlyCapabilityNotice';
+import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import { 
     Package, AlertTriangle, TrendingUp, Plus, Search, ChevronDown, 
     Edit2, Trash2, RefreshCw, Box, 
@@ -14,7 +14,7 @@ import {
     FileText, Clock, X, Loader2
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
-import SellerHeader from '@/Components/SellerHeader';
+import SellerHeader from '@/Layouts/SellerHeader';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import useConstraintValidation from '@/hooks/useConstraintValidation';

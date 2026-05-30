@@ -34,7 +34,7 @@ class CheckMaintenanceMode
 
             // Abort or render maintenance page
             if ($request->expectsJson() || $request->header('X-Inertia')) {
-                return Inertia::render('Maintenance')->toResponse($request)->setStatusCode(503);
+                return Inertia::render('Consumer/Maintenance')->toResponse($request)->setStatusCode(503);
             }
 
             return response()->view('maintenance', [], 503);

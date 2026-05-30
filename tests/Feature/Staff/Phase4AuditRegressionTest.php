@@ -50,7 +50,7 @@ class Phase4AuditRegressionTest extends TestCase
             ->get(route('team-messages.index', ['user_id' => $owner->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/TeamMessages')
+                ->component('Seller/Chat/TeamMessages')
                 ->where('activeMessages', function ($messages) {
                     $texts = collect($messages)->pluck('text');
 

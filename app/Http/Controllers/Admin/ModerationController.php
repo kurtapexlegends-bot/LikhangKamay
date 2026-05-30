@@ -50,7 +50,7 @@ class ModerationController extends Controller
             })
             ->values();
 
-        return Inertia::render('Admin/ReviewModeration', [
+        return Inertia::render('Admin/Compliance/ReviewModeration', [
             'disputes' => $disputes,
         ]);
     }
@@ -123,7 +123,7 @@ class ModerationController extends Controller
             ->latest()
             ->paginate(15);
 
-        return Inertia::render('Admin/ModerationQueue', [
+        return Inertia::render('Admin/Compliance/ModerationQueue', [
             'flags' => $flags
         ]);
     }

@@ -964,7 +964,7 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn(Assert $page) => $page
-                ->component('Seller/HR')
+                ->component('Seller/HR/HR')
                 ->where('staff.0.name', 'Legacy Employee')
                 ->where('staff.0.has_login_account', false)
                 ->where('staff.0.login_account', null)
@@ -982,7 +982,7 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Seller/HR')
+                ->component('Seller/HR/HR')
                 ->where('staffProvisioning.canEditHrRecords', true)
                 ->where('staffProvisioning.canCreateStaffAccounts', true)
                 ->where('staffProvisioning.canDeleteStaffAccounts', true)
@@ -1026,7 +1026,7 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn(Assert $page) => $page
-                ->component('Seller/HR')
+                ->component('Seller/HR/HR')
                 ->where('staff.0.has_login_account', true)
                 ->where('staff.0.login_account.id', $linkedLogin->id)
                 ->where('staff.0.login_account.avatar', 'avatars/staff-avatar.png')
@@ -1058,7 +1058,7 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn(Assert $page) => $page
-                ->component('Seller/HR')
+                ->component('Seller/HR/HR')
                 ->where('staff.0.login_account.user_level', 'standard')
         );
     }
@@ -1098,7 +1098,7 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Seller/HR')
+                ->component('Seller/HR/HR')
                 ->has('staffAccessAudits', 1)
                 ->where('staffAccessAudits.0.event', 'login_created')
                 ->where('staff.0.login_account.staff_access_permission_level', User::STAFF_ACCESS_PERMISSION_UPDATE)
@@ -1143,7 +1143,7 @@ class HrStaffProvisioningTest extends TestCase
         $response->assertOk();
         $response->assertInertia(
             fn(Assert $page) => $page
-                ->component('Seller/HR')
+                ->component('Seller/HR/HR')
                 ->where('staff.0.name', 'Legacy Employee')
                 ->where('staff.0.has_login_account', false)
                 ->where('staff.0.login_account', null)

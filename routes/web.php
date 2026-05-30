@@ -1,37 +1,37 @@
 <?php
 
-use App\Http\Controllers\HRController;
-use App\Http\Controllers\ChatController;
-use App\Http\Controllers\PaymentController; // Added
-use App\Http\Controllers\LalamoveDeliveryController;
+use App\Http\Controllers\Seller\HRController;
+use App\Http\Controllers\Chat\ChatController;
+use App\Http\Controllers\Consumer\PaymentController; // Added
+use App\Http\Controllers\Seller\LalamoveDeliveryController;
 use App\Http\Controllers\Webhooks\LalamoveWebhookController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\CartController; // <--- Make sure this is imported
+use App\Http\Controllers\Consumer\HomeController;
+use App\Http\Controllers\Consumer\CartController; // <--- Make sure this is imported
 
 
 // use App\Http\Controllers\FinanceController; // Removed
 
-use App\Http\Controllers\ShopController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\ThreeDManagerController;
-use App\Http\Controllers\ProcurementController;
-use App\Http\Controllers\StockRequestController;
-use App\Http\Controllers\AccountingController; // <--- Added
-use App\Http\Controllers\UserAddressController;
-use App\Http\Controllers\ArtisanSetupController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\StaffDashboardController;
-use App\Http\Controllers\TeamMessageController;
-use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\Seller\ShopController;
+use App\Http\Controllers\Seller\OrderController;
+use App\Http\Controllers\Core\ProfileController;
+use App\Http\Controllers\Seller\ProductController;
+use App\Http\Controllers\Consumer\ReviewController;
+use App\Http\Controllers\Seller\DashboardController;
+use App\Http\Controllers\Analytics\AnalyticsController;
+use App\Http\Controllers\Seller\ThreeDManagerController;
+use App\Http\Controllers\Seller\ProcurementController;
+use App\Http\Controllers\Seller\StockRequestController;
+use App\Http\Controllers\Seller\AccountingController; // <--- Added
+use App\Http\Controllers\Consumer\UserAddressController;
+use App\Http\Controllers\Auth\ArtisanSetupController;
+use App\Http\Controllers\Seller\SettingsController;
+use App\Http\Controllers\Core\NotificationController;
+use App\Http\Controllers\Seller\SubscriptionController;
+use App\Http\Controllers\Seller\StaffDashboardController;
+use App\Http\Controllers\Seller\TeamMessageController;
+use App\Http\Controllers\Seller\AuditLogController;
 use App\Http\Controllers\Auth\SocialAuthController;
-use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Admin\TaxonomyController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\PlatformDiagnosticsController;
@@ -47,11 +47,11 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->middleware('throttle:marketplace.search')->name('shop.index');
 Route::get('/shop/{user:shop_slug}', [ShopController::class, 'seller'])->name('shop.seller');
 Route::get('/product/{product}', [ProductController::class, 'show'])->name('product.show');
-Route::post('/sponsorship-events/track', [\App\Http\Controllers\SponsorshipController::class, 'track'])
+Route::post('/sponsorship-events/track', [\App\Http\Controllers\Seller\SponsorshipController::class, 'track'])
     ->middleware('throttle:120,1')
     ->name('sponsorships.track');
 
-Route::post('/validate-constraint', [\App\Http\Controllers\ValidationController::class, 'validateConstraint'])
+Route::post('/validate-constraint', [\App\Http\Controllers\Compliance\ValidationController::class, 'validateConstraint'])
     ->middleware('throttle:60,1')
     ->name('api.validate-constraint');
 
@@ -65,19 +65,19 @@ Route::get('/artisan/register', function () {
 Route::post('/webhooks/qstash-handler', [\App\Http\Controllers\Webhooks\QStashWebhookController::class, 'handle']);
 
 Route::get('/terms', function () {
-    return Inertia::render('Legal/TermsOfService');
+    return Inertia::render('Consumer/Legal/TermsOfService');
 })->name('terms');
 
 Route::get('/privacy', function () {
-    return Inertia::render('Legal/PrivacyPolicy');
+    return Inertia::render('Consumer/Legal/PrivacyPolicy');
 })->name('privacy');
 
 Route::get('/seller-agreement', function () {
-    return Inertia::render('Legal/SellerAgreement');
+    return Inertia::render('Consumer/Legal/SellerAgreement');
 })->name('seller.agreement');
 
 Route::get('/seller-privacy', function () {
-    return Inertia::render('Legal/SellerDataPrivacy');
+    return Inertia::render('Consumer/Legal/SellerDataPrivacy');
 })->name('seller.privacy');
 
 // --- SOCIAL AUTH (Google/Facebook) ---
@@ -147,7 +147,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/orders/{id}/lalamove', [LalamoveDeliveryController::class, 'store'])->middleware('seller.module:orders')->name('orders.lalamove.store');
         Route::post('/orders/bulk-lalamove', [LalamoveDeliveryController::class, 'bulkStore'])->middleware('seller.module:orders')->name('orders.bulk-lalamove');
         Route::get('/orders/bulk-labels', [OrderController::class, 'bulkLabels'])->middleware('seller.module:orders')->name('orders.bulk-labels');
-        Route::post('/orders/bulk-packing-slips', [\App\Http\Controllers\OrderPrintController::class, 'bulkPackingSlips'])->middleware('seller.module:orders')->name('orders.bulk-packing-slips');
+        Route::post('/orders/bulk-packing-slips', [\App\Http\Controllers\Seller\OrderPrintController::class, 'bulkPackingSlips'])->middleware('seller.module:orders')->name('orders.bulk-packing-slips');
         
         Route::get('/analytics', [AnalyticsController::class, 'index'])->middleware('seller.module:analytics')->name('analytics.index');
         Route::get('/analytics/export', [AnalyticsController::class, 'export'])->middleware('seller.module:analytics')->name('analytics.export'); // <--- Added
@@ -179,8 +179,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/subscription/downgrade', [SubscriptionController::class, 'downgrade'])->middleware('artisan')->name('seller.subscription.downgrade');
 
         // SPONSORSHIPS
-        Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'index'])->middleware(['artisan', 'seller.module:sponsorships'])->name('seller.sponsorships');
-        Route::post('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'store'])->middleware(['artisan', 'seller.module:sponsorships'])->name('seller.sponsorships.store');
+        Route::get('/sponsorships', [\App\Http\Controllers\Seller\SponsorshipController::class, 'index'])->middleware(['artisan', 'seller.module:sponsorships'])->name('seller.sponsorships');
+        Route::post('/sponsorships', [\App\Http\Controllers\Seller\SponsorshipController::class, 'store'])->middleware(['artisan', 'seller.module:sponsorships'])->name('seller.sponsorships.store');
 
         // SETTINGS
         Route::post('/settings/modules', [SettingsController::class, 'updateModules'])->middleware('artisan')->name('settings.modules');
@@ -258,7 +258,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/checkout/shipping-quote', [OrderController::class, 'quoteShipping'])->name('checkout.shipping-quote');
     Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
     Route::get('/saved', function () {
-        return Inertia::render('Buyer/Saved');
+        return Inertia::render('Consumer/Buyer/Saved');
     })->name('saved.index');
 
     // PAYMENT ROUTES
@@ -294,11 +294,12 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
     // GLOBAL SEARCH
-    Route::get('/api/global-search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])->name('api.global-search');
-    Route::get('/api/search/suggestions', [\App\Http\Controllers\SearchController::class, 'suggestions'])->name('api.search.suggestions');
+    Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
+    Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])->name('api.search.suggestions');
 
     // REPORTING
-    Route::post('/report', [\App\Http\Controllers\FlaggedContentController::class, 'store'])->name('report.store');
+    Route::post('/report', [\App\Http\Controllers\Compliance\FlaggedContentController::class, 'store'])->name('report.store');
+    
 });
 
 Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
@@ -308,7 +309,7 @@ Route::get('/subscription/payment/cancel', [SubscriptionController::class, 'canc
 Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
 Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhooks\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
 
-Route::get('/img/proxy', [\App\Http\Controllers\ImageProxyController::class, 'proxy'])->name('img.proxy');
+Route::get('/img/proxy', [\App\Http\Controllers\Core\ImageProxyController::class, 'proxy'])->name('img.proxy');
 
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {
@@ -339,9 +340,9 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
 
     
     // Sponsorship Approvals
-    Route::get('/sponsorships', [\App\Http\Controllers\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');
-    Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\SponsorshipController::class, 'approve'])->name('admin.sponsorships.approve');
-    Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\SponsorshipController::class, 'reject'])->name('admin.sponsorships.reject');
+    Route::get('/sponsorships', [\App\Http\Controllers\Seller\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');
+    Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\Seller\SponsorshipController::class, 'approve'])->name('admin.sponsorships.approve');
+    Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\Seller\SponsorshipController::class, 'reject'])->name('admin.sponsorships.reject');
 
     // System Announcements
     Route::get('/announcements', [SuperAdminController::class, 'announcements'])->name('admin.announcements');
@@ -369,7 +370,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/trash/permanent-delete', [PlatformDiagnosticsController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
     
     // Support Impersonation
-    Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
+    Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\Admin\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
 
     // Global Taxonomy Engine
     Route::get('/taxonomy', [TaxonomyController::class, 'index'])->name('admin.taxonomy.index');
@@ -379,7 +380,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
 });
 
 // Stop Impersonation Route (Protected by standard auth)
-Route::post('/impersonation/leave', [\App\Http\Controllers\ImpersonationController::class, 'leave'])
+Route::post('/impersonation/leave', [\App\Http\Controllers\Admin\ImpersonationController::class, 'leave'])
     ->middleware(['auth'])
     ->name('impersonation.leave');
 

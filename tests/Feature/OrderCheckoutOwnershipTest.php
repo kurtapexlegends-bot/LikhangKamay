@@ -20,6 +20,7 @@ class OrderCheckoutOwnershipTest extends TestCase
         Mail::fake();
         Notification::fake();
 
+        /** @var User $buyer */
         $buyer = User::factory()->create();
         $actualSeller = User::factory()->artisanApproved()->create();
         $wrongSeller = User::factory()->artisanApproved()->create();
@@ -84,6 +85,7 @@ class OrderCheckoutOwnershipTest extends TestCase
                 return true;
             });
 
+        /** @var User $buyer */
         $buyer = User::factory()->create();
         $seller = User::factory()->artisanApproved()->create();
 

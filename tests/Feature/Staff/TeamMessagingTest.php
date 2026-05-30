@@ -131,7 +131,7 @@ class TeamMessagingTest extends TestCase
             ->get(route('team-messages.index', ['user_id' => $owner->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/TeamMessages')
+                ->component('Seller/Chat/TeamMessages')
                 ->where('currentChatUser.id', $owner->id)
                 ->where('activeMessages.0.text', 'Welcome to the internal inbox.')
             );
@@ -172,7 +172,7 @@ class TeamMessagingTest extends TestCase
             ->get(route('chat.index', ['user_id' => $buyer->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/Chat')
+                ->component('Seller/Chat/Chat')
                 ->where('currentChatUser.id', $buyer->id)
                 ->where('activeMessages.0.text', 'Hello from the shop.')
             );
@@ -209,7 +209,7 @@ class TeamMessagingTest extends TestCase
             ->get(route('chat.index', ['user_id' => $buyer->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Seller/Chat')
+                ->component('Seller/Chat/Chat')
                 ->where('currentChatUser.id', $buyer->id)
                 ->where('activeMessages.0.text', 'Hello from the shop.')
                 ->where('sellerSidebar.canEditModules.messages', false)
