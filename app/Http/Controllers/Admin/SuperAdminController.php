@@ -319,36 +319,8 @@ class SuperAdminController extends Controller
             $query = $this->buildUserQuery($roleFilter, $search);
             $users = $query->orderBy('created_at', 'desc')->paginate(10)->through(fn($user) => $this->mapAdminPrimaryAccount($user, $search));
 
-            $orphanedStaff = User::where('role', 'staff')
-                ->whereNull('seller_owner_id')
-                ->get()
-                ->map(fn($u) => [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'email' => $u->email,
-                    'created_at' => $u->created_at->format('M d, Y'),
-                ]);
-
-            $artisans = User::where('role', 'artisan')
-                ->where('artisan_status', 'pending')
-                ->whereNotNull('setup_completed_at')
-                ->orderBy('setup_completed_at', 'asc')
-                ->get()
-                ->map(fn($user) => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'avatar' => $user->avatar,
-                    'shop_name' => $user->shop_name,
-                    'phone_number' => $user->phone_number,
-                    'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
-                    'business_permit' => $user->business_permit ? asset('storage/' . $user->business_permit) : null,
-                    'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
-                    'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
-                    'tin_id' => $user->tin_id ? asset('storage/' . $user->tin_id) : null,
-                    'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
-                    'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
-                ]);
+            $orphanedStaff = $this->getOrphanedStaff();
+            $artisans = $this->getPendingArtisansList();
 
             return Inertia::render('Admin/Users/UserManager', [
                 'users' => $users,
@@ -367,6 +339,49 @@ class SuperAdminController extends Controller
             Log::error("SuperAdmin UserManager error: " . $e->getMessage());
             return back()->with('error', 'Error loading user manager.');
         }
+    }
+
+    /**
+     * Get orphaned staff members.
+     */
+    private function getOrphanedStaff()
+    {
+        return User::where('role', 'staff')
+            ->whereNull('seller_owner_id')
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'created_at' => $u->created_at->format('M d, Y'),
+            ]);
+    }
+
+    /**
+     * Get pending artisan applications.
+     */
+    private function getPendingArtisansList()
+    {
+        return User::where('role', 'artisan')
+            ->where('artisan_status', 'pending')
+            ->whereNotNull('setup_completed_at')
+            ->orderBy('setup_completed_at', 'asc')
+            ->get()
+            ->map(fn($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'shop_name' => $user->shop_name,
+                'phone_number' => $user->phone_number,
+                'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
+                'business_permit' => $user->business_permit ? asset('storage/' . $user->business_permit) : null,
+                'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
+                'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
+                'tin_id' => $user->tin_id ? asset('storage/' . $user->tin_id) : null,
+                'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
+                'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
+            ]);
     }
 
     public function markArtisanDocumentViewed(Request $request, int|string $id)
