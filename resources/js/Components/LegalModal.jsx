@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronDown, ChevronUp, FileText, Shield, Store, Lock, Box, Check, AlertTriangle } from 'lucide-react';
+import Modal from '@/Components/Modal';
 
 export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }) {
     const [expandedSections, setExpandedSections] = useState({});
@@ -144,17 +145,10 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
         };
     }, [isOpen, type]);
 
-    if (!isOpen) return null;
-
     return (
-        <div 
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
-            onClick={() => onClose?.({ accepted: false })}
-        >
-            <div 
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <Modal show={isOpen} onClose={() => onClose?.({ accepted: false })} maxWidth="lg">
+            {/* Modal Content */}
+            <div className="bg-white flex flex-col overflow-hidden max-h-[85vh]">
                 {/* Header - Consistent clay color */}
                 <div className="bg-gradient-to-r from-clay-600 to-clay-700 p-5 text-white flex-shrink-0">
                     <div className="flex items-center justify-between">
@@ -273,14 +267,6 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                     </button>
                 </div>
             </div>
-
-            {/* Animation styles */}
-            <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-                .animate-fade-in { animation: fadeIn 0.2s ease-out; }
-                .animate-slide-up { animation: slideUp 0.3s ease-out; }
-            `}} />
-        </div>
+        </Modal>
     );
 }
