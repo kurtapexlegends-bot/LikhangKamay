@@ -35,7 +35,7 @@ import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 
 const resolveActiveGroup = (path) => {
-    if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics')) return 'Platform Pulse';
+    if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics') || path.includes('operations')) return 'Platform Pulse';
     if (path.includes('users') || path.includes('pending')) return 'User Accounts';
     if (path.includes('taxonomy') || path.includes('sponsorships')) return 'Product Catalog';
     if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements')) return 'Trust & Safety';
@@ -105,8 +105,7 @@ export default function AdminLayout({ title, children }) {
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
-                { name: 'SLA Monitoring', href: route('admin.sla'), icon: Clock3, current: route().current('admin.sla') },
-                { name: 'Diagnostics', href: route('admin.diagnostics'), icon: Activity, current: route().current('admin.diagnostics') },
+                { name: 'Platform Operations', href: route('admin.operations'), icon: Activity, current: route().current('admin.operations') },
             ]
         },
         {
@@ -257,6 +256,7 @@ export default function AdminLayout({ title, children }) {
                                     'Moderation Queue': "Review flagged products and user content",
                                     'Diagnostics Command Center': "Monitor system memory, cache, and heartbeats",
                                     'Diagnostics': "Monitor system memory, cache, and heartbeats",
+                                    'Platform Operations': "Monitor system health, service level compliance, and administrative logs",
                                     'Global Taxonomy Engine': "Manage the global product category list",
                                     'Taxonomy Engine': "Manage the global product category list",
                                     'System Settings': "Manage platform identity, SEO, and branding",

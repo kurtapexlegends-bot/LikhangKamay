@@ -29,10 +29,13 @@ class PlatformDiagnosticsController extends Controller
     }
 
     /**
-     * System Health & Diagnostics
+     * Platform Operations Control Center Dashboard
      */
-    public function index()
+    public function operations(Request $request)
     {
+        $activeTab = $request->input('tab', 'health');
+
+        // 1. Diagnostics / System Health Data
         $cacheStatus = 'Online';
         $dbStatus = 'Online';
         $paymongoStatus = 'Unknown';
@@ -50,61 +53,106 @@ class PlatformDiagnosticsController extends Controller
         }
 
         try {
-            $secretKey = config('services.paymongo.secret_key');
-            if ($secretKey) {
-                $response = Http::withToken($secretKey)
-                    ->get('https://api.paymongo.com/v1/links?limit=1');
-                $paymongoStatus = $response->successful() ? 'Online' : 'Error';
-            } else {
-                $paymongoStatus = 'Unconfigured';
-            }
+            // Cache PayMongo API check for 60 seconds to prevent blocking page loads during log search/pagination
+            $paymongoStatus = Cache::remember('paymongo_api_status', 60, function () {
+                $secretKey = config('services.paymongo.secret_key');
+                if ($secretKey) {
+                    $response = Http::withToken($secretKey)
+                        ->get('https://api.paymongo.com/v1/links?limit=1');
+                    return $response->successful() ? 'Online' : 'Error';
+                }
+                return 'Unconfigured';
+            });
         } catch (\Exception $e) {
             $paymongoStatus = 'Offline';
         }
 
-        return Inertia::render('Admin/Layout/Diagnostics', [
-            'systemHealth' => [
-                'database' => $dbStatus,
-                'cache' => $cacheStatus,
-                'paymongo' => $paymongoStatus,
-                'lalamove' => 'Unconfigured', // Placeholder
-                'smtp' => config('mail.mailers.smtp.host') ? 'Configured' : 'Unconfigured',
-                'environment' => config('app.env'),
-                'debug_mode' => config('app.debug'),
-            ],
-            'queueStatus' => [
-                'total_jobs' => DB::table('jobs')->count(),
-                'failed_jobs' => DB::table('failed_jobs')->count(),
-                'emails' => DB::table('jobs')->where('payload', 'like', '%Mail%')->orWhere('payload', 'like', '%Notification%')->count(),
-                'reports' => DB::table('jobs')->where('payload', 'like', '%Report%')->count(),
-                'images' => DB::table('jobs')->where('payload', 'like', '%Image%')->orWhere('payload', 'like', '%Process%')->count(),
-            ],
-            'memoryUsage' => round(memory_get_usage(true) / 1024 / 1024, 2),
-            'peakMemoryUsage' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
-        ]);
-    }
+        $systemHealth = [
+            'database' => $dbStatus,
+            'cache' => $cacheStatus,
+            'paymongo' => $paymongoStatus,
+            'lalamove' => 'Unconfigured', // Placeholder
+            'smtp' => config('mail.mailers.smtp.host') ? 'Configured' : 'Unconfigured',
+            'environment' => config('app.env'),
+            'debug_mode' => config('app.debug'),
+        ];
 
-    /**
-     * SLA Monitoring - Platform Governance
-     */
-    public function sla()
-    {
-        $metrics = $this->analytics->getSLAMetrics();
+        $queueStatus = [
+            'total_jobs' => DB::table('jobs')->count(),
+            'failed_jobs' => DB::table('failed_jobs')->count(),
+            'emails' => DB::table('jobs')->where('payload', 'like', '%Mail%')->orWhere('payload', 'like', '%Notification%')->count(),
+            'reports' => DB::table('jobs')->where('payload', 'like', '%Report%')->count(),
+            'images' => DB::table('jobs')->where('payload', 'like', '%Image%')->orWhere('payload', 'like', '%Process%')->count(),
+        ];
 
+        $memoryUsage = round(memory_get_usage(true) / 1024 / 1024, 2);
+        $peakMemoryUsage = round(memory_get_peak_usage(true) / 1024 / 1024, 2);
+
+        // 2. SLA Data
+        $slaMetrics = $this->analytics->getSLAMetrics();
         $staleArtisanApplications = $this->getStaleArtisanApplications();
         $staleDisputes = $this->getStaleDisputes();
         $staleSponsorships = $this->getStaleSponsorships();
-
         $staleQueue = collect([])
             ->concat($staleArtisanApplications)
             ->concat($staleDisputes)
             ->concat($staleSponsorships)
             ->sortByDesc('hours_pending')
             ->values();
+        $slaMetrics = array_merge($slaMetrics, ['totalStaleItems' => $staleQueue->count()]);
 
-        return Inertia::render('Admin/Analytics/SLA', [
-            'metrics' => array_merge($metrics, ['totalStaleItems' => $staleQueue->count()]),
+        // 3. Activity / Audit Logs Data
+        $search = $request->input('search');
+        $actionType = $request->input('action_type');
+
+        $activities = PlatformActivity::query()
+            ->with('user:id,name,role,avatar')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('description', 'like', "%{$search}%")
+                      ->orWhere('action', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($uq) use ($search) {
+                          $uq->where('name', 'like', "%{$search}%");
+                      });
+                });
+            })
+            ->when($actionType, function ($query, $actionType) {
+                $query->where('action', $actionType);
+            })
+            ->latest()
+            ->paginate(50)
+            ->withQueryString()
+            ->through(fn($a) => [
+                'id' => $a->id,
+                'action' => $a->action,
+                'description' => $a->description,
+                'metadata' => $a->metadata,
+                'created_at' => $a->created_at->toIso8601String(),
+                'user' => [
+                    'name' => $a->user->name ?? 'System',
+                    'role' => $a->user->role ?? 'N/A',
+                    'avatar' => $a->user->avatar ?? null,
+                ]
+            ]);
+
+        $availableActions = Cache::remember('platform_activity_actions', 3600, function () {
+            return PlatformActivity::select('action')
+                ->distinct()
+                ->pluck('action')
+                ->all();
+        });
+
+        return Inertia::render('Admin/Layout/PlatformOperations', [
+            'systemHealth' => $systemHealth,
+            'queueStatus' => $queueStatus,
+            'memoryUsage' => $memoryUsage,
+            'peakMemoryUsage' => $peakMemoryUsage,
+            'slaMetrics' => $slaMetrics,
             'staleQueue' => $staleQueue,
+            'activities' => $activities,
+            'filters' => $request->only(['search', 'action_type']),
+            'availableActions' => $availableActions,
+            'defaultTab' => $activeTab,
         ]);
     }
 
@@ -167,82 +215,6 @@ class PlatformDiagnosticsController extends Controller
     }
 
     /**
-     * Restoration Center (Trash)
-     */
-    public function trash()
-    {
-        $deletedProducts = $this->getDeletedProducts();
-        $deletedCategories = $this->getDeletedCategories();
-        $deletedOrders = $this->getDeletedOrders();
-
-        $trashQueue = collect([])
-            ->concat($deletedProducts)
-            ->concat($deletedCategories)
-            ->concat($deletedOrders)
-            ->sortByDesc('deleted_at')
-            ->values();
-
-        return Inertia::render('Admin/Compliance/Trash', [
-            'trashQueue' => $trashQueue,
-            'stats' => [
-                'totalItems' => $trashQueue->count(),
-                'products' => count($deletedProducts),
-                'categories' => count($deletedCategories),
-                'orders' => count($deletedOrders),
-            ]
-        ]);
-    }
-
-    protected function getDeletedProducts()
-    {
-        return Product::onlyTrashed()
-            ->with('user:id,name,shop_name')
-            ->orderBy('deleted_at', 'desc')
-            ->limit(100)
-            ->get()
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'type' => 'Product',
-                'context' => $p->user->shop_name ?? $p->user->name,
-                'deleted_at' => $p->deleted_at->toIso8601String(),
-                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
-            ]);
-    }
-
-    protected function getDeletedCategories()
-    {
-        return Category::onlyTrashed()
-            ->orderBy('deleted_at', 'desc')
-            ->get()
-            ->map(fn($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'type' => 'Category',
-                'context' => 'Global Taxonomy',
-                'deleted_at' => $c->deleted_at->toIso8601String(),
-                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
-            ]);
-    }
-
-    protected function getDeletedOrders()
-    {
-        return Order::onlyTrashed()
-            ->with('user:id,name')
-            ->orderBy('deleted_at', 'desc')
-            ->limit(100)
-            ->get()
-            ->map(fn($o) => [
-                'id' => $o->id,
-                'name' => "Order #{$o->order_number}",
-                'type' => 'Order',
-                'context' => $o->user->name ?? 'Unknown Customer',
-                'deleted_at' => $o->deleted_at->toIso8601String(),
-                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
-            ]);
-    }
-
-    /**
      * Purge all system caches
      */
     public function purgeCache()
@@ -260,55 +232,68 @@ class PlatformDiagnosticsController extends Controller
     }
 
     /**
-     * Platform-wide Administrative Audit Log
+     * Restore a soft-deleted item from the trash.
      */
-    public function activity(Request $request)
+    public function restoreItem(Request $request)
     {
-        $search = $request->input('search');
-        $actionType = $request->input('action_type');
-
-        $activities = PlatformActivity::query()
-            ->with('user:id,name,role,avatar')
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('description', 'like', "%{$search}%")
-                      ->orWhere('action', 'like', "%{$search}%")
-                      ->orWhereHas('user', function ($uq) use ($search) {
-                          $uq->where('name', 'like', "%{$search}%");
-                      });
-                });
-            })
-            ->when($actionType, function ($query, $actionType) {
-                $query->where('action', $actionType);
-            })
-            ->latest()
-            ->paginate(50)
-            ->withQueryString()
-            ->through(fn($a) => [
-                'id' => $a->id,
-                'action' => $a->action,
-                'description' => $a->description,
-                'metadata' => $a->metadata,
-                'created_at' => $a->created_at->toIso8601String(),
-                'user' => [
-                    'name' => $a->user->name ?? 'System',
-                    'role' => $a->user->role ?? 'N/A',
-                    'avatar' => $a->user->avatar ?? null,
-                ]
-            ]);
-
-        // Get unique actions for the filter dropdown
-        $availableActions = Cache::remember('platform_activity_actions', 3600, function () {
-            return PlatformActivity::select('action')
-                ->distinct()
-                ->pluck('action')
-                ->all();
-        });
-
-        return Inertia::render('Admin/Layout/ActivityLog', [
-            'activities' => $activities,
-            'filters' => $request->only(['search', 'action_type']),
-            'availableActions' => $availableActions,
+        $validated = $request->validate([
+            'id' => 'required',
+            'type' => 'required|in:Product,Category,Order',
         ]);
+
+        $model = match($validated['type']) {
+            'Product' => Product::class,
+            'Category' => Category::class,
+            'Order' => Order::class,
+            default => null
+        };
+
+        if (!$model) {
+            return back()->with('error', 'Invalid item type.');
+        }
+
+        $item = $model::onlyTrashed()->findOrFail($validated['id']);
+        $item->restore();
+
+        PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => 'item_restored',
+            'description' => "Super Admin restored soft-deleted {$validated['type']} (ID: {$validated['id']}).",
+        ]);
+
+        return back()->with('success', "{$validated['type']} restored successfully.");
+    }
+
+    /**
+     * Permanently delete an item from the trash.
+     */
+    public function permanentDeleteItem(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required',
+            'type' => 'required|in:Product,Category,Order',
+        ]);
+
+        $model = match($validated['type']) {
+            'Product' => Product::class,
+            'Category' => Category::class,
+            'Order' => Order::class,
+            default => null
+        };
+
+        if (!$model) {
+            return back()->with('error', 'Invalid item type.');
+        }
+
+        $item = $model::onlyTrashed()->findOrFail($validated['id']);
+        $item->forceDelete();
+
+        PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => 'item_permanently_deleted',
+            'description' => "Super Admin permanently deleted {$validated['type']} (ID: {$validated['id']}).",
+        ]);
+
+        return back()->with('success', "{$validated['type']} permanently deleted.");
     }
 }

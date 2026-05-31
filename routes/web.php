@@ -322,7 +322,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
-    Route::get('/sla', [PlatformDiagnosticsController::class, 'sla'])->name('admin.sla');
+    Route::get('/sla', fn() => redirect()->route('admin.operations', ['tab' => 'sla']))->name('admin.sla');
     Route::get('/compliance', [ModerationController::class, 'compliance'])->name('admin.compliance');
     Route::get('/review-moderation', fn() => redirect()->route('admin.compliance', ['tab' => 'disputes']))->name('admin.review-moderation');
     Route::patch('/review-moderation/{reviewDispute}', [ModerationController::class, 'updateReview'])->name('admin.review-moderation.update');
@@ -360,9 +360,10 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/moderation-queue/{id}/suspend', [ModerationController::class, 'suspendUser'])->name('admin.moderation.suspend');
     Route::post('/moderation-queue/{id}/dismiss', [ModerationController::class, 'dismissFlag'])->name('admin.moderation.dismiss');
 
-    // System Diagnostics & Logs
-    Route::get('/diagnostics', [PlatformDiagnosticsController::class, 'index'])->middleware('throttle:admin.heavy')->name('admin.diagnostics');
-    Route::get('/activity-log', [PlatformDiagnosticsController::class, 'activity'])->name('admin.activity.index');
+    // Platform Operations Control Center
+    Route::get('/operations', [PlatformDiagnosticsController::class, 'operations'])->name('admin.operations');
+    Route::get('/diagnostics', fn() => redirect()->route('admin.operations', ['tab' => 'health']))->name('admin.diagnostics');
+    Route::get('/activity-log', fn() => redirect()->route('admin.operations', ['tab' => 'logs']))->name('admin.activity.index');
     Route::post('/diagnostics/cache/purge', [PlatformDiagnosticsController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
 
     // Restoration Center (Trash)
