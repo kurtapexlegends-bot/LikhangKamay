@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
-import Dropdown from '@/Components/Dropdown'; 
+import Dropdown from '@/Components/Dropdown';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState'; 
 import Modal from '@/Components/Modal';
 import RatingModal from '@/Components/Consumer/RatingModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -1351,20 +1352,17 @@ export default function MyOrders({ auth, orders }) {
                             );
                         })
                     ) : (
-                        <div className="py-24 text-center bg-white rounded-2xl border border-stone-100 shadow-sm">
-                            <div className="w-20 h-20 bg-[#FCFAF7] border border-stone-200/60 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
-                                <ShoppingBag size={32} strokeWidth={1.5} className="text-stone-400" />
-                            </div>
-                            <h3 className="text-[17px] font-bold tracking-tight text-stone-900">No orders found</h3>
-                            <p className="text-stone-500 text-[13px] mb-6 mt-1.5 max-w-sm mx-auto">
-                                {activeTab === 'All' 
+                        <WorkspaceEmptyState
+                            icon={ShoppingBag}
+                            title="No orders found"
+                            description={
+                                activeTab === 'All' 
                                     ? "You haven't placed any orders yet. Start exploring artisan products." 
-                                    : `No orders found in the "${tabs.find(t => t.id === activeTab)?.label}" category.`}
-                            </p>
-                            <Link href="/shop" className="inline-flex items-center gap-2 px-6 py-2.5 bg-clay-700 text-white rounded-xl text-[13px] font-bold hover:bg-clay-800 shadow-sm transition-all hover:-translate-y-0.5 active:scale-95">
-                                <ShoppingBag size={16} strokeWidth={2.5} /> Start Shopping
-                            </Link>
-                        </div>
+                                    : `No orders found in the "${tabs.find(t => t.id === activeTab)?.label}" category.`
+                            }
+                            actionLabel="Start Shopping"
+                            actionHref="/shop"
+                        />
                     )}
                 </div>
 
