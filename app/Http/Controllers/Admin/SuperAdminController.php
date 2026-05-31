@@ -307,16 +307,16 @@ class SuperAdminController extends Controller
     }
 
     /**
-     * User Management
+     * User Directory & Approvals Center
      */
-    public function users(Request $request)
+    public function userManager(Request $request)
     {
         try {
+            $tab = $request->get('tab', 'directory');
             $search = trim((string) $request->get('search', ''));
             $roleFilter = in_array($request->get('role'), ['all', 'artisan', 'buyer', 'super_admin']) ? $request->get('role') : 'all';
 
             $query = $this->buildUserQuery($roleFilter, $search);
-
             $users = $query->orderBy('created_at', 'desc')->paginate(10)->through(fn($user) => $this->mapAdminPrimaryAccount($user, $search));
 
             $orphanedStaff = User::where('role', 'staff')
@@ -329,47 +329,44 @@ class SuperAdminController extends Controller
                     'created_at' => $u->created_at->format('M d, Y'),
                 ]);
 
-            return Inertia::render('Admin/Compliance/Users', [
+            $artisans = User::where('role', 'artisan')
+                ->where('artisan_status', 'pending')
+                ->whereNotNull('setup_completed_at')
+                ->orderBy('setup_completed_at', 'asc')
+                ->get()
+                ->map(fn($user) => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'avatar' => $user->avatar,
+                    'shop_name' => $user->shop_name,
+                    'phone_number' => $user->phone_number,
+                    'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
+                    'business_permit' => $user->business_permit ? asset('storage/' . $user->business_permit) : null,
+                    'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
+                    'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
+                    'tin_id' => $user->tin_id ? asset('storage/' . $user->tin_id) : null,
+                    'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
+                    'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
+                ]);
+
+            return Inertia::render('Admin/Users/UserManager', [
                 'users' => $users,
-                'filters' => ['role' => $roleFilter, 'search' => $search],
+                'filters' => [
+                    'role' => $roleFilter,
+                    'search' => $search,
+                    'tab' => $tab,
+                ],
                 'unlinkedStaffGroup' => [
                     'staff_members' => $orphanedStaff,
                     'staff_count' => $orphanedStaff->count(),
                 ],
+                'artisans' => $artisans,
             ]);
         } catch (\Throwable $e) {
-            Log::error("SuperAdmin Users error: " . $e->getMessage());
-            return back()->with('error', 'Error loading users.');
+            Log::error("SuperAdmin UserManager error: " . $e->getMessage());
+            return back()->with('error', 'Error loading user manager.');
         }
-    }
-
-    /**
-     * Artisan Application Management
-     */
-    public function pendingArtisans()
-    {
-        $artisans = User::where('role', 'artisan')
-            ->where('artisan_status', 'pending')
-            ->whereNotNull('setup_completed_at')
-            ->orderBy('setup_completed_at', 'asc')
-            ->get()
-            ->map(fn($user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'avatar' => $user->avatar,
-                'shop_name' => $user->shop_name,
-                'phone_number' => $user->phone_number,
-                'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
-                'business_permit' => $user->business_permit ? asset('storage/' . $user->business_permit) : null,
-                'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
-                'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
-                'tin_id' => $user->tin_id ? asset('storage/' . $user->tin_id) : null,
-                'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
-                'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
-            ]);
-
-        return Inertia::render('Admin/Catalog/PendingArtisans', ['artisans' => $artisans]);
     }
 
     public function markArtisanDocumentViewed(Request $request, int|string $id)

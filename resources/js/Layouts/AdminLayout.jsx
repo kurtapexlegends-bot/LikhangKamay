@@ -111,12 +111,11 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'User Accounts',
             items: [
-                { name: 'User Directory', href: route('admin.users'), icon: Users, current: route().current('admin.users') },
                 {
-                    name: 'Artisan Applications',
-                    href: route('admin.pending'),
-                    icon: Store,
-                    current: route().current('admin.pending'),
+                    name: 'User Manager',
+                    href: route('admin.users.manager'),
+                    icon: Users,
+                    current: route().current('admin.users.manager') || route().current('admin.users') || route().current('admin.pending'),
                     badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
             ]
@@ -227,7 +226,7 @@ export default function AdminLayout({ title, children }) {
                             <h1 className="truncate text-xl font-bold text-stone-900 tracking-tight">
                                 {title === 'Platform Insights' ? 'Insights' :
                                  title === 'Diagnostics Command Center' ? 'Diagnostics' :
-                                 title === 'User Management' ? 'User Directory' :
+                                 title === 'User Management' || title === 'User Manager' || title === 'User Directory & Approvals Center' ? 'User Manager' :
                                  title === 'Pending Artisans' ? 'Artisan Applications' :
                                  title === 'Global Taxonomy Engine' || title === 'Taxonomy Engine' ? 'Taxonomy Engine' :
                                  title === 'Sponsorship Requests' ? 'Sponsorships' :
@@ -246,6 +245,8 @@ export default function AdminLayout({ title, children }) {
                                     'Insights': "Revenue forecasts and performance analytics",
                                     'User Management': "Manage buyers, artisans, staff, and admins",
                                     'User Directory': "Manage buyers, artisans, staff, and admins",
+                                    'User Manager': "Manage users, staff, and onboarding.",
+                                    'User Directory & Approvals Center': "Manage users, staff, and onboarding.",
                                     'Review Moderation': "Handle seller-submitted review moderation requests",
                                     'Pending Artisans': "Review artisan applications",
                                     'Artisan Applications': "Review artisan applications",
@@ -256,7 +257,7 @@ export default function AdminLayout({ title, children }) {
                                     'Moderation Queue': "Review flagged products and user content",
                                     'Diagnostics Command Center': "Monitor system memory, cache, and heartbeats",
                                     'Diagnostics': "Monitor system memory, cache, and heartbeats",
-                                    'Platform Operations': "Monitor system health, service level compliance, and administrative logs",
+                                    'Platform Operations': "Monitor system health, SLAs, and admin logs.",
                                     'Global Taxonomy Engine': "Manage the global product category list",
                                     'Taxonomy Engine': "Manage the global product category list",
                                     'System Settings': "Manage platform identity, SEO, and branding",

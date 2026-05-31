@@ -321,13 +321,14 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
 
     Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
-    Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
+    Route::get('/users-manager', [SuperAdminController::class, 'userManager'])->name('admin.users.manager');
+    Route::get('/users', fn() => redirect()->route('admin.users.manager', ['tab' => 'directory']))->name('admin.users');
     Route::get('/sla', fn() => redirect()->route('admin.operations', ['tab' => 'sla']))->name('admin.sla');
     Route::get('/compliance', [ModerationController::class, 'compliance'])->name('admin.compliance');
     Route::get('/review-moderation', fn() => redirect()->route('admin.compliance', ['tab' => 'disputes']))->name('admin.review-moderation');
     Route::patch('/review-moderation/{reviewDispute}', [ModerationController::class, 'updateReview'])->name('admin.review-moderation.update');
     Route::delete('/review-moderation/{reviewDispute}', [ModerationController::class, 'destroyReview'])->name('admin.review-moderation.destroy');
-    Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
+    Route::get('/pending-artisans', fn() => redirect()->route('admin.users.manager', ['tab' => 'approvals']))->name('admin.pending');
     Route::get('/pending-artisans/{id}', [SuperAdminController::class, 'viewArtisan'])->name('admin.artisan.view');
     Route::post('/pending-artisans/bulk-approve', [SuperAdminController::class, 'bulkApproveArtisans'])->name('admin.artisan.bulk-approve');
     Route::post('/pending-artisans/{id}/documents/viewed', [SuperAdminController::class, 'markArtisanDocumentViewed'])->name('admin.artisan.documents.viewed');

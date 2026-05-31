@@ -30,10 +30,10 @@ class UserManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.users'))
+            ->get(route('admin.users.manager'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Compliance/Users')
+                ->component('Admin/Users/UserManager')
                 ->where('users.data', function ($users) use ($owner, $staff, $employee) {
                     $topLevelIds = collect($users)->pluck('id');
                     $ownerRow = collect($users)->firstWhere('id', $owner->id);
@@ -62,10 +62,10 @@ class UserManagementTest extends TestCase
         User::factory()->create();
 
         $this->actingAs($admin)
-            ->get(route('admin.users', ['role' => 'super_admin']))
+            ->get(route('admin.users.manager', ['role' => 'super_admin']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Compliance/Users')
+                ->component('Admin/Users/UserManager')
                 ->where('filters.role', 'super_admin')
                 ->where('users.data', function ($users) use ($admin, $otherAdmin) {
                     $ids = collect($users)->pluck('id')->sort()->values()->all();
@@ -86,10 +86,10 @@ class UserManagementTest extends TestCase
         User::factory()->artisanApproved()->create();
 
         $this->actingAs($admin)
-            ->get(route('admin.users', ['role' => 'buyer']))
+            ->get(route('admin.users.manager', ['role' => 'buyer']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Compliance/Users')
+                ->component('Admin/Users/UserManager')
                 ->where('filters.role', 'buyer')
                 ->where('users.data', function ($users) use ($buyer, $secondBuyer) {
                     $ids = collect($users)->pluck('id')->sort()->values()->all();
@@ -119,10 +119,10 @@ class UserManagementTest extends TestCase
         User::factory()->staff($otherOwner)->create();
 
         $this->actingAs($admin)
-            ->get(route('admin.users', ['search' => 'Heritage Clay']))
+            ->get(route('admin.users.manager', ['search' => 'Heritage Clay']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Compliance/Users')
+                ->component('Admin/Users/UserManager')
                 ->where('filters.role', 'all')
                 ->where('filters.search', 'Heritage Clay')
                 ->where('users.data', function ($users) use ($owner, $staff) {
@@ -155,10 +155,10 @@ class UserManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.users', ['role' => 'artisan', 'search' => 'Alice Ledger']))
+            ->get(route('admin.users.manager', ['role' => 'artisan', 'search' => 'Alice Ledger']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Compliance/Users')
+                ->component('Admin/Users/UserManager')
                 ->where('filters.role', 'artisan')
                 ->where('filters.search', 'Alice Ledger')
                 ->where('users.data', function ($users) use ($owner, $matchingStaff, $otherStaff) {
@@ -187,10 +187,10 @@ class UserManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.users'))
+            ->get(route('admin.users.manager'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Compliance/Users')
+                ->component('Admin/Users/UserManager')
                 ->where('unlinkedStaffGroup.staff_count', 1)
                 ->where('unlinkedStaffGroup.staff_members', function ($staffMembers) use ($orphanedStaff) {
                     return count($staffMembers) === 1

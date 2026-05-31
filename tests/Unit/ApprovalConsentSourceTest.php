@@ -8,7 +8,7 @@ class ApprovalConsentSourceTest extends TestCase
 {
     public function test_pending_artisan_review_source_tracks_document_previews_and_requires_them_before_approval(): void
     {
-        $source = file_get_contents(base_path('resources/js/Pages/Admin/Catalog/PendingArtisans.jsx'));
+        $source = file_get_contents(base_path('resources/js/Pages/Admin/Users/UserManager.jsx'));
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString("route('admin.artisan.documents.viewed', viewingArtisan.id)", $source);
