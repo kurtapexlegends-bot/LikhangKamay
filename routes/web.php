@@ -323,7 +323,8 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users', [SuperAdminController::class, 'users'])->name('admin.users');
     Route::get('/sla', [PlatformDiagnosticsController::class, 'sla'])->name('admin.sla');
-    Route::get('/review-moderation', [ModerationController::class, 'reviewIndex'])->name('admin.review-moderation');
+    Route::get('/compliance', [ModerationController::class, 'compliance'])->name('admin.compliance');
+    Route::get('/review-moderation', fn() => redirect()->route('admin.compliance', ['tab' => 'disputes']))->name('admin.review-moderation');
     Route::patch('/review-moderation/{reviewDispute}', [ModerationController::class, 'updateReview'])->name('admin.review-moderation.update');
     Route::delete('/review-moderation/{reviewDispute}', [ModerationController::class, 'destroyReview'])->name('admin.review-moderation.destroy');
     Route::get('/pending-artisans', [SuperAdminController::class, 'pendingArtisans'])->name('admin.pending');
@@ -353,7 +354,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/announcements/{announcement}/stop', [SuperAdminController::class, 'stopAnnouncement'])->name('admin.announcements.stop');
 
     // Moderation Queue
-    Route::get('/moderation-queue', [ModerationController::class, 'queue'])->name('admin.moderation');
+    Route::get('/moderation-queue', fn() => redirect()->route('admin.compliance', ['tab' => 'flags']))->name('admin.moderation');
     Route::post('/moderation-queue/{id}/resolve', [ModerationController::class, 'resolveFlag'])->name('admin.moderation.resolve');
     Route::post('/moderation-queue/{id}/takedown', [ModerationController::class, 'takedownProduct'])->name('admin.moderation.takedown');
     Route::post('/moderation-queue/{id}/suspend', [ModerationController::class, 'suspendUser'])->name('admin.moderation.suspend');
@@ -365,7 +366,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/diagnostics/cache/purge', [PlatformDiagnosticsController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
 
     // Restoration Center (Trash)
-    Route::get('/trash', [PlatformDiagnosticsController::class, 'trash'])->name('admin.trash');
+    Route::get('/trash', fn() => redirect()->route('admin.compliance', ['tab' => 'trash']))->name('admin.trash');
     Route::post('/trash/restore', [PlatformDiagnosticsController::class, 'restoreItem'])->name('admin.trash.restore');
     Route::post('/trash/permanent-delete', [PlatformDiagnosticsController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
     

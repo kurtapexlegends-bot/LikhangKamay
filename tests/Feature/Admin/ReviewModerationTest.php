@@ -56,9 +56,13 @@ class ReviewModerationTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('admin.review-moderation'))
+            ->assertRedirect(route('admin.compliance', ['tab' => 'disputes']));
+
+        $this->actingAs($admin)
+            ->get(route('admin.compliance', ['tab' => 'disputes']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Compliance/ReviewModeration')
+                ->component('Admin/Compliance/ContentSafety')
                 ->where('disputes.0.shop_name', 'Clay House')
                 ->where('disputes.0.product_name', 'Studio Vase')
                 ->where('disputes.0.status', 'pending')

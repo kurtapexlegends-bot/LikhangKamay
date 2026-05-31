@@ -38,7 +38,7 @@ const resolveActiveGroup = (path) => {
     if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics')) return 'Platform Pulse';
     if (path.includes('users') || path.includes('pending')) return 'User Accounts';
     if (path.includes('taxonomy') || path.includes('sponsorships')) return 'Product Catalog';
-    if (path.includes('moderation') || path.includes('trash') || path.includes('announcements')) return 'Trust & Safety';
+    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements')) return 'Trust & Safety';
     if (path.includes('monetization') || path.includes('settings')) return 'Business Config';
     return null;
 };
@@ -132,8 +132,7 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'Trust & Safety',
             items: [
-                { name: 'Moderation Queue', href: route('admin.moderation'), icon: ShieldAlert, current: route().current('admin.moderation') },
-                { name: 'Restoration Center', href: route('admin.trash'), icon: RotateCcw, current: route().current('admin.trash') },
+                { name: 'Content Safety', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance') },
                 { name: 'Global Alerts', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
             ]
         },
@@ -262,6 +261,9 @@ export default function AdminLayout({ title, children }) {
                                     'Taxonomy Engine': "Manage the global product category list",
                                     'System Settings': "Manage platform identity, SEO, and branding",
                                     'Restoration Center': "Restore or permanently delete removed items",
+                                    'Content Governance & Safety Center': "Manage flagged content, review disputes, and trash",
+                                    'Content Governance': "Manage flagged content, review disputes, and trash",
+                                    'Content Safety': "Manage flagged content, review disputes, and trash",
                                     'SLA Monitoring': "Monitor service level agreement compliance and response times"
                                 }[title] || ""}
                             </p>

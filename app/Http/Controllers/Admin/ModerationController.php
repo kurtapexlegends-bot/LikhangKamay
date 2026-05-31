@@ -7,6 +7,9 @@ use App\Models\Review;
 use App\Models\ReviewDispute;
 use App\Models\FlaggedContent;
 use App\Models\User;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Order;
 use App\Notifications\ReviewModerationStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +18,158 @@ use Inertia\Inertia;
 
 class ModerationController extends Controller
 {
+    /**
+     * Unified Compliance & Governance Dashboard
+     */
+    public function compliance(Request $request)
+    {
+        $flags = $this->getPendingFlags();
+        $disputes = $this->getReviewDisputes();
+        $trashData = $this->getTrashQueueAndStats();
+
+        return Inertia::render('Admin/Compliance/ContentSafety', [
+            'flags' => $flags,
+            'disputes' => $disputes,
+            'trashQueue' => $trashData['queue'],
+            'trashStats' => $trashData['stats'],
+            'defaultTab' => $request->input('tab', 'flags'),
+        ]);
+    }
+
+    /**
+     * Get pending flags
+     */
+    private function getPendingFlags()
+    {
+        return FlaggedContent::with(['reporter:id,name', 'reportable'])
+            ->where('status', 'pending')
+            ->latest()
+            ->paginate(15, ['*'], 'flags_page');
+    }
+
+    /**
+     * Get review disputes
+     */
+    private function getReviewDisputes()
+    {
+        return ReviewDispute::query()
+            ->with(['review.product.user', 'reporter'])
+            ->latest()
+            ->get()
+            ->map(function (ReviewDispute $dispute) {
+                $review = $dispute->review;
+                $product = $review?->product;
+                $shopOwner = $product?->user;
+
+                return [
+                    'id' => $dispute->id,
+                    'status' => $dispute->status,
+                    'reason' => $dispute->reason,
+                    'details' => $dispute->details ?? $dispute->explanation,
+                    'resolution_notes' => $dispute->resolution_notes,
+                    'reported_at' => $dispute->created_at?->toIso8601String(),
+                    'resolved_at' => $dispute->resolved_at?->toIso8601String(),
+                    'reported_by' => $dispute->reporter?->name ?? 'Unknown user',
+                    'shop_name' => $shopOwner?->shop_name ?? $shopOwner?->name ?? 'Unknown shop',
+                    'product_name' => $product?->name ?? 'Unknown product',
+                    'product_slug' => $product?->slug,
+                    'product_id' => $product?->id,
+                    'review_id' => $review?->id,
+                    'review_rating' => $review?->rating,
+                    'review_comment' => $review?->comment,
+                    'review_hidden_from_marketplace' => (bool) ($review?->is_hidden_from_marketplace ?? false),
+                ];
+            })
+            ->values();
+    }
+
+    /**
+     * Get deleted/trash items queue and stats
+     */
+    private function getTrashQueueAndStats()
+    {
+        $deletedProducts = $this->getDeletedProducts();
+        $deletedCategories = $this->getDeletedCategories();
+        $deletedOrders = $this->getDeletedOrders();
+
+        $queue = collect([])
+            ->concat($deletedProducts)
+            ->concat($deletedCategories)
+            ->concat($deletedOrders)
+            ->sortByDesc('deleted_at')
+            ->values();
+
+        $stats = [
+            'totalItems' => $queue->count(),
+            'products' => count($deletedProducts),
+            'categories' => count($deletedCategories),
+            'orders' => count($deletedOrders),
+        ];
+
+        return [
+            'queue' => $queue,
+            'stats' => $stats,
+        ];
+    }
+
+    /**
+     * Get deleted products
+     */
+    private function getDeletedProducts()
+    {
+        return Product::onlyTrashed()
+            ->with('user:id,name,shop_name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'type' => 'Product',
+                'context' => $p->user->shop_name ?? $p->user->name,
+                'deleted_at' => $p->deleted_at->toIso8601String(),
+                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    /**
+     * Get deleted categories
+     */
+    private function getDeletedCategories()
+    {
+        return Category::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->get()
+            ->map(fn($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'type' => 'Category',
+                'context' => 'Global Taxonomy',
+                'deleted_at' => $c->deleted_at->toIso8601String(),
+                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    /**
+     * Get deleted orders
+     */
+    private function getDeletedOrders()
+    {
+        return Order::onlyTrashed()
+            ->with('user:id,name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($o) => [
+                'id' => $o->id,
+                'name' => "Order #{$o->order_number}",
+                'type' => 'Order',
+                'context' => $o->user->name ?? 'Unknown Customer',
+                'deleted_at' => $o->deleted_at->toIso8601String(),
+                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
     /**
      * Review Moderation Dashboard
      */
