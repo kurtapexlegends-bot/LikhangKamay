@@ -138,7 +138,7 @@ export default function AnnouncementBanner({ announcement }) {
                         className="pointer-events-auto"
                     >
                         <div 
-                            className={`relative overflow-hidden rounded-full border p-1.5 pr-2.5 sm:pr-3 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 transition-all ${wrapperClass}`}
+                            className={`relative overflow-hidden rounded-[1.75rem] sm:rounded-full border p-2 sm:p-1.5 pr-3 sm:pr-3 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 transition-all ${wrapperClass}`}
                             style={customWrapperStyle}
                         >
                             {/* Left: Beautiful Circular Badge */}
@@ -153,13 +153,13 @@ export default function AnnouncementBanner({ announcement }) {
                             </motion.div>
 
                         {/* Middle: Content */}
-                        <div className="flex-1 min-w-0 text-center sm:text-left py-1 sm:py-0">
+                        <div className="flex-1 min-w-0 text-center sm:text-left py-1 sm:py-0 px-2 sm:px-0">
                             <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2 mb-0.5">
                                 <strong className={`text-[13px] sm:text-sm font-bold tracking-tight truncate ${textClass}`}>
                                     {announcement.title}
                                 </strong>
                                 <span className={`hidden sm:inline text-xs shrink-0 ${subTextClass}`}>&bull;</span>
-                                <span className={`text-[12px] sm:text-[13px] font-medium truncate max-w-[500px] ${subTextClass}`}>
+                                <span className={`text-[12px] sm:text-[13px] font-medium truncate sm:max-w-[420px] md:max-w-[500px] ${subTextClass}`}>
                                     {announcement.message}
                                 </span>
                             </div>
@@ -171,7 +171,7 @@ export default function AnnouncementBanner({ announcement }) {
                             {announcement.action_url && announcement.action_text && (
                                 <Link 
                                     href={announcement.action_url}
-                                    className={`hidden sm:flex px-4 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 shadow-sm ${isCustom ? 'bg-white/20 hover:bg-white/30' : 'bg-stone-900 text-white hover:bg-stone-800'}`}
+                                    className={`flex px-4 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 shadow-sm ${isCustom ? 'bg-white/20 hover:bg-white/30' : 'bg-stone-900 text-white hover:bg-stone-800'}`}
                                     style={isCustom && announcement.text_color ? { color: announcement.text_color, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } : {}}
                                 >
                                     {announcement.action_text}

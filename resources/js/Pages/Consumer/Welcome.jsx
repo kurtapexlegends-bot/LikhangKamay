@@ -47,38 +47,52 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
             {/* --- MAIN CONTENT --- */}
             <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 flex flex-col gap-10">
                 
-                {/* HERO BANNER */}
-                <div className="w-full relative overflow-hidden rounded-2xl md:rounded-xl shadow-md border border-stone-200/50 bg-[#FAF8F5]">
-                    {/* Organic Ceramic Vase Line Watermark (subtle SVG pattern) */}
-                    <div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none">
-                        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor">
-                            <path d="M50,10 C30,25 35,70 50,90 C65,70 70,25 50,10 Z" strokeWidth="0.5" />
-                        </svg>
+                {/* HERO BANNER - DESKTOP/TABLET (Original Full-bleed backdrop overlay) */}
+                <div className="hidden md:block w-full h-[360px] rounded-xl overflow-hidden relative group shadow-lg">
+                    <img 
+                        src="https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&q=80&w=1600" 
+                        alt="Handcrafted Pottery" 
+                        className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col justify-end p-10">
+                        <h1 className="text-3xl md:text-4xl font-serif font-bold text-white mb-2">The Art of Clay</h1>
+                        <p className="text-white/80 text-sm md:text-base mb-5 max-w-lg">
+                            Discover handcrafted masterpieces from Cavite's finest artisans. Support local, buy authentic.
+                        </p>
+                        <Link 
+                            href={route('shop.index')} 
+                            className="bg-white text-gray-800 px-6 py-2.5 rounded-sm text-sm font-medium w-fit hover:bg-clay-50 transition shadow flex items-center gap-2"
+                        >
+                            Shop Collection <ArrowRight size={16} />
+                        </Link>
                     </div>
-                    
-                    <div className="flex flex-col-reverse md:flex-row items-stretch min-h-[280px] md:h-[360px]">
+                </div>
+
+                {/* HERO BANNER - MOBILE (Touch-optimized beautiful split layout) */}
+                <div className="block md:hidden w-full relative overflow-hidden rounded-2xl shadow-md border border-stone-200/50 bg-[#FAF8F5]">
+                    <div className="flex flex-col-reverse items-stretch min-h-[280px]">
                         {/* Text Column */}
-                        <div className="flex-1 p-6 sm:p-8 md:p-10 flex flex-col justify-center bg-gradient-to-t md:bg-none from-stone-50/90 via-white/80 to-transparent md:from-transparent relative z-10">
+                        <div className="flex-1 p-6 flex flex-col justify-center bg-gradient-to-t from-stone-50/90 via-white/80 to-transparent relative z-10">
                             <span className="inline-block text-[9px] font-black uppercase tracking-[0.25em] text-clay-600 mb-2">Curated Cavite Pottery</span>
-                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-black text-stone-900 mb-2.5 leading-tight">The Art of Clay</h1>
-                            <p className="text-stone-600 text-xs sm:text-sm mb-5 max-w-sm leading-relaxed">
+                            <h1 className="text-2xl font-serif font-black text-stone-900 mb-2.5 leading-tight">The Art of Clay</h1>
+                            <p className="text-stone-600 text-xs mb-5 max-w-sm leading-relaxed">
                                 Discover handcrafted masterpieces from Cavite's finest artisans. Support local, buy authentic.
                             </p>
                             <Link 
                                 href={route('shop.index')} 
-                                className="bg-stone-900 text-white hover:bg-stone-850 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black w-fit transition shadow-md active:scale-95 flex items-center gap-2 border border-stone-900 hover:border-stone-850"
+                                className="bg-stone-900 text-white hover:bg-stone-850 px-5 py-2.5 rounded-xl text-xs font-black w-fit transition shadow-md active:scale-95 flex items-center gap-2 border border-stone-900 hover:border-stone-850"
                             >
                                 Shop Collection <ArrowRight size={14} />
                             </Link>
                         </div>
                         {/* Image Column */}
-                        <div className="w-full md:w-[45%] h-[180px] sm:h-[220px] md:h-auto overflow-hidden relative">
+                        <div className="w-full h-[180px] overflow-hidden relative">
                             <img 
                                 src="https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&q=80&w=1600" 
                                 alt="Handcrafted Pottery" 
                                 className="w-full h-full object-cover transform hover:scale-105 transition duration-700" 
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F5] via-transparent to-transparent md:hidden"></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F5] via-transparent to-transparent"></div>
                         </div>
                     </div>
                 </div>
@@ -157,20 +171,42 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                         <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-3">
                             Browse by Category
                         </h2>
-                        <div className="bg-white md:bg-white rounded-2xl p-4 md:p-6 border border-gray-100 md:border-gray-100 shadow-sm md:shadow-sm overflow-hidden">
-                            <div className="flex overflow-x-auto md:grid md:grid-cols-4 lg:grid-cols-7 gap-3 md:gap-4 pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x">
+                        <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm overflow-hidden">
+                            {/* Desktop/Tablet View: Grid */}
+                            <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-7 gap-4">
                                 {categories.map((cat, idx) => {
                                     const Icon = CATEGORY_ICONS[cat] || CATEGORY_ICONS['default'];
                                     return (
                                         <Link 
                                             href={`${route('shop.index')}?category=${encodeURIComponent(cat)}`} 
                                             key={idx} 
-                                            className="flex flex-col items-center justify-center gap-2 md:gap-3 p-3 md:p-4 rounded-2xl md:rounded-xl hover:bg-clay-50 hover:border-clay-200 border border-stone-50 md:border-transparent transition-all duration-300 group min-w-[110px] md:min-w-0 snap-center bg-stone-50/30 md:bg-transparent"
+                                            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl hover:bg-clay-50/60 hover:border-clay-200 border border-transparent transition-all duration-300 group bg-transparent"
                                         >
-                                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-clay-100 text-clay-600 flex items-center justify-center group-hover:bg-clay-600 group-hover:text-white transition-colors duration-300">
-                                                <Icon size={20} strokeWidth={1.5} className="md:w-6 md:h-6" />
+                                            <div className="w-12 h-12 rounded-full bg-clay-100 text-clay-600 flex items-center justify-center group-hover:bg-clay-600 group-hover:text-white transition-colors duration-300">
+                                                <Icon size={22} strokeWidth={1.5} />
                                             </div>
-                                            <span className="text-[11px] md:text-sm font-bold text-stone-600 group-hover:text-clay-800 text-center leading-tight">
+                                            <span className="text-sm font-bold text-stone-600 group-hover:text-clay-800 text-center leading-tight">
+                                                {cat}
+                                            </span>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Mobile View: Horizontal Scroll */}
+                            <div className="flex md:hidden overflow-x-auto gap-3 pb-2 -mx-4 px-4 scrollbar-hide snap-x">
+                                {categories.map((cat, idx) => {
+                                    const Icon = CATEGORY_ICONS[cat] || CATEGORY_ICONS['default'];
+                                    return (
+                                        <Link 
+                                            href={`${route('shop.index')}?category=${encodeURIComponent(cat)}`} 
+                                            key={idx} 
+                                            className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-stone-100 transition-all duration-300 group min-w-[100px] snap-center bg-stone-50/40"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-clay-100 text-clay-600 flex items-center justify-center">
+                                                <Icon size={20} strokeWidth={1.5} />
+                                            </div>
+                                            <span className="text-[11px] font-bold text-stone-600 text-center leading-tight">
                                                 {cat}
                                             </span>
                                         </Link>
