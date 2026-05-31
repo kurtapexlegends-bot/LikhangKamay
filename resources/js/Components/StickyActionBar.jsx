@@ -15,7 +15,7 @@ export default function StickyActionBar({ children, className = '' }) {
     }, []);
 
     const content = (
-        <div className={`fixed inset-x-0 bottom-0 z-[70] w-full border-t border-stone-200 bg-white/95 backdrop-blur-md p-3 md:p-4 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] md:hidden ${className}`}>
+        <div className={`fixed bottom-4 inset-x-4 z-[70] border border-stone-200/60 bg-white/95 backdrop-blur-xl p-3 shadow.sm shadow-[0_-8px_30px_rgba(27,27,27,0.06),0_15px_30px_rgba(0,0,0,0.04)] rounded-2xl md:hidden ${className}`}>
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
                 {children}
             </div>

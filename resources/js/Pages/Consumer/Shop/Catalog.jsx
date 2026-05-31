@@ -7,7 +7,7 @@ import {
     SlidersHorizontal, MapPin, Search, X, Check, Loader2,
     Sparkles, ArrowUpDown, Filter, Award
 } from 'lucide-react';
-import Modal from '@/Components/Modal';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent, useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
@@ -255,46 +255,43 @@ export default function Catalog(props) {
                         onClearAll={clearAllFilters}
                     />
 
-                    {/* --- MOBILE FILTER MODAL --- */}
-                    <Modal show={isFilterOpen} onClose={() => setIsFilterOpen(false)}>
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-gray-900">Filters</h3>
-                                <button onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                    <X size={24} />
-                                </button>
-                            </div>
-                            <div className="overflow-y-auto max-h-[70vh] pr-2">
-                                <FilterSidebar 
-                                    className="block w-full"
-                                    categories={categories}
-                                    availableLocations={availableLocations}
-                                    availableMaterials={availableMaterials}
-                                    activeCategory={activeCategory}
-                                    minPrice={minPrice} setMinPrice={setMinPrice}
-                                    maxPrice={maxPrice} setMaxPrice={setMaxPrice}
-                                    minRating={minRating}
-                                    selectedLocations={selectedLocations}
-                                    selectedMaterials={selectedMaterials}
-                                    activeFilterCount={activeFilterCount}
-                                    onCategoryClick={(cat) => { handleCategoryClick(cat); setIsFilterOpen(false); }}
-                                    onApplyPrice={() => { applyFilters({ price_min: minPrice, price_max: maxPrice }); setIsFilterOpen(false); }}
-                                    onRatingChange={(rating) => { handleRatingChange(rating); setIsFilterOpen(false); }}
-                                    onMaterialChange={(mat) => { handleMaterialChange(mat); }}
-                                    onLocationChange={(loc) => { handleLocationChange(loc); }}
-                                    onClearAll={() => { clearAllFilters(); setIsFilterOpen(false); }}
-                                />
-                            </div>
-                            <div className="mt-6 pt-4 border-t border-gray-100 flex gap-3">
-                                <button 
-                                    onClick={() => setIsFilterOpen(false)}
-                                    className="flex-1 py-2.5 bg-clay-600 text-white rounded-lg font-bold text-sm"
-                                >
-                                    Show Results
-                                </button>
-                            </div>
+                    {/* --- MOBILE FILTER SIDE PANEL --- */}
+                    <SlideOverDrawer 
+                        show={isFilterOpen} 
+                        onClose={() => setIsFilterOpen(false)}
+                        title="Filters"
+                        widthClass="max-w-[280px]"
+                        footer={
+                            <button 
+                                onClick={() => setIsFilterOpen(false)}
+                                className="w-full py-2.5 bg-stone-900 hover:bg-stone-850 text-white rounded-xl font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md border border-stone-900"
+                            >
+                                Show Results
+                            </button>
+                        }
+                    >
+                        <div className="custom-sidebar-wrap pb-8">
+                            <FilterSidebar 
+                                className="block w-full"
+                                categories={categories}
+                                availableLocations={availableLocations}
+                                availableMaterials={availableMaterials}
+                                activeCategory={activeCategory}
+                                minPrice={minPrice} setMinPrice={setMinPrice}
+                                maxPrice={maxPrice} setMaxPrice={setMaxPrice}
+                                minRating={minRating}
+                                selectedLocations={selectedLocations}
+                                selectedMaterials={selectedMaterials}
+                                activeFilterCount={activeFilterCount}
+                                onCategoryClick={(cat) => { handleCategoryClick(cat); setIsFilterOpen(false); }}
+                                onApplyPrice={() => { applyFilters({ price_min: minPrice, price_max: maxPrice }); setIsFilterOpen(false); }}
+                                onRatingChange={(rating) => { handleRatingChange(rating); setIsFilterOpen(false); }}
+                                onMaterialChange={(mat) => { handleMaterialChange(mat); }}
+                                onLocationChange={(loc) => { handleLocationChange(loc); }}
+                                onClearAll={() => { clearAllFilters(); setIsFilterOpen(false); }}
+                            />
                         </div>
-                    </Modal>
+                    </SlideOverDrawer>
 
                     {/* --- RIGHT SIDE: GRID --- */}
                     <div className="flex-1">
@@ -352,6 +349,26 @@ export default function Catalog(props) {
                                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Mobile Categories Swiper */}
+                        <div className="flex lg:hidden overflow-x-auto gap-2 pb-3 mb-4 -mx-4 px-4 scrollbar-hide snap-x border-b border-stone-100">
+                            {categories.map((cat) => {
+                                const isActive = activeCategory === cat;
+                                return (
+                                    <button
+                                        key={cat}
+                                        onClick={() => handleCategoryClick(cat)}
+                                        className={`snap-center flex-shrink-0 px-4 py-2 rounded-full text-xs font-black transition-all active:scale-95 border ${
+                                            isActive
+                                                ? 'bg-stone-900 border-stone-900 text-white shadow-sm'
+                                                : 'bg-white border-stone-200 text-stone-600 hover:text-stone-950'
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* Active Filters Chips */}

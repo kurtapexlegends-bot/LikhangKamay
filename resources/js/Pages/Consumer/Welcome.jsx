@@ -48,23 +48,38 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
             <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 flex flex-col gap-10">
                 
                 {/* HERO BANNER */}
-                <div className="w-full h-[280px] md:h-[360px] rounded-xl overflow-hidden relative group shadow-lg">
-                    <img 
-                        src="https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&q=80&w=1600" 
-                        alt="Handcrafted Pottery" 
-                        className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col justify-end p-6 md:p-10">
-                        <h1 className="text-3xl md:text-4xl font-serif font-bold text-white mb-2">The Art of Clay</h1>
-                        <p className="text-white/80 text-sm md:text-base mb-5 max-w-lg">
-                            Discover handcrafted masterpieces from Cavite's finest artisans. Support local, buy authentic.
-                        </p>
-                        <Link 
-                            href={route('shop.index')} 
-                            className="bg-white text-gray-800 px-6 py-2.5 rounded-sm text-sm font-medium w-fit hover:bg-clay-50 transition shadow flex items-center gap-2"
-                        >
-                            Shop Collection <ArrowRight size={16} />
-                        </Link>
+                <div className="w-full relative overflow-hidden rounded-2xl md:rounded-xl shadow-md border border-stone-200/50 bg-[#FAF8F5]">
+                    {/* Organic Ceramic Vase Line Watermark (subtle SVG pattern) */}
+                    <div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none">
+                        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor">
+                            <path d="M50,10 C30,25 35,70 50,90 C65,70 70,25 50,10 Z" strokeWidth="0.5" />
+                        </svg>
+                    </div>
+                    
+                    <div className="flex flex-col-reverse md:flex-row items-stretch min-h-[280px] md:h-[360px]">
+                        {/* Text Column */}
+                        <div className="flex-1 p-6 sm:p-8 md:p-10 flex flex-col justify-center bg-gradient-to-t md:bg-none from-stone-50/90 via-white/80 to-transparent md:from-transparent relative z-10">
+                            <span className="inline-block text-[9px] font-black uppercase tracking-[0.25em] text-clay-600 mb-2">Curated Cavite Pottery</span>
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-black text-stone-900 mb-2.5 leading-tight">The Art of Clay</h1>
+                            <p className="text-stone-600 text-xs sm:text-sm mb-5 max-w-sm leading-relaxed">
+                                Discover handcrafted masterpieces from Cavite's finest artisans. Support local, buy authentic.
+                            </p>
+                            <Link 
+                                href={route('shop.index')} 
+                                className="bg-stone-900 text-white hover:bg-stone-850 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black w-fit transition shadow-md active:scale-95 flex items-center gap-2 border border-stone-900 hover:border-stone-850"
+                            >
+                                Shop Collection <ArrowRight size={14} />
+                            </Link>
+                        </div>
+                        {/* Image Column */}
+                        <div className="w-full md:w-[45%] h-[180px] sm:h-[220px] md:h-auto overflow-hidden relative">
+                            <img 
+                                src="https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&q=80&w=1600" 
+                                alt="Handcrafted Pottery" 
+                                className="w-full h-full object-cover transform hover:scale-105 transition duration-700" 
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F5] via-transparent to-transparent md:hidden"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -247,11 +262,83 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
             {/* TOP STORES - DSS Dashboard */}
                 {topSellers.length > 0 && (
                     <section className="order-4">
-                        <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-3">
-                            <Trophy size={20} className="text-amber-500" />
+                        <h2 className="text-lg font-serif font-black text-stone-900 mb-5 flex items-center gap-2">
+                            <Trophy size={18} className="text-[#D4A373]" />
                             Top Selling Stores
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                        
+                        {/* Mobile view: Horizontal swiping boutique carousel */}
+                        <div className="flex md:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x scrollbar-hide">
+                            {topSellers.map((store, originalIdx) => {
+                                const isFirst = originalIdx === 0;
+                                return (
+                                    <div 
+                                        key={store.store_slug || originalIdx}
+                                        className={`snap-center flex-shrink-0 w-[240px] bg-white rounded-2xl border p-4 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-transform duration-300 ${
+                                            isFirst ? 'border-clay-200 ring-1 ring-clay-100/50' : 'border-stone-100'
+                                        }`}
+                                    >
+                                        <div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative flex-shrink-0">
+                                                    <UserAvatar 
+                                                        user={{ 
+                                                            avatar: store.store_avatar, 
+                                                            name: store.store_name, 
+                                                            premium_tier: store.premium_tier 
+                                                        }} 
+                                                        className="w-11 h-11 text-base border border-stone-200 shadow-sm"
+                                                    />
+                                                    <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white shadow border border-white ${
+                                                        isFirst ? 'bg-gradient-to-r from-amber-400 to-orange-400' : 'bg-stone-500'
+                                                    }`}>
+                                                        {originalIdx + 1}
+                                                    </div>
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <Link href={route('shop.seller', store.store_slug)} className="font-bold text-stone-900 truncate block text-sm">
+                                                        {store.store_name}
+                                                    </Link>
+                                                    <p className="text-[10px] text-stone-500 font-semibold mt-0.5">{formatSold(store.total_sold)} sold</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Products Preview strip */}
+                                            {store.products && store.products.length > 0 && (
+                                                <div className="flex gap-2.5 mt-4">
+                                                    {store.products.slice(0, 3).map((p) => (
+                                                        <Link 
+                                                            key={p.id}
+                                                            href={route('product.show', p.slug)}
+                                                            className="w-14 h-14 rounded-xl overflow-hidden border border-stone-100 flex-shrink-0 relative group shadow-sm"
+                                                        >
+                                                            <img 
+                                                                src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/storage') || p.img.startsWith('/img') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
+                                                                alt=""
+                                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                                onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                            />
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <Link 
+                                            href={route('shop.seller', store.store_slug)}
+                                            className={`mt-4 block text-center text-[10px] font-black uppercase tracking-wider py-2 rounded-xl transition ${
+                                                isFirst ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-stone-50 text-stone-600 hover:bg-stone-100'
+                                            }`}
+                                        >
+                                            Visit Boutique →
+                                        </Link>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop view: Classic Podium grid */}
+                        <div className="hidden md:grid grid-cols-3 gap-4 items-stretch">
                             {/* Use original array order and CSS order to layout: #2, #1, #3 on desktop, and #1, #2, #3 on mobile */}
                             {topSellers.map((store, originalIdx) => {
                                 const isFirst = originalIdx === 0;
@@ -314,7 +401,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                             <span className="text-[10px] font-bold flex items-center gap-1"><Star size={10} className="fill-amber-400 text-amber-400"/> {hasRating(store.products[0].rating) ? formatRating(store.products[0].rating) : 'New'}</span>
                                                         </div>
                                                         <div className="absolute bottom-2 inset-x-0 flex justify-center">
-                                                           <span className={`text-[10px] uppercase tracking-wide font-black px-3 py-1 rounded-full border text-white shadow-md ${isFirst ? 'bg-gradient-to-r from-amber-500 to-orange-500 border-amber-200' : 'bg-clay-600 border-clay-400'}`}>#1 Product</span>
+                                                           <span className={`text-[10px] uppercase tracking-wide font-black px-3 py-1 rounded-full border text-white shadow-md ${isFirst ? 'bg-gradient-to-r from-amber-505 to-orange-505 border-amber-202' : 'bg-clay-606 border-clay-404'}`}>#1 Product</span>
                                                         </div>
                                                     </div>
                                                     <div className="mt-2 flex flex-col items-center">

@@ -5,7 +5,7 @@ import Dropdown from '@/Components/Dropdown';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { 
     MessageCircle, ChevronDown, ShoppingBag, 
-    Search, ShoppingCart, User, LogOut, Heart, Clock
+    Search, ShoppingCart, User, LogOut, Heart, Clock, X
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
@@ -28,6 +28,7 @@ export default function BuyerNavbar() {
     const [term, setTerm] = useState(params.get('search') || '');
     const [isScrolled, setIsScrolled] = useState(false);
     const [localCartCount, setLocalCartCount] = useState(cartCount || 0);
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
     // Search Suggestions State
     const [suggestions, setSuggestions] = useState({ products: [], artisans: [] });
@@ -109,10 +110,12 @@ export default function BuyerNavbar() {
         <>
         <nav className={`bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md py-1' : 'shadow-sm/50 py-3'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className={`flex flex-wrap items-center gap-3 md:flex-nowrap md:justify-between md:items-center md:gap-8 transition-all duration-300 ${isScrolled ? 'md:h-14' : 'md:h-20'}`}>
+                
+                {/* --- DESKTOP HEADER LAYOUT --- */}
+                <div className={`hidden md:flex flex-nowrap justify-between items-center gap-8 transition-all duration-300 ${isScrolled ? 'md:h-14' : 'md:h-20'}`}>
                     
                     {/* LOGO */}
-                    <Link href="/" className="order-1 flex min-w-0 items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
+                    <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
                         <img src={platform.logo} alt="Logo" className={`object-contain transition-all duration-300 ${isScrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-9 h-9 sm:w-10 sm:h-10'}`} />
                         <div className={`flex min-w-0 flex-col transition-all duration-300 ${isScrolled ? 'opacity-0 w-0 overflow-hidden sm:opacity-100 sm:w-auto' : 'opacity-100 w-auto'}`}>
                             <span className={`truncate font-serif font-bold text-gray-900 leading-none tracking-tight transition-all duration-300 ${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`}>{platform.name}</span>
@@ -121,7 +124,7 @@ export default function BuyerNavbar() {
                     </Link>
 
                     {/* SEARCH */}
-                    <div className="order-3 basis-full md:order-2 md:flex-1 md:max-w-3xl relative">
+                    <div className="flex-1 max-w-3xl relative">
                         <form onSubmit={handleSearch} className="relative group">
                             <input 
                                 type="text" 
@@ -195,9 +198,8 @@ export default function BuyerNavbar() {
                         )}
                     </div>
 
-
                     {/* ACTIONS */}
-                    <div className="order-2 ml-auto flex items-center gap-1.5 sm:gap-3 md:order-3 md:ml-0 md:gap-4 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4 flex-shrink-0">
                         {user ? (
                             <>
                                 {showBuyerChat && (
@@ -220,7 +222,7 @@ export default function BuyerNavbar() {
                                 <Link 
                                     id="navbar-cart-icon"
                                     href={route('cart.index')} 
-                                    className="hidden md:inline-flex items-center justify-center p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group relative"
+                                    className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-all active:scale-95 group relative"
                                 >
                                     <div className="relative inline-flex">
                                         <ShoppingCart size={20} className="group-hover:scale-110 transition-transform cart-icon-svg" />
@@ -292,8 +294,176 @@ export default function BuyerNavbar() {
                         )}
                     </div>
                 </div>
+
+                {/* --- PREMIUM MOBILE HEADER LAYOUT (NO WRAP, 56px ROW) --- */}
+                <div className="flex md:hidden items-center justify-between w-full h-14">
+                    {/* Logo & Serif Branding */}
+                    <Link href="/" className="flex items-center gap-2 group min-w-0">
+                        <img src={platform.logo} alt="Logo" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
+                        <span className="font-serif font-extrabold text-stone-900 text-base sm:text-lg tracking-tight truncate leading-none">
+                            {platform.name}
+                        </span>
+                    </Link>
+
+                    {/* Compact actions tray */}
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        {/* Search overlay trigger */}
+                        <button
+                            onClick={() => setIsMobileSearchOpen(true)}
+                            className="p-2 text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50"
+                            aria-label="Open Search"
+                        >
+                            <Search size={20} strokeWidth={2.2} />
+                        </button>
+
+                        {/* Chat icon */}
+                        {user && showBuyerChat && (
+                            <Link
+                                href={route('buyer.chat')}
+                                className="p-2 text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50 relative"
+                            >
+                                <MessageCircle size={20} strokeWidth={2} />
+                                {unreadMessageCount > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white shadow-sm ring-2 ring-white">
+                                        {unreadMessageCount}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
+
+                        {/* Cart */}
+                        <Link
+                            href={route('cart.index')}
+                            className="p-2 text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50 relative"
+                            id="mobile-cart-icon-nav"
+                        >
+                            <ShoppingCart size={20} strokeWidth={2} className="cart-icon-svg" />
+                            {localCartCount > 0 && (
+                                <span className="absolute top-1.5 right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-clay-600 text-[8px] font-black text-white shadow-sm ring-2 ring-white cart-badge">
+                                    {localCartCount}
+                                </span>
+                            )}
+                        </Link>
+
+                        {/* User Profile avatar dropdown */}
+                        {user ? (
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button className="flex items-center pl-1 pr-1 py-1 rounded-full hover:bg-stone-50 active:scale-95">
+                                        <UserAvatar 
+                                            user={user} 
+                                            className="w-7 h-7 border border-stone-200 shadow-sm" 
+                                        />
+                                    </button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Content width="44">
+                                    <Dropdown.Link href={route('profile.edit')}><User size={14} className="inline mr-2"/> Profile</Dropdown.Link>
+                                    <Dropdown.Link href={route('my-orders.index')}><ShoppingBag size={14} className="inline mr-2"/> Purchases</Dropdown.Link>
+                                    <div className="border-t border-stone-100 my-1"></div>
+                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="text-red-600"><LogOut size={14} className="inline mr-2"/> Log Out</Dropdown.Link>
+                                </Dropdown.Content>
+                            </Dropdown>
+                        ) : (
+                            <Link 
+                                href={route('login')}
+                                className="text-xs font-black text-clay-600 hover:text-clay-700 bg-clay-50/80 px-3 py-1.5 rounded-full border border-clay-100"
+                            >
+                                Login
+                            </Link>
+                        )}
+                    </div>
+                </div>
+
             </div>
         </nav>
+
+        {/* --- LUXURIOUS SLIDE-DOWN SEARCH OVERLAY --- */}
+        {isMobileSearchOpen && (
+            <div className="fixed inset-0 z-[100] bg-stone-950/45 backdrop-blur-md flex flex-col justify-start transition-all duration-300">
+                <div className="bg-[#FAF7F2] border-b border-stone-200/60 px-4 py-4 shadow-2xl animate-in slide-in-from-top duration-300 rounded-b-3xl">
+                    <div className="flex items-center gap-3">
+                        <form 
+                            onSubmit={(e) => { 
+                                e.preventDefault(); 
+                                setIsMobileSearchOpen(false); 
+                                handleSearch(e); 
+                            }} 
+                            className="relative flex-1"
+                        >
+                            <input
+                                type="text"
+                                placeholder="Search pottery, vases, artisans..."
+                                className="w-full bg-white border border-stone-200 rounded-full pl-10 pr-10 py-2.5 text-sm focus:border-clay-400 focus:ring-1 focus:ring-clay-100 shadow-sm placeholder-stone-400 text-stone-800"
+                                value={term}
+                                onChange={(e) => setTerm(e.target.value)}
+                                autoFocus
+                            />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4" />
+                            {term && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTerm('')}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </form>
+                        <button
+                            onClick={() => setIsMobileSearchOpen(false)}
+                            className="text-stone-500 hover:text-stone-950 text-xs font-black uppercase tracking-wider px-1.5 py-1"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+
+                    {/* Trending Ceramics Chips */}
+                    <div className="mt-5">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2.5">Trending Collections</p>
+                        <div className="flex flex-wrap gap-2">
+                            {['Planter', 'Vase', 'Mug', 'Tableware', 'Plate'].map((item) => (
+                                <button
+                                    key={item}
+                                    onClick={() => {
+                                        setTerm(item);
+                                        setIsMobileSearchOpen(false);
+                                        router.get(route('shop.index'), { search: item });
+                                    }}
+                                    className="text-xs font-bold text-clay-700 bg-clay-50/80 hover:bg-clay-100 border border-clay-100/50 px-3.5 py-1.5 rounded-full transition-all active:scale-95"
+                                >
+                                    {item}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Search Suggestions */}
+                    {term.length >= 2 && (suggestions.products.length > 0 || suggestions.artisans.length > 0) && (
+                        <div className="mt-5 max-h-[45vh] overflow-y-auto divide-y divide-stone-100/80 pr-1">
+                            {suggestions.products.map(p => (
+                                <Link 
+                                    key={p.id} 
+                                    href={route('product.show', p.slug)} 
+                                    onClick={() => setIsMobileSearchOpen(false)}
+                                    className="flex items-center gap-3 py-3"
+                                >
+                                    <div className="w-10 h-10 rounded-lg bg-stone-100 overflow-hidden flex-shrink-0 border border-stone-200/55">
+                                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold text-stone-950 truncate leading-snug">{p.name}</p>
+                                        <p className="text-[10px] text-stone-500 font-medium truncate mt-0.5">₱{p.price}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                {/* Underlay tap-to-close */}
+                <div className="flex-1" onClick={() => setIsMobileSearchOpen(false)}></div>
+            </div>
+        )}
+
         <MobileDock />
         </>
     );

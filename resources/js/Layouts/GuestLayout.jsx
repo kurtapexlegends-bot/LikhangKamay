@@ -69,12 +69,22 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full lg:w-1/2 bg-white flex flex-col relative overflow-y-auto px-6 sm:px-12 lg:px-20 py-12 auth-scroll-container"
+                className="w-full lg:w-1/2 bg-[#FAF7F2] flex flex-col relative overflow-y-auto px-6 sm:px-12 lg:px-20 py-12 auth-scroll-container"
             >
                 {/* Soft Kiln-ambient Glow in background */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] rounded-full bg-clay-500/[0.03] blur-[120px] mix-blend-multiply animate-pulse" style={{ animationDuration: '8s' }}></div>
-                    <div className="absolute bottom-[10%] left-[-10%] w-[30rem] h-[30rem] rounded-full bg-stone-100 blur-[100px] mix-blend-multiply"></div>
+                    <div className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] rounded-full bg-clay-500/[0.06] blur-[120px] mix-blend-multiply animate-pulse" style={{ animationDuration: '8s' }}></div>
+                    <div className="absolute bottom-[10%] left-[-10%] w-[30rem] h-[30rem] rounded-full bg-clay-100/30 blur-[100px] mix-blend-multiply"></div>
+                </div>
+
+                {/* Abstract organic pottery watermark SVG in background */}
+                <div className="absolute right-[-5%] bottom-[-5%] w-64 h-64 opacity-[0.035] pointer-events-none text-clay-950 select-none z-0">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="0.8">
+                        <path d="M50,10 C35,10 30,25 30,45 C30,70 38,90 50,90 C62,90 70,70 70,45 C70,25 65,10 50,10 Z" />
+                        <path d="M30,30 C30,30 40,35 50,35 C60,35 70,30 70,30" />
+                        <path d="M30,60 C30,60 40,65 50,65 C60,65 70,60 70,60" />
+                        <path d="M50,10 L50,90" strokeDasharray="1 3" />
+                    </svg>
                 </div>
 
                 <style dangerouslySetInnerHTML={{ __html: `
@@ -84,7 +94,7 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
                 {/* CLOSE BUTTON (X) - Elegant & Minimal */}
                 <Link 
                     href="/" 
-                    className="absolute top-6 right-6 p-2.5 text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-full transition-all duration-300 active:scale-95 z-30 border border-stone-200/40 shadow-sm bg-white/50 backdrop-blur-sm"
+                    className="absolute top-6 right-6 p-2.5 text-stone-400 hover:text-stone-900 hover:bg-stone-100/50 rounded-full transition-all duration-300 active:scale-95 z-30 border border-stone-200/40 shadow-sm bg-white/50 backdrop-blur-sm"
                     title="Close"
                 >
                     <X size={18} />
@@ -94,11 +104,14 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
                 <div className="w-full max-w-md mx-auto relative z-10 my-auto">
                     
                     {/* MOBILE HEADER (Visible only on small screens) */}
-                    <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
-                        <div className="bg-clay-600/10 border border-clay-500/20 p-2 rounded-xl">
-                            <img src="/images/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+                    <div className="lg:hidden flex flex-col items-center mb-8 justify-center text-center">
+                        <div className="flex items-center gap-2.5 mb-2">
+                            <div className="bg-clay-50 border border-clay-100/50 p-2 rounded-xl shadow-sm">
+                                <img src="/images/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
+                            </div>
+                            <span className="font-serif font-bold text-xl tracking-wider text-stone-900">LikhangKamay</span>
                         </div>
-                        <span className="font-serif font-bold text-2xl tracking-wider text-stone-900">LikhangKamay</span>
+                        <div className="h-0.5 w-10 bg-clay-500/30 rounded-full"></div>
                     </div>
 
                     {children}

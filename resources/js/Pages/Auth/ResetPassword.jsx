@@ -87,7 +87,7 @@ export default function ResetPassword({ token, email }) {
                     </motion.div>
 
                     {/* Password Fields */}
-                    <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
                                 id="password"

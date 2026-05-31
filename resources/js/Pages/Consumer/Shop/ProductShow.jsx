@@ -496,40 +496,43 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 </span>
                             </div>
 
-                            {/* Specifications - Compact Grid for Mobile */}
-                            <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-5 text-[11px] sm:flex sm:flex-col sm:space-y-2 sm:text-xs">
-                                {product.clay_type && (
-                                    <div className="flex flex-col sm:flex-row">
-                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Material</span>
-                                        <span className="text-gray-700 font-medium truncate">{product.clay_type}</span>
-                                    </div>
-                                )}
-                                {product.glaze_type && (
-                                    <div className="flex flex-col sm:flex-row">
-                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Finish</span>
-                                        <span className="text-gray-700 font-medium truncate">{product.glaze_type}</span>
-                                    </div>
-                                )}
-                                {(product.height > 0 || product.width > 0) && (
-                                    <div className="flex flex-col sm:flex-row">
-                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Dimensions</span>
-                                        <span className="text-gray-700 font-medium truncate">{product.height || 0}"H x {product.width || 0}"W</span>
-                                    </div>
-                                )}
-                                {product.firing_method && (
-                                    <div className="flex flex-col sm:flex-row">
-                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Firing</span>
-                                        <span className="text-gray-700 font-medium truncate">{product.firing_method}</span>
-                                    </div>
-                                )}
-                                {product.food_safe && (
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center">
-                                        <span className="text-gray-400 font-semibold uppercase tracking-wide mb-0.5 sm:w-24 sm:mb-0">Food Safe</span>
-                                        <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px]">
-                                            <Check size={10} /> Yes
-                                        </span>
-                                    </div>
-                                )}
+                            {/* Specifications - Premium Clay Card Tray */}
+                            <div className="bg-[#FAF8F5]/85 border border-stone-200/40 rounded-2xl p-4 sm:p-5 mb-5 space-y-3 shadow-sm">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 border-b border-stone-200/50 pb-2 mb-2">Specifications</h4>
+                                <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-[11px] sm:flex sm:flex-col sm:space-y-2 sm:text-xs">
+                                    {product.clay_type && (
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline">
+                                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Material</span>
+                                            <span className="text-stone-700 font-bold truncate">{product.clay_type}</span>
+                                        </div>
+                                    )}
+                                    {product.glaze_type && (
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline">
+                                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Finish</span>
+                                            <span className="text-stone-700 font-bold truncate">{product.glaze_type}</span>
+                                        </div>
+                                    )}
+                                    {(product.height > 0 || product.width > 0) && (
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline">
+                                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Dimensions</span>
+                                            <span className="text-stone-700 font-bold truncate">{product.height || 0}"H x {product.width || 0}"W</span>
+                                        </div>
+                                    )}
+                                    {product.firing_method && (
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline">
+                                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Firing</span>
+                                            <span className="text-stone-700 font-bold truncate">{product.firing_method}</span>
+                                        </div>
+                                    )}
+                                    {product.food_safe && (
+                                        <div className="flex flex-col sm:flex-row sm:items-center">
+                                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Food Safe</span>
+                                            <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] w-fit">
+                                                <Check size={10} /> Yes
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Quantity */}

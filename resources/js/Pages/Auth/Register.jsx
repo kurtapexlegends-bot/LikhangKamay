@@ -192,7 +192,7 @@ export default function Register() {
                     className="space-y-5"
                 >
                     {/* Name Fields Grid */}
-                    <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
                                 ref={firstNameRef}
@@ -262,7 +262,7 @@ export default function Register() {
                     </motion.div>
 
                     {/* Split Password Fields */}
-                    <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
                                 ref={passwordRef}

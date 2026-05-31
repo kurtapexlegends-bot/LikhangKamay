@@ -95,7 +95,7 @@ export default function ForgotPassword({ status }) {
                         <InputError message={errors.email} className="mt-2" />
                     </motion.div>
 
-                    <motion.div variants={itemVariants} className="pt-1">
+                    <motion.div variants={itemVariants}>
                         <PrimaryButton 
                             className="w-full justify-center py-3 bg-stone-900 hover:bg-stone-850 text-white rounded-xl text-xs font-bold uppercase tracking-widest border border-stone-900 shadow-md transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] overflow-hidden relative group" 
                             disabled={processing}
