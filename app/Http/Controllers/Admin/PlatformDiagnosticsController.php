@@ -35,7 +35,22 @@ class PlatformDiagnosticsController extends Controller
     {
         $activeTab = $request->input('tab', 'health');
 
-        // 1. Diagnostics / System Health Data
+        return Inertia::render('Admin/Layout/PlatformOperations', [
+            'systemHealth' => $this->getSystemHealth(),
+            'queueStatus' => $this->getQueueStatus(),
+            'memoryUsage' => $this->getMemoryUsage(),
+            'peakMemoryUsage' => $this->getPeakMemoryUsage(),
+            'slaMetrics' => $this->getSLAMetrics(),
+            'staleQueue' => $this->getStaleQueue(),
+            'activities' => $this->getActivityLogs($request),
+            'filters' => $request->only(['search', 'action_type']),
+            'availableActions' => $this->getAvailableActions(),
+            'defaultTab' => $activeTab,
+        ]);
+    }
+
+    private function getSystemHealth(): array
+    {
         $cacheStatus = 'Online';
         $dbStatus = 'Online';
         $paymongoStatus = 'Unknown';
@@ -53,7 +68,6 @@ class PlatformDiagnosticsController extends Controller
         }
 
         try {
-            // Cache PayMongo API check for 60 seconds to prevent blocking page loads during log search/pagination
             $paymongoStatus = Cache::remember('paymongo_api_status', 60, function () {
                 $secretKey = config('services.paymongo.secret_key');
                 if ($secretKey) {
@@ -67,45 +81,65 @@ class PlatformDiagnosticsController extends Controller
             $paymongoStatus = 'Offline';
         }
 
-        $systemHealth = [
+        return [
             'database' => $dbStatus,
             'cache' => $cacheStatus,
             'paymongo' => $paymongoStatus,
-            'lalamove' => 'Unconfigured', // Placeholder
+            'lalamove' => 'Unconfigured',
             'smtp' => config('mail.mailers.smtp.host') ? 'Configured' : 'Unconfigured',
             'environment' => config('app.env'),
             'debug_mode' => config('app.debug'),
         ];
+    }
 
-        $queueStatus = [
+    private function getQueueStatus(): array
+    {
+        return [
             'total_jobs' => DB::table('jobs')->count(),
             'failed_jobs' => DB::table('failed_jobs')->count(),
             'emails' => DB::table('jobs')->where('payload', 'like', '%Mail%')->orWhere('payload', 'like', '%Notification%')->count(),
             'reports' => DB::table('jobs')->where('payload', 'like', '%Report%')->count(),
             'images' => DB::table('jobs')->where('payload', 'like', '%Image%')->orWhere('payload', 'like', '%Process%')->count(),
         ];
+    }
 
-        $memoryUsage = round(memory_get_usage(true) / 1024 / 1024, 2);
-        $peakMemoryUsage = round(memory_get_peak_usage(true) / 1024 / 1024, 2);
+    private function getMemoryUsage(): float
+    {
+        return round(memory_get_usage(true) / 1024 / 1024, 2);
+    }
 
-        // 2. SLA Data
-        $slaMetrics = $this->analytics->getSLAMetrics();
+    private function getPeakMemoryUsage(): float
+    {
+        return round(memory_get_peak_usage(true) / 1024 / 1024, 2);
+    }
+
+    private function getSLAMetrics(): array
+    {
+        $metrics = $this->analytics->getSLAMetrics();
+        $staleQueueCount = $this->getStaleQueue()->count();
+        return array_merge($metrics, ['totalStaleItems' => $staleQueueCount]);
+    }
+
+    private function getStaleQueue()
+    {
         $staleArtisanApplications = $this->getStaleArtisanApplications();
         $staleDisputes = $this->getStaleDisputes();
         $staleSponsorships = $this->getStaleSponsorships();
-        $staleQueue = collect([])
+        
+        return collect([])
             ->concat($staleArtisanApplications)
             ->concat($staleDisputes)
             ->concat($staleSponsorships)
             ->sortByDesc('hours_pending')
             ->values();
-        $slaMetrics = array_merge($slaMetrics, ['totalStaleItems' => $staleQueue->count()]);
+    }
 
-        // 3. Activity / Audit Logs Data
+    private function getActivityLogs(Request $request)
+    {
         $search = $request->input('search');
         $actionType = $request->input('action_type');
 
-        $activities = PlatformActivity::query()
+        return PlatformActivity::query()
             ->with('user:id,name,role,avatar')
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -134,26 +168,16 @@ class PlatformDiagnosticsController extends Controller
                     'avatar' => $a->user->avatar ?? null,
                 ]
             ]);
+    }
 
-        $availableActions = Cache::remember('platform_activity_actions', 3600, function () {
+    private function getAvailableActions(): array
+    {
+        return Cache::remember('platform_activity_actions', 3600, function () {
             return PlatformActivity::select('action')
                 ->distinct()
                 ->pluck('action')
                 ->all();
         });
-
-        return Inertia::render('Admin/Layout/PlatformOperations', [
-            'systemHealth' => $systemHealth,
-            'queueStatus' => $queueStatus,
-            'memoryUsage' => $memoryUsage,
-            'peakMemoryUsage' => $peakMemoryUsage,
-            'slaMetrics' => $slaMetrics,
-            'staleQueue' => $staleQueue,
-            'activities' => $activities,
-            'filters' => $request->only(['search', 'action_type']),
-            'availableActions' => $availableActions,
-            'defaultTab' => $activeTab,
-        ]);
     }
 
     protected function getStaleArtisanApplications()

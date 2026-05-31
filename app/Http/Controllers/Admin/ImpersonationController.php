@@ -31,15 +31,15 @@ class ImpersonationController extends Controller
         // Store the original admin ID in the session
         session(['impersonator_id' => $adminId]);
 
-        // Perform the login swap
-        Auth::login($user);
-
         // Log the activity
         PlatformActivity::log(
             'user_impersonation',
             "Admin started impersonating user: {$user->name} (ID: {$user->id})",
             ['target_user_id' => $user->id, 'target_user_role' => $user->role]
         );
+
+        // Perform the login swap
+        Auth::login($user);
 
         $targetRoute = $user->role === 'artisan' ? route('dashboard') : route('home');
 

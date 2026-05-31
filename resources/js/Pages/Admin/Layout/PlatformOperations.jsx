@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useToast } from '@/Components/ToastContext';
+import UserAvatar from '@/Components/UserAvatar';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { 
     Server, 
@@ -734,15 +735,7 @@ export default function PlatformOperations({
                                                                 </td>
                                                                 <td className="px-6 py-5 align-top">
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className="w-8 h-8 rounded-lg bg-clay-50 border border-clay-100 overflow-hidden flex-shrink-0">
-                                                                            {log.user.avatar ? (
-                                                                                <img src={log.user.avatar} alt="" className="w-full h-full object-cover" />
-                                                                            ) : (
-                                                                                <div className="w-full h-full flex items-center justify-center text-clay-300">
-                                                                                    <UserIcon size={14} />
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
+                                                                        <UserAvatar user={log.user} className="w-8 h-8" />
                                                                         <div>
                                                                             <p className="text-xs font-black text-gray-900 leading-none">{log.user.name}</p>
                                                                             <p className="text-[9px] font-bold text-clay-600 uppercase tracking-widest mt-1">{log.user.role.replace('_', ' ')}</p>
