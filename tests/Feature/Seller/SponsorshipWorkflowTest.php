@@ -30,11 +30,11 @@ class SponsorshipWorkflowTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $response = $this->from(route('admin.sponsorships'))
+        $response = $this->from(route('admin.catalog.index', ['tab' => 'sponsorships']))
             ->actingAs($admin)
             ->post(route('admin.sponsorships.reject', $requestRecord));
 
-        $response->assertRedirect(route('admin.sponsorships'));
+        $response->assertRedirect(route('admin.catalog.index', ['tab' => 'sponsorships']));
         $response->assertSessionHasErrors('rejection_reason');
 
         $this->assertDatabaseHas('sponsorship_requests', [
@@ -42,6 +42,30 @@ class SponsorshipWorkflowTest extends TestCase
             'status' => 'pending',
             'rejection_reason' => null,
         ]);
+    }
+
+    public function test_admin_can_view_catalog_manager(): void
+    {
+        /** @var User $admin */
+        $admin = User::factory()->superAdmin()->create();
+        $seller = $this->createEliteSeller();
+        $product = $this->createProduct($seller);
+        SponsorshipRequest::create([
+            'user_id' => $seller->id,
+            'product_id' => $product->id,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.catalog.index', ['tab' => 'sponsorships']));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Catalog/CatalogManager')
+            ->has('requests')
+        );
+
+        $pageData = $response->original->getData()['page'];
+        $this->assertContains('categories', $pageData['deferredProps']['default'] ?? []);
     }
 
     public function test_admin_reject_stores_reason_and_notifies_seller(): void

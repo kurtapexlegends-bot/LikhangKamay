@@ -101,73 +101,7 @@ class SponsorshipController extends Controller
         ]);
 
         return back()->with('success', 'Sponsorship requested successfully! Used 1 credit.');
-    }
-
-    // Admin Views and Actions
-    public function adminIndex()
-    {
-        $requests = SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
-            ->latest()
-            ->paginate(10);
-
-        return Inertia::render('Admin/Catalog/SponsorshipRequests', [
-            'requests' => $requests
-        ]);
-    }
-
-    public function approve(SponsorshipRequest $sponsorshipRequest)
-    {
-        if ($sponsorshipRequest->status !== 'pending') {
-            return back()->with('error', 'Request is not pending.');
-        }
-
-        if (!$sponsorshipRequest->product) {
-            return back()->with('error', 'The requested product could not be found.');
-        }
-
-        DB::transaction(function () use ($sponsorshipRequest) {
-            $approvedAt = now();
-
-            $sponsorshipRequest->update([
-                'status' => 'approved',
-                'approved_at' => $approvedAt,
-                'rejection_reason' => null,
-            ]);
-
-            // Sponsor for 7 days
-            $sponsorshipRequest->product->update([
-                'is_sponsored' => true,
-                'sponsored_until' => $approvedAt->copy()->addDays(7),
-            ]);
-        });
-
-        $sponsorshipRequest->loadMissing('product');
-        $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
-
-        return back()->with('success', 'Sponsorship approved for 7 days.');
-    }
-
-    public function reject(Request $request, SponsorshipRequest $sponsorshipRequest)
-    {
-        if ($sponsorshipRequest->status !== 'pending') {
-            return back()->with('error', 'Request is not pending.');
-        }
-
-        $validated = $request->validate([
-            'rejection_reason' => ['required', 'string', 'max:1000'],
-        ]);
-
-        $sponsorshipRequest->update([
-            'status' => 'rejected',
-            'approved_at' => null,
-            'rejection_reason' => $validated['rejection_reason'],
-        ]);
-
-        $sponsorshipRequest->loadMissing('product');
-        $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
-
-        return back()->with('success', 'Sponsorship rejected.');
-    }
+    }    // Seller View
 
     public function track(Request $request, SponsorshipAnalyticsService $analyticsService)
     {

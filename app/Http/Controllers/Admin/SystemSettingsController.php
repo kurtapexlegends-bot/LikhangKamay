@@ -33,167 +33,25 @@ class SystemSettingsController extends Controller
     public function index()
     {
         try {
-            $systemSettings = [
-                'platform_name' => $this->settings->get('platform_name', 'Likhang Kamay'),
-                'platform_logo' => $this->settings->get('platform_logo'),
-                'favicon' => $this->settings->get('favicon'),
-                'primary_color' => $this->settings->get('primary_color', '#8B4513'),
-                'seo_metadata' => $this->settings->get('seo_metadata', [
-                    'title' => 'Likhang Kamay | Artisan Marketplace',
-                    'description' => 'A premium marketplace for Filipino artisans and handmade crafts.',
-                    'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
-                ]),
-                'contact_info' => $this->settings->get('contact_info', [
-                    'email' => 'support@likhangkamay.app',
-                    'phone' => '',
-                    'address' => '',
-                ]),
-                'social_links' => $this->settings->get('social_links', [
-                    'facebook' => '',
-                    'instagram' => '',
-                    'twitter' => '',
-                ]),
-                // Operational Settings
-                'commission_rate' => $this->settings->get('commission_rate', 5.0),
-                'convenience_fee' => $this->settings->get('convenience_fee', 15.0),
-                'withdrawal_min' => $this->settings->get('withdrawal_min', 500.0),
-                'maintenance_mode' => $this->settings->get('maintenance_mode', false),
-                'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
-
-                // SMTP Settings
-                'mail_host' => $this->settings->get('mail_host', 'smtp.mailtrap.io'),
-                'mail_port' => $this->settings->get('mail_port', '2525'),
-                'mail_encryption' => $this->settings->get('mail_encryption', 'tls'),
-                'mail_username' => $this->settings->get('mail_username', ''),
-                'mail_password' => $this->settings->get('mail_password', ''),
-                'mail_from_address' => $this->settings->get('mail_from_address', 'noreply@likhangkamay.app'),
-                'mail_from_name' => $this->settings->get('mail_from_name', 'Likhang Kamay'),
-            ];
-
-            $premiumPrice = 199;
-            $elitePrice = 399;
-
-            $premiumUsersCount = User::where('role', 'artisan')->where('premium_tier', 'premium')->count();
-            $eliteUsersCount = User::where('role', 'artisan')->where('premium_tier', 'super_premium')->count();
-            $freeUsersCount = User::where('role', 'artisan')->where(function($q) {
-                $q->where('premium_tier', 'free')->orWhereNull('premium_tier');
-            })->count();
-
-            $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
-            $previousPremiumUsersCount = $this->metrics->getHistoricalTierCount('premium', 30);
-            $previousEliteUsersCount = $this->metrics->getHistoricalTierCount('super_premium', 30);
-            $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
-
-            $mrrGrowth = 0;
-            if ($previousProjectedMrr > 0) {
-                $mrrGrowth = (($projectedMrr - $previousProjectedMrr) / $previousProjectedMrr) * 100;
-            } elseif ($projectedMrr > 0) {
-                $mrrGrowth = 100;
-            }
-
-            $mrrMetric = [
-                'value' => $projectedMrr,
-                'growth' => round($mrrGrowth, 1),
-                'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral'),
-                'is_projected' => true,
-                'basis' => 'Based on current active artisan plan tiers.',
-            ];
-
-            $activeSponsorships = SponsorshipRequest::where('status', 'approved')->count();
-            $pendingSponsorships = SponsorshipRequest::where('status', 'pending')->count();
-            $previousActiveSponsorships = SponsorshipRequest::where('status', 'approved')
-                ->where('approved_at', '<', now()->subDays(30))
-                ->count();
-            
-            $sponsorshipGrowth = 0;
-            if ($previousActiveSponsorships > 0) {
-                $sponsorshipGrowth = (($activeSponsorships - $previousActiveSponsorships) / $previousActiveSponsorships) * 100;
-            } elseif ($activeSponsorships > 0) {
-                $sponsorshipGrowth = 100;
-            }
-
-            $sponsorshipMetric = [
-                'value' => $activeSponsorships,
-                'growth' => round($sponsorshipGrowth, 1),
-                'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
-            ];
-
-            $monetizationMetrics = [
-                'mrr' => $mrrMetric,
-                'sponsorships' => $sponsorshipMetric,
-                'subscribers' => [
-                    'free' => $freeUsersCount,
-                    'premium' => $premiumUsersCount,
-                    'elite' => $eliteUsersCount,
-                    'total_paid' => $premiumUsersCount + $eliteUsersCount,
-                ],
-                'pendingSponsorships' => $pendingSponsorships,
-            ];
-
-            $recentSubscribers = UserTierLog::query()
-                ->with('user:id,name,shop_name,avatar,premium_tier')
-                ->whereNotNull('new_tier')
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(function($log) {
-                    $user = $log->user;
-                    if (!$user) return null;
-
-                    $formatTierLabel = fn (?string $tier) => match ($tier) {
-                        'super_premium' => 'Elite',
-                        'premium' => 'Premium',
-                        'free', null, '' => 'Free',
-                        default => ucfirst(str_replace('_', ' ', (string) $tier)),
-                    };
-
-                    $newTierLabel = $formatTierLabel($log->new_tier);
-                    $previousTierLabel = $formatTierLabel($log->previous_tier);
-                    $changeDirection = match ([$log->previous_tier, $log->new_tier]) {
-                        ['premium', 'super_premium'], ['free', 'premium'], ['free', 'super_premium'], [null, 'premium'], [null, 'super_premium'] => 'upgrade',
-                        ['super_premium', 'premium'], ['premium', 'free'], ['super_premium', 'free'] => 'downgrade',
-                        default => 'change',
-                    };
-
-                    return [
-                        'id' => $log->id,
-                        'user_id' => $user->id,
-                        'name' => $user->name,
-                        'shop_name' => $user->shop_name,
-                        'avatar' => $user->avatar,
-                        'premium_tier' => $log->new_tier,
-                        'previous_tier' => $log->previous_tier,
-                        'previous_tier_label' => $previousTierLabel,
-                        'tier' => $newTierLabel,
-                        'change_label' => "{$previousTierLabel} to {$newTierLabel}",
-                        'change_direction' => $changeDirection,
-                        'date' => $log->created_at->format('M d, Y h:i A'),
-                    ];
-                })
-                ->filter()
-                ->values();
-
-            $recentSponsorships = Inertia::defer(function() {
-                return SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
-                    ->orderBy('created_at', 'desc')
-                    ->limit(5)
-                    ->get()
-                    ->map(function($req) {
-                        return [
-                            'id' => $req->id,
-                            'user' => $req->user,
-                            'product_name' => $req->product->name ?? 'Unknown Product',
-                            'status' => $req->status,
-                            'date' => $req->created_at->format('M d, Y h:i A')
-                        ];
-                    });
-            });
-
             return Inertia::render('Admin/Layout/SystemConfig', [
-                'settings' => $systemSettings,
-                'metrics' => $monetizationMetrics,
-                'recentSubscribers' => $recentSubscribers,
-                'recentSponsorships' => $recentSponsorships,
+                'settings' => $this->getSystemSettings(),
+                'metrics' => $this->getMonetizationMetrics(),
+                'recentSubscribers' => $this->getRecentSubscribers(),
+                'recentSponsorships' => Inertia::defer(function() {
+                    return SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
+                        ->orderBy('created_at', 'desc')
+                        ->limit(5)
+                        ->get()
+                        ->map(function($req) {
+                            return [
+                                'id' => $req->id,
+                                'user' => $req->user,
+                                'product_name' => $req->product->name ?? 'Unknown Product',
+                                'status' => $req->status,
+                                'date' => $req->created_at->format('M d, Y h:i A')
+                            ];
+                        });
+                }),
             ]);
         } catch (\Throwable $e) {
             Log::error("SystemSettings index error: " . $e->getMessage());
@@ -205,7 +63,7 @@ class SystemSettingsController extends Controller
                     'primary_color' => '#8B4513',
                     'seo_metadata' => ['title' => '', 'description' => '', 'keywords' => ''],
                     'contact_info' => ['email' => '', 'phone' => '', 'address' => ''],
-                    'social_links' => ['facebook' => '', 'instagram' => '', 'twitter' => ''],
+                    'social_links' => ['facebook' => '', 'indigo_avatar' => '', 'twitter' => ''],
                     'commission_rate' => 5.0,
                     'convenience_fee' => 15.0,
                     'withdrawal_min' => 500.0,
@@ -230,6 +88,156 @@ class SystemSettingsController extends Controller
                 'db_error' => true
             ]);
         }
+    }
+
+    private function getSystemSettings(): array
+    {
+        return [
+            'platform_name' => $this->settings->get('platform_name', 'Likhang Kamay'),
+            'platform_logo' => $this->settings->get('platform_logo'),
+            'favicon' => $this->settings->get('favicon'),
+            'primary_color' => $this->settings->get('primary_color', '#8B4513'),
+            'seo_metadata' => $this->settings->get('seo_metadata', [
+                'title' => 'Likhang Kamay | Artisan Marketplace',
+                'description' => 'A premium marketplace for Filipino artisans and handmade crafts.',
+                'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
+            ]),
+            'contact_info' => $this->settings->get('contact_info', [
+                'email' => 'support@likhangkamay.app',
+                'phone' => '',
+                'address' => '',
+            ]),
+            'social_links' => $this->settings->get('social_links', [
+                'facebook' => '',
+                'instagram' => '',
+                'twitter' => '',
+            ]),
+            // Operational Settings
+            'commission_rate' => $this->settings->get('commission_rate', 5.0),
+            'convenience_fee' => $this->settings->get('convenience_fee', 15.0),
+            'withdrawal_min' => $this->settings->get('withdrawal_min', 500.0),
+            'maintenance_mode' => $this->settings->get('maintenance_mode', false),
+            'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
+
+            // SMTP Settings
+            'mail_host' => $this->settings->get('mail_host', 'smtp.mailtrap.io'),
+            'mail_port' => $this->settings->get('mail_port', '2525'),
+            'mail_encryption' => $this->settings->get('mail_encryption', 'tls'),
+            'mail_username' => $this->settings->get('mail_username', ''),
+            'mail_password' => $this->settings->get('mail_password', ''),
+            'mail_from_address' => $this->settings->get('mail_from_address', 'noreply@likhangkamay.app'),
+            'mail_from_name' => $this->settings->get('mail_from_name', 'Likhang Kamay'),
+        ];
+    }
+
+    private function getMonetizationMetrics(): array
+    {
+        $premiumPrice = 199;
+        $elitePrice = 399;
+
+        $premiumUsersCount = User::where('role', 'artisan')->where('premium_tier', 'premium')->count();
+        $eliteUsersCount = User::where('role', 'artisan')->where('premium_tier', 'super_premium')->count();
+        $freeUsersCount = User::where('role', 'artisan')->where(function($q) {
+            $q->where('premium_tier', 'free')->orWhereNull('premium_tier');
+        })->count();
+
+        $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
+        $previousPremiumUsersCount = $this->metrics->getHistoricalTierCount('premium', 30);
+        $previousEliteUsersCount = $this->metrics->getHistoricalTierCount('super_premium', 30);
+        $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
+
+        $mrrGrowth = 0;
+        if ($previousProjectedMrr > 0) {
+            $mrrGrowth = (($projectedMrr - $previousProjectedMrr) / $previousProjectedMrr) * 100;
+        } elseif ($projectedMrr > 0) {
+            $mrrGrowth = 100;
+        }
+
+        $mrrMetric = [
+            'value' => $projectedMrr,
+            'growth' => round($mrrGrowth, 1),
+            'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral'),
+            'is_projected' => true,
+            'basis' => 'Based on current active artisan plan tiers.',
+        ];
+
+        $activeSponsorships = SponsorshipRequest::where('status', 'approved')->count();
+        $pendingSponsorships = SponsorshipRequest::where('status', 'pending')->count();
+        $previousActiveSponsorships = SponsorshipRequest::where('status', 'approved')
+            ->where('approved_at', '<', now()->subDays(30))
+            ->count();
+        
+        $sponsorshipGrowth = 0;
+        if ($previousActiveSponsorships > 0) {
+            $sponsorshipGrowth = (($activeSponsorships - $previousActiveSponsorships) / $previousActiveSponsorships) * 100;
+        } elseif ($activeSponsorships > 0) {
+            $sponsorshipGrowth = 100;
+        }
+
+        $sponsorshipMetric = [
+            'value' => $activeSponsorships,
+            'growth' => round($sponsorshipGrowth, 1),
+            'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
+        ];
+
+        return [
+            'mrr' => $mrrMetric,
+            'sponsorships' => $sponsorshipMetric,
+            'subscribers' => [
+                'free' => $freeUsersCount,
+                'premium' => $premiumUsersCount,
+                'elite' => $eliteUsersCount,
+                'total_paid' => $premiumUsersCount + $eliteUsersCount,
+            ],
+            'pendingSponsorships' => $pendingSponsorships,
+        ];
+    }
+
+    private function getRecentSubscribers(): array
+    {
+        return UserTierLog::query()
+            ->with('user:id,name,shop_name,avatar,premium_tier')
+            ->whereNotNull('new_tier')
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(function($log) {
+                $user = $log->user;
+                if (!$user) return null;
+
+                $formatTierLabel = fn (?string $tier) => match ($tier) {
+                    'super_premium' => 'Elite',
+                    'premium' => 'Premium',
+                    'free', null, '' => 'Free',
+                    default => ucfirst(str_replace('_', ' ', (string) $tier)),
+                };
+
+                $newTierLabel = $formatTierLabel($log->new_tier);
+                $previousTierLabel = $formatTierLabel($log->previous_tier);
+                $changeDirection = match ([$log->previous_tier, $log->new_tier]) {
+                    ['premium', 'super_premium'], ['free', 'premium'], ['free', 'super_premium'], [null, 'premium'], [null, 'super_premium'] => 'upgrade',
+                    ['super_premium', 'premium'], ['premium', 'free'], ['super_premium', 'free'] => 'downgrade',
+                    default => 'change',
+                };
+
+                return [
+                    'id' => $log->id,
+                    'user_id' => $user->id,
+                    'name' => $user->name,
+                    'shop_name' => $user->shop_name,
+                    'avatar' => $user->avatar,
+                    'premium_tier' => $log->new_tier,
+                    'previous_tier' => $log->previous_tier,
+                    'previous_tier_label' => $previousTierLabel,
+                    'tier' => $newTierLabel,
+                    'change_label' => "{$previousTierLabel} to {$newTierLabel}",
+                    'change_direction' => $changeDirection,
+                    'date' => $log->created_at->format('M d, Y h:i A'),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->toArray();
     }
 
     public function update(Request $request)

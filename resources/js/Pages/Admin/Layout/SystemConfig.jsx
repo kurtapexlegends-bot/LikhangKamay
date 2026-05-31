@@ -245,38 +245,27 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
             <div className="max-w-6xl mx-auto space-y-6">
                 
-                {/* Main Tabs Container */}
-                <div className="bg-white rounded-2xl border border-clay-100 p-4 shadow-sm">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-clay-50 flex items-center justify-center text-clay-600 shadow-inner">
-                                <Layout size={20} />
-                            </div>
-                            <div>
-                                <h2 className="text-base font-bold text-stone-900 tracking-tight leading-none">System Config & Operations</h2>
-                                <p className="text-[10px] text-stone-500 mt-1">Configure global branding, mail sync, monetization dashboard, and platform tiers.</p>
-                            </div>
-                        </div>
-
-                        {/* Top-Level Tabs */}
-                        <div className="flex items-center gap-1.5 bg-stone-50 p-1 rounded-xl border border-stone-100 overflow-x-auto">
-                            {mainTabs.map((tab) => (
+                {/* --- TABS NAVIGATION --- */}
+                <div className="border-b border-stone-200 bg-white rounded-t-2xl shadow-sm px-4 pt-4 sm:px-6">
+                    <div className="flex space-x-6 overflow-x-auto scrollbar-hide">
+                        {mainTabs.map((tab) => {
+                            const Icon = tab.icon;
+                            return (
                                 <button
                                     key={tab.id}
                                     type="button"
                                     onClick={() => handleTabChange(tab.id)}
-                                    className={`
-                                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap
-                                        ${activeTab === tab.id 
-                                            ? 'bg-white text-clay-600 shadow-sm border border-clay-100' 
-                                            : 'text-stone-400 hover:text-stone-600 hover:bg-white/50'}
-                                    `}
+                                    className={`flex items-center gap-2 border-b-2 pb-4 px-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none ${
+                                        activeTab === tab.id
+                                            ? 'border-clay-600 text-clay-700 font-bold'
+                                            : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200'
+                                    }`}
                                 >
-                                    <tab.icon size={13} />
-                                    {tab.name}
+                                    <Icon size={16} />
+                                    <span>{tab.name}</span>
                                 </button>
-                            ))}
-                        </div>
+                            );
+                        })}
                     </div>
                 </div>
 

@@ -32,7 +32,7 @@ use App\Http\Controllers\Seller\TeamMessageController;
 use App\Http\Controllers\Seller\AuditLogController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\SuperAdminController;
-use App\Http\Controllers\Admin\TaxonomyController;
+use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\PlatformDiagnosticsController;
 use App\Models\Product;
@@ -336,15 +336,16 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/pending-artisans/{id}/reject', [SuperAdminController::class, 'rejectArtisan'])->name('admin.artisan.reject');
     
     // Real-time Validation
-    Route::post('/taxonomy/check-name', [TaxonomyController::class, 'checkCategoryName'])->name('admin.taxonomy.check-name');
+    Route::post('/taxonomy/check-name', [CatalogController::class, 'checkCategoryName'])->name('admin.taxonomy.check-name');
     Route::post('/artisan/check-slug', [SuperAdminController::class, 'checkArtisanSlug'])->name('admin.artisan.check-slug');
 
 
     
-    // Sponsorship Approvals
-    Route::get('/sponsorships', [\App\Http\Controllers\Seller\SponsorshipController::class, 'adminIndex'])->name('admin.sponsorships');
-    Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\Seller\SponsorshipController::class, 'approve'])->name('admin.sponsorships.approve');
-    Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\Seller\SponsorshipController::class, 'reject'])->name('admin.sponsorships.reject');
+    // Consolidated Product Catalog
+    Route::get('/catalog', [CatalogController::class, 'index'])->name('admin.catalog.index');
+    Route::get('/sponsorships', fn() => redirect()->route('admin.catalog.index', ['tab' => 'sponsorships']))->name('admin.sponsorships');
+    Route::post('/sponsorships/{sponsorshipRequest}/approve', [CatalogController::class, 'approveSponsorship'])->name('admin.sponsorships.approve');
+    Route::post('/sponsorships/{sponsorshipRequest}/reject', [CatalogController::class, 'rejectSponsorship'])->name('admin.sponsorships.reject');
 
     // System Announcements
     Route::get('/announcements', [SuperAdminController::class, 'announcements'])->name('admin.announcements');
@@ -376,10 +377,10 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\Admin\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
 
     // Global Taxonomy Engine
-    Route::get('/taxonomy', [TaxonomyController::class, 'index'])->name('admin.taxonomy.index');
-    Route::post('/taxonomy', [TaxonomyController::class, 'store'])->name('admin.taxonomy.store');
-    Route::patch('/taxonomy/{category}', [TaxonomyController::class, 'update'])->name('admin.taxonomy.update');
-    Route::delete('/taxonomy/{category}', [TaxonomyController::class, 'destroy'])->name('admin.taxonomy.destroy');
+    Route::get('/taxonomy', fn() => redirect()->route('admin.catalog.index', ['tab' => 'taxonomy']))->name('admin.taxonomy.index');
+    Route::post('/taxonomy', [CatalogController::class, 'storeTaxonomy'])->name('admin.taxonomy.store');
+    Route::patch('/taxonomy/{category}', [CatalogController::class, 'updateTaxonomy'])->name('admin.taxonomy.update');
+    Route::delete('/taxonomy/{category}', [CatalogController::class, 'destroyTaxonomy'])->name('admin.taxonomy.destroy');
 });
 
 // Stop Impersonation Route (Protected by standard auth)

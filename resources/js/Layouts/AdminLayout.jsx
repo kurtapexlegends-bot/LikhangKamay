@@ -37,7 +37,7 @@ const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 const resolveActiveGroup = (path) => {
     if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics') || path.includes('operations')) return 'Platform Pulse';
     if (path.includes('users') || path.includes('pending')) return 'User Accounts';
-    if (path.includes('taxonomy') || path.includes('sponsorships')) return 'Product Catalog';
+    if (path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Product Catalog';
     if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements')) return 'Trust & Safety';
     if (path.includes('monetization') || path.includes('settings')) return 'Business Config';
     return null;
@@ -123,8 +123,7 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'Product Catalog',
             items: [
-                { name: 'Taxonomy Engine', href: route('admin.taxonomy.index'), icon: FolderTree, current: route().current('admin.taxonomy.*') },
-                { name: 'Sponsorships', href: route('admin.sponsorships'), icon: Award, current: route().current('admin.sponsorships') },
+                { name: 'Catalog Manager', href: route('admin.catalog.index'), icon: FolderTree, current: route().current('admin.catalog.*') },
             ]
         },
         {
@@ -229,6 +228,7 @@ export default function AdminLayout({ title, children }) {
                                  title === 'Pending Artisans' ? 'Artisan Applications' :
                                  title === 'Global Taxonomy Engine' || title === 'Taxonomy Engine' ? 'Taxonomy Engine' :
                                  title === 'Sponsorship Requests' ? 'Sponsorships' :
+                                 title === 'Catalog Manager' ? 'Catalog Manager' :
                                  title === 'System Announcements' ? 'Global Alerts' :
                                  title === 'Monetization' ? 'Platform Revenue' :
                                  title === 'System Config' || title === 'System Settings' ? 'System Config' :
@@ -257,8 +257,7 @@ export default function AdminLayout({ title, children }) {
                                     'Diagnostics Command Center': "Monitor system memory, cache, and heartbeats",
                                     'Diagnostics': "Monitor system memory, cache, and heartbeats",
                                     'Platform Operations': "Monitor system health, SLAs, and admin logs.",
-                                    'Global Taxonomy Engine': "Manage the global product category list",
-                                    'Taxonomy Engine': "Manage the global product category list",
+                                    'Catalog Manager': "Manage product categories, metadata hierarchy, and artisan promotions.",
                                     'System Config': "Manage platform settings, SEO, pricing, and revenue logs.",
                                     'System Settings': "Manage platform settings, SEO, pricing, and revenue logs.",
                                     'Restoration Center': "Restore or permanently delete removed items",
