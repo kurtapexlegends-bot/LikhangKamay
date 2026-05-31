@@ -137,8 +137,7 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'Business Config',
             items: [
-                { name: 'Platform Revenue', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization') },
-                { name: 'System Settings', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
+                { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
             ]
         }
     ];
@@ -232,7 +231,7 @@ export default function AdminLayout({ title, children }) {
                                  title === 'Sponsorship Requests' ? 'Sponsorships' :
                                  title === 'System Announcements' ? 'Global Alerts' :
                                  title === 'Monetization' ? 'Platform Revenue' :
-                                 title === 'System Settings' ? 'System Settings' :
+                                 title === 'System Config' || title === 'System Settings' ? 'System Config' :
                                  title}
                             </h1>
                             
@@ -260,7 +259,8 @@ export default function AdminLayout({ title, children }) {
                                     'Platform Operations': "Monitor system health, SLAs, and admin logs.",
                                     'Global Taxonomy Engine': "Manage the global product category list",
                                     'Taxonomy Engine': "Manage the global product category list",
-                                    'System Settings': "Manage platform identity, SEO, and branding",
+                                    'System Config': "Manage platform settings, SEO, pricing, and revenue logs.",
+                                    'System Settings': "Manage platform settings, SEO, pricing, and revenue logs.",
                                     'Restoration Center': "Restore or permanently delete removed items",
                                     'Content Governance & Safety Center': "Manage flagged content, review disputes, and trash",
                                     'Content Governance': "Manage flagged content, review disputes, and trash",

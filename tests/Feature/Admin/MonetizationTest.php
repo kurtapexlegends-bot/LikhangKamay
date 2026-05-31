@@ -12,6 +12,15 @@ class MonetizationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_monetization_route_redirects_to_settings(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.monetization'))
+            ->assertRedirect(route('admin.settings.index', ['tab' => 'monetization']));
+    }
+
     public function test_monetization_marks_plan_mrr_as_projected(): void
     {
         $admin = User::factory()->superAdmin()->create();
@@ -19,10 +28,10 @@ class MonetizationTest extends TestCase
         User::factory()->artisanApproved()->create(['premium_tier' => 'super_premium']);
 
         $this->actingAs($admin)
-            ->get(route('admin.monetization'))
+            ->get(route('admin.settings.index', ['tab' => 'monetization']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Analytics/Monetization')
+                ->component('Admin/Layout/SystemConfig')
                 ->where('metrics.mrr.value', 598)
                 ->where('metrics.mrr.is_projected', true)
                 ->where('metrics.mrr.basis', 'Based on current active artisan plan tiers.')
@@ -47,10 +56,10 @@ class MonetizationTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.monetization'))
+            ->get(route('admin.settings.index', ['tab' => 'monetization']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Analytics/Monetization')
+                ->component('Admin/Layout/SystemConfig')
                 ->where('recentSubscribers.0.id', $log->id)
                 ->where('recentSubscribers.0.user_id', $artisan->id)
                 ->where('recentSubscribers.0.name', 'Cavite Potter')
@@ -59,5 +68,5 @@ class MonetizationTest extends TestCase
                 ->where('recentSubscribers.0.tier', 'Premium')
             );
     }
-
 }
+

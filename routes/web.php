@@ -319,7 +319,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('admin.settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'update'])->name('admin.settings.update');
 
-    Route::get('/monetization', [SuperAdminController::class, 'monetization'])->name('admin.monetization');
+    Route::get('/monetization', fn() => redirect()->route('admin.settings.index', ['tab' => 'monetization']))->name('admin.monetization');
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users-manager', [SuperAdminController::class, 'userManager'])->name('admin.users.manager');
     Route::get('/users', fn() => redirect()->route('admin.users.manager', ['tab' => 'directory']))->name('admin.users');

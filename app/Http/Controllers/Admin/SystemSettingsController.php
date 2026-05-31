@@ -3,24 +3,37 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Models\SponsorshipRequest;
+use App\Models\UserTierLog;
 use App\Services\SystemSettingsService;
+use App\Services\Admin\AdminMetricsService;
+use App\Services\Admin\AdminAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class SystemSettingsController extends Controller
 {
     protected SystemSettingsService $settings;
+    protected AdminMetricsService $metrics;
+    protected AdminAnalyticsService $analytics;
 
-    public function __construct(SystemSettingsService $settings)
-    {
+    public function __construct(
+        SystemSettingsService $settings,
+        AdminMetricsService $metrics,
+        AdminAnalyticsService $analytics
+    ) {
         $this->settings = $settings;
+        $this->metrics = $metrics;
+        $this->analytics = $analytics;
     }
 
     public function index()
     {
-        return Inertia::render('Admin/Layout/SystemSettings', [
-            'settings' => [
+        try {
+            $systemSettings = [
                 'platform_name' => $this->settings->get('platform_name', 'Likhang Kamay'),
                 'platform_logo' => $this->settings->get('platform_logo'),
                 'favicon' => $this->settings->get('favicon'),
@@ -46,8 +59,177 @@ class SystemSettingsController extends Controller
                 'withdrawal_min' => $this->settings->get('withdrawal_min', 500.0),
                 'maintenance_mode' => $this->settings->get('maintenance_mode', false),
                 'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
-            ]
-        ]);
+
+                // SMTP Settings
+                'mail_host' => $this->settings->get('mail_host', 'smtp.mailtrap.io'),
+                'mail_port' => $this->settings->get('mail_port', '2525'),
+                'mail_encryption' => $this->settings->get('mail_encryption', 'tls'),
+                'mail_username' => $this->settings->get('mail_username', ''),
+                'mail_password' => $this->settings->get('mail_password', ''),
+                'mail_from_address' => $this->settings->get('mail_from_address', 'noreply@likhangkamay.app'),
+                'mail_from_name' => $this->settings->get('mail_from_name', 'Likhang Kamay'),
+            ];
+
+            $premiumPrice = 199;
+            $elitePrice = 399;
+
+            $premiumUsersCount = User::where('role', 'artisan')->where('premium_tier', 'premium')->count();
+            $eliteUsersCount = User::where('role', 'artisan')->where('premium_tier', 'super_premium')->count();
+            $freeUsersCount = User::where('role', 'artisan')->where(function($q) {
+                $q->where('premium_tier', 'free')->orWhereNull('premium_tier');
+            })->count();
+
+            $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
+            $previousPremiumUsersCount = $this->metrics->getHistoricalTierCount('premium', 30);
+            $previousEliteUsersCount = $this->metrics->getHistoricalTierCount('super_premium', 30);
+            $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
+
+            $mrrGrowth = 0;
+            if ($previousProjectedMrr > 0) {
+                $mrrGrowth = (($projectedMrr - $previousProjectedMrr) / $previousProjectedMrr) * 100;
+            } elseif ($projectedMrr > 0) {
+                $mrrGrowth = 100;
+            }
+
+            $mrrMetric = [
+                'value' => $projectedMrr,
+                'growth' => round($mrrGrowth, 1),
+                'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral'),
+                'is_projected' => true,
+                'basis' => 'Based on current active artisan plan tiers.',
+            ];
+
+            $activeSponsorships = SponsorshipRequest::where('status', 'approved')->count();
+            $pendingSponsorships = SponsorshipRequest::where('status', 'pending')->count();
+            $previousActiveSponsorships = SponsorshipRequest::where('status', 'approved')
+                ->where('approved_at', '<', now()->subDays(30))
+                ->count();
+            
+            $sponsorshipGrowth = 0;
+            if ($previousActiveSponsorships > 0) {
+                $sponsorshipGrowth = (($activeSponsorships - $previousActiveSponsorships) / $previousActiveSponsorships) * 100;
+            } elseif ($activeSponsorships > 0) {
+                $sponsorshipGrowth = 100;
+            }
+
+            $sponsorshipMetric = [
+                'value' => $activeSponsorships,
+                'growth' => round($sponsorshipGrowth, 1),
+                'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
+            ];
+
+            $monetizationMetrics = [
+                'mrr' => $mrrMetric,
+                'sponsorships' => $sponsorshipMetric,
+                'subscribers' => [
+                    'free' => $freeUsersCount,
+                    'premium' => $premiumUsersCount,
+                    'elite' => $eliteUsersCount,
+                    'total_paid' => $premiumUsersCount + $eliteUsersCount,
+                ],
+                'pendingSponsorships' => $pendingSponsorships,
+            ];
+
+            $recentSubscribers = UserTierLog::query()
+                ->with('user:id,name,shop_name,avatar,premium_tier')
+                ->whereNotNull('new_tier')
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(function($log) {
+                    $user = $log->user;
+                    if (!$user) return null;
+
+                    $formatTierLabel = fn (?string $tier) => match ($tier) {
+                        'super_premium' => 'Elite',
+                        'premium' => 'Premium',
+                        'free', null, '' => 'Free',
+                        default => ucfirst(str_replace('_', ' ', (string) $tier)),
+                    };
+
+                    $newTierLabel = $formatTierLabel($log->new_tier);
+                    $previousTierLabel = $formatTierLabel($log->previous_tier);
+                    $changeDirection = match ([$log->previous_tier, $log->new_tier]) {
+                        ['premium', 'super_premium'], ['free', 'premium'], ['free', 'super_premium'], [null, 'premium'], [null, 'super_premium'] => 'upgrade',
+                        ['super_premium', 'premium'], ['premium', 'free'], ['super_premium', 'free'] => 'downgrade',
+                        default => 'change',
+                    };
+
+                    return [
+                        'id' => $log->id,
+                        'user_id' => $user->id,
+                        'name' => $user->name,
+                        'shop_name' => $user->shop_name,
+                        'avatar' => $user->avatar,
+                        'premium_tier' => $log->new_tier,
+                        'previous_tier' => $log->previous_tier,
+                        'previous_tier_label' => $previousTierLabel,
+                        'tier' => $newTierLabel,
+                        'change_label' => "{$previousTierLabel} to {$newTierLabel}",
+                        'change_direction' => $changeDirection,
+                        'date' => $log->created_at->format('M d, Y h:i A'),
+                    ];
+                })
+                ->filter()
+                ->values();
+
+            $recentSponsorships = Inertia::defer(function() {
+                return SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get()
+                    ->map(function($req) {
+                        return [
+                            'id' => $req->id,
+                            'user' => $req->user,
+                            'product_name' => $req->product->name ?? 'Unknown Product',
+                            'status' => $req->status,
+                            'date' => $req->created_at->format('M d, Y h:i A')
+                        ];
+                    });
+            });
+
+            return Inertia::render('Admin/Layout/SystemConfig', [
+                'settings' => $systemSettings,
+                'metrics' => $monetizationMetrics,
+                'recentSubscribers' => $recentSubscribers,
+                'recentSponsorships' => $recentSponsorships,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("SystemSettings index error: " . $e->getMessage());
+            return Inertia::render('Admin/Layout/SystemConfig', [
+                'settings' => [
+                    'platform_name' => 'Likhang Kamay',
+                    'platform_logo' => null,
+                    'favicon' => null,
+                    'primary_color' => '#8B4513',
+                    'seo_metadata' => ['title' => '', 'description' => '', 'keywords' => ''],
+                    'contact_info' => ['email' => '', 'phone' => '', 'address' => ''],
+                    'social_links' => ['facebook' => '', 'instagram' => '', 'twitter' => ''],
+                    'commission_rate' => 5.0,
+                    'convenience_fee' => 15.0,
+                    'withdrawal_min' => 500.0,
+                    'maintenance_mode' => false,
+                    'paymongo_enabled' => true,
+                    'mail_host' => 'smtp.mailtrap.io',
+                    'mail_port' => '2525',
+                    'mail_encryption' => 'tls',
+                    'mail_username' => '',
+                    'mail_password' => '',
+                    'mail_from_address' => 'noreply@likhangkamay.app',
+                    'mail_from_name' => 'Likhang Kamay',
+                ],
+                'metrics' => [
+                    'mrr' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'sponsorships' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'subscribers' => ['free' => 0, 'premium' => 0, 'elite' => 0, 'total_paid' => 0],
+                    'pendingSponsorships' => 0,
+                ],
+                'recentSubscribers' => [],
+                'recentSponsorships' => [],
+                'db_error' => true
+            ]);
+        }
     }
 
     public function update(Request $request)
@@ -75,6 +257,15 @@ class SystemSettingsController extends Controller
             'withdrawal_min' => 'required|numeric|min:0',
             'maintenance_mode' => 'required|boolean',
             'paymongo_enabled' => 'required|boolean',
+
+            // SMTP Validation
+            'mail_host' => 'nullable|string|max:255',
+            'mail_port' => 'nullable|string|max:10',
+            'mail_encryption' => 'nullable|string|max:20',
+            'mail_username' => 'nullable|string|max:255',
+            'mail_password' => 'nullable|string|max:255',
+            'mail_from_address' => 'nullable|email|max:255',
+            'mail_from_name' => 'nullable|string|max:255',
         ]);
 
         // Audit Logging for critical changes
@@ -121,6 +312,15 @@ class SystemSettingsController extends Controller
         $this->settings->set('maintenance_mode', $validated['maintenance_mode'] ? 'true' : 'false', 'boolean');
         $this->settings->set('paymongo_enabled', $validated['paymongo_enabled'] ? 'true' : 'false', 'boolean');
 
+        // Save SMTP Config
+        $this->settings->set('mail_host', $validated['mail_host'] ?? '');
+        $this->settings->set('mail_port', $validated['mail_port'] ?? '');
+        $this->settings->set('mail_encryption', $validated['mail_encryption'] ?? '');
+        $this->settings->set('mail_username', $validated['mail_username'] ?? '');
+        $this->settings->set('mail_password', $validated['mail_password'] ?? '');
+        $this->settings->set('mail_from_address', $validated['mail_from_address'] ?? '');
+        $this->settings->set('mail_from_name', $validated['mail_from_name'] ?? '');
+
         if ($request->hasFile('platform_logo')) {
             $path = $request->file('platform_logo')->store('platform', 'public');
             $this->settings->set('platform_logo', Storage::url($path));
@@ -134,3 +334,4 @@ class SystemSettingsController extends Controller
         return back()->with('success', 'System settings synchronized successfully.');
     }
 }
+
