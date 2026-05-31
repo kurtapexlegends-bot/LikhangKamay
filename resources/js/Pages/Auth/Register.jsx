@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -7,7 +7,8 @@ import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, Loader2, Store, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Store, Mail, Lock, User, CheckCircle2, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -19,13 +20,19 @@ export default function Register() {
         terms: false,
     });
 
-    const [showPassword, setShowPassword] = useState(false);
+    const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
     const [legalModal, setLegalModal] = useState({ isOpen: false, type: 'terms' });
     const [isGuidingTermsAcceptance, setIsGuidingTermsAcceptance] = useState(false);
     const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState({
         terms: false,
         privacy: false,
     });
+
+    const firstNameRef = useRef(null);
+    const lastNameRef = useRef(null);
+    const emailRef = useRef(null);
+    const passwordRef = useRef(null);
+    const confirmPasswordRef = useRef(null);
 
     useEffect(() => {
         return () => {
@@ -62,6 +69,17 @@ export default function Register() {
     const submit = (e) => {
         e.preventDefault();
         post(route('register'));
+    };
+
+    const handleKeyDown = (nextRef) => (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            nextRef.current?.focus();
+        }
+    };
+
+    const handleGoogleClick = () => {
+        setIsGoogleSigningIn(true);
     };
 
     const openLegalModal = (type) => {
@@ -130,256 +148,311 @@ export default function Register() {
 
     const canEnableTermsCheckbox = acceptedLegalDocuments.terms && acceptedLegalDocuments.privacy;
 
+    // Staggered animation configurations
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 15 },
+        show: { 
+            opacity: 1, 
+            y: 0, 
+            transition: { type: "spring", stiffness: 260, damping: 22 } 
+        }
+    };
+
     return (
         <GuestLayout quote="Join the community of art lovers and clay enthusiasts.">
             <Head title="Create Account" />
 
-            <div className="mb-8 text-center sm:text-left">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-clay-100 to-amber-50 mb-4 shadow-inner">
-                    <User className="text-clay-600" size={24} strokeWidth={2.5} />
-                </div>
-                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight mb-2">Create Account</h1>
-                <p className="text-stone-500 text-sm sm:text-base">Sign up to discover unique local pottery.</p>
-            </div>
+            <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-5 pt-2"
+            >
+                {/* Header Section */}
+                <motion.div variants={itemVariants} className="mb-8 text-left">
+                    <span className="text-[9px] font-sans tracking-[0.25em] uppercase text-clay-600 font-bold mb-2 block">Registration Hub</span>
+                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight mb-1.5">Create Account</h1>
+                    <p className="text-stone-400 text-xs font-medium">Sign up to discover unique local pottery.</p>
+                </motion.div>
 
-            <form onSubmit={submit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
-                                <User size={18} />
-                            </div>
+                {/* Form */}
+                <motion.form 
+                    variants={containerVariants}
+                    onSubmit={submit} 
+                    className="space-y-5"
+                >
+                    {/* Name Fields Grid */}
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
                             <TextInput
+                                ref={firstNameRef}
                                 id="first_name"
                                 name="first_name"
                                 value={data.first_name}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
+                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="given-name"
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
+                                onKeyDown={handleKeyDown(lastNameRef)}
                                 required
                                 floatingLabel="First Name"
-                                withIcon={true}
+                                icon={User}
                             />
+                            <InputError message={errors.first_name} className="mt-2" />
                         </div>
-                        <InputError message={errors.first_name} className="mt-2" />
-                    </div>
 
-                    <div>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
-                                <User size={18} />
-                            </div>
+                        <div>
                             <TextInput
+                                ref={lastNameRef}
                                 id="last_name"
                                 name="last_name"
                                 value={data.last_name}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
+                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
+                                onKeyDown={handleKeyDown(emailRef)}
                                 floatingLabel="Last Name"
-                                withIcon={true}
+                                icon={User}
                             />
+                            <InputError message={errors.last_name} className="mt-2" />
                         </div>
-                        <InputError message={errors.last_name} className="mt-2" />
-                    </div>
-                </div>
+                    </motion.div>
 
-                <div>
-                    <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
-                            <Mail size={18} />
-                        </div>
+                    {/* Email Field */}
+                    <motion.div variants={itemVariants}>
                         <TextInput
+                            ref={emailRef}
                             id="email"
                             type="email"
                             name="email"
                             value={data.email}
-                            className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
+                            className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                             autoComplete="username"
                             onChange={(e) => setData('email', e.target.value)}
+                            onKeyDown={handleKeyDown(passwordRef)}
                             required
                             floatingLabel="Email Address"
-                            withIcon={true}
+                            icon={Mail}
                         />
                         {emailValidation.isValid !== null && (
-                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium px-1 animate-in fade-in slide-in-from-top-1 duration-300 ${emailValidation.isValid ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
+                                emailValidation.isValid 
+                                    ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
+                                    : 'text-rose-700 bg-rose-50 border-rose-100/60'
+                            }`}>
                                 {emailValidation.isValid ? (
-                                    <CheckCircle size={14} className="shrink-0" />
+                                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
                                 ) : (
-                                    <AlertCircle size={14} className="shrink-0" />
+                                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
                                 )}
                                 <span>{emailValidation.message}</span>
                             </div>
                         )}
-                    </div>
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
+                        <InputError message={errors.email} className="mt-2" />
+                    </motion.div>
 
-                {/* Split Password Fields with Toggle */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
-                                <Lock size={18} />
-                            </div>
+                    {/* Split Password Fields */}
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
                             <TextInput
+                                ref={passwordRef}
                                 id="password"
-                                type={showPassword ? "text" : "password"}
+                                type="password"
                                 name="password"
                                 value={data.password}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 pr-10 transition-all hover:border-stone-300"
+                                className="block w-full"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
+                                onKeyDown={handleKeyDown(confirmPasswordRef)}
                                 required
                                 floatingLabel="Password"
-                                withIcon={true}
+                                icon={Lock}
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 mt-1 pr-3.5 flex items-center text-stone-400 hover:text-clay-600 transition-colors z-20"
-                            >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
                         </div>
-                    </div>
-                    <div>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors z-20">
-                                <Lock size={18} />
-                            </div>
+                        <div>
                             <TextInput
+                                ref={confirmPasswordRef}
                                 id="password_confirmation"
-                                type={showPassword ? "text" : "password"}
+                                type="password"
                                 name="password_confirmation"
                                 value={data.password_confirmation}
-                                className="pl-10 mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 transition-all hover:border-stone-300"
+                                className="block w-full"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
                                 required
                                 floatingLabel="Confirm Password"
-                                withIcon={true}
+                                icon={Lock}
                             />
                         </div>
-                    </div>
-                </div>
-                <InputError message={errors.password} className="mt-2" />
+                    </motion.div>
+                    <InputError message={errors.password} className="mt-2" />
 
-                {data.password && (
-                    <div className="mt-2 p-3 bg-stone-50 rounded-xl border border-stone-100 animate-in fade-in zoom-in-95 duration-300">
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Password Strength</span>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                                (data.password.length < 8) ? 'text-rose-500' : 
-                                (data.password.length < 12) ? 'text-amber-500' : 'text-emerald-500'
-                            }`}>
-                                {data.password.length < 8 ? 'Weak' : data.password.length < 12 ? 'Fair' : 'Strong'}
-                            </span>
-                        </div>
-                        <div className="h-1.5 w-full bg-stone-200 rounded-full overflow-hidden flex gap-0.5">
-                            <div className={`h-full transition-all duration-500 ${data.password.length >= 4 ? (data.password.length < 8 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                            <div className={`h-full transition-all duration-500 ${data.password.length >= 8 ? (data.password.length < 12 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                            <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                            <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && data.password.length >= 8 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                        </div>
-                        <p className="mt-2 text-[10px] text-stone-500 leading-tight">
-                            Use 8+ characters with a mix of letters, numbers & symbols for maximum security.
-                        </p>
-                    </div>
-                )}
-
-                <div className="block mt-4">
-                    <div className="flex items-start bg-stone-50/50 p-4 rounded-xl border border-stone-100">
-                        <Checkbox
-                            name="terms"
-                            checked={data.terms}
-                            onChange={handleTermsCheckboxChange}
-                            className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
-                        />
-                        <span className="ms-3 text-sm text-stone-600 leading-snug">
-                            I agree to the{' '}
-                            <button 
-                                type="button"
-                                onClick={() => openLegalModal('terms')}
-                                className="font-semibold text-clay-600 hover:text-clay-700 hover:underline transition-colors"
-                            >
-                                Terms of Service
-                            </button>
-                            {' '}and{' '}
-                            <button 
-                                type="button"
-                                onClick={() => openLegalModal('privacy')}
-                                className="font-semibold text-clay-600 hover:text-clay-700 hover:underline transition-colors"
-                            >
-                                Privacy Policy
-                            </button>.
-                        </span>
-                    </div>
-                    <InputError message={errors.terms} className="mt-2" />
-                </div>
-
-                <div className="pt-4">
-                    <PrimaryButton 
-                        className="relative w-full justify-center py-3.5 bg-gradient-to-r from-clay-600 to-clay-500 hover:from-clay-700 hover:to-clay-600 border-none rounded-xl text-base font-bold shadow-lg shadow-clay-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-clay-500/30 active:translate-y-0 active:shadow-md overflow-hidden group" 
-                        disabled={processing}
-                    >
-                        {/* Shine effect */}
-                        <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg]"></div>
-                        
-                        <span className="relative flex items-center gap-2">
-                            {processing ? (
+                    {/* Real-time Password Matching status indicator */}
+                    {data.password && data.password_confirmation && (
+                        <motion.div 
+                            variants={itemVariants}
+                            className={`flex items-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-xl border transition-all duration-300 ${
+                                data.password === data.password_confirmation
+                                    ? 'text-emerald-700 bg-emerald-50/80 border-emerald-100/60 shadow-sm shadow-emerald-500/5'
+                                    : 'text-amber-700 bg-amber-50/80 border-amber-100/60 shadow-sm shadow-amber-500/5'
+                            }`}
+                        >
+                            {data.password === data.password_confirmation ? (
                                 <>
-                                    <Loader2 size={18} className="animate-spin" />
-                                    <span>Processing...</span>
+                                    <CheckCircle2 size={15} className="shrink-0 text-emerald-600 animate-pulse" />
+                                    <span>Passwords match successfully.</span>
                                 </>
                             ) : (
-                                'Create Account'
+                                <>
+                                    <AlertCircle size={15} className="shrink-0 text-amber-600 animate-pulse" />
+                                    <span>Passwords do not match yet.</span>
+                                </>
                             )}
-                        </span>
-                    </PrimaryButton>
-                </div>
-            </form>
+                        </motion.div>
+                    )}
 
-            {/* Social Login Section */}
-            <div className="mt-8">
-                <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="px-4 bg-white text-stone-400 text-xs font-semibold uppercase tracking-widest">Or sign up with</span>
-                    </div>
-                </div>
+                    {/* Password Strength Indicator */}
+                    {data.password && (
+                        <motion.div 
+                            variants={itemVariants}
+                            className="mt-1.5 px-1 space-y-1.5 animate-in fade-in duration-300"
+                        >
+                            <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-wider">
+                                <span className="text-stone-400">Strength</span>
+                                <span className={
+                                    data.password.length < 8 ? 'text-rose-500' : 
+                                    data.password.length < 12 ? 'text-amber-500' : 'text-emerald-500'
+                                }>
+                                    {data.password.length < 8 ? 'Weak' : data.password.length < 12 ? 'Fair' : 'Strong'}
+                                </span>
+                            </div>
+                            <div className="h-1 w-full bg-stone-100 rounded-full overflow-hidden flex gap-0.5">
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 4 ? (data.password.length < 8 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 8 ? (data.password.length < 12 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && data.password.length >= 8 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                            </div>
+                        </motion.div>
+                    )}
 
-                <a 
-                    href="/auth/google" 
-                    className="w-full flex items-center justify-center gap-3 py-3 border border-stone-200 rounded-xl hover:bg-stone-50 hover:border-stone-300 bg-white transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group"
+                    {/* Terms Checkbox Row */}
+                    <motion.div 
+                        variants={itemVariants}
+                        className="block"
+                    >
+                        <div className="flex items-start bg-stone-50/60 p-4 rounded-xl border border-stone-100/80">
+                            <Checkbox
+                                name="terms"
+                                checked={data.terms}
+                                onChange={handleTermsCheckboxChange}
+                                className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
+                            />
+                            <span className="ms-3 text-xs text-stone-500 leading-relaxed select-none">
+                                I agree to the{' '}
+                                <button 
+                                    type="button"
+                                    onClick={() => openLegalModal('terms')}
+                                    className="font-bold text-clay-600 hover:text-clay-700 hover:underline transition-colors uppercase tracking-wider text-[10px]"
+                                >
+                                    Terms of Service
+                                </button>
+                                {' '}and{' '}
+                                <button 
+                                    type="button"
+                                    onClick={() => openLegalModal('privacy')}
+                                    className="font-bold text-clay-600 hover:text-clay-700 hover:underline transition-colors uppercase tracking-wider text-[10px]"
+                                >
+                                    Privacy Policy
+                                </button>.
+                            </span>
+                        </div>
+                        <InputError message={errors.terms} className="mt-2" />
+                    </motion.div>
+
+                    {/* Create Account Submit Button */}
+                    <motion.div variants={itemVariants}>
+                        <PrimaryButton 
+                            className="relative w-full justify-center py-3 bg-stone-900 hover:bg-stone-850 border-stone-900 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md overflow-hidden group" 
+                            disabled={processing}
+                        >
+                            <span className="relative flex items-center gap-2">
+                                {processing ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span>Processing...</span>
+                                    </>
+                                ) : (
+                                    'Create Account'
+                                )}
+                            </span>
+                        </PrimaryButton>
+                    </motion.div>
+                </motion.form>
+
+                {/* Social Signup Section */}
+                <motion.div variants={itemVariants} className="mt-8 flex flex-col items-center">
+                    <div className="relative w-full mb-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full h-px bg-stone-200/60"></div>
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                            <span className="px-4 bg-white text-stone-400 font-bold uppercase tracking-widest text-[9px]">Or sign up with</span>
+                        </div>
+                    </div>
+
+                    <a 
+                        href="/auth/google" 
+                        onClick={handleGoogleClick}
+                        className="group flex items-center justify-center gap-3 px-6 py-2.5 border border-stone-200/80 rounded-full bg-white hover:bg-stone-50 hover:border-stone-400 transition-all duration-300 active:scale-[0.98] shadow-sm hover:shadow"
+                    >
+                        {isGoogleSigningIn ? (
+                            <>
+                                <Loader2 size={14} className="animate-spin text-stone-500" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Connecting...</span>
+                            </>
+                        ) : (
+                            <>
+                                <img src="/images/google-icon.svg" className="w-4 h-4 group-hover:scale-110 transition-transform" alt="Google" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-600 group-hover:text-stone-900 transition-colors">Google Account</span>
+                            </>
+                        )}
+                    </a>
+                </motion.div>
+
+                {/* Footer Navigation */}
+                <motion.div 
+                    variants={itemVariants}
+                    className="mt-10 pt-6 border-t border-stone-100"
                 >
-                    <img src="/images/google-icon.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
-                    <span className="text-sm font-semibold text-stone-600">Google</span>
-                </a>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-stone-100">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                    <Link 
-                        href={route('login')}
-                        className="group flex items-center justify-center gap-2 text-[13px] font-bold text-stone-600 bg-stone-50 border border-stone-200 px-5 py-2.5 rounded-xl hover:bg-stone-100 hover:border-stone-300 transition-all duration-300 shadow-sm hover:shadow"
-                    >
-                        <User size={16} className="text-stone-400 group-hover:text-stone-600 transition-colors group-hover:scale-110" />
-                        <span>Log in</span>
-                    </Link>
-                    
-                    <Link 
-                        href="/artisan/register" 
-                        className="group flex items-center justify-center gap-2 text-[13px] font-bold text-clay-700 bg-clay-50 border border-clay-200 px-5 py-2.5 rounded-xl hover:bg-clay-100 hover:border-clay-300 transition-all duration-300 shadow-sm hover:shadow"
-                    >
-                        <Store size={16} className="text-clay-500 group-hover:text-clay-700 transition-colors group-hover:scale-110" />
-                        <span>Become an Artisan</span>
-                    </Link>
-                </div>
-            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                        <Link 
+                            href={route('login')}
+                            className="group flex items-center justify-center gap-2 text-xs font-bold text-stone-600 bg-stone-50 border border-stone-200 px-5 py-3 rounded-xl hover:bg-stone-100 hover:border-stone-300 transition-all duration-300 shadow-sm hover:shadow uppercase tracking-wider"
+                        >
+                            <User size={14} className="text-stone-400 group-hover:text-stone-600 transition-colors group-hover:scale-110" />
+                            <span>Log in</span>
+                        </Link>
+                        
+                        <Link 
+                            href="/artisan/register" 
+                            className="group flex items-center justify-center gap-2 text-xs font-bold text-clay-700 bg-clay-50 border border-clay-200 px-5 py-3 rounded-xl hover:bg-clay-100 hover:border-clay-300 transition-all duration-300 shadow-sm hover:shadow uppercase tracking-wider"
+                        >
+                            <Store size={14} className="text-clay-500 group-hover:text-clay-700 transition-colors group-hover:scale-110" />
+                            <span>Become an Artisan</span>
+                        </Link>
+                    </div>
+                </motion.div>
+            </motion.div>
 
             {/* Legal Modal */}
             <LegalModal 

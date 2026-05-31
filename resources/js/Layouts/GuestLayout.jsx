@@ -1,91 +1,110 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import { X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function GuestLayout({ children, image, quote, quoteAuthor }) {
-    // Default Pottery Theme Image
+    // Premium Pottery Theme Image
     const bgImage = image || "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?q=80&w=1969&auto=format&fit=crop";
 
     return (
-        // 1. FULL SCREEN WRAPPER (Fixed)
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 font-sans">
+        // 1. FULL VIEWPORT CANVAS
+        <div className="fixed inset-0 z-50 flex items-stretch font-sans overflow-hidden bg-stone-950">
             
-            {/* 2. BACKDROP (Dimmed & Blurred like Lazada) */}
-            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm">
+            {/* --- LEFT SIDE: CINEMATIC ARTWORK GRID (Hidden on Mobile) --- */}
+            <motion.div 
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                className="hidden lg:flex lg:w-1/2 relative bg-stone-900 flex-col justify-between p-12 overflow-hidden border-r border-stone-800"
+            >
+                {/* Architectural Ceramic Showcase Background */}
                 <img 
-                    src="https://images.unsplash.com/photo-1459156212016-c812468e2115?q=80&w=2000&auto=format&fit=crop" 
-                    className="w-full h-full object-cover opacity-20" 
-                    alt="Background"
+                    src={bgImage} 
+                    alt="Artisan Craft" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity scale-105 hover:scale-100 transition-transform duration-10000 ease-out"
+                    onError={(e) => {
+                        e.target.style.opacity = 0;
+                    }}
                 />
-            </div>
-
-            {/* 3. THE MODAL CARD (Split Layout) */}
-            <div className="relative z-10 w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto max-h-[92dvh] md:max-h-[90vh] animate-fade-in-up">
                 
-                {/* --- LEFT SIDE: IMAGE / BRANDING (Hidden on Mobile) --- */}
-                <div className="hidden md:flex md:w-5/12 relative bg-clay-800 text-white flex-col justify-between p-8 overflow-hidden">
-                    {/* Background Image for Left Side */}
-                    <img 
-                        src={bgImage} 
-                        alt="" 
-                        className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay transition-opacity duration-300"
-                        onError={(e) => {
-                            e.target.style.opacity = 0;
-                        }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-clay-900/90 to-transparent"></div>
+                {/* Terracotta/Clay Glaze Filter */}
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/60 to-clay-950/20 z-10"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(215,108,61,0.15),transparent_50%)] z-10"></div>
 
-                    {/* Logo/Brand (Top Left) */}
-                    <div className="relative z-10 flex items-center gap-3">
-                        <div className="bg-white/20 backdrop-blur border border-white/30 p-2 rounded-lg">
-                            <img src="/images/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
-                        </div>
-                        <span className="font-serif font-bold text-lg tracking-wide">LikhangKamay</span>
+                {/* Top Section: Logo & Branding */}
+                <div className="relative z-20 flex items-center gap-3">
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 p-2.5 rounded-xl shadow-inner">
+                        <img src="/images/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
                     </div>
+                    <span className="font-serif font-bold text-xl tracking-wider text-amber-50">LikhangKamay</span>
+                </div>
 
-                    {/* Quote (Bottom Left) */}
-                    <div className="relative z-10">
-                        <blockquote className="font-serif text-2xl leading-snug italic mb-4">
-                            "{quote || 'Crafting the future of local pottery.'}"
-                        </blockquote>
-                        <p className="text-xs uppercase tracking-widest opacity-70 font-bold">
-                            — {quoteAuthor || 'LikhangKamay'}
+                {/* Middle Section: Editorial Text */}
+                <div className="relative z-20 my-auto max-w-lg">
+                    <span className="text-[10px] font-sans tracking-[0.25em] uppercase text-clay-400 font-bold mb-3 block">Artisan Craftsmanship</span>
+                    <h2 className="font-serif text-5xl font-bold text-white leading-[1.15] mb-6 tracking-tight">
+                        Earth shaped by hand, <br/>
+                        fired by soul.
+                    </h2>
+                    <div className="h-px w-20 bg-clay-500/50 mb-6"></div>
+                </div>
+
+                {/* Bottom Section: Glassmorphic Manifesto Card */}
+                <div className="relative z-20 bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] p-6 rounded-2xl max-w-md shadow-2xl">
+                    <blockquote className="font-serif text-lg leading-relaxed italic text-stone-200 mb-4">
+                        "{quote || 'Crafting the future of local pottery.'}"
+                    </blockquote>
+                    <div className="flex items-center gap-3">
+                        <div className="h-0.5 w-4 bg-clay-500"></div>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-clay-400 font-bold">
+                            {quoteAuthor || 'LikhangKamay'}
                         </p>
                     </div>
                 </div>
+            </motion.div>
 
-                {/* --- RIGHT SIDE: FORM (Hidden Scrollbar) --- */}
-                <div 
-                    className="w-full md:w-7/12 bg-white p-5 sm:p-6 lg:p-10 pt-8 relative flex flex-col overflow-y-auto"
-                    style={{ 
-                        scrollbarWidth: 'none',
-                        msOverflowStyle: 'none'
-                    }}
-                >
-                    {/* MOBILE HEADER (Visible only on small screens) */}
-                    <div className="md:hidden flex items-center justify-center gap-2 mb-5 text-clay-800">
-                        <img src="/images/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
-                        <span className="font-serif font-bold text-xl tracking-wide">LikhangKamay</span>
-                    </div>
-                    {/* Hide webkit scrollbar */}
-                    <style dangerouslySetInnerHTML={{ __html: `
-                        .auth-scroll-container::-webkit-scrollbar { display: none; }
-                    `}} />
-                    
-                    {/* CLOSE BUTTON (X) - Top Right */}
-                    <Link 
-                        href="/" 
-                        className="absolute top-3 right-3 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
-                        title="Close"
-                    >
-                        <X size={20} />
-                    </Link>
-
-                    {/* Form Content Injected Here */}
-                    {children}
+            {/* --- RIGHT SIDE: FORM WORKSPACE WITH AMBIENT KILN GLOW --- */}
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full lg:w-1/2 bg-white flex flex-col relative overflow-y-auto px-6 sm:px-12 lg:px-20 py-12 auth-scroll-container"
+            >
+                {/* Soft Kiln-ambient Glow in background */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] rounded-full bg-clay-500/[0.03] blur-[120px] mix-blend-multiply animate-pulse" style={{ animationDuration: '8s' }}></div>
+                    <div className="absolute bottom-[10%] left-[-10%] w-[30rem] h-[30rem] rounded-full bg-stone-100 blur-[100px] mix-blend-multiply"></div>
                 </div>
 
-            </div>
+                <style dangerouslySetInnerHTML={{ __html: `
+                    .auth-scroll-container::-webkit-scrollbar { display: none; }
+                `}} />
+                
+                {/* CLOSE BUTTON (X) - Elegant & Minimal */}
+                <Link 
+                    href="/" 
+                    className="absolute top-6 right-6 p-2.5 text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-full transition-all duration-300 active:scale-95 z-30 border border-stone-200/40 shadow-sm bg-white/50 backdrop-blur-sm"
+                    title="Close"
+                >
+                    <X size={18} />
+                </Link>
+
+                {/* Form Content Injected Here */}
+                <div className="w-full max-w-md mx-auto relative z-10 my-auto">
+                    
+                    {/* MOBILE HEADER (Visible only on small screens) */}
+                    <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
+                        <div className="bg-clay-600/10 border border-clay-500/20 p-2 rounded-xl">
+                            <img src="/images/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+                        </div>
+                        <span className="font-serif font-bold text-2xl tracking-wider text-stone-900">LikhangKamay</span>
+                    </div>
+
+                    {children}
+                </div>
+            </motion.div>
+
         </div>
     );
 }

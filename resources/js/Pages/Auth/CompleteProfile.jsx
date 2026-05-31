@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import { Head, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false }) {
     const suggestedNameParts = typeof suggestedName === 'string'
@@ -24,7 +24,6 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
         terms: false,
     });
 
-    const [showPassword, setShowPassword] = useState(false);
     const [legalModal, setLegalModal] = useState({ isOpen: false, type: isArtisan ? 'seller' : 'terms' });
     const [isGuidingTermsAcceptance, setIsGuidingTermsAcceptance] = useState(false);
     const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState(
@@ -137,6 +136,26 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
         openNextRequiredLegalModal();
     };
 
+    // Staggered animation configurations
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 15 },
+        show: { 
+            opacity: 1, 
+            y: 0, 
+            transition: { type: "spring", stiffness: 260, damping: 22 } 
+        }
+    };
+
     return (
         <GuestLayout 
             quote={isArtisan 
@@ -146,289 +165,231 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
         >
             <Head title="Complete Your Profile" />
 
-            <div className="mb-8 text-center sm:text-left">
-                <div className="flex items-center justify-center gap-2 mb-4 sm:justify-start">
-                    <CheckCircle className="text-green-500" size={22} />
-                    <span className="text-sm font-medium text-green-600">
-                        Connected via {providerLabel}
-                    </span>
-                </div>
-
-                {isArtisan && (
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-stone-800 to-stone-900 text-amber-50 rounded-full text-xs font-bold uppercase tracking-widest mb-6 shadow-md shadow-stone-900/20">
-                        <Store size={14} /> Artisan Account
+            <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-5 pt-2"
+            >
+                {/* Header Section */}
+                <motion.div variants={itemVariants} className="mb-8 text-left">
+                    <div className="flex items-center gap-2 mb-3.5">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100">
+                            <CheckCircle className="text-emerald-600 shrink-0" size={12} />
+                        </div>
+                        <span className="text-[10px] font-sans font-bold text-emerald-700 uppercase tracking-wider">
+                            Connected via {providerLabel}
+                        </span>
                     </div>
-                )}
 
-                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight mb-2">
-                    Complete Your Profile
-                </h2>
-                <p className="text-stone-500 text-sm sm:text-base">
-                    {isArtisan 
-                        ? "Set your details and password to create your seller account."
-                        : "Set your name and password to secure your account."
-                    }
-                </p>
-            </div>
+                    <span className="text-[9px] font-sans tracking-[0.25em] uppercase text-clay-600 font-bold mb-2 block">
+                        {isArtisan ? 'Artisan Profile' : 'Buyer Profile'}
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight mb-1.5">
+                        Complete Your Profile
+                    </h2>
+                    <p className="text-stone-400 text-xs font-medium">
+                        {isArtisan 
+                            ? "Set your details and password to create your seller account."
+                            : "Set your name and password to secure your account."
+                        }
+                    </p>
+                </motion.div>
 
-            <form onSubmit={submit} className="space-y-4">
-
-                {isArtisan ? (
-                    <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Form */}
+                <motion.form 
+                    variants={containerVariants}
+                    onSubmit={submit} 
+                    className="space-y-5"
+                >
+                    {/* Name Fields Grid */}
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <InputLabel htmlFor="first_name" value="First Name" className="text-stone-700 font-bold mb-1.5" />
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                                    <User size={18} />
-                                </div>
-                                <TextInput
-                                    id="first_name"
-                                    name="first_name"
-                                    value={data.first_name}
-                                    className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
-                                    autoComplete="given-name"
-                                    isFocused={true}
-                                    onChange={(e) => setData('first_name', e.target.value)}
-                                    placeholder="John"
-                                />
-                            </div>
+                            <TextInput
+                                id="first_name"
+                                name="first_name"
+                                value={data.first_name}
+                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
+                                autoComplete="given-name"
+                                isFocused={true}
+                                onChange={(e) => setData('first_name', e.target.value)}
+                                required
+                                floatingLabel="First Name"
+                                icon={User}
+                            />
                             <InputError message={errors.first_name} className="mt-2" />
                         </div>
+
                         <div>
-                            <InputLabel htmlFor="last_name" value="Last Name" className="text-stone-700 font-bold mb-1.5" />
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                                    <User size={18} />
-                                </div>
-                                <TextInput
-                                    id="last_name"
-                                    name="last_name"
-                                    value={data.last_name}
-                                    className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
-                                    autoComplete="family-name"
-                                    onChange={(e) => setData('last_name', e.target.value)}
-                                    placeholder="Doe"
-                                />
-                            </div>
+                            <TextInput
+                                id="last_name"
+                                name="last_name"
+                                value={data.last_name}
+                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
+                                autoComplete="family-name"
+                                onChange={(e) => setData('last_name', e.target.value)}
+                                required
+                                floatingLabel="Last Name"
+                                icon={User}
+                            />
                             <InputError message={errors.last_name} className="mt-2" />
                         </div>
-                    </div>
-                    <div>
-                        <InputLabel htmlFor="shop_name" value="Shop Name" className="text-stone-700 font-bold mb-1.5" />
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                                <Briefcase size={18} />
-                            </div>
+                    </motion.div>
+
+                    {/* Shop Name Field (only for Artisans) */}
+                    {isArtisan && (
+                        <motion.div variants={itemVariants}>
                             <TextInput
                                 id="shop_name"
                                 name="shop_name"
                                 value={data.shop_name}
-                                className={`pl-10 pr-10 block w-full rounded-xl border ${isShopNameTaken ? 'border-rose-300 ring-rose-500/10' : 'border-stone-200 ring-clay-500/10'} bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 py-3 transition-all hover:border-stone-300`}
+                                className={`block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white ${
+                                    isShopNameTaken ? 'border-rose-350 focus:border-rose-500' : 'border-stone-200/80'
+                                }`}
                                 autoComplete="organization"
                                 onChange={(e) => setData('shop_name', e.target.value)}
-                                placeholder="e.g. Silang Pottery"
+                                required
+                                floatingLabel="Shop Name"
+                                icon={Briefcase}
                             />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                {isValidatingShop ? (
-                                    <Loader2 size={16} className="text-stone-400 animate-spin" />
-                                ) : data.shop_name.trim().length > 2 ? (
-                                    isShopNameTaken ? (
-                                        <XCircle size={16} className="text-rose-500" />
-                                    ) : (
-                                        <CheckCircle size={16} className="text-emerald-500" />
-                                    )
-                                ) : null}
-                            </div>
-                        </div>
-                        {isShopNameTaken && (
-                            <p className="mt-1.5 text-[10px] font-bold text-rose-500 flex items-center gap-1 uppercase tracking-wider">
-                                <AlertTriangle size={10} /> This shop name is already taken.
-                            </p>
-                        )}
-                        <InputError message={errors.shop_name} className="mt-2" />
-                    </div>
-                    <div>
-                        <InputLabel htmlFor="email" value="Business Email" className="text-stone-700 font-bold mb-1.5" />
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
-                                <Mail size={18} />
-                            </div>
-                            <TextInput
-                                id="email"
-                                type="email"
-                                value={email}
-                                className="pl-10 block w-full py-3"
-                                disabled
-                            />
-                        </div>
-                        <p className="text-xs text-stone-400 mt-1">Verified via {providerLabel}</p>
-                    </div>
-                    </>
-                ) : (
-                    <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <InputLabel htmlFor="first_name" value="First Name" className="text-stone-700 font-bold mb-1.5" />
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                                    <User size={18} />
+                            
+                            {isValidatingShop && (
+                                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-stone-100 bg-stone-50 text-stone-500 animate-in fade-in slide-in-from-top-1 duration-300">
+                                    <Loader2 size={14} className="shrink-0 animate-spin text-stone-400" />
+                                    <span>Checking shop availability...</span>
                                 </div>
-                                <TextInput
-                                    id="first_name"
-                                    name="first_name"
-                                    value={data.first_name}
-                                    className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
-                                    autoComplete="given-name"
-                                    isFocused={true}
-                                    onChange={(e) => setData('first_name', e.target.value)}
-                                    placeholder="John"
-                                />
-                            </div>
-                            <InputError message={errors.first_name} className="mt-2" />
-                        </div>
-                        <div>
-                            <InputLabel htmlFor="last_name" value="Last Name" className="text-stone-700 font-bold mb-1.5" />
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                                    <User size={18} />
-                                </div>
-                                <TextInput
-                                    id="last_name"
-                                    name="last_name"
-                                    value={data.last_name}
-                                    className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
-                                    autoComplete="family-name"
-                                    onChange={(e) => setData('last_name', e.target.value)}
-                                    placeholder="Doe"
-                                />
-                            </div>
-                            <InputError message={errors.last_name} className="mt-2" />
-                        </div>
-                    </div>
-                    <div>
-                        <InputLabel htmlFor="email" value="Email Address" className="text-stone-700 font-bold mb-1.5" />
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
-                                <Mail size={18} />
-                            </div>
-                            <TextInput
-                                id="email"
-                                type="email"
-                                value={email}
-                                className="pl-10 block w-full py-3"
-                                disabled
-                            />
-                        </div>
-                        <p className="text-xs text-stone-400 mt-1">Verified via {providerLabel}</p>
-                    </div>
-                    </>
-                )}
+                            )}
 
-                {/* Password Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <InputLabel htmlFor="password" value="Password" className="text-stone-700 font-bold mb-1.5" />
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                                <Lock size={18} />
-                            </div>
+                            {!isValidatingShop && data.shop_name.trim().length > 2 && (
+                                <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
+                                    !isShopNameTaken 
+                                        ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
+                                        : 'text-rose-700 bg-rose-50 border-rose-100/60'
+                                }`}>
+                                    {!isShopNameTaken ? (
+                                        <>
+                                            <CheckCircle size={14} className="shrink-0 text-emerald-600" />
+                                            <span>Shop name is available.</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <XCircle size={14} className="shrink-0 text-rose-500" />
+                                            <span>This shop name is already taken.</span>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                            <InputError message={errors.shop_name} className="mt-2" />
+                        </motion.div>
+                    )}
+
+                    {/* Email Field (Read-only, pre-verified) */}
+                    <motion.div variants={itemVariants}>
+                        <TextInput
+                            id="email"
+                            type="email"
+                            value={email}
+                            className="block w-full bg-stone-100 hover:bg-stone-100 text-stone-500 border-stone-200/80 cursor-not-allowed"
+                            disabled
+                            floatingLabel="Verified Email Address"
+                            icon={Mail}
+                        />
+                        <p className="text-[10px] text-stone-400 mt-1.5 px-1 font-semibold uppercase tracking-wider">
+                            Verified securely via {providerLabel}
+                        </p>
+                    </motion.div>
+
+                    {/* Password Fields */}
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
                             <TextInput
                                 id="password"
-                                type={showPassword ? "text" : "password"}
+                                type="password"
                                 name="password"
                                 value={data.password}
-                                className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 pr-10 transition-all hover:border-stone-300"
+                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
-                                placeholder="********"
+                                required
+                                floatingLabel="Password"
+                                icon={Lock}
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-clay-600 transition"
-                            >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
                         </div>
-                    </div>
-                    <div>
-                        <InputLabel htmlFor="password_confirmation" value="Confirm" className="text-stone-700 font-bold mb-1.5" />
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-clay-500 transition-colors">
-                                <Lock size={18} />
-                            </div>
+                        <div>
                             <TextInput
                                 id="password_confirmation"
-                                type={showPassword ? "text" : "password"}
+                                type="password"
                                 name="password_confirmation"
                                 value={data.password_confirmation}
-                                className="pl-10 block w-full rounded-xl border-stone-200 bg-stone-50/50 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 py-3 transition-all hover:border-stone-300"
+                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
-                                placeholder="********"
+                                required
+                                floatingLabel="Confirm Password"
+                                icon={Lock}
                             />
                         </div>
-                    </div>
-                </div>
-                <InputError message={errors.password} className="mt-2" />
+                    </motion.div>
+                    <InputError message={errors.password} className="mt-2" />
 
-                <div className="block mt-4">
-                    <div className="flex items-start bg-stone-50/50 p-4 rounded-xl border border-stone-100">
-                        <Checkbox
-                            name="terms"
-                            checked={data.terms}
-                            onChange={handleTermsCheckboxChange}
-                            className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
-                        />
-                        <span className="ms-3 text-sm text-stone-600 leading-snug">
-                            I agree to the{' '}
-                            <button
-                                type="button"
-                                onClick={() => openLegalModal(primaryLegalType)}
-                                className="font-semibold text-clay-600 hover:text-clay-700 hover:underline transition-colors"
-                            >
-                                {primaryLegalLabel}
-                            </button>
-                            {' '}and{' '}
-                            <button
-                                type="button"
-                                onClick={() => openLegalModal(secondaryLegalType)}
-                                className="font-semibold text-clay-600 hover:text-clay-700 hover:underline transition-colors"
-                            >
-                                {secondaryLegalLabel}
-                            </button>.
-                        </span>
-                    </div>
-                    <InputError message={errors.terms} className="mt-2" />
-                </div>
-
-                <div className="pt-4">
-                    <PrimaryButton 
-                        className={`relative w-full justify-center py-3.5 rounded-xl text-base font-bold shadow-lg transition-all hover:-translate-y-0.5 overflow-hidden group ${
-                            isArtisan 
-                                ? 'bg-gradient-to-r from-stone-800 to-stone-900 hover:from-stone-900 hover:to-black shadow-stone-900/25' 
-                                : 'bg-gradient-to-r from-clay-600 to-clay-500 hover:from-clay-700 hover:to-clay-600 shadow-clay-500/25'
-                        }`}
-                        disabled={processing || (isArtisan && isShopNameTaken)}
+                    {/* Terms Checkbox Row */}
+                    <motion.div 
+                        variants={itemVariants}
+                        className="block"
                     >
-                        <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-20deg]"></div>
-                        <span className={`relative flex items-center gap-2 ${isArtisan ? 'text-amber-50' : 'text-white'}`}>
-                            {processing ? (
-                                <>
-                                    <Loader2 size={18} className="animate-spin" />
-                                    <span>Processing...</span>
-                                </>
-                            ) : isArtisan ? (
-                                'Continue to Shop Setup'
-                            ) : (
-                                'Complete Registration'
-                            )}
-                        </span>
-                    </PrimaryButton>
-                </div>
-            </form>
+                        <div className="flex items-start bg-stone-50/60 p-4 rounded-xl border border-stone-100/80">
+                            <Checkbox
+                                name="terms"
+                                checked={data.terms}
+                                onChange={handleTermsCheckboxChange}
+                                className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
+                            />
+                            <span className="ms-3 text-xs text-stone-500 leading-relaxed select-none">
+                                I agree to the{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => openLegalModal(primaryLegalType)}
+                                    className="font-bold text-clay-600 hover:text-clay-700 hover:underline transition-colors uppercase tracking-wider text-[10px]"
+                                >
+                                    {primaryLegalLabel}
+                                </button>
+                                {' '}and{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => openLegalModal(secondaryLegalType)}
+                                    className="font-bold text-clay-600 hover:text-clay-700 hover:underline transition-colors uppercase tracking-wider text-[10px]"
+                                >
+                                    {secondaryLegalLabel}
+                                </button>.
+                            </span>
+                        </div>
+                        <InputError message={errors.terms} className="mt-2" />
+                    </motion.div>
 
+                    {/* Complete Submit Button */}
+                    <motion.div variants={itemVariants}>
+                        <PrimaryButton 
+                            className="relative w-full justify-center py-3 bg-stone-900 hover:bg-stone-850 border-stone-900 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md overflow-hidden group" 
+                            disabled={processing || (isArtisan && isShopNameTaken)}
+                        >
+                            <span className="relative flex items-center gap-2">
+                                {processing ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span>Processing...</span>
+                                    </>
+                                ) : isArtisan ? (
+                                    'Continue to Shop Setup'
+                                ) : (
+                                    'Complete Registration'
+                                )}
+                            </span>
+                        </PrimaryButton>
+                    </motion.div>
+                </motion.form>
+            </motion.div>
+
+            {/* Legal Modal */}
             <LegalModal
                 isOpen={legalModal.isOpen}
                 onClose={handleLegalModalClose}
