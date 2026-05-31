@@ -36,20 +36,16 @@ const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 
 const resolveActiveGroup = (path) => {
     if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics') || path.includes('operations')) return 'Platform Pulse';
-    if (path.includes('users') || path.includes('pending')) return 'User Accounts';
-    if (path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Product Catalog';
-    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements')) return 'Trust & Safety';
-    if (path.includes('monetization') || path.includes('settings')) return 'Business Config';
+    if (path.includes('users') || path.includes('pending') || path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Marketplace';
+    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements') || path.includes('monetization') || path.includes('settings')) return 'Governance';
     return null;
 };
 
 const getInitialExpandedGroups = () => {
     const defaultGroups = {
         'Platform Pulse': true,
-        'User Accounts': true,
-        'Product Catalog': true,
-        'Trust & Safety': true,
-        'Business Config': true,
+        'Marketplace': true,
+        'Governance': true,
     };
 
     if (typeof window === 'undefined') return defaultGroups;
@@ -109,7 +105,7 @@ export default function AdminLayout({ title, children }) {
             ]
         },
         {
-            title: 'User Accounts',
+            title: 'Marketplace',
             items: [
                 {
                     name: 'User Manager',
@@ -118,24 +114,14 @@ export default function AdminLayout({ title, children }) {
                     current: route().current('admin.users.manager') || route().current('admin.users') || route().current('admin.pending'),
                     badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
-            ]
-        },
-        {
-            title: 'Product Catalog',
-            items: [
                 { name: 'Catalog Manager', href: route('admin.catalog.index'), icon: FolderTree, current: route().current('admin.catalog.*') },
             ]
         },
         {
-            title: 'Trust & Safety',
+            title: 'Governance',
             items: [
                 { name: 'Content Safety', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance') },
                 { name: 'Global Alerts', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
-            ]
-        },
-        {
-            title: 'Business Config',
-            items: [
                 { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
             ]
         }
