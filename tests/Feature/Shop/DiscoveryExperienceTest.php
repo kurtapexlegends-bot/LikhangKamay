@@ -24,17 +24,21 @@ class DiscoveryExperienceTest extends TestCase
             'name' => 'Plain Owner',
         ]);
 
-        $this->makeProduct($sellerWithMatchingShop, [
+        $product1 = $this->makeProduct($sellerWithMatchingShop, [
             'name' => 'Ivory Vase',
             'description' => 'Wheel-thrown ceramic vase.',
             'sold' => 4,
         ]);
+        $product1->created_at = now();
+        $product1->save();
 
-        $this->makeProduct($descriptionOnlySeller, [
+        $product2 = $this->makeProduct($descriptionOnlySeller, [
             'name' => 'Stone Pitcher',
             'description' => 'Inspired by Heritage Clay techniques for rustic interiors.',
             'sold' => 9,
         ]);
+        $product2->created_at = now()->subMinute();
+        $product2->save();
 
         $this->get(route('shop.index', ['search' => 'Heritage Clay']))
             ->assertOk()

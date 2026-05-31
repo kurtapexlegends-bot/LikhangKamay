@@ -14,15 +14,8 @@ export default function MobileDock() {
 
     const handleSearchClick = (e) => {
         e.preventDefault();
-        // Focus the search input in the navbar
-        const searchInput = document.querySelector('input[placeholder*="Search"]');
-        if (searchInput) {
-            searchInput.focus();
-            // Scroll to top to ensure search bar is visible
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            router.visit(route('shop.index'));
-        }
+        // Dispatch custom event to trigger mobile search slide-down in BuyerNavbar
+        window.dispatchEvent(new CustomEvent('toggle-mobile-search'));
     };
 
     const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
@@ -31,6 +24,16 @@ export default function MobileDock() {
     const workspaceLabel = sellerSidebar?.actorType === 'staff' ? 'Staff Hub' : 'Seller Dashboard';
 
     const isActive = (path) => url === path || (url?.startsWith(path + '/'));
+
+    React.useEffect(() => {
+        const handleOpenAccount = () => {
+            setIsAccountOpen(true);
+        };
+        window.addEventListener('toggle-mobile-account', handleOpenAccount);
+        return () => {
+            window.removeEventListener('toggle-mobile-account', handleOpenAccount);
+        };
+    }, []);
 
     return (
         <>

@@ -93,11 +93,17 @@ export default function BuyerNavbar() {
             }
         };
 
+        const handleToggleSearch = () => {
+            setIsMobileSearchOpen(true);
+        };
+
         window.addEventListener('cart-add-animate', handleCartAnimate);
+        window.addEventListener('toggle-mobile-search', handleToggleSearch);
         
         return () => {
             window.removeEventListener('scroll', handleScroll);
             window.removeEventListener('cart-add-animate', handleCartAnimate);
+            window.removeEventListener('toggle-mobile-search', handleToggleSearch);
         };
     }, []);
 
@@ -345,24 +351,18 @@ export default function BuyerNavbar() {
                             )}
                         </Link>
 
-                        {/* User Profile avatar dropdown */}
+                        {/* User Profile avatar bottom-drawer trigger on mobile */}
                         {user ? (
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <button className="flex items-center pl-1 pr-1 py-1 rounded-full hover:bg-stone-50 active:scale-95">
-                                        <UserAvatar 
-                                            user={user} 
-                                            className="w-7 h-7 border border-stone-200 shadow-sm" 
-                                        />
-                                    </button>
-                                </Dropdown.Trigger>
-                                <Dropdown.Content width="44">
-                                    <Dropdown.Link href={route('profile.edit')}><User size={14} className="inline mr-2"/> Profile</Dropdown.Link>
-                                    <Dropdown.Link href={route('my-orders.index')}><ShoppingBag size={14} className="inline mr-2"/> Purchases</Dropdown.Link>
-                                    <div className="border-t border-stone-100 my-1"></div>
-                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="text-red-600"><LogOut size={14} className="inline mr-2"/> Log Out</Dropdown.Link>
-                                </Dropdown.Content>
-                            </Dropdown>
+                            <button 
+                                onClick={() => window.dispatchEvent(new CustomEvent('toggle-mobile-account'))}
+                                className="flex items-center pl-1 pr-1 py-1 rounded-full hover:bg-stone-50 active:scale-95"
+                                aria-label="Open Account Drawer"
+                            >
+                                <UserAvatar 
+                                    user={user} 
+                                    className="w-7 h-7 border border-stone-200 shadow-sm" 
+                                />
+                            </button>
                         ) : (
                             <Link 
                                 href={route('login')}
@@ -377,10 +377,18 @@ export default function BuyerNavbar() {
             </div>
         </nav>
 
-        {/* --- LUXURIOUS SLIDE-DOWN SEARCH OVERLAY --- */}
+        {/* --- LUXURIOUS BOTTOM-SHEET SEARCH OVERLAY (Mobile/Tablet specific) --- */}
         {isMobileSearchOpen && (
-            <div className="fixed inset-0 z-[100] bg-stone-950/45 backdrop-blur-md flex flex-col justify-start transition-all duration-300">
-                <div className="bg-[#FAF7F2] border-b border-stone-200/60 px-4 py-4 shadow-2xl animate-in slide-in-from-top duration-300 rounded-b-3xl">
+            <div className="fixed inset-0 z-[100] bg-stone-950/50 backdrop-blur-sm flex flex-col justify-end transition-all duration-300">
+                {/* Underlay tap-to-close click-shield */}
+                <div className="absolute inset-0 z-0" onClick={() => setIsMobileSearchOpen(false)}></div>
+                
+                {/* Search Drawer Container */}
+                <div className="relative z-10 w-full max-w-lg mx-auto bg-[#FAF7F2] rounded-t-[2rem] border-t border-stone-200/60 px-4 pt-2 pb-8 shadow-[0_-15px_30px_rgba(0,0,0,0.15)] flex flex-col animate-in slide-in-from-bottom duration-300">
+                    
+                    {/* Bottom Sheet Pill Drag Indicator Accent */}
+                    <div className="w-12 h-1 bg-stone-300/80 rounded-full mx-auto mb-4 mt-1"></div>
+
                     <div className="flex items-center gap-3">
                         <form 
                             onSubmit={(e) => { 
@@ -439,13 +447,13 @@ export default function BuyerNavbar() {
 
                     {/* Search Suggestions */}
                     {term.length >= 2 && (suggestions.products.length > 0 || suggestions.artisans.length > 0) && (
-                        <div className="mt-5 max-h-[45vh] overflow-y-auto divide-y divide-stone-100/80 pr-1">
+                        <div className="mt-5 max-h-[40vh] overflow-y-auto divide-y divide-stone-100/85 pr-1">
                             {suggestions.products.map(p => (
                                 <Link 
                                     key={p.id} 
                                     href={route('product.show', p.slug)} 
                                     onClick={() => setIsMobileSearchOpen(false)}
-                                    className="flex items-center gap-3 py-3"
+                                    className="flex items-center gap-3 py-3 hover:bg-stone-100/40 px-1 rounded-xl transition-colors"
                                 >
                                     <div className="w-10 h-10 rounded-lg bg-stone-100 overflow-hidden flex-shrink-0 border border-stone-200/55">
                                         <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
@@ -459,8 +467,6 @@ export default function BuyerNavbar() {
                         </div>
                     )}
                 </div>
-                {/* Underlay tap-to-close */}
-                <div className="flex-1" onClick={() => setIsMobileSearchOpen(false)}></div>
             </div>
         )}
 
