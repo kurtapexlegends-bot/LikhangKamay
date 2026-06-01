@@ -187,7 +187,7 @@ export default function Login({ status, canResetPassword }) {
                             <div className="w-full h-px bg-stone-200/60"></div>
                         </div>
                         <div className="relative flex justify-center text-xs">
-                            <span className="px-4 bg-white text-stone-400 font-bold uppercase tracking-widest text-[9px]">Or continue with</span>
+                            <span className="px-4 bg-[#FAF7F2] text-stone-400 font-bold uppercase tracking-widest text-[9px]">Or continue with</span>
                         </div>
                     </div>
 

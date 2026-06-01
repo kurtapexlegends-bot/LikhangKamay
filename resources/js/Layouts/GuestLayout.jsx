@@ -77,15 +77,6 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
                     <div className="absolute bottom-[10%] left-[-10%] w-[30rem] h-[30rem] rounded-full bg-clay-100/30 blur-[100px] mix-blend-multiply"></div>
                 </div>
 
-                {/* Abstract organic pottery watermark SVG in background */}
-                <div className="absolute right-[-5%] bottom-[-5%] w-64 h-64 opacity-[0.035] pointer-events-none text-clay-950 select-none z-0">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="0.8">
-                        <path d="M50,10 C35,10 30,25 30,45 C30,70 38,90 50,90 C62,90 70,70 70,45 C70,25 65,10 50,10 Z" />
-                        <path d="M30,30 C30,30 40,35 50,35 C60,35 70,30 70,30" />
-                        <path d="M30,60 C30,60 40,65 50,65 C60,65 70,60 70,60" />
-                        <path d="M50,10 L50,90" strokeDasharray="1 3" />
-                    </svg>
-                </div>
 
                 <style dangerouslySetInnerHTML={{ __html: `
                     .auth-scroll-container::-webkit-scrollbar { display: none; }
