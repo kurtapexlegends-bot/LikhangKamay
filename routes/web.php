@@ -154,8 +154,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/analytics/export', [AnalyticsController::class, 'export'])->middleware('seller.module:analytics')->name('analytics.export'); // <--- Added
         
         Route::get('/products', [ProductController::class, 'index'])->middleware('seller.module:products')->name('products.index');
-        Route::get('/products/export-csv', [ProductController::class, 'exportCsv'])->middleware('throttle:bulk.ops')->name('products.export-csv');
-        Route::post('/products/import-csv', [ProductController::class, 'importCsv'])->middleware('throttle:bulk.ops')->name('products.import-csv');
+        Route::get('/products/export-csv', [ProductController::class, 'exportCsv'])->middleware(['seller.module:products', 'throttle:bulk.ops'])->name('products.export-csv');
+        Route::post('/products/import-csv', [ProductController::class, 'importCsv'])->middleware(['seller.module:products', 'throttle:bulk.ops'])->name('products.import-csv');
         Route::post('/products', [ProductController::class, 'store'])->middleware('seller.module:products')->name('products.store');
         Route::post('/products/{id}/update', [ProductController::class, 'update'])->middleware('seller.module:products')->name('products.update'); 
         Route::post('/products/bulk-status', [ProductController::class, 'bulkUpdateStatus'])->middleware('seller.module:products')->name('products.bulk-status');
