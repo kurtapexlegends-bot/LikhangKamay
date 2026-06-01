@@ -353,14 +353,6 @@ class OrderController extends Controller
      */
     public function update(Request $request, string $id, OrderFinanceService $orderFinanceService)
     {
-        $order = Order::where('order_number', $id)
-            ->where('artisan_id', $this->sellerOwnerId())
-            ->with('delivery')
-            ->firstOrFail();
-        $previousStatus = $order->status;
-        $previousPaymentStatus = $order->payment_status;
-        $previousTrackingNumber = $order->tracking_number;
-
         $request->validate([
             'status' => 'required|string|in:Accepted,Processing,Rejected,Shipped,Ready for Pickup,Delivered,Completed,Cancelled',
             'tracking_number' => 'nullable|string|max:100',
@@ -368,180 +360,193 @@ class OrderController extends Controller
             'proof_of_delivery' => 'nullable|image|max:5120' // 5MB Max
         ]);
 
-        if (!$this->isAllowedSellerStatusTransition($order, $request->status)) {
-            return back()->with('error', 'This order status change is not allowed from its current state.');
-        }
+        $order = Order::where('order_number', $id)
+            ->where('artisan_id', $this->sellerOwnerId())
+            ->with('delivery')
+            ->firstOrFail();
 
-        // GUARD: Prevent shipping unpaid non-COD orders
-        if (in_array($request->status, ['Shipped', 'Ready for Pickup'])) {
-            if ($order->payment_method !== 'COD' && $order->payment_status !== 'paid') {
-                return back()->with('error', 'Cannot ship unpaid order. Please wait for payment.');
-            }
-        }
+        $previousStatus = $order->status;
+        $previousPaymentStatus = $order->payment_status;
+        $previousTrackingNumber = $order->tracking_number;
 
-        if ($order->shipping_method === 'Delivery'
-            && $order->delivery?->external_order_id
-            && in_array($request->status, ['Shipped', 'Delivered'], true)) {
-            return back()->with('error', 'Lalamove-managed delivery orders update automatically from courier status.');
-        }
-
-        $replacementInProgress = $order->replacement_started_at !== null && $order->replacement_resolved_at === null;
-
-        if ($request->status === 'Completed' && $replacementInProgress) {
-            return back()->with('error', 'Replacement orders must be marked as received by the buyer before completion.');
-        }
-
-        $updateData = ['status' => $request->status];
-
-        // Ensure proof is present before any database writes or side effects when the next status requires it.
-        if ($this->statusRequiresProofImage($order, $request->status)) {
-            $hasExistingProof = filled($order->proof_of_delivery);
-            $requiresFreshProof = $this->statusRequiresFreshProofImage($order, $request->status);
-
-            if (
-                !$request->hasFile('proof_of_delivery')
-                && (!$hasExistingProof || $requiresFreshProof)
-            ) {
-                return back()->with('error', $this->proofRequirementMessage($order, $request->status));
-            }
-        }
-
-        // Handle Proof of Delivery Upload
+        // Handle Proof of Delivery Upload outside the transaction
+        $proofPath = null;
         if ($request->hasFile('proof_of_delivery')) {
-            $path = $request->file('proof_of_delivery')->store('proofs', 'public');
-            $updateData['proof_of_delivery'] = $path;
+            $proofPath = $request->file('proof_of_delivery')->store('proofs', 'public');
         }
 
-        // Set timestamps based on status change
-        if ($request->status === 'Accepted') {
-            $updateData['accepted_at'] = now();
-        } elseif ($request->status === 'Processing') {
-            // BOM Deduction Trigger
-            try {
-                $this->deductSuppliesForOrder($order);
-            } catch (\Exception $e) {
-                return back()->with('error', $e->getMessage());
-            }
-        } elseif ($request->status === 'Completed') {
-            if ($order->payment_method === 'COD') {
-                $updateData['payment_status'] = 'paid';
-            } elseif ($order->payment_status !== 'paid') {
-                return back()->with('error', 'Cannot complete an unpaid order.');
-            }
-        } elseif ($request->status === 'Shipped' || $request->status === 'Ready for Pickup') {
-            $updateData['shipped_at'] = now();
-        } elseif ($request->status === 'Delivered') {
-            $updateData['delivered_at'] = now();
-            // Auto-complete after 1 day if no return
-            $updateData['warranty_expires_at'] = now()->addDay();
-        }
+        try {
+            DB::transaction(function () use ($order, $request, $proofPath, $previousStatus, $previousPaymentStatus, $previousTrackingNumber, $orderFinanceService) {
+                // Pessimistic lock read
+                $lockedOrder = Order::with(['delivery', 'items'])->lockForUpdate()->findOrFail($order->id);
 
-        // Add tracking number when shipping
-        if ($request->status === 'Shipped' && $request->tracking_number) {
-            $updateData['tracking_number'] = $request->tracking_number;
-        }
+                if (!$this->isAllowedSellerStatusTransition($lockedOrder, $request->status)) {
+                    throw new \Exception('This order status change is not allowed from its current state.');
+                }
 
-        // Add shipping notes if provided
-        if ($request->shipping_notes) {
-            $updateData['shipping_notes'] = $request->shipping_notes;
-        }
-
-        // Check for rejection/cancellation to restore stock
-        if (in_array($request->status, ['Rejected', 'Cancelled']) && !in_array($order->status, ['Rejected', 'Cancelled'])) {
-            DB::transaction(function () use ($order, $updateData) {
-                foreach ($order->items as $item) {
-                    $product = Product::find($item->product_id);
-                    if ($product) {
-                        $product->increment('stock', $item->quantity);
-                        $product->decrement('sold', $item->quantity); // Revert sold count
-                        // Sync to linked Supply
-                        if ($product->track_as_supply && $product->supply) {
-                            $product->supply->update(['quantity' => $product->stock]);
-                        }
+                // GUARD: Prevent shipping unpaid non-COD orders
+                if (in_array($request->status, ['Shipped', 'Ready for Pickup'])) {
+                    if ($lockedOrder->payment_method !== 'COD' && $lockedOrder->payment_status !== 'paid') {
+                        throw new \Exception('Cannot ship unpaid order. Please wait for payment.');
                     }
                 }
 
-                // Restore BOM Supplies if it was Processing
-                if ($order->status === 'Processing') {
-                    foreach ($order->items as $item) {
-                        $product = Product::with('recipes.supply')->find($item->product_id);
-                        if ($product && $product->production_method === 'manufactured') {
-                            foreach ($product->recipes as $recipe) {
-                                if ($recipe->supply) {
-                                    $recipe->supply->increment('quantity', $recipe->quantity_required * $item->quantity);
+                if ($lockedOrder->shipping_method === 'Delivery'
+                    && $lockedOrder->delivery?->external_order_id
+                    && in_array($request->status, ['Shipped', 'Delivered'], true)) {
+                    throw new \Exception('Lalamove-managed delivery orders update automatically from courier status.');
+                }
+
+                $replacementInProgress = $lockedOrder->replacement_started_at !== null && $lockedOrder->replacement_resolved_at === null;
+
+                if ($request->status === 'Completed' && $replacementInProgress) {
+                    throw new \Exception('Replacement orders must be marked as received by the buyer before completion.');
+                }
+
+                // Ensure proof is present before any database writes or side effects when the next status requires it.
+                if ($this->statusRequiresProofImage($lockedOrder, $request->status)) {
+                    $hasExistingProof = filled($lockedOrder->proof_of_delivery);
+                    $requiresFreshProof = $this->statusRequiresFreshProofImage($lockedOrder, $request->status);
+
+                    if (!$proofPath && (!$hasExistingProof || $requiresFreshProof)) {
+                        throw new \Exception($this->proofRequirementMessage($lockedOrder, $request->status));
+                    }
+                }
+
+                $updateData = ['status' => $request->status];
+
+                if ($proofPath) {
+                    $updateData['proof_of_delivery'] = $proofPath;
+                }
+
+                // Set timestamps based on status change
+                if ($request->status === 'Accepted') {
+                    $updateData['accepted_at'] = now();
+                } elseif ($request->status === 'Processing') {
+                    // BOM Deduction Trigger
+                    $this->deductSuppliesForOrder($lockedOrder);
+                } elseif ($request->status === 'Completed') {
+                    if ($lockedOrder->payment_method === 'COD') {
+                        $updateData['payment_status'] = 'paid';
+                    } elseif ($lockedOrder->payment_status !== 'paid') {
+                        throw new \Exception('Cannot complete an unpaid order.');
+                    }
+                } elseif ($request->status === 'Shipped' || $request->status === 'Ready for Pickup') {
+                    $updateData['shipped_at'] = now();
+                } elseif ($request->status === 'Delivered') {
+                    $updateData['delivered_at'] = now();
+                    // Auto-complete after 1 day if no return
+                    $updateData['warranty_expires_at'] = now()->addDay();
+                }
+
+                // Add tracking number when shipping
+                if ($request->status === 'Shipped' && $request->tracking_number) {
+                    $updateData['tracking_number'] = $request->tracking_number;
+                }
+
+                // Add shipping notes if provided
+                if ($request->shipping_notes) {
+                    $updateData['shipping_notes'] = $request->shipping_notes;
+                }
+
+                // Check for rejection/cancellation to restore stock
+                if (in_array($request->status, ['Rejected', 'Cancelled']) && !in_array($lockedOrder->status, ['Rejected', 'Cancelled'])) {
+                    foreach ($lockedOrder->items as $item) {
+                        $product = Product::lockForUpdate()->find($item->product_id);
+                        if ($product) {
+                            $product->increment('stock', $item->quantity);
+                            $product->decrement('sold', $item->quantity); // Revert sold count
+                            // Sync to linked Supply
+                            if ($product->track_as_supply && $product->supply) {
+                                $product->supply->update(['quantity' => $product->stock]);
+                            }
+                        }
+                    }
+
+                    // Restore BOM Supplies if it was Processing
+                    if ($lockedOrder->status === 'Processing') {
+                        foreach ($lockedOrder->items as $item) {
+                            $product = Product::with('recipes.supply')->find($item->product_id);
+                            if ($product && $product->production_method === 'manufactured') {
+                                foreach ($product->recipes as $recipe) {
+                                    if ($recipe->supply) {
+                                        $recipe->supply->increment('quantity', $recipe->quantity_required * $item->quantity);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                if ($request->status === 'Cancelled') {
+                    $updateData['cancelled_at'] = now();
+                    $updateData['cancellation_reason'] = 'seller_cancelled';
+                } elseif ($request->status === 'Rejected') {
+                    $updateData['cancelled_at'] = now();
+                    $updateData['cancellation_reason'] = 'seller_rejected';
+                }
+
+                $lockedOrder->update($updateData);
+                $lockedOrder->refresh();
+
+                $this->recordOrderAuditEvent(
+                    $lockedOrder,
+                    $request->user(),
+                    eventType: 'order_status_changed',
+                    severity: in_array($request->status, ['Rejected', 'Cancelled'], true) ? 'warning' : 'info',
+                    title: 'Order Status Updated',
+                    summary: "{$lockedOrder->order_number} moved from {$previousStatus} to {$lockedOrder->status}.",
+                    status: strtolower((string) $lockedOrder->status),
+                    details: [
+                        'before' => [
+                            'status' => $previousStatus,
+                            'payment_status' => $previousPaymentStatus,
+                            'tracking_number' => $previousTrackingNumber,
+                        ],
+                        'after' => [
+                            'status' => $lockedOrder->status,
+                            'payment_status' => $lockedOrder->payment_status,
+                            'tracking_number' => $lockedOrder->tracking_number,
+                        ],
+                        'lines' => array_values(array_filter([
+                            $request->tracking_number ? "Tracking number: {$request->tracking_number}" : null,
+                            $request->shipping_notes ? 'Shipping notes were updated.' : null,
+                            $proofPath ? 'Uploaded a new proof image.' : null,
+                        ])),
+                    ],
+                );
+
+                if ($request->status === 'Completed') {
+                    $orderFinanceService->settleCompletedOrder($lockedOrder);
+                }
+
+                // Send email notifications based on status change
+                $lockedOrder->load(['items', 'user']);
+                $buyer = $lockedOrder->user;
+
+                if ($buyer && $buyer->email) {
+                    if ($request->status === 'Accepted') {
+                        $this->sendMailSilently(
+                            $buyer->email,
+                            new OrderAccepted($lockedOrder),
+                            'order_accepted',
+                            ['order_id' => $lockedOrder->id, 'order_number' => $lockedOrder->order_number]
+                        );
+                    } elseif ($request->status === 'Shipped') {
+                        $this->sendMailSilently(
+                            $buyer->email,
+                            new OrderShipped($lockedOrder),
+                            'order_shipped',
+                            ['order_id' => $lockedOrder->id, 'order_number' => $lockedOrder->order_number]
+                        );
+                    }
+                }
             });
+
+            return redirect()->back()->with('success', 'Order status updated successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        if ($request->status === 'Cancelled') {
-            $updateData['cancelled_at'] = now();
-            $updateData['cancellation_reason'] = 'seller_cancelled';
-        } elseif ($request->status === 'Rejected') {
-            $updateData['cancelled_at'] = now();
-            $updateData['cancellation_reason'] = 'seller_rejected';
-        }
-
-        $order->update($updateData);
-        $order->refresh();
-
-        $this->recordOrderAuditEvent(
-            $order,
-            $request->user(),
-            eventType: 'order_status_changed',
-            severity: in_array($request->status, ['Rejected', 'Cancelled'], true) ? 'warning' : 'info',
-            title: 'Order Status Updated',
-            summary: "{$order->order_number} moved from {$previousStatus} to {$order->status}.",
-            status: strtolower((string) $order->status),
-            details: [
-                'before' => [
-                    'status' => $previousStatus,
-                    'payment_status' => $previousPaymentStatus,
-                    'tracking_number' => $previousTrackingNumber,
-                ],
-                'after' => [
-                    'status' => $order->status,
-                    'payment_status' => $order->payment_status,
-                    'tracking_number' => $order->tracking_number,
-                ],
-                'lines' => array_values(array_filter([
-                    $request->tracking_number ? "Tracking number: {$request->tracking_number}" : null,
-                    $request->shipping_notes ? 'Shipping notes were updated.' : null,
-                    $request->hasFile('proof_of_delivery') ? 'Uploaded a new proof image.' : null,
-                ])),
-            ],
-        );
-
-        if ($request->status === 'Completed') {
-            $orderFinanceService->settleCompletedOrder($order);
-        }
-
-        // Send email notifications based on status change
-        $order->load(['items', 'user']);
-        $buyer = $order->user;
-
-        if ($buyer && $buyer->email) {
-            if ($request->status === 'Accepted') {
-                $this->sendMailSilently(
-                    $buyer->email,
-                    new OrderAccepted($order),
-                    'order_accepted',
-                    ['order_id' => $order->id, 'order_number' => $order->order_number]
-                );
-            } elseif ($request->status === 'Shipped') {
-                $this->sendMailSilently(
-                    $buyer->email,
-                    new OrderShipped($order),
-                    'order_shipped',
-                    ['order_id' => $order->id, 'order_number' => $order->order_number]
-                );
-            }
-        }
-
-        return redirect()->back();
     }
 
     private function isAllowedSellerStatusTransition(Order $order, string $nextStatus): bool
@@ -787,48 +792,54 @@ class OrderController extends Controller
      */
     public function updatePaymentStatus(Request $request, string $id)
     {
-        $order = Order::where('order_number', $id)
-            ->where('artisan_id', $this->sellerOwnerId())
-            ->firstOrFail();
-
         $request->validate([
             'payment_status' => 'required|string|in:paid'
         ]);
 
-        if ($order->payment_method !== 'COD') {
-            return redirect()->back()->with('error', 'Only cash on delivery orders can be marked paid manually.');
+        try {
+            DB::transaction(function () use ($id, $request) {
+                $order = Order::lockForUpdate()->where('order_number', $id)
+                    ->where('artisan_id', $this->sellerOwnerId())
+                    ->firstOrFail();
+
+                if ($order->payment_method !== 'COD') {
+                    throw new \Exception('Only cash on delivery orders can be marked paid manually.');
+                }
+
+                if (in_array($order->status, ['Refunded', 'Cancelled', 'Rejected'], true)) {
+                    throw new \Exception('Payment status can no longer be changed for this order.');
+                }
+
+                if ($order->payment_status === 'paid') {
+                    return;
+                }
+
+                $order->update(['payment_status' => $request->payment_status]);
+
+                $this->recordOrderAuditEvent(
+                    $order->fresh(),
+                    $request->user(),
+                    eventType: 'payment_status_updated',
+                    severity: 'info',
+                    title: 'Order Payment Updated',
+                    summary: "{$order->order_number} was manually marked as paid.",
+                    status: strtolower((string) $request->payment_status),
+                    details: [
+                        'before' => [
+                            'payment_status' => $order->getOriginal('payment_status'),
+                        ],
+                        'after' => [
+                            'payment_status' => $request->payment_status,
+                        ],
+                        'lines' => ['Manual COD payment confirmation was applied.'],
+                    ],
+                );
+            });
+
+            return redirect()->back()->with('success', 'Payment status updated.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        if (in_array($order->status, ['Refunded', 'Cancelled', 'Rejected'], true)) {
-            return redirect()->back()->with('error', 'Payment status can no longer be changed for this order.');
-        }
-
-        if ($order->payment_status === 'paid') {
-            return redirect()->back()->with('success', 'Payment status is already up to date.');
-        }
-
-        $order->update(['payment_status' => $request->payment_status]);
-
-        $this->recordOrderAuditEvent(
-            $order->fresh(),
-            $request->user(),
-            eventType: 'payment_status_updated',
-            severity: 'info',
-            title: 'Order Payment Updated',
-            summary: "{$order->order_number} was manually marked as paid.",
-            status: strtolower((string) $request->payment_status),
-            details: [
-                'before' => [
-                    'payment_status' => $order->getOriginal('payment_status'),
-                ],
-                'after' => [
-                    'payment_status' => $request->payment_status,
-                ],
-                'lines' => ['Manual COD payment confirmation was applied.'],
-            ],
-        );
-
-        return redirect()->back()->with('success', 'Payment status updated.');
     }
 
     /**
@@ -1253,54 +1264,59 @@ class OrderController extends Controller
      */
     public function buyerReceiveOrder(string $id, OrderFinanceService $orderFinanceService)
     {
-        $order = Order::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        try {
+            DB::transaction(function () use ($id, $orderFinanceService, &$successMessage) {
+                $order = Order::lockForUpdate()->where('id', $id)
+                    ->where('user_id', Auth::id())
+                    ->firstOrFail();
 
-        if ($order->status !== 'Delivered') {
-            return redirect()->back()->with('error', 'You can confirm receipt only after the order is marked as delivered.');
+                if ($order->status !== 'Delivered') {
+                    throw new \Exception('You can confirm receipt only after the order is marked as delivered.');
+                }
+
+                if ($order->payment_method !== 'COD' && $order->payment_status !== 'paid') {
+                    throw new \Exception('Cannot confirm receipt until payment is completed.');
+                }
+
+                $updateData = [
+                    'status' => 'Completed',
+                    'received_at' => now(),
+                    'warranty_expires_at' => now()->addDay()
+                ];
+
+                if ($order->replacement_started_at !== null && $order->replacement_resolved_at === null) {
+                    $updateData['replacement_resolved_at'] = now();
+                }
+
+                if ($order->payment_method === 'COD') {
+                    $updateData['payment_status'] = 'paid';
+                }
+
+                $order->update($updateData);
+                $order->refresh();
+                $orderFinanceService->settleCompletedOrder($order);
+
+                // Send delivery confirmation email to buyer
+                $order->load('items');
+                $buyer = Auth::user();
+                if ($buyer && $buyer->email) {
+                    $this->sendMailSilently(
+                        $buyer->email,
+                        new OrderDelivered($order),
+                        'order_delivered',
+                        ['order_id' => $order->id, 'order_number' => $order->order_number]
+                    );
+                }
+
+                $successMessage = $order->replacement_started_at !== null && $order->replacement_resolved_at !== null
+                    ? 'Replacement received and order marked as completed.'
+                    : 'Order marked as received! You have 1 day to request a return if needed.';
+            });
+
+            return redirect()->back()->with('success', $successMessage);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        if ($order->payment_method !== 'COD' && $order->payment_status !== 'paid') {
-            return redirect()->back()->with('error', 'Cannot confirm receipt until payment is completed.');
-        }
-
-        $updateData = [
-            'status' => 'Completed', // Auto-complete if paid
-            'received_at' => now(),
-            'warranty_expires_at' => now()->addDay() // 1-day return window
-        ];
-
-        if ($order->replacement_started_at !== null && $order->replacement_resolved_at === null) {
-            $updateData['replacement_resolved_at'] = now();
-        }
-
-        // Only auto-mark as paid if it's COD. Online payments must be verified by PayMongo.
-        if ($order->payment_method === 'COD') {
-            $updateData['payment_status'] = 'paid';
-        }
-
-        $order->update($updateData);
-        $order->refresh();
-        $orderFinanceService->settleCompletedOrder($order);
-
-        // Send delivery confirmation email to buyer
-        $order->load('items');
-        $buyer = Auth::user();
-        if ($buyer && $buyer->email) {
-            $this->sendMailSilently(
-                $buyer->email,
-                new OrderDelivered($order),
-                'order_delivered',
-                ['order_id' => $order->id, 'order_number' => $order->order_number]
-            );
-        }
-
-        $successMessage = $order->replacement_started_at !== null && $order->replacement_resolved_at !== null
-            ? 'Replacement received and order marked as completed.'
-            : 'Order marked as received! You have 1 day to request a return if needed.';
-
-        return redirect()->back()->with('success', $successMessage);
     }
 
     private function reconcilePendingOnlinePaymentsForUser(User $user, PayMongoService $payMongoService): void
@@ -1353,70 +1369,83 @@ class OrderController extends Controller
      */
     public function buyerRequestReturn(Request $request, string $id)
     {
-        $order = Order::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->where('status', 'Completed')
-            ->firstOrFail();
-
-        // Check if within warranty period
-        if (!$order->warranty_expires_at || now()->greaterThan($order->warranty_expires_at)) {
-            return redirect()->back()->with('error', 'Return window has expired. Returns must be requested within 1 day of receiving your order.');
-        }
-
         $request->validate([
             'return_reason' => 'required|string|max:1000',
             'return_proof_image' => 'required|image|max:5120', // 5MB Max
         ]);
 
-        $updateData = [
-            'status' => 'Refund/Return',
-            'return_reason' => $request->return_reason
-        ];
-
+        $proofPath = null;
         if ($request->hasFile('return_proof_image')) {
-            $path = $request->file('return_proof_image')->store('returns', 'public');
-            $updateData['return_proof_image'] = $path;
+            $proofPath = $request->file('return_proof_image')->store('returns', 'public');
         }
 
-        $order->update($updateData);
-        $order->refresh();
+        try {
+            DB::transaction(function () use ($id, $request, $proofPath) {
+                $order = Order::lockForUpdate()->where('id', $id)
+                    ->where('user_id', Auth::id())
+                    ->firstOrFail();
 
-        $this->recordOrderAuditEvent(
-            $order,
-            $request->user(),
-            eventType: 'return_requested',
-            severity: 'warning',
-            title: 'Buyer Requested Return',
-            summary: "{$order->order_number} was moved to return review.",
-            status: 'refund_return',
-            details: [
-                'before' => [
-                    'status' => 'Completed',
-                ],
-                'after' => [
-                    'status' => $order->status,
-                    'return_reason' => $order->return_reason,
-                ],
-                'lines' => array_values(array_filter([
-                    $order->return_reason ? "Reason: {$order->return_reason}" : null,
-                    $request->hasFile('return_proof_image') ? 'Buyer submitted return proof image.' : null,
-                ])),
-            ],
-        );
+                if ($order->status !== 'Completed') {
+                    throw new \Exception('This order is not completed.');
+                }
 
-        // Send return notification to seller
-        $order->load('items');
-        $seller = User::find($order->artisan_id);
-        if ($seller && $seller->email) {
-            $this->sendMailSilently(
-                $seller->email,
-                new ReturnRequested($order),
-                'return_requested',
-                ['order_id' => $order->id, 'order_number' => $order->order_number]
-            );
+                // Check if within warranty period
+                if (!$order->warranty_expires_at || now()->greaterThan($order->warranty_expires_at)) {
+                    throw new \Exception('Return window has expired. Returns must be requested within 1 day of receiving your order.');
+                }
+
+                $updateData = [
+                    'status' => 'Refund/Return',
+                    'return_reason' => $request->return_reason
+                ];
+
+                if ($proofPath) {
+                    $updateData['return_proof_image'] = $proofPath;
+                }
+
+                $order->update($updateData);
+                $order->refresh();
+
+                $this->recordOrderAuditEvent(
+                    $order,
+                    $request->user(),
+                    eventType: 'return_requested',
+                    severity: 'warning',
+                    title: 'Buyer Requested Return',
+                    summary: "{$order->order_number} was moved to return review.",
+                    status: 'refund_return',
+                    details: [
+                        'before' => [
+                            'status' => 'Completed',
+                        ],
+                        'after' => [
+                            'status' => $order->status,
+                            'return_reason' => $order->return_reason,
+                        ],
+                        'lines' => array_values(array_filter([
+                            $order->return_reason ? "Reason: {$order->return_reason}" : null,
+                            $proofPath ? 'Buyer submitted return proof image.' : null,
+                        ])),
+                    ],
+                );
+
+                // Send return notification to seller
+                $order->load('items');
+                $seller = User::find($order->artisan_id);
+                if ($seller && $seller->email) {
+                    $this->sendMailSilently(
+                        $seller->email,
+                        new ReturnRequested($order),
+                        'return_requested',
+                        ['order_id' => $order->id, 'order_number' => $order->order_number]
+                    );
+                }
+            });
+
+            return redirect()->back()->with('success', 'Return request submitted. Please chat with the seller to negotiate.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        return redirect()->back()->with('success', 'Return request submitted. Please chat with the seller to negotiate.');
     }
 
     /**
@@ -1424,19 +1453,25 @@ class OrderController extends Controller
      */
     public function buyerCancelReturn(string $id, OrderFinanceService $orderFinanceService)
     {
-        $order = Order::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->where('status', 'Refund/Return')
-            ->firstOrFail();
+        try {
+            DB::transaction(function () use ($id, $orderFinanceService) {
+                $order = Order::lockForUpdate()->where('id', $id)
+                    ->where('user_id', Auth::id())
+                    ->where('status', 'Refund/Return')
+                    ->firstOrFail();
 
-        // Cancelling return means accepting the item -> Complete the transaction
-        $order->update([
-            'status' => 'Completed',
-        ]);
-        $order->refresh();
-        $orderFinanceService->settleCompletedOrder($order);
+                // Cancelling return means accepting the item -> Complete the transaction
+                $order->update([
+                    'status' => 'Completed',
+                ]);
+                $order->refresh();
+                $orderFinanceService->settleCompletedOrder($order);
+            });
 
-        return redirect()->back()->with('success', 'Return request cancelled. Order marked as Completed.');
+            return redirect()->back()->with('success', 'Return request cancelled. Order marked as Completed.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     /**
@@ -1444,34 +1479,41 @@ class OrderController extends Controller
      */
     public function buyerCancelOrder(string $id)
     {
-        $order = Order::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->where('status', 'Pending')
-            ->with('items')
-            ->firstOrFail();
+        try {
+            DB::transaction(function () use ($id) {
+                $order = Order::lockForUpdate()->where('id', $id)
+                    ->where('user_id', Auth::id())
+                    ->with('items')
+                    ->firstOrFail();
 
-        // Restore stock for each item in the cancelled order
-        DB::transaction(function () use ($order) {
-            foreach ($order->items as $item) {
-                $product = Product::find($item->product_id);
-                if ($product) {
-                    $product->increment('stock', $item->quantity);
-                    $product->decrement('sold', $item->quantity); // Revert sold count
-                    // Sync to linked Supply
-                    if ($product->track_as_supply && $product->supply) {
-                        $product->supply->update(['quantity' => $product->stock]);
+                if ($order->status !== 'Pending') {
+                    throw new \Exception('Only pending orders can be cancelled.');
+                }
+
+                // Restore stock for each item in the cancelled order
+                foreach ($order->items as $item) {
+                    $product = Product::lockForUpdate()->find($item->product_id);
+                    if ($product) {
+                        $product->increment('stock', $item->quantity);
+                        $product->decrement('sold', $item->quantity); // Revert sold count
+                        // Sync to linked Supply
+                        if ($product->track_as_supply && $product->supply) {
+                            $product->supply->update(['quantity' => $product->stock]);
+                        }
                     }
                 }
-            }
-            
-            $order->update([
-                'status' => 'Cancelled',
-                'cancelled_at' => now(),
-                'cancellation_reason' => 'buyer_cancelled',
-            ]);
-        });
+                
+                $order->update([
+                    'status' => 'Cancelled',
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => 'buyer_cancelled',
+                ]);
+            });
 
-        return redirect()->back()->with('success', 'Order cancelled successfully.');
+            return redirect()->back()->with('success', 'Order cancelled successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     /**
