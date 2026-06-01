@@ -148,6 +148,10 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('catalog_materials');
             \Illuminate\Support\Facades\Cache::forget('catalog_locations');
             \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+            \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
+            \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
+            \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
+            \Illuminate\Support\Facades\Cache::forget('home_categories');
         });
 
         static::deleted(function ($product) {
@@ -158,6 +162,10 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('catalog_materials');
             \Illuminate\Support\Facades\Cache::forget('catalog_locations');
             \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+            \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
+            \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
+            \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
+            \Illuminate\Support\Facades\Cache::forget('home_categories');
         });
     }
 

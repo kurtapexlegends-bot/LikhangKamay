@@ -6,6 +6,7 @@ use App\Http\Controllers\Consumer\PaymentController; // Added
 use App\Http\Controllers\Seller\LalamoveDeliveryController;
 use App\Http\Controllers\Webhooks\LalamoveWebhookController;
 use App\Http\Controllers\Consumer\HomeController;
+use App\Http\Controllers\Consumer\CatalogController as ConsumerCatalogController;
 use App\Http\Controllers\Consumer\CartController; // <--- Make sure this is imported
 
 
@@ -42,9 +43,9 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 // --- PUBLIC ROUTES ---
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [ConsumerCatalogController::class, 'home'])->name('home');
 
-Route::get('/shop', [ShopController::class, 'index'])->middleware('throttle:marketplace.search')->name('shop.index');
+Route::get('/shop', [ConsumerCatalogController::class, 'index'])->middleware('throttle:marketplace.search')->name('shop.index');
 Route::get('/shop/{user:shop_slug}', [ShopController::class, 'seller'])->name('shop.seller');
 Route::get('/product/{product}', [ProductController::class, 'show'])->name('product.show');
 Route::post('/sponsorship-events/track', [\App\Http\Controllers\Seller\SponsorshipController::class, 'track'])
