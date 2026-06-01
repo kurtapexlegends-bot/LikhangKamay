@@ -18,10 +18,43 @@ class ShopController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = $this->buildCatalogQuery($request);
-            $paginator = $query->paginate(20)->withQueryString();
-            
-            $paginator->through(fn ($product) => $this->serializeCatalogProduct($product));
+            $isDefaultRequest = !$request->filled('search') &&
+                                (!$request->filled('category') || $request->category === 'All') &&
+                                !$request->filled('price_min') &&
+                                !$request->filled('price_max') &&
+                                !$request->filled('locations') &&
+                                !$request->filled('materials') &&
+                                !$request->filled('min_rating') &&
+                                (!$request->filled('sort') || $request->sort === 'newest') &&
+                                ((int) $request->get('page', 1) === 1);
+
+            if ($isDefaultRequest) {
+                $cacheData = Cache::remember('shop_catalog_default_page_1', 600, function () use ($request) {
+                    $query = $this->buildCatalogQuery($request);
+                    $paginator = $query->paginate(20)->withQueryString();
+                    $paginator->through(fn ($product) => $this->serializeCatalogProduct($product));
+
+                    return [
+                        'items' => $paginator->items(),
+                        'total' => $paginator->total(),
+                        'per_page' => $paginator->perPage(),
+                        'current_page' => $paginator->currentPage(),
+                        'last_page' => $paginator->lastPage(),
+                    ];
+                });
+
+                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $cacheData['items'],
+                    $cacheData['total'],
+                    $cacheData['per_page'],
+                    $cacheData['current_page'],
+                    ['path' => $request->url(), 'query' => $request->query()]
+                );
+            } else {
+                $query = $this->buildCatalogQuery($request);
+                $paginator = $query->paginate(20)->withQueryString();
+                $paginator->through(fn ($product) => $this->serializeCatalogProduct($product));
+            }
 
             $sponsoredResults = collect($paginator->items())
                 ->filter(fn($p) => $p['is_sponsored'])

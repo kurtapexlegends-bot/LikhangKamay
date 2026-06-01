@@ -8,19 +8,34 @@ use Illuminate\Support\Facades\Cache;
 class SystemSettingsService
 {
     /**
+     * Get all platform settings cached.
+     *
+     * @return array<string, array{value: string, type: string}>
+     */
+    protected function getAllSettings(): array
+    {
+        return Cache::remember('all_platform_settings', 3600, function () {
+            return PlatformVariable::all()->mapWithKeys(function ($variable) {
+                return [$variable->key => [
+                    'value' => $variable->value,
+                    'type' => $variable->type,
+                ]];
+            })->toArray();
+        });
+    }
+
+    /**
      * Get a setting value by key with caching and default fallback.
      */
     public function get(string $key, mixed $default = null): mixed
     {
-        return Cache::remember("platform_setting_{$key}", 3600, function () use ($key, $default) {
-            $variable = PlatformVariable::where('key', $key)->first();
-            
-            if (!$variable) {
-                return $default;
-            }
+        $all = $this->getAllSettings();
 
-            return $this->castValue($variable->value, $variable->type);
-        });
+        if (!array_key_exists($key, $all)) {
+            return $default;
+        }
+
+        return $this->castValue($all[$key]['value'], $all[$key]['type']);
     }
 
     /**
@@ -37,6 +52,7 @@ class SystemSettingsService
             ]
         );
 
+        Cache::forget('all_platform_settings');
         Cache::forget("platform_setting_{$key}");
         
         // Clear branding specific caches if needed

@@ -139,6 +139,26 @@ class Product extends Model
                  $product->slug = \Illuminate\Support\Str::slug($product->name . '-' . \Illuminate\Support\Str::random(6));
             }
         });
+
+        static::saved(function ($product) {
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_products");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_best_sellers");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_stats");
+            \Illuminate\Support\Facades\Cache::forget('catalog_materials');
+            \Illuminate\Support\Facades\Cache::forget('catalog_locations');
+            \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+        });
+
+        static::deleted(function ($product) {
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_products");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_best_sellers");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_stats");
+            \Illuminate\Support\Facades\Cache::forget('catalog_materials');
+            \Illuminate\Support\Facades\Cache::forget('catalog_locations');
+            \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+        });
     }
 
     /**

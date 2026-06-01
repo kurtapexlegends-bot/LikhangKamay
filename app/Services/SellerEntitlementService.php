@@ -185,7 +185,7 @@ class SellerEntitlementService
         }
 
         return [
-            'activeCount' => $seller->products()->where('status', 'Active')->count(),
+            'activeCount' => isset($seller->products_count) ? (int) $seller->products_count : $seller->products()->where('status', 'Active')->count(),
             'limit' => $seller->getActiveProductLimit(),
             'tierKey' => $entitlements['tierKey'],
             'tierLabel' => $entitlements['tierLabel'],

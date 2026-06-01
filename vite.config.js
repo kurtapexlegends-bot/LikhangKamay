@@ -54,7 +54,17 @@ export default defineConfig({
                     if (id.includes('node_modules/@headlessui')) {
                         return 'vendor-headlessui';
                     }
+                    if (id.includes('node_modules/@sentry')) {
+                        return 'vendor-sentry';
+                    }
+                    if (id.includes('node_modules/emoji-picker-react')) {
+                        return 'vendor-emoji';
+                    }
+                    if (id.includes('node_modules/@gradio')) {
+                        return 'vendor-gradio';
+                    }
                 },
+                experimentalMinChunkSize: 10000,
             },
         },
     },

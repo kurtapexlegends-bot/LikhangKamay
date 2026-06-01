@@ -60,7 +60,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->unreadNotifications->markAsRead();
+        $user->unreadNotifications()->update(['read_at' => now()]);
 
         return back();
     }
