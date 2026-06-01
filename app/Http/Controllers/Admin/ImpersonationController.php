@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\PlatformActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class ImpersonationController extends Controller
 {
@@ -16,10 +17,7 @@ class ImpersonationController extends Controller
      */
     public function impersonate(User $user, Request $request)
     {
-        // Security Check: Only super admins can initiate impersonation
-        if (Auth::user()->role !== 'super_admin') {
-            abort(403, 'Unauthorized to impersonate users.');
-        }
+        Gate::authorize('admin-action');
 
         $adminId = Auth::id();
 

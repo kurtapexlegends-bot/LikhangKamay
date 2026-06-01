@@ -18,6 +18,7 @@ use App\Mail\ArtisanRejected;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
@@ -48,6 +49,8 @@ class SuperAdminController extends Controller
      */
     public function dashboard()
     {
+        Gate::authorize('admin-action');
+
         try {
             return Inertia::render('Admin/Layout/Dashboard', [
                 'stats' => (function() {
@@ -167,6 +170,8 @@ class SuperAdminController extends Controller
      */
     public function userManager(Request $request)
     {
+        Gate::authorize('admin-action');
+
         try {
             $tab = $request->get('tab', 'directory');
             $search = trim((string) $request->get('search', ''));
@@ -242,6 +247,7 @@ class SuperAdminController extends Controller
 
     public function markArtisanDocumentViewed(Request $request, int|string $id)
     {
+        Gate::authorize('admin-action');
         $request->validate(['document' => 'required|string|in:business_permit,dti_registration,valid_id,tin_id']);
         $documentKey = $request->document;
 
@@ -260,6 +266,7 @@ class SuperAdminController extends Controller
 
     public function approveArtisan(int|string $id)
     {
+        Gate::authorize('admin-action');
         $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
 
         // REQUIREMENT: Admin must have previewed all required documents before approving
@@ -295,11 +302,13 @@ class SuperAdminController extends Controller
 
     public function rejectArtisan(Request $request, int|string $id)
     {
+        Gate::authorize('admin-action');
         $request->validate(['reason' => 'required|string|min:10']);
+        $reason = strip_tags($request->reason);
         $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
 
         ArtisanStatusLog::create(['user_id' => $artisan->id, 'previous_status' => $artisan->artisan_status, 'new_status' => 'rejected']);
-        $artisan->update(['artisan_status' => 'rejected', 'artisan_rejection_reason' => $request->reason]);
+        $artisan->update(['artisan_status' => 'rejected', 'artisan_rejection_reason' => $reason]);
 
         $this->clearViewedArtisanDocumentKeys($id);
 
@@ -322,6 +331,7 @@ class SuperAdminController extends Controller
      */
     public function insights()
     {
+        Gate::authorize('admin-action');
         return Inertia::render('Admin/Analytics/Insights', $this->analytics->getInsightsData());
     }
 
@@ -330,6 +340,7 @@ class SuperAdminController extends Controller
      */
     public function announcements()
     {
+        Gate::authorize('admin-action');
         return Inertia::render('Admin/Layout/Announcements', [
             'announcements' => SystemAnnouncement::with('creator:id,name')->latest()->get(),
         ]);
@@ -337,6 +348,7 @@ class SuperAdminController extends Controller
 
     public function storeAnnouncement(Request $request)
     {
+        Gate::authorize('admin-action');
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'message' => 'required|string',
@@ -344,6 +356,8 @@ class SuperAdminController extends Controller
             'target_audience' => 'required|in:all,artisans,buyers',
             'is_active' => 'boolean',
         ]);
+        $validated['title'] = strip_tags($validated['title']);
+        $validated['message'] = strip_tags($validated['message']);
 
         if ($request->boolean('is_active')) {
             SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
@@ -363,6 +377,7 @@ class SuperAdminController extends Controller
 
     public function updateAnnouncement(Request $request, int|string $id)
     {
+        Gate::authorize('admin-action');
         $announcement = SystemAnnouncement::findOrFail($id);
         
         $validated = $request->validate([
@@ -372,6 +387,8 @@ class SuperAdminController extends Controller
             'target_audience' => 'required|in:all,artisans,buyers',
             'is_active' => 'boolean',
         ]);
+        $validated['title'] = strip_tags($validated['title']);
+        $validated['message'] = strip_tags($validated['message']);
 
         if ($request->boolean('is_active') && !$announcement->is_active) {
             SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
@@ -387,6 +404,7 @@ class SuperAdminController extends Controller
 
     public function broadcastAnnouncement(int|string $id)
     {
+        Gate::authorize('admin-action');
         $announcement = SystemAnnouncement::findOrFail($id);
         
         // EXCLUSIVE BROADCAST: Deactivate all currently active announcements 
@@ -406,6 +424,7 @@ class SuperAdminController extends Controller
 
     public function stopAnnouncement(int|string $id)
     {
+        Gate::authorize('admin-action');
         $announcement = SystemAnnouncement::findOrFail($id);
         $announcement->update(['is_active' => false]);
         $this->clearAnnouncementCache();
@@ -415,6 +434,7 @@ class SuperAdminController extends Controller
 
     public function destroyAnnouncement(int|string $id)
     {
+        Gate::authorize('admin-action');
         $announcement = SystemAnnouncement::findOrFail($id);
         $announcement->delete();
         $this->clearAnnouncementCache();
@@ -431,6 +451,7 @@ class SuperAdminController extends Controller
 
     public function viewArtisan(int|string $id)
     {
+        Gate::authorize('admin-action');
         $user = User::where('role', 'artisan')->findOrFail($id);
         
         return Inertia::render('Admin/ArtisanDetail', [
@@ -449,17 +470,25 @@ class SuperAdminController extends Controller
 
     public function bulkApproveArtisans(Request $request)
     {
+        Gate::authorize('admin-action');
         $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:users,id']);
         
         $count = 0;
         foreach ($request->ids as $id) {
             $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->find($id);
-            if ($artisan) {
-                $artisan->update(['artisan_status' => 'approved', 'approved_at' => now(), 'approved_by' => Auth::id()]);
-                $count++;
-                try {
-                    if ($artisan->email) Mail::to($artisan->email)->send(new ArtisanApproved($artisan));
-                } catch (\Exception $e) { Log::error('Bulk Email failed: ' . $e->getMessage()); }
+            if (!$artisan) {
+                continue;
+            }
+            $artisan->update(['artisan_status' => 'approved', 'approved_at' => now(), 'approved_by' => Auth::id()]);
+            $count++;
+            
+            if (!$artisan->email) {
+                continue;
+            }
+            try {
+                Mail::to($artisan->email)->send(new ArtisanApproved($artisan));
+            } catch (\Exception $e) {
+                Log::error('Bulk Email failed: ' . $e->getMessage());
             }
         }
 
@@ -551,6 +580,7 @@ class SuperAdminController extends Controller
 
     public function checkArtisanSlug(Request $request)
     {
+        Gate::authorize('admin-action');
         $exists = User::where('shop_slug', $request->slug)->when($request->exclude_id, fn($q) => $q->where('id', '!=', $request->exclude_id))->exists();
         return response()->json(['exists' => $exists]);
     }

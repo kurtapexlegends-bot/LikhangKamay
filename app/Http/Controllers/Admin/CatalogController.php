@@ -10,6 +10,7 @@ use App\Notifications\SponsorshipStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class CatalogController extends Controller
@@ -19,6 +20,7 @@ class CatalogController extends Controller
      */
     public function index()
     {
+        Gate::authorize('admin-action');
         return Inertia::render('Admin/Catalog/CatalogManager', [
             'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
             'requests' => SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
@@ -32,13 +34,16 @@ class CatalogController extends Controller
      */
     public function storeTaxonomy(Request $request)
     {
+        Gate::authorize('admin-action');
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name'
         ]);
 
+        $name = strip_tags($validated['name']);
+
         Category::create([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name'])
+            'name' => $name,
+            'slug' => Str::slug($name)
         ]);
 
         return back()->with('success', 'Category created successfully.');
@@ -49,12 +54,13 @@ class CatalogController extends Controller
      */
     public function updateTaxonomy(Request $request, Category $category)
     {
+        Gate::authorize('admin-action');
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id
         ]);
 
         $oldName = $category->name;
-        $newName = $validated['name'];
+        $newName = strip_tags($validated['name']);
 
         $category->update([
             'name' => $newName,
@@ -72,6 +78,7 @@ class CatalogController extends Controller
      */
     public function destroyTaxonomy(Category $category)
     {
+        Gate::authorize('admin-action');
         if ($category->products()->count() > 0) {
             return back()->with('error', 'Cannot delete a category that contains products. Please reassign the products first.');
         }
@@ -86,6 +93,7 @@ class CatalogController extends Controller
      */
     public function checkCategoryName(Request $request)
     {
+        Gate::authorize('admin-action');
         $exists = Category::where('name', $request->name)
             ->when($request->exclude_id, fn($q) => $q->where('id', '!=', $request->exclude_id))
             ->exists();
@@ -98,6 +106,7 @@ class CatalogController extends Controller
      */
     public function approveSponsorship(SponsorshipRequest $sponsorshipRequest)
     {
+        Gate::authorize('admin-action');
         if ($sponsorshipRequest->status !== 'pending') {
             return back()->with('error', 'Request is not pending.');
         }
@@ -133,6 +142,7 @@ class CatalogController extends Controller
      */
     public function rejectSponsorship(Request $request, SponsorshipRequest $sponsorshipRequest)
     {
+        Gate::authorize('admin-action');
         if ($sponsorshipRequest->status !== 'pending') {
             return back()->with('error', 'Request is not pending.');
         }
@@ -144,7 +154,7 @@ class CatalogController extends Controller
         $sponsorshipRequest->update([
             'status' => 'rejected',
             'approved_at' => null,
-            'rejection_reason' => $validated['rejection_reason'],
+            'rejection_reason' => strip_tags($validated['rejection_reason']),
         ]);
 
         $sponsorshipRequest->loadMissing('product');

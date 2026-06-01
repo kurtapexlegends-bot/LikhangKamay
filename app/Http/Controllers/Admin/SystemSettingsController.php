@@ -12,6 +12,7 @@ use App\Services\Admin\AdminAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class SystemSettingsController extends Controller
@@ -32,6 +33,7 @@ class SystemSettingsController extends Controller
 
     public function index()
     {
+        Gate::authorize('admin-action');
         try {
             return Inertia::render('Admin/Layout/SystemConfig', [
                 'settings' => $this->getSystemSettings(),
@@ -242,6 +244,7 @@ class SystemSettingsController extends Controller
 
     public function update(Request $request)
     {
+        Gate::authorize('admin-action');
         $validated = $request->validate([
             'platform_name' => 'required|string|max:255',
             'platform_logo' => 'nullable|image|max:2048',
@@ -305,6 +308,23 @@ class SystemSettingsController extends Controller
                 'GATEWAY_STATUS_CHANGE',
                 "PayMongo gateway status changed to {$status}."
             );
+        }
+
+        $validated['platform_name'] = strip_tags($validated['platform_name']);
+        if (isset($validated['seo_metadata']['title'])) {
+            $validated['seo_metadata']['title'] = strip_tags($validated['seo_metadata']['title']);
+        }
+        if (isset($validated['seo_metadata']['description'])) {
+            $validated['seo_metadata']['description'] = strip_tags($validated['seo_metadata']['description']);
+        }
+        if (isset($validated['seo_metadata']['keywords'])) {
+            $validated['seo_metadata']['keywords'] = strip_tags($validated['seo_metadata']['keywords']);
+        }
+        if (isset($validated['contact_info']['address'])) {
+            $validated['contact_info']['address'] = strip_tags($validated['contact_info']['address']);
+        }
+        if (isset($validated['mail_from_name'])) {
+            $validated['mail_from_name'] = strip_tags($validated['mail_from_name']);
         }
 
         $this->settings->set('platform_name', $validated['platform_name']);

@@ -13,6 +13,7 @@ use App\Models\Order;
 use App\Notifications\ReviewModerationStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -23,6 +24,7 @@ class ModerationController extends Controller
      */
     public function compliance(Request $request)
     {
+        Gate::authorize('admin-action');
         $flags = $this->getPendingFlags();
         $disputes = $this->getReviewDisputes();
         $trashData = $this->getTrashQueueAndStats();
@@ -175,6 +177,7 @@ class ModerationController extends Controller
      */
     public function reviewIndex()
     {
+        Gate::authorize('admin-action');
         $disputes = ReviewDispute::query()
             ->with(['review.product.user', 'reporter'])
             ->latest()
@@ -215,32 +218,39 @@ class ModerationController extends Controller
      */
     public function updateReview(Request $request, ReviewDispute $reviewDispute)
     {
+        Gate::authorize('admin-action');
         $validated = $request->validate([
             'status' => 'required|in:under_review,resolved,rejected',
             'resolution_notes' => 'nullable|string|max:1000',
         ]);
 
+        $resolutionNotes = isset($validated['resolution_notes']) ? strip_tags($validated['resolution_notes']) : null;
         $resolvedStatuses = ['resolved', 'rejected'];
         $reviewDispute->loadMissing('review');
 
-        DB::transaction(function () use ($request, $reviewDispute, $validated, $resolvedStatuses) {
+        DB::transaction(function () use ($request, $reviewDispute, $validated, $resolvedStatuses, $resolutionNotes) {
             $reviewDispute->update([
                 'status' => $validated['status'],
-                'resolution_notes' => $validated['resolution_notes'] ?: null,
+                'resolution_notes' => $resolutionNotes,
                 'resolved_at' => in_array($validated['status'], $resolvedStatuses, true) ? now() : null,
             ]);
 
-            if (!$reviewDispute->review) {
+            $review = $reviewDispute->review;
+            if (!$review) {
                 return;
             }
 
-            $this->syncReviewMarketplaceVisibility($reviewDispute->review, $request->user()?->id);
+            $this->syncReviewMarketplaceVisibility($review, $request->user()?->id);
 
-            if (in_array($validated['status'], $resolvedStatuses, true) && $reviewDispute->review->user) {
-                $reviewDispute->review->user->notify(
+            if (!in_array($validated['status'], $resolvedStatuses, true)) {
+                return;
+            }
+
+            if ($review->user) {
+                $review->user->notify(
                     new ReviewModerationStatusNotification(
-                        $reviewDispute->review,
-                        (bool) $reviewDispute->review->fresh()->is_hidden_from_marketplace,
+                        $review,
+                        (bool) $review->fresh()->is_hidden_from_marketplace,
                     )
                 );
             }
@@ -254,6 +264,7 @@ class ModerationController extends Controller
      */
     public function destroyReview(Request $request, ReviewDispute $reviewDispute)
     {
+        Gate::authorize('admin-action');
         $reviewDispute->loadMissing('review');
 
         DB::transaction(function () use ($request, $reviewDispute) {
@@ -273,6 +284,7 @@ class ModerationController extends Controller
      */
     public function queue()
     {
+        Gate::authorize('admin-action');
         $flags = FlaggedContent::with(['reporter:id,name', 'reportable'])
             ->where('status', 'pending')
             ->latest()
@@ -288,6 +300,7 @@ class ModerationController extends Controller
      */
     public function resolveFlag(int|string $id)
     {
+        Gate::authorize('admin-action');
         $flag = FlaggedContent::findOrFail($id);
         
         $flag->update([
@@ -304,6 +317,7 @@ class ModerationController extends Controller
      */
     public function takedownProduct(int|string $id)
     {
+        Gate::authorize('admin-action');
         $flag = FlaggedContent::findOrFail($id);
         
         if ($flag->reportable_type === 'App\Models\Product' && $flag->reportable) {
@@ -324,6 +338,7 @@ class ModerationController extends Controller
      */
     public function suspendUser(int|string $id)
     {
+        Gate::authorize('admin-action');
         $flag = FlaggedContent::findOrFail($id);
         
         $userId = null;
@@ -354,6 +369,7 @@ class ModerationController extends Controller
      */
     public function dismissFlag(int|string $id)
     {
+        Gate::authorize('admin-action');
         $flag = FlaggedContent::findOrFail($id);
         
         $flag->update([

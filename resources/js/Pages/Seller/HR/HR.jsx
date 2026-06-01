@@ -659,7 +659,7 @@ function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose
                                                                 : 'text-stone-700'
                                                     }`}>{day.day_number}</span>
                                                     {day.is_today && (
-                                                        <span className="inline-flex rounded-sm bg-clay-100 px-1 py-0.5 text-[8px] font-bold uppercase tracking-widest text-clay-700">
+                                                        <span className="hidden sm:inline-flex rounded-sm bg-clay-100 px-1 py-0.5 text-[8px] font-bold uppercase tracking-widest text-clay-700">
                                                             Today
                                                         </span>
                                                     )}

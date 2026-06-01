@@ -13,6 +13,7 @@ use App\Models\PlatformActivity;
 use App\Services\Admin\AdminAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,7 @@ class PlatformDiagnosticsController extends Controller
      */
     public function operations(Request $request)
     {
+        Gate::authorize('admin-action');
         $activeTab = $request->input('tab', 'health');
 
         return Inertia::render('Admin/Layout/PlatformOperations', [
@@ -243,6 +245,7 @@ class PlatformDiagnosticsController extends Controller
      */
     public function purgeCache()
     {
+        Gate::authorize('admin-action');
         Artisan::call('cache:clear');
         Artisan::call('view:clear');
         
@@ -260,6 +263,7 @@ class PlatformDiagnosticsController extends Controller
      */
     public function restoreItem(Request $request)
     {
+        Gate::authorize('admin-action');
         $validated = $request->validate([
             'id' => 'required',
             'type' => 'required|in:Product,Category,Order',
@@ -293,6 +297,7 @@ class PlatformDiagnosticsController extends Controller
      */
     public function permanentDeleteItem(Request $request)
     {
+        Gate::authorize('admin-action');
         $validated = $request->validate([
             'id' => 'required',
             'type' => 'required|in:Product,Category,Order',

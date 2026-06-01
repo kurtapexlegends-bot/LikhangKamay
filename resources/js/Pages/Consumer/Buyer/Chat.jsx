@@ -218,7 +218,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
 
             {/* CHAT CONTAINER */}
             <main className={`flex-1 max-w-7xl w-full mx-auto sm:px-6 lg:px-8 sm:py-6 ${!showMobileList ? 'p-0 sm:px-4' : 'p-4'}`}>
-                <div className={`bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col sm:flex-row h-[calc(100dvh)] sm:h-[calc(100vh-140px)] sm:rounded-2xl`}>
+                <div className={`bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col sm:flex-row ${showMobileList ? 'h-[calc(100dvh-3.5rem)]' : 'h-[calc(100dvh)]'} sm:h-[calc(100vh-140px)] sm:rounded-2xl`}>
                     
                     {/* LEFT: CONTACT LIST */}
                     <div className={`w-full sm:w-80 sm:max-w-[20rem] border-r border-gray-100 flex flex-col bg-gradient-to-b from-white to-gray-50 ${showMobileList ? 'block' : 'hidden sm:flex'}`}>
