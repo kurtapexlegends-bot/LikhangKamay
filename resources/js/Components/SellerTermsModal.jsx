@@ -1,7 +1,15 @@
 import React from 'react';
 import Modal from '@/Components/Modal';
 
-export default function SellerTermsModal({ show, onClose }) {
+export default function SellerTermsModal({ show, onClose, onAccept }) {
+    const handleAccept = () => {
+        if (onAccept) {
+            onAccept();
+        } else {
+            onClose();
+        }
+    };
+
     return (
         <Modal show={show} onClose={onClose} maxWidth="2xl">
             {/* Modal Content */}
@@ -71,7 +79,7 @@ export default function SellerTermsModal({ show, onClose }) {
                     <button onClick={onClose} className="px-4 py-2 bg-white border border-stone-300 rounded-lg text-stone-700 font-medium hover:bg-stone-50 transition">
                         Close
                     </button>
-                    <button onClick={onClose} className="px-4 py-2 bg-clay-600 text-white rounded-lg font-bold hover:bg-clay-700 transition shadow-md">
+                    <button onClick={handleAccept} className="px-4 py-2 bg-clay-600 text-white rounded-lg font-bold hover:bg-clay-700 transition shadow-md">
                         I Understand & Agree
                     </button>
                 </div>

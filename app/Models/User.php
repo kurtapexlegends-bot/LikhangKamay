@@ -674,6 +674,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->artisan_status === 'rejected';
     }
 
+    public function hasAcceptedComplianceTerms(string $type = 'seller_terms'): bool
+    {
+        return $this->complianceAgreements()->where('document_type', $type)->exists();
+    }
+
     public function canAccessDashboard(): bool
     {
         if ($this->isStaff()) {
@@ -1052,6 +1057,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public function sponsorshipRequests()
     {
         return $this->hasMany(\App\Models\SponsorshipRequest::class);
+    }
+
+    public function complianceAgreements()
+    {
+        return $this->hasMany(\App\Models\SellerComplianceAgreement::class);
     }
 
     public function sellerOwner()

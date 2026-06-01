@@ -137,7 +137,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     })->name('artisan.pending');
 
     // SELLER ROUTES
-    Route::middleware(['seller.workspace', 'staff.attendance'])->group(function () {
+    Route::middleware(['seller.workspace', 'staff.attendance', 'seller.compliance'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
         Route::get('/orders/export', [OrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
         Route::get('/orders/{id}/receipt', [OrderController::class, 'sellerDownloadReceipt'])->middleware('seller.module:orders')->name('orders.receipt');

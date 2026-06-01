@@ -102,4 +102,18 @@ class UserFactory extends Factory
             'created_by_user_id' => $sellerOwner?->id,
         ]);
     }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            if ($user->role === 'artisan') {
+                $user->complianceAgreements()->create([
+                    'document_type' => 'seller_terms',
+                    'accepted_at' => now(),
+                    'ip_address' => '127.0.0.1',
+                    'user_agent' => 'Symfony/PHPUnit',
+                ]);
+            }
+        });
+    }
 }

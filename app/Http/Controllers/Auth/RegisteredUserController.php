@@ -51,13 +51,26 @@ class RegisteredUserController extends Controller
 
         $role = $request->filled('shop_name') ? 'artisan' : 'buyer';
 
-        $user = User::create([
-            ...User::persistableNameAttributes($name),
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $role,
-            'shop_name' => $request->shop_name,
-        ]);
+        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($name, $request, $role) {
+            $user = User::create([
+                ...User::persistableNameAttributes($name),
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => $role,
+                'shop_name' => $request->shop_name,
+            ]);
+
+            if ($role === 'artisan') {
+                $user->complianceAgreements()->create([
+                    'document_type' => 'seller_terms',
+                    'accepted_at' => now(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+
+            return $user;
+        });
 
         Auth::login($user);
         $request->session()->regenerate();

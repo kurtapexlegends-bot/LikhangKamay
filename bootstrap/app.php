@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'artisan' => \App\Http\Middleware\EnsureArtisan::class,
             'seller.workspace' => \App\Http\Middleware\EnsureSellerWorkspaceAccess::class,
             'seller.module' => \App\Http\Middleware\EnsureSellerModuleAccess::class,
+            'seller.compliance' => \App\Http\Middleware\EnsureSellerCompliance::class,
             'staff.security' => \App\Http\Middleware\EnsureStaffSecurityGate::class,
             'staff.attendance' => \App\Http\Middleware\EnsureStaffAttendanceActive::class,
         ]);

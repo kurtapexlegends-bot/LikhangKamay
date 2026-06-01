@@ -91,6 +91,13 @@ class ShopController extends Controller
     private function buildCatalogQuery(Request $request)
     {
         $query = Product::where('status', 'Active')
+            ->whereHas('user', function ($q) {
+                $q->where('role', 'artisan')
+                  ->where('artisan_status', 'approved')
+                  ->whereHas('complianceAgreements', function ($cq) {
+                      $cq->where('document_type', 'seller_terms');
+                  });
+            })
             ->with(['user']);
 
         if ($request->filled('category') && $request->category !== 'All') {
@@ -216,7 +223,11 @@ class ShopController extends Controller
     {
         $seller = $user;
 
-        if ($seller->role !== 'artisan' || $seller->artisan_status !== 'approved') {
+        $hasAccepted = \App\Models\SellerComplianceAgreement::where('user_id', $seller->id)
+            ->where('document_type', 'seller_terms')
+            ->exists();
+
+        if ($seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || !$hasAccepted) {
             abort(404);
         }
 

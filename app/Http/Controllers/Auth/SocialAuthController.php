@@ -28,6 +28,7 @@ class SocialAuthController extends Controller
             'social_auth_remember' => $remember,
         ]);
 
+        /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
         $driver = Socialite::driver($provider);
 
         if (!$remember && $provider === 'google') {
@@ -212,7 +213,20 @@ class SocialAuthController extends Controller
             $userData['shop_name'] = $request->shop_name;
         }
 
-        $user = User::create($userData);
+        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($userData, $isArtisan, $request) {
+            $user = User::create($userData);
+
+            if ($isArtisan) {
+                $user->complianceAgreements()->create([
+                    'document_type' => 'seller_terms',
+                    'accepted_at' => now(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+
+            return $user;
+        });
 
         // Clear session
         session()->forget([

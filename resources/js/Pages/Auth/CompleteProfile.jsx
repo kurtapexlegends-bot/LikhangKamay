@@ -6,6 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
+import SellerTermsModal from '@/Components/SellerTermsModal';
 import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -390,12 +391,23 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             </motion.div>
 
             {/* Legal Modal */}
-            <LegalModal
-                isOpen={legalModal.isOpen}
-                onClose={handleLegalModalClose}
-                onAccept={handleLegalAccept}
-                type={legalModal.type}
-            />
+            {legalModal.isOpen && legalModal.type === 'seller' ? (
+                <SellerTermsModal
+                    show={true}
+                    onClose={() => handleLegalModalClose({ accepted: false })}
+                    onAccept={() => {
+                        handleLegalAccept();
+                        handleLegalModalClose({ accepted: true });
+                    }}
+                />
+            ) : (
+                <LegalModal 
+                    isOpen={legalModal.isOpen} 
+                    onClose={handleLegalModalClose} 
+                    onAccept={handleLegalAccept}
+                    type={legalModal.type} 
+                />
+            )}
         </GuestLayout>
     );
 }
