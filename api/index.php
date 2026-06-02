@@ -16,6 +16,12 @@ if ($uri !== '/' && file_exists(__DIR__ . '/../public' . $uri)) {
     return false;
 }
 
+// Ensure the writable view compiled path directory exists in /tmp before booting
+$viewCompiledPath = '/tmp/storage/framework/views';
+if (!is_dir($viewCompiledPath)) {
+    @mkdir($viewCompiledPath, 0755, true);
+}
+
 try {
     require __DIR__ . '/../public/index.php';
 } catch (\Throwable $e) {
