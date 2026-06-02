@@ -152,6 +152,7 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
             \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
             \Illuminate\Support\Facades\Cache::forget('home_categories');
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_analytics_daily_rollup_" . \Carbon\Carbon::now(config('app.timezone'))->toDateString());
         });
 
         static::deleted(function ($product) {
@@ -166,6 +167,7 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
             \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
             \Illuminate\Support\Facades\Cache::forget('home_categories');
+            \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_analytics_daily_rollup_" . \Carbon\Carbon::now(config('app.timezone'))->toDateString());
         });
     }
 

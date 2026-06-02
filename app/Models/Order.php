@@ -84,6 +84,14 @@ class Order extends Model
                 unset($order->attributes['seller_net_amount']);
             }
         });
+
+        static::saved(function (self $order) {
+            \Illuminate\Support\Facades\Cache::forget("seller_{$order->artisan_id}_analytics_daily_rollup_" . \Carbon\Carbon::now(config('app.timezone'))->toDateString());
+        });
+
+        static::deleted(function (self $order) {
+            \Illuminate\Support\Facades\Cache::forget("seller_{$order->artisan_id}_analytics_daily_rollup_" . \Carbon\Carbon::now(config('app.timezone'))->toDateString());
+        });
     }
 
     /**

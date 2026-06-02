@@ -203,4 +203,27 @@ class ShopController extends Controller
 
         return redirect()->back()->with('success', 'Shop settings updated successfully.');
     }
+
+    /**
+     * Retrieve the aggregated and cached shop analytics rollup data.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Services\ShopAnalyticsService  $analyticsService
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function analyticsRollup(Request $request, \App\Services\ShopAnalyticsService $analyticsService)
+    {
+        $user = $request->user()->getEffectiveSeller();
+        abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
+
+        $date = $request->input('date');
+        $threshold = $request->input('threshold', 5);
+
+        $rollup = $analyticsService->getAnalyticsRollup($user->id, $date, (int) $threshold);
+
+        return response()->json([
+            'success' => true,
+            'data' => $rollup,
+        ]);
+    }
 }

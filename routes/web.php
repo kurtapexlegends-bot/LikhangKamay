@@ -173,6 +173,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // SHOP SETTINGS
         Route::get('/shop-settings', [ShopController::class, 'settings'])->middleware('seller.module:shop_settings')->name('shop.settings');
         Route::post('/shop-settings', [ShopController::class, 'updateSettings'])->middleware('seller.module:shop_settings')->name('shop.settings.update');
+        Route::get('/shop/analytics/rollup', [ShopController::class, 'analyticsRollup'])->name('shop.analytics.rollup');
 
         // SUBSCRIPTIONS
         Route::get('/subscription', [SubscriptionController::class, 'index'])->middleware('artisan')->name('seller.subscription');

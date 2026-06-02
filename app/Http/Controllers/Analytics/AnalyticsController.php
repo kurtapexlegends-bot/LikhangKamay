@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Review;
 use App\Services\SponsorshipAnalyticsService;
+use App\Services\ShopAnalyticsService;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,12 +22,17 @@ class AnalyticsController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(Request $request, SponsorshipAnalyticsService $sponsorshipAnalyticsService)
-    {
+    public function index(
+        Request $request,
+        SponsorshipAnalyticsService $sponsorshipAnalyticsService,
+        ShopAnalyticsService $shopAnalyticsService
+    ) {
         $seller = $this->sellerOwner();
         $sellerId = $seller->id;
         $filter = $request->input('filter', 'monthly');
         $categoryFilter = $request->input('category', 'All Categories');
+
+        $rollup = $shopAnalyticsService->getAnalyticsRollup($sellerId);
 
         $financials = $this->getFinancialMetrics($sellerId);
         $customerInsights = $this->getCustomerInsights($sellerId);
@@ -56,6 +62,11 @@ class AnalyticsController extends Controller
                 ],
                 'average_rating' => $reviewStats['average'],
                 'review_stats' => $reviewStats,
+                'fulfillment_latency' => $rollup['fulfillment_latency'] ?? [
+                    'avg_acceptance_hours' => 0.0,
+                    'avg_fulfillment_hours' => 0.0,
+                    'avg_delivery_hours' => 0.0,
+                ],
             ],
             'financials_masked' => !$canViewRevenue,
             'insights' => [
@@ -64,6 +75,7 @@ class AnalyticsController extends Controller
                 'sales_heatmap' => $intelligence['sales_heatmap'],
                 'sales_velocity' => $intelligence['sales_velocity'],
                 'slow_movers' => $intelligence['slow_movers'],
+                'low_stock_products' => $rollup['low_stock_alerts']['products'] ?? [],
             ],
             'dataContext' => [
                 'generated_at' => now()->toIso8601String(),
