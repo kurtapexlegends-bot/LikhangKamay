@@ -146,20 +146,25 @@ class ChatController extends Controller
 
         $contactIds = $contacts->pluck('id');
 
-        // Pre-fetch latest messages for all contacts
-        $latestMessagesQuery = Message::where(function($q) use ($userId, $contactIds) {
-            $q->where('sender_id', $userId)->whereIn('receiver_id', $contactIds);
-        })->orWhere(function($q) use ($userId, $contactIds) {
-            $q->whereIn('sender_id', $contactIds)->where('receiver_id', $userId);
-        })->latest()->get();
+        if ($contactIds->isEmpty()) {
+            $latestMessagesQuery = collect();
+            $unreadCounts = collect();
+        } else {
+            // Pre-fetch latest messages for all contacts
+            $latestMessagesQuery = Message::where(function($q) use ($userId, $contactIds) {
+                $q->where('sender_id', $userId)->whereIn('receiver_id', $contactIds);
+            })->orWhere(function($q) use ($userId, $contactIds) {
+                $q->whereIn('sender_id', $contactIds)->where('receiver_id', $userId);
+            })->latest()->get();
 
-        // Also pre-fetch unread counts
-        $unreadCounts = Message::whereIn('sender_id', $contactIds)
-            ->where('receiver_id', $userId)
-            ->where('is_read', false)
-            ->selectRaw('sender_id, count(*) as count')
-            ->groupBy('sender_id')
-            ->pluck('count', 'sender_id');
+            // Also pre-fetch unread counts
+            $unreadCounts = Message::whereIn('sender_id', $contactIds)
+                ->where('receiver_id', $userId)
+                ->where('is_read', false)
+                ->selectRaw('sender_id, count(*) as count')
+                ->groupBy('sender_id')
+                ->pluck('count', 'sender_id');
+        }
 
         $conversations = $contacts->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts) {
             $lastMsg = $latestMessagesQuery->first(function($msg) use ($userId, $user) {
