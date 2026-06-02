@@ -16,4 +16,12 @@ if ($uri !== '/' && file_exists(__DIR__ . '/../public' . $uri)) {
     return false;
 }
 
-require __DIR__ . '/../public/index.php';
+try {
+    require __DIR__ . '/../public/index.php';
+} catch (\Throwable $e) {
+    error_log("ENTRY_POINT_CRASH: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    if ($e->getPrevious()) {
+        error_log("ENTRY_POINT_PREVIOUS: " . $e->getPrevious()->getMessage() . " in " . $e->getPrevious()->getFile() . ":" . $e->getPrevious()->getLine());
+    }
+    throw $e;
+}
