@@ -20,8 +20,8 @@ return new class extends Migration
         \Illuminate\Support\Facades\DB::statement("
             UPDATE products
             SET 
-                rating = COALESCE((SELECT ROUND(AVG(r.rating), 2) FROM reviews r WHERE r.product_id = products.id AND r.is_hidden_from_marketplace = 0), 0),
-                reviews_count = COALESCE((SELECT COUNT(*) FROM reviews r WHERE r.product_id = products.id AND r.is_hidden_from_marketplace = 0), 0)
+                rating = COALESCE((SELECT ROUND(AVG(r.rating), 2) FROM reviews r WHERE r.product_id = products.id AND r.is_hidden_from_marketplace = false), 0),
+                reviews_count = COALESCE((SELECT COUNT(*) FROM reviews r WHERE r.product_id = products.id AND r.is_hidden_from_marketplace = false), 0)
         ");
     }
 
