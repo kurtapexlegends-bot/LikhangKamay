@@ -50,11 +50,3 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         \Sentry\Laravel\Integration::handles($exceptions);
     })->create();
-
-// Overwrite cache paths dynamically in Vercel/serverless environments to avoid read-only permission errors
-if (env('APP_ENV') === 'production' || !empty($_ENV['NOW_REGION'])) {
-    $app->useConfigPath('/tmp/config.php');
-    $app->useRoutesPath('/tmp/routes.php');
-}
-
-return $app;
