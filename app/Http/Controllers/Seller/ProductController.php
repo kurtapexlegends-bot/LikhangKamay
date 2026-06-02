@@ -64,6 +64,7 @@ class ProductController extends Controller
                 'model_3d_path',
                 'track_as_supply',
                 'production_method',
+                'rejection_reason',
                 'created_at',
                 'updated_at',
             ])
@@ -79,7 +80,13 @@ class ProductController extends Controller
             if ($request->status === 'Low Stock') {
                 $query->where('stock', '<', 10)->where('status', '!=', 'Archived');
             } else {
-                $query->where('status', $request->status);
+                $statusMap = [
+                    'Pending Review' => 'pending_review',
+                    'Rejected' => 'rejected',
+                    'Flagged' => 'flagged',
+                ];
+                $dbStatus = $statusMap[$request->status] ?? $request->status;
+                $query->where('status', $dbStatus);
             }
         }
 
@@ -122,6 +129,7 @@ class ProductController extends Controller
                 'model_3d_path' => $product->model_3d_path,
                 'track_as_supply' => (bool) $product->track_as_supply,
                 'production_method' => $product->production_method ?? 'resell',
+                'rejection_reason' => $product->rejection_reason,
                 'recipes' => $product->recipes->map(fn($r) => [
                     'id' => $r->id,
                     'supply_id' => $r->supply_id,
@@ -244,7 +252,7 @@ class ProductController extends Controller
 
         $sellerId = $seller->id;
 
-          DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus) {
+          $product = DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus) {
               $product = Product::create([
                 'user_id' => $sellerId,
                 'sku' => $validated['sku'],
@@ -326,11 +334,17 @@ class ProductController extends Controller
                   'target_url' => route('products.index', ['highlight_product' => $product->id]),
                   'target_label' => 'Open Products',
               ]);
+
+              return $product;
           });
 
-        return redirect()->back()->with('success', $requestedStatus === 'Draft' && $validated['status'] === 'Active'
-            ? $this->draftActivationRequirementMessage($activationReadiness['missing'])
-            : 'Product created successfully!');
+        $isPendingReview = $product && $product->status === 'pending_review';
+
+        return redirect()->back()->with('success', $isPendingReview
+            ? 'Product submitted for review!'
+            : ($requestedStatus === 'Draft' && $validated['status'] === 'Active'
+                ? $this->draftActivationRequirementMessage($activationReadiness['missing'])
+                : 'Product created successfully!'));
     }
 
       public function update(Request $request, int|string $id)
@@ -520,9 +534,14 @@ class ProductController extends Controller
               'target_label' => 'Open Products',
           ]);
 
-        return redirect()->back()->with('success', $requestedStatus === 'Draft' && $validated['status'] === 'Active'
-            ? $this->draftActivationRequirementMessage($activationReadiness['missing'])
-            : 'Product updated successfully!');
+        $product->refresh();
+        $isPendingReview = $product->status === 'pending_review';
+
+        return redirect()->back()->with('success', $isPendingReview
+            ? 'Product submitted for review!'
+            : ($requestedStatus === 'Draft' && $validated['status'] === 'Active'
+                ? $this->draftActivationRequirementMessage($activationReadiness['missing'])
+                : 'Product updated successfully!'));
     }
 
     public function archive(string|int $id)
@@ -632,7 +651,10 @@ class ProductController extends Controller
                     continue;
                 }
 
-                $product->update(['status' => 'Active']);
+                $product->update([
+                    'status' => 'pending_review',
+                    'rejection_reason' => null
+                ]);
                 $remainingActivationSlots--;
                 $activated++;
             }
@@ -857,11 +879,19 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
+        $viewer = Auth::user();
+        if ($product->status !== 'Active') {
+            $isOwner = $viewer && $viewer->id === $product->user_id;
+            $isAdmin = $viewer && $viewer->role === 'super_admin';
+            if (!$isOwner && !$isAdmin) {
+                abort(404);
+            }
+        }
+
         $product->load([
             'user',
             'reviews' => fn ($query) => $query->visibleToMarketplace()->with('user'),
         ]);
-        $viewer = Auth::user();
 
         $product->model_url = $product->model_3d_path
             ? asset('storage/' . $product->model_3d_path)

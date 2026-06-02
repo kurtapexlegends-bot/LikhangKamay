@@ -11,7 +11,7 @@ import axios from 'axios';
 import {
     FolderTree, Plus, Edit2, Trash2, Tag, AlertTriangle, Save, X, ChevronDown,
     Settings, Loader2, CheckCircle2, XCircle, Award, Search, Clock, Package,
-    TrendingUp, Store
+    TrendingUp, Store, ShieldAlert, Check
 } from 'lucide-react';
 
 const MetricCard = ({ title, value, subtitle, icon: Icon, tone = 'amber' }) => {
@@ -36,7 +36,7 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, tone = 'amber' }) => {
     );
 };
 
-export default function CatalogManager({ categories, requests }) {
+export default function CatalogManager({ categories, requests, products, filters }) {
     const { addToast } = useToast();
 
     // Tab switcher state
@@ -47,6 +47,77 @@ export default function CatalogManager({ categories, requests }) {
         }
         return 'taxonomy';
     });
+
+    // ==========================================
+    // PRODUCT MODERATION STATE & LOGIC
+    // ==========================================
+    const [selectedProductIds, setSelectedProductIds] = useState([]);
+    const [currentStatusFilter, setCurrentStatusFilter] = useState(filters?.product_status || 'pending_review');
+    const [isModifyingProduct, setIsModifyingProduct] = useState(false);
+    const [moderationModal, setModerationModal] = useState({ isOpen: false, type: null, ids: [] });
+    const [moderationFeedback, setModerationFeedback] = useState('');
+    const [lastType, setLastType] = useState('reject');
+
+    const handleProductStatusFilterChange = (status) => {
+        setCurrentStatusFilter(status);
+        setSelectedProductIds([]);
+        router.get(route('admin.catalog.index'), { tab: 'moderation', product_status: status }, { preserveScroll: true, preserveState: true });
+    };
+
+    const handleSelectAllProducts = (e) => {
+        if (e.target.checked) {
+            setSelectedProductIds(products?.data?.map(p => p.id) || []);
+        } else {
+            setSelectedProductIds([]);
+        }
+    };
+
+    const handleSelectProduct = (productId) => {
+        setSelectedProductIds(prev => 
+            prev.includes(productId) 
+                ? prev.filter(id => id !== productId)
+                : [...prev, productId]
+        );
+    };
+
+    const triggerModeration = (ids, type) => {
+        setModerationFeedback('');
+        setModerationModal({ isOpen: true, type, ids: Array.isArray(ids) ? ids : [ids] });
+        if (type === 'reject' || type === 'flag') {
+            setLastType(type);
+        }
+    };
+
+    const confirmModerationAction = () => {
+        const { type, ids } = moderationModal;
+        
+        if (type !== 'approve' && !moderationFeedback.trim()) {
+            addToast('Feedback/reason is required.', 'error');
+            return;
+        }
+
+        setIsModifyingProduct(true);
+        router.post(route('admin.catalog.moderate'), {
+            ids,
+            action: type,
+            feedback: moderationFeedback.trim()
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setSelectedProductIds([]);
+                setModerationModal({ isOpen: false, type: null, ids: [] });
+                setModerationFeedback('');
+                addToast(`Product(s) successfully ${type}d.`, 'success');
+            },
+            onError: (err) => {
+                addToast(err.feedback || 'Failed to moderate product(s).', 'error');
+            },
+            onFinish: () => {
+                setIsModifyingProduct(false);
+            }
+        });
+    };
 
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
@@ -305,6 +376,7 @@ export default function CatalogManager({ categories, requests }) {
     const mainTabs = [
         { id: 'taxonomy', name: 'Taxonomy Engine', icon: FolderTree },
         { id: 'sponsorships', name: 'Sponsorship Requests', icon: Award },
+        { id: 'moderation', name: 'Product Moderation', icon: Package },
     ];
 
     return (
@@ -782,7 +854,7 @@ export default function CatalogManager({ categories, requests }) {
                                         totalPages={requests.last_page}
                                         totalItems={requests.total}
                                         itemsPerPage={requests.per_page}
-                                        onPageChange={(page) => router.get(route('admin.catalog.index'), { tab: 'sponsorships', page }, { preserveScroll: true, preserveState: true })}
+                                        onPageChange={(requests_page) => router.get(route('admin.catalog.index'), { tab: 'sponsorships', requests_page }, { preserveScroll: true, preserveState: true })}
                                         itemLabel="requests"
                                     />
                                 )}
@@ -849,6 +921,277 @@ export default function CatalogManager({ categories, requests }) {
                                             className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50"
                                         >
                                             {processingSponsorship ? 'Rejecting...' : 'Reject Request'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </Modal>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'moderation' && (
+                        <motion.div
+                            key="moderation-tab"
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-6"
+                        >
+                            {/* Filter Bar & Bulk Actions */}
+                            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <label className="text-xs font-bold text-stone-500 uppercase tracking-widest whitespace-nowrap">Filter Status:</label>
+                                    <select
+                                        value={currentStatusFilter}
+                                        onChange={(e) => handleProductStatusFilterChange(e.target.value)}
+                                        className="rounded-xl border-stone-200 text-xs font-bold text-stone-700 bg-stone-50 focus:bg-white focus:border-clay-300 focus:ring-1 focus:ring-clay-300 transition"
+                                    >
+                                        <option value="pending_review">Pending Review</option>
+                                        <option value="rejected">Rejected</option>
+                                        <option value="flagged">Flagged</option>
+                                        <option value="Active">Approved / Active</option>
+                                        <option value="all">All Listings</option>
+                                    </select>
+                                </div>
+
+                                {selectedProductIds.length > 0 && (
+                                    <div className="flex items-center gap-2 bg-stone-50 px-4 py-2 rounded-xl border border-stone-150 animate-fadeIn">
+                                        <span className="text-xs font-bold text-stone-600 mr-2">
+                                            {selectedProductIds.length} Selected
+                                        </span>
+                                        <button
+                                            onClick={() => triggerModeration(selectedProductIds, 'approve')}
+                                            className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 transition"
+                                        >
+                                            <Check size={12} /> Approve
+                                        </button>
+                                        <button
+                                            onClick={() => triggerModeration(selectedProductIds, 'reject')}
+                                            className="flex items-center gap-1 bg-rose-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-rose-700 transition"
+                                        >
+                                            <XCircle size={12} /> Reject
+                                        </button>
+                                        <button
+                                            onClick={() => triggerModeration(selectedProductIds, 'flag')}
+                                            className="flex items-center gap-1 bg-amber-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-amber-700 transition"
+                                        >
+                                            <ShieldAlert size={12} /> Flag
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Table */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse table-card-mobile">
+                                        <thead>
+                                            <tr className="bg-stone-50 border-b border-stone-100">
+                                                <th className="py-4 px-6 w-12 text-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        onChange={handleSelectAllProducts}
+                                                        checked={products?.data?.length > 0 && selectedProductIds.length === products.data.length}
+                                                        className="rounded text-clay-600 focus:ring-clay-500"
+                                                    />
+                                                </th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-1/3">Product</th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Artisan Seller</th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Submitted</th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Status</th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-stone-100">
+                                            {products?.data?.length > 0 ? (
+                                                products.data.map((product) => (
+                                                    <tr key={product.id} className="hover:bg-stone-50/50 transition duration-150">
+                                                        <td className="py-4 px-6 text-center align-middle" data-label="Select">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedProductIds.includes(product.id)}
+                                                                onChange={() => handleSelectProduct(product.id)}
+                                                                className="rounded text-clay-600 focus:ring-clay-500"
+                                                            />
+                                                        </td>
+                                                        <td className="py-4 px-6 align-middle" data-label="Product">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 rounded-xl border border-stone-200 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                                                                    {product.cover_photo_path ? (
+                                                                        <img
+                                                                            src={`/storage/${product.cover_photo_path}`}
+                                                                            alt=""
+                                                                            className="w-full h-full object-cover"
+                                                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                                        />
+                                                                    ) : (
+                                                                        <Package size={16} className="text-stone-300" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="max-w-[200px]">
+                                                                    <p className="text-sm font-bold text-stone-900 truncate">{product.name}</p>
+                                                                    <p className="text-[10px] text-stone-500 mt-0.5 truncate">SKU: {product.sku}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-4 px-6 align-middle text-sm font-bold text-stone-850" data-label="Seller">
+                                                            <div>
+                                                                <p className="text-stone-900">{product.user?.shop_name || 'Individual Seller'}</p>
+                                                                <p className="text-[10px] text-stone-500 font-medium mt-0.5">{product.user?.name}</p>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-4 px-6 align-middle text-xs font-semibold text-stone-550" data-label="Submitted">
+                                                            {product.created_at ? new Date(product.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
+                                                        </td>
+                                                        <td className="py-4 px-6 align-middle" data-label="Status">
+                                                            {product.status === 'Active' ? (
+                                                                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"><CheckCircle2 size={12}/> Active</span>
+                                                            ) : product.status === 'pending_review' ? (
+                                                                <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"><Clock size={12}/> Pending Review</span>
+                                                            ) : product.status === 'rejected' ? (
+                                                                <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"><XCircle size={12}/> Rejected</span>
+                                                            ) : product.status === 'flagged' ? (
+                                                                <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"><ShieldAlert size={12}/> Flagged</span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1.5 bg-stone-50 text-stone-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"><AlertTriangle size={12}/> {product.status}</span>
+                                                            )}
+                                                            {product.rejection_reason && (
+                                                                <p className="text-[10px] text-red-500 mt-1 max-w-[180px] truncate" title={product.rejection_reason}>
+                                                                    Reason: {product.rejection_reason}
+                                                                </p>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-4 px-6 align-middle text-right" data-label="Actions">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {product.status !== 'Active' && (
+                                                                    <button
+                                                                        onClick={() => triggerModeration(product.id, 'approve')}
+                                                                        className="p-1.5 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition"
+                                                                        title="Approve Listing"
+                                                                    >
+                                                                        <Check size={14} strokeWidth={2.5} />
+                                                                    </button>
+                                                                )}
+                                                                {product.status !== 'rejected' && (
+                                                                    <button
+                                                                        onClick={() => triggerModeration(product.id, 'reject')}
+                                                                        className="p-1.5 text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                                                                        title="Reject Listing"
+                                                                    >
+                                                                        <XCircle size={14} strokeWidth={2.5} />
+                                                                    </button>
+                                                                )}
+                                                                {product.status !== 'flagged' && (
+                                                                    <button
+                                                                        onClick={() => triggerModeration(product.id, 'flag')}
+                                                                        className="p-1.5 text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition"
+                                                                        title="Flag Listing"
+                                                                    >
+                                                                        <ShieldAlert size={14} strokeWidth={2.5} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="6" className="py-16 text-center">
+                                                        <div className="inline-flex p-4 bg-stone-50 rounded-full mb-3 text-stone-300 border border-stone-100">
+                                                            <Package size={24} />
+                                                        </div>
+                                                        <h3 className="text-sm font-bold text-stone-900">No products matching status</h3>
+                                                        <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                                                            Currently no artisan listings are listed with this status moderation.
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Pagination */}
+                                {products?.last_page > 1 && (
+                                    <CompactPagination
+                                        currentPage={products.current_page}
+                                        totalPages={products.last_page}
+                                        totalItems={products.total}
+                                        itemsPerPage={products.per_page}
+                                        onPageChange={(products_page) => router.get(route('admin.catalog.index'), { tab: 'moderation', product_status: currentStatusFilter, products_page }, { preserveScroll: true, preserveState: true })}
+                                        itemLabel="products"
+                                    />
+                                )}
+                            </div>
+
+                            {/* Moderation Modals */}
+                            <ConfirmationModal
+                                isOpen={moderationModal.isOpen && moderationModal.type === 'approve'}
+                                onClose={() => setModerationModal({ isOpen: false, type: null, ids: [] })}
+                                onConfirm={confirmModerationAction}
+                                title="Approve Listing(s)?"
+                                message={`Are you sure you want to approve the selected ${moderationModal.ids?.length} product listing(s)? This will publish them and make them fully searchable in the public marketplace.`}
+                                icon={CheckCircle2}
+                                iconBg="bg-emerald-50 text-emerald-600"
+                                confirmText="Yes, Approve"
+                                confirmColor="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-250/20"
+                                processing={isModifyingProduct}
+                            />
+
+                            <Modal
+                                show={moderationModal.isOpen && (moderationModal.type === 'reject' || moderationModal.type === 'flag')}
+                                onClose={() => {
+                                    setModerationFeedback('');
+                                    setModerationModal({ isOpen: false, type: null, ids: [] });
+                                }}
+                                maxWidth="md"
+                            >
+                                <div className="p-6">
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <div 
+                                            className={`w-12 h-12 rounded-2xl flex items-center justify-center ${lastType === 'reject' ? 'bg-red-50 text-red-650' : 'bg-amber-50 text-amber-650'}`}
+                                            style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px' }}
+                                        >
+                                            {lastType === 'reject' ? <XCircle size={22} /> : <ShieldAlert size={22} />}
+                                        </div>
+                                        <div>
+                                            <h2 className="text-lg font-bold text-stone-900">
+                                                {lastType === 'reject' ? 'Reject Product Listing(s)?' : 'Flag Product Listing(s)?'}
+                                            </h2>
+                                            <p className="text-sm text-stone-500 mt-1">
+                                                Enter the feedback or reason for this moderation action on the selected {moderationModal.ids?.length} product(s). Sellers will be notified of this message.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-2">
+                                        Reason Feedback
+                                    </label>
+                                    <textarea
+                                        value={moderationFeedback}
+                                        onChange={(e) => setModerationFeedback(e.target.value)}
+                                        rows={5}
+                                        className="w-full rounded-xl border border-stone-250 focus:border-clay-300 focus:ring-clay-200 text-sm"
+                                        placeholder="Explain the listing adjustments or guidelines violated so the seller can take corrective actions."
+                                        autoFocus
+                                    />
+
+                                    <div className="mt-5 flex justify-end gap-3">
+                                        <button
+                                            onClick={() => {
+                                                setModerationFeedback('');
+                                                setModerationModal({ isOpen: false, type: null, ids: [] });
+                                            }}
+                                            className="px-4 py-2.5 border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={confirmModerationAction}
+                                            disabled={isModifyingProduct}
+                                            className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 ${lastType === 'reject' ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}
+                                        >
+                                            {isModifyingProduct ? 'Processing...' : lastType === 'reject' ? 'Reject Listing(s)' : 'Flag Listing(s)'}
                                         </button>
                                     </div>
                                 </div>

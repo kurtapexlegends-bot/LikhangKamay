@@ -3,6 +3,7 @@ import { Link, usePage, router } from '@inertiajs/react';
 import axios from 'axios';
 import Dropdown from '@/Components/Dropdown'; 
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import { useRealtime } from '@/hooks/useRealtime';
 import { 
     MessageCircle, ChevronDown, ShoppingBag, 
     Search, ShoppingCart, User, LogOut, Heart, Clock, X
@@ -11,6 +12,9 @@ import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
 
 export default function BuyerNavbar() {
+    // Enable Real-time synchronization
+    useRealtime();
+
     const { auth, cartCount, sellerSidebar, unreadMessageCount, platform } = usePage().props;
     const user = auth?.user;
     const rawBuyerName = user?.name?.trim()

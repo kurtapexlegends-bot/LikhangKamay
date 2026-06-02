@@ -60,7 +60,7 @@ class ProductActivationRequirementsTest extends TestCase
             ->assertRedirect(route('products.index', absolute: false))
             ->assertSessionHas('success', '1 product was activated. 1 product was kept in Draft because required media is incomplete.');
 
-        $this->assertSame('Active', $readyProduct->fresh()->status);
+        $this->assertSame('pending_review', $readyProduct->fresh()->status);
         $this->assertSame('Draft', $incompleteProduct->fresh()->status);
     }
 

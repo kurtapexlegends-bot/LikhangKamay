@@ -6,6 +6,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
+import { useRealtime } from '@/hooks/useRealtime';
 import {
     LayoutDashboard,
     Users,
@@ -72,6 +73,9 @@ const getInitialExpandedGroups = () => {
 };
 
 export default function AdminLayout({ title, children }) {
+    // Enable Real-time synchronization
+    useRealtime();
+
     const { pendingArtisanCount, auth, globalAnnouncement } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());

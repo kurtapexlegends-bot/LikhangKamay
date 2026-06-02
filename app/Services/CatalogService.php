@@ -18,7 +18,7 @@ class CatalogService
     {
         return Cache::remember('home_sponsored_products', 1800, function () {
             return Product::with('user')
-                ->where('status', 'Active')
+                ->approved()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -40,7 +40,7 @@ class CatalogService
     {
         $pool = Cache::remember('home_featured_products_pool', 1800, function () {
             return Product::with('user')
-                ->where('status', 'Active')
+                ->approved()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -92,7 +92,7 @@ class CatalogService
     public function getTopSellers(): array
     {
         return Cache::remember('home_top_sellers', 1800, function () {
-            $topStores = Product::where('status', 'Active')
+            $topStores = Product::approved()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -103,7 +103,7 @@ class CatalogService
                 ->selectRaw('user_id, SUM(sold) as total_sold')
                 ->groupBy('user_id')
                 ->orderByDesc('total_sold')
-                ->orderByDesc(DB::raw('(SELECT COALESCE(AVG(rating), 0) FROM products p2 WHERE p2.user_id = products.user_id AND p2.status = "Active")'))
+                ->orderByDesc(DB::raw('(SELECT COALESCE(AVG(rating), 0) FROM products p2 WHERE p2.user_id = products.user_id AND p2.status = \'Active\')'))
                 ->orderBy('user_id')
                 ->take(3)
                 ->get();
@@ -114,7 +114,7 @@ class CatalogService
 
             $storeIds = $topStores->pluck('user_id')->all();
             $sellers = User::with(['products' => function ($q) {
-                    $q->where('status', 'Active')
+                    $q->approved()
                       ->orderByDesc('sold')
                       ->orderByDesc('rating')
                       ->orderByDesc('created_at')
@@ -164,7 +164,7 @@ class CatalogService
      */
     public function buildCatalogQuery(array $filters)
     {
-        $query = Product::where('status', 'Active')
+        $query = Product::approved()
             ->whereHas('user', function ($q) {
                 $q->where('role', 'artisan')
                   ->where('artisan_status', 'approved')
@@ -284,7 +284,7 @@ class CatalogService
     public function getCatalogMetadata(): array
     {
         $locations = Cache::remember('catalog_locations', 3600, function () {
-            return User::whereHas('products', fn ($q) => $q->where('status', 'Active'))
+            return User::whereHas('products', fn ($q) => $q->approved())
                 ->whereNotNull('city')
                 ->distinct()
                 ->pluck('city')
@@ -294,7 +294,7 @@ class CatalogService
         });
 
         $materials = Cache::remember('catalog_materials', 3600, function () {
-            return Product::where('status', 'Active')
+            return Product::approved()
                 ->whereNotNull('clay_type')
                 ->distinct()
                 ->pluck('clay_type')

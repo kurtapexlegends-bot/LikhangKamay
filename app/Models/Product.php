@@ -45,13 +45,16 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes, HasTransformableImages, Searchable;
 
+    public static $bypassReview = false;
+
     protected $fillable = [
         'user_id', 'sku', 'name', 'description', 'category', 'status',
         'clay_type', 'glaze_type', 'firing_method', 'food_safe', 'colors',
         'height', 'width', 'weight',
         'price', 'cost_price', 'stock', 'lead_time', 'sold',
         'cover_photo_path', 'gallery_paths', 'model_3d_path', 'slug',
-        'track_as_supply', 'is_sponsored', 'sponsored_until', 'production_method'
+        'track_as_supply', 'is_sponsored', 'sponsored_until', 'production_method',
+        'rejection_reason'
     ];
 
     protected $casts = [
@@ -132,11 +135,29 @@ class Product extends Model
 
         static::creating(function ($product) {
             $product->slug = \Illuminate\Support\Str::slug($product->name . '-' . \Illuminate\Support\Str::random(6));
+            if (!static::$bypassReview) {
+                $user = \Illuminate\Support\Facades\Auth::guard()->user();
+                if ($user && ($user->role === 'artisan' || $user->role === 'staff')) {
+                    if ($product->status === 'Active') {
+                        $product->status = 'pending_review';
+                        $product->rejection_reason = null;
+                    }
+                }
+            }
         });
 
         static::updating(function ($product) {
             if ($product->isDirty('name')) {
                  $product->slug = \Illuminate\Support\Str::slug($product->name . '-' . \Illuminate\Support\Str::random(6));
+            }
+            if (!static::$bypassReview) {
+                $user = \Illuminate\Support\Facades\Auth::guard()->user();
+                if ($user && ($user->role === 'artisan' || $user->role === 'staff')) {
+                    if ($product->status !== 'Draft' && $product->status !== 'Archived') {
+                        $product->status = 'pending_review';
+                        $product->rejection_reason = null;
+                    }
+                }
             }
         });
 
@@ -153,6 +174,13 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
             \Illuminate\Support\Facades\Cache::forget('home_categories');
             \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_analytics_daily_rollup_" . \Carbon\Carbon::now(config('app.timezone'))->toDateString());
+
+            if ($product->status === 'pending_review' && ($product->wasRecentlyCreated || $product->wasChanged('status'))) {
+                $admins = \App\Models\User::where('role', 'super_admin')->get();
+                \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\ProductPendingReviewNotification($product));
+            } else if ($product->status === 'pending_review') {
+                dd('saved observer debug:', $product->wasRecentlyCreated, $product->wasChanged('status'), $product->getOriginal('status'), $product->status);
+            }
         });
 
         static::deleted(function ($product) {
@@ -171,11 +199,19 @@ class Product extends Model
         });
     }
 
-    /**
-     * Get the route key for the model.
-     */
     public function getRouteKeyName()
     {
         return 'slug';
+    }
+
+    /**
+     * Scope a query to only include approved (Active) products.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeApproved(\Illuminate\Database\Eloquent\Builder $query)
+    {
+        return $query->where('status', 'Active');
     }
 }

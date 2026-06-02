@@ -345,6 +345,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     
     // Consolidated Product Catalog
     Route::get('/catalog', [CatalogController::class, 'index'])->name('admin.catalog.index');
+    Route::post('/catalog/moderate', [CatalogController::class, 'bulkModerateProducts'])->name('admin.catalog.moderate');
     Route::get('/sponsorships', fn() => redirect()->route('admin.catalog.index', ['tab' => 'sponsorships']))->name('admin.sponsorships');
     Route::post('/sponsorships/{sponsorshipRequest}/approve', [CatalogController::class, 'approveSponsorship'])->name('admin.sponsorships.approve');
     Route::post('/sponsorships/{sponsorshipRequest}/reject', [CatalogController::class, 'rejectSponsorship'])->name('admin.sponsorships.reject');

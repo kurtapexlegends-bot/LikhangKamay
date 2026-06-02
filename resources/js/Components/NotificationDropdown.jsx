@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote, CheckCircle, Undo, Clock, ArchiveX } from 'lucide-react';
+import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote, CheckCircle, Undo, Clock, ArchiveX, ShieldAlert } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { formatChatRelative } from '@/lib/chatTime';
 
@@ -22,7 +22,7 @@ const matchesNotificationFilter = (notification, filterKey) => {
     }
 
     if (filterKey === 'attention') {
-        return ['low_stock', 'supply_depleted', 'accounting_rejected', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline'].includes(notification.type);
+        return ['low_stock', 'low_stock_warning', 'supply_depleted', 'accounting_rejected', 'accounting_request', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline', 'product_moderation', 'new_review'].includes(notification.type);
     }
 
     return true;
@@ -40,6 +40,7 @@ export default function NotificationDropdown() {
 
     const filterDefinitions = useMemo(() => {
         const isSuperAdmin = auth?.user?.role === 'super_admin';
+        const isBuyer = !auth?.user?.role || auth?.user?.role === 'buyer';
         const base = [
             { key: 'all', label: 'All' },
             { key: 'unread', label: 'Unread' },
@@ -49,6 +50,14 @@ export default function NotificationDropdown() {
             return [
                 ...base,
                 { key: 'attention', label: 'Attention' },
+            ];
+        }
+
+        if (isBuyer) {
+            return [
+                ...base,
+                { key: 'orders', label: 'Orders' },
+                { key: 'messages', label: 'Messages' },
             ];
         }
 
@@ -95,42 +104,96 @@ export default function NotificationDropdown() {
     // We now use centralized Supabase Realtime in AuthenticatedLayout/MainLayout
     // No more manual polling needed.
 
-    const getIcon = (type) => {
+    const getIconData = (type) => {
         switch (type) {
             case 'new_order':
-                return <Package size={16} className="text-green-500" />;
-            case 'new_message':
-                return <MessageCircle size={16} className="text-blue-500" />;
-            case 'new_review':
-                return <Star size={16} className="text-yellow-500" />;
-            case 'review_moderation_status':
-                return <AlertTriangle size={16} className="text-rose-500" />;
-            case 'low_stock':
-                return <AlertTriangle size={16} className="text-red-500" />;
-            case 'sponsorship_status':
-                return <Award size={16} className="text-amber-500" />;
-            case 'replacement_resolution':
-                return <PackageCheck size={16} className="text-teal-500" />;
-            case 'team_message':
-                return <Users size={16} className="text-emerald-500" />;
-            case 'delivery_update':
-                return <Truck size={16} className="text-indigo-500" />;
-            case 'accounting_rejected':
-                return <AlertTriangle size={16} className="text-red-500" />;
-            case 'accounting_request':
-                return <Banknote size={16} className="text-emerald-500" />;
-            case 'artisan_application':
-                return <Store size={16} className="text-clay-600" />;
             case 'payment_confirmed':
-                return <CheckCircle size={16} className="text-emerald-500" />;
+                return {
+                    icon: <Package size={16} className="text-emerald-600" />,
+                    bgClass: 'bg-emerald-50'
+                };
+            case 'new_message':
+            case 'team_message':
+                return {
+                    icon: <MessageCircle size={16} className="text-blue-600" />,
+                    bgClass: 'bg-blue-50'
+                };
+            case 'new_review':
+                return {
+                    icon: <Star size={16} className="text-amber-500" />,
+                    bgClass: 'bg-amber-50'
+                };
+            case 'review_moderation_status':
             case 'refund_request':
-                return <Undo size={16} className="text-rose-500" />;
+                return {
+                    icon: <Undo size={16} className="text-rose-600" />,
+                    bgClass: 'bg-rose-50'
+                };
+            case 'low_stock':
+                return {
+                    icon: <AlertTriangle size={16} className="text-red-600" />,
+                    bgClass: 'bg-red-50'
+                };
+            case 'low_stock_warning':
+                return {
+                    icon: <AlertTriangle size={16} className="text-amber-600" />,
+                    bgClass: 'bg-amber-50'
+                };
+            case 'sponsorship_status':
+                return {
+                    icon: <Award size={16} className="text-amber-600" />,
+                    bgClass: 'bg-amber-50'
+                };
+            case 'replacement_resolution':
+                return {
+                    icon: <PackageCheck size={16} className="text-teal-500" />,
+                    bgClass: 'bg-teal-50'
+                };
+            case 'team_message':
+                return {
+                    icon: <Users size={16} className="text-emerald-600" />,
+                    bgClass: 'bg-emerald-50'
+                };
+            case 'delivery_update':
+                return {
+                    icon: <Truck size={16} className="text-indigo-600" />,
+                    bgClass: 'bg-indigo-50'
+                };
+            case 'accounting_rejected':
+                return {
+                    icon: <AlertTriangle size={16} className="text-red-650" />,
+                    bgClass: 'bg-red-50'
+                };
+            case 'accounting_request':
+                return {
+                    icon: <Banknote size={16} className="text-emerald-600" />,
+                    bgClass: 'bg-emerald-50'
+                };
+            case 'artisan_application':
+                return {
+                    icon: <Store size={16} className="text-clay-600" />,
+                    bgClass: 'bg-clay-50'
+                };
             case 'shipment_deadline':
-                return <Clock size={16} className="text-amber-500" />;
+                return {
+                    icon: <Clock size={16} className="text-amber-600" />,
+                    bgClass: 'bg-amber-50'
+                };
             case 'supply_depleted':
-                return <ArchiveX size={16} className="text-red-600" />;
+                return {
+                    icon: <ArchiveX size={16} className="text-red-600" />,
+                    bgClass: 'bg-red-50'
+                };
+            case 'product_moderation':
+                return {
+                    icon: <ShieldAlert size={16} className="text-amber-600" />,
+                    bgClass: 'bg-amber-50'
+                };
             default:
-                return <Bell size={16} className="text-gray-500" />;
+                return {
+                    icon: <Bell size={16} className="text-stone-500" />,
+                    bgClass: 'bg-stone-50'
+                };
         }
     };
 
@@ -202,7 +265,7 @@ export default function NotificationDropdown() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-stone-200 bg-white animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-96 md:w-[400px] overflow-hidden rounded-xl border border-stone-200 bg-white animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50 px-4 py-4">
                         <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
@@ -256,30 +319,38 @@ export default function NotificationDropdown() {
                                         !notification.read_at ? 'bg-clay-50/30' : ''
                                     }`}
                                 >
-                                    <div 
-                                        onClick={() => handleMarkAsRead(notification.id, notification.url, true)}
-                                        className="flex items-start gap-3 cursor-pointer"
-                                    >
-                                        <div className="shrink-0 rounded-lg bg-stone-100 p-2">
-                                            {getIcon(notification.type)}
-                                        </div>
-                                        <div className="flex-1 min-w-0 pr-6">
-                                            <p className={`text-sm ${!notification.read_at ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-                                                {notification.title}
-                                            </p>
-                                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                                                {notification.message}
-                                            </p>
-                                            <p className="text-[10px] text-gray-400 mt-1">
-                                                {notification.created_at_raw
-                                                    ? formatChatRelative(notification.created_at_raw, relativeNow)
-                                                    : notification.created_at}
-                                            </p>
-                                        </div>
-                                        {!notification.read_at && (
-                                            <div className="w-2 h-2 bg-clay-500 rounded-full shrink-0 mt-2"></div>
-                                        )}
-                                    </div>
+                                    {(() => {
+                                        const iconData = getIconData(notification.type);
+                                        return (
+                                            <div 
+                                                onClick={() => handleMarkAsRead(notification.id, notification.url, true)}
+                                                className="flex items-start gap-3 cursor-pointer"
+                                            >
+                                                <div 
+                                                    className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${iconData.bgClass}`}
+                                                    style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
+                                                >
+                                                    {iconData.icon}
+                                                </div>
+                                                <div className="flex-1 min-w-0 pr-6">
+                                                    <p className={`text-sm ${!notification.read_at ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                                                        {notification.title}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                                                        {notification.message}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 mt-1">
+                                                        {notification.created_at_raw
+                                                            ? formatChatRelative(notification.created_at_raw, relativeNow)
+                                                            : notification.created_at}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                     })()}
+                                     {!notification.read_at && (
+                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-clay-500 rounded-full shrink-0"></div>
+                                     )}
 
                                     {/* 3-Dot Menu Trigger */}
                                     <button

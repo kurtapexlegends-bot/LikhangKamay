@@ -228,11 +228,13 @@ export default function ProductManager({
         reason: "Physical Store Sale",
     });
 
+    const shouldValidateSku = !data.id || (selectedProduct && data.sku !== selectedProduct.sku);
+
     const skuValidation = useConstraintValidation(
         'sku_uniqueness', 
         data.sku, 
         { product_id: data.id }, 
-        !data.id // Only validate for new products
+        shouldValidateSku
     );
 
     const [previews, setPreviews] = useState({ cover: null, gallery: [] });
@@ -1003,6 +1005,9 @@ export default function ProductManager({
                             {[
                                 "All",
                                 "Active",
+                                "Pending Review",
+                                "Rejected",
+                                "Flagged",
                                 "Draft",
                                 "Archived",
                                 "Low Stock",
@@ -1010,7 +1015,7 @@ export default function ProductManager({
                                 <button
                                     key={tab}
                                     onClick={() => handleTabChange(tab)}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition ${activeTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition whitespace-nowrap ${activeTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                                 >
                                     {tab}
                                 </button>
@@ -1283,15 +1288,39 @@ export default function ProductManager({
                                             <td className="px-5 py-3">
                                                 <div className="flex flex-col items-start gap-1">
                                                     {product.stock < 10 && (
-                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 border border-rose-200 uppercase tracking-wide">
+                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 border border-rose-200 uppercase tracking-wide whitespace-nowrap">
                                                             Low Stock
                                                         </span>
                                                     )}
                                                     <span
-                                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${product.status === "Active" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : product.status === "Archived" ? "bg-gray-100 text-gray-600 border-gray-200" : "bg-amber-50 text-amber-700 border-amber-100"}`}
+                                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${
+                                                            product.status === "Active"
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                                : product.status === "Archived"
+                                                                ? "bg-gray-100 text-gray-600 border-gray-200"
+                                                                : product.status === "pending_review"
+                                                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                                                : product.status === "rejected"
+                                                                ? "bg-rose-50 text-rose-700 border-rose-100"
+                                                                : product.status === "flagged"
+                                                                ? "bg-orange-50 text-orange-700 border-orange-100"
+                                                                : "bg-stone-50 text-stone-700 border-stone-200"
+                                                        }`}
                                                     >
-                                                        {product.status}
+                                                        {product.status === "pending_review"
+                                                            ? "Pending Review"
+                                                            : product.status === "rejected"
+                                                            ? "Rejected"
+                                                            : product.status === "flagged"
+                                                            ? "Flagged"
+                                                            : product.status}
                                                     </span>
+                                                    {(product.status === "rejected" || product.status === "flagged") && product.rejection_reason && (
+                                                        <div className="mt-1 flex items-start gap-1 text-[10px] text-rose-600 bg-rose-50/50 p-1.5 rounded-lg border border-rose-100 max-w-[180px] break-words">
+                                                            <AlertTriangle size={10} className="shrink-0 mt-0.5" />
+                                                            <span>Reason: {product.rejection_reason}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-5 py-3 text-right">
@@ -1461,11 +1490,37 @@ export default function ProductManager({
                                                         {product.sku}
                                                     </p>
                                                 </div>
-                                                <span
-                                                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${product.status === "Active" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : product.status === "Archived" ? "bg-gray-100 text-gray-600 border-gray-200" : "bg-amber-50 text-amber-700 border-amber-100"}`}
-                                                >
-                                                    {product.status}
-                                                </span>
+                                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                                    <span
+                                                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${
+                                                            product.status === "Active"
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                                : product.status === "Archived"
+                                                                ? "bg-gray-100 text-gray-600 border-gray-200"
+                                                                : product.status === "pending_review"
+                                                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                                                : product.status === "rejected"
+                                                                ? "bg-rose-50 text-rose-700 border-rose-100"
+                                                                : product.status === "flagged"
+                                                                ? "bg-orange-50 text-orange-700 border-orange-100"
+                                                                : "bg-stone-50 text-stone-700 border-stone-200"
+                                                        }`}
+                                                    >
+                                                        {product.status === "pending_review"
+                                                            ? "Pending Review"
+                                                            : product.status === "rejected"
+                                                            ? "Rejected"
+                                                            : product.status === "flagged"
+                                                            ? "Flagged"
+                                                            : product.status}
+                                                    </span>
+                                                    {(product.status === "rejected" || product.status === "flagged") && product.rejection_reason && (
+                                                        <div className="mt-1 flex items-start gap-1 text-[10px] text-rose-600 bg-rose-50/50 p-1.5 rounded-lg border border-rose-100 max-w-[150px] break-words">
+                                                            <AlertTriangle size={10} className="shrink-0 mt-0.5" />
+                                                            <span>Reason: {product.rejection_reason}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
@@ -1677,7 +1732,7 @@ export default function ProductManager({
                                                 placeholder="LK-XXXX"
                                             />
                                             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                                                {data.sku && (
+                                                {shouldValidateSku && data.sku && (
                                                     skuValidation.isValid === null ? (
                                                         <Loader2 size={12} className="animate-spin text-stone-400" />
                                                     ) : skuValidation.isValid ? (
@@ -1818,25 +1873,67 @@ export default function ProductManager({
                                                 <option value="Archived">
                                                     Archived
                                                 </option>
+                                                {data.status === "pending_review" && (
+                                                    <option value="pending_review">
+                                                        Pending Review
+                                                    </option>
+                                                )}
+                                                {data.status === "rejected" && (
+                                                    <option value="rejected">
+                                                        Rejected
+                                                    </option>
+                                                )}
+                                                {data.status === "flagged" && (
+                                                    <option value="flagged">
+                                                        Flagged
+                                                    </option>
+                                                )}
                                             </select>
-                                            <div
-                                                className={`mt-2 rounded-xl border px-3 py-2 ${activationReadiness.canActivate ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}
-                                            >
-                                                <p
-                                                    className={`text-[11px] font-bold ${activationReadiness.canActivate ? "text-emerald-700" : "text-amber-700"}`}
+                                            {data.status === "Active" && (
+                                                <div
+                                                    className={`mt-2 rounded-xl border px-3 py-2 ${activationReadiness.canActivate ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}
                                                 >
-                                                    {activationReadiness.canActivate
-                                                        ? "Ready for Active listing"
-                                                        : `Still needed for Active: ${activationReadiness.missingLabels.join(", ")}`}
-                                                </p>
-                                                <p
-                                                    className={`mt-1 text-[10px] ${activationReadiness.canActivate ? "text-emerald-600" : "text-amber-600"}`}
-                                                >
-                                                    {activationReadiness.canActivate
-                                                        ? "Activation requirements are complete."
-                                                        : "Active stays locked until the required media is uploaded."}
-                                                </p>
-                                            </div>
+                                                    <p
+                                                        className={`text-[11px] font-bold ${activationReadiness.canActivate ? "text-emerald-700" : "text-amber-700"}`}
+                                                    >
+                                                        {activationReadiness.canActivate
+                                                            ? "Ready for Active listing"
+                                                            : `Still needed for Active: ${activationReadiness.missingLabels.join(", ")}`}
+                                                    </p>
+                                                    <p
+                                                        className={`mt-1 text-[10px] ${activationReadiness.canActivate ? "text-emerald-600" : "text-amber-600"}`}
+                                                    >
+                                                        {activationReadiness.canActivate
+                                                            ? "Activation requirements are complete."
+                                                            : "Active stays locked until the required media is uploaded."}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {(data.status === 'rejected' || data.status === 'flagged') && (
+                                                <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+                                                    <p className="text-[11px] font-bold text-red-700">
+                                                        Listing {data.status === 'rejected' ? 'Rejected' : 'Flagged'}
+                                                    </p>
+                                                    {selectedProduct?.rejection_reason && (
+                                                        <p className="mt-1 text-[10px] text-red-600 font-semibold">
+                                                            Reason: {selectedProduct.rejection_reason}
+                                                        </p>
+                                                    )}
+                                                    <p className="mt-1 text-[10px] text-stone-500 font-medium">
+                                                        Saving updates to this product will automatically resubmit it for review.
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {data.status === 'pending_review' && (
+                                                <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                                                    <p className="text-[11px] font-bold text-amber-700">
+                                                        Pending Review
+                                                    </p>
+                                                    <p className="mt-1 text-[10px] text-stone-600 font-medium">
+                                                        This listing is currently being reviewed by administrators and is hidden from the catalog.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">

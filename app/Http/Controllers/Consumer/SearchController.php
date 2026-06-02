@@ -24,7 +24,7 @@ class SearchController extends Controller
             ]);
         }
 
-        $products = Product::where('status', 'Active')
+        $products = Product::approved()
             ->search($search, ['name', 'category'])
             ->with('user:id,shop_name,name,shop_slug,avatar')
             ->limit(5)

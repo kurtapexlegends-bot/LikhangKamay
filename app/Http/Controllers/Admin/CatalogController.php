@@ -18,14 +18,26 @@ class CatalogController extends Controller
     /**
      * Display unified Product Catalog & Promotions Control Center
      */
-    public function index()
+    public function index(Request $request)
     {
         Gate::authorize('admin-action');
+
+        $statusFilter = $request->input('product_status', 'pending_review');
+        $productQuery = Product::with('user:id,name,shop_name')
+            ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
+                $q->where('status', $statusFilter);
+            })
+            ->latest();
+
         return Inertia::render('Admin/Catalog/CatalogManager', [
             'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
             'requests' => SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
                 ->latest()
-                ->paginate(10)
+                ->paginate(10, ['*'], 'requests_page'),
+            'products' => $productQuery->paginate(10, ['*'], 'products_page'),
+            'filters' => [
+                'product_status' => $statusFilter
+            ]
         ]);
     }
 
@@ -161,5 +173,61 @@ class CatalogController extends Controller
         $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
 
         return back()->with('success', 'Sponsorship rejected.');
+    }
+
+    /**
+     * Bulk moderate products (approve, reject, flag)
+     */
+    public function bulkModerateProducts(Request $request)
+    {
+        Gate::authorize('admin-action');
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'exists:products,id',
+            'action' => 'required|string|in:approve,reject,flag',
+            'feedback' => 'nullable|string|max:1000',
+        ]);
+
+        $action = $validated['action'];
+        $feedback = $validated['feedback'] ?? null;
+
+        if (in_array($action, ['reject', 'flag']) && empty(trim($feedback ?? ''))) {
+            return back()->withErrors(['feedback' => 'Feedback/reason is required when rejecting or flagging products.']);
+        }
+
+        $products = Product::whereIn('id', $validated['ids'])->get();
+
+        DB::transaction(function () use ($products, $action, $feedback) {
+            Product::$bypassReview = true;
+
+            foreach ($products as $product) {
+                $status = match ($action) {
+                    'approve' => 'Active',
+                    'reject' => 'rejected',
+                    'flag' => 'flagged',
+                };
+
+                $product->update([
+                    'status' => $status,
+                    'rejection_reason' => $action === 'approve' ? null : strip_tags($feedback),
+                ]);
+
+                // Notify seller
+                $product->user?->notify(new \App\Notifications\ProductModerationNotification(
+                    $product,
+                    $action === 'approve' ? 'approved' : $action,
+                    $feedback
+                ));
+            }
+        });
+
+        $actionLabel = match ($action) {
+            'approve' => 'approved',
+            'reject' => 'rejected',
+            'flag' => 'flagged',
+        };
+
+        return back()->with('success', count($validated['ids']) . " product(s) successfully {$actionLabel}.");
     }
 }
