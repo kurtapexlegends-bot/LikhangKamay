@@ -42,6 +42,12 @@ return Application::configure(basePath: dirname(__DIR__))
         
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->report(function (Throwable $e) {
+            error_log("DETAILED_CRASH_INFO: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+            if ($e->getPrevious()) {
+                error_log("PREVIOUS_CRASH_INFO: " . $e->getPrevious()->getMessage());
+            }
+        });
         \Sentry\Laravel\Integration::handles($exceptions);
     })->create();
 
