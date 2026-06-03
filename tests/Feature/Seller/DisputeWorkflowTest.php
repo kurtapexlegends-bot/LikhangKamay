@@ -24,6 +24,7 @@ class DisputeWorkflowTest extends TestCase
 
         $seller = User::factory()->artisanApproved()->create();
         $buyer = User::factory()->create();
+        assert($buyer instanceof User);
 
         $order = Order::create([
             'artisan_id' => $seller->id,
@@ -65,8 +66,8 @@ class DisputeWorkflowTest extends TestCase
         $this->assertCount(2, $dispute->proof_photos);
 
         // Check if files were saved
-        Storage::disk('public')->assertExists($dispute->proof_photos[0]);
-        Storage::disk('public')->assertExists($dispute->proof_photos[1]);
+        $this->assertTrue(Storage::disk('public')->exists($dispute->proof_photos[0]));
+        $this->assertTrue(Storage::disk('public')->exists($dispute->proof_photos[1]));
 
         // Seller must have received RefundRequestNotification
         Notification::assertSentTo($seller, \App\Notifications\RefundRequestNotification::class);
@@ -76,6 +77,7 @@ class DisputeWorkflowTest extends TestCase
     {
         $seller = User::factory()->artisanApproved()->create();
         $buyer = User::factory()->create();
+        assert($buyer instanceof User);
 
         $order = Order::create([
             'artisan_id' => $seller->id,
@@ -247,6 +249,7 @@ class DisputeWorkflowTest extends TestCase
 
         $seller = User::factory()->artisanApproved()->create();
         $buyer = User::factory()->create();
+        assert($buyer instanceof User);
 
         $product = Product::create([
             'user_id' => $seller->id,
@@ -316,6 +319,7 @@ class DisputeWorkflowTest extends TestCase
 
         $seller = User::factory()->artisanApproved()->create();
         $buyer = User::factory()->create();
+        assert($buyer instanceof User);
         $admin = User::factory()->superAdmin()->create();
 
         $order = Order::create([
