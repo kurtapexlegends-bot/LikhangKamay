@@ -424,17 +424,25 @@ const sellerDeliverySummary = (order) => {
 
 const sellerIssueSummary = (order) => {
     if (order.status === "Refund/Return") {
+        const dispute = order.dispute;
+        const reason = dispute ? dispute.reason : (order.return_reason || "No reason provided.");
+        const proofPhotos = dispute ? dispute.proof_photos : (order.return_proof_image ? [order.return_proof_image] : []);
         return {
             tone: "border-orange-200 bg-orange-50",
             badgeTone: "border-orange-200 bg-white text-orange-700",
             icon: RotateCcw,
-            title: "Return pending decision",
-            detail: "Review the buyer proof, coordinate in chat if needed, then refund, replace, or reject the request.",
+            title: dispute && dispute.status !== "pending"
+                ? `Dispute status: ${dispute.status.replace(/_/g, " ").toUpperCase()}`
+                : "Return pending decision",
+            detail: dispute
+                ? "Review the buyer proof, coordinate in chat if needed, then respond to the dispute claim."
+                : "Review the buyer proof, coordinate in chat if needed, then refund, replace, or reject the request.",
             timestampLabel: null,
             timestampValue: null,
             infoLabel: "Reason",
-            infoValue: order.return_reason || "No reason provided.",
-            proofHref: order.return_proof_image,
+            infoValue: reason,
+            proofPhotos: proofPhotos,
+            proofHref: !dispute && order.return_proof_image ? order.return_proof_image : null,
             proofLabel: "View Buyer Proof",
         };
     }
@@ -475,6 +483,8 @@ const sellerIssueSummary = (order) => {
     }
 
     if (order.status === "Refunded" || order.payment_status === "refunded") {
+        const dispute = order.dispute;
+        const proofPhotos = dispute ? dispute.proof_photos : (order.return_proof_image ? [order.return_proof_image] : []);
         return {
             tone: "border-purple-200 bg-purple-50",
             badgeTone: "border-purple-200 bg-white text-purple-700",
@@ -483,10 +493,11 @@ const sellerIssueSummary = (order) => {
             detail: "The refund is already processed for this order. The return case is closed unless a new issue is opened.",
             timestampLabel: null,
             timestampValue: null,
-            infoLabel: null,
-            infoValue: null,
-            proofHref: order.return_proof_image,
-            proofLabel: order.return_proof_image ? "View Buyer Proof" : null,
+            infoLabel: dispute ? "Reason" : null,
+            infoValue: dispute ? dispute.reason : null,
+            proofPhotos: proofPhotos,
+            proofHref: !dispute && order.return_proof_image ? order.return_proof_image : null,
+            proofLabel: "View Buyer Proof",
         };
     }
 
@@ -709,6 +720,71 @@ export default function OrderManager({ auth, orders = [] }) {
         processing: false,
     });
     const [returnActionKey, setReturnActionKey] = useState(null);
+
+    const [disputeModalState, setDisputeModalState] = useState({
+        isOpen: false,
+        disputeId: null,
+        orderId: null,
+        responseType: "accept", // 'accept' | 'reject' | 'replacement'
+        sellerExplanation: "",
+        sellerProposedDescription: "",
+        processing: false,
+        error: "",
+    });
+
+    const openDisputeModal = (order) => {
+        if (!order.dispute) return;
+        setDisputeModalState({
+            isOpen: true,
+            disputeId: order.dispute.id,
+            orderId: order.id,
+            responseType: "accept",
+            sellerExplanation: "",
+            sellerProposedDescription: "",
+            processing: false,
+            error: "",
+        });
+    };
+
+    const submitDisputeResponse = () => {
+        if (!canEditOrders) return;
+        const { disputeId, responseType, sellerExplanation, sellerProposedDescription } = disputeModalState;
+        
+        if (responseType === 'reject' && !sellerExplanation.trim()) {
+            setDisputeModalState(prev => ({ ...prev, error: "Please provide an explanation for rejecting the dispute." }));
+            return;
+        }
+        
+        if (responseType === 'replacement' && !sellerProposedDescription.trim()) {
+            setDisputeModalState(prev => ({ ...prev, error: "Please describe the proposed replacement exchange." }));
+            return;
+        }
+        
+        router.post(
+            route("disputes.respond", disputeId),
+            {
+                response_type: responseType,
+                seller_explanation: responseType === 'reject' ? sellerExplanation : null,
+                seller_proposed_description: responseType === 'replacement' ? sellerProposedDescription : null,
+            },
+            {
+                preserveScroll: true,
+                onStart: () => setDisputeModalState(prev => ({ ...prev, processing: true, error: "" })),
+                onError: (errs) => {
+                    setDisputeModalState(prev => ({
+                        ...prev,
+                        processing: false,
+                        error: errs.message || errs.seller_explanation || errs.seller_proposed_description || "An error occurred."
+                    }));
+                },
+                onSuccess: () => {
+                    setDisputeModalState(prev => ({ ...prev, isOpen: false, processing: false }));
+                    addToast("Dispute response submitted successfully.", "success");
+                },
+                onFinish: () => setDisputeModalState(prev => ({ ...prev, processing: false })),
+            }
+        );
+    };
 
     const hasActiveCourierTracking = useMemo(() => {
         return paginatedOrders.some((order) => {
@@ -2298,7 +2374,25 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                 </div>
                                                             )}
 
-                                                            {issueSummary.proofHref && (
+                                                            {issueSummary.proofPhotos && issueSummary.proofPhotos.length > 0 ? (
+                                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                                    {issueSummary.proofPhotos.map((photo, pIdx) => {
+                                                                        const photoUrl = photo.startsWith('http') || photo.startsWith('/storage') ? photo : `/storage/${photo}`;
+                                                                        return (
+                                                                            <a
+                                                                                key={pIdx}
+                                                                                href={photoUrl}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="relative group border border-stone-200 bg-white rounded-lg overflow-hidden h-12 w-12 shadow-sm hover:ring-2 hover:ring-clay-500 transition-all shrink-0"
+                                                                            >
+                                                                                <img src={photoUrl} className="h-full w-full object-cover" alt={`Proof ${pIdx + 1}`} />
+                                                                                <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-stone-900/30 transition-colors" />
+                                                                            </a>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            ) : issueSummary.proofHref && (
                                                                 <a
                                                                     href={
                                                                         issueSummary.proofHref
@@ -2778,59 +2872,79 @@ export default function OrderManager({ auth, orders = [] }) {
                                                                 </button>
                                                             )}
                                                             <div className="flex flex-col gap-2">
-                                                                <div className="flex flex-col gap-2 sm:flex-row">
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            submitRefundApproval(
-                                                                                order.id,
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            !canEditOrders ||
-                                                                            !!returnActionKey ||
-                                                                            replacementModal.processing
-                                                                        }
-                                                                        className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-                                                                        title="Refunds money without deducting stock"
-                                                                    >
-                                                                        {returnActionKey ===
-                                                                        `${order.id}:refund`
-                                                                            ? "Refunding..."
-                                                                            : "Approve (Refund)"}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            openReplacementModal(
-                                                                                order.id,
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            !canEditOrders ||
-                                                                            !!returnActionKey ||
-                                                                            replacementModal.processing
-                                                                        }
-                                                                        className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-                                                                        title="Restarts the delivery cycle and requires a compensation note"
-                                                                    >
-                                                                        Approve
-                                                                        (Replace)
-                                                                    </button>
-                                                                </div>
-                                                                <button
-                                                                    disabled={
-                                                                        !canEditOrders
-                                                                    }
-                                                                    onClick={() =>
-                                                                        initiateStatusUpdate(
-                                                                            order.id,
-                                                                            "Completed",
-                                                                        )
-                                                                    }
-                                                                    className="w-full px-2 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold hover:bg-red-100 transition disabled:cursor-not-allowed disabled:opacity-50"
-                                                                >
-                                                                    Reject
-                                                                    Return
-                                                                </button>
+                                                                {order.dispute ? (
+                                                                    order.dispute.status === 'pending' ? (
+                                                                        <button
+                                                                            disabled={!canEditOrders}
+                                                                            onClick={() => openDisputeModal(order)}
+                                                                            className="w-full px-4 py-2.5 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                                                                        >
+                                                                            Respond to Dispute
+                                                                        </button>
+                                                                    ) : (
+                                                                        <div className="rounded-lg border border-stone-200 bg-stone-50 p-2.5 text-center">
+                                                                            <p className="text-[11px] font-bold text-stone-600">
+                                                                                Status: <span className="capitalize">{order.dispute.status.replace(/_/g, ' ')}</span>
+                                                                            </p>
+                                                                        </div>
+                                                                    )
+                                                                ) : (
+                                                                    <>
+                                                                        <div className="flex flex-col gap-2 sm:flex-row">
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    submitRefundApproval(
+                                                                                        order.id,
+                                                                                    )
+                                                                                }
+                                                                                disabled={
+                                                                                    !canEditOrders ||
+                                                                                    !!returnActionKey ||
+                                                                                    replacementModal.processing
+                                                                                }
+                                                                                className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                                                                                title="Refunds money without deducting stock"
+                                                                            >
+                                                                                {returnActionKey ===
+                                                                                `${order.id}:refund`
+                                                                                    ? "Refunding..."
+                                                                                    : "Approve (Refund)"}
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    openReplacementModal(
+                                                                                        order.id,
+                                                                                    )
+                                                                                }
+                                                                                disabled={
+                                                                                    !canEditOrders ||
+                                                                                    !!returnActionKey ||
+                                                                                    replacementModal.processing
+                                                                                }
+                                                                                className="flex-1 px-2 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg text-[10px] font-bold hover:bg-gray-50 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                                                                                title="Restarts the delivery cycle and requires a compensation note"
+                                                                            >
+                                                                                Approve
+                                                                                (Replace)
+                                                                            </button>
+                                                                        </div>
+                                                                        <button
+                                                                            disabled={
+                                                                                !canEditOrders
+                                                                            }
+                                                                            onClick={() =>
+                                                                                initiateStatusUpdate(
+                                                                                    order.id,
+                                                                                    "Completed",
+                                                                                )
+                                                                            }
+                                                                            className="w-full px-2 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold hover:bg-red-100 transition disabled:cursor-not-allowed disabled:opacity-50"
+                                                                        >
+                                                                            Reject
+                                                                            Return
+                                                                        </button>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </>
                                                     )}
@@ -3474,6 +3588,135 @@ export default function OrderManager({ auth, orders = [] }) {
                             {replacementModal.processing
                                 ? "Approving..."
                                 : "Approve Replacement"}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* --- DISPUTE RESPONSE MODAL --- */}
+            <Modal
+                show={disputeModalState.isOpen}
+                onClose={() => setDisputeModalState(prev => ({ ...prev, isOpen: false }))}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="rounded-full bg-clay-100 p-3 text-clay-700">
+                            <RotateCcw size={22} />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-stone-900">
+                                Respond to Dispute
+                            </h2>
+                            <p className="text-sm text-stone-500">
+                                Select an option to resolve or reply to the buyer's return/refund claim.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">
+                                Response Action
+                            </span>
+                            <div className="grid grid-cols-1 gap-2">
+                                <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/50 p-3 hover:bg-stone-50 cursor-pointer select-none transition-colors">
+                                    <input
+                                        type="radio"
+                                        name="responseType"
+                                        value="accept"
+                                        checked={disputeModalState.responseType === "accept"}
+                                        onChange={(e) => setDisputeModalState(prev => ({ ...prev, responseType: e.target.value, error: "" }))}
+                                        className="mt-0.5 text-clay-600 focus:ring-clay-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-bold text-stone-800">Accept return & refund</p>
+                                        <p className="text-xs text-stone-500">Approve return request and issue full refund immediately.</p>
+                                    </div>
+                                </label>
+                                <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/50 p-3 hover:bg-stone-50 cursor-pointer select-none transition-colors">
+                                    <input
+                                        type="radio"
+                                        name="responseType"
+                                        value="replacement"
+                                        checked={disputeModalState.responseType === "replacement"}
+                                        onChange={(e) => setDisputeModalState(prev => ({ ...prev, responseType: e.target.value, error: "" }))}
+                                        className="mt-0.5 text-clay-600 focus:ring-clay-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-bold text-stone-800">Suggest replacement exchange</p>
+                                        <p className="text-xs text-stone-500">Offer to replace the items. Buyer must accept/confirm.</p>
+                                    </div>
+                                </label>
+                                <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/50 p-3 hover:bg-stone-50 cursor-pointer select-none transition-colors">
+                                    <input
+                                        type="radio"
+                                        name="responseType"
+                                        value="reject"
+                                        checked={disputeModalState.responseType === "reject"}
+                                        onChange={(e) => setDisputeModalState(prev => ({ ...prev, responseType: e.target.value, error: "" }))}
+                                        className="mt-0.5 text-clay-600 focus:ring-clay-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-bold text-stone-800">Reject return request</p>
+                                        <p className="text-xs text-stone-500">Deny return request. Buyer can escalate to admin support.</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {disputeModalState.responseType === "replacement" && (
+                            <div>
+                                <InputLabel value="Proposed Replacement Details" />
+                                <textarea
+                                    rows={4}
+                                    value={disputeModalState.sellerProposedDescription}
+                                    onChange={(e) => setDisputeModalState(prev => ({ ...prev, sellerProposedDescription: e.target.value, error: "" }))}
+                                    className="w-full rounded-xl border-stone-200 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                    placeholder="Describe the replacement items or how you will resolve the issue..."
+                                />
+                            </div>
+                        )}
+
+                        {disputeModalState.responseType === "reject" && (
+                            <div>
+                                <InputLabel value="Rejection Explanation" />
+                                <textarea
+                                    rows={4}
+                                    value={disputeModalState.sellerExplanation}
+                                    onChange={(e) => setDisputeModalState(prev => ({ ...prev, sellerExplanation: e.target.value, error: "" }))}
+                                    className="w-full rounded-xl border-stone-200 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                    placeholder="Explain the reasons why the return request is rejected..."
+                                />
+                            </div>
+                        )}
+
+                        {disputeModalState.error && (
+                            <p className="text-xs font-bold text-red-600">
+                                {disputeModalState.error}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3 border-t border-stone-100 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setDisputeModalState(prev => ({ ...prev, isOpen: false }))}
+                            disabled={disputeModalState.processing}
+                            className="rounded-xl border border-stone-200 px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 transition disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={submitDisputeResponse}
+                            disabled={!canEditOrders || disputeModalState.processing}
+                            className="rounded-xl bg-clay-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-clay-200 hover:bg-clay-700 transition disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                            {disputeModalState.processing && (
+                                <LoaderCircle size={14} className="animate-spin" />
+                            )}
+                            Submit Response
                         </button>
                     </div>
                 </div>

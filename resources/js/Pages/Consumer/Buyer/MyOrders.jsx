@@ -10,45 +10,65 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import { Clock, Store, MapPin, Search, ShoppingBag, AlertCircle, AlertTriangle, MessageCircle, ExternalLink, Hash, CheckCircle, PackageCheck, Truck, RotateCcw, XCircle, CreditCard, Star, Activity, Printer, UploadCloud, ChevronDown, ChevronRight } from 'lucide-react';
 
 // --- RETURN REQUEST MODAL COMPONENT ---
+// --- RETURN REQUEST MODAL COMPONENT (MULTI-PHOTO) ---
 const ReturnRequestModal = ({ isOpen, onClose, order }) => {
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
-        return_reason: '',
-        return_proof_image: null,
+        reason: '',
+        proof_photos: [],
     });
 
-    const [previewUrl, setPreviewUrl] = useState(null);
+    const [previewUrls, setPreviewUrls] = useState([]);
 
-    const revokePreview = () => {
-        if (previewUrl?.startsWith('blob:')) {
-            URL.revokeObjectURL(previewUrl);
-        }
+    const revokePreviews = () => {
+        previewUrls.forEach(url => {
+            if (url.startsWith('blob:')) {
+                URL.revokeObjectURL(url);
+            }
+        });
     };
 
     React.useEffect(() => {
         if (!isOpen) {
             reset();
             clearErrors();
-            revokePreview();
-            setPreviewUrl(null);
+            revokePreviews();
+            setPreviewUrls([]);
         }
     }, [isOpen]);
 
     React.useEffect(() => {
-        return () => revokePreview();
-    }, [previewUrl]);
+        return () => revokePreviews();
+    }, [previewUrls]);
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setData('return_proof_image', file);
-            revokePreview();
-            setPreviewUrl(URL.createObjectURL(file));
+        const files = Array.from(e.target.files);
+        if (files.length + data.proof_photos.length > 5) {
+            alert('You can upload up to 5 photos in total.');
+            return;
         }
+        const updatedFiles = [...data.proof_photos, ...files];
+        setData('proof_photos', updatedFiles);
+
+        const newUrls = files.map(file => URL.createObjectURL(file));
+        setPreviewUrls([...previewUrls, ...newUrls]);
+    };
+
+    const handleRemoveFile = (index) => {
+        const updatedFiles = [...data.proof_photos];
+        updatedFiles.splice(index, 1);
+        setData('proof_photos', updatedFiles);
+
+        const updatedUrls = [...previewUrls];
+        if (updatedUrls[index]?.startsWith('blob:')) {
+            URL.revokeObjectURL(updatedUrls[index]);
+        }
+        updatedUrls.splice(index, 1);
+        setPreviewUrls(updatedUrls);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('my-orders.return', order.id), {
+        post(route('my-orders.dispute', order.id), {
             preserveScroll: true,
             onSuccess: () => onClose(),
         });
@@ -62,8 +82,8 @@ const ReturnRequestModal = ({ isOpen, onClose, order }) => {
                         <RotateCcw size={24} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Request Return</h2>
-                        <p className="text-sm text-gray-500">Provide details for your request.</p>
+                        <h2 className="text-xl font-bold text-gray-900">Initiate Return Dispute</h2>
+                        <p className="text-sm text-gray-500">Provide details and photos of the damaged item.</p>
                     </div>
                 </div>
 
@@ -74,40 +94,55 @@ const ReturnRequestModal = ({ isOpen, onClose, order }) => {
                         <textarea
                             className="w-full border-gray-300 rounded-xl focus:ring-orange-500 focus:border-orange-500 shadow-sm text-sm"
                             rows="3"
-                            placeholder="e.g., Item is damaged, wrong item sent..."
-                            value={data.return_reason}
-                            onChange={(e) => setData('return_reason', e.target.value)}
+                            placeholder="Describe what is wrong with the item (damaged, wrong item sent)..."
+                            value={data.reason}
+                            onChange={(e) => setData('reason', e.target.value)}
                             required
                         ></textarea>
-                        {errors.return_reason && <p className="text-red-500 text-xs mt-1">{errors.return_reason}</p>}
+                        {errors.reason && <p className="text-red-500 text-xs mt-1">{errors.reason}</p>}
                     </div>
 
                     {/* Image Upload */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Proof Image</label>
-                        <label className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${previewUrl ? 'border-orange-400 bg-orange-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'}`}>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Proof Photos (Up to 5)</label>
+                        <label className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:border-gray-400 transition-colors">
                             <div className="space-y-1 text-center">
-                                {previewUrl ? (
-                                    <img src={previewUrl} alt="Preview" className="mx-auto h-32 object-contain" />
-                                ) : (
-                                    <UploadCloud className="mx-auto h-10 w-10 text-gray-400" />
-                                )}
+                                <UploadCloud className="mx-auto h-10 w-10 text-gray-400" />
                                 <div className="flex text-sm text-gray-600 justify-center">
-                                    <span className="relative rounded-md font-medium text-orange-600 hover:text-orange-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-orange-500">
-                                        <span>Upload a file</span>
+                                    <span className="relative rounded-md font-medium text-orange-600 hover:text-orange-500 focus-within:outline-none">
+                                        <span>Upload images</span>
                                         <input 
                                             type="file" 
                                             className="sr-only" 
                                             accept="image/*"
+                                            multiple
                                             onChange={handleFileChange}
-                                            required={!previewUrl} // Required initially
+                                            required={data.proof_photos.length === 0}
                                         />
                                     </span>
                                 </div>
-                                {!previewUrl && <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>}
+                                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB (multiple allowed)</p>
                             </div>
                         </label>
-                        {errors.return_proof_image && <p className="text-red-500 text-xs mt-1">{errors.return_proof_image}</p>}
+                        {errors.proof_photos && <p className="text-red-500 text-xs mt-1">{errors.proof_photos}</p>}
+                        
+                        {/* Preview list */}
+                        {previewUrls.length > 0 && (
+                            <div className="mt-4 grid grid-cols-5 gap-2">
+                                {previewUrls.map((url, index) => (
+                                    <div key={index} className="relative aspect-square rounded-lg border border-gray-200 overflow-hidden group">
+                                        <img src={url} alt="Preview" className="h-full w-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveFile(index)}
+                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow hover:bg-red-700 transition"
+                                        >
+                                            <XCircle size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
@@ -124,7 +159,79 @@ const ReturnRequestModal = ({ isOpen, onClose, order }) => {
                             disabled={processing}
                             className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-2 font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:opacity-50"
                         >
-                            {processing ? 'Submitting...' : 'Submit Request'}
+                            {processing ? 'Submitting...' : 'Submit Dispute'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+    );
+};
+
+// --- ESCALATE DISPUTE MODAL COMPONENT ---
+const EscalateDisputeModal = ({ isOpen, onClose, disputeId }) => {
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+        action: 'escalate',
+        escalation_reason: '',
+    });
+
+    React.useEffect(() => {
+        if (!isOpen) {
+            reset();
+            clearErrors();
+        }
+    }, [isOpen]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        post(route('disputes.react', disputeId), {
+            preserveScroll: true,
+            onSuccess: () => onClose(),
+        });
+    };
+
+    return (
+        <Modal show={isOpen} onClose={onClose} maxWidth="md">
+            <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-amber-100 text-amber-600 rounded-full">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Escalate Dispute</h2>
+                        <p className="text-sm text-gray-500">Provide details on why you are escalating this dispute.</p>
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Reason for Escalation</label>
+                        <textarea
+                            className="w-full border-gray-300 rounded-xl focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm"
+                            rows="4"
+                            placeholder="Explain the situation clearly (e.g., seller proposed replacement but I prefer refund, or seller rejected but product is damaged)..."
+                            value={data.escalation_reason}
+                            onChange={(e) => setData('escalation_reason', e.target.value)}
+                            required
+                        ></textarea>
+                        {errors.escalation_reason && <p className="text-red-500 text-xs mt-1">{errors.escalation_reason}</p>}
+                    </div>
+
+                    <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-xl border border-gray-200 bg-white px-4 py-2 font-bold text-gray-700 transition hover:bg-gray-50"
+                            disabled={processing}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-6 py-2 font-bold text-white shadow-lg shadow-amber-200 transition hover:bg-amber-700 disabled:opacity-50"
+                        >
+                            {processing ? 'Escalating...' : 'Confirm Escalation'}
                         </button>
                     </div>
                 </form>
@@ -602,6 +709,64 @@ const buyerDeliverySummary = (order) => {
 };
 
 const buyerIssueSummary = (order) => {
+    if (order.dispute) {
+        const dispute = order.dispute;
+        let title = 'Dispute Return/Refund Filed';
+        let detail = 'Your request is waiting for the seller. Use chat to agree on a refund or replacement.';
+        let tone = 'border-orange-200 bg-orange-50';
+        let badgeTone = 'border-orange-200 bg-white text-orange-700';
+
+        if (dispute.status === 'seller_accepted') {
+            title = 'Refund Approved';
+            detail = 'The seller accepted your refund request.';
+            tone = 'border-purple-200 bg-purple-50';
+            badgeTone = 'border-purple-200 bg-white text-purple-700';
+        } else if (dispute.status === 'seller_rejected') {
+            title = 'Dispute Rejected by Seller';
+            detail = 'The seller rejected your return request. You can negotiate via chat, accept the decision, or escalate to Admin Helpdesk for arbitration.';
+            tone = 'border-red-200 bg-red-50';
+            badgeTone = 'border-red-200 bg-white text-red-700';
+        } else if (dispute.status === 'seller_proposed_replacement') {
+            title = 'Replacement Exchange Proposed';
+            detail = 'The seller proposed a replacement exchange. Please review the details below. You can accept this offer or escalate the dispute to Admin Helpdesk.';
+            tone = 'border-blue-200 bg-blue-50';
+            badgeTone = 'border-blue-200 bg-white text-blue-700';
+        } else if (dispute.status === 'escalated') {
+            title = 'Escalated to Admin Support';
+            detail = 'The dispute has been escalated. Platform moderators are reviewing the evidence to resolve the issue.';
+            tone = 'border-amber-200 bg-amber-50';
+            badgeTone = 'border-amber-200 bg-white text-amber-700';
+        } else if (dispute.status === 'resolved_refunded') {
+            title = 'Dispute Resolved: Refunded';
+            detail = 'Admin support or seller ruled in favor of a refund. The transaction has been refunded.';
+            tone = 'border-purple-200 bg-purple-50';
+            badgeTone = 'border-purple-200 bg-white text-purple-700';
+        } else if (dispute.status === 'resolved_rejected') {
+            title = 'Dispute Case Closed';
+            detail = 'Admin support ruled to reject the return claim. The order remains completed.';
+            tone = 'border-stone-200 bg-stone-50';
+            badgeTone = 'border-stone-200 bg-white text-stone-700';
+        } else if (dispute.status === 'resolved_replacement') {
+            title = 'Replacement Exchange Started';
+            detail = 'You accepted the replacement proposal. The seller is preparing the replacement item.';
+            tone = 'border-teal-200 bg-teal-50';
+            badgeTone = 'border-teal-200 bg-white text-teal-700';
+        }
+
+        return {
+            tone,
+            badgeTone,
+            icon: RotateCcw,
+            title,
+            detail,
+            timestampLabel: dispute.resolved_at ? 'Resolved' : (dispute.status === 'seller_proposed_replacement' ? 'Proposed' : null),
+            timestampValue: dispute.resolved_at || null,
+            infoLabel: dispute.status === 'seller_proposed_replacement' ? 'Replacement Description' : (dispute.status === 'seller_rejected' ? 'Rejection Explanation' : 'Reason'),
+            infoValue: dispute.status === 'seller_proposed_replacement' ? dispute.seller_proposed_description : (dispute.status === 'seller_rejected' ? dispute.seller_explanation : dispute.reason),
+            proofPhotos: dispute.proof_photos,
+        };
+    }
+
     if (order.status === 'Refund/Return') {
         return {
             tone: 'border-orange-200 bg-orange-50',
@@ -678,6 +843,7 @@ export default function MyOrders({ auth, orders }) {
     
     const [ratingModal, setRatingModal] = useState({ isOpen: false, order: null });
     const [returnModalState, setReturnModalState] = useState({ isOpen: false, order: null });
+    const [escalateModalState, setEscalateModalState] = useState({ isOpen: false, disputeId: null });
     const [expandedOrders, setExpandedOrders] = useState(new Set());
     const [expandedCourierTrackings, setExpandedCourierTrackings] = useState(new Set());
 
@@ -1165,6 +1331,22 @@ export default function MyOrders({ auth, orders }) {
                                                     <PackageCheck size={10} /> {issueSummary.proofLabel}
                                                 </a>
                                             )}
+
+                                            {issueSummary.proofPhotos && issueSummary.proofPhotos.length > 0 && (
+                                                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                                    {issueSummary.proofPhotos.map((photo, i) => (
+                                                        <a
+                                                            key={i}
+                                                            href={photo}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="h-12 w-12 rounded-lg border border-white/80 overflow-hidden shadow-sm hover:opacity-85 transition-opacity"
+                                                        >
+                                                            <img src={photo} alt={`Proof ${i + 1}`} className="h-full w-full object-cover" />
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -1332,6 +1514,24 @@ export default function MyOrders({ auth, orders }) {
                                         {/* REFUND/RETURN */}
                                         {order.status === 'Refund/Return' && (
                                             <>
+                                                {order.dispute?.status === 'seller_proposed_replacement' && (
+                                                    <button 
+                                                        onClick={() => router.post(route('disputes.react', order.dispute.id), { action: 'accept_replacement' })}
+                                                        className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-teal-600 text-white rounded-lg text-[12px] font-bold hover:bg-teal-700 shadow-md shadow-teal-200 transition-all hover:-translate-y-0.5 animate-pulse"
+                                                    >
+                                                        <CheckCircle size={15} /> Accept Replacement
+                                                    </button>
+                                                )}
+                                                
+                                                {['seller_proposed_replacement', 'seller_rejected'].includes(order.dispute?.status) && (
+                                                    <button 
+                                                        onClick={() => setEscalateModalState({ isOpen: true, disputeId: order.dispute.id })}
+                                                        className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-amber-200 bg-amber-50 text-amber-700 rounded-lg text-[12px] font-bold hover:bg-amber-100 transition shadow-sm animate-pulse"
+                                                    >
+                                                        <AlertTriangle size={15} /> Escalate to Admin
+                                                    </button>
+                                                )}
+
                                                 <button 
                                                     onClick={() => openModal('cancelReturn', order.id)}
                                                     className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-red-200 bg-red-50 text-red-600 rounded-lg text-[12px] font-bold hover:bg-red-100 transition shadow-sm"
@@ -1380,6 +1580,13 @@ export default function MyOrders({ auth, orders }) {
                 isOpen={returnModalState.isOpen}
                 onClose={() => setReturnModalState({ isOpen: false, order: null })}
                 order={returnModalState.order}
+            />
+
+            {/* --- ESCALATE DISPUTE MODAL --- */}
+            <EscalateDisputeModal
+                isOpen={escalateModalState.isOpen}
+                onClose={() => setEscalateModalState({ isOpen: false, disputeId: null })}
+                disputeId={escalateModalState.disputeId}
             />
 
             {/* --- CONFIRMATION MODAL --- */}

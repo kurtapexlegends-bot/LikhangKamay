@@ -67,6 +67,11 @@ class Order extends Model
         return $this->hasOne(OrderDelivery::class);
     }
 
+    public function dispute()
+    {
+        return $this->hasOne(Dispute::class);
+    }
+
     protected static function boot()
     {
         parent::boot();

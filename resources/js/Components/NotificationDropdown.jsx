@@ -14,7 +14,7 @@ const matchesNotificationFilter = (notification, filterKey) => {
     }
 
     if (filterKey === 'orders') {
-        return ['new_order', 'delivery_update', 'replacement_resolution', 'payment_confirmed'].includes(notification.type);
+        return ['new_order', 'delivery_update', 'replacement_resolution', 'payment_confirmed', 'dispute_accepted', 'dispute_replacement_proposed', 'dispute_rejected', 'dispute_arbitrated_refund', 'dispute_arbitrated_rejected'].includes(notification.type);
     }
 
     if (filterKey === 'messages') {
@@ -22,7 +22,7 @@ const matchesNotificationFilter = (notification, filterKey) => {
     }
 
     if (filterKey === 'attention') {
-        return ['low_stock', 'low_stock_warning', 'supply_depleted', 'accounting_rejected', 'accounting_request', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline', 'product_moderation', 'new_review'].includes(notification.type);
+        return ['low_stock', 'low_stock_warning', 'supply_depleted', 'accounting_rejected', 'accounting_request', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline', 'product_moderation', 'new_review', 'dispute_escalated', 'dispute_accepted', 'dispute_replacement_proposed', 'dispute_rejected', 'dispute_arbitrated_refund', 'dispute_arbitrated_rejected'].includes(notification.type);
     }
 
     return true;
@@ -125,6 +125,8 @@ export default function NotificationDropdown() {
                 };
             case 'review_moderation_status':
             case 'refund_request':
+            case 'dispute_accepted':
+            case 'dispute_arbitrated_refund':
                 return {
                     icon: <Undo size={16} className="text-rose-600" />,
                     bgClass: 'bg-rose-50'
@@ -145,6 +147,7 @@ export default function NotificationDropdown() {
                     bgClass: 'bg-amber-50'
                 };
             case 'replacement_resolution':
+            case 'dispute_replacement_proposed':
                 return {
                     icon: <PackageCheck size={16} className="text-teal-500" />,
                     bgClass: 'bg-teal-50'
@@ -185,9 +188,16 @@ export default function NotificationDropdown() {
                     bgClass: 'bg-red-50'
                 };
             case 'product_moderation':
+            case 'dispute_escalated':
                 return {
                     icon: <ShieldAlert size={16} className="text-amber-600" />,
                     bgClass: 'bg-amber-50'
+                };
+            case 'dispute_rejected':
+            case 'dispute_arbitrated_rejected':
+                return {
+                    icon: <XCircle size={16} className="text-red-600" />,
+                    bgClass: 'bg-red-50'
                 };
             default:
                 return {

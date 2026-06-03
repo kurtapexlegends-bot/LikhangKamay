@@ -38,7 +38,7 @@ const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 const resolveActiveGroup = (path) => {
     if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics') || path.includes('operations')) return 'Platform Pulse';
     if (path.includes('users') || path.includes('pending') || path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Marketplace';
-    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements') || path.includes('monetization') || path.includes('settings')) return 'Governance';
+    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements') || path.includes('monetization') || path.includes('settings') || path.includes('disputes')) return 'Governance';
     return null;
 };
 
@@ -125,6 +125,7 @@ export default function AdminLayout({ title, children }) {
             title: 'Governance',
             items: [
                 { name: 'Content Safety', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance') },
+                { name: 'Escalated Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: route().current('admin.disputes.index') },
                 { name: 'Global Alerts', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
                 { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
             ]
@@ -221,6 +222,7 @@ export default function AdminLayout({ title, children }) {
                                  title === 'Catalog Manager' ? 'Catalog Manager' :
                                  title === 'System Announcements' ? 'Global Alerts' :
                                  title === 'Monetization' ? 'Platform Revenue' :
+                                 title === 'Escalated Disputes' || title === 'Dispute Arbitration' ? 'Escalated Disputes' :
                                  title === 'System Config' || title === 'System Settings' ? 'System Config' :
                                  title}
                             </h1>

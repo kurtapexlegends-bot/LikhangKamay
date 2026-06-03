@@ -57,7 +57,7 @@ class OrderController extends Controller
         $seller?->loadMissing('addresses');
 
         $query = Order::where('artisan_id', $sellerId)
-            ->with(['items.product.recipes.supply', 'user', 'delivery.events']);
+            ->with(['items.product.recipes.supply', 'user', 'delivery.events', 'dispute']);
 
         // 1. Search Filter
         if ($request->filled('search')) {
@@ -125,6 +125,19 @@ class OrderController extends Controller
                 'lalamove_booking_requirements' => $bookingRequirements,
                 'return_reason' => $order->return_reason,
                 'return_proof_image' => $order->return_proof_image ? '/storage/' . $order->return_proof_image : null,
+                'dispute' => $order->dispute ? [
+                    'id' => $order->dispute->id,
+                    'status' => $order->dispute->status,
+                    'reason' => $order->dispute->reason,
+                    'proof_photos' => collect($order->dispute->proof_photos)->map(fn($p) => str_starts_with($p, 'http') ? $p : '/storage/' . $p)->toArray(),
+                    'seller_response_type' => $order->dispute->seller_response_type,
+                    'seller_explanation' => $order->dispute->seller_explanation,
+                    'seller_proposed_description' => $order->dispute->seller_proposed_description,
+                    'escalation_reason' => $order->dispute->escalation_reason,
+                    'admin_notes' => $order->dispute->admin_notes,
+                    'admin_decision' => $order->dispute->admin_decision,
+                    'resolved_at' => $order->dispute->resolved_at?->format('M d, Y h:i A'),
+                ] : null,
                 'replacement_resolution_description' => $order->replacement_resolution_description,
                 'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
                 'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),
@@ -1150,7 +1163,7 @@ class OrderController extends Controller
         $this->reconcilePendingOnlinePaymentsForUser(Auth::user(), $payMongoService);
 
         $ordersQuery = Order::where('user_id', $userId)
-            ->with(['items', 'user', 'artisan:id,name,shop_name', 'delivery'])
+            ->with(['items', 'user', 'artisan:id,name,shop_name', 'delivery', 'dispute'])
             ->latest();
 
         $initialOrders = (clone $ordersQuery)->get();
@@ -1220,6 +1233,19 @@ class OrderController extends Controller
             'cancellation_reason' => $order->cancellation_reason,
             'received_at' => $order->received_at?->format('M d, Y h:i A'),
             'warranty_expires_at' => $order->warranty_expires_at?->format('M d, Y h:i A'),
+            'dispute' => $order->dispute ? [
+                'id' => $order->dispute->id,
+                'status' => $order->dispute->status,
+                'reason' => $order->dispute->reason,
+                'proof_photos' => collect($order->dispute->proof_photos)->map(fn($p) => str_starts_with($p, 'http') ? $p : '/storage/' . $p)->toArray(),
+                'seller_response_type' => $order->dispute->seller_response_type,
+                'seller_explanation' => $order->dispute->seller_explanation,
+                'seller_proposed_description' => $order->dispute->seller_proposed_description,
+                'escalation_reason' => $order->dispute->escalation_reason,
+                'admin_notes' => $order->dispute->admin_notes,
+                'admin_decision' => $order->dispute->admin_decision,
+                'resolved_at' => $order->dispute->resolved_at?->format('M d, Y h:i A'),
+            ] : null,
             'replacement_resolution_description' => $order->replacement_resolution_description,
             'replacement_started_at' => $order->replacement_started_at?->format('M d, Y h:i A'),
             'replacement_resolved_at' => $order->replacement_resolved_at?->format('M d, Y h:i A'),

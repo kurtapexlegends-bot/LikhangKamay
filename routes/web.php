@@ -36,6 +36,7 @@ use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\PlatformDiagnosticsController;
+use App\Http\Controllers\Core\DisputeController;
 use App\Models\Product;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -149,6 +150,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/orders/bulk-lalamove', [LalamoveDeliveryController::class, 'bulkStore'])->middleware('seller.module:orders')->name('orders.bulk-lalamove');
         Route::get('/orders/bulk-labels', [OrderController::class, 'bulkLabels'])->middleware('seller.module:orders')->name('orders.bulk-labels');
         Route::post('/orders/bulk-packing-slips', [\App\Http\Controllers\Seller\OrderPrintController::class, 'bulkPackingSlips'])->middleware('seller.module:orders')->name('orders.bulk-packing-slips');
+        Route::post('/disputes/{id}/respond', [DisputeController::class, 'sellerRespond'])->middleware('seller.module:orders')->name('disputes.respond');
         
         Route::get('/analytics', [AnalyticsController::class, 'index'])->middleware('seller.module:analytics')->name('analytics.index');
         Route::get('/analytics/export', [AnalyticsController::class, 'export'])->middleware('seller.module:analytics')->name('analytics.export'); // <--- Added
@@ -273,6 +275,10 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/my-orders/{id}/cancel-return', [OrderController::class, 'buyerCancelReturn'])->name('my-orders.cancel-return');
     Route::get('/my-orders/{id}/receipt', [OrderController::class, 'downloadReceipt'])->name('my-orders.receipt');
 
+    // Disputes
+    Route::post('/my-orders/{id}/dispute', [DisputeController::class, 'buyerInitiateDispute'])->name('my-orders.dispute');
+    Route::post('/disputes/{id}/react', [DisputeController::class, 'buyerReact'])->name('disputes.react');
+
     // --- CART ROUTES (MISSING PART) ---
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add', [CartController::class, 'store'])->middleware('throttle:60,1')->name('cart.store');
@@ -357,6 +363,10 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::delete('/announcements/{announcement}', [SuperAdminController::class, 'destroyAnnouncement'])->name('admin.announcements.destroy');
     Route::post('/announcements/{announcement}/broadcast', [SuperAdminController::class, 'broadcastAnnouncement'])->name('admin.announcements.broadcast');
     Route::post('/announcements/{announcement}/stop', [SuperAdminController::class, 'stopAnnouncement'])->name('admin.announcements.stop');
+
+    // Dispute Arbitration
+    Route::get('/disputes', [DisputeController::class, 'adminIndex'])->name('admin.disputes.index');
+    Route::post('/disputes/{id}/arbitrate', [DisputeController::class, 'adminArbitrate'])->name('admin.disputes.arbitrate');
 
     // Moderation Queue
     Route::get('/moderation-queue', fn() => redirect()->route('admin.compliance', ['tab' => 'flags']))->name('admin.moderation');
