@@ -9,14 +9,33 @@ import { useToast } from '@/Components/ToastContext';
  * Falls back to active Inertia polling if Supabase is unavailable in local environment.
  */
 export const useRealtime = () => {
-    const { auth, notifications = [] } = usePage().props;
+    const { auth, notifications } = usePage().props;
     const { addToast } = useToast();
     const user = auth?.user;
-    const prevNotificationsRef = useRef(notifications);
+    const prevNotificationsRef = useRef(undefined);
+    const initialReloadFinished = useRef(false);
 
     // Track when notifications prop changes to display visual toasts for newly received unread items
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            initialReloadFinished.current = false;
+            prevNotificationsRef.current = undefined;
+            return;
+        }
+
+        // If notifications is undefined, it has not been loaded (or has been flushed by full visit)
+        if (notifications === undefined) {
+            initialReloadFinished.current = false;
+            prevNotificationsRef.current = undefined;
+            return;
+        }
+        
+        if (!initialReloadFinished.current) {
+            prevNotificationsRef.current = notifications;
+            initialReloadFinished.current = true;
+            return;
+        }
+
         const prev = prevNotificationsRef.current || [];
         const newUnread = (notifications || []).filter(n => 
             !n.read_at && !prev.some(p => p.id === n.id)

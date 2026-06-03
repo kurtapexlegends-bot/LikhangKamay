@@ -69,6 +69,62 @@ class OrderController extends Controller
             });
         }
 
+        // Add date range filters:
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Fetch tab counts for this artisan (with search and date filters applied, but status omitted)
+        $countsQuery = Order::where('artisan_id', $sellerId);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $countsQuery->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('tracking_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('start_date')) {
+            $countsQuery->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $countsQuery->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $statusCounts = $countsQuery->select(['status', DB::raw('count(*) as count')])
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $tabCounts = [
+            'Pending' => $statusCounts['Pending'] ?? 0,
+            'Accepted' => $statusCounts['Accepted'] ?? 0,
+            'Processing' => $statusCounts['Processing'] ?? 0,
+            'Shipped' => $statusCounts['Shipped'] ?? 0,
+            'To Pickup' => $statusCounts['Ready for Pickup'] ?? 0,
+            'Delivered' => $statusCounts['Delivered'] ?? 0,
+            'Returns' => $statusCounts['Refund/Return'] ?? 0,
+            'Completed' => $statusCounts['Completed'] ?? 0,
+            'Cancelled' => ($statusCounts['Cancelled'] ?? 0) + ($statusCounts['Rejected'] ?? 0),
+            'paymentHoldCount' => Order::where('artisan_id', $sellerId)
+                ->where('payment_method', '!=', 'COD')
+                ->where('payment_status', '!=', 'paid')
+                ->where('status', 'Accepted')
+                ->count(),
+            'hasActiveCourierTracking' => Order::where('artisan_id', $sellerId)
+                ->where('shipping_method', 'Delivery')
+                ->whereHas('delivery', function ($q) {
+                    $q->whereNotNull('external_order_id')
+                      ->whereNotIn(DB::raw('UPPER(status)'), ['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED']);
+                })
+                ->exists(),
+        ];
+
         // 2. Status Filter (Tab based)
         if ($request->filled('status') && $request->status !== 'All') {
             if ($request->status === 'Cancelled') {
@@ -79,6 +135,26 @@ class OrderController extends Controller
                 $query->where('status', 'Refund/Return');
             } else {
                 $query->where('status', $request->status);
+            }
+        }
+
+        // 3. Quick Filter
+        if ($request->filled('quick_filter')) {
+            $qf = $request->quick_filter;
+            if ($qf === 'urgent') {
+                $query->whereIn('status', ['Pending', 'Refund/Return']);
+            } elseif ($qf === 'payment_hold') {
+                $query->where('payment_method', '!=', 'COD')
+                    ->where('payment_status', '!=', 'paid')
+                    ->where('status', 'Accepted');
+            } elseif ($qf === 'live_courier') {
+                $query->where('shipping_method', 'Delivery')
+                    ->whereHas('delivery', function ($q) {
+                        $q->whereNotNull('external_order_id')
+                          ->whereNotIn(DB::raw('UPPER(status)'), ['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED']);
+                    });
+            } elseif ($qf === 'returns') {
+                $query->where('status', 'Refund/Return');
             }
         }
 
@@ -95,6 +171,7 @@ class OrderController extends Controller
                 'db_id' => $order->id,
                 'date' => $order->created_at->format('M d, Y - h:i A'),
                 'customer' => $order->customer_name,
+                'customer_avatar' => $order->user?->avatar_url,
                 'user_id' => $order->user_id, // For chat linking
                 'status' => $order->status,
                 'payment_status' => $order->payment_status ?? 'pending',
@@ -163,7 +240,8 @@ class OrderController extends Controller
         });
 
         return Inertia::render('Seller/Orders/OrderManager', [
-            'orders' => $paginator
+            'orders' => $paginator,
+            'tabCounts' => $tabCounts
         ]);
     }
 

@@ -67,7 +67,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     onClose={() => setSidebarOpen(false)}
                 />
 
-                <div scroll-region="true" className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:ml-52 animate-page-enter">
+                <div scroll-region="true" className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:ml-52">
                     {children}
                 </div>
             </div>

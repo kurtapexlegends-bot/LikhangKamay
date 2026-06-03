@@ -362,7 +362,6 @@ const NavItem = ({ href, icon: Icon, active, badge, onClick, children }) => {
             href={href}
             prefetch="hover"
             preserveScroll
-            preserveState
             onClick={onClick}
             whileTap={{ scale: 0.97, x: 2 }}
             className={`

@@ -84,7 +84,7 @@ const KPICard = ({
                     {title}
                 </p>
                 <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
-                    {typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.]/g, '')))) ? (
+                    {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.]/g, ''))))) ? (
                         <AnimatedCounter 
                             value={typeof value === 'number' ? value : parseFloat(value.replace(/[^\d.]/g, ''))} 
                             formatter={displayFormatter}

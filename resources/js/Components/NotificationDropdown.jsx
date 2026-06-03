@@ -113,7 +113,6 @@ export default function NotificationDropdown() {
                     bgClass: 'bg-emerald-50'
                 };
             case 'new_message':
-            case 'team_message':
                 return {
                     icon: <MessageCircle size={16} className="text-blue-600" />,
                     bgClass: 'bg-blue-50'
