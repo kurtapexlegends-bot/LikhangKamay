@@ -1097,8 +1097,9 @@ export default function MyOrders({ auth, orders }) {
                                 {/* Timeline Section - Collapsible on Mobile */}
                                 <div className="border-b border-stone-50">
                                     <button 
+                                        type="button"
                                         onClick={() => toggleOrderExpansion(order.id)}
-                                        className="flex w-full items-center justify-between bg-white px-4 py-2 sm:hidden"
+                                        className="flex w-full items-center justify-between bg-white px-4 py-3 sm:hidden min-h-[44px]"
                                     >
                                         <div className="flex items-center gap-2">
                                             <Activity size={12} className="text-clay-500" />
@@ -1130,8 +1131,13 @@ export default function MyOrders({ auth, orders }) {
                                                         <p className="text-[12px] font-bold text-stone-900">{deliverySummary.title}</p>
                                                         <p className="text-[10px] leading-snug text-stone-600">{deliverySummary.detail}</p>
                                                         {order.shipping_method === 'Pick Up' && order.proof_of_delivery && (
-                                                            <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-600 underline hover:text-orange-800 flex items-center gap-1 mt-1.5">
-                                                                <PackageCheck size={11} /> {buyerProofLabel(order)}
+                                                            <a 
+                                                                href={order.proof_of_delivery} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-[#FFFDFB] px-2.5 py-1.5 text-[10px] font-bold text-orange-650 hover:bg-orange-50 transition shadow-sm min-h-[44px] sm:min-h-[28px] mt-1.5"
+                                                            >
+                                                                <PackageCheck size={12} /> {buyerProofLabel(order)}
                                                             </a>
                                                         )}
                                                     </div>
@@ -1188,8 +1194,13 @@ export default function MyOrders({ auth, orders }) {
                                                                 </span>
                                                             )}
                                                             {order.proof_of_delivery && (
-                                                                <a href={order.proof_of_delivery} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 underline hover:text-blue-800 flex items-center gap-1">
-                                                                    <PackageCheck size={9} /> {buyerProofLabel(order)}
+                                                                <a 
+                                                                    href={order.proof_of_delivery} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer" 
+                                                                    className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-white px-2.5 py-1.5 text-[10px] font-bold text-blue-650 hover:bg-blue-50 transition shadow-sm min-h-[44px] sm:min-h-[28px] mt-1"
+                                                                >
+                                                                    <PackageCheck size={12} /> {buyerProofLabel(order)}
                                                                 </a>
                                                             )}
                                                         </div>

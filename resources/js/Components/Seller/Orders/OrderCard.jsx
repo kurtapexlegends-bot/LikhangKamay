@@ -436,7 +436,7 @@ export default function OrderCard({
                         {canAccessMessages && (
                             <button
                                 onClick={() => openChat(order.user_id)}
-                                className="p-1.5 text-stone-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center border border-stone-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] active:scale-95"
+                                className="p-2 text-stone-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center border border-stone-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] active:scale-95"
                                 title="Chat with customer"
                                 type="button"
                             >
@@ -470,7 +470,7 @@ export default function OrderCard({
                                     href={order.proof_of_delivery}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 bg-stone-50 border border-stone-200 rounded-md px-2 py-0.5 text-[9px] font-bold text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition shadow-sm"
+                                    className="inline-flex items-center gap-1 bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-stone-600 hover:bg-stone-105 transition shadow-sm min-h-[44px] sm:min-h-[28px]"
                                 >
                                     <PackageCheck size={10} /> {sellerProofLabel(order)}
                                 </a>
@@ -481,7 +481,7 @@ export default function OrderCard({
                                     <button
                                         disabled={!canEditOrders}
                                         onClick={() => markAsPaidAction(order.id)}
-                                        className="inline-flex items-center justify-center gap-1 bg-green-50 border border-green-200 rounded-md px-2 py-0.5 text-[9px] font-bold text-green-700 hover:bg-green-105 transition shadow-sm"
+                                        className="inline-flex items-center justify-center gap-1 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-green-700 hover:bg-green-105 transition shadow-sm min-h-[44px] sm:min-h-[28px]"
                                     >
                                         <DollarSign size={10} /> Mark as Paid
                                     </button>
@@ -717,9 +717,10 @@ export default function OrderCard({
 
                         {order.timeline?.length > 0 && (
                             <div className="rounded-xl border border-stone-200/80 bg-white p-2 shadow-sm transition-colors hover:border-clay-200 flex flex-col">
-                                <div 
+                                <button
+                                    type="button"
                                     onClick={() => toggleTimelineExpansion(order.id)}
-                                    className="flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-stone-50/50 p-1 -m-1 rounded transition-colors"
+                                    className="flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-stone-50/50 p-2.5 rounded-xl transition-colors text-left w-full min-h-[44px] focus-visible:outline-none"
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <Activity
@@ -740,7 +741,7 @@ export default function OrderCard({
                                             <ChevronRight size={12} className="text-stone-400" />
                                         )}
                                     </div>
-                                </div>
+                                </button>
                                 {expandedTimelines.has(order.id) && (
                                     <div className="space-y-3 pl-1 mt-3 border-t border-stone-100 pt-3">
                                         {order.timeline.slice(0, 4).map((entry, i) => (
