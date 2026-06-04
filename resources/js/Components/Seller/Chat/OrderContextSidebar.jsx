@@ -34,10 +34,10 @@ export default function OrderContextSidebar({
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                 {/* User Profile Summary */}
                 <div className="flex flex-col items-center text-center mb-8">
-                    <div className="relative mb-4 flex justify-center">
+                    <div className="relative mb-4 w-24 h-24 mx-auto shrink-0">
                         <UserAvatar user={currentChatUser} className="w-24 h-24 text-3xl shadow-md border-4 border-white" />
                         {currentChatUser.is_online && (
-                            <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-4 border-gray-50 z-20" />
+                            <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-4 border-white z-20" />
                         )}
                     </div>
                     <h4 className="font-bold text-gray-900 text-lg mb-2 truncate max-w-full">{currentChatUser.name}</h4>

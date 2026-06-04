@@ -267,12 +267,12 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     }, {}), [activeMessages, timeNow]);
 
     return (
-        <div className="min-h-screen bg-stone-50 flex font-sans text-stone-800">
+        <div className="h-screen overflow-hidden bg-stone-50 flex font-sans text-stone-800 relative">
             <ImpersonationBanner />
             <Head title="Chat" />
             <SellerSidebar active="chat" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 h-screen transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 h-screen overflow-hidden transition-all duration-300">
                 <SellerHeader
                     title={
                         <div className="flex items-center gap-3">
@@ -305,7 +305,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                     />
 
                     {/* CONVERSATION AREA */}
-                    <div className={`flex-1 flex flex-col bg-[#FDFBF9] ${!showMobileList ? 'flex' : 'hidden sm:flex'}`}>
+                    <div className={`flex-1 flex flex-col min-h-0 overflow-hidden bg-[#FDFBF9] ${!showMobileList ? 'flex' : 'hidden sm:flex'}`}>
                         {currentChatUser ? (
                             <>
                                 <MessageWindow

@@ -24,7 +24,7 @@ export default function MessageWindow({
     if (!currentChatUser) return null;
 
     return (
-        <div className="flex-1 flex flex-col min-w-0 bg-[#FDFBF9]">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-[#FDFBF9]">
             {/* Chat Header */}
             <div className="border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 bg-white/90 backdrop-blur-md shrink-0 sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -35,10 +35,10 @@ export default function MessageWindow({
                     >
                         <ArrowLeft size={18} />
                     </button>
-                    <div className="relative">
+                    <div className="relative shrink-0 w-10 h-10">
                         <UserAvatar user={currentChatUser} className="w-10 h-10 shadow-sm border border-stone-100" />
                         {currentChatUser.is_online && (
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
+                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white z-10" />
                         )}
                     </div>
                     <div className="min-w-0">
@@ -46,9 +46,6 @@ export default function MessageWindow({
                         <p className={`text-[10px] font-medium flex items-center gap-1.5 ${
                             currentChatUser.is_online ? 'text-green-600' : 'text-gray-400'
                         }`}>
-                            <span className={`w-1 h-1 rounded-full ${
-                                currentChatUser.is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-300'
-                            }`} />
                             {currentChatUser.is_online
                                 ? 'Online now'
                                 : `Last seen ${formatChatRelative(currentChatUser.last_seen_at_iso, timeNow) || currentChatUser.last_seen || 'recently'}`}

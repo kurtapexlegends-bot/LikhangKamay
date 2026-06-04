@@ -147,7 +147,7 @@ export default function MessageInput({
                         </div>
                     )}
                     <div className="flex items-end gap-2 sm:gap-3 w-full">
-                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all overflow-hidden shadow-sm">
+                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all shadow-sm">
                             {/* Template Selector Dropdown (Desktop Only) */}
                             {showTemplateSelector && !isMessagesReadOnly && (
                                 <div ref={templateSelectorRef} className="absolute bottom-full left-0 mb-2 z-50 w-72 max-h-80 overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-2 duration-200">
