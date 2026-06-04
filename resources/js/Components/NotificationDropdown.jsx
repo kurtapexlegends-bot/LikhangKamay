@@ -29,7 +29,11 @@ const matchesNotificationFilter = (notification, filterKey) => {
 };
 
 export default function NotificationDropdown() {
-    const { notifications = [], unreadNotificationCount = 0, auth } = usePage().props;
+    const { notifications = [], unreadNotificationCount, auth } = usePage().props;
+    const [localUnreadNotificationCount, setLocalUnreadNotificationCount] = useState(() => {
+        const cached = localStorage.getItem('lk_unread_notifications');
+        return cached !== null ? parseInt(cached, 10) : (unreadNotificationCount || 0);
+    });
     const [isOpen, setIsOpen] = useState(false);
     const [activeMenu, setActiveMenu] = useState(null);
     const [activeFilter, setActiveFilter] = useState('all');
@@ -37,6 +41,13 @@ export default function NotificationDropdown() {
     const [processing, setProcessing] = useState(false);
     const [relativeNow, setRelativeNow] = useState(() => Date.now());
     const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof unreadNotificationCount === 'number') {
+            setLocalUnreadNotificationCount(unreadNotificationCount);
+            localStorage.setItem('lk_unread_notifications', unreadNotificationCount);
+        }
+    }, [unreadNotificationCount]);
 
     const filterDefinitions = useMemo(() => {
         const isSuperAdmin = auth?.user?.role === 'super_admin';
@@ -264,9 +275,9 @@ export default function NotificationDropdown() {
             >
                 <div className="relative inline-flex">
                     <Bell size={20} className="group-hover:scale-110 transition-transform" />
-                    {unreadNotificationCount > 0 && (
+                    {localUnreadNotificationCount > 0 && (
                         <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
-                            {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                            {localUnreadNotificationCount > 9 ? '9+' : localUnreadNotificationCount}
                         </span>
                     )}
                 </div>
@@ -279,7 +290,7 @@ export default function NotificationDropdown() {
                     <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50 px-4 py-4">
                         <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
                         <div className="flex items-center gap-3">
-                            {unreadNotificationCount > 0 && (
+                            {localUnreadNotificationCount > 0 && (
                                 <button 
                                     onClick={handleMarkAllAsRead}
                                     className="flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-clay-600 transition-colors hover:text-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"

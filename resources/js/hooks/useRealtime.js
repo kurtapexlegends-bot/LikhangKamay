@@ -69,12 +69,13 @@ export const useRealtime = () => {
 
         // 2. Setup Supabase real-time sync if available, or fall back to polling
         let notificationChannel = null;
+        let sellerNotificationChannel = null;
         let orderChannel = null;
         let adminChannel = null;
         let fallbackPollInterval = null;
 
         if (supabase) {
-            // Notification Listener
+            // Notification Listener for User directly
             notificationChannel = supabase
                 .channel(`notifications:notifiable_id=eq.${user.id}`)
                 .on(
@@ -110,17 +111,56 @@ export const useRealtime = () => {
                 )
                 .subscribe();
 
-            // Order Listener (for Artisans)
-            if (user.role === 'artisan') {
+            // Notification Listener for Effective Seller Owner (for Staff)
+            const effectiveSellerId = auth?.effectiveSellerId;
+            if (effectiveSellerId && effectiveSellerId !== user.id) {
+                sellerNotificationChannel = supabase
+                    .channel(`notifications:notifiable_id=eq.${effectiveSellerId}`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'notifications',
+                            filter: `notifiable_id=eq.${effectiveSellerId}`,
+                        },
+                        (payload) => {
+                            console.log('New shop notification received via Supabase:', payload);
+                            
+                            const reloadKeys = ['notifications', 'unreadNotificationCount'];
+                            if (window.location.pathname.includes('/products')) {
+                                reloadKeys.push('products');
+                                reloadKeys.push('metrics');
+                            }
+                            if (window.location.pathname.includes('/orders')) {
+                                reloadKeys.push('orders');
+                            }
+
+                            router.reload({
+                                only: reloadKeys,
+                                preserveScroll: true,
+                            });
+                            
+                            window.dispatchEvent(new CustomEvent('new-notification', { detail: payload.new }));
+                        }
+                    )
+                    .subscribe();
+            }
+
+            // Order Listener (for Artisans & Staff)
+            const isSellerActor = user.role === 'artisan' || user.role === 'staff';
+            const sellerIdForOrders = effectiveSellerId || user.id;
+
+            if (isSellerActor && sellerIdForOrders) {
                 orderChannel = supabase
-                    .channel(`orders:artisan_id=eq.${user.id}`)
+                    .channel(`orders:artisan_id=eq.${sellerIdForOrders}`)
                     .on(
                         'postgres_changes',
                         {
                             event: '*',
                             schema: 'public',
                             table: 'orders',
-                            filter: `artisan_id=eq.${user.id}`,
+                            filter: `artisan_id=eq.${sellerIdForOrders}`,
                         },
                         (payload) => {
                             console.log('Order update received:', payload);
@@ -178,7 +218,7 @@ export const useRealtime = () => {
                     reloadKeys.push('pendingArtisanCount');
                     reloadKeys.push('logs');
                     reloadKeys.push('adminStats');
-                } else if (user.role === 'artisan') {
+                } else if (user.role === 'artisan' || user.role === 'staff') {
                     reloadKeys.push('stats');
                     reloadKeys.push('recentOrders');
                 }
@@ -193,9 +233,10 @@ export const useRealtime = () => {
 
         return () => {
             if (notificationChannel) supabase.removeChannel(notificationChannel);
+            if (sellerNotificationChannel) supabase.removeChannel(sellerNotificationChannel);
             if (orderChannel) supabase.removeChannel(orderChannel);
             if (adminChannel) supabase.removeChannel(adminChannel);
             if (fallbackPollInterval) clearInterval(fallbackPollInterval);
         };
-    }, [user?.id]);
+    }, [user?.id, auth?.effectiveSellerId]);
 };

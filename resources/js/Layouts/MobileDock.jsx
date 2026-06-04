@@ -11,6 +11,17 @@ export default function MobileDock() {
     const { auth, cartCount, sellerSidebar } = usePage().props;
     const user = auth?.user;
     const [isAccountOpen, setIsAccountOpen] = useState(false);
+    const [localCartCount, setLocalCartCount] = useState(() => {
+        const cached = localStorage.getItem('lk_cart_count');
+        return cached !== null ? parseInt(cached, 10) : (cartCount || 0);
+    });
+
+    React.useEffect(() => {
+        if (typeof cartCount === 'number') {
+            setLocalCartCount(cartCount);
+            localStorage.setItem('lk_cart_count', cartCount);
+        }
+    }, [cartCount]);
 
     const handleSearchClick = (e) => {
         e.preventDefault();
@@ -77,9 +88,9 @@ export default function MobileDock() {
                     >
                         <div className="relative">
                             <ShoppingCart size={21} strokeWidth={isActive('/cart') ? 2.5 : 2} />
-                            {cartCount > 0 && (
+                            {localCartCount > 0 && (
                                 <span className="absolute -top-1.5 -right-2.5 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[#D4A373] px-1 text-[7px] font-black leading-none text-stone-950 shadow-sm ring-1 ring-stone-950">
-                                    {cartCount}
+                                    {localCartCount}
                                 </span>
                             )}
                         </div>

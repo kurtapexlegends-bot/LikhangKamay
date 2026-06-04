@@ -31,7 +31,14 @@ export default function BuyerNavbar() {
     const params = new URLSearchParams(window.location.search);
     const [term, setTerm] = useState(params.get('search') || '');
     const [isScrolled, setIsScrolled] = useState(false);
-    const [localCartCount, setLocalCartCount] = useState(cartCount || 0);
+    const [localCartCount, setLocalCartCount] = useState(() => {
+        const cached = localStorage.getItem('lk_cart_count');
+        return cached !== null ? parseInt(cached, 10) : (cartCount || 0);
+    });
+    const [localUnreadMessageCount, setLocalUnreadMessageCount] = useState(() => {
+        const cached = localStorage.getItem('lk_unread_messages');
+        return cached !== null ? parseInt(cached, 10) : (unreadMessageCount || 0);
+    });
     const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
     // Search Suggestions State
@@ -59,8 +66,18 @@ export default function BuyerNavbar() {
     }, [term]);
 
     useEffect(() => {
-        setLocalCartCount(cartCount || 0);
+        if (typeof cartCount === 'number') {
+            setLocalCartCount(cartCount);
+            localStorage.setItem('lk_cart_count', cartCount);
+        }
     }, [cartCount]);
+
+    useEffect(() => {
+        if (typeof unreadMessageCount === 'number') {
+            setLocalUnreadMessageCount(unreadMessageCount);
+            localStorage.setItem('lk_unread_messages', unreadMessageCount);
+        }
+    }, [unreadMessageCount]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -219,9 +236,9 @@ export default function BuyerNavbar() {
                                     >
                                         <div className="relative inline-flex">
                                             <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
-                                            {unreadMessageCount > 0 && (
+                                            {localUnreadMessageCount > 0 && (
                                                 <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
-                                                    {unreadMessageCount}
+                                                    {localUnreadMessageCount}
                                                 </span>
                                             )}
                                         </div>
@@ -333,9 +350,9 @@ export default function BuyerNavbar() {
                                 className="p-2 text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50 relative"
                             >
                                 <MessageCircle size={20} strokeWidth={2} />
-                                {unreadMessageCount > 0 && (
+                                {localUnreadMessageCount > 0 && (
                                     <span className="absolute top-1.5 right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white shadow-sm ring-2 ring-white">
-                                        {unreadMessageCount}
+                                        {localUnreadMessageCount}
                                     </span>
                                 )}
                             </Link>

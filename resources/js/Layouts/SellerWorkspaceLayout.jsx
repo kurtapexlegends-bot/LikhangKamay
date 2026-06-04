@@ -9,14 +9,9 @@ const SellerWorkspaceShellContext = createContext({
     closeSidebar: () => {},
 });
 
-import { useRealtime } from '@/hooks/useRealtime';
-
 export default function SellerWorkspaceLayout({ active, children, sidebarUser = null }) {
     const { auth } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
-
-    // Enable Real-time synchronization
-    useRealtime();
 
     // Gesture-based sidebar reveal (Swipe from left edge)
     React.useEffect(() => {

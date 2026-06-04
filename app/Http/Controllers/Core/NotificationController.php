@@ -19,10 +19,10 @@ class NotificationController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
-        $notifications = $user->notifications()->take(30)->get()->map(
+        $notifications = $user->getNotificationsQuery()->latest()->take(30)->get()->map(
             fn ($notification) => NotificationPresenter::present($notification, $user)
         );
-        $unreadCount = $user->unreadNotifications()->count();
+        $unreadCount = $user->getUnreadNotificationsQuery()->count();
 
         if ($request->wantsJson() && !$request->header('X-Inertia')) {
             return response()->json([
@@ -44,7 +44,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $notification = $user->notifications()->find($id);
+        $notification = $user->getNotificationsQuery()->find($id);
         
         if ($notification) {
             $notification->markAsRead();
@@ -60,7 +60,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->unreadNotifications()->update(['read_at' => now()]);
+        $user->getUnreadNotificationsQuery()->update(['read_at' => now()]);
 
         return back();
     }
@@ -69,7 +69,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $notification = $user->notifications()->find($id);
+        $notification = $user->getNotificationsQuery()->find($id);
         
         if ($notification) {
             $notification->markAsUnread();
@@ -82,7 +82,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $notification = $user->notifications()->find($id);
+        $notification = $user->getNotificationsQuery()->find($id);
         
         if ($notification) {
             $notification->delete();
@@ -95,7 +95,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->notifications()->delete();
+        $user->getNotificationsQuery()->delete();
 
         return back();
     }

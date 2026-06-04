@@ -69,7 +69,7 @@ class NotificationPresenter
             return route('buyer.chat', ['user_id' => $senderId]);
         }
 
-        if ($user?->isArtisan()) {
+        if ($user?->isArtisan() || $user?->isStaff()) {
             return route('chat.index', ['user_id' => $senderId]);
         }
 

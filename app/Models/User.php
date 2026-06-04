@@ -659,6 +659,30 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->getEffectiveSeller()?->id;
     }
 
+    /**
+     * Get the notifications query for the user, including effective seller notifications if the user is a staff member.
+     */
+    public function getNotificationsQuery()
+    {
+        $notifiableIds = [$this->id];
+        $effectiveSellerId = $this->getEffectiveSellerId();
+        if ($effectiveSellerId && $effectiveSellerId !== $this->id) {
+            $notifiableIds[] = $effectiveSellerId;
+        }
+
+        return \Illuminate\Notifications\DatabaseNotification::where('notifiable_type', $this->getMorphClass())
+            ->whereIn('notifiable_id', $notifiableIds);
+    }
+
+    /**
+     * Get the unread notifications query for the user, including effective seller notifications if the user is a staff member.
+     */
+    public function getUnreadNotificationsQuery()
+    {
+        return $this->getNotificationsQuery()->whereNull('read_at');
+    }
+
+
     public function isPendingApproval(): bool
     {
         return $this->isArtisan() && $this->artisan_status === 'pending' && $this->setup_completed_at !== null;

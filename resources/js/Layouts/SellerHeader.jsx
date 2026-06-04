@@ -8,6 +8,7 @@ import { Menu, ChevronDown, User, LogOut, Building2 } from 'lucide-react';
 
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
+import { useRealtime } from '@/hooks/useRealtime';
 
 /**
  * Reusable Seller Header Component
@@ -19,6 +20,7 @@ import GlobalSearch from '@/Components/Consumer/GlobalSearch';
  * @param {Function} props.onMenuClick
  */
 export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuClick, badge, actions = null }) {
+    useRealtime();
     const { auth: pageAuth } = usePage().props;
     const auth = propAuth || pageAuth;
 

@@ -207,7 +207,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     }, {}), [activeMessages, timeNow]);
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
+        <div className="h-screen overflow-hidden bg-[#FDFBF9] font-sans text-gray-800 flex flex-col" style={{ scrollbarGutter: 'stable' }}>
             <ImpersonationBanner />
             <Head title="My Messages" />
 
@@ -217,8 +217,8 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
             </div>
 
             {/* CHAT CONTAINER */}
-            <main className={`flex-1 max-w-7xl w-full mx-auto sm:px-6 lg:px-8 sm:py-6 ${!showMobileList ? 'p-0 sm:px-4' : 'p-4'}`}>
-                <div className={`bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col sm:flex-row ${showMobileList ? 'h-[calc(100dvh-3.5rem)]' : 'h-[calc(100dvh)]'} sm:h-[calc(100vh-140px)] sm:rounded-2xl`}>
+            <main className={`flex-1 min-h-0 overflow-hidden max-w-7xl w-full mx-auto sm:px-6 lg:px-8 sm:py-6 ${!showMobileList ? 'p-0 sm:px-4' : 'p-4'}`}>
+                <div className={`bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col sm:flex-row w-full h-full sm:rounded-2xl`}>
                     
                     {/* LEFT: CONTACT LIST */}
                     <div className={`w-full sm:w-80 sm:max-w-[20rem] border-r border-gray-100 flex flex-col bg-gradient-to-b from-white to-gray-50 ${showMobileList ? 'block' : 'hidden sm:flex'}`}>
@@ -297,7 +297,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                     </div>
 
                     {/* RIGHT: CONVERSATION */}
-                    <div className={`flex-1 flex flex-col bg-white ${!showMobileList ? 'block' : 'hidden sm:flex'}`}>
+                    <div className={`flex-1 flex flex-col min-h-0 overflow-hidden bg-white ${!showMobileList ? 'flex' : 'hidden sm:flex'}`}>
                         {currentChatUser ? (
                             <>
                                 {/* ACTIVE CHAT HEADER */}
@@ -309,20 +309,20 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                         >
                                             <ArrowLeft size={20} />
                                         </button>
-                                        <div className="relative">
-                                            <UserAvatar user={currentChatUser} className="w-10 h-10 shadow-sm border border-stone-100" />
-                                            <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${currentChatUser.is_online ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h2 className="font-bold text-gray-900 text-sm truncate">{currentChatUser.shop_name || currentChatUser.name}</h2>
-                                            <p className="text-[10px] text-gray-500 font-medium">
-                                                {currentChatUser.is_online ? (
-                                                    <span className="text-green-600 font-bold">Online</span>
-                                                ) : (
-                                                    formatChatRelative(currentChatUser.last_seen_at_iso, timeNow) || currentChatUser.last_seen
-                                                )}
-                                            </p>
-                                        </div>
+                                         <div className="relative shrink-0 w-10 h-10">
+                                             <UserAvatar user={currentChatUser} className="w-10 h-10 shadow-sm border border-stone-100" />
+                                             <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white z-10 ${currentChatUser.is_online ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                         </div>
+                                         <div className="min-w-0">
+                                             <h2 className="font-bold text-gray-900 text-sm truncate">{currentChatUser.shop_name || currentChatUser.name}</h2>
+                                             <p className="text-[10px] text-gray-500 font-medium">
+                                                 {currentChatUser.is_online ? (
+                                                     <span className="text-green-600 font-bold">Online</span>
+                                                 ) : (
+                                                     formatChatRelative(currentChatUser.last_seen_at_iso, timeNow) || currentChatUser.last_seen
+                                                 )}
+                                             </p>
+                                         </div>
                                     </div>
                                     
                                     <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -600,7 +600,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                     
                     {/* INFO PANEL (Slide Over on right) */}
                     {showInfoPanel && currentChatUser && (
-                        <div className="w-full sm:w-80 border-l border-gray-100 bg-gray-50 flex flex-col absolute right-0 top-0 bottom-0 z-20 shadow-2xl sm:relative sm:shadow-none animate-in slide-in-from-right-10">
+                        <div className="w-full xl:w-80 border-l border-gray-100 bg-gray-50 flex flex-col absolute right-0 top-0 bottom-0 z-20 shadow-2xl xl:relative xl:shadow-none animate-in slide-in-from-right-10">
                             {/* --- HEADER --- */}
                             <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-20 sticky top-0">
                                 <h3 className="font-bold text-gray-900">Seller Info</h3>
@@ -616,12 +616,12 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                             <div className="flex-1 overflow-y-auto p-6">
                                 {/* User Profile Summary */}
                                 <div className="flex flex-col items-center text-center mb-8">
-                                    <div className="relative mb-4 flex justify-center">
-                                        <UserAvatar user={currentChatUser} className="w-24 h-24 text-3xl shadow-md border-4 border-white" />
-                                        {currentChatUser.is_online && (
-                                            <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-4 border-gray-50 z-20" />
-                                        )}
-                                    </div>
+                                     <div className="relative mb-4 w-24 h-24 mx-auto shrink-0">
+                                         <UserAvatar user={currentChatUser} className="w-24 h-24 text-3xl shadow-md border-4 border-white" />
+                                         {currentChatUser.is_online && (
+                                             <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-4 border-white z-20" />
+                                         )}
+                                     </div>
                                     <h4 className="font-bold text-gray-900 text-lg mb-4">{currentChatUser.shop_name || currentChatUser.name}</h4>
                                     <p className="text-sm text-gray-500 mb-4">{currentChatUser.email}</p>
                                     
