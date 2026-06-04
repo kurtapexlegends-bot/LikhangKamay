@@ -67,16 +67,20 @@ export default function PayrollHistoryTable({
                                     </p>
                                 </div>
 
-                                <div className="flex justify-end">
-                                    {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) ? (
+                                <div className="flex justify-end gap-2">
+                                    <button 
+                                        onClick={() => router.get(route('hr.payroll.show', payroll.id))} 
+                                        className="inline-flex items-center justify-center rounded-xl bg-stone-100 px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-200 transition min-h-[44px] min-w-[100px]"
+                                    >
+                                        View Details
+                                    </button>
+                                    {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) && (
                                         <button 
                                             onClick={() => deletePayroll(payroll.id)} 
-                                            className="inline-flex items-center justify-center rounded-xl bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-100 transition min-h-[44px] min-w-[120px]"
+                                            className="inline-flex items-center justify-center rounded-xl bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-100 transition min-h-[44px] min-w-[110px]"
                                         >
                                             Delete Request
                                         </button>
-                                    ) : (
-                                        <span className="text-xs italic text-gray-400">Locked</span>
                                     )}
                                 </div>
                             </div>
@@ -106,7 +110,7 @@ export default function PayrollHistoryTable({
                             <th className="px-5 py-3.5 text-right">Total Amount</th>
                             <th className="px-5 py-3.5 text-center">Status</th>
                             <th className="px-5 py-3.5">Reason</th>
-                            <th className="px-6 py-3.5 text-right w-32">Actions</th>
+                            <th className="px-6 py-3.5 text-right w-44">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -151,16 +155,22 @@ export default function PayrollHistoryTable({
                                         </div>
                                     </td>
                                     <td className="px-5 py-4 text-right">
-                                        {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) ? (
-                                            <button 
-                                                onClick={() => deletePayroll(payroll.id)} 
-                                                className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition"
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => router.get(route('hr.payroll.show', payroll.id))}
+                                                className="inline-flex items-center justify-center rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-200 transition"
                                             >
-                                                Delete Request
+                                                View
                                             </button>
-                                        ) : (
-                                            <span className="text-gray-400 text-xs italic">Locked</span>
-                                        )}
+                                            {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) && (
+                                                <button 
+                                                    onClick={() => deletePayroll(payroll.id)} 
+                                                    className="inline-flex items-center justify-center rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100 transition"
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))
