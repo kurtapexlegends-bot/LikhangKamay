@@ -23,7 +23,7 @@ export function AttendanceSummaryCard({ attendance, attendanceStatus, monthLabel
             type="button"
             onClick={canOpen ? onOpenCalendar : undefined}
             disabled={!canOpen}
-            className={`w-full min-w-0 rounded-2xl border px-3 py-2.5 text-left transition sm:min-w-[190px] min-h-[44px] relative group ${
+            className={`w-full min-w-0 rounded-2xl border px-3 py-2.5 text-left transition sm:min-w-[190px] min-h-[44px] relative group/attendance ${
                 canOpen
                     ? 'border-stone-200 bg-white hover:border-clay-200 hover:bg-[#FCF7F2]'
                     : 'border-stone-200 bg-white'
@@ -66,7 +66,7 @@ export function AttendanceSummaryCard({ attendance, attendanceStatus, monthLabel
 
             {/* Hover Peek Tooltip */}
             {canOpen && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 w-56 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none bg-white border border-stone-200 rounded-xl p-3 shadow-lg text-stone-700 z-50">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 w-56 invisible group-hover/attendance:visible opacity-0 group-hover/attendance:opacity-100 transition-all duration-150 pointer-events-none bg-white border border-stone-200 rounded-xl p-3 shadow-lg text-stone-700 z-50">
                     <div className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-stone-400 border-b border-stone-100 pb-1.5 mb-2">
                         Recent Attendance
                     </div>
