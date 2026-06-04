@@ -11,7 +11,7 @@ export function RolePresetCard({ preset, isSelected, radioName, onSelect }) {
 
     return (
         <label
-            className={`relative cursor-pointer rounded-[1.25rem] border p-4 transition-all duration-300 ${
+            className={`relative cursor-pointer rounded-[1.25rem] border p-4 transition-all duration-300 focus-within:ring-2 focus-within:ring-clay-500/50 focus-within:outline-none ${
                 isSelected
                     ? 'border-[#E7D8C9] bg-[#FCF7F2]/50 shadow-md ring-1 ring-clay-700/5 -translate-y-0.5'
                     : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50 hover:shadow-sm'
@@ -78,7 +78,7 @@ export function ModuleAccessLevelCard({ module, value, onChange }) {
                 <button
                     type="button"
                     onClick={() => onChange(null)}
-                    className={`flex-1 rounded-lg py-1.5 text-[9px] xl:text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    className={`flex-1 rounded-lg py-1.5 text-[9px] xl:text-[10px] font-bold uppercase tracking-widest transition-all focus:ring-2 focus:ring-clay-500 focus:outline-none ${
                         isOff
                             ? 'bg-white text-stone-800 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-stone-900/5 cursor-default'
                             : 'text-stone-500 hover:text-stone-800'
@@ -93,7 +93,7 @@ export function ModuleAccessLevelCard({ module, value, onChange }) {
                             key={option.key}
                             type="button"
                             onClick={() => onChange(option.key)}
-                            className={`flex-1 rounded-lg py-1.5 text-[9px] xl:text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:ring-2 ${
+                            className={`flex-1 rounded-lg py-1.5 text-[9px] xl:text-[10px] font-bold uppercase tracking-widest transition-all focus:ring-2 focus:ring-clay-500 focus:outline-none ${
                                 isSelected
                                     ? option.key === 'can_edit'
                                         ? 'bg-[#FCF7F2] text-clay-700 shadow-[0_1px_2px_rgba(180,120,90,0.1)] ring-1 ring-clay-700/10 cursor-default'

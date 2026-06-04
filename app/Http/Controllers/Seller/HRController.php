@@ -27,9 +27,11 @@ class HRController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(Request $request, SellerEntitlementService $entitlementService, StaffAttendanceService $attendanceService)
+    public function index(Request $request, SellerEntitlementService $entitlementService, StaffAttendanceService $attendanceService): \Inertia\Response
     {
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
+        /** @var \App\Models\User $actor */
         $actor = $this->sellerActor();
         
         $monthQuery = $request->query('month');
@@ -81,7 +83,7 @@ class HRController extends Controller
         ]);
     }
 
-    private function getEmployeeRecordsWithLogin($seller)
+    private function getEmployeeRecordsWithLogin(User $seller)
     {
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $employeeQuery = Employee::query()
@@ -112,7 +114,7 @@ class HRController extends Controller
         return $employeeQuery->get();
     }
 
-    private function transformEmployeeRecords($employeeRecords, $attendanceSummaries)
+    private function transformEmployeeRecords(\Illuminate\Support\Collection $employeeRecords, array $attendanceSummaries)
     {
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $supportsMustChangePassword = Schema::hasColumn('users', 'must_change_password');
@@ -139,6 +141,7 @@ class HRController extends Controller
 
             return [
                 'id' => $employee->id,
+                'employee_id' => $employee->employee_id,
                 'name' => $employee->name,
                 'role' => $employee->role,
                 'salary' => $employee->salary,
@@ -181,7 +184,7 @@ class HRController extends Controller
         });
     }
 
-    private function getRecentAccessAudits($seller)
+    private function getRecentAccessAudits(User $seller)
     {
         if (!$this->supportsStaffAccessAuditSchema()) {
             return [];
@@ -263,7 +266,16 @@ class HRController extends Controller
             ]);
         }
 
+        $sellerId = $this->sellerOwnerId();
+
         $rules = [
+            'employee_id' => [
+                'nullable',
+                'string',
+                'max:12',
+                'regex:/^[A-Za-z0-9-]+$/',
+                Rule::unique('employees', 'employee_id')->where('user_id', $sellerId)
+            ],
             'name' => ['required', 'string', 'max:255'],
             'role' => ['required', 'string', 'max:255'],
             'salary' => ['required', 'numeric', 'min:0'],
@@ -296,14 +308,21 @@ class HRController extends Controller
             'email.regex' => 'Staff login accounts must use a Gmail address.',
         ]);
 
-        $sellerId = $this->sellerOwnerId();
         $supportedModules = $entitlementService->getSupportedStaffModules();
         $staffAccount = null;
         $employee = null;
 
-        DB::transaction(function () use (&$staffAccount, &$employee, $validated, $sellerId, $actor, $supportedModules) {
+        $employeeId = $request->input('employee_id');
+        if (empty($employeeId)) {
+            do {
+                $employeeId = 'EMP-' . rand(100000, 900000);
+            } while (Employee::where('user_id', $sellerId)->where('employee_id', $employeeId)->exists());
+        }
+
+        DB::transaction(function () use (&$staffAccount, &$employee, $validated, $sellerId, $actor, $supportedModules, $employeeId) {
             $employee = Employee::create([
                 'user_id' => $sellerId,
+                'employee_id' => $employeeId,
                 'name' => $validated['name'],
                 'role' => $validated['role'],
                 'salary' => $validated['salary'],
@@ -374,7 +393,7 @@ class HRController extends Controller
         return redirect()->back()->with('success', 'Employee added successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
@@ -414,7 +433,7 @@ class HRController extends Controller
         return redirect()->back();
     }
 
-    public function update(Request $request, $id, SellerEntitlementService $entitlementService)
+    public function update(Request $request, int $id, SellerEntitlementService $entitlementService)
     {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
@@ -473,7 +492,16 @@ class HRController extends Controller
             ]);
         }
 
+        $sellerId = $this->sellerOwnerId();
+
         $rules = [
+            'employee_id' => [
+                'nullable',
+                'string',
+                'max:12',
+                'regex:/^[A-Za-z0-9-]+$/',
+                Rule::unique('employees', 'employee_id')->where('user_id', $sellerId)->ignore($employee->id)
+            ],
             'name' => ['required', 'string', 'max:255'],
             'role' => ['required', 'string', 'max:255'],
             'salary' => ['required', 'numeric', 'min:0'],
@@ -504,6 +532,15 @@ class HRController extends Controller
         ]);
 
         $supportedModules = $entitlementService->getSupportedStaffModules();
+
+        $employeeId = $request->input('employee_id');
+        if ($employee->employee_id) {
+            $employeeId = $employee->employee_id;
+        } elseif (empty($employeeId)) {
+            do {
+                $employeeId = 'EMP-' . rand(100000, 900000);
+            } while (Employee::where('user_id', $sellerId)->where('employee_id', $employeeId)->exists());
+        }
         $sendVerification = false;
         $createdLogin = false;
         $emailChanged = false;
@@ -514,8 +551,9 @@ class HRController extends Controller
         $auditAfter = null;
         $auditChanges = [];
 
-        DB::transaction(function () use ($employee, &$linkedLogin, $validated, $shouldManageLoginSettings, $supportedModules, $wantsLoginAccount, &$sendVerification, &$createdLogin, &$emailChanged, &$passwordReset, &$workspaceSuspended, &$workspaceRestored, &$auditAfter, $actor) {
+        DB::transaction(function () use ($employee, &$linkedLogin, $validated, $shouldManageLoginSettings, $supportedModules, $wantsLoginAccount, &$sendVerification, &$createdLogin, &$emailChanged, &$passwordReset, &$workspaceSuspended, &$workspaceRestored, &$auditAfter, $actor, $employeeId) {
             $employee->update([
+                'employee_id' => $employeeId,
                 'name' => trim($validated['name']),
                 'role' => trim($validated['role']),
                 'salary' => $validated['salary'],
@@ -863,7 +901,7 @@ class HRController extends Controller
             ->with('success', 'Payroll request sent to Accounting.');
     }
 
-    public function destroyPayroll($id)
+    public function destroyPayroll(int $id)
     {
         abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 

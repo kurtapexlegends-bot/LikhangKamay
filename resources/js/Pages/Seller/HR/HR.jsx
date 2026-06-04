@@ -40,6 +40,27 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         return staff.find(emp => emp.id === attendanceModalEmployee.id) || attendanceModalEmployee;
     }, [attendanceModalEmployee, staff]);
 
+    const generateRandomEmployeeId = () => {
+        const randomNum = Math.floor(100000 + Math.random() * 900000); // 6 digits
+        return `EMP-${randomNum}`;
+    };
+
+    const openAddModal = () => {
+        if (!canEditHrRecords) { showReadOnlyToast(); return; }
+        setData({
+            employee_id: generateRandomEmployeeId(),
+            name: '',
+            role: DEFAULT_EMPLOYEE_ROLE,
+            salary: '',
+            create_login_account: false,
+            email: '',
+            default_password: '',
+            staff_role_preset_key: initialPresetKey,
+            module_overrides: buildModuleSelection(initialPresetKey),
+        });
+        setIsModalOpen(true);
+    };
+
     const handleMonthChange = (newMonth) => {
         router.get(
             route('hr.index'),
@@ -135,6 +156,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     });
 
     const employeeIdValidation = useConstraintValidation('employee_id_uniqueness', data.employee_id, { employee_id: editingEmployee?.id });
+    const emailValidation = useConstraintValidation(
+        'email_availability',
+        data.email,
+        { user_id: editingEmployee?.login_account?.id },
+        data.create_login_account
+    );
 
     const submit = (e) => {
         e.preventDefault();
@@ -161,8 +188,18 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         staff_role_preset_key: initialPresetKey,
         module_overrides: buildModuleSelection(initialPresetKey),
     });
-
-    const editEmployeeIdValidation = useConstraintValidation('employee_id_uniqueness', editData.employee_id, { employee_id: editingEmployee?.id });
+    const editEmployeeIdValidation = useConstraintValidation(
+        'employee_id_uniqueness',
+        editData.employee_id,
+        { employee_id: editingEmployee?.id },
+        !!editingEmployee && editData.employee_id !== editingEmployee.employee_id
+    );
+    const editEmailValidation = useConstraintValidation(
+        'email_availability',
+        editData.email,
+        { user_id: editingEmployee?.login_account?.id },
+        editData.create_login_account && (!editingEmployee?.login_account || editData.email !== editingEmployee.login_account.email)
+    );
 
     const getModuleSelectionFromLogin = (loginAccount, presetKey) => {
         const defaultSelection = buildModuleSelection(presetKey);
@@ -182,7 +219,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
         setEditingEmployee(employee);
         setEditData({
-            employee_id: employee.employee_id || '',
+            employee_id: employee.employee_id || generateRandomEmployeeId(),
             name: employee.name || '',
             role: hasLoginAccount ? (rolePresets.find(p => p.key === presetKey)?.label || 'Custom') : (employee.role || DEFAULT_EMPLOYEE_ROLE),
             salary: employee.salary ?? '',
@@ -352,7 +389,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             <Banknote size={16} /> Generate Payroll
                         </button>
                         <button
-                            onClick={() => setIsModalOpen(true)}
+                            onClick={openAddModal}
                             className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700 min-h-[44px]"
                         >
                             <UserPlus size={16} /> Add Employee
@@ -423,7 +460,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                         openAttendanceModal={setAttendanceModalEmployee}
                         presetLabelByKey={presetLabelByKey}
                         monthLabel={sellerSettings.attendance_month_label || 'Current Month'}
-                        onAddClick={() => setIsModalOpen(true)}
+                        onAddClick={openAddModal}
                     />
                 )}
 
@@ -467,6 +504,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                 canEditHrRecords={canEditHrRecords}
                 employeeIdValidation={employeeIdValidation}
+                emailValidation={emailValidation}
             />
 
             {editingEmployee && (
@@ -487,6 +525,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                     canEditHrRecords={canEditHrRecords}
                     employeeIdValidation={editEmployeeIdValidation}
+                    emailValidation={editEmailValidation}
                 />
             )}
 

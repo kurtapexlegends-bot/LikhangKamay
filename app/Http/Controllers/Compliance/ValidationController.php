@@ -22,7 +22,7 @@ class ValidationController extends Controller
 
         switch ($type) {
             case 'email_availability':
-                return $this->checkEmailAvailability($value);
+                return $this->checkEmailAvailability($value, $context['user_id'] ?? null);
             
             case 'sku_uniqueness':
                 return $this->checkSkuUniqueness($value, $context['product_id'] ?? null);
@@ -44,13 +44,17 @@ class ValidationController extends Controller
         }
     }
 
-    private function checkEmailAvailability($email)
+    private function checkEmailAvailability($email, $userId = null)
     {
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return response()->json(['valid' => false, 'message' => 'Please enter a valid email address.']);
         }
 
-        $exists = User::where('email', $email)->exists();
+        $query = User::where('email', $email);
+        if ($userId) {
+            $query->where('id', '!=', $userId);
+        }
+        $exists = $query->exists();
 
         return response()->json([
             'valid' => !$exists,

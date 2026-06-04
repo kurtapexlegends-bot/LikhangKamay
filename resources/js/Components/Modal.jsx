@@ -49,10 +49,11 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className={`fixed inset-0 z-50 flex transform transition-all p-0 sm:px-4 sm:py-4 ${effectiveBottomSheet ? 'items-end sm:items-center' : 'items-center overflow-y-auto px-3 py-3'}`}
+                className={`fixed inset-0 z-50 flex transform transition-all p-0 sm:px-4 sm:py-4 justify-center ${effectiveBottomSheet ? 'items-end sm:items-center' : 'items-center overflow-y-auto px-3 py-3'}`}
                 onClose={close}
             >
                 <TransitionChild
+                    as={React.Fragment}
                     enter="ease-out duration-500"
                     enterFrom="opacity-0"
                     enterTo="opacity-100"
@@ -64,6 +65,7 @@ export default function Modal({
                 </TransitionChild>
 
                 <TransitionChild
+                    as={React.Fragment}
                     enter="ease-out duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
                     enterFrom={`opacity-0 ${effectiveBottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
                     enterTo="opacity-100 translate-y-0 sm:scale-100"
@@ -72,7 +74,7 @@ export default function Modal({
                     leaveTo={`opacity-0 ${effectiveBottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
                 >
                     <DialogPanel
-                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'rounded-2xl'}`}
+                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'w-full mx-4 sm:mx-auto rounded-2xl'}`}
                     >
                         {effectiveBottomSheet && (
                             <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
