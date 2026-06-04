@@ -32,6 +32,32 @@ export default function AttendanceCalendarModal({
     const selectedDayHoursLabel = selectedDay ? formatWorkedHoursLabel(selectedDay.worked_minutes) : '0h';
     const bestLoggedDay = calendarDays.filter((day) => day.has_hours).sort((a, b) => b.worked_minutes - a.worked_minutes)[0] || null;
 
+    const selectedDayBlock = (
+        <div className="rounded-xl border border-clay-100 bg-white shadow-sm overflow-hidden flex flex-col relative">
+            <div className="p-3">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">Selected</p>
+                <h3 className="mt-1 text-sm font-bold tracking-tight text-gray-900">
+                    {selectedDay ? formatAttendanceDateLabelSafe(selectedDay.date) : 'Choose a date'}
+                </h3>
+
+                <div className="mt-2.5 bg-stone-50 rounded-lg p-2 flex items-center gap-2.5 border border-stone-100">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white border border-[#E7D8C9] text-clay-600 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                        <Clock3 size={14} />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">Worked</p>
+                        <p className="text-xs font-bold text-gray-900 truncate">{selectedDayHoursLabel}</p>
+                    </div>
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
+                    {selectedDay?.has_hours
+                        ? `${employee?.name} logged ${selectedDayHoursLabel} on this date.`
+                        : 'No attendance hours logged on this date.'}
+                </p>
+            </div>
+        </div>
+    );
+
     const createdAt = sellerSettings.created_at;
     const currentMonthValue = sellerSettings.attendance_month_value || new Date().toISOString().slice(0, 7);
 
@@ -116,7 +142,8 @@ export default function AttendanceCalendarModal({
                 </div>
 
                 {/* Main Content Layout */}
-                <div className="flex flex-col md:flex-row">                    {/* Left: Calendar Grid */}
+                <div className="flex flex-col md:flex-row">
+                    {/* Left: Calendar Grid */}
                     <div className="flex-1 p-5 border-b md:border-b-0 md:border-r border-stone-100">
                         <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-stone-100 pb-4">
                             <div>
@@ -160,6 +187,11 @@ export default function AttendanceCalendarModal({
                                     <ChevronRight size={16} />
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Mobile Selected Day Block */}
+                        <div className="md:hidden mb-4">
+                            {selectedDayBlock}
                         </div>
 
                         {/* Legend */}
@@ -219,22 +251,36 @@ export default function AttendanceCalendarModal({
                                                     )}
                                                 </div>
                                                 {day.has_hours ? (
-                                                    <div className="flex items-center justify-between gap-1 mt-1">
-                                                        <span className={`text-[10px] font-bold leading-tight ${
-                                                            day.worked_minutes > 480 ? 'text-amber-700' : 'text-emerald-700'
-                                                        }`}>
-                                                            {day.worked_hours_label}
-                                                        </span>
-                                                        {day.worked_minutes > 480 && (
-                                                            <span className="inline-flex rounded bg-amber-100 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-800 scale-90 origin-right">
-                                                                OT
+                                                    <>
+                                                        {/* Desktop detail */}
+                                                        <div className="hidden sm:flex items-center justify-between gap-1 mt-1">
+                                                            <span className={`text-[10px] font-bold leading-tight ${
+                                                                day.worked_minutes > 480 ? 'text-amber-700' : 'text-emerald-700'
+                                                            }`}>
+                                                                {day.worked_hours_label}
                                                             </span>
-                                                        )}
-                                                    </div>
+                                                            {day.worked_minutes > 480 && (
+                                                                <span className="inline-flex rounded bg-amber-100 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-800 scale-90 origin-right">
+                                                                    OT
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {/* Mobile dot badge */}
+                                                        <div className="sm:hidden flex justify-center mt-1">
+                                                            <span className={`h-1.5 w-1.5 rounded-full ${
+                                                                day.worked_minutes > 480 ? 'bg-amber-500' : 'bg-emerald-500'
+                                                            }`} />
+                                                        </div>
+                                                    </>
                                                 ) : (
-                                                    <p className="text-[10px] font-semibold leading-tight mt-1 text-stone-400">
-                                                        -
-                                                    </p>
+                                                    <>
+                                                        {/* Desktop default */}
+                                                        <p className="hidden sm:block text-[10px] font-semibold leading-tight mt-1 text-stone-400">
+                                                            -
+                                                        </p>
+                                                        {/* Mobile placeholder to preserve vertical layout spacing */}
+                                                        <div className="sm:hidden h-1.5 mt-1" />
+                                                    </>
                                                 )}
                                             </div>
                                         </button>
@@ -257,28 +303,8 @@ export default function AttendanceCalendarModal({
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-clay-100 bg-white shadow-sm overflow-hidden flex flex-col relative mt-2">
-                            <div className="p-3">
-                                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">Selected</p>
-                                <h3 className="mt-1 text-sm font-bold tracking-tight text-gray-900">
-                                    {selectedDay ? formatAttendanceDateLabelSafe(selectedDay.date) : 'Choose a date'}
-                                </h3>
-
-                                <div className="mt-2.5 bg-stone-50 rounded-lg p-2 flex items-center gap-2.5 border border-stone-100">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white border border-[#E7D8C9] text-clay-600 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-                                        <Clock3 size={14} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">Worked</p>
-                                        <p className="text-xs font-bold text-gray-900 truncate">{selectedDayHoursLabel}</p>
-                                    </div>
-                                </div>
-                                <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
-                                    {selectedDay?.has_hours
-                                        ? `${employee?.name} logged ${selectedDayHoursLabel} on this date.`
-                                        : 'No attendance hours logged on this date.'}
-                                </p>
-                            </div>
+                        <div className="hidden md:block mt-2">
+                            {selectedDayBlock}
                         </div>
 
                         <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm flex flex-col gap-2 mt-auto">

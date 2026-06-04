@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import axios from 'axios';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import Dropdown from '@/Components/Dropdown';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { Users, UserPlus, Trash2, Banknote, Shield, Settings as SettingsIcon, EyeOff } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
@@ -375,25 +376,67 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 badge={{ label: 'Enterprise', iconColor: 'text-clay-400' }}
                 actions={canEditHrRecords ? (
                     <>
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-stone-100 px-4 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-200 min-h-[44px]"
-                            title="Payroll Settings"
-                        >
-                            <SettingsIcon size={16} />
-                        </button>
-                        <button
-                            onClick={openPayrollModal}
-                            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 min-h-[44px]"
-                        >
-                            <Banknote size={16} /> Generate Payroll
-                        </button>
-                        <button
-                            onClick={openAddModal}
-                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700 min-h-[44px]"
-                        >
-                            <UserPlus size={16} /> Add Employee
-                        </button>
+                        {/* Desktop actions */}
+                        <div className="hidden sm:flex items-center gap-2">
+                            <button
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="inline-flex items-center gap-2 rounded-xl bg-stone-100 px-4 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-200 min-h-[44px]"
+                                title="Payroll Settings"
+                            >
+                                <SettingsIcon size={16} />
+                            </button>
+                            <button
+                                onClick={openPayrollModal}
+                                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-55 min-h-[44px]"
+                            >
+                                <Banknote size={16} /> Generate Payroll
+                            </button>
+                            <button
+                                onClick={openAddModal}
+                                className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700 min-h-[44px]"
+                            >
+                                <UserPlus size={16} /> Add Employee
+                            </button>
+                        </div>
+
+                        {/* Mobile action menu */}
+                        <div className="sm:hidden">
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button
+                                        type="button"
+                                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-500 shadow-sm transition hover:bg-stone-55"
+                                        title="Actions"
+                                    >
+                                        <SettingsIcon size={18} />
+                                    </button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Content align="top-right" width="48">
+                                    <button
+                                        onClick={() => setIsSettingsOpen(true)}
+                                        className="block w-full px-4 py-2 text-left text-xs font-bold text-stone-700 hover:bg-stone-50"
+                                    >
+                                        Payroll Settings
+                                    </button>
+                                    {activeTab === 'directory' && (
+                                        <button
+                                            onClick={openPayrollModal}
+                                            className="block w-full px-4 py-2 text-left text-xs font-bold text-stone-700 hover:bg-stone-50"
+                                        >
+                                            Generate Payroll
+                                        </button>
+                                    )}
+                                    {activeTab === 'payroll' && (
+                                        <button
+                                            onClick={openAddModal}
+                                            className="block w-full px-4 py-2 text-left text-xs font-bold text-stone-700 hover:bg-stone-50"
+                                        >
+                                            Add Employee
+                                        </button>
+                                    )}
+                                </Dropdown.Content>
+                            </Dropdown>
+                        </div>
                     </>
                 ) : (
                     <span className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-500 min-h-[44px]">
@@ -568,6 +611,28 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 confirmText={confirmModal.type === 'employee' ? 'Remove' : 'Delete'}
                 confirmColor="bg-red-600 hover:bg-red-700"
             />
+
+            {/* Mobile Floating Action Buttons */}
+            {canEditHrRecords && (
+                <div className="sm:hidden">
+                    {activeTab === 'directory' && (
+                        <button
+                            onClick={openAddModal}
+                            className="fixed bottom-6 right-6 z-40 flex items-center justify-center h-12 px-4 bg-clay-700 text-white rounded-full shadow-lg font-bold text-xs gap-1.5 transition active:scale-95 hover:bg-clay-800"
+                        >
+                            <UserPlus size={16} /> Add Employee
+                        </button>
+                    )}
+                    {activeTab === 'payroll' && (
+                        <button
+                            onClick={openPayrollModal}
+                            className="fixed bottom-6 right-6 z-40 flex items-center justify-center h-12 px-4 bg-clay-700 text-white rounded-full shadow-lg font-bold text-xs gap-1.5 transition active:scale-95 hover:bg-clay-800"
+                        >
+                            <Banknote size={16} /> Generate Payroll
+                        </button>
+                    )}
+                </div>
+            )}
         </>
     );
 }

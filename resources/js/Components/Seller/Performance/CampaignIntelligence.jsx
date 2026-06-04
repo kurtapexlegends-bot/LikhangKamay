@@ -76,11 +76,19 @@ export default function CampaignIntelligence({
                 ) : (
                     <div className="space-y-6">
                         {/* Grid parameters */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" animate={animate} />
-                            <KPICard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" color="text-amber-600" animate={animate} />
-                            <KPICard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" animate={animate} />
-                            <KPICard title="Ad Revenue" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" animate={animate} />
+                        <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                                <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" animate={animate} />
+                            </div>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                                <KPICard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" color="text-amber-600" animate={animate} />
+                            </div>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                                <KPICard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" animate={animate} />
+                            </div>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                                <KPICard title="Ad Revenue" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" animate={animate} />
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
