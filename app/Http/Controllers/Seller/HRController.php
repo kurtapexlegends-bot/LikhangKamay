@@ -27,13 +27,25 @@ class HRController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(SellerEntitlementService $entitlementService, StaffAttendanceService $attendanceService)
+    public function index(Request $request, SellerEntitlementService $entitlementService, StaffAttendanceService $attendanceService)
     {
         $seller = $this->sellerOwner();
         $actor = $this->sellerActor();
         
+        $monthQuery = $request->query('month');
+        $parsedMonth = null;
+        if ($monthQuery) {
+            try {
+                $parsedMonth = \Carbon\Carbon::parse($monthQuery);
+            } catch (\Exception $e) {
+                // ignore and fall back to null
+            }
+        }
+
+        $activePeriod = $parsedMonth ?: now(config('app.timezone'));
+
         $employeeRecords = $this->getEmployeeRecordsWithLogin($seller);
-        $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller);
+        $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller, $parsedMonth);
         $employees = $this->transformEmployeeRecords($employeeRecords, $attendanceSummaries);
 
         $payrolls = Payroll::with('requester:id,name')
@@ -52,7 +64,9 @@ class HRController extends Controller
             'sellerSettings' => [
                 'overtime_rate' => $seller->overtime_rate ?? 50.00,
                 'payroll_working_days' => $seller->payroll_working_days ?? 22,
-                'attendance_month_label' => $this->attendanceMonthLabel(),
+                'attendance_month_label' => $activePeriod->format('F Y'),
+                'attendance_month_value' => $activePeriod->format('Y-m'),
+                'created_at' => $seller->created_at ? $seller->created_at->toIso8601String() : now(config('app.timezone'))->toIso8601String(),
             ],
             'staffProvisioning' => [
                 'canEditHrRecords' => $canEditHrRecords,

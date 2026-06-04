@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, X, Clock3 } from 'lucide-react';
+import { CalendarDays, X, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import {
     buildAttendanceCalendarWeeks,
@@ -9,7 +9,14 @@ import {
     formatAttendanceTime
 } from '@/utils/hrHelpers';
 
-export default function AttendanceCalendarModal({ employee, selectedDate, onSelectDate, onClose }) {
+export default function AttendanceCalendarModal({ 
+    employee, 
+    selectedDate, 
+    onSelectDate, 
+    onClose,
+    sellerSettings = {},
+    onMonthChange
+}) {
     if (!employee) return null;
 
     const calendarDays = employee?.attendance?.calendar_days || [];
@@ -24,6 +31,64 @@ export default function AttendanceCalendarModal({ employee, selectedDate, onSele
     const totalWorkedMinutes = Number(employee?.attendance?.worked_minutes || 0);
     const selectedDayHoursLabel = selectedDay ? formatWorkedHoursLabel(selectedDay.worked_minutes) : '0h';
     const bestLoggedDay = calendarDays.filter((day) => day.has_hours).sort((a, b) => b.worked_minutes - a.worked_minutes)[0] || null;
+
+    const createdAt = sellerSettings.created_at;
+    const currentMonthValue = sellerSettings.attendance_month_value || new Date().toISOString().slice(0, 7);
+
+    const selectableMonths = React.useMemo(() => {
+        const currentDate = new Date();
+        if (!createdAt) {
+            const val = currentDate.toISOString().slice(0, 7);
+            const lbl = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            return [{ value: val, label: lbl }];
+        }
+        
+        const createdDate = new Date(createdAt);
+        const months = [];
+        let year = createdDate.getFullYear();
+        let month = createdDate.getMonth();
+        
+        const endYear = currentDate.getFullYear();
+        const endMonth = currentDate.getMonth();
+        
+        while (year < endYear || (year === endYear && month <= endMonth)) {
+            const val = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const dateObj = new Date(year, month, 1);
+            const lbl = dateObj.toLocaleString('default', { month: 'long', year: 'numeric' });
+            months.push({ value: val, label: lbl });
+            
+            month++;
+            if (month > 11) {
+                month = 0;
+                year++;
+            }
+        }
+        
+        if (months.length === 0) {
+            const val = currentDate.toISOString().slice(0, 7);
+            const lbl = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            months.push({ value: val, label: lbl });
+        }
+        
+        return months.reverse();
+    }, [createdAt]);
+
+    const currentIndex = selectableMonths.findIndex(m => m.value === currentMonthValue);
+    
+    const isPrevDisabled = currentIndex === -1 || currentIndex === selectableMonths.length - 1;
+    const isNextDisabled = currentIndex === -1 || currentIndex === 0;
+
+    const goToPrevMonth = () => {
+        if (!isPrevDisabled && onMonthChange) {
+            onMonthChange(selectableMonths[currentIndex + 1].value);
+        }
+    };
+
+    const goToNextMonth = () => {
+        if (!isNextDisabled && onMonthChange) {
+            onMonthChange(selectableMonths[currentIndex - 1].value);
+        }
+    };
 
     return (
         <Modal show={!!employee} onClose={onClose} maxWidth="3xl">
@@ -51,30 +116,71 @@ export default function AttendanceCalendarModal({ employee, selectedDate, onSele
                 </div>
 
                 {/* Main Content Layout */}
-                <div className="flex flex-col md:flex-row">
-                    {/* Left: Calendar Grid */}
+                <div className="flex flex-col md:flex-row">                    {/* Left: Calendar Grid */}
                     <div className="flex-1 p-5 border-b md:border-b-0 md:border-r border-stone-100">
-                        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-stone-100 pb-4">
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Daily View</p>
                                 <p className="mt-1 text-[11px] text-stone-500">Select any date to review logged hours.</p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500">
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 border border-emerald-100">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Worked
-                                </span>
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCF7F2] text-clay-700 px-2 py-0.5 border border-[#E7D8C9]">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-clay-500"></span> Selected
-                                </span>
+                            
+                            {/* Month Selector Component */}
+                            <div className="flex items-center gap-2 self-start sm:self-auto">
+                                <button
+                                    type="button"
+                                    onClick={goToPrevMonth}
+                                    disabled={isPrevDisabled}
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:bg-stone-50 hover:border-stone-300 disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
+                                    title="Previous month"
+                                    aria-label="Previous month"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                
+                                <select
+                                    value={currentMonthValue}
+                                    onChange={(e) => onMonthChange && onMonthChange(e.target.value)}
+                                    className="rounded-xl border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 shadow-sm transition focus:border-clay-500 focus:ring-clay-500 min-h-[44px] min-w-[130px] cursor-pointer"
+                                >
+                                    {selectableMonths.map((m) => (
+                                        <option key={m.value} value={m.value}>
+                                            {m.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                
+                                <button
+                                    type="button"
+                                    onClick={goToNextMonth}
+                                    disabled={isNextDisabled}
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:bg-stone-50 hover:border-stone-300 disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
+                                    title="Next month"
+                                    aria-label="Next month"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
                             </div>
                         </div>
 
+                        {/* Legend */}
+                        <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 border border-emerald-100">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Worked
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 border border-amber-100">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span> Overtime
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCF7F2] text-clay-700 px-2 py-0.5 border border-[#E7D8C9]">
+                                <span className="h-1.5 w-1.5 rounded-full bg-clay-500"></span> Selected
+                            </span>
+                        </div>
+ 
                         <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 border-b border-stone-50 pb-2">
                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                                 <span key={day}>{day}</span>
                             ))}
                         </div>
-
+ 
                         <div className="grid gap-1.5">
                             {calendarWeeks.map((week, weekIndex) => (
                                 <div key={`week-${weekIndex}`} className="grid grid-cols-7 gap-1.5">
@@ -89,7 +195,9 @@ export default function AttendanceCalendarModal({ employee, selectedDate, onSele
                                                 selectedDay?.date === day.date
                                                     ? 'border-clay-300 bg-[#FCF7F2] ring-2 ring-clay-200 ring-offset-1'
                                                     : day.has_hours
-                                                        ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-300'
+                                                        ? day.worked_minutes > 480
+                                                            ? 'border-amber-200 bg-amber-50/50 hover:bg-amber-50 hover:border-amber-300'
+                                                            : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-300'
                                                         : 'border-stone-100 bg-stone-50/50 hover:bg-stone-100'
                                             } ${day.is_today && selectedDay?.date !== day.date ? 'ring-1 ring-stone-200' : ''}`}
                                         >
@@ -99,7 +207,9 @@ export default function AttendanceCalendarModal({ employee, selectedDate, onSele
                                                         selectedDay?.date === day.date
                                                             ? 'text-clay-900'
                                                             : day.has_hours
-                                                                ? 'text-emerald-900'
+                                                                ? day.worked_minutes > 480
+                                                                    ? 'text-amber-900'
+                                                                    : 'text-emerald-900'
                                                                 : 'text-stone-700'
                                                     }`}>{day.day_number}</span>
                                                     {day.is_today && (
@@ -108,11 +218,24 @@ export default function AttendanceCalendarModal({ employee, selectedDate, onSele
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className={`text-[10px] font-semibold leading-tight mt-1 ${
-                                                    day.has_hours ? 'text-emerald-700' : 'text-stone-400'
-                                                }`}>
-                                                    {day.has_hours ? day.worked_hours_label : '-'}
-                                                </p>
+                                                {day.has_hours ? (
+                                                    <div className="flex items-center justify-between gap-1 mt-1">
+                                                        <span className={`text-[10px] font-bold leading-tight ${
+                                                            day.worked_minutes > 480 ? 'text-amber-700' : 'text-emerald-700'
+                                                        }`}>
+                                                            {day.worked_hours_label}
+                                                        </span>
+                                                        {day.worked_minutes > 480 && (
+                                                            <span className="inline-flex rounded bg-amber-100 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-800 scale-90 origin-right">
+                                                                OT
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-[10px] font-semibold leading-tight mt-1 text-stone-400">
+                                                        -
+                                                    </p>
+                                                )}
                                             </div>
                                         </button>
                                     ))}

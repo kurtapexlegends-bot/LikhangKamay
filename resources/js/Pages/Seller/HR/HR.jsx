@@ -34,6 +34,26 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceModalEmployee, setAttendanceModalEmployee] = useState(null);
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
+
+    const activeAttendanceEmployee = useMemo(() => {
+        if (!attendanceModalEmployee) return null;
+        return staff.find(emp => emp.id === attendanceModalEmployee.id) || attendanceModalEmployee;
+    }, [attendanceModalEmployee, staff]);
+
+    const handleMonthChange = (newMonth) => {
+        router.get(
+            route('hr.index'),
+            { month: newMonth },
+            {
+                preserveState: true,
+                only: ['staff', 'sellerSettings'],
+                onSuccess: () => {
+                    setSelectedAttendanceDate(null);
+                }
+            }
+        );
+    };
+
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
     const [dryRunResults, setDryRunResults] = useState(null);
     const [isDryRunning, setIsDryRunning] = useState(false);
@@ -423,10 +443,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             </main>
 
             <AttendanceCalendarModal
-                employee={attendanceModalEmployee}
+                employee={activeAttendanceEmployee}
                 selectedDate={selectedAttendanceDate}
                 onSelectDate={setSelectedAttendanceDate}
                 onClose={() => setAttendanceModalEmployee(null)}
+                sellerSettings={sellerSettings}
+                onMonthChange={handleMonthChange}
             />
 
             <EmployeeFormModal
