@@ -46,27 +46,31 @@ export default function ProductTable({
                         sortKey="name"
                         currentSort={sortConfig}
                         onSort={requestSort}
+                        align="left"
                     />
                     <SortableHeader
                         label="Price"
                         sortKey="price"
                         currentSort={sortConfig}
                         onSort={requestSort}
+                        align="center"
                     />
                     <SortableHeader
                         label="Stock"
                         sortKey="stock"
                         currentSort={sortConfig}
                         onSort={requestSort}
+                        align="center"
                     />
                     <SortableHeader
                         label="Sold"
                         sortKey="sold"
                         currentSort={sortConfig}
                         onSort={requestSort}
+                        align="center"
                     />
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-5 py-4 text-center">Status</th>
+                    <th className="px-5 py-4 text-center">Actions</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -102,11 +106,11 @@ export default function ProductTable({
                                     </div>
                                 </div>
                             </td>
-                            <td className="px-5 py-3 font-bold text-gray-700 text-sm">
+                            <td className="px-5 py-3 font-bold text-gray-700 text-sm text-center">
                                 ₱{Number(product.price).toLocaleString()}
                             </td>
                             <td className="px-5 py-3">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center gap-2">
                                     <QuickRestock
                                         item={product}
                                         canEdit={canEditProducts}
@@ -119,11 +123,11 @@ export default function ProductTable({
                                     )}
                                 </div>
                             </td>
-                            <td className="px-5 py-3 text-sm font-medium text-gray-600">
+                            <td className="px-5 py-3 text-sm font-medium text-gray-600 text-center">
                                 {product.sold}
                             </td>
                             <td className="px-5 py-3">
-                                <div className="flex flex-col items-start gap-1">
+                                <div className="flex flex-col items-center gap-1">
                                     {product.stock < 10 && (
                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 border border-rose-200 uppercase tracking-wide whitespace-nowrap">
                                             Low Stock
@@ -161,8 +165,8 @@ export default function ProductTable({
                                         )}
                                 </div>
                             </td>
-                            <td className="px-5 py-3 text-right">
-                                <div className="flex justify-end gap-1.5">
+                            <td className="px-5 py-3 text-center">
+                                <div className="flex justify-center gap-1.5">
                                     <button
                                         type="button"
                                         disabled={!canEditProducts}

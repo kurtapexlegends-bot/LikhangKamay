@@ -39,7 +39,7 @@ export default function CatalogFilters({
                             key={tab}
                             type="button"
                             onClick={() => handleTabChange(tab)}
-                            className={`px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md text-xs font-bold transition whitespace-nowrap min-h-[40px] sm:min-h-0 ${
+                            className={`px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md text-xs font-bold transition whitespace-nowrap min-h-[44px] sm:min-h-0 ${
                                 activeTab === tab
                                     ? "bg-white text-clay-700 shadow-sm"
                                     : "text-gray-500 hover:text-gray-700"
@@ -192,7 +192,7 @@ export default function CatalogFilters({
                     <button
                         type="button"
                         onClick={() => applyQuickFilter("all", activeTab)}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors shrink-0 min-h-[36px] ${
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors shrink-0 min-h-[44px] ${
                             quickFilter === "all"
                                 ? "border-clay-200 bg-clay-50 text-clay-700"
                                 : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
@@ -204,7 +204,7 @@ export default function CatalogFilters({
                         <button
                             type="button"
                             onClick={() => applyQuickFilter("needs_readiness", "Draft")}
-                            className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors shrink-0 min-h-[36px] ${
+                            className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors shrink-0 min-h-[44px] ${
                                 quickFilter === "needs_readiness"
                                     ? "border-amber-200 bg-amber-55 text-amber-700"
                                     : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"
@@ -216,7 +216,7 @@ export default function CatalogFilters({
                     <button
                         type="button"
                         onClick={() => applyQuickFilter("ready_drafts", "Draft")}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors shrink-0 min-h-[36px] ${
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors shrink-0 min-h-[44px] ${
                             quickFilter === "ready_drafts"
                                 ? "border-emerald-250 bg-emerald-55 text-emerald-700"
                                 : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50"

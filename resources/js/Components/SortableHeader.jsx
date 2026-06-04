@@ -10,16 +10,22 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
  * @param {Function} onSort - Callback function to handle sort changes.
  * @param {string} className - Additional classes for the <th> element.
  */
-const SortableHeader = ({ label, sortKey, currentSort, onSort, className = "" }) => {
+const SortableHeader = ({ label, sortKey, currentSort, onSort, className = "", align = "left" }) => {
     const isSorted = currentSort.key === sortKey;
     const isAsc = currentSort.direction === "asc";
 
+    const alignClass = {
+        left: 'justify-start',
+        center: 'justify-center',
+        right: 'justify-end',
+    }[align] || 'justify-start';
+
     return (
         <th
-            className={`px-6 py-4 cursor-pointer hover:bg-gray-50 transition group select-none ${className}`}
+            className={`px-5 py-4 cursor-pointer hover:bg-gray-50 transition group select-none ${className}`}
             onClick={() => onSort(sortKey)}
         >
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-xs uppercase tracking-wider">
+            <div className={`flex items-center gap-2 text-gray-600 font-bold text-xs uppercase tracking-wider ${alignClass}`}>
                 <span>{label}</span>
                 <div className="flex flex-col -space-y-1.5">
                     <ChevronUp
