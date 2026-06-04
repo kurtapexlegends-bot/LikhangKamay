@@ -43,6 +43,12 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
     const [supplyToRequest, setSupplyToRequest] = useState(null);
     const [requestQuantity, setRequestQuantity] = useState(0);
     const { flash, filters = {} } = usePage().props;
+    
+    const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
+    useEffect(() => {
+        const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [filterCategory, setFilterCategory] = useState('all');
     const [isNavigating, setIsNavigating] = useState(false);
@@ -232,6 +238,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             icon={Box}
                             bg="bg-blue-50"
                             color="text-blue-600"
+                            animate={shouldAnimateKPI}
                         />
                         <KPICard 
                             title="Low Stock Alerts"
@@ -239,6 +246,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             icon={AlertTriangle}
                             bg={lowStockItems > 0 ? 'bg-red-50' : 'bg-green-50'}
                             color={lowStockItems > 0 ? 'text-red-600' : 'text-green-600'}
+                            animate={shouldAnimateKPI}
                         />
                         <KPICard 
                             title="Total Value"
@@ -246,6 +254,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             icon={TrendingUp}
                             bg="bg-emerald-50"
                             color="text-emerald-600"
+                            animate={shouldAnimateKPI}
                         />
                     </div>
 
@@ -575,7 +584,8 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                                     value={data.quantity} 
-                                    onChange={e => setData('quantity', e.target.value)} 
+                                    onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
+                                    onChange={e => setData('quantity', e.target.value.replace(/[-.]/g, ""))} 
                                     required 
                                     min="0"
                                 />
@@ -598,12 +608,14 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 <InputLabel value="Unit Cost (₱)" />
                                 <input 
                                     type="number" 
+                                    min="0"
                                     step="0.01"
                                     disabled={!canEditProcurement}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                                     placeholder="0.00"
                                     value={data.unit_cost} 
-                                    onChange={e => setData('unit_cost', e.target.value)} 
+                                    onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                    onChange={e => setData('unit_cost', e.target.value.replace(/-/g, ""))} 
                                 />
                             </div>
                             <div>
@@ -662,7 +674,8 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             disabled={!canEditProcurement}
                             className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
                             value={restockForm.data.quantity} 
-                            onChange={e => restockForm.setData('quantity', e.target.value)} 
+                            onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
+                            onChange={e => restockForm.setData('quantity', e.target.value.replace(/[-.]/g, ""))} 
                             required 
                             min="1"
                         />
@@ -704,7 +717,8 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                     disabled={!canEditStockRequests}
                                     className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-amber-500 focus:ring-amber-500 shadow-sm transition pr-12 font-bold" 
                                     value={requestQuantity} 
-                                    onChange={e => setRequestQuantity(e.target.value)} 
+                                    onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
+                                    onChange={e => setRequestQuantity(e.target.value.replace(/[-.]/g, ""))} 
                                     required 
                                     min="1"
                                 />

@@ -45,7 +45,7 @@ const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleStrin
 
 const COLORS = ['#c07251', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
 
-const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
+const MetricCard = ({ title, value, growth, icon: Icon, bg, text, animate = true }) => {
     let growthColor = 'text-gray-500';
     let GrowthIcon = Minus;
     let growthPrefix = '';
@@ -69,10 +69,12 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text }) => {
             <div>
                 <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
                 <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
-                    {typeof value === 'number' ? (
-                        <AnimatedCounter value={value} />
-                    ) : value.includes('₱') ? (
-                        <AnimatedCounter value={parseFloat(value.replace(/[^\d.]/g, ''))} formatter={(v) => `₱${Math.round(v).toLocaleString()}`} />
+                    {animate && (typeof value === 'number' || (typeof value === 'string' && value.includes('₱'))) ? (
+                        typeof value === 'number' ? (
+                            <AnimatedCounter value={value} />
+                        ) : (
+                            <AnimatedCounter value={parseFloat(value.replace(/[^\d.]/g, ''))} formatter={(v) => `₱${Math.round(v).toLocaleString()}`} />
+                        )
                     ) : (
                         value
                     )}
@@ -121,6 +123,12 @@ export default function Dashboard({ auth }) {
     const [pendingRequests, setPendingRequests] = useState(initialMetrics.pending_requests || 0);
     const [isLoading, setIsLoading] = useState(false);
     const searchTimeoutRef = useRef(null);
+    
+    const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
+    useEffect(() => {
+        const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
 
     const isNewlyApproved = auth.user.approved_at 
         ? (new Date() - new Date(auth.user.approved_at)) / (1000 * 60 * 60 * 24) <= 7 
@@ -213,6 +221,7 @@ export default function Dashboard({ auth }) {
                                     icon={DollarSign} 
                                     bg="bg-emerald-50" 
                                     text="text-emerald-600" 
+                                    animate={shouldAnimateKPI}
                                 />
                                 <MetricCard 
                                     title="Total Orders" 
@@ -221,6 +230,7 @@ export default function Dashboard({ auth }) {
                                     icon={ShoppingBag} 
                                     bg="bg-clay-50" 
                                     text="text-clay-600" 
+                                    animate={shouldAnimateKPI}
                                 />
                                 <MetricCard 
                                     title="Total Customers" 
@@ -229,6 +239,7 @@ export default function Dashboard({ auth }) {
                                     icon={Users} 
                                     bg="bg-rose-50" 
                                     text="text-rose-600" 
+                                    animate={shouldAnimateKPI}
                                 />
                                 <MetricCard 
                                     title="Avg. Order Value" 
@@ -237,6 +248,7 @@ export default function Dashboard({ auth }) {
                                     icon={CreditCard} 
                                     bg="bg-stone-100" 
                                     text="text-stone-600" 
+                                    animate={shouldAnimateKPI}
                                 />
                             </>
                         )}

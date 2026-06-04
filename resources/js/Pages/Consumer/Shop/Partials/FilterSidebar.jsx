@@ -81,16 +81,18 @@ export default function FilterSidebar({
                     <div className="relative flex-1">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₱</span>
                         <input 
-                            type="number" placeholder="Min" value={minPrice}
-                            onChange={(e) => setMinPrice(e.target.value)}
+                            type="number" min="0" step="any" placeholder="Min" value={minPrice}
+                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                            onChange={(e) => setMinPrice(e.target.value.replace(/-/g, ""))}
                             className="w-full bg-gray-50 border border-gray-200 rounded-lg text-sm py-2 pl-6 pr-2 focus:ring-1 focus:ring-clay-200 focus:border-clay-400 focus:bg-white transition"
                         />
                     </div>
                     <div className="relative flex-1">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₱</span>
                         <input 
-                            type="number" placeholder="Max" value={maxPrice}
-                            onChange={(e) => setMaxPrice(e.target.value)}
+                            type="number" min="0" step="any" placeholder="Max" value={maxPrice}
+                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                            onChange={(e) => setMaxPrice(e.target.value.replace(/-/g, ""))}
                             className="w-full bg-gray-50 border border-gray-200 rounded-lg text-sm py-2 pl-6 pr-2 focus:ring-1 focus:ring-clay-200 focus:border-clay-400 focus:bg-white transition"
                         />
                     </div>

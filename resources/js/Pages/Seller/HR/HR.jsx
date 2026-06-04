@@ -2098,10 +2098,13 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Monthly Salary (PHP)</label>
                                 <input
                                     type="number"
+                                    min="0"
+                                    step="any"
                                     className={modalFieldClass}
                                     placeholder="0"
                                     value={data.salary}
-                                    onChange={e => setData('salary', e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                    onChange={e => setData('salary', e.target.value.replace(/-/g, ""))}
                                     required
                                 />
                                 {errors.salary && <p className="mt-1 text-xs text-red-500 font-medium">{errors.salary}</p>}
@@ -2405,9 +2408,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Monthly Salary (PHP)</label>
                                 <input
                                     type="number"
+                                    min="0"
+                                    step="any"
                                     className={modalFieldClass}
                                     value={editData.salary}
-                                    onChange={(e) => setEditData('salary', e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                    onChange={(e) => setEditData('salary', e.target.value.replace(/-/g, ""))}
                                     required
                                 />
                                 {editErrors.salary && <p className="mt-1 text-xs text-red-500 font-medium">{editErrors.salary}</p>}
@@ -2553,7 +2559,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                               className="w-full rounded-xl border border-red-200 bg-white p-2 text-sm text-red-900 shadow-none focus:border-red-500 focus:ring-red-500"
                                               value={item.absences_days ?? ''}
                                               disabled={!item.isSelected}
-                                              onChange={(e) => updatePayrollItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                              onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                              onChange={(e) => updatePayrollItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
                                               min="0"
                                               max="31"
                                               step="0.5"
@@ -2566,7 +2573,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                               className="w-full rounded-xl border border-orange-200 bg-white p-2 text-sm text-orange-900 shadow-none focus:border-orange-500 focus:ring-orange-500"
                                               value={item.undertime_hours ?? ''}
                                               disabled={!item.isSelected}
-                                              onChange={(e) => updatePayrollItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                              onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                              onChange={(e) => updatePayrollItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
                                               min="0"
                                               step="0.5"
                                           />
@@ -2578,7 +2586,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                               className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-sm text-clay-900 shadow-none focus:border-clay-500 focus:ring-clay-500"
                                               value={item.overtime_hours ?? ''}
                                               disabled={!item.isSelected}
-                                              onChange={(e) => updatePayrollItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                              onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                              onChange={(e) => updatePayrollItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
                                               min="0"
                                               step="0.5"
                                           />
@@ -2633,7 +2642,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                 className="w-full border-red-200 bg-white shadow-none rounded-lg text-sm p-1.5 focus:border-red-500 focus:ring-red-500 text-red-900 font-bold text-center"
                                                 value={item.absences_days ?? ''}
                                                 disabled={!item.isSelected}
-                                                onChange={(e) => updatePayrollItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                                onChange={(e) => updatePayrollItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
                                                 min="0" max="31" step="0.5"
                                             />
                                         </td>
@@ -2643,7 +2653,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                 className="w-full border-orange-200 bg-white shadow-none rounded-lg text-sm p-1.5 focus:border-orange-500 focus:ring-orange-500 text-orange-900 font-bold text-center"
                                                 value={item.undertime_hours ?? ''}
                                                 disabled={!item.isSelected}
-                                                onChange={(e) => updatePayrollItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                                onChange={(e) => updatePayrollItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
                                                 min="0" step="0.5"
                                             />
                                         </td>
@@ -2653,7 +2664,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                 className="w-full border-[#E7D8C9] bg-white shadow-none rounded-lg text-sm p-1.5 focus:border-clay-500 focus:ring-clay-500 text-clay-900 font-bold text-center"
                                                 value={item.overtime_hours ?? ''}
                                                 disabled={!item.isSelected}
-                                                onChange={(e) => updatePayrollItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                                onChange={(e) => updatePayrollItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
                                                 min="0" step="0.5"
                                             />
                                         </td>
@@ -2753,7 +2765,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 type="number" 
                                 className="w-full rounded-xl border-gray-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500" 
                                 value={settingsData.overtime_rate ?? ''} 
-                                onChange={e => setSettingsData('overtime_rate', e.target.value)} 
+                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                onChange={e => setSettingsData('overtime_rate', e.target.value.replace(/-/g, ""))} 
                                 required min="0" step="any"
                             />
                         </div>
@@ -2763,7 +2776,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 type="number" 
                                 className="w-full rounded-xl border-gray-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500" 
                                 value={settingsData.payroll_working_days ?? ''} 
-                                onChange={e => setSettingsData('payroll_working_days', e.target.value)} 
+                                onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
+                                onChange={e => setSettingsData('payroll_working_days', e.target.value.replace(/[-.]/g, ""))} 
                                 required min="1" max="31"
                             />
                         </div>

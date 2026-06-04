@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -66,6 +66,12 @@ export default function Analytics({
     const [chartFilter, setChartFilter] = useState('Monthly');
     const [catFilter, setCatFilter] = useState(filters.category);
     const [isLoading, setIsLoading] = useState(false);
+    const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
 
     const currentChartData = chartData[chartFilter.toLowerCase()] || [];
     const stats = metrics.review_stats;
@@ -140,6 +146,7 @@ export default function Analytics({
                                 icon={DollarSign} 
                                 bg="bg-stone-50" 
                                 color="text-clay-600" 
+                                animate={shouldAnimateKPI}
                             />
                             <KPICard 
                                 title="Gross Profit" 
@@ -149,9 +156,10 @@ export default function Analytics({
                                 icon={TrendingUp} 
                                 bg="bg-emerald-50" 
                                 color="text-emerald-600" 
+                                animate={shouldAnimateKPI}
                             />
-                            <KPICard title="Profit Margin" value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} icon={Activity} bg="bg-emerald-50" color="text-emerald-600" />
-                            <KPICard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-amber-50" color="text-amber-600" formatter={(v) => v.toFixed(1)} />
+                            <KPICard title="Profit Margin" value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} icon={Activity} bg="bg-emerald-50" color="text-emerald-600" animate={shouldAnimateKPI} />
+                            <KPICard title="Shop Rating" value={`${metrics.average_rating} / 5.0`} icon={Star} bg="bg-amber-50" color="text-amber-600" formatter={(v) => v.toFixed(1)} animate={shouldAnimateKPI} />
                         </>
                     )}
                 </StaggerContainer>
@@ -361,6 +369,7 @@ export default function Analytics({
                     sponsorshipMetrics={sponsorshipMetrics} 
                     sponsorshipChartData={sponsorshipChartData} 
                     sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability} 
+                    animate={shouldAnimateKPI}
                 />
 
                 {/* Level 5: Customer Retention, VIP Patrons, Customer Ratings & Top Products (Side-by-Side Balance) */}

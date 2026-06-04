@@ -629,6 +629,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                             <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={12} />
                                                             <TextInput 
                                                                 type="number"
+                                                                min="0"
+                                                                max="100"
                                                                 step="0.1"
                                                                 className="block w-full pl-8 bg-stone-50/30 text-xs py-2" 
                                                                 value={data.commission_rate}
@@ -642,6 +644,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={12} />
                                                             <TextInput 
                                                                 type="number"
+                                                                min="0"
+                                                                step="any"
                                                                 className="block w-full pl-8 bg-stone-50/30 text-xs py-2" 
                                                                 value={data.convenience_fee}
                                                                 onChange={(e) => setData('convenience_fee', e.target.value)}
@@ -654,6 +658,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                             <ArrowRight className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={12} />
                                                             <TextInput 
                                                                 type="number"
+                                                                min="0"
+                                                                step="any"
                                                                 className="block w-full pl-8 bg-stone-50/30 text-xs py-2" 
                                                                 value={data.withdrawal_min}
                                                                 onChange={(e) => setData('withdrawal_min', e.target.value)}

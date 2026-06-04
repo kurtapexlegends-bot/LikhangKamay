@@ -16,7 +16,8 @@ export default function CampaignIntelligence({
     sellerSubscription,
     sponsorshipMetrics,
     sponsorshipChartData,
-    sponsorshipAnalyticsAvailability
+    sponsorshipAnalyticsAvailability,
+    animate = true
 }) {
     const [sponsorshipFilter, setSponsorshipFilter] = useState('Daily');
 
@@ -76,10 +77,10 @@ export default function CampaignIntelligence({
                     <div className="space-y-6">
                         {/* Grid parameters */}
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" />
-                            <KPICard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" color="text-amber-600" />
-                            <KPICard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" />
-                            <KPICard title="Ad Revenue" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" />
+                            <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" animate={animate} />
+                            <KPICard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" color="text-amber-600" animate={animate} />
+                            <KPICard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" animate={animate} />
+                            <KPICard title="Ad Revenue" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" animate={animate} />
                         </div>
 
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
