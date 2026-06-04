@@ -60,7 +60,7 @@ export default function Modal({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-md transition-opacity" />
+                    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" />
                 </TransitionChild>
 
                 <TransitionChild

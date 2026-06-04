@@ -127,7 +127,7 @@ export default function ProductFormModal({
                                 key={tab}
                                 type="button"
                                 onClick={() => setActiveFormTab(tab)}
-                                className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-h-[40px] sm:min-h-0 flex-1 ${activeFormTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-h-[44px] sm:min-h-0 flex-1 ${activeFormTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                             >
                                 {tab}
                             </button>
@@ -468,7 +468,7 @@ export default function ProductFormModal({
                                         {data.recipes.length > 0 ? (
                                             <div className="space-y-3">
                                                 {data.recipes.map((item, idx) => (
-                                                    <div key={idx} className="flex items-center gap-3 animate-fadeIn">
+                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 border border-stone-100 p-3.5 rounded-2xl sm:border-0 sm:p-0 sm:rounded-none animate-fadeIn">
                                                         <div className="flex-1">
                                                             <select
                                                                 className="w-full rounded-xl border-gray-300 text-sm focus:border-clay-500 focus:ring-clay-500 min-h-[44px] sm:min-h-0"
@@ -485,25 +485,27 @@ export default function ProductFormModal({
                                                                 ))}
                                                             </select>
                                                         </div>
-                                                        <div className="w-24">
-                                                            <input
-                                                                type="number"
-                                                                className="w-full rounded-xl border-gray-300 text-sm focus:border-clay-500 focus:ring-clay-500 min-h-[44px] sm:min-h-0"
-                                                                placeholder="Qty"
-                                                                value={item.quantity_required}
-                                                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                                                onChange={(e) => updateRecipeItem(idx, "quantity_required", e.target.value.replace(/-/g, ""))}
-                                                                min="0.01"
-                                                                step="any"
-                                                            />
+                                                        <div className="flex items-center gap-3 justify-between sm:justify-start w-full sm:w-auto">
+                                                            <div className="w-24 sm:w-24 flex-1 sm:flex-none">
+                                                                <input
+                                                                    type="number"
+                                                                    className="w-full rounded-xl border-gray-300 text-sm focus:border-clay-500 focus:ring-clay-500 min-h-[44px] sm:min-h-0"
+                                                                    placeholder="Qty"
+                                                                    value={item.quantity_required}
+                                                                    onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                                                    onChange={(e) => updateRecipeItem(idx, "quantity_required", e.target.value.replace(/-/g, ""))}
+                                                                    min="0.01"
+                                                                    step="any"
+                                                                />
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeRecipeItem(idx)}
+                                                                className="text-stone-400 hover:text-rose-600 p-2 rounded-lg transition min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeRecipeItem(idx)}
-                                                            className="text-stone-400 hover:text-rose-600 p-2 rounded-lg transition min-h-[44px] min-w-[44px] flex items-center justify-center"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>
