@@ -64,18 +64,20 @@ const KPICard = ({
         GrowthIcon = TrendingDown;
     }
 
-    const defaultFormatter = (v) => {
+    const displayFormatter = React.useMemo(() => {
+        if (formatter) return formatter;
+        
         const isCurrency = 
             (typeof value === 'string' && (value.includes('₱') || value.includes('PHP'))) ||
             (title && (title.toLowerCase().includes('revenue') || title.toLowerCase().includes('profit') || title.toLowerCase().includes('value') || title.toLowerCase().includes('price')));
         
-        if (isCurrency) {
-            return `₱${Math.round(v).toLocaleString()}`;
-        }
-        return Math.round(v).toLocaleString();
-    };
-
-    const displayFormatter = formatter || defaultFormatter;
+        return (v) => {
+            if (isCurrency) {
+                return `₱${Math.round(v).toLocaleString()}`;
+            }
+            return Math.round(v).toLocaleString();
+        };
+    }, [formatter, value, title]);
 
     const Front = (
         <div className="flex items-center justify-between h-full">
@@ -90,7 +92,7 @@ const KPICard = ({
                             formatter={displayFormatter}
                         />
                     ) : (
-                        value
+                        typeof value === 'number' ? displayFormatter(value) : value
                     )}
                 </h3>
                 <div className="flex items-center gap-3 mt-1.5">
