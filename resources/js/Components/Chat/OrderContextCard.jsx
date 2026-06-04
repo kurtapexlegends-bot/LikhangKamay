@@ -10,7 +10,9 @@ import {
     ShoppingBag,
     Truck,
     XCircle,
+    X,
 } from 'lucide-react';
+import Modal from '@/Components/Modal';
 
 const statusStyles = {
     Pending: {
@@ -81,6 +83,7 @@ function ItemImage({ item }) {
 export default function OrderContextCard({ order, viewer = 'buyer' }) {
     const [expanded, setExpanded] = useState(false);
     const [isCardExpanded, setIsCardExpanded] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     const lineCount = useMemo(() => {
         if (!order) {
@@ -114,12 +117,143 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
     const StatusIcon = statusConfig.icon;
     const heading = viewer === 'seller' ? 'Current Buyer Order' : 'Current Order';
 
+    const handleHeaderClick = () => {
+        if (window.innerWidth < 640) {
+            setIsDrawerOpen(true);
+        } else {
+            setIsCardExpanded(!isCardExpanded);
+        }
+    };
+
+    const detailsContent = (
+        <div className="px-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{heading}</p>
+                    {hasMultipleActiveOrders && (
+                        <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
+                            1 of {activeOrdersCount} active
+                        </span>
+                    )}
+                </div>
+                <Link
+                    href={order.detailsRoute}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-600 transition hover:text-clay-700 bg-clay-50/50 hover:bg-clay-50 px-3 py-1.5 rounded-lg shadow-sm"
+                >
+                    <ShoppingBag size={14} />
+                    View Full Details
+                </Link>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+                <button
+                    type="button"
+                    onClick={() => setExpanded((value) => !value)}
+                    className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-gray-50/50"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="p-1.5 bg-gray-100 rounded-lg text-gray-500">
+                            <Package size={16} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-gray-800">Order Items</p>
+                            <p className="text-xs text-gray-500 font-medium">
+                                {unitsCount} total unit{unitsCount === 1 ? '' : 's'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-400">
+                        <span className="text-xs font-medium mr-1">{expanded ? 'Hide' : 'Show'} items</span>
+                        <ChevronDown size={16} className={`transition-transform duration-200 ${expanded ? 'rotate-180 text-gray-800' : ''}`} />
+                    </div>
+                </button>
+                {expanded && (
+                    <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/30">
+                        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_280px]">
+                            <div className="space-y-3 pr-2">
+                                {orderItems.map((item) => {
+                                    const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
+
+                                    return (
+                                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+                                            <ItemImage item={item} />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-bold text-gray-900">{item.name}</p>
+                                                <p className="text-xs text-gray-500 mt-0.5">{item.variant}</p>
+                                                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium text-gray-600">
+                                                    <span className="rounded-md bg-gray-100 px-2 py-1 leading-none">Qty {item.quantity}</span>
+                                                    <span className="text-gray-400">&times;</span>
+                                                    <span>{currency.format(item.price || 0)}</span>
+                                                </div>
+                                            </div>
+                                            <div className="text-left sm:text-right mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                                                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 hidden sm:block mb-1">Line Total</p>
+                                                <p className="text-sm font-bold text-gray-900">{currency.format(lineTotal)}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3 border-b border-gray-50 pb-2">Order Details</p>
+                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500">Customer</p>
+                                            <p className="mt-1 text-sm font-medium text-gray-900">{order.customerName}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500">Payment</p>
+                                            <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-900">
+                                                <CreditCard size={14} className="text-clay-500" />
+                                                {order.paymentMethod}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500">Shipping Method</p>
+                                            <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-900">
+                                                <Truck size={14} className="text-clay-500" />
+                                                {order.shippingMethod}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500">Tracking</p>
+                                            <p className="mt-1 text-sm font-medium text-gray-900">{order.trackingNumber || 'Not available yet'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                                    <div className="flex items-start gap-2">
+                                        <MapPin size={16} className="mt-0.5 shrink-0 text-clay-500" />
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500">Shipping Address</p>
+                                            <p className="mt-1 text-sm font-medium leading-relaxed text-gray-900">{order.shippingAddress}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {order.shippingNotes && (
+                                    <div className="rounded-xl border border-gray-100 bg-yellow-50 p-4 shadow-sm">
+                                        <p className="text-xs font-semibold text-yellow-800">Notes from checkout</p>
+                                        <p className="mt-1 text-sm leading-relaxed text-yellow-900">{order.shippingNotes}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
     return (
         <section className="flex flex-col border-b border-gray-200 bg-white shadow-sm z-10 transition-all shrink-0">
             {/* COMPACT STRIP (Always visible) */}
             <div 
                 className="px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 flex items-center justify-between gap-3 cursor-pointer hover:bg-gray-50/80 transition-colors"
-                onClick={() => setIsCardExpanded(!isCardExpanded)}
+                onClick={handleHeaderClick}
             >
                 <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
                     <div className="p-1.5 sm:p-2 bg-clay-50/80 border border-clay-100 text-clay-600 rounded-xl shadow-sm">
@@ -151,129 +285,34 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                 </div>
             </div>
 
-            {/* EXPANDED CONTENT */}
+            {/* EXPANDED CONTENT (Desktop Only) */}
             {isCardExpanded && (
-            <div className="px-3 py-3 sm:px-4 lg:px-6 overflow-y-auto custom-scrollbar w-full max-h-[50vh] bg-[#FDFBF9] border-t border-gray-100 shadow-inner animate-in slide-in-from-top-2 fade-in duration-200">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
-                    <div className="flex items-center gap-2">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{heading}</p>
-                        {hasMultipleActiveOrders && (
-                            <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
-                                1 of {activeOrdersCount} active
-                            </span>
-                        )}
-                    </div>
-                    <Link
-                        href={order.detailsRoute}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-600 transition hover:text-clay-700 bg-clay-50/50 hover:bg-clay-50 px-3 py-1.5 rounded-lg shadow-sm"
-                    >
-                        <ShoppingBag size={14} />
-                        View Full Details
-                    </Link>
+                <div className="hidden sm:block px-3 py-3 sm:px-4 lg:px-6 overflow-y-auto custom-scrollbar w-full max-h-[50vh] bg-[#FDFBF9] border-t border-gray-100 shadow-inner animate-in slide-in-from-top-2 fade-in duration-200">
+                    {detailsContent}
                 </div>
-
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
-                    <button
-                        type="button"
-                        onClick={() => setExpanded((value) => !value)}
-                        className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-gray-50/50"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="p-1.5 bg-gray-100 rounded-lg text-gray-500">
-                                <Package size={16} />
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-gray-800">Order Items</p>
-                                <p className="text-xs text-gray-500 font-medium">
-                                    {unitsCount} total unit{unitsCount === 1 ? '' : 's'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-400">
-                            <span className="text-xs font-medium mr-1">{expanded ? 'Hide' : 'Show'} items</span>
-                            <ChevronDown size={16} className={`transition-transform duration-200 ${expanded ? 'rotate-180 text-gray-800' : ''}`} />
-                        </div>
-                    </button>
-                    {expanded && (
-                        <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/30">
-                            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_280px]">
-                                <div className="space-y-3 pr-2">
-                                    {orderItems.map((item) => {
-                                        const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
-
-                                        return (
-                                            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
-                                                <ItemImage item={item} />
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-bold text-gray-900">{item.name}</p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">{item.variant}</p>
-                                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium text-gray-600">
-                                                        <span className="rounded-md bg-gray-100 px-2 py-1 leading-none">Qty {item.quantity}</span>
-                                                        <span className="text-gray-400">&times;</span>
-                                                        <span>{currency.format(item.price || 0)}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="text-left sm:text-right mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-                                                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 hidden sm:block mb-1">Line Total</p>
-                                                    <p className="text-sm font-bold text-gray-900">{currency.format(lineTotal)}</p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3 border-b border-gray-50 pb-2">Order Details</p>
-                                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                                            <div>
-                                                <p className="text-xs font-semibold text-gray-500">Customer</p>
-                                                <p className="mt-1 text-sm font-medium text-gray-900">{order.customerName}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-semibold text-gray-500">Payment</p>
-                                                <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-900">
-                                                    <CreditCard size={14} className="text-clay-500" />
-                                                    {order.paymentMethod}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-semibold text-gray-500">Shipping Method</p>
-                                                <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-900">
-                                                    <Truck size={14} className="text-clay-500" />
-                                                    {order.shippingMethod}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-semibold text-gray-500">Tracking</p>
-                                                <p className="mt-1 text-sm font-medium text-gray-900">{order.trackingNumber || 'Not available yet'}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                                        <div className="flex items-start gap-2">
-                                            <MapPin size={16} className="mt-0.5 shrink-0 text-clay-500" />
-                                            <div>
-                                                <p className="text-xs font-semibold text-gray-500">Shipping Address</p>
-                                                <p className="mt-1 text-sm font-medium leading-relaxed text-gray-900">{order.shippingAddress}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {order.shippingNotes && (
-                                        <div className="rounded-xl border border-gray-100 bg-yellow-50 p-4 shadow-sm">
-                                            <p className="text-xs font-semibold text-yellow-800">Notes from checkout</p>
-                                            <p className="mt-1 text-sm leading-relaxed text-yellow-900">{order.shippingNotes}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
             )}
+
+            {/* MOBILE DRAWER/BOTTOM SHEET */}
+            <Modal show={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} maxWidth="xl" bottomSheet={true}>
+                <div className="flex flex-col max-h-[85vh]">
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{heading}</h3>
+                            <p className="text-[11px] text-gray-500 font-medium mt-0.5">Order Info Summary</p>
+                        </div>
+                        <button 
+                            onClick={() => setIsDrawerOpen(false)}
+                            className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none"
+                            type="button"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF9]">
+                        {detailsContent}
+                    </div>
+                </div>
+            </Modal>
         </section>
     );
 }

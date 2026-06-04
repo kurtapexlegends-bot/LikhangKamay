@@ -241,7 +241,7 @@ export default function MessageInput({
                                 onChange={(e) => {
                                     setData('message', e.target.value);
                                     e.target.style.height = 'auto';
-                                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                                    e.target.style.height = Math.min(e.target.scrollHeight, window.innerWidth < 640 ? 70 : 120) + 'px';
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -253,7 +253,7 @@ export default function MessageInput({
                                 }}
                                 disabled={isMessagesReadOnly}
                                 placeholder={isMessagesReadOnly ? "Chat is read-only..." : "Type a message..."}
-                                className="flex-1 bg-transparent border-0 focus:ring-0 focus:outline-none resize-none py-3 px-3 text-sm text-gray-800 placeholder-gray-400 font-medium max-h-32 min-h-[44px]"
+                                className="flex-1 bg-transparent border-0 focus:ring-0 focus:outline-none resize-none py-3 px-3 text-sm text-gray-800 placeholder-gray-400 font-medium max-h-[70px] sm:max-h-32 min-h-[44px]"
                             />
 
                             <div className="flex items-center px-1">

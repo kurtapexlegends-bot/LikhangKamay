@@ -17,6 +17,13 @@ const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatClock, formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
 
+const BUYER_QUICK_REPLIES = [
+    'Hello! Is this product available?',
+    'Can I customize the color or size?',
+    'When will this order be shipped?',
+    'Thank you so much!'
+];
+
 export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
@@ -456,6 +463,29 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                 {/* MESSAGE INPUT */}
                                 <div className="p-3 sm:p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 shrink-0 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
                                     <div className="max-w-3xl mx-auto flex flex-col">
+                                    {/* Mobile Quick Replies Carousel */}
+                                    <div className="flex sm:hidden overflow-x-auto flex-nowrap gap-2 pb-2.5 mb-2.5 no-scrollbar">
+                                        {BUYER_QUICK_REPLIES.map((replyText, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => {
+                                                    setData('message', replyText);
+                                                    setTimeout(() => {
+                                                        if (inputRef.current) {
+                                                            inputRef.current.style.height = 'auto';
+                                                            inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 70) + 'px';
+                                                            inputRef.current.focus();
+                                                        }
+                                                    }, 0);
+                                                }}
+                                                className="px-4 py-2 bg-clay-50 border border-clay-100 hover:bg-clay-100 text-clay-700 text-xs font-bold rounded-full whitespace-nowrap min-h-[38px] flex items-center justify-center active:scale-95 transition-all"
+                                            >
+                                                {replyText}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
                                     {/* Emoji Picker Popover */}
                                     {showEmojiPicker && (
                                         <div ref={emojiPickerRef} className="absolute bottom-full right-3 sm:right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
@@ -491,7 +521,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                             <button 
                                                 type="button" 
                                                 onClick={removeAttachment}
-                                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                             >
                                                 <X size={16} />
                                             </button>
@@ -505,7 +535,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                                 <button 
                                                     type="button" 
                                                     onClick={() => imageInputRef.current?.click()}
-                                                    className="p-2 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white hover:text-clay-600"
+                                                    className="p-2.5 sm:p-2 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white hover:text-clay-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                     title="Attach Image"
                                                 >
                                                     <ImageIcon size={20} />
@@ -513,7 +543,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                                 <button 
                                                     type="button" 
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="p-2 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white hover:text-clay-600"
+                                                    className="p-2.5 sm:p-2 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white hover:text-clay-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                     title="Attach Document"
                                                 >
                                                     <Paperclip size={20} />
@@ -527,11 +557,11 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                                 onChange={(e) => {
                                                     setData('message', e.target.value);
                                                     e.target.style.height = 'auto';
-                                                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                                                    e.target.style.height = Math.min(e.target.scrollHeight, window.innerWidth < 640 ? 70 : 120) + 'px';
                                                     signalTyping();
                                                 }}
                                                 placeholder="Type your message here..." 
-                                                className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[120px] custom-scrollbar leading-relaxed"
+                                                className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[70px] sm:max-h-[120px] custom-scrollbar leading-relaxed"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter' && !e.shiftKey) {
                                                         e.preventDefault();
@@ -545,7 +575,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                             <button 
                                                 type="button" 
                                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                className={`p-2 mx-1 rounded-xl transition-all shrink-0 ${showEmojiPicker ? 'bg-white text-clay-600 shadow-sm' : 'text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm'}`}
+                                                className={`p-2.5 sm:p-2 mx-1 rounded-xl transition-all shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center ${showEmojiPicker ? 'bg-white text-clay-600 shadow-sm' : 'text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm'}`}
                                                 title="Insert Emoji"
                                             >
                                                 <Smile size={20} />
@@ -600,82 +630,90 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                     
                     {/* INFO PANEL (Slide Over on right) */}
                     {showInfoPanel && currentChatUser && (
-                        <div className="w-full xl:w-80 border-l border-gray-100 bg-gray-50 flex flex-col absolute right-0 top-0 bottom-0 z-20 shadow-2xl xl:relative xl:shadow-none animate-in slide-in-from-right-10">
-                            {/* --- HEADER --- */}
-                            <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-20 sticky top-0">
-                                <h3 className="font-bold text-gray-900">Seller Info</h3>
-                                <button 
-                                    onClick={() => setShowInfoPanel(false)}
-                                    className="p-2 -mr-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
-                                >
-                                    <X size={20} />
-                                </button>
-                            </header>
-                            
-                            {/* Panel Content */}
-                            <div className="flex-1 overflow-y-auto p-6">
-                                {/* User Profile Summary */}
-                                <div className="flex flex-col items-center text-center mb-8">
-                                     <div className="relative mb-4 w-24 h-24 mx-auto shrink-0">
-                                         <UserAvatar user={currentChatUser} className="w-24 h-24 text-3xl shadow-md border-4 border-white" />
-                                         {currentChatUser.is_online && (
-                                             <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-4 border-white z-20" />
-                                         )}
-                                     </div>
-                                    <h4 className="font-bold text-gray-900 text-lg mb-4">{currentChatUser.shop_name || currentChatUser.name}</h4>
-                                    <p className="text-sm text-gray-500 mb-4">{currentChatUser.email}</p>
-                                    
-                                    <div className="flex gap-2 w-full">
-                                        {currentChatUserShopHref ? (
-                                            <Link
-                                                href={currentChatUserShopHref}
-                                                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition shadow-sm"
-                                            >
-                                                <ShoppingBag size={16} className="text-clay-500" />
-                                                View Shop
-                                            </Link>
-                                        ) : (
-                                            <span className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-50 border border-gray-200 text-gray-400 rounded-xl text-sm font-semibold cursor-not-allowed shadow-sm">
-                                                <ShoppingBag size={16} className="text-gray-300" />
-                                                Shop Unavailable
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
+                        <>
+                            {/* Backdrop for mobile overlays */}
+                            <div 
+                                className="fixed inset-0 bg-stone-900/35 backdrop-blur-[1px] z-20 xl:hidden animate-in fade-in duration-200"
+                                onClick={() => setShowInfoPanel(false)}
+                            />
+                            <div className="fixed inset-y-0 right-0 z-30 w-80 max-w-[85vw] xl:max-w-none xl:w-80 bg-white border-l border-gray-100 flex flex-col shrink-0 h-full shadow-2xl xl:shadow-none xl:relative animate-in slide-in-from-right duration-300">
+                                {/* --- HEADER --- */}
+                                <header className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+                                    <h3 className="font-bold text-gray-900 text-sm tracking-wide uppercase">Seller Profile</h3>
+                                    <button 
+                                        onClick={() => setShowInfoPanel(false)}
+                                        className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                        type="button"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </header>
                                 
-                                {/* Info Cards */}
-                                <div className="space-y-4">
-                                    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                                        <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">About Seller</h5>
-                                        <div className="space-y-4">
-                                            <div className="flex items-start gap-3">
-                                                <User size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">{currentChatUser.name}</p>
-                                                    <p className="text-xs text-gray-500">Contact Person</p>
+                                {/* Panel Content */}
+                                <div className="flex-1 overflow-y-auto p-6">
+                                    {/* User Profile Summary */}
+                                    <div className="flex flex-col items-center text-center mb-8">
+                                         <div className="relative mb-4 w-24 h-24 mx-auto shrink-0">
+                                             <UserAvatar user={currentChatUser} className="w-24 h-24 text-3xl shadow-md border-4 border-white" />
+                                             {currentChatUser.is_online && (
+                                                 <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-4 border-white z-20" />
+                                             )}
+                                         </div>
+                                        <h4 className="font-bold text-gray-900 text-lg mb-4">{currentChatUser.shop_name || currentChatUser.name}</h4>
+                                        <p className="text-sm text-gray-500 mb-4">{currentChatUser.email}</p>
+                                        
+                                        <div className="flex gap-2 w-full">
+                                            {currentChatUserShopHref ? (
+                                                <Link
+                                                    href={currentChatUserShopHref}
+                                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition shadow-sm"
+                                                >
+                                                    <ShoppingBag size={16} className="text-clay-500" />
+                                                    View Shop
+                                                </Link>
+                                            ) : (
+                                                <span className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-50 border border-gray-200 text-gray-400 rounded-xl text-sm font-semibold cursor-not-allowed shadow-sm">
+                                                    <ShoppingBag size={16} className="text-gray-300" />
+                                                    Shop Unavailable
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Info Cards */}
+                                    <div className="space-y-4">
+                                        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                                            <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">About Seller</h5>
+                                            <div className="space-y-4">
+                                                <div className="flex items-start gap-3">
+                                                    <User size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-medium text-gray-900 truncate">{currentChatUser.name}</p>
+                                                        <p className="text-xs text-gray-500">Contact Person</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-start gap-3">
-                                                <MapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-medium text-gray-900 break-words">
-                                                        {currentChatUserAddress || 'No address provided'}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500">Address</p>
+                                                <div className="flex items-start gap-3">
+                                                    <MapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-medium text-gray-900 break-words">
+                                                            {currentChatUserAddress || 'No address provided'}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">Address</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-start gap-3">
-                                                <Phone size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">{currentChatUser.phone_number || 'No number provided'}</p>
-                                                    <p className="text-xs text-gray-500">Number</p>
+                                                <div className="flex items-start gap-3">
+                                                    <Phone size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-medium text-gray-900 truncate">{currentChatUser.phone_number || 'No number provided'}</p>
+                                                        <p className="text-xs text-gray-500">Number</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
             </main>
