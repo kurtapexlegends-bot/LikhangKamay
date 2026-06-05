@@ -665,7 +665,7 @@ export default function Checkout({ auth, pricing }) {
                                             {!showAggregateBreakdown && (
                                                 <>
                                                     <div className="flex justify-between"><span>Merchandise</span><span className="font-medium">{peso(group.subtotal)}</span></div>
-                                                    {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Platform Fee</span><span className="font-medium">{peso(group.platformFee)}</span></div>}
+                                                    {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Platform Fee ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span><span className="font-medium">{peso(group.platformFee)}</span></div>}
                                                     {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Shipping Fee</span><span className={shippingQuote.status !== 'ready' ? 'italic text-gray-400 font-normal' : 'font-medium'}>{shippingQuote.status === 'ready' ? peso(group.shippingFee) : (shippingQuote.status === 'error' ? 'Unavailable' : 'Calculating...')}</span></div>}
                                                 </>
                                             )}
@@ -683,7 +683,7 @@ export default function Checkout({ auth, pricing }) {
                                 {showAggregateBreakdown && (
                                     <>
                                         <div className="flex justify-between"><span>Merchandise Subtotal</span><span>{peso(summary.merchandiseSubtotal)}</span></div>
-                                        <div className="flex justify-between"><span>Platform Fee ({Number(convenienceFeeRate * 100).toFixed(0)}%)</span><span>{peso(summary.platformFeeTotal)}</span></div>
+                                        <div className="flex justify-between"><span>Platform Fee ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span><span>{peso(summary.platformFeeTotal)}</span></div>
                                         <div className="flex justify-between"><span>Shipping Fee</span><span className={data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready' ? 'text-xs italic text-gray-400' : ''}>{shippingFeeSummaryValue}</span></div>
                                     </>
                                 )}
