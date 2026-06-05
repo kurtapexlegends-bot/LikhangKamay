@@ -267,7 +267,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                             </div>
 
                             <div className="px-5 py-5 sm:px-6">
-                                <div className="grid gap-3 lg:grid-cols-3">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {plans.map((plan) => {
                                         const current = isCurrentPlan(plan.id);
                                         const tierIndex = plans.findIndex((item) => item.id === plan.id);

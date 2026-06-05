@@ -525,7 +525,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                     </div>
                     
                     <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <InputLabel value="Item SKU" />
                                 <div className="relative">
@@ -557,7 +557,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                                 {errors.sku && <p className="mt-1 text-xs text-red-500 font-medium">{errors.sku}</p>}
                             </div>
 
-                            <div className="md:col-span-2">
+                            <div className="sm:col-span-2">
                                 <InputLabel value="Item Name" />
                                 <input 
                                     type="text" 
@@ -582,7 +582,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             </div>
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                                 <InputLabel value="Quantity" />
                                 <input 
@@ -609,7 +609,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <InputLabel value="Unit Cost (₱)" />
                                 <input 
