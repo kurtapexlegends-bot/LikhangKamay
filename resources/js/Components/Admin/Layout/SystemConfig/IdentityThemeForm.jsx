@@ -2,7 +2,7 @@ import React from 'react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
-import { Sparkles, Image as ImageIcon, Globe } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Globe, RotateCcw } from 'lucide-react';
 
 export default function IdentityThemeForm({ data, setData, errors, handleFileChange }) {
     return (
@@ -40,6 +40,17 @@ export default function IdentityThemeForm({ data, setData, errors, handleFileCha
                                 value={data.primary_color}
                                 onChange={(e) => setData('primary_color', e.target.value)}
                             />
+                            {data.primary_color !== '#8B4513' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setData('primary_color', '#8B4513')}
+                                    className="p-3 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-lg shrink-0 transition-all active:scale-95 flex items-center justify-center min-h-[44px] min-w-[44px] border border-stone-200/50 shadow-sm"
+                                    title="Reset to default brand color (#8B4513)"
+                                    aria-label="Reset color"
+                                >
+                                    <RotateCcw size={14} />
+                                </button>
+                            )}
                         </div>
                         <InputError className="mt-1" message={errors.primary_color} />
                     </div>
