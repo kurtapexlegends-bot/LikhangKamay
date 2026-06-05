@@ -14,10 +14,10 @@ export default function OrderContextSidebar({
         <>
             {/* Backdrop for mobile overlays */}
             <div 
-                className="fixed inset-0 bg-stone-900/35 backdrop-blur-[1px] z-20 xl:hidden animate-in fade-in duration-200"
+                className="fixed inset-0 bg-stone-900/35 backdrop-blur-[1px] z-50 xl:hidden animate-in fade-in duration-200"
                 onClick={() => setShowInfoPanel(false)}
             />
-            <div className="fixed inset-y-0 right-0 z-30 w-80 max-w-[85vw] xl:max-w-none xl:w-80 bg-white border-l border-gray-100 flex flex-col shrink-0 h-full shadow-2xl xl:shadow-none xl:relative animate-in slide-in-from-right duration-300">
+            <div className="fixed inset-y-0 right-0 z-50 xl:z-auto w-80 max-w-[85vw] xl:max-w-none xl:w-80 bg-white border-l border-gray-100 flex flex-col shrink-0 h-full shadow-2xl xl:shadow-none xl:relative animate-in slide-in-from-right duration-300">
             {/* Panel Header */}
             <header className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <h3 className="font-bold text-gray-900 text-sm tracking-wide uppercase">Customer Profile</h3>
