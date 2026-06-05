@@ -5,7 +5,6 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { 
     Save, 
-    Palette, 
     Search, 
     Mail, 
     Server, 
@@ -18,7 +17,6 @@ import {
     ChevronDown
 } from 'lucide-react';
 
-import IdentityThemeForm from '@/Components/Admin/Layout/SystemConfig/IdentityThemeForm';
 import SeoMetadataForm from '@/Components/Admin/Layout/SystemConfig/SeoMetadataForm';
 import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSocialsForm';
 import SmtpConfigForm from '@/Components/Admin/Layout/SystemConfig/SmtpConfigForm';
@@ -37,7 +35,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         return 'branding';
     });
 
-    const [activeSubTab, setActiveSubTab] = useState('branding_identity');
+    const [activeSubTab, setActiveSubTab] = useState('branding_seo');
     const [showMobileNotes, setShowMobileNotes] = useState(false);
 
     const handleTabChange = (tabId) => {
@@ -118,7 +116,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     ];
 
     const subTabs = [
-        { id: 'branding_identity', name: 'Identity & Theme', icon: Palette },
         { id: 'branding_seo', name: 'Search & Metadata', icon: Search },
         { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
         { id: 'branding_smtp', name: 'SMTP Outgoing Mail', icon: Server },
@@ -188,15 +185,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                                 {/* Left Column: Inputs */}
                                 <div className="lg:col-span-2 space-y-6">
-                                    {activeSubTab === 'branding_identity' && (
-                                        <IdentityThemeForm 
-                                            data={data} 
-                                            setData={setData} 
-                                            errors={errors} 
-                                            handleFileChange={handleFileChange} 
-                                        />
-                                    )}
-
                                     {activeSubTab === 'branding_seo' && (
                                         <SeoMetadataForm 
                                             data={data} 
