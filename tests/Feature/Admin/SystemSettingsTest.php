@@ -52,6 +52,11 @@ class SystemSettingsTest extends TestCase
             'mail_password' => 'test-password',
             'mail_from_address' => 'noreply-test@likhangkamay.app',
             'mail_from_name' => 'Likhang Kamay Mailer',
+            'tier_free_limit' => 5,
+            'tier_premium_price' => 249.00,
+            'tier_premium_limit' => 15,
+            'tier_super_premium_price' => 499.00,
+            'tier_super_premium_limit' => 60,
         ];
 
         $response = $this->actingAs($admin)
@@ -91,6 +96,13 @@ class SystemSettingsTest extends TestCase
         $this->assertEquals('test-password', $this->settings->get('mail_password'));
         $this->assertEquals('noreply-test@likhangkamay.app', $this->settings->get('mail_from_address'));
         $this->assertEquals('Likhang Kamay Mailer', $this->settings->get('mail_from_name'));
+
+        // Assert Subscription Tier Settings
+        $this->assertEquals(5, $this->settings->get('tier_free_limit'));
+        $this->assertEquals(249.00, $this->settings->get('tier_premium_price'));
+        $this->assertEquals(15, $this->settings->get('tier_premium_limit'));
+        $this->assertEquals(499.00, $this->settings->get('tier_super_premium_price'));
+        $this->assertEquals(60, $this->settings->get('tier_super_premium_limit'));
     }
 
     public function test_non_admin_cannot_update_system_settings(): void

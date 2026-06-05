@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { AlertCircle, ArrowRight, CheckCircle2, ChevronRight, Clock3, Crown, Package, ShieldCheck, Sparkles, X, Users, XCircle } from 'lucide-react';
@@ -171,7 +171,21 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
         currency,
         minimumFractionDigits: 2,
     }).format(Number(amount || 0));
-    const plans = PLAN_CONFIG;
+    const { sellerSubscription } = usePage().props;
+    const limits = sellerSubscription?.tierLimits || { free: 3, premium: 10, super_premium: 50 };
+    const prices = sellerSubscription?.tierPrices || { free: 0, premium: 199, super_premium: 399 };
+
+    const plans = PLAN_CONFIG.map(plan => ({
+        ...plan,
+        limit: limits[plan.id] ?? plan.limit,
+        price: plan.id === 'free' ? 'Free' : `PHP ${prices[plan.id] ?? plan.price.replace('PHP ', '')}`,
+        features: plan.features.map(feat => {
+            if (feat.startsWith('Up to ') && feat.includes('active product')) {
+                return `Up to ${limits[plan.id] ?? plan.limit} active product${(limits[plan.id] ?? plan.limit) === 1 ? '' : 's'}`;
+            }
+            return feat;
+        })
+    }));
     const requiresAutomaticDrafting = activeProductsCount > (targetPlan?.limit ?? limit);
     const showsStandardDowngradeWarning = currentPlan === 'super_premium' && targetPlan?.value === 'free';
     const plannedDraftCount = targetPlan ? Math.max(0, activeProductsCount - targetPlan.limit) : 0;

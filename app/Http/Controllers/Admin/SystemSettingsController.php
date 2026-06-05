@@ -119,6 +119,13 @@ class SystemSettingsController extends Controller
             'maintenance_mode' => $this->settings->get('maintenance_mode', false),
             'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
 
+            // Subscription Tier Settings
+            'tier_free_limit' => $this->settings->get('tier_free_limit', 3),
+            'tier_premium_price' => $this->settings->get('tier_premium_price', 199.00),
+            'tier_premium_limit' => $this->settings->get('tier_premium_limit', 10),
+            'tier_super_premium_price' => $this->settings->get('tier_super_premium_price', 399.00),
+            'tier_super_premium_limit' => $this->settings->get('tier_super_premium_limit', 50),
+
             // SMTP Settings
             'mail_host' => $this->settings->get('mail_host', 'smtp.mailtrap.io'),
             'mail_port' => $this->settings->get('mail_port', '2525'),
@@ -132,8 +139,8 @@ class SystemSettingsController extends Controller
 
     private function getMonetizationMetrics(): array
     {
-        $premiumPrice = 199;
-        $elitePrice = 399;
+        $premiumPrice = (float) $this->settings->get('tier_premium_price', 199.00);
+        $elitePrice = (float) $this->settings->get('tier_super_premium_price', 399.00);
 
         $premiumUsersCount = User::where('role', 'artisan')->where('premium_tier', 'premium')->count();
         $eliteUsersCount = User::where('role', 'artisan')->where('premium_tier', 'super_premium')->count();
@@ -266,6 +273,13 @@ class SystemSettingsController extends Controller
             'maintenance_mode' => 'required|boolean',
             'paymongo_enabled' => 'required|boolean',
 
+            // Subscription Tier Validation
+            'tier_free_limit' => 'sometimes|required|integer|min:1',
+            'tier_premium_price' => 'sometimes|required|numeric|min:0',
+            'tier_premium_limit' => 'sometimes|required|integer|min:1',
+            'tier_super_premium_price' => 'sometimes|required|numeric|min:0',
+            'tier_super_premium_limit' => 'sometimes|required|integer|min:1',
+
             // SMTP Validation
             'mail_host' => 'nullable|string|max:255',
             'mail_port' => 'nullable|string|max:10',
@@ -314,6 +328,38 @@ class SystemSettingsController extends Controller
             );
         }
 
+        // Audit Logging for subscription plan modifications
+        if (isset($validated['tier_free_limit']) && (int)$this->settings->get('tier_free_limit') !== (int)$validated['tier_free_limit']) {
+            \App\Models\PlatformActivity::log(
+                'TIER_LIMIT_UPDATE',
+                "Changed Free plan product limit from " . $this->settings->get('tier_free_limit') . " to " . $validated['tier_free_limit']
+            );
+        }
+        if (isset($validated['tier_premium_price']) && (float)$this->settings->get('tier_premium_price') !== (float)$validated['tier_premium_price']) {
+            \App\Models\PlatformActivity::log(
+                'TIER_PRICE_UPDATE',
+                "Changed Premium plan monthly price from ₱" . $this->settings->get('tier_premium_price') . " to ₱" . $validated['tier_premium_price']
+            );
+        }
+        if (isset($validated['tier_premium_limit']) && (int)$this->settings->get('tier_premium_limit') !== (int)$validated['tier_premium_limit']) {
+            \App\Models\PlatformActivity::log(
+                'TIER_LIMIT_UPDATE',
+                "Changed Premium plan product limit from " . $this->settings->get('tier_premium_limit') . " to " . $validated['tier_premium_limit']
+            );
+        }
+        if (isset($validated['tier_super_premium_price']) && (float)$this->settings->get('tier_super_premium_price') !== (float)$validated['tier_super_premium_price']) {
+            \App\Models\PlatformActivity::log(
+                'TIER_PRICE_UPDATE',
+                "Changed Elite plan monthly price from ₱" . $this->settings->get('tier_super_premium_price') . " to ₱" . $validated['tier_super_premium_price']
+            );
+        }
+        if (isset($validated['tier_super_premium_limit']) && (int)$this->settings->get('tier_super_premium_limit') !== (int)$validated['tier_super_premium_limit']) {
+            \App\Models\PlatformActivity::log(
+                'TIER_LIMIT_UPDATE',
+                "Changed Elite plan product limit from " . $this->settings->get('tier_super_premium_limit') . " to " . $validated['tier_super_premium_limit']
+            );
+        }
+
         $validated['platform_name'] = strip_tags($validated['platform_name']);
         if (isset($validated['seo_metadata']['title'])) {
             $validated['seo_metadata']['title'] = strip_tags($validated['seo_metadata']['title']);
@@ -342,6 +388,23 @@ class SystemSettingsController extends Controller
         $this->settings->set('convenience_fee', $validated['convenience_fee'], 'float');
         $this->settings->set('maintenance_mode', $validated['maintenance_mode'] ? 'true' : 'false', 'boolean');
         $this->settings->set('paymongo_enabled', $validated['paymongo_enabled'] ? 'true' : 'false', 'boolean');
+
+        // Save Subscription Tier settings
+        if (isset($validated['tier_free_limit'])) {
+            $this->settings->set('tier_free_limit', $validated['tier_free_limit'], 'integer');
+        }
+        if (isset($validated['tier_premium_price'])) {
+            $this->settings->set('tier_premium_price', $validated['tier_premium_price'], 'float');
+        }
+        if (isset($validated['tier_premium_limit'])) {
+            $this->settings->set('tier_premium_limit', $validated['tier_premium_limit'], 'integer');
+        }
+        if (isset($validated['tier_super_premium_price'])) {
+            $this->settings->set('tier_super_premium_price', $validated['tier_super_premium_price'], 'float');
+        }
+        if (isset($validated['tier_super_premium_limit'])) {
+            $this->settings->set('tier_super_premium_limit', $validated['tier_super_premium_limit'], 'integer');
+        }
 
         // Save SMTP Config
         $this->settings->set('mail_host', $validated['mail_host'] ?? '');

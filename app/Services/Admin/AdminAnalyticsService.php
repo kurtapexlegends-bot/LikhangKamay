@@ -64,8 +64,8 @@ class AdminAnalyticsService
 
     protected function getRevenueForecastData(): array
     {
-        $premiumPrice = 199;
-        $elitePrice = 399;
+        $premiumPrice = (float) \App\Facades\Settings::get('tier_premium_price', 199.00);
+        $elitePrice = (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00);
 
         $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->endOfMonth());
         $snapshots = app(\App\Services\Admin\AdminMetricsService::class)->getHistoricalTierSnapshots($months->toArray());

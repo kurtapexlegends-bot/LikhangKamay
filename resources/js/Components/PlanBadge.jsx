@@ -267,6 +267,13 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 const isDowngrade = index < currentIndex;
                                 const PlanIcon = plan.icon;
 
+                                const limits = sellerSubscription?.tierLimits || { free: 3, premium: 10, super_premium: 50 };
+                                const prices = sellerSubscription?.tierPrices || { free: 0, premium: 199, super_premium: 399 };
+                                
+                                const planLimit = limits[plan.id] ?? plan.limit;
+                                const rawPrice = prices[plan.id] ?? 0;
+                                const planPrice = plan.id === 'free' ? 'Free' : `₱${rawPrice}`;
+
                                 return (
                                     <div
                                         key={plan.id}
@@ -315,7 +322,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
 
                                         <div className="mb-3">
                                             <div className="flex items-baseline gap-1">
-                                                <span className="text-[2rem] font-black tracking-tight text-stone-900">{plan.price}</span>
+                                                <span className="text-[2rem] font-black tracking-tight text-stone-900">{planPrice}</span>
                                                 {plan.period && (
                                                     <span className="text-xs font-semibold text-stone-400">{plan.period}</span>
                                                 )}
@@ -323,16 +330,22 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                         </div>
 
                                         <ul className="mb-4 flex-1 space-y-2">
-                                            {plan.features.map((feature, featureIndex) => (
-                                                <li key={featureIndex} className="flex items-start gap-2 text-[10.5px] font-medium leading-4 text-stone-600">
-                                                    <Check
-                                                        size={12}
-                                                        className={`mt-0.5 shrink-0 ${isCurrent ? plan.lightText : 'text-green-500'}`}
-                                                        strokeWidth={3}
-                                                    />
-                                                    <span>{feature}</span>
-                                                </li>
-                                            ))}
+                                            {plan.features.map((feature, featureIndex) => {
+                                                let renderedFeature = feature;
+                                                if (feature.startsWith('Up to ') && feature.includes('Active Product')) {
+                                                    renderedFeature = `Up to ${planLimit} Active Products`;
+                                                }
+                                                return (
+                                                    <li key={featureIndex} className="flex items-start gap-2 text-[10.5px] font-medium leading-4 text-stone-600">
+                                                        <Check
+                                                            size={12}
+                                                            className={`mt-0.5 shrink-0 ${isCurrent ? plan.lightText : 'text-green-500'}`}
+                                                            strokeWidth={3}
+                                                        />
+                                                        <span>{renderedFeature}</span>
+                                                    </li>
+                                                );
+                                            })}
                                         </ul>
 
                                         <div className="mt-auto">
@@ -367,7 +380,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleDowngrade(plan.id, plan.limit);
+                                                        handleDowngrade(plan.id, planLimit);
                                                     }}
                                                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-stone-200 bg-white px-4 py-2 text-[11px] font-bold text-stone-600 transition-all duration-200 hover:border-stone-300 hover:text-stone-900"
                                                 >

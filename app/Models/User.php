@@ -725,9 +725,9 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public function getActiveProductLimit(): int
     {
         return match($this->premium_tier) {
-            'super_premium' => 50,
-            'premium' => 10,
-            default => 3,
+            'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+            'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
+            default => (int) \App\Facades\Settings::get('tier_free_limit', 3),
         };
     }
 

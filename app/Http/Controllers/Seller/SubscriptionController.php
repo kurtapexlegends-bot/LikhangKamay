@@ -80,6 +80,15 @@ class SubscriptionController extends Controller
         ]);
     }
 
+    public function getPlanPrice(string $plan): float
+    {
+        return match ($plan) {
+            'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 199.00),
+            'super_premium' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00),
+            default => 0.00,
+        };
+    }
+
     public function upgrade(Request $request)
     {
         $validated = $request->validate([
@@ -101,7 +110,7 @@ class SubscriptionController extends Controller
             return back()->with('error', 'You are already on this plan.');
         }
 
-        $amount = self::PLAN_PRICES[$validated['plan']] ?? 0;
+        $amount = $this->getPlanPrice($validated['plan']);
 
         $transaction = SubscriptionTransaction::create($this->buildSubscriptionTransactionPayload(
             $user,

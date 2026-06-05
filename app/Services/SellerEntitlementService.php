@@ -194,6 +194,16 @@ class SellerEntitlementService
             'canExportAnalytics' => $seller->isPremiumTier(),
             'canCustomizeModules' => $entitlements['canManageModuleSettings'],
             'canRequestSponsorships' => $seller->isEliteTier(),
+            'tierLimits' => [
+                'free' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+                'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
+                'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+            ],
+            'tierPrices' => [
+                'free' => 0.00,
+                'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 199.00),
+                'super_premium' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00),
+            ],
         ];
     }
 

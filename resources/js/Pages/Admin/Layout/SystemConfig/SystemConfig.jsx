@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useToast } from '@/Components/ToastContext';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { 
     Save, 
@@ -12,7 +13,8 @@ import {
     CheckCircle2, 
     Percent, 
     CreditCard,
-    ChevronDown
+    ChevronDown,
+    AlertCircle
 } from 'lucide-react';
 
 import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSocialsForm';
@@ -22,6 +24,7 @@ import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/Subscripti
 
 export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships }) {
     const { flash } = usePage().props;
+    const { addToast } = useToast();
 
     const [activeTab, setActiveTab] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -71,6 +74,13 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         maintenance_mode: settings?.maintenance_mode || false,
         paymongo_enabled: settings?.paymongo_enabled || true,
 
+        // Subscription Tier Settings
+        tier_free_limit: settings?.tier_free_limit ?? 3,
+        tier_premium_price: settings?.tier_premium_price ?? 199,
+        tier_premium_limit: settings?.tier_premium_limit ?? 10,
+        tier_super_premium_price: settings?.tier_super_premium_price ?? 399,
+        tier_super_premium_limit: settings?.tier_super_premium_limit ?? 50,
+
         // SMTP Settings
         mail_host: settings?.mail_host || 'smtp.mailtrap.io',
         mail_port: settings?.mail_port || '2525',
@@ -86,8 +96,59 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         post(route('admin.settings.update'), {
             forceFormData: true,
             preserveScroll: true,
+            onSuccess: () => {
+                addToast('System settings synchronized successfully.', 'success');
+            },
+            onError: (errs) => {
+                const errorMsg = Object.values(errs)[0] || 'Validation failed. Please check the fields.';
+                addToast(errorMsg, 'error');
+            }
         });
     };
+
+    useEffect(() => {
+        if (settings) {
+            setData({
+                platform_name: settings.platform_name || '',
+                platform_logo: null,
+                platform_logo_preview: settings.platform_logo || '',
+                favicon: null,
+                favicon_preview: settings.favicon || '',
+                primary_color: settings.primary_color || '#8B4513',
+                seo_metadata: {
+                    title: settings.seo_metadata?.title || '',
+                    description: settings.seo_metadata?.description || '',
+                    keywords: settings.seo_metadata?.keywords || '',
+                },
+                contact_info: {
+                    email: settings.contact_info?.email || 'support@likhangkamay.app',
+                    phone: settings.contact_info?.phone || '',
+                    address: settings.contact_info?.address || '',
+                },
+                social_links: {
+                    facebook: settings.social_links?.facebook || '',
+                    instagram: settings.social_links?.instagram || '',
+                    twitter: settings.social_links?.twitter || '',
+                },
+                commission_rate: settings.commission_rate || 5.0,
+                convenience_fee: settings.convenience_fee || 3.0,
+                maintenance_mode: settings.maintenance_mode || false,
+                paymongo_enabled: settings.paymongo_enabled || true,
+                tier_free_limit: settings.tier_free_limit ?? 3,
+                tier_premium_price: settings.tier_premium_price ?? 199,
+                tier_premium_limit: settings.tier_premium_limit ?? 10,
+                tier_super_premium_price: settings.tier_super_premium_price ?? 399,
+                tier_super_premium_limit: settings.tier_super_premium_limit ?? 50,
+                mail_host: settings.mail_host || 'smtp.mailtrap.io',
+                mail_port: settings.mail_port || '2525',
+                mail_encryption: settings.mail_encryption || 'tls',
+                mail_username: settings.mail_username || '',
+                mail_password: settings.mail_password || '',
+                mail_from_address: settings.mail_from_address || 'noreply@likhangkamay.app',
+                mail_from_name: settings.mail_from_name || 'Likhang Kamay',
+            });
+        }
+    }, [settings]);
 
     const handleFileChange = (e, field) => {
         const file = e.target.files[0];
@@ -212,7 +273,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                 disabled={processing}
                                                 className="w-full py-3 bg-clay-600 hover:bg-clay-500 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
                                             >
-                                                <Save size={14} className="group-hover:rotate-12 transition-transform" />
+                                                <Save size={14} className="transition-transform duration-200 group-hover:scale-110" />
                                                 {processing ? 'Processing...' : 'Apply Config Update'}
                                             </PrimaryButton>
 
@@ -356,9 +417,86 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
                             transition={{ duration: 0.2 }}
-                            className="space-y-6"
                         >
-                            <SubscriptionTiers />
+                            <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                                {/* Left Column: Inputs */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    <SubscriptionTiers 
+                                        data={data} 
+                                        setData={setData} 
+                                        errors={errors} 
+                                    />
+                                </div>
+
+                                {/* Right Column: Sticky actions */}
+                                <div className="space-y-6">
+                                    <div className="hidden lg:block bg-stone-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
+                                        <div className="relative z-10 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+                                                    <Save size={14} className="text-clay-400" />
+                                                </div>
+                                                <h3 className="text-sm font-bold">Apply Plan Changes</h3>
+                                            </div>
+                                            <p className="text-[11px] text-stone-400 leading-relaxed font-medium">
+                                                Plan tier modifications (limits and pricing) will apply immediately to all active artisan shops.
+                                            </p>
+                                            
+                                            <PrimaryButton 
+                                                disabled={processing}
+                                                className="w-full py-3 bg-clay-600 hover:bg-clay-550 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
+                                            >
+                                                <Save size={14} className="transition-transform duration-200 group-hover:scale-110" />
+                                                {processing ? 'Processing...' : 'Apply Tier Update'}
+                                            </PrimaryButton>
+
+                                            {recentlySuccessful && (
+                                                <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold animate-in fade-in slide-in-from-top-1">
+                                                    <CheckCircle2 size={13} />
+                                                    <span>Tier settings updated!</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-clay-600/10 rounded-full blur-3xl group-hover:bg-clay-600/20 transition-colors" />
+                                    </div>
+
+                                    {/* Operational Warnings */}
+                                    <div className="bg-amber-50/40 rounded-2xl border border-amber-200/50 p-5 lg:p-6 space-y-4">
+                                        <div className="flex gap-2.5">
+                                            <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={16} />
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-wider">Warning: Downgrade Impact</h4>
+                                                <p className="text-[9px] text-amber-700 font-medium leading-relaxed mt-1">
+                                                    Reducing product limits will draft excess listings of sellers when their accounts reconcile. Set limits carefully to prevent catalog disruption.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+
+                            {/* Sticky actions bar for Mobile (below lg) */}
+                            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+                                <div className="flex-1 min-w-0 pr-4">
+                                    {recentlySuccessful && (
+                                        <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold animate-in fade-in">
+                                            <CheckCircle2 size={12} />
+                                            <span>Saved successfully!</span>
+                                        </div>
+                                    )}
+                                    {!recentlySuccessful && (
+                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider">Unsaved Changes</span>
+                                    )}
+                                </div>
+                                <PrimaryButton 
+                                    disabled={processing}
+                                    onClick={submit}
+                                    className="py-2.5 px-4 bg-clay-600 hover:bg-clay-550 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
+                                >
+                                    <Save size={12} />
+                                    {processing ? 'Saving...' : 'Apply Config'}
+                                </PrimaryButton>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
