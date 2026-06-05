@@ -252,7 +252,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                             <ul className="space-y-3">
                                                 {[
                                                     { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
-                                                    { title: 'SMTP Syncing', desc: 'Verification codes require correct host credentials to verify artisans.', icon: Server },
                                                     { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
                                                 ].map((tip, idx) => (
                                                     <li key={idx} className="flex gap-2.5">
@@ -279,7 +278,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                     <ul className="space-y-3 pt-2">
                                                         {[
                                                             { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
-                                                            { title: 'SMTP Syncing', desc: 'Verification codes require correct host credentials to verify artisans.', icon: Server },
                                                             { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
                                                         ].map((tip, idx) => (
                                                             <li key={idx} className="flex gap-2.5">
