@@ -214,7 +214,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             <div className="flex min-h-screen flex-col">
                 <SellerHeader
                     title="Subscription Plan"
-                    subtitle="Manage product capacity, workspace access, and plan upgrades."
+                    subtitle=" Manage capacity, access, and upgrades."
                     auth={auth}
                     onMenuClick={openSidebar}
                 />
@@ -265,7 +265,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                             </div>
 
                             <div className="px-5 py-5 sm:px-6">
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                <div className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 md:grid md:grid-cols-3 md:gap-6 no-scrollbar">
                                     {plans.map((plan) => {
                                         const current = isCurrentPlan(plan.id);
                                         const tierIndex = plans.findIndex((item) => item.id === plan.id);
@@ -302,11 +302,11 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                         return (
                                             <article
                                                 key={plan.id}
-                                                className={`relative flex flex-col rounded-[1.7rem] border bg-white px-5 pb-5 pt-4 ${cardClass}`}
+                                                className={`relative flex flex-col rounded-[1.7rem] border bg-white px-5 pb-5 pt-4 w-[85%] md:w-full shrink-0 snap-center ${cardClass}`}
                                             >
                                                 {(current || isPremiumPlan) && (
-                                                    <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
-                                                        <span className={`rounded-full px-3.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] ${labelClass}`}>
+                                                    <div className="absolute top-3 right-3 z-10">
+                                                        <span className={`rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.15em] whitespace-nowrap ${labelClass}`}>
                                                             {current ? 'Current Plan' : 'Most Popular'}
                                                         </span>
                                                     </div>

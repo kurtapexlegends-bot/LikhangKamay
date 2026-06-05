@@ -196,7 +196,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
 
     const modalContent = (
         <div
-            className={`fixed inset-0 z-[9999] overflow-y-auto transition-all duration-300 ${
+            className={`fixed inset-0 z-[9999] overflow-hidden transition-all duration-300 ${
                 isAnimating ? 'bg-black/40 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-0'
             }`}
         >
@@ -217,7 +217,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                     }}
                 >
-                    <div className="relative border-b border-stone-100 px-5 pb-3.5 pt-4.5 sm:px-6">
+                    <div className="relative border-b border-stone-100 px-5 py-3 sm:px-6">
                         <div className="absolute right-3 top-0 h-20 w-20 -translate-y-1/3 rounded-full bg-gradient-to-br from-amber-100/25 to-orange-100/20 blur-2xl pointer-events-none" />
                         <div className="absolute left-3 top-3 h-14 w-14 rounded-full bg-gradient-to-br from-violet-100/20 to-indigo-100/10 blur-xl pointer-events-none" />
 
@@ -246,8 +246,8 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         </div>
                     </div>
 
-                    <div className="bg-stone-50/30 p-4.5 sm:p-5">
-                        <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-3">
+                    <div className="bg-stone-50/30 p-4 sm:p-4">
+                        <div className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 lg:grid lg:grid-cols-3 lg:gap-5 no-scrollbar">
                             {PLANS.map((plan, index) => {
                                 const isCurrent = plan.id === currentTier;
                                 const isUpgrade = index > currentIndex;
@@ -257,7 +257,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 return (
                                     <div
                                         key={plan.id}
-                                        className={`relative flex h-full flex-col rounded-[1.25rem] border-2 bg-white p-5 transition-all duration-300 ease-out group cursor-pointer lg:min-h-[29rem] ${
+                                        className={`relative flex h-full flex-col rounded-[1.25rem] border-2 bg-white p-4 transition-all duration-300 ease-out group cursor-pointer w-[85%] lg:w-full shrink-0 snap-center lg:min-h-[22.5rem] ${
                                             isCurrent
                                                 ? `${plan.lightBorder} ${plan.lightBg} ring-1 ring-offset-1 ring-offset-white ${plan.lightBorder} shadow-md`
                                                 : hoveredPlan === plan.id
@@ -290,8 +290,8 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                             </div>
                                         )}
 
-                                        <div className="mb-3.5 mt-1 flex items-start gap-2.5">
-                                            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-105 rotate-3' : ''}`}>
+                                        <div className="mb-2.5 mt-0.5 flex items-start gap-2">
+                                            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110' : ''}`}>
                                                 <PlanIcon size={15} className="text-white" />
                                             </div>
                                             <div>
@@ -300,7 +300,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                             </div>
                                         </div>
 
-                                        <div className="mb-5">
+                                        <div className="mb-3">
                                             <div className="flex items-baseline gap-1">
                                                 <span className="text-[2rem] font-black tracking-tight text-stone-900">{plan.price}</span>
                                                 {plan.period && (
@@ -309,7 +309,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                             </div>
                                         </div>
 
-                                        <ul className="mb-6 flex-1 space-y-3">
+                                        <ul className="mb-4 flex-1 space-y-2">
                                             {plan.features.map((feature, featureIndex) => (
                                                 <li key={featureIndex} className="flex items-start gap-2 text-[10.5px] font-medium leading-4 text-stone-600">
                                                     <Check
@@ -368,7 +368,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         </div>
                     </div>
 
-                    <div className="flex flex-col items-center justify-between gap-2.5 border-t border-stone-100 bg-white px-5 py-3 sm:flex-row sm:px-6">
+                    <div className="flex flex-col items-center justify-between gap-2 border-t border-stone-100 bg-white px-5 py-2.5 sm:flex-row sm:px-6">
                         <p className="text-center text-[10px] font-medium text-stone-500 sm:text-left">
                             {canManagePlan
                                 ? 'Plans can be changed anytime. Downgrades may deactivate some products.'
