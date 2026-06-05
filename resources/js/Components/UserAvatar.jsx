@@ -16,9 +16,14 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     const avatarSrc = avatarBaseSrc && avatarVersion
         ? `${avatarBaseSrc}${avatarBaseSrc.includes('?') ? '&' : '?'}v=${encodeURIComponent(avatarVersion)}`
         : avatarBaseSrc;
-    
+    const tooltipTitle = isElite 
+        ? 'Elite Subscription Plan' 
+        : isPremium 
+            ? 'Premium Subscription Plan' 
+            : undefined;
+
     return (
-        <div className="relative inline-flex">
+        <div className="relative inline-flex" title={tooltipTitle}>
             {isPremium && (
                 <div className="absolute -top-2 -right-1.5 z-10 rotate-[15deg] text-amber-500">
                     <Crown size={16} strokeWidth={2.5} className="fill-amber-400" />

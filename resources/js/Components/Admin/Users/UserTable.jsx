@@ -108,7 +108,7 @@ export default function UserTable({
                     const isExpandable = isExpandableAccount(user);
                     return (
                         <div key={user.id} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-4">
                                 <UserAvatar user={user} className="h-10 w-10 shrink-0 border border-stone-100" />
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-start justify-between gap-2">
@@ -208,94 +208,100 @@ export default function UserTable({
                             const isExpanded = !!expandedRows[String(user.id)];
                             return (
                                 <React.Fragment key={user.id}>
-                                    <tr
-                                        className={`group transition-colors ${isExpandable ? 'cursor-pointer hover:bg-[#FDFBF9]' : 'hover:bg-stone-50/50'} ${isExpanded ? 'bg-[#FDFBF9]' : ''}`}
-                                        role={isExpandable ? 'button' : undefined}
-                                        tabIndex={isExpandable ? 0 : undefined}
-                                        aria-expanded={isExpandable ? isExpanded : undefined}
-                                        onClick={isExpandable ? () => toggleExpandedRow(user.id) : undefined}
-                                        onKeyDown={isExpandable ? (event) => handleRowKeyDown(event, user.id) : undefined}
-                                    >
-                                        <td className="px-5 py-3">
-                                            <div className="flex items-center gap-3">
-                                                {isExpandable ? (
-                                                    <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 transition-all duration-300 group-hover:scale-105 ${isExpanded ? 'shadow-inner border-stone-300 text-stone-600 bg-stone-50' : 'group-hover:bg-stone-50 group-hover:border-stone-300'}`}>
-                                                        <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                                                    </span>
-                                                ) : <div className="w-6 shrink-0"></div>}
+                                    <motion.tr
+                                         initial={{ opacity: 0, y: 4 }}
+                                         animate={{ opacity: 1, y: 0 }}
+                                         transition={{ duration: 0.2 }}
+                                         className={`group transition-colors ${isExpandable ? 'cursor-pointer hover:bg-[#FDFBF9]' : 'hover:bg-stone-50/50'} ${isExpanded ? 'bg-[#FDFBF9]' : ''}`}
+                                         role={isExpandable ? 'button' : undefined}
+                                         tabIndex={isExpandable ? 0 : undefined}
+                                         aria-expanded={isExpandable ? isExpanded : undefined}
+                                         onClick={isExpandable ? () => toggleExpandedRow(user.id) : undefined}
+                                         onKeyDown={isExpandable ? (event) => handleRowKeyDown(event, user.id) : undefined}
+                                     >
+                                         <td className="px-5 py-4">
+                                             <div className="flex items-center gap-4">
+                                                 {isExpandable ? (
+                                                     <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 transition-all duration-300 group-hover:scale-105 ${isExpanded ? 'shadow-inner border-stone-300 text-stone-600 bg-stone-50' : 'group-hover:bg-stone-50 group-hover:border-stone-300'}`}>
+                                                         <ChevronDown size={14} className={`transition-transform duration-300 group-hover:translate-y-[1px] ${isExpanded ? 'rotate-180 group-hover:translate-y-[-1px]' : ''}`} />
+                                                     </span>
+                                                 ) : <div className="w-6 shrink-0"></div>}
 
-                                                <UserAvatar user={user} className="h-8 w-8 border border-stone-200 transition-all" />
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-semibold text-stone-900 truncate">{user.name}</p>
-                                                    <p className="text-xs text-stone-500 truncate font-medium">{user.email}</p>
-                                                </div>
-                                            </div>
-                                        </td>
+                                                 <UserAvatar user={user} className="h-8 w-8 border border-stone-200 transition-all" />
+                                                 <div className="min-w-0">
+                                                     <p className="text-xs font-semibold text-stone-900 truncate">{user.name}</p>
+                                                     <p className="text-xs text-stone-505 truncate font-medium">{user.email}</p>
+                                                 </div>
+                                             </div>
+                                         </td>
 
-                                        <td className="px-5 py-3">
-                                            {user.role === 'artisan' ? (
-                                                <div className="space-y-0.5">
-                                                    <div className="flex flex-wrap items-center gap-1.5">
-                                                        <p className="text-xs font-semibold text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
-                                                        <span className="inline-flex items-center rounded bg-stone-100 border border-stone-200 px-1.5 py-0.5 text-[10px] font-medium text-stone-600">
-                                                            {user.staff_count === 1 ? '1 staff' : `${user.staff_count} staff`}
-                                                        </span>
-                                                        {filters.search && user.matched_staff_count > 0 && (
-                                                            <span className="inline-flex items-center rounded bg-clay-50 border border-clay-100 px-1.5 py-0.5 text-[10px] font-medium text-clay-700 animate-pulse">
-                                                                {user.matched_staff_count} match
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400 font-medium">
-                                                        <span>
-                                                            {isExpandable ? (isExpanded ? 'Hide staff list.' : 'Click to view staff.') : 'No staff accounts.'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            ) : user.role === 'super_admin' ? (
-                                                <span className="text-xs uppercase tracking-wider font-semibold text-stone-400">Platform Admins</span>
-                                            ) : (
-                                                <span className="text-xs uppercase tracking-wider font-semibold text-stone-400">Standard User</span>
-                                            )}
-                                        </td>
+                                         <td className="px-5 py-4">
+                                             {user.role === 'artisan' ? (
+                                                 <div className="space-y-0.5">
+                                                     <div className="flex flex-wrap items-center gap-1.5">
+                                                         <p className="text-xs font-semibold text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
+                                                         <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                                             user.staff_count > 0 
+                                                                 ? 'bg-[#F2EAE1] border-[#E8D9CB] text-[#7A5037]' 
+                                                                 : 'bg-stone-50 border-stone-200 text-stone-400'
+                                                         }`}>
+                                                             {user.staff_count === 1 ? '1 staff' : `${user.staff_count} staff`}
+                                                         </span>
+                                                         {filters.search && user.matched_staff_count > 0 && (
+                                                             <span className="inline-flex items-center rounded bg-clay-50 border border-clay-100 px-1.5 py-0.5 text-[10px] font-medium text-clay-700 animate-pulse">
+                                                                 {user.matched_staff_count} match
+                                                             </span>
+                                                         )}
+                                                     </div>
+                                                     <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400 font-medium">
+                                                         <span>
+                                                             {isExpandable ? (isExpanded ? 'Hide staff list.' : 'Click to view staff.') : 'No staff accounts.'}
+                                                         </span>
+                                                     </div>
+                                                 </div>
+                                             ) : user.role === 'super_admin' ? (
+                                                 <span className="text-[11px] font-medium text-stone-400 tracking-wide">Platform administrator</span>
+                                             ) : (
+                                                 <span className="text-[11px] font-medium text-stone-400 tracking-wide">Standard platform user</span>
+                                             )}
+                                         </td>
 
-                                        <td className="px-5 py-3 text-center">
-                                            <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
-                                                {user.role === 'artisan' && <Store size={10} />}
-                                                {user.role === 'super_admin' && <Shield size={10} />}
-                                                {user.role === 'buyer' && <Users size={10} />}
-                                                {user.role === 'artisan' && 'Artisan'}
-                                                {user.role === 'super_admin' && 'Admin'}
-                                                {user.role === 'buyer' && 'Buyer'}
-                                            </span>
-                                        </td>
+                                         <td className="px-5 py-4 text-center">
+                                             <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
+                                                 {user.role === 'artisan' && <Store size={10} />}
+                                                 {user.role === 'super_admin' && <Shield size={10} />}
+                                                 {user.role === 'buyer' && <Users size={10} />}
+                                                 {user.role === 'artisan' && 'Artisan'}
+                                                 {user.role === 'super_admin' && 'Admin'}
+                                                 {user.role === 'buyer' && 'Buyer'}
+                                             </span>
+                                         </td>
 
-                                        <td className="px-5 py-3 text-center">
-                                            <div className="flex flex-col items-center gap-1">
-                                                <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
-                                                    {user.account_state}
-                                                </span>
+                                         <td className="px-5 py-4 text-center">
+                                             <div className="flex flex-col items-center gap-1">
+                                                 <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                                     {user.account_state}
+                                                 </span>
+                                             </div>
+                                         </td>
 
-                                            </div>
-                                        </td>
-
-                                        <td className="px-5 py-3 text-xs font-semibold text-stone-500 whitespace-nowrap">
-                                            {user.created_at}
-                                        </td>
-                                        
-                                        <td className="px-5 py-3 text-right whitespace-nowrap">
-                                            {user.role !== 'super_admin' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
-                                                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-stone-900 border border-stone-850 px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-stone-900/20 min-h-[40px]"
-                                                    title={`Impersonate ${user.name}`}
-                                                >
-                                                    <VenetianMask size={12} /> Login As
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
+                                         <td className="px-5 py-4 text-xs font-semibold text-stone-500 whitespace-nowrap">
+                                             {user.created_at}
+                                         </td>
+                                         
+                                         <td className="px-5 py-4 text-right whitespace-nowrap">
+                                             {user.role !== 'super_admin' && (
+                                                 <button
+                                                     type="button"
+                                                     onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
+                                                     className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-stone-900 border border-stone-850 px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-stone-900/20 min-h-[40px]"
+                                                     title={`Impersonate ${user.name}`}
+                                                 >
+                                                     <VenetianMask size={12} /> Login As
+                                                 </button>
+                                             )}
+                                         </td>
+                                     </motion.tr>
 
                                     {isExpandable && isExpanded && (
                                         <tr className="bg-[#F8F6F4] relative">

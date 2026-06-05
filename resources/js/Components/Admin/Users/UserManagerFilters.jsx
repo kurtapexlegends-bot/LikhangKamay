@@ -57,7 +57,7 @@ export default function UserManagerFilters({
                                     type="text"
                                     value={search}
                                     onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Search accounts or staff..."
+                                    placeholder="Search name, shop, email, or connected staff..."
                                     className="w-full rounded-full border border-stone-200 bg-stone-50 py-3 pl-10 pr-10 text-sm font-medium text-stone-900 placeholder-stone-400 transition-all focus:border-clay-300 focus:bg-white focus:ring-2 focus:ring-clay-500/20 min-h-[44px]"
                                 />
                                 {search && (
@@ -182,7 +182,7 @@ export default function UserManagerFilters({
                         type="text"
                         value={searchQuery}
                         onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Search shop, owner, phone, or location"
+                        placeholder="Search shop, owner name, phone, or region..."
                         className="w-full rounded-full border border-stone-200 bg-white py-3 pl-3 pr-10 text-sm font-medium text-stone-900 placeholder-stone-400 transition-all focus:border-clay-300 focus:ring-2 focus:ring-clay-500/20 min-h-[44px]"
                     />
                     {searchQuery && (
