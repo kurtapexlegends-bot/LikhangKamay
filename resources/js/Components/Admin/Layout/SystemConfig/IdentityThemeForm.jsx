@@ -25,7 +25,7 @@ export default function IdentityThemeForm({ data, setData, errors, handleFileCha
                         <InputLabel htmlFor="primary_color" value="Primary Brand Color" className="text-stone-700 font-bold mb-1.5 uppercase tracking-wider text-[10px]" />
                         <div className="flex items-center gap-2">
                             <div 
-                                className="w-11 h-11 rounded-lg border border-stone-200 shadow-sm shrink-0"
+                                className="w-12 h-12 rounded-lg border border-stone-200 shadow-sm shrink-0"
                                 style={{ backgroundColor: data.primary_color }}
                             />
                             <TextInput
@@ -36,7 +36,7 @@ export default function IdentityThemeForm({ data, setData, errors, handleFileCha
                             />
                             <input 
                                 type="color" 
-                                className="w-11 h-11 p-1 bg-white border border-stone-200 rounded-lg cursor-pointer shrink-0"
+                                className="w-12 h-12 p-1 bg-white border border-stone-200 rounded-lg cursor-pointer shrink-0"
                                 value={data.primary_color}
                                 onChange={(e) => setData('primary_color', e.target.value)}
                             />
@@ -69,10 +69,16 @@ export default function IdentityThemeForm({ data, setData, errors, handleFileCha
                         ) : (
                             <ImageIcon className="text-stone-300" size={24} />
                         )}
-                        <label htmlFor="platform_logo" className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
+                        {/* Desktop hover overlay */}
+                        <label htmlFor="platform_logo" className="hidden md:flex absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 items-center justify-center cursor-pointer transition-opacity">
                             <span className="text-white text-[9px] font-bold bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 flex items-center gap-1.5">
                                 <ImageIcon size={12} /> Replace Logo
                             </span>
+                        </label>
+                        {/* Mobile edit badge */}
+                        <label htmlFor="platform_logo" className="md:hidden absolute bottom-2 right-2 bg-stone-900/80 backdrop-blur-sm text-white p-2 rounded-lg cursor-pointer border border-white/10 flex items-center gap-1 text-[9px] font-bold shadow-sm active:bg-stone-950">
+                            <ImageIcon size={11} />
+                            <span>Replace</span>
                         </label>
                         <input id="platform_logo" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'platform_logo')} />
                     </div>
@@ -89,8 +95,13 @@ export default function IdentityThemeForm({ data, setData, errors, handleFileCha
                         ) : (
                             <Globe className="text-stone-300" size={24} />
                         )}
-                        <label htmlFor="favicon" className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
+                        {/* Desktop hover overlay */}
+                        <label htmlFor="favicon" className="hidden md:flex absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 items-center justify-center cursor-pointer transition-opacity">
                             <span className="text-white text-[8px] font-bold bg-white/10 backdrop-blur-md px-2 py-1 rounded">Change</span>
+                        </label>
+                        {/* Mobile edit badge */}
+                        <label htmlFor="favicon" className="md:hidden absolute bottom-1 right-1 bg-stone-900/80 backdrop-blur-sm text-white p-1.5 rounded-md cursor-pointer border border-white/10 flex items-center justify-center shadow-sm active:bg-stone-950">
+                            <ImageIcon size={10} />
                         </label>
                         <input id="favicon" type="file" className="hidden" accept=".ico,.png" onChange={(e) => handleFileChange(e, 'favicon')} />
                     </div>

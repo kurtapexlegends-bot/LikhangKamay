@@ -12,10 +12,10 @@ export default function SubscriptionTiers() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 md:grid md:grid-cols-3 md:gap-6 no-scrollbar">
                 
                 {/* Free Tier Card */}
-                <div className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col justify-between transition hover:border-stone-300 relative">
+                <div className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col justify-between transition hover:border-stone-300 relative w-[85%] md:w-full shrink-0 snap-center">
                     <div className="space-y-4">
                         <div>
                             <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Basic</span>
@@ -59,7 +59,7 @@ export default function SubscriptionTiers() {
                 </div>
 
                 {/* Premium Tier Card */}
-                <div className="bg-white rounded-2xl border-2 border-clay-500 p-6 flex flex-col justify-between transition hover:shadow-sm relative">
+                <div className="bg-white rounded-2xl border-2 border-clay-500 p-6 flex flex-col justify-between transition hover:shadow-sm relative w-[85%] md:w-full shrink-0 snap-center">
                     <div className="absolute top-3 right-3 bg-clay-500 text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
                         Most Popular
                     </div>
@@ -106,7 +106,7 @@ export default function SubscriptionTiers() {
                 </div>
 
                 {/* Elite Tier Card */}
-                <div className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col justify-between transition hover:border-stone-300 relative">
+                <div className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col justify-between transition hover:border-stone-300 relative w-[85%] md:w-full shrink-0 snap-center">
                     <div className="space-y-4">
                         <div>
                             <span className="text-[9px] font-bold uppercase tracking-wider text-violet-600">Enterprise</span>

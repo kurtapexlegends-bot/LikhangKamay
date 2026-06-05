@@ -124,7 +124,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1 no-scrollbar">
-                        <table className="w-full text-left min-w-[500px]">
+                        <table className="hidden md:table w-full text-left min-w-[500px]">
                             <thead className="bg-stone-50 border-b border-stone-100">
                                 <tr>
                                     <th className="px-5 py-2.5 text-[9px] font-bold text-stone-400 uppercase tracking-wider">Artisan</th>
@@ -187,6 +187,63 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 )}
                             </tbody>
                         </table>
+
+                        <div className="md:hidden divide-y divide-stone-100">
+                            {isLoadingSubscribers ? (
+                                <>
+                                    <div className="p-4 space-y-2 animate-pulse">
+                                        <div className="h-4 bg-stone-100 rounded w-1/3"></div>
+                                        <div className="h-3 bg-stone-100 rounded w-1/2"></div>
+                                    </div>
+                                    <div className="p-4 space-y-2 animate-pulse">
+                                        <div className="h-4 bg-stone-100 rounded w-1/3"></div>
+                                        <div className="h-3 bg-stone-100 rounded w-1/2"></div>
+                                    </div>
+                                </>
+                            ) : recentSubscribers.length > 0 ? recentSubscribers.map((user) => (
+                                <div key={user.id} className="p-4 space-y-3 hover:bg-stone-50/50 transition">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <UserAvatar user={user} className="w-8 h-8 border border-clay-100" />
+                                            <div>
+                                                <p className="font-bold text-stone-900 text-xs">{user.name}</p>
+                                                <p className="text-[10px] text-stone-500">{user.shop_name || "No Shop"}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-stone-900 text-[10px]">{user.date}</div>
+                                            <div className="text-[8px] text-stone-400 mt-0.5">{user.change_label}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between bg-stone-50 p-2 rounded-lg border border-stone-100/50">
+                                        <span className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Tier Shift</span>
+                                        <div className="flex items-center gap-1.5 text-[9px] font-bold">
+                                            <span className="bg-stone-200/60 text-stone-600 px-1.5 py-0.5 rounded border border-stone-200">{user.previous_tier_label || 'Free'}</span>
+                                            <ChevronRight size={8} />
+                                            <span className={`px-1.5 py-0.5 rounded border ${planTierBadgeClasses[user.tier] || planTierBadgeClasses.Free}`}>
+                                                {user.tier}
+                                            </span>
+                                            <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black border uppercase tracking-wider ml-1 ${
+                                                changeDirectionBadgeClasses[user.change_direction] || changeDirectionBadgeClasses.change
+                                            }`}>
+                                                {user.change_direction === 'upgrade' && <TrendingUp size={8} />}
+                                                {user.change_direction === 'downgrade' && <TrendingDown size={8} />}
+                                                {user.change_direction}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="p-6 text-center">
+                                    <WorkspaceEmptyState
+                                        compact
+                                        icon={TrendingUp}
+                                        title="No recent plan changes"
+                                        description="Subscription plan changes will appear here."
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -202,7 +259,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-1 no-scrollbar">
-                        <table className="w-full text-left min-w-[500px]">
+                        <table className="hidden md:table w-full text-left min-w-[500px]">
                             <thead className="bg-stone-50 border-b border-stone-100">
                                 <tr>
                                     <th className="px-5 py-2.5 text-[9px] font-bold text-stone-400 uppercase tracking-wider">Product / Artisan</th>
@@ -260,6 +317,58 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 )}
                             </tbody>
                         </table>
+
+                        <div className="md:hidden divide-y divide-stone-100">
+                            {isLoadingSponsorships ? (
+                                <>
+                                    <div className="p-4 space-y-2 animate-pulse">
+                                        <div className="h-4 bg-stone-100 rounded w-1/3"></div>
+                                        <div className="h-3 bg-stone-100 rounded w-1/2"></div>
+                                    </div>
+                                    <div className="p-4 space-y-2 animate-pulse">
+                                        <div className="h-4 bg-stone-100 rounded w-1/3"></div>
+                                        <div className="h-3 bg-stone-100 rounded w-1/2"></div>
+                                    </div>
+                                </>
+                            ) : recentSponsorships.length > 0 ? recentSponsorships.map((req) => (
+                                <div key={req.id} className="p-4 space-y-2.5 hover:bg-stone-50/50 transition">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <UserAvatar user={req.user} className="w-8 h-8 border border-clay-100" />
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-stone-900 text-xs truncate max-w-[150px]" title={req.product_name}>{req.product_name}</p>
+                                                <p className="text-[10px] text-stone-500 font-medium">by {req.user?.name}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[8px] font-black border uppercase tracking-wider shrink-0 ${
+                                            req.status === "approved"
+                                                ? "bg-green-50 text-green-700 border-green-200"
+                                                : req.status === "rejected" || req.status === "cancelled"
+                                                ? "bg-stone-100 text-stone-600 border-stone-200"
+                                                : "bg-amber-50 text-amber-700 border-amber-200"
+                                        }`}>
+                                            {req.status === "approved" && <CheckCircle size={10} />}
+                                            {(req.status === "rejected" || req.status === "cancelled") && <XCircle size={10} />}
+                                            {req.status === "pending" && <Clock size={10} />}
+                                            {req.status}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] text-stone-500 font-medium pt-1 border-t border-stone-50">
+                                        <span>Submission Date</span>
+                                        <span className="font-bold text-stone-900">{req.date}</span>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="p-6 text-center">
+                                    <WorkspaceEmptyState
+                                        compact
+                                        icon={Clock}
+                                        title="No recent sponsorships"
+                                        description="New sponsorship request history will appear here."
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

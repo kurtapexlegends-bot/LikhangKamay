@@ -14,7 +14,8 @@ import {
     ShieldCheck, 
     CheckCircle2, 
     Percent, 
-    CreditCard
+    CreditCard,
+    ChevronDown
 } from 'lucide-react';
 
 import IdentityThemeForm from '@/Components/Admin/Layout/SystemConfig/IdentityThemeForm';
@@ -37,6 +38,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     });
 
     const [activeSubTab, setActiveSubTab] = useState('branding_identity');
+    const [showMobileNotes, setShowMobileNotes] = useState(false);
 
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
@@ -257,29 +259,80 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                         <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-clay-600/10 rounded-full blur-3xl group-hover:bg-clay-600/20 transition-colors" />
                                     </div>
 
-                                    <div className="bg-white rounded-2xl border border-clay-100 p-6 space-y-4 shadow-sm">
-                                        <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-wider">Operational Notes</h4>
-                                        <ul className="space-y-3">
-                                            {[
-                                                { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
-                                                { title: 'SMTP Syncing', desc: 'Verification codes require correct host credentials to verify artisans.', icon: Server },
-                                                { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
-                                            ].map((tip, idx) => (
-                                                <li key={idx} className="flex gap-2.5">
-                                                    <tip.icon size={14} className="text-clay-600 shrink-0 mt-0.5" />
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-stone-900">{tip.title}</p>
-                                                        <p className="text-[9px] text-stone-500 font-medium leading-relaxed">{tip.desc}</p>
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
+                                    <div className="bg-white rounded-2xl border border-clay-100 p-5 lg:p-6 space-y-4 shadow-sm select-none">
+                                        <div 
+                                            onClick={() => {
+                                                if (window.innerWidth < 1024) {
+                                                    setShowMobileNotes(!showMobileNotes);
+                                                }
+                                            }}
+                                            className="flex items-center justify-between cursor-pointer lg:cursor-default"
+                                        >
+                                            <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-wider">Operational Notes</h4>
+                                            <div className="lg:hidden text-stone-400 hover:text-stone-600 p-1">
+                                                <motion.span
+                                                    animate={{ rotate: showMobileNotes ? 180 : 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="inline-block"
+                                                >
+                                                    <ChevronDown size={14} />
+                                                </motion.span>
+                                            </div>
+                                        </div>
+
+                                        {/* Desktop Notes: always visible */}
+                                        <div className="hidden lg:block">
+                                            <ul className="space-y-3">
+                                                {[
+                                                    { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
+                                                    { title: 'SMTP Syncing', desc: 'Verification codes require correct host credentials to verify artisans.', icon: Server },
+                                                    { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
+                                                ].map((tip, idx) => (
+                                                    <li key={idx} className="flex gap-2.5">
+                                                        <tip.icon size={14} className="text-clay-600 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <p className="text-[10px] font-bold text-stone-900">{tip.title}</p>
+                                                            <p className="text-[9px] text-stone-500 font-medium leading-relaxed">{tip.desc}</p>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        {/* Mobile Notes: collapsible */}
+                                        <AnimatePresence initial={false}>
+                                            {showMobileNotes && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="lg:hidden overflow-hidden"
+                                                >
+                                                    <ul className="space-y-3 pt-2">
+                                                        {[
+                                                            { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
+                                                            { title: 'SMTP Syncing', desc: 'Verification codes require correct host credentials to verify artisans.', icon: Server },
+                                                            { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
+                                                        ].map((tip, idx) => (
+                                                            <li key={idx} className="flex gap-2.5">
+                                                                <tip.icon size={14} className="text-clay-600 shrink-0 mt-0.5" />
+                                                                <div>
+                                                                    <p className="text-[10px] font-bold text-stone-900">{tip.title}</p>
+                                                                    <p className="text-[9px] text-stone-500 font-medium leading-relaxed">{tip.desc}</p>
+                                                                </div>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 </div>
                             </form>
 
                             {/* Sticky actions bar for Mobile (below lg) */}
-                            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+                            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
                                 <div className="flex-1 min-w-0 pr-4">
                                     {recentlySuccessful && (
                                         <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold animate-in fade-in">
