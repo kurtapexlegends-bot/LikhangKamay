@@ -246,8 +246,6 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                         </div>
 
                         <section className="mx-auto max-w-[1020px] overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.32)]">
-                            <div className="h-1 bg-gradient-to-r from-[#FFA426] via-[#FF8A1C] to-[#8B5CF6]" />
-
                             <div className="border-b border-stone-100 px-5 py-4 sm:px-6">
                                 <div className="flex items-start gap-3.5">
                                     <div className="inline-flex h-10 w-10 items-center justify-center rounded-[1.05rem] bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white shadow-sm">

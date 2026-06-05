@@ -217,8 +217,6 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                     }}
                 >
-                    <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-orange-500 to-violet-500" />
-
                     <div className="relative border-b border-stone-100 px-5 pb-3.5 pt-4.5 sm:px-6">
                         <div className="absolute right-3 top-0 h-20 w-20 -translate-y-1/3 rounded-full bg-gradient-to-br from-amber-100/25 to-orange-100/20 blur-2xl pointer-events-none" />
                         <div className="absolute left-3 top-3 h-14 w-14 rounded-full bg-gradient-to-br from-violet-100/20 to-indigo-100/10 blur-xl pointer-events-none" />
