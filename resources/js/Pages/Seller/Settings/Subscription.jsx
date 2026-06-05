@@ -317,20 +317,19 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                                 key={plan.id}
                                                 className={`relative flex flex-col rounded-[1.7rem] border bg-white px-5 pb-5 pt-4 w-[85%] md:w-full shrink-0 snap-center ${cardClass}`}
                                             >
-                                                {(current || isPremiumPlan) && (
-                                                    <div className="absolute top-3 right-3 z-10">
-                                                        <span className={`rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.15em] whitespace-nowrap ${labelClass}`}>
-                                                            {current ? 'Current Plan' : 'Most Popular'}
-                                                        </span>
-                                                    </div>
-                                                )}
-
                                                 <div className="flex items-start gap-3">
                                                     <div className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] ${iconClass}`}>
                                                         <PlanIcon className="h-4 w-4" />
                                                     </div>
-                                                    <div>
-                                                        <h3 className="text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
+                                                            {(current || isPremiumPlan) && (
+                                                                <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap ${labelClass}`}>
+                                                                    {current ? 'Current Plan' : 'Most Popular'}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <p className="mt-1 max-w-[210px] text-[13px] font-medium leading-6 text-stone-500">{plan.description}</p>
                                                     </div>
                                                 </div>

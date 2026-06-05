@@ -290,25 +290,25 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                                         }}
                                     >
-                                        {isCurrent && (
-                                            <div className={`absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r ${plan.gradient} px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg`}>
-                                                Current Plan
-                                            </div>
-                                        )}
-
-                                        {plan.recommended && !isCurrent && (
-                                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg">
-                                                <Star size={10} fill="currentColor" />
-                                                Most Popular
-                                            </div>
-                                        )}
-
                                         <div className="mb-2.5 mt-0.5 flex items-start gap-2">
                                             <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110' : ''}`}>
                                                 <PlanIcon size={15} className="text-white" />
                                             </div>
-                                            <div>
-                                                <h3 className="text-[1.05rem] font-extrabold leading-none text-stone-900">{plan.name}</h3>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    <h3 className="text-[1.05rem] font-extrabold leading-none text-stone-900">{plan.name}</h3>
+                                                    {isCurrent && (
+                                                        <span className="rounded-full bg-stone-100 border border-stone-200 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-[0.1em] text-stone-600 whitespace-nowrap">
+                                                            Current
+                                                        </span>
+                                                    )}
+                                                    {plan.recommended && !isCurrent && (
+                                                        <span className="flex items-center gap-0.5 rounded-full bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-[0.1em] text-amber-700 whitespace-nowrap">
+                                                            <Star size={7} fill="currentColor" />
+                                                            Popular
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="mt-1 text-[10px] font-medium leading-4 text-stone-500">{plan.description}</p>
                                             </div>
                                         </div>
