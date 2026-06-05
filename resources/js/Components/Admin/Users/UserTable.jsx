@@ -157,11 +157,6 @@ export default function UserTable({
 
                                     <div className="mt-3 flex items-center justify-between border-t border-stone-50 pt-2.5 text-[10px] font-medium text-stone-400">
                                         <span>Joined {user.created_at}</span>
-                                        {user.role === 'buyer' && (
-                                            <span className={user.email_verified ? 'text-emerald-600' : 'text-amber-600'}>
-                                                {user.email_verified ? 'Verified' : 'Pending'}
-                                            </span>
-                                        )}
                                     </div>
                                 </div>
                             </div>

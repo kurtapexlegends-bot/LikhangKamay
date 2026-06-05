@@ -237,17 +237,17 @@ export default function ArtisanVerificationDrawer({
                                     className="mr-auto"
                                 />
                             )}
-                            <button
+                             <button
                                 onClick={() => setRejectingArtisan(null)}
                                 disabled={processing}
-                                className="rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-[12px] font-bold text-stone-600 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[40px] flex items-center"
+                                className="rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-[12px] font-bold text-stone-600 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[44px] flex items-center"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleRejectArtisan}
                                 disabled={processing || rejectReason.length < 10}
-                                className="flex items-center gap-1.5 rounded-lg bg-red-600 px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[40px]"
+                                className="flex items-center gap-1.5 rounded-lg bg-red-600 px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
                             >
                                 {processing ? <LoaderCircle size={14} className="animate-spin" /> : <XCircle size={14} />}
                                 {processing ? 'Rejecting...' : 'Confirm'}

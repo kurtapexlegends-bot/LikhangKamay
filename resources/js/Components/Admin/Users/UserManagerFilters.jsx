@@ -64,7 +64,7 @@ export default function UserManagerFilters({
                                     <button
                                         type="button"
                                         onClick={clearSearch}
-                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded p-1 text-stone-400 transition-colors hover:text-stone-700 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded p-1 text-stone-400 transition-colors hover:text-stone-700 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                         aria-label="Clear account search"
                                     >
                                         <X size={14} />

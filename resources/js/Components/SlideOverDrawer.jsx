@@ -49,7 +49,7 @@ export default function SlideOverDrawer({
                                                 </h2>
                                                 <button
                                                     type="button"
-                                                    className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors focus:outline-none focus:ring-2 focus:ring-clay-500/50"
+                                                    className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors focus:outline-none focus:ring-2 focus:ring-clay-500/50 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                     onClick={onClose}
                                                 >
                                                     <span className="sr-only">Close panel</span>
