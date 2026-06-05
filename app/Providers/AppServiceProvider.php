@@ -26,6 +26,31 @@ class AppServiceProvider extends ServiceProvider
             return $user && $user->role === 'super_admin';
         });
 
+        // Dynamically override SMTP config and app name from database settings
+        try {
+            $settings = app('system.settings');
+            
+            $platformName = $settings->get('platform_name');
+            if ($platformName) {
+                config(['app.name' => $platformName]);
+            }
+
+            $mailHost = $settings->get('mail_host');
+            if ($mailHost) {
+                config([
+                    'mail.mailers.smtp.host' => $mailHost,
+                    'mail.mailers.smtp.port' => $settings->get('mail_port', '2525'),
+                    'mail.mailers.smtp.encryption' => $settings->get('mail_encryption', 'tls'),
+                    'mail.mailers.smtp.username' => $settings->get('mail_username'),
+                    'mail.mailers.smtp.password' => $settings->get('mail_password'),
+                    'mail.from.address' => $settings->get('mail_from_address', 'noreply@likhangkamay.app'),
+                    'mail.from.name' => $settings->get('mail_from_name', 'Likhang Kamay'),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Silence if database is not ready or migrated yet
+        }
+
         if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
 

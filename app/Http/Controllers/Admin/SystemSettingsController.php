@@ -35,7 +35,7 @@ class SystemSettingsController extends Controller
     {
         Gate::authorize('admin-action');
         try {
-            return Inertia::render('Admin/Layout/SystemConfig', [
+            return Inertia::render('Admin/Layout/SystemConfig/SystemConfig', [
                 'settings' => $this->getSystemSettings(),
                 'metrics' => $this->getMonetizationMetrics(),
                 'recentSubscribers' => $this->getRecentSubscribers(),
@@ -57,7 +57,7 @@ class SystemSettingsController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error("SystemSettings index error: " . $e->getMessage());
-            return Inertia::render('Admin/Layout/SystemConfig', [
+            return Inertia::render('Admin/Layout/SystemConfig/SystemConfig', [
                 'settings' => [
                     'platform_name' => 'Likhang Kamay',
                     'platform_logo' => null,
@@ -68,7 +68,6 @@ class SystemSettingsController extends Controller
                     'social_links' => ['facebook' => '', 'indigo_avatar' => '', 'twitter' => ''],
                     'commission_rate' => 5.0,
                     'convenience_fee' => 15.0,
-                    'withdrawal_min' => 500.0,
                     'maintenance_mode' => false,
                     'paymongo_enabled' => true,
                     'mail_host' => 'smtp.mailtrap.io',
@@ -117,7 +116,6 @@ class SystemSettingsController extends Controller
             // Operational Settings
             'commission_rate' => $this->settings->get('commission_rate', 5.0),
             'convenience_fee' => $this->settings->get('convenience_fee', 15.0),
-            'withdrawal_min' => $this->settings->get('withdrawal_min', 500.0),
             'maintenance_mode' => $this->settings->get('maintenance_mode', false),
             'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
 
@@ -265,7 +263,6 @@ class SystemSettingsController extends Controller
             // Operational Validation
             'commission_rate' => 'required|numeric|min:0|max:100',
             'convenience_fee' => 'required|numeric|min:0',
-            'withdrawal_min' => 'required|numeric|min:0',
             'maintenance_mode' => 'required|boolean',
             'paymongo_enabled' => 'required|boolean',
 
@@ -336,7 +333,6 @@ class SystemSettingsController extends Controller
         // Save Operational Settings
         $this->settings->set('commission_rate', $validated['commission_rate'], 'float');
         $this->settings->set('convenience_fee', $validated['convenience_fee'], 'float');
-        $this->settings->set('withdrawal_min', $validated['withdrawal_min'], 'float');
         $this->settings->set('maintenance_mode', $validated['maintenance_mode'] ? 'true' : 'false', 'boolean');
         $this->settings->set('paymongo_enabled', $validated['paymongo_enabled'] ? 'true' : 'false', 'boolean');
 

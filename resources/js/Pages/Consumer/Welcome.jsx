@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
+import Footer from '@/Layouts/Footer';
 import {
     Utensils, Coffee, Flower2, Sprout, Home, ChefHat, Gift, Package, Award, Trophy, ArrowRight, Star, MapPin, Facebook, Instagram, Twitter
 } from 'lucide-react';
@@ -521,53 +522,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
             </main>
 
             {/* --- FOOTER --- */}
-            <footer className="bg-white border-t border-gray-100 mt-10">
-                <div className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-                    <div className="flex flex-col md:flex-row justify-between items-start gap-8">
-                        <div className="max-w-sm">
-                            <div className="flex items-center gap-2 mb-3">
-                                <img src="/images/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
-                                <span className="font-serif text-lg font-bold text-gray-900">LikhangKamay</span>
-                            </div>
-                            <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                                LikhangKamay is a digital marketplace dedicated to the talented potters and artisans of Cavite.
-                            </p>
-                            <div className="flex gap-3">
-                                <a href="#" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-clay-600 hover:text-white transition">
-                                    <Facebook size={14} />
-                                </a>
-                                <a href="#" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-clay-600 hover:text-white transition">
-                                    <Instagram size={14} />
-                                </a>
-                                <a href="#" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-clay-600 hover:text-white transition">
-                                    <Twitter size={14} />
-                                </a>
-                            </div>
-                        </div>
-                        <div className="flex gap-12">
-                            <div>
-                                <h4 className="font-semibold text-gray-900 text-xs uppercase tracking-wider mb-3">Marketplace</h4>
-                                <ul className="space-y-2 text-sm text-gray-500">
-                                    <li><Link href={route('shop.index')} className="hover:text-clay-600 transition">All Products</Link></li>
-                                    <li><Link href="#" className="hover:text-clay-600 transition">Featured Artisans</Link></li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-gray-900 text-xs uppercase tracking-wider mb-3">Support</h4>
-                                <ul className="space-y-2 text-sm text-gray-500">
-                                    <li><Link href="/artisan/register" className="hover:text-clay-600 transition">Seller Centre</Link></li>
-                                    <li><Link href="#" className="hover:text-clay-600 transition">FAQs</Link></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="border-t border-gray-100">
-                    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4 text-center text-xs text-gray-400">
-                        © 2026 LikhangKamay. Connecting Cavite's artisans with the world.
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }

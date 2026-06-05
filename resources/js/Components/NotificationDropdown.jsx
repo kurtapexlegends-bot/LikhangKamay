@@ -285,7 +285,7 @@ export default function NotificationDropdown() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-96 md:w-[400px] overflow-hidden rounded-xl border border-stone-200 bg-white animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="fixed left-4 right-4 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto z-50 mt-2 w-[calc(100vw-2rem)] sm:w-96 md:w-[400px] overflow-hidden rounded-xl border border-stone-200 bg-white animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl">
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50 px-4 py-4">
                         <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
@@ -293,7 +293,7 @@ export default function NotificationDropdown() {
                             {localUnreadNotificationCount > 0 && (
                                 <button 
                                     onClick={handleMarkAllAsRead}
-                                    className="flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-clay-600 transition-colors hover:text-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                                    className="flex items-center gap-1 rounded px-2 py-2 text-xs font-bold text-clay-600 transition-colors hover:text-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[44px]"
                                     title="Mark all as read"
                                 >
                                     <Check size={12} /> Read All
@@ -302,7 +302,7 @@ export default function NotificationDropdown() {
                             {notifications.length > 0 && (
                                 <button 
                                     onClick={handleClearAll}
-                                    className="flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-red-500 transition-colors hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
+                                    className="flex items-center gap-1 rounded px-2 py-2 text-xs font-medium text-red-500 transition-colors hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 min-h-[44px]"
                                     title="Delete all notifications"
                                 >
                                     <Trash2 size={12} /> Clear All
@@ -311,13 +311,13 @@ export default function NotificationDropdown() {
                         </div>
                     </div>
 
-                    <div className="flex gap-2 overflow-x-auto border-b border-stone-100 bg-white px-3 py-2">
+                    <div className="flex gap-2 overflow-x-auto border-b border-stone-100 bg-white px-3 py-2 no-scrollbar">
                         {filterDefinitions.map((filter) => (
                             <button
                                 key={filter.key}
                                 type="button"
                                 onClick={() => setActiveFilter(filter.key)}
-                                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors shrink-0 min-h-[36px] ${
                                     activeFilter === filter.key
                                         ? 'border-clay-200 bg-clay-50 text-clay-700'
                                         : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
@@ -352,7 +352,7 @@ export default function NotificationDropdown() {
                                                 >
                                                     {iconData.icon}
                                                 </div>
-                                                <div className="flex-1 min-w-0 pr-6">
+                                                <div className="flex-1 min-w-0 pr-10 md:pr-6">
                                                     <p className={`text-sm ${!notification.read_at ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
                                                         {notification.title}
                                                     </p>
@@ -369,7 +369,7 @@ export default function NotificationDropdown() {
                                         );
                                      })()}
                                      {!notification.read_at && (
-                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-clay-500 rounded-full shrink-0"></div>
+                                         <div className="absolute right-12 top-1/2 -translate-y-1/2 w-2 h-2 bg-clay-500 rounded-full shrink-0 md:right-3 pointer-events-none"></div>
                                      )}
 
                                     {/* 3-Dot Menu Trigger */}
@@ -379,24 +379,24 @@ export default function NotificationDropdown() {
                                             setActiveMenu(activeMenu === notification.id ? null : notification.id);
                                         }}
                                         aria-label="Open notification actions"
-                                        className="absolute top-3 right-2 rounded-full p-1 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-stone-200 hover:text-gray-600 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                                        className="absolute top-1 right-1 md:top-3 md:right-2 rounded-full text-gray-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-stone-200 hover:text-gray-600 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 w-11 h-11 flex items-center justify-center md:w-8 md:h-8"
                                     >
                                         <MoreHorizontal size={16} />
                                     </button>
 
                                     {/* Menu Dropdown */}
                                     {activeMenu === notification.id && (
-                                        <div className="absolute top-8 right-2 z-10 w-32 rounded-lg border border-stone-200 bg-white py-1 animate-in fade-in zoom-in-95 duration-100">
+                                        <div className="absolute top-10 right-2 z-10 w-32 rounded-lg border border-stone-200 bg-white shadow-lg py-1 animate-in fade-in zoom-in-95 duration-100 md:top-8">
                                             <button
                                                 onClick={(e) => notification.read_at ? handleMarkAsUnread(e, notification.id) : handleMarkAsRead(notification.id, null, false)}
-                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20"
+                                                className="flex w-full items-center gap-2 px-3 py-3 md:py-2 text-left text-xs text-gray-700 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 min-h-[44px] md:min-h-0"
                                             >
                                                 {notification.read_at ? <Mail size={12} /> : <MailOpen size={12} />}
                                                 {notification.read_at ? 'Mark Unread' : 'Mark Read'}
                                             </button>
                                             <button
                                                 onClick={(e) => handleDelete(e, notification.id)}
-                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20"
+                                                className="flex w-full items-center gap-2 px-3 py-3 md:py-2 text-left text-xs text-red-650 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 min-h-[44px] md:min-h-0"
                                             >
                                                 <Trash2 size={12} /> Delete
                                             </button>

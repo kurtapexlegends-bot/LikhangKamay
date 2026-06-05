@@ -43,10 +43,12 @@ class SystemSettingsService
      */
     public function set(string $key, mixed $value, string $type = 'string', ?string $description = null): PlatformVariable
     {
+        $dbValue = (is_array($value) || is_object($value)) ? json_encode($value) : (string) $value;
+
         $variable = PlatformVariable::updateOrCreate(
             ['key' => $key],
             [
-                'value' => (string) $value,
+                'value' => $dbValue,
                 'type' => $type,
                 'description' => $description ?? PlatformVariable::where('key', $key)->value('description')
             ]
