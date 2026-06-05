@@ -203,7 +203,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
             <div
                 ref={overlayRef}
                 onClick={handleOverlayClick}
-                className="flex min-h-full items-center justify-center px-4 py-10 sm:px-6 sm:py-16 md:py-20"
+                className="flex min-h-full items-center justify-center p-3 sm:p-4"
                 style={{ perspective: '1200px' }}
             >
                 <div
@@ -291,7 +291,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                         )}
 
                                         <div className="mb-3.5 mt-1 flex items-start gap-2.5">
-                                            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110 -rotate-12' : ''}`}>
+                                            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-105 rotate-3' : ''}`}>
                                                 <PlanIcon size={15} className="text-white" />
                                             </div>
                                             <div>
