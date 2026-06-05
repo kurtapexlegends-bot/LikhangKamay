@@ -46,7 +46,7 @@ class AddressTypeReceiptTest extends TestCase
             'shipping_method' => 'Delivery',
             'selected_address_id' => $savedAddress->id,
             'payment_method' => 'COD',
-            'total' => 927,
+            'total' => 939,
         ]);
 
         $response->assertRedirect(route('my-orders.index', absolute: false));
@@ -55,7 +55,7 @@ class AddressTypeReceiptTest extends TestCase
 
         $this->assertSame($savedAddress->full_address, $order->shipping_address);
         $this->assertSame('office', $order->shipping_address_type);
-        $this->assertSame(15.0, (float) $order->convenience_fee_amount);
+        $this->assertSame(27.0, (float) $order->convenience_fee_amount);
 
         $receiptResponse = $this->actingAs($buyer)->get(route('my-orders.receipt', $order->id));
 
@@ -63,7 +63,7 @@ class AddressTypeReceiptTest extends TestCase
             ->assertOk()
             ->assertSee('Convenience Fee', false)
             ->assertSee('Office', false)
-            ->assertSee('PHP 15.00', false)
+            ->assertSee('PHP 27.00', false)
             ->assertSee('Total Paid', false);
     }
 
@@ -141,7 +141,7 @@ class AddressTypeReceiptTest extends TestCase
             'phone_number' => '09998887777',
             'payment_method' => 'COD',
             'save_address' => true,
-            'total' => 655.00,
+            'total' => 659.20,
         ]);
 
         $response->assertRedirect(route('my-orders.index', absolute: false));
@@ -157,7 +157,7 @@ class AddressTypeReceiptTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'user_id' => $buyer->id,
             'shipping_address_type' => 'other',
-            'convenience_fee_amount' => 15.00,
+            'convenience_fee_amount' => 19.20,
         ]);
     }
 

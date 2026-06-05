@@ -30,13 +30,14 @@ export default function PlatformOpsForm({ data, setData }) {
                         </div>
                     </div>
                     <div>
-                        <InputLabel value="Convenience Fee (PHP)" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
+                        <InputLabel value="Convenience Fee (%)" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
                         <div className="relative">
-                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={12} />
+                            <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={12} />
                             <TextInput 
                                 type="number"
                                 min="0"
-                                step="any"
+                                max="100"
+                                step="0.1"
                                 className="block w-full pl-8 bg-stone-50/30 text-xs py-2 min-h-[44px]" 
                                 value={data.convenience_fee}
                                 onChange={(e) => setData('convenience_fee', e.target.value)}

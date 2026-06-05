@@ -71,7 +71,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         },
         // Operational Settings
         commission_rate: settings?.commission_rate || 5.0,
-        convenience_fee: settings?.convenience_fee || 15.0,
+        convenience_fee: settings?.convenience_fee || 3.0,
         maintenance_mode: settings?.maintenance_mode || false,
         paymongo_enabled: settings?.paymongo_enabled || true,
 

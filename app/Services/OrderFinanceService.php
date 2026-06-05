@@ -13,9 +13,8 @@ class OrderFinanceService
 
     public static function getConvenienceFeeRate(): float
     {
-        // The setting 'convenience_fee' is a flat PHP amount, not a rate.
-        // Let's check how it's used in calculateAmounts.
-        return (float) \App\Facades\Settings::get('convenience_fee', 15.0);
+        // Now 'convenience_fee' is a percentage (e.g. 3.0 represents 3%).
+        return (float) \App\Facades\Settings::get('convenience_fee', 3.0) / 100;
     }
 
     /**
@@ -36,7 +35,7 @@ class OrderFinanceService
     {
         $normalizedSubtotal = $this->money($merchandiseSubtotal);
         $convenienceFee = $shippingMethod === 'Delivery'
-            ? $this->money(self::getConvenienceFeeRate())
+            ? $this->money($normalizedSubtotal * self::getConvenienceFeeRate())
             : 0.00;
         $normalizedShippingFee = $shippingMethod === 'Delivery'
             ? $this->money($shippingFee)

@@ -67,7 +67,7 @@ class SystemSettingsController extends Controller
                     'contact_info' => ['email' => '', 'phone' => '', 'address' => ''],
                     'social_links' => ['facebook' => '', 'indigo_avatar' => '', 'twitter' => ''],
                     'commission_rate' => 5.0,
-                    'convenience_fee' => 15.0,
+                    'convenience_fee' => 3.0,
                     'maintenance_mode' => false,
                     'paymongo_enabled' => true,
                     'mail_host' => 'smtp.mailtrap.io',
@@ -115,7 +115,7 @@ class SystemSettingsController extends Controller
             ]),
             // Operational Settings
             'commission_rate' => $this->settings->get('commission_rate', 5.0),
-            'convenience_fee' => $this->settings->get('convenience_fee', 15.0),
+            'convenience_fee' => $this->settings->get('convenience_fee', 3.0),
             'maintenance_mode' => $this->settings->get('maintenance_mode', false),
             'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
 
@@ -262,7 +262,7 @@ class SystemSettingsController extends Controller
             'social_links.twitter' => 'nullable|url|max:255',
             // Operational Validation
             'commission_rate' => 'required|numeric|min:0|max:100',
-            'convenience_fee' => 'required|numeric|min:0',
+            'convenience_fee' => 'required|numeric|min:0|max:100',
             'maintenance_mode' => 'required|boolean',
             'paymongo_enabled' => 'required|boolean',
 
@@ -288,6 +288,13 @@ class SystemSettingsController extends Controller
             \App\Models\PlatformActivity::log(
                 'COMMISSION_UPDATE',
                 "Changed site-wide commission from " . $this->settings->get('commission_rate') . "% to " . $validated['commission_rate'] . "%"
+            );
+        }
+
+        if ((float)$this->settings->get('convenience_fee') !== (float)$validated['convenience_fee']) {
+            \App\Models\PlatformActivity::log(
+                'CONVENIENCE_FEE_UPDATE',
+                "Changed site-wide convenience fee rate from " . $this->settings->get('convenience_fee') . "% to " . $validated['convenience_fee'] . "%"
             );
         }
 

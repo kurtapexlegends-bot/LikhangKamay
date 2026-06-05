@@ -201,7 +201,7 @@ export default function Checkout({ auth, pricing }) {
                 total: Number((
                     data.shipping_method === 'Delivery'
                         ? group.subtotal
-                            + convenienceFeeForSubtotal(group.subtotal)
+                            + platformFeeForSubtotal(group.subtotal)
                             + Number(shippingQuote.groups[String(group.sellerId)] || 0)
                         : group.subtotal
                 ).toFixed(2)),
