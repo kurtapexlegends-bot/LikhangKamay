@@ -122,7 +122,7 @@ class SuperAdminController extends Controller
                     return User::with('sellerOwner:id,name,shop_name')
                         ->orderBy('created_at', 'desc')
                         ->limit(10)
-                        ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier', 'seller_owner_id', 'email_verified_at', 'must_change_password', 'staff_module_permissions'])
+                        ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier', 'seller_owner_id', 'email_verified_at', 'must_change_password', 'staff_module_permissions', 'staff_plan_suspended_at'])
                         ->map(function (User $user) {
                             [$accountState, $accountStateTone] = $this->resolveAdminAccountState($user);
 
@@ -209,13 +209,9 @@ class SuperAdminController extends Controller
     {
         return User::where('role', 'staff')
             ->whereNull('seller_owner_id')
+            ->with('employee')
             ->get()
-            ->map(fn($u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'email' => $u->email,
-                'created_at' => $u->created_at->format('M d, Y'),
-            ]);
+            ->map(fn($s) => $this->mapAdminStaffMember($s));
     }
 
     /**
@@ -516,6 +512,9 @@ class SuperAdminController extends Controller
         }
         
         if ($user->isStaff()) {
+            if (!$user->isWorkspaceAccessEnabled()) {
+                return ['Access Suspended', 'danger'];
+            }
             if ($user->must_change_password) {
                 return ['Password Reset Required', 'warning'];
             }
@@ -523,6 +522,26 @@ class SuperAdminController extends Controller
         }
 
         return [$user->hasVerifiedEmail() ? 'Verified' : 'Unverified', $user->hasVerifiedEmail() ? 'success' : 'warning'];
+    }
+
+    private function mapAdminStaffMember(User $s)
+    {
+        [$sState, $sTone] = $this->resolveAdminAccountState($s);
+        return [
+            'id' => $s->id,
+            'name' => $s->name,
+            'email' => $s->email,
+            'created_at' => $s->created_at ? $s->created_at->format('M d, Y') : null,
+            'employee_name' => $s->employee->name ?? $s->name,
+            'employee_linked' => (bool)$s->employee_id,
+            'email_verified' => (bool)$s->email_verified_at,
+            'requires_password_change' => (bool)$s->must_change_password,
+            'workspace_access_enabled' => $s->isWorkspaceAccessEnabled(),
+            'account_state' => $sState,
+            'account_state_tone' => $sTone,
+            'staff_role_preset_key' => $s->staff_role_preset_key,
+            'module_permissions' => $s->staff_module_permissions,
+        ];
     }
 
     private function mapAdminPrimaryAccount(User $user, string $search)
@@ -559,22 +578,12 @@ class SuperAdminController extends Controller
             'account_state_tone' => $tone,
             'created_at' => $user->created_at->format('M d, Y'),
             'avatar' => $user->avatar,
+            'premium_tier' => $user->premium_tier,
+            'email_verified' => (bool)$user->email_verified_at,
+            'workspace_access_enabled' => $user->isWorkspaceAccessEnabled(),
             'staff_count' => $user->staff_members_count ?? 0,
             'matched_staff_count' => $matchedStaffCount,
-            'staff_members' => $staffMembers->map(function($s) {
-                [$sState, $sTone] = $this->resolveAdminAccountState($s);
-                return [
-                    'id' => $s->id,
-                    'name' => $s->name,
-                    'email' => $s->email,
-                    'employee_name' => $s->employee->name ?? $s->name,
-                    'employee_linked' => (bool)$s->employee_id,
-                    'email_verified' => (bool)$s->email_verified_at,
-                    'requires_password_change' => (bool)$s->must_change_password,
-                    'account_state' => $sState,
-                    'account_state_tone' => $sTone,
-                ];
-            })->values(),
+            'staff_members' => $staffMembers->map(fn($s) => $this->mapAdminStaffMember($s))->values(),
         ];
     }
 

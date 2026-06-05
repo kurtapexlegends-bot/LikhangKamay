@@ -42,6 +42,11 @@ const Content = ({ align = 'right', width = '48', contentClasses = 'py-1 bg-whit
 
     let widthClasses = '';
     if (width === '48') widthClasses = 'w-48';
+    else if (width === '56') widthClasses = 'w-56';
+    else if (width === '60') widthClasses = 'w-60';
+    else if (width === '64') widthClasses = 'w-64';
+    else if (width === '80') widthClasses = 'w-80';
+    else if (width !== 'custom') widthClasses = width;
 
     return (
         <Transition

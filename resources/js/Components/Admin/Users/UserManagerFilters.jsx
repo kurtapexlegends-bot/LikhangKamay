@@ -75,7 +75,7 @@ export default function UserManagerFilters({
                     </div>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm px-4 py-3 sm:px-6">
+                <div className="rounded-2xl border border-stone-200 bg-white shadow-sm px-4 py-3 sm:px-6">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p className="text-sm font-semibold text-stone-900">Platform Accounts</p>

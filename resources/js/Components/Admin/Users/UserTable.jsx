@@ -275,11 +275,7 @@ export default function UserTable({
                                                 <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
                                                     {user.account_state}
                                                 </span>
-                                                {user.role === 'buyer' && (
-                                                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                                                        {user.email_verified ? 'Verified' : 'Unverified'}
-                                                    </p>
-                                                )}
+
                                             </div>
                                         </td>
 
