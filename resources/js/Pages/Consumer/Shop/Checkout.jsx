@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, Info, MapPin, MessageCircle, Package, Pencil, Save, ShieldCheck, Store, Trash2, Truck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -215,7 +216,13 @@ export default function Checkout({ auth, pricing }) {
             ? peso(summary.shippingFeeTotal)
             : shippingQuote.status === 'error'
                 ? 'Unavailable'
-            : 'Calculating...';
+            : (
+                <span className="inline-flex items-center gap-0.5">
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400"></span>
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.15s]"></span>
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.3s]"></span>
+                </span>
+            );
 
     const showAggregateBreakdown = totalSellers > 1;
 
@@ -436,11 +443,11 @@ export default function Checkout({ auth, pricing }) {
                         <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                             <div className="mb-3 flex items-center gap-3 text-clay-700"><Truck size={18} /><h2 className="text-base font-bold">Shipping Method</h2></div>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.shipping_method === 'Delivery' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600' : 'border-gray-200 hover:border-clay-300'}`}>
+                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${data.shipping_method === 'Delivery' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600 shadow-sm' : 'border-gray-200 hover:border-clay-300'}`}>
                                     <input type="radio" name="shipping_method" value="Delivery" checked={data.shipping_method === 'Delivery'} onChange={(event) => setData((current) => ({ ...current, shipping_method: event.target.value }))} className="text-clay-600 focus:ring-clay-500" />
                                     <div><p className="font-bold text-gray-900">Standard Delivery</p><p className="text-xs text-gray-500">Convenience fee applies per seller order subtotal.</p></div>
                                 </label>
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.shipping_method === 'Pick Up' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600' : 'border-gray-200 hover:border-clay-300'}`}>
+                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${data.shipping_method === 'Pick Up' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600 shadow-sm' : 'border-gray-200 hover:border-clay-300'}`}>
                                     <input type="radio" name="shipping_method" value="Pick Up" checked={data.shipping_method === 'Pick Up'} onChange={(event) => setData((current) => ({ ...current, shipping_method: event.target.value, payment_method: 'COD' }))} className="text-clay-600 focus:ring-clay-500" />
                                     <div><p className="font-bold text-gray-900">Store Pick Up</p><p className="text-xs text-gray-500">No convenience fee. COD only.</p></div>
                                 </label>
@@ -456,13 +463,13 @@ export default function Checkout({ auth, pricing }) {
                                             <div
                                                 key={address.id}
                                                 onClick={() => chooseSavedAddress(address)}
-                                                className={`cursor-pointer rounded-xl border p-4 ${
+                                                className={`cursor-pointer rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${
                                                     selectedAddressId === address.id
                                                         ? address.is_default
-                                                            ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500'
-                                                            : 'border-clay-600 bg-clay-50 ring-1 ring-clay-600'
+                                                            ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 shadow-sm'
+                                                            : 'border-clay-600 bg-clay-50 ring-1 ring-clay-600 shadow-sm'
                                                         : address.is_default
-                                                            ? 'border-emerald-500 bg-emerald-50'
+                                                            ? 'border-emerald-500 bg-emerald-50 hover:shadow-sm'
                                                             : 'border-gray-200 hover:border-clay-300'
                                                 }`}
                                             >
@@ -515,75 +522,83 @@ export default function Checkout({ auth, pricing }) {
                                                 <p className="mt-1 text-[10px] text-gray-500">{address.recipient_name} | {address.phone_number}</p>
                                             </div>
                                         ))}
-                                        <div onClick={chooseNewAddress} className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-3.5 text-center ${selectedAddressId === 'new' ? 'border-clay-600 bg-clay-50 text-clay-700' : 'border-gray-200 text-gray-400 hover:border-clay-400 hover:text-clay-600'}`}>
+                                        <div onClick={chooseNewAddress} className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-3.5 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${selectedAddressId === 'new' ? 'border-clay-600 bg-clay-50 text-clay-700 shadow-sm' : 'border-gray-200 text-gray-400 hover:border-clay-400 hover:text-clay-600'}`}>
                                             <span className="text-2xl font-light">+</span>
                                             <span className="text-sm font-medium">Use New Address</span>
                                         </div>
                                     </div>
                                 )}
 
-                                {showAddressForm && (
-                                    <div className="space-y-3.5">
-                                        <div>
-                                            <p className="mb-2 text-sm font-bold text-gray-800">Address Type</p>
-                                            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                                                {TYPES.map((type) => (
-                                                    <button key={type.value} type="button" onClick={() => setData((current) => ({ ...current, shipping_address_type: type.value }))} className={`rounded-xl border px-3 py-2.5 text-sm font-bold ${data.shipping_address_type === type.value ? 'border-clay-600 bg-clay-50 text-clay-700' : 'border-gray-200 text-gray-500 hover:border-clay-300'}`}>{type.label}</button>
-                                                ))}
-                                            </div>
-                                            {errors.shipping_address_type && <p className="mt-1 text-sm text-red-500">{errors.shipping_address_type}</p>}
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                                <AnimatePresence initial={false}>
+                                    {showAddressForm && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.25 }}
+                                            className="space-y-3.5 overflow-hidden"
+                                        >
                                             <div>
-                                                <label className="mb-1 block text-sm font-bold text-gray-700">Recipient Name</label>
-                                                <input
-                                                    type="text"
-                                                    value={data.recipient_name}
-                                                    onChange={(event) => setData('recipient_name', event.target.value)}
-                                                    className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
-                                                    placeholder="Full recipient name"
-                                                />
-                                                {errors.recipient_name && <p className="mt-1 text-sm text-red-500">{errors.recipient_name}</p>}
+                                                <p className="mb-2 text-sm font-bold text-gray-800">Address Type</p>
+                                                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                                                    {TYPES.map((type) => (
+                                                        <button key={type.value} type="button" onClick={() => setData((current) => ({ ...current, shipping_address_type: type.value }))} className={`rounded-xl border px-3 py-2.5 text-sm font-bold ${data.shipping_address_type === type.value ? 'border-clay-600 bg-clay-50 text-clay-700' : 'border-gray-200 text-gray-500 hover:border-clay-300'}`}>{type.label}</button>
+                                                    ))}
+                                                </div>
+                                                {errors.shipping_address_type && <p className="mt-1 text-sm text-red-500">{errors.shipping_address_type}</p>}
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-bold text-gray-700">Phone Number</label>
-                                                <input
-                                                    type="text"
-                                                    value={data.phone_number}
-                                                    onChange={(event) => setData('phone_number', event.target.value)}
-                                                    className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
-                                                    placeholder="09XXXXXXXXX"
-                                                />
-                                                {errors.phone_number && <p className="mt-1 text-sm text-red-500">{errors.phone_number}</p>}
+                                            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-bold text-gray-700">Recipient Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={data.recipient_name}
+                                                        onChange={(event) => setData('recipient_name', event.target.value)}
+                                                        className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                                        placeholder="Full recipient name"
+                                                    />
+                                                    {errors.recipient_name && <p className="mt-1 text-sm text-red-500">{errors.recipient_name}</p>}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-bold text-gray-700">Phone Number</label>
+                                                    <input
+                                                        type="text"
+                                                        value={data.phone_number}
+                                                        onChange={(event) => setData('phone_number', event.target.value)}
+                                                        className="w-full rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500"
+                                                        placeholder="09XXXXXXXXX"
+                                                    />
+                                                    {errors.phone_number && <p className="mt-1 text-sm text-red-500">{errors.phone_number}</p>}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <StructuredAddressFields
-                                            key={`checkout-address-${selectedAddressId}`}
-                                            data={data}
-                                            setData={setData}
-                                            errors={errors}
-                                            prefix="shipping_"
-                                            required
-                                            previewLabel="Delivery Address"
-                                        />
-                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={saveAddress}
-                                                className="w-full rounded-xl bg-clay-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-clay-700 sm:w-auto"
-                                            >
-                                                Save Address
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={cancelAddressForm}
-                                                className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-gray-500 transition hover:bg-stone-50 hover:text-gray-700 sm:w-auto sm:border-0 sm:px-0 sm:py-0"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
+                                            <StructuredAddressFields
+                                                key={`checkout-address-${selectedAddressId}`}
+                                                data={data}
+                                                setData={setData}
+                                                errors={errors}
+                                                prefix="shipping_"
+                                                required
+                                                previewLabel="Delivery Address"
+                                            />
+                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={saveAddress}
+                                                    className="w-full rounded-xl bg-clay-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-clay-700 sm:w-auto"
+                                                >
+                                                    Save Address
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={cancelAddressForm}
+                                                    className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-gray-500 transition hover:bg-stone-50 hover:text-gray-700 sm:w-auto sm:border-0 sm:px-0 sm:py-0"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                                 {!isNewAddress && needsDeliveryContactDetails && (
                                     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
                                         <p className="text-sm font-bold text-amber-800">Complete delivery contact details</p>
@@ -634,16 +649,25 @@ export default function Checkout({ auth, pricing }) {
 
                         <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                             <div className="mb-3 flex items-center gap-3 text-clay-700"><CreditCard size={18} /><h2 className="text-base font-bold">Payment Method</h2></div>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.payment_method === 'COD' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600' : 'border-gray-200 hover:border-clay-300'}`}>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${data.payment_method === 'COD' ? 'border-clay-600 bg-clay-50 ring-1 ring-clay-600 shadow-sm' : 'border-gray-200 hover:border-clay-300'}`}>
                                     <input type="radio" name="payment" value="COD" checked={data.payment_method === 'COD'} onChange={(event) => setData('payment_method', event.target.value)} className="text-clay-600 focus:ring-clay-500" />
                                     <div><p className="font-bold text-gray-900">Cash on Delivery</p><p className="text-xs text-gray-500">Pay when you receive</p></div>
                                 </label>
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 ${data.shipping_method === 'Pick Up' ? 'cursor-not-allowed border-gray-100 bg-gray-50 opacity-50' : data.payment_method === 'GCash' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:border-gray-300'}`}>
+                                <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-all duration-300 ${data.shipping_method === 'Pick Up' ? 'cursor-not-allowed border-gray-100 bg-gray-50 opacity-50' : `hover:-translate-y-0.5 hover:shadow-sm ${data.payment_method === 'GCash' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500 shadow-sm' : 'border-gray-200 hover:border-blue-300'}`}`}>
                                     <input type="radio" name="payment" value="GCash" checked={data.payment_method === 'GCash'} onChange={(event) => setData('payment_method', event.target.value)} disabled={data.shipping_method === 'Pick Up'} className="text-blue-600 focus:ring-blue-500 disabled:opacity-50" />
                                     <div><p className="font-bold text-gray-900">GCash</p><p className="text-xs text-gray-500">{data.shipping_method === 'Pick Up' ? 'Not available for pickup' : 'Pay online after order placement'}</p></div>
                                 </label>
                             </div>
+                            {data.shipping_method === 'Pick Up' && (
+                                <div className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50/60 border border-amber-200 p-3 text-xs text-amber-800 animate-fadeIn">
+                                    <Info size={14} className="shrink-0 mt-0.5 text-amber-600" />
+                                    <div>
+                                        <span className="font-bold">GCash is unavailable for Store Pick Up.</span>
+                                        <p className="mt-0.5 text-amber-700">Pick up orders must be settled via Cash on Delivery (COD) directly at the artisan's physical location.</p>
+                                    </div>
+                                </div>
+                            )}
                             {errors.payment_method && <p className="mt-2 text-sm text-red-500">{errors.payment_method}</p>}
                         </div>
                     </div>
@@ -666,7 +690,24 @@ export default function Checkout({ auth, pricing }) {
                                                 <>
                                                     <div className="flex justify-between"><span>Merchandise</span><span className="font-medium">{peso(group.subtotal)}</span></div>
                                                     {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Platform Fee ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span><span className="font-medium">{peso(group.platformFee)}</span></div>}
-                                                    {data.shipping_method === 'Delivery' && <div className="flex justify-between"><span>Shipping Fee</span><span className={shippingQuote.status !== 'ready' ? 'italic text-gray-400 font-normal' : 'font-medium'}>{shippingQuote.status === 'ready' ? peso(group.shippingFee) : (shippingQuote.status === 'error' ? 'Unavailable' : 'Calculating...')}</span></div>}
+                                                    {data.shipping_method === 'Delivery' && (
+                                                        <div className="flex justify-between">
+                                                            <span>Shipping Fee</span>
+                                                            <span className={shippingQuote.status !== 'ready' ? 'italic text-gray-400 font-normal' : 'font-medium'}>
+                                                                {shippingQuote.status === 'ready' ? (
+                                                                    peso(group.shippingFee)
+                                                                ) : shippingQuote.status === 'error' ? (
+                                                                    'Unavailable'
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-0.5">
+                                                                        <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400"></span>
+                                                                        <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.15s]"></span>
+                                                                        <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.3s]"></span>
+                                                                    </span>
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </>
                                             )}
                                             {showAggregateBreakdown && (
@@ -689,26 +730,53 @@ export default function Checkout({ auth, pricing }) {
                                 )}
                                 {totalSellers > 1 && <div className="flex justify-between text-xs text-blue-600"><span className="flex items-center gap-1"><Package size={12} />Order Split</span><span className="font-bold">{totalSellers} separate orders</span></div>}
                                 <div className="mt-2 flex justify-between border-t border-dashed border-gray-200 pt-2 text-lg font-bold text-gray-900"><span>Total Due Now</span><span>{peso(summary.grandTotal)}</span></div>
-                                <p className="text-center text-[10px] text-gray-400">
-                                    {data.shipping_method === 'Pick Up'
-                                        ? 'Pickup orders have no shipping charge.'
-                                        : shippingQuote.status === 'ready'
-                                            ? 'Shipping fee is already included in the total due now.'
-                                            : shippingQuote.status === 'error'
-                                                ? 'Delivery quote failed. Retry after checking the address details.'
+                                {data.shipping_method === 'Delivery' && shippingQuote.status === 'error' ? (
+                                    <div className="mt-3 rounded-xl border border-red-200 bg-red-50/40 p-3 text-xs">
+                                        <div className="flex gap-2 text-red-700">
+                                            <AlertTriangle size={14} className="shrink-0 mt-0.5 animate-bounce" />
+                                            <div>
+                                                <p className="font-bold">Delivery Quote Failed</p>
+                                                <p className="mt-0.5 text-red-600">Unable to calculate shipping. Please verify your address or connection and try again.</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuoteRetryNonce((current) => current + 1)}
+                                            className="mt-2.5 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-center text-xs font-bold text-red-700 hover:bg-red-50 transition-colors shadow-sm"
+                                        >
+                                            Retry Quote Calculation
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-[10px] text-gray-400">
+                                        {data.shipping_method === 'Pick Up'
+                                            ? 'Pickup orders have no shipping charge.'
+                                            : shippingQuote.status === 'ready'
+                                                ? 'Shipping fee is already included in the total due now.'
                                                 : 'Waiting for the delivery quote before enabling checkout.'}
-                                </p>
-                                {data.shipping_method === 'Delivery' && shippingQuote.status === 'error' && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setQuoteRetryNonce((current) => current + 1)}
-                                        className="mt-2 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-600 transition-colors hover:bg-stone-50"
-                                    >
-                                        Retry Quote
-                                    </button>
+                                    </p>
                                 )}
                             </div>
-                            <button onClick={submitCheckout} disabled={submitDisabled || isPendingArtisan} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"><ShieldCheck size={18} />{processing ? 'Processing...' : totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</button>
+                            <button
+                                onClick={submitCheckout}
+                                disabled={submitDisabled || isPendingArtisan}
+                                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {processing ? (
+                                    <>
+                                        <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                        </svg>
+                                        <span>Processing...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldCheck size={18} />
+                                        <span>{totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</span>
+                                    </>
+                                )}
+                            </button>
                             {isPendingArtisan && <p className="mt-2 text-center text-xs font-bold text-amber-600">Checkout is disabled for pending shops.</p>}
                             <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400"><MessageCircle size={12} />Chat opens after ordering</p>
                         </div>
@@ -735,8 +803,20 @@ export default function Checkout({ auth, pricing }) {
                         disabled={submitDisabled || isPendingArtisan}
                         className="flex h-11 flex-[1.2] items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        <ShieldCheck size={16} />
-                        {processing ? 'Processing...' : 'Place Order'}
+                        {processing ? (
+                            <>
+                                <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                <span>Processing...</span>
+                            </>
+                        ) : (
+                            <>
+                                <ShieldCheck size={16} />
+                                <span>Place Order</span>
+                            </>
+                        )}
                     </button>
                 </StickyActionBar>
             </div>
