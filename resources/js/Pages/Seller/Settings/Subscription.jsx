@@ -91,8 +91,18 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [targetPlan, setTargetPlan] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [activePageIndex, setActivePageIndex] = useState(0);
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
+
+    const handleScroll = (e) => {
+        const scrollLeft = e.currentTarget.scrollLeft;
+        const width = e.currentTarget.getBoundingClientRect().width;
+        if (width > 0) {
+            const index = Math.round(scrollLeft / width);
+            setActivePageIndex(index);
+        }
+    };
 
     const isCurrentPlan = (plan) => currentPlan === plan;
 
@@ -221,24 +231,24 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
 
                 <main className="mx-auto w-full max-w-[1120px] px-4 py-5 sm:px-6 lg:px-7">
                     <div className="space-y-5">
-                        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-bold text-stone-600">
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+                            <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-bold text-stone-600">
                                 <ShieldCheck size={13} />
                                 Current plan: {currentPlanMeta.name}
                             </span>
                             {pendingUpgrade ? (
-                                <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+                                <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
                                     <Clock3 size={13} />
                                     Payment pending until PayMongo confirms it
                                 </span>
                             ) : (
-                                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
+                                <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
                                     <CheckCircle2 size={13} />
                                     Plan changes apply after paid upgrades or confirmed downgrades
                                 </span>
                             )}
                             {activeProductsCount > limit && (
-                                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[11px] font-bold text-red-700">
+                                <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[11px] font-bold text-red-700">
                                     <AlertCircle size={13} />
                                     Some products must return to draft under the current limit
                                 </span>
@@ -265,7 +275,10 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                             </div>
 
                             <div className="px-5 py-5 sm:px-6">
-                                <div className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 md:grid md:grid-cols-3 md:gap-6 no-scrollbar">
+                                <div 
+                                    onScroll={handleScroll}
+                                    className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 md:grid md:grid-cols-3 md:gap-6 no-scrollbar"
+                                >
                                     {plans.map((plan) => {
                                         const current = isCurrentPlan(plan.id);
                                         const tierIndex = plans.findIndex((item) => item.id === plan.id);
@@ -373,6 +386,18 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                                             </article>
                                         );
                                     })}
+                                </div>
+
+                                {/* Page Indicator Dots on Mobile */}
+                                <div className="flex justify-center gap-1.5 mt-2 md:hidden">
+                                    {plans.map((_, i) => (
+                                        <span
+                                            key={i}
+                                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                                                activePageIndex === i ? 'w-4 bg-orange-600' : 'w-1.5 bg-stone-200'
+                                            }`}
+                                        />
+                                    ))}
                                 </div>
                             </div>
 
@@ -551,17 +576,17 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
                         )}
                     </div>
 
-                    <div className="mt-6 flex justify-end gap-3 border-t border-stone-200 pt-4">
+                    <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2.5 border-t border-stone-200 pt-4">
                         <button
                             onClick={closeFinalDowngradeModal}
-                            className="px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-300 rounded-lg hover:bg-stone-50"
+                            className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-300 rounded-lg hover:bg-stone-50"
                         >
                             Go back
                         </button>
                         <button
                             onClick={confirmDowngrade}
                             disabled={isProcessing}
-                            className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors ${
+                            className={`w-full sm:w-auto px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors ${
                                 isProcessing
                                     ? 'bg-stone-300 cursor-not-allowed'
                                     : 'bg-orange-600 hover:bg-orange-700'

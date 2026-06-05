@@ -105,7 +105,17 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
     const [hoveredPlan, setHoveredPlan] = useState(null);
     const [pendingDowngrade, setPendingDowngrade] = useState(null);
     const [isDowngrading, setIsDowngrading] = useState(false);
+    const [activePageIndex, setActivePageIndex] = useState(0);
     const overlayRef = useRef(null);
+
+    const handleScroll = (e) => {
+        const scrollLeft = e.currentTarget.scrollLeft;
+        const width = e.currentTarget.getBoundingClientRect().width;
+        if (width > 0) {
+            const index = Math.round(scrollLeft / width);
+            setActivePageIndex(index);
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -247,7 +257,10 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                     </div>
 
                     <div className="bg-stone-50/30 p-4 sm:p-4">
-                        <div className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 lg:grid lg:grid-cols-3 lg:gap-5 no-scrollbar">
+                        <div 
+                            onScroll={handleScroll}
+                            className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 lg:grid lg:grid-cols-3 lg:gap-5 no-scrollbar"
+                        >
                             {PLANS.map((plan, index) => {
                                 const isCurrent = plan.id === currentTier;
                                 const isUpgrade = index > currentIndex;
@@ -366,6 +379,18 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 );
                             })}
                         </div>
+
+                        {/* Page Indicator Dots on Mobile */}
+                        <div className="flex justify-center gap-1.5 mt-2 lg:hidden">
+                            {PLANS.map((_, i) => (
+                                <span
+                                    key={i}
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                        activePageIndex === i ? 'w-4 bg-[#6D5EF6]' : 'w-1.5 bg-stone-200'
+                                    }`}
+                                />
+                            ))}
+                        </div>
                     </div>
 
                     <div className="flex flex-col items-center justify-between gap-2 border-t border-stone-100 bg-white px-5 py-2.5 sm:flex-row sm:px-6">
@@ -442,17 +467,17 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                     )}
                                 </div>
 
-                                <div className="mt-5 flex justify-end gap-3">
+                                <div className="mt-5 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
                                     <button
                                         onClick={() => setPendingDowngrade(null)}
-                                        className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-600 transition-colors hover:bg-stone-50"
+                                        className="w-full sm:w-auto rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-600 transition-colors hover:bg-stone-50"
                                     >
                                         Go back
                                     </button>
                                     <button
                                         onClick={confirmDowngrade}
                                         disabled={isDowngrading}
-                                        className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition-colors ${
+                                        className={`w-full sm:w-auto rounded-xl px-4 py-2 text-sm font-bold text-white transition-colors ${
                                             isDowngrading ? 'cursor-not-allowed bg-stone-300' : 'bg-orange-600 hover:bg-orange-700'
                                         }`}
                                     >
