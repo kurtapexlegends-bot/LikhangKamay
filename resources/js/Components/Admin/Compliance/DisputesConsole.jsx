@@ -98,41 +98,44 @@ export default function DisputesConsole({
             </div>
 
             {/* Quick Tabs filters with horizontal scroll on mobile */}
-            <div className="flex items-center gap-2 border-b border-stone-100 px-4 py-3 sm:px-6 bg-white overflow-x-auto flex-nowrap scrollbar-hide -mx-4 px-4 sm:-mx-0 sm:px-0">
-                {[
-                    ['open', 'Open queue'],
-                    ['closed', 'Closed'],
-                    ['low_rating', '1-2 stars'],
-                    ['high_rating', '4-5 stars'],
-                ].map(([key, label]) => (
+            <div className="relative">
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 sm:hidden" />
+                <div className="flex items-center gap-2 border-b border-stone-100 px-4 py-3 sm:px-6 bg-white overflow-x-auto flex-nowrap scrollbar-hide -mx-4 px-4 sm:-mx-0 sm:px-0">
+                    {[
+                        ['open', 'Open queue'],
+                        ['closed', 'Closed'],
+                        ['low_rating', '1-2 stars'],
+                        ['high_rating', '4-5 stars'],
+                    ].map(([key, label]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => {
+                                setDisputeQuickView(key);
+                                setDisputesCurrentPage(1);
+                            }}
+                            className={`rounded-full border px-4 py-2 text-[10px] font-bold transition-colors whitespace-nowrap min-h-[40px] flex items-center justify-center shrink-0 ${
+                                disputeQuickView === key
+                                    ? 'border-clay-200 bg-clay-50 text-clay-700'
+                                    : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                     <button
-                        key={key}
                         type="button"
                         onClick={() => {
-                            setDisputeQuickView(key);
+                            setDisputeQuickView('open');
+                            setDisputeStatusFilter('all');
+                            setDisputeSearch('');
                             setDisputesCurrentPage(1);
                         }}
-                        className={`rounded-full border px-4 py-2 text-[10px] font-bold transition-colors whitespace-nowrap min-h-[40px] flex items-center justify-center shrink-0 ${
-                            disputeQuickView === key
-                                ? 'border-clay-200 bg-clay-50 text-clay-700'
-                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                        }`}
+                        className="ml-auto rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-bold text-stone-500 hover:bg-stone-50 whitespace-nowrap min-h-[40px] flex items-center justify-center shrink-0"
                     >
-                        {label}
+                        Reset filters
                     </button>
-                ))}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setDisputeQuickView('open');
-                        setDisputeStatusFilter('all');
-                        setDisputeSearch('');
-                        setDisputesCurrentPage(1);
-                    }}
-                    className="ml-auto rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-bold text-stone-500 hover:bg-stone-50 whitespace-nowrap min-h-[40px] flex items-center justify-center shrink-0"
-                >
-                    Reset filters
-                </button>
+                </div>
             </div>
 
             {/* Dispute Items list */}
@@ -183,12 +186,12 @@ export default function DisputesConsole({
                                     )}
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2 lg:justify-end shrink-0">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 lg:justify-end shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
                                     {dispute.status === 'pending' && (
                                         <button
                                             type="button"
                                             onClick={() => openDisputeActionModal(dispute, 'under_review')}
-                                            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100 min-h-[44px] flex items-center justify-center"
+                                            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
                                         >
                                             Start Review
                                         </button>
@@ -198,14 +201,14 @@ export default function DisputesConsole({
                                             <button
                                                 type="button"
                                                 onClick={() => openDisputeActionModal(dispute, 'resolved')}
-                                                className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 min-h-[44px] flex items-center justify-center"
+                                                className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
                                             >
                                                 Approve Request
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => openDisputeActionModal(dispute, 'rejected')}
-                                                className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-100 min-h-[44px] flex items-center justify-center"
+                                                className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
                                             >
                                                 Reject Request
                                             </button>
@@ -214,7 +217,7 @@ export default function DisputesConsole({
                                     <button
                                         type="button"
                                         onClick={() => setDisputeDeleteState({ open: true, dispute })}
-                                        className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 min-h-[44px] flex items-center justify-center"
+                                        className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
                                     >
                                         Remove Request
                                     </button>

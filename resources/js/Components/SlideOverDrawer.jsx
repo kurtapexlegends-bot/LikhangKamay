@@ -8,7 +8,8 @@ export default function SlideOverDrawer({
     title,
     children,
     footer = null,
-    widthClass = 'max-w-md' // Default to medium width, can be overridden with 'max-w-2xl', etc.
+    widthClass = 'max-w-md', // Default to medium width, can be overridden with 'max-w-2xl', etc.
+    bodyClassName = 'relative flex-1 overflow-y-auto custom-scrollbar p-6'
 }) {
     return (
         <Transition show={show} as={Fragment}>
@@ -59,7 +60,7 @@ export default function SlideOverDrawer({
                                         )}
                                         
                                         {/* Body */}
-                                        <div className="relative flex-1 overflow-y-auto custom-scrollbar p-6">
+                                        <div className={bodyClassName}>
                                             {children}
                                         </div>
 

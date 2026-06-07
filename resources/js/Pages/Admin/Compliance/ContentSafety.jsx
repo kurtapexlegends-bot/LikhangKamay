@@ -266,9 +266,10 @@ export default function ContentSafety({ flags, disputes = [], trashQueue = [], t
                                     title={`Ticket #${selectedFlag?.id}`}
                                     widthClass="max-w-xl"
                                     className="lg:hidden"
+                                    bodyClassName="relative flex-1 overflow-hidden"
                                 >
                                     {selectedFlag && (
-                                        <div className="h-full -m-6">
+                                        <div className="h-full">
                                             <ReportDetailsCard 
                                                 selectedFlag={selectedFlag} 
                                                 handleAction={handleFlagAction} 

@@ -39,7 +39,8 @@ export default function TrashRestorationTable({
                 </div>
             </div>
 
-            <div className="overflow-x-auto w-full">
+            {/* Desktop Table View */}
+            <div className="overflow-x-auto w-full hidden md:block">
                 <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
                         <tr className="bg-stone-50/50">
@@ -112,6 +113,64 @@ export default function TrashRestorationTable({
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Cards List View */}
+            <div className="block md:hidden divide-y divide-stone-100 bg-white">
+                {filteredTrashQueue.length === 0 ? (
+                    <div className="px-6 py-12 text-center bg-white">
+                        <WorkspaceEmptyState
+                            icon={History}
+                            title="Trash queue is empty"
+                            description="Deleted items that are pending permanent deletion will appear here."
+                        />
+                    </div>
+                ) : (
+                    filteredTrashQueue.map((item) => (
+                        <div key={`${item.type}-${item.id}`} className="p-4 space-y-3 hover:bg-stone-50/50 transition-colors">
+                            {/* Card Header Row: Badge & Days Left */}
+                            <div className="flex items-center justify-between">
+                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                                    item.type === 'Product' ? 'bg-clay-50 text-clay-700' :
+                                    item.type === 'Category' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700'
+                                }`}>
+                                    {item.type === 'Product' && <Package size={10} />}
+                                    {item.type === 'Category' && <FolderTree size={10} />}
+                                    {item.type === 'Order' && <ShoppingBag size={10} />}
+                                    {item.type}
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] font-mono font-bold text-stone-700 bg-stone-50 px-2 py-0.5 border border-stone-100 rounded-md">
+                                        {Math.max(0, Math.ceil((new Date(item.expires_at) - new Date()) / (1000 * 60 * 60 * 24)))} Days Left
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Card Content: Name and Deletion Context */}
+                            <div>
+                                <h4 className="text-xs font-bold text-stone-900 leading-snug">{item.name}</h4>
+                                <p className="text-[11px] text-stone-500 font-medium italic mt-1">{item.context}</p>
+                                <p className="text-[9px] text-stone-400 font-medium mt-0.5">Expires: {new Date(item.expires_at).toLocaleDateString()}</p>
+                            </div>
+
+                            {/* Card Footer Actions Row */}
+                            <div className="flex items-center gap-2 pt-1">
+                                <button 
+                                    onClick={() => setConfirmingRestore(item)}
+                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl font-bold text-[10px] hover:bg-indigo-100 transition min-h-[44px]"
+                                >
+                                    <RotateCcw size={15} /> Restore
+                                </button>
+                                <button 
+                                    onClick={() => setConfirmingDelete(item)}
+                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl font-bold text-[10px] hover:bg-rose-100 transition min-h-[44px]"
+                                >
+                                    <Trash2 size={15} /> Delete Permanently
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );
