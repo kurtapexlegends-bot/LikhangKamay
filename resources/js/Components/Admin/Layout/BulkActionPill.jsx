@@ -47,6 +47,15 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
         };
     }, []);
 
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     return (
         <AnimatePresence>
             {selectedCount > 0 && (
@@ -65,7 +74,10 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
                         damping: 30,
                         opacity: { duration: 0.2 }
                     }}
-                    className="fixed bottom-4 sm:bottom-8 left-1/2 z-45 sm:z-50 pointer-events-none"
+                    className="fixed left-1/2 z-45 sm:z-50 pointer-events-none"
+                    style={{
+                        bottom: isMobile ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : '2rem'
+                    }}
                 >
                     <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-white/80 backdrop-blur-2xl px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-clay-200/50 ring-1 ring-black/5">
                         <div className="flex items-center gap-2.5 pr-3 border-r border-clay-100">
