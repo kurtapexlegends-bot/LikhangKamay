@@ -133,6 +133,10 @@ class CartController extends Controller
     // 2. Add Item
     public function store(Request $request)
     {
+        if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+            return redirect()->back()->with('error', 'Administrators are not permitted to make purchases.');
+        }
+
         $validated = $request->validate([
             'product_id' => 'required|integer|exists:products,id',
             'quantity' => 'nullable|integer|min:1',
@@ -222,6 +226,10 @@ class CartController extends Controller
 
     public function buyAgain($orderId)
     {
+        if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+            return redirect()->back()->with('error', 'Administrators are not permitted to make purchases.');
+        }
+
         $order = \App\Models\Order::with('items')->where('user_id', Auth::id())->findOrFail($orderId);
         $cart = $this->normalizeCart(Session::get('cart', []));
         $addedCount = 0;

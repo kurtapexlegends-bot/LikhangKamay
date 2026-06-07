@@ -6,7 +6,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import { useRealtime } from '@/hooks/useRealtime';
 import { 
     MessageCircle, ChevronDown, ShoppingBag, 
-    Search, ShoppingCart, User, LogOut, Heart, Clock, X
+    Search, ShoppingCart, User, LogOut, Heart, Clock, X, Shield
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
@@ -295,6 +295,15 @@ export default function BuyerNavbar() {
                                                     <span className="flex items-center">
                                                         <Clock size={16} className="inline mr-2" />
                                                         Application Status
+                                                    </span>
+                                                </Dropdown.Link>
+                                            )}
+                                            {/* ADMIN LINK */}
+                                            {(user.role === 'super_admin' || user.role === 'admin') && (
+                                                <Dropdown.Link href={route('admin.dashboard')} className="text-stone-900 font-bold bg-stone-50 border-b border-stone-100">
+                                                    <span className="flex items-center text-stone-700">
+                                                        <Shield size={16} className="inline mr-2" />
+                                                        Admin Dashboard
                                                     </span>
                                                 </Dropdown.Link>
                                             )}

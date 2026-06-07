@@ -7,7 +7,8 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import {
     Star, MapPin, Truck, ShieldCheck, Minus, Plus, Box, Image as ImageIcon,
     Heart, ChevronRight, Check, Pin, Flag,
-    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2, History, ZoomIn, ZoomOut
+    Clock, ShoppingCart, MessageCircle, Store, Award, Package, Crown, Pencil, Trash2, Loader2, History, ZoomIn, ZoomOut,
+    Shield, ChevronLeft
 } from 'lucide-react';
 import { normalizeRating, hasRating, formatRating } from '@/utils/rating';
 import { getRecentlyViewedProducts, isProductWishlisted, rememberViewedProduct, toggleWishlistedProduct } from '@/utils/buyerSignals';
@@ -335,6 +336,33 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
             <div className="max-w-6xl mx-auto px-3 py-3 pb-28 sm:px-4 sm:py-4 sm:pb-4">
                 
+                {/* Admin Compliance Back Banner */}
+                {(auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin') && (
+                    <div className="mb-4 bg-stone-900 border border-stone-850 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+                        <div className="flex items-center gap-2.5">
+                            <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                            <div>
+                                <p className="text-xs font-black text-white uppercase tracking-wider">Admin Live View</p>
+                                <p className="text-[10px] text-stone-400 font-medium mt-0.5">You are previewing this product as an administrator. Compliance status: {product.status || 'Active'}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Link 
+                                href={route('admin.compliance')} 
+                                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-stone-800 text-stone-200 hover:text-white hover:bg-stone-750 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all border border-stone-700"
+                            >
+                                <ChevronLeft size={14} /> Back to Content Safety
+                            </Link>
+                            <Link 
+                                href={route('admin.dashboard')} 
+                                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-stone-800 text-stone-200 hover:text-white hover:bg-stone-750 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all border border-stone-700"
+                            >
+                                Admin Panel
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 {/* Breadcrumb - Compact - Hidden on Mobile */}
                 <nav className="hidden sm:flex flex-wrap items-center gap-1.5 text-xs text-gray-400 mb-4">
                     <Link href="/" className="hover:text-clay-600">Home</Link>
@@ -567,6 +595,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 {isPendingArtisan ? (
                                     <div className="flex w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-[13px] font-bold text-amber-700 shadow-sm">
                                         Purchasing is disabled while your shop application is under review.
+                                    </div>
+                                ) : (auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin') ? (
+                                    <div className="flex w-full items-center justify-center rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-[13px] font-bold text-stone-700 shadow-sm">
+                                        Purchasing is disabled for administrator accounts.
                                     </div>
                                 ) : (
                                     <>
@@ -1015,6 +1047,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                         {isPendingArtisan ? (
                             <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 text-[13px] font-bold text-amber-700">
                                 Disabled for pending shops
+                            </div>
+                        ) : (auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin') ? (
+                            <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 px-4 text-[13px] font-bold text-stone-700">
+                                Disabled for admins
                             </div>
                         ) : (
                             <div className="flex gap-2.5">

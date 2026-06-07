@@ -293,6 +293,10 @@ class OrderController extends Controller
      */
     public function create(Request $request)
     {
+        if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+            abort(403, 'Administrators are not permitted to make purchases.');
+        }
+
         $items = [];
 
         // CASE 1: Buy Now (Single Product)
@@ -375,6 +379,10 @@ class OrderController extends Controller
 
     public function quoteShipping(Request $request, CheckoutShippingService $checkoutShippingService)
     {
+        if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+            abort(403, 'Administrators are not permitted to make purchases.');
+        }
+
         $request->validate([
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|integer|exists:products,id',
@@ -981,6 +989,9 @@ class OrderController extends Controller
         CheckoutShippingService $checkoutShippingService
     )
     {
+        if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+            abort(403, 'Administrators are not permitted to make purchases.');
+        }
 
         /** @var User $buyer */
         $buyer = $request->user();

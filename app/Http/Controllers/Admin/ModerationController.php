@@ -128,7 +128,7 @@ class ModerationController extends Controller
                 'id' => $p->id,
                 'name' => $p->name,
                 'type' => 'Product',
-                'context' => $p->user->shop_name ?? $p->user->name,
+                'context' => $p->user?->shop_name ?? $p->user?->name ?? 'Unknown Shop',
                 'deleted_at' => $p->deleted_at->toIso8601String(),
                 'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
             ]);
@@ -166,7 +166,7 @@ class ModerationController extends Controller
                 'id' => $o->id,
                 'name' => "Order #{$o->order_number}",
                 'type' => 'Order',
-                'context' => $o->user->name ?? 'Unknown Customer',
+                'context' => $o->user?->name ?? 'Unknown Customer',
                 'deleted_at' => $o->deleted_at->toIso8601String(),
                 'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
             ]);

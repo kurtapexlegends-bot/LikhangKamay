@@ -22,6 +22,7 @@ export default function Cart({ cart }) {
     useFlashToast(flash, addToast);
 
     const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
+    const isAdmin = auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin';
 
     // Convert the cart object (from PHP Session) into an array
     const cartItems = Object.values(cart || {});
@@ -345,6 +346,10 @@ export default function Cart({ cart }) {
                                     {isPendingArtisan ? (
                                         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-bold text-amber-700 shadow-sm">
                                             Checkout is disabled while your shop application is under review.
+                                        </div>
+                                    ) : isAdmin ? (
+                                        <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-xs font-bold text-stone-700 shadow-sm">
+                                            Purchasing and checkout are disabled for administrator accounts.
                                         </div>
                                     ) : (
                                         <>

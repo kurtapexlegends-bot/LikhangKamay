@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { 
-    ShoppingBag, Search, ShoppingCart, User, Heart, Home, LogOut, Settings, Package, Clock, Edit2, Store
+    ShoppingBag, Search, ShoppingCart, User, Heart, Home, LogOut, Settings, Package, Clock, Edit2, Store, Shield, ShieldAlert
 } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import UserAvatar from '@/Components/UserAvatar';
@@ -157,6 +157,29 @@ export default function MobileDock() {
                                 <MenuLink href={route('profile.edit')} icon={Settings} label="Profile Details" onClick={() => setIsAccountOpen(false)} />
                                 <MenuLink href={route('shop.index')} icon={Store} label="Addresses" onClick={() => setIsAccountOpen(false)} />
                             </div>
+
+                            {/* Section: Admin */}
+                            {(user.role === 'super_admin' || user.role === 'admin') && (
+                                <div className="space-y-0.5 pt-1">
+                                    <p className="px-3 mb-1.5 text-[9px] font-black uppercase tracking-widest text-stone-400">Admin</p>
+                                    <Link 
+                                        href={route('admin.dashboard')} 
+                                        className="flex items-center gap-3 px-3 py-2.5 text-xs font-black text-stone-700 bg-stone-100/80 hover:bg-stone-200/80 rounded-xl transition-all border border-stone-200/55 shadow-sm"
+                                        onClick={() => setIsAccountOpen(false)}
+                                    >
+                                        <Shield size={14} className="text-stone-600" />
+                                        Admin Dashboard
+                                    </Link>
+                                    <Link 
+                                        href={route('admin.compliance')} 
+                                        className="flex items-center gap-3 px-3 py-2.5 text-xs font-black text-stone-700 hover:bg-stone-200/80 rounded-xl transition-all border border-transparent hover:border-stone-200/50"
+                                        onClick={() => setIsAccountOpen(false)}
+                                    >
+                                        <ShieldAlert size={14} className="text-stone-400" />
+                                        Content Safety
+                                    </Link>
+                                </div>
+                            )}
 
                             {/* Section: Workspace */}
                             {(sellerWorkspaceHref || (user.role === 'artisan' && user.artisan_status === 'pending')) && (
