@@ -9,7 +9,8 @@ export default function SlideOverDrawer({
     children,
     footer = null,
     widthClass = 'max-w-md', // Default to medium width, can be overridden with 'max-w-2xl', etc.
-    bodyClassName = 'relative flex-1 overflow-y-auto custom-scrollbar p-6'
+    bodyClassName = 'relative flex-1 overflow-y-auto custom-scrollbar p-6',
+    heightClass = 'h-[85vh]' // Default bottom sheet height on mobile/tablet
 }) {
     return (
         <Transition show={show} as={Fragment}>
@@ -30,18 +31,18 @@ export default function SlideOverDrawer({
                 {/* Sliding Panel */}
                 <div className="fixed inset-0 overflow-hidden">
                     <div className="absolute inset-0 overflow-hidden">
-                        <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
+                        <div className="pointer-events-none fixed inset-0 flex items-end justify-center lg:inset-y-0 lg:right-0 lg:left-auto lg:max-w-full lg:pl-10 lg:sm:pl-16 lg:items-stretch lg:justify-end">
                             <TransitionChild
                                 as={Fragment}
                                 enter="transform transition ease-in-out duration-400 sm:duration-500"
-                                enterFrom="translate-x-full"
-                                enterTo="translate-x-0"
+                                enterFrom="translate-y-full lg:translate-y-0 lg:translate-x-full"
+                                enterTo="translate-y-0 lg:translate-x-0"
                                 leave="transform transition ease-in-out duration-400 sm:duration-500"
-                                leaveFrom="translate-x-0"
-                                leaveTo="translate-x-full"
+                                leaveFrom="translate-y-0 lg:translate-x-0"
+                                leaveTo="translate-y-full lg:translate-y-0 lg:translate-x-full"
                             >
-                                <DialogPanel className={`pointer-events-auto w-screen ${widthClass}`}>
-                                    <div className="flex h-full flex-col bg-white shadow-2xl">
+                                <DialogPanel className={`pointer-events-auto w-full lg:h-full lg:w-screen ${heightClass} ${widthClass}`}>
+                                    <div className="flex h-full flex-col bg-white shadow-2xl rounded-t-2xl lg:rounded-t-none">
                                         {/* Header */}
                                         {title && (
                                             <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5 shrink-0">
