@@ -43,42 +43,54 @@ export default function PlatformPerformanceCharts({ slaMetrics = {}, staleQueue 
     return (
         <div className="space-y-6">
             {/* SLA Metric cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <SLACard 
-                    title="Artisan Approval" 
-                    value={slaMetrics.avgArtisanApprovalHours ?? 0} 
-                    unit="Hrs"
-                    subtitle="Avg. Time to Approved"
-                    icon={Store}
-                    compliance={slaMetrics.artisanSLACompliance}
-                    color="text-clay-600"
-                />
-                <SLACard 
-                    title="Dispute Resolution" 
-                    value={slaMetrics.avgDisputeResolutionHours ?? 0} 
-                    unit="Hrs"
-                    subtitle="Avg. Time to Resolved"
-                    icon={ShieldAlert}
-                    compliance={slaMetrics.disputeSLACompliance}
-                    color="text-indigo-600"
-                />
-                <SLACard 
-                    title="Sponsorship Approval" 
-                    value={slaMetrics.avgSponsorshipApprovalHours ?? 0} 
-                    unit="Hrs"
-                    subtitle="Avg. Time to Approved"
-                    icon={Award}
-                    compliance={slaMetrics.sponsorshipSLACompliance}
-                    color="text-amber-600"
-                />
-                <SLACard 
-                    title="Total Stale Items" 
-                    value={slaMetrics.totalStaleItems ?? 0} 
-                    unit="Items"
-                    subtitle="Pending > 48 Hours"
-                    icon={Clock3}
-                    color="text-red-600"
-                />
+            <div className="relative">
+                <div className="flex overflow-x-auto lg:grid lg:grid-cols-4 gap-6 pb-3 lg:pb-0 no-scrollbar snap-x snap-mandatory flex-nowrap lg:flex-wrap -mx-4 px-4 lg:-mx-0 lg:px-0">
+                    <div className="min-w-[240px] lg:min-w-0 snap-start shrink-0 flex-1">
+                        <SLACard 
+                            title="Artisan Approval" 
+                            value={slaMetrics.avgArtisanApprovalHours ?? 0} 
+                            unit="Hrs"
+                            subtitle="Avg. Time to Approved"
+                            icon={Store}
+                            compliance={slaMetrics.artisanSLACompliance}
+                            color="text-clay-600"
+                        />
+                    </div>
+                    <div className="min-w-[240px] lg:min-w-0 snap-start shrink-0 flex-1">
+                        <SLACard 
+                            title="Dispute Resolution" 
+                            value={slaMetrics.avgDisputeResolutionHours ?? 0} 
+                            unit="Hrs"
+                            subtitle="Avg. Time to Resolved"
+                            icon={ShieldAlert}
+                            compliance={slaMetrics.disputeSLACompliance}
+                            color="text-indigo-600"
+                        />
+                    </div>
+                    <div className="min-w-[240px] lg:min-w-0 snap-start shrink-0 flex-1">
+                        <SLACard 
+                            title="Sponsorship Approval" 
+                            value={slaMetrics.avgSponsorshipApprovalHours ?? 0} 
+                            unit="Hrs"
+                            subtitle="Avg. Time to Approved"
+                            icon={Award}
+                            compliance={slaMetrics.sponsorshipSLACompliance}
+                            color="text-amber-600"
+                        />
+                    </div>
+                    <div className="min-w-[240px] lg:min-w-0 snap-start shrink-0 flex-1">
+                        <SLACard 
+                            title="Total Stale Items" 
+                            value={slaMetrics.totalStaleItems ?? 0} 
+                            unit="Items"
+                            subtitle="Pending > 48 Hours"
+                            icon={Clock3}
+                            color="text-red-600"
+                        />
+                    </div>
+                </div>
+                {/* Right Edge Fade Indicator for Mobile */}
+                <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-8 bg-gradient-to-l from-[#FAF9F5] to-transparent lg:hidden" />
             </div>
 
             {/* Table of Stale Items */}
@@ -95,10 +107,8 @@ export default function PlatformPerformanceCharts({ slaMetrics = {}, staleQueue 
                 </div>
 
                 <div className="relative">
-                    {/* Horizontal scroll fade overlay on mobile */}
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 lg:hidden" />
-                    
-                    <div className="overflow-x-auto">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-[#FAF9F5]">
@@ -152,7 +162,7 @@ export default function PlatformPerformanceCharts({ slaMetrics = {}, staleQueue 
                                             <td className="px-8 py-5 text-right">
                                                 <Link 
                                                     href={item.route}
-                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-clay-600 hover:text-clay-700 transition-colors min-h-[36px]"
+                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-clay-600 hover:text-clay-700 transition-colors min-h-[44px] px-4 py-2"
                                                 >
                                                     Resolve Now <ChevronRight size={14} />
                                                 </Link>
@@ -162,6 +172,54 @@ export default function PlatformPerformanceCharts({ slaMetrics = {}, staleQueue 
                                 )}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile Stacked Card View */}
+                    <div className="md:hidden divide-y divide-gray-100">
+                        {staleQueue.length === 0 ? (
+                            <div className="px-6 py-8 text-center bg-white">
+                                <WorkspaceEmptyState
+                                    icon={CheckCircle2}
+                                    title="SLA Fully Compliant"
+                                    description="All pending applications and disputes are within safe limits."
+                                />
+                            </div>
+                        ) : (
+                            staleQueue.map((item) => (
+                                <div key={`${item.type}-${item.id}`} className="p-5 space-y-4 hover:bg-stone-50/50 transition">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-gray-900">{item.name}</span>
+                                            <span className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">{item.type}</span>
+                                        </div>
+                                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                                            item.priority === 'Critical' ? 'bg-red-50 text-red-700 border border-red-200/50' : 'bg-amber-50 text-amber-700 border border-amber-200/50'
+                                        }`}>
+                                            {item.priority}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs font-medium text-gray-600 bg-stone-50 p-3 rounded-xl border border-stone-100/50">
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Shop Context</span>
+                                            <span className="font-bold text-stone-700">{item.shop_name !== 'N/A' ? item.shop_name : 'No Shop'}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5 items-end">
+                                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Time Overdue</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <Clock3 className="text-red-500" size={12} />
+                                                <span className="font-mono font-bold text-red-600">+{item.hours_pending}h</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Link
+                                        href={item.route}
+                                        className="w-full flex items-center justify-center gap-1 bg-clay-600 hover:bg-clay-700 text-white rounded-xl py-2.5 font-bold text-xs shadow-sm transition-all active:scale-95 min-h-[44px]"
+                                    >
+                                        Resolve Now <ChevronRight size={14} />
+                                    </Link>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
@@ -194,10 +252,10 @@ export default function PlatformPerformanceCharts({ slaMetrics = {}, staleQueue 
                         <History className="text-stone-400" size={24} />
                     </div>
                     <h4 className="text-sm font-bold text-gray-900">Historical Benchmarking</h4>
-                    <p className="text-xs text-gray-505 mt-2 max-w-xs mx-auto">
+                    <p className="text-xs text-gray-500 mt-2 max-w-xs mx-auto">
                         The platform is currently operating at <strong className="text-gray-900">88%</strong> of its peak efficiency recorded in Q1 2026.
                     </p>
-                    <button className="mt-6 text-[11px] font-bold text-clay-600 hover:underline min-h-[36px]">
+                    <button className="mt-6 text-[11px] font-bold text-clay-600 hover:underline min-h-[44px] px-4 py-2 flex items-center justify-center mx-auto">
                         Export Compliance Audit Log
                     </button>
                 </div>

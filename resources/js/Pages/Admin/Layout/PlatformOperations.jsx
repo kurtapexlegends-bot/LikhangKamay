@@ -54,9 +54,9 @@ export default function PlatformOperations({
                 <div className="border-b border-stone-200 bg-white rounded-t-2xl shadow-sm px-4 pt-4 sm:px-6">
                     <div className="flex space-x-6 overflow-x-auto scrollbar-hide">
                         {[
-                            { id: 'health', label: 'System Health', icon: Activity },
-                            { id: 'sla', label: 'SLA Exceptions', icon: Clock3, badge: staleQueue.length || null },
-                            { id: 'logs', label: 'Audit Logs', icon: Shield, badge: (activities && activities.total) || null },
+                            { id: 'health', label: 'System Health', mobileLabel: 'Health', icon: Activity },
+                            { id: 'sla', label: 'SLA Exceptions', mobileLabel: 'SLA', icon: Clock3, badge: staleQueue.length || null },
+                            { id: 'logs', label: 'Audit Logs', mobileLabel: 'Logs', icon: Shield, badge: (activities && activities.total) || null },
                         ].map((tab) => {
                             const Icon = tab.icon;
                             return (
@@ -70,12 +70,15 @@ export default function PlatformOperations({
                                     }`}
                                 >
                                     <Icon size={16} />
-                                    <span>{tab.label}</span>
+                                    <span>
+                                        <span className="hidden sm:inline">{tab.label}</span>
+                                        <span className="sm:hidden">{tab.mobileLabel}</span>
+                                    </span>
                                     {tab.badge !== null && (
                                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
                                             activeTab === tab.id ? 'bg-clay-600 text-white' : 'bg-stone-100 text-stone-600'
                                         }`}>
-                                            {tab.badge}
+                                            {typeof tab.badge === 'number' && tab.badge > 99 ? '99+' : tab.badge}
                                         </span>
                                     )}
                                 </button>

@@ -78,10 +78,8 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
             {/* Activities Table */}
             <div className="bg-white rounded-3xl border border-clay-100 overflow-hidden shadow-sm">
                 <div className="relative">
-                    {/* Horizontal scroll fade overlay on mobile */}
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 lg:hidden" />
-                    
-                    <div className="overflow-x-auto">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-[#FAF9F5] border-b border-stone-100">
@@ -162,6 +160,74 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile Log Cards View */}
+                    <div className="md:hidden divide-y divide-stone-100">
+                        {activities && activities.data && activities.data.length > 0 ? (
+                            activities.data.map((log) => {
+                                const ActionIcon = getActionIcon(log.action);
+                                const colorClasses = getActionColor(log.action);
+
+                                return (
+                                    <div key={log.id} className="p-4 space-y-3 hover:bg-stone-50/50 transition">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center border shadow-sm ${colorClasses}`}>
+                                                    <ActionIcon size={12} />
+                                                </div>
+                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${colorClasses}`}>
+                                                    {log.action.split('_')[0]}
+                                                </span>
+                                            </div>
+                                            <div className="text-right text-[9px] text-stone-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                                <Calendar size={10} />
+                                                {new Date(log.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                <span className="text-stone-300">|</span>
+                                                <Clock size={10} />
+                                                {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-bold text-gray-800 leading-snug">{log.description}</p>
+                                            
+                                            {log.metadata && Object.keys(log.metadata).length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                                    {Object.entries(log.metadata).map(([key, value]) => (
+                                                        <div key={key} className="flex items-center gap-1 px-1.5 py-0.5 bg-stone-100 rounded-md border border-stone-200/60">
+                                                            <span className="text-[8px] font-black text-stone-400 uppercase tracking-tight">{key.replace(/_/g, ' ')}:</span>
+                                                            <span className="text-[8px] font-bold text-stone-600">
+                                                                {typeof value === 'boolean' ? (value ? 'YES' : 'NO') : String(value)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
+                                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Administrator</span>
+                                            <div className="flex items-center gap-2">
+                                                <UserAvatar user={log.user} className="w-6 h-6 border border-stone-200" />
+                                                <div className="text-left">
+                                                    <p className="text-[10px] font-black text-gray-900 leading-none">{log.user.name}</p>
+                                                    <p className="text-[8px] font-bold text-clay-600 uppercase tracking-widest mt-0.5">{log.user.role.replace('_', ' ')}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="p-6 text-center">
+                                <WorkspaceEmptyState
+                                    icon={Shield}
+                                    title="No activity logs found"
+                                    description="Governance events will appear here once recorded."
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Pagination */}
@@ -179,7 +245,7 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                                     preserveState
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                     className={`
-                                        px-3 py-2.5 rounded-lg text-[10px] font-black transition-all border uppercase tracking-widest min-h-[40px] flex items-center justify-center
+                                        px-3.5 py-2.5 rounded-lg text-[10px] font-black transition-all border uppercase tracking-widest min-h-[44px] flex items-center justify-center
                                         ${link.active 
                                             ? 'bg-clay-600 text-white border-clay-600 shadow-md shadow-clay-600/20' 
                                             : 'bg-white border-stone-100 text-gray-500 hover:text-clay-600'}
