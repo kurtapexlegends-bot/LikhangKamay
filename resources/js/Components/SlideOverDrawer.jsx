@@ -10,7 +10,7 @@ export default function SlideOverDrawer({
     footer = null,
     widthClass = 'max-w-md', // Default to medium width, can be overridden with 'max-w-2xl', etc.
     bodyClassName = 'relative flex-1 overflow-y-auto custom-scrollbar p-6',
-    heightClass = 'h-[85vh]' // Default bottom sheet height on mobile/tablet
+    heightClass = 'h-auto max-h-[85vh]' // Default bottom sheet height on mobile/tablet
 }) {
     return (
         <Transition show={show} as={Fragment}>
@@ -42,7 +42,7 @@ export default function SlideOverDrawer({
                                 leaveTo="translate-y-full lg:translate-y-0 lg:translate-x-full"
                             >
                                 <DialogPanel className={`pointer-events-auto w-full lg:h-full lg:w-screen ${heightClass} ${widthClass}`}>
-                                    <div className="flex h-full flex-col bg-white shadow-2xl rounded-t-2xl lg:rounded-t-none">
+                                    <div className="flex h-full lg:h-full flex-col bg-white shadow-2xl rounded-t-2xl lg:rounded-t-none max-h-[85vh] lg:max-h-none">
                                         {/* Header */}
                                         {title && (
                                             <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5 shrink-0">
