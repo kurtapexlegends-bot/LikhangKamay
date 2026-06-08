@@ -17,73 +17,97 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
     return (
         <div className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {isLoadingMetrics ? (
-                    <>
-                        <StatSkeleton />
-                        <StatSkeleton />
-                        <StatSkeleton />
-                        <StatSkeleton />
-                    </>
-                ) : (
-                    <>
-                        <StatCard
-                            title="Plan MRR"
-                            metric={metrics.mrr}
-                            prefix="₱"
-                            icon={CircleDollarSign}
-                            bg="bg-emerald-50"
-                            text="text-emerald-600"
-                            subtitle={metrics.mrr?.basis}
-                        />
-                        <StatCard
-                            title="Paid Subs"
-                            metric={metrics.subscribers?.total_paid || 0}
-                            icon={Users}
-                            bg="bg-blue-50"
-                            text="text-blue-600"
-                            subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active`}
-                        />
-                        <StatCard
-                            title="Elite Only"
-                            metric={metrics.subscribers?.elite || 0}
-                            icon={Star}
-                            bg="bg-fuchsia-50"
-                            text="text-fuchsia-600"
-                        />
-                        <StatCard
-                            title="Sponsored"
-                            metric={metrics.sponsorships}
-                            icon={Award}
-                            bg="bg-amber-50"
-                            text="text-amber-600"
-                        />
-                    </>
-                )}
+            <div className="relative">
+                <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-3 sm:pb-0 no-scrollbar snap-x snap-mandatory flex-nowrap sm:flex-wrap -mx-4 px-4 sm:-mx-0 sm:px-0">
+                    {isLoadingMetrics ? (
+                        <>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatSkeleton />
+                            </div>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatSkeleton />
+                            </div>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatSkeleton />
+                            </div>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatSkeleton />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatCard
+                                    title="Plan MRR"
+                                    metric={metrics.mrr}
+                                    prefix="₱"
+                                    icon={CircleDollarSign}
+                                    bg="bg-emerald-50"
+                                    text="text-emerald-600"
+                                    subtitle={metrics.mrr?.basis}
+                                />
+                            </div>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatCard
+                                    title="Paid Subs"
+                                    metric={metrics.subscribers?.total_paid || 0}
+                                    icon={Users}
+                                    bg="bg-blue-50"
+                                    text="text-blue-600"
+                                    subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active`}
+                                />
+                            </div>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatCard
+                                    title="Elite Only"
+                                    metric={metrics.subscribers?.elite || 0}
+                                    icon={Star}
+                                    bg="bg-fuchsia-50"
+                                    text="text-fuchsia-600"
+                                />
+                            </div>
+                            <div className="min-w-[240px] sm:min-w-0 snap-start shrink-0 flex-1">
+                                <StatCard
+                                    title="Sponsored"
+                                    metric={metrics.sponsorships}
+                                    icon={Award}
+                                    bg="bg-amber-50"
+                                    text="text-amber-600"
+                                />
+                            </div>
+                        </>
+                    )}
+                </div>
+                {/* Right Edge Fade Indicator for Mobile */}
+                <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-8 bg-gradient-to-l from-[#FAF9F6] to-transparent sm:hidden" />
             </div>
 
             {/* Monetization Actions */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar flex-nowrap">
-                <Link
-                    href={route("admin.sponsorships")}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-stone-200 bg-white px-3 py-2 text-[10px] font-bold text-stone-600 transition-colors hover:bg-stone-50 min-h-[40px] shadow-sm shrink-0"
-                >
-                    <Award size={12} />
-                    Sponsorship Queue
-                </Link>
-                <Link
-                    href={route("admin.users", { role: "artisan" })}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-stone-200 bg-white px-3 py-2 text-[10px] font-bold text-stone-600 transition-colors hover:bg-stone-50 min-h-[40px] shadow-sm shrink-0"
-                >
-                    <Users size={12} />
-                    Review Plans
-                </Link>
-                {!isLoadingMetrics && (
-                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-3 py-2 text-[10px] font-bold text-stone-500 min-h-[40px] shrink-0">
-                        <CircleDollarSign size={12} />
-                        {metrics.pendingSponsorships > 0 ? `${metrics.pendingSponsorships} pending` : 'No backlog'}
-                    </span>
-                )}
+            <div className="relative">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar flex-nowrap -mx-4 px-4 sm:-mx-0 sm:px-0">
+                    <Link
+                        href={route("admin.sponsorships")}
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-stone-200 bg-white px-4 py-2.5 text-[10px] font-bold text-stone-600 transition-colors hover:bg-stone-50 min-h-[44px] shadow-sm shrink-0"
+                    >
+                        <Award size={12} />
+                        Sponsorship Queue
+                    </Link>
+                    <Link
+                        href={route("admin.users", { role: "artisan" })}
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-stone-200 bg-white px-4 py-2.5 text-[10px] font-bold text-stone-600 transition-colors hover:bg-stone-50 min-h-[44px] shadow-sm shrink-0"
+                    >
+                        <Users size={12} />
+                        Review Plans
+                    </Link>
+                    {!isLoadingMetrics && (
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 text-[10px] font-bold text-stone-500 min-h-[44px] shrink-0">
+                            <CircleDollarSign size={12} />
+                            {metrics.pendingSponsorships > 0 ? `${metrics.pendingSponsorships} pending` : 'No backlog'}
+                        </span>
+                    )}
+                </div>
+                {/* Right Edge Fade Indicator for Mobile */}
+                <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-8 bg-gradient-to-l from-[#FAF9F6] to-transparent sm:hidden" />
             </div>
 
             {/* Pending Sponsorship Notice */}
@@ -216,18 +240,18 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between bg-stone-50 p-2 rounded-lg border border-stone-100/50">
-                                        <span className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Tier Shift</span>
-                                        <div className="flex items-center gap-1.5 text-[9px] font-bold">
+                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Tier Shift</span>
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold">
                                             <span className="bg-stone-200/60 text-stone-600 px-1.5 py-0.5 rounded border border-stone-200">{user.previous_tier_label || 'Free'}</span>
-                                            <ChevronRight size={8} />
+                                            <ChevronRight size={10} />
                                             <span className={`px-1.5 py-0.5 rounded border ${planTierBadgeClasses[user.tier] || planTierBadgeClasses.Free}`}>
                                                 {user.tier}
                                             </span>
-                                            <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black border uppercase tracking-wider ml-1 ${
+                                            <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-black border uppercase tracking-wider ml-1 ${
                                                 changeDirectionBadgeClasses[user.change_direction] || changeDirectionBadgeClasses.change
                                             }`}>
-                                                {user.change_direction === 'upgrade' && <TrendingUp size={8} />}
-                                                {user.change_direction === 'downgrade' && <TrendingDown size={8} />}
+                                                {user.change_direction === 'upgrade' && <TrendingUp size={10} />}
+                                                {user.change_direction === 'downgrade' && <TrendingDown size={10} />}
                                                 {user.change_direction}
                                             </span>
                                         </div>
