@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote, CheckCircle, Undo, Clock, ArchiveX, ShieldAlert } from 'lucide-react';
+import { Bell, Package, MessageCircle, Star, AlertTriangle, Check, MoreHorizontal, Trash2, MailOpen, Mail, Award, PackageCheck, Users, Truck, Store, Banknote, CheckCircle, Undo, Clock, ArchiveX, ShieldAlert, XCircle } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { formatChatRelative } from '@/lib/chatTime';
 
