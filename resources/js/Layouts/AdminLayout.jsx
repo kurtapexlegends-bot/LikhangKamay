@@ -258,7 +258,9 @@ export default function AdminLayout({ title, children }) {
                                     'Content Governance & Safety Center': "Manage flagged listings, reviews, and user content.",
                                     'Content Governance': "Manage flagged listings, reviews, and user content.",
                                     'Content Safety': "Manage flagged listings, reviews, and user content.",
-                                    'SLA Monitoring': "Monitor admin response times and system SLAs."
+                                    'SLA Monitoring': "Monitor admin response times and system SLAs.",
+                                    'Escalated Disputes': "Moderate and resolve escalated customer disputes.",
+                                    'Dispute Arbitration': "Moderate and resolve escalated customer disputes."
                                 }[title] || ""}
                             </p>
                         </div>
