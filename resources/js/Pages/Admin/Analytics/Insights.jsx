@@ -236,27 +236,6 @@ export default function Insights({
                         />
                     </div>
 
-                    {/* Artisan Churn Overview */}
-                    <div className="bg-stone-900 rounded-2xl shadow-sm overflow-hidden p-5 sm:p-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between relative">
-                        <div className="relative z-10">
-                            <h3 className="font-bold text-white text-lg mb-1">Artisan Activity</h3>
-                            <p className="text-[11px] font-medium text-stone-400">Tracking activity based on last active request</p>
-                        </div>
-                        <div className="flex items-center justify-between gap-6 sm:gap-8 w-full sm:w-auto relative z-10">
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-emerald-400 leading-none mb-1.5">{churn.active}</p>
-                                <p className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">Active</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-amber-400 leading-none mb-1.5">{churn.atRisk}</p>
-                                <p className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">At Risk</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-red-400 leading-none mb-1.5">{churn.churned}</p>
-                                <p className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">Churned</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Right Column */}
@@ -346,6 +325,25 @@ export default function Insights({
                                 At-Risk Artisans
                             </h3>
                             <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 mt-0.5">No recent activity for 30-60 days. Immediate follow-up recommended.</p>
+                        </div>
+                        <div className="px-4 sm:px-5 py-2.5 bg-stone-50/50 border-b border-stone-100 flex items-center justify-around text-center text-xs">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-650" style={{ backgroundColor: '#10b981' }}></span>
+                                <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">Active:</span>
+                                <span className="text-emerald-700 font-extrabold text-xs">{churn.active}</span>
+                            </div>
+                            <div className="border-l border-stone-200 h-3"></div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" style={{ backgroundColor: '#d97706' }}></span>
+                                <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">At Risk:</span>
+                                <span className="text-amber-700 font-extrabold text-xs">{churn.atRisk}</span>
+                            </div>
+                            <div className="border-l border-stone-200 h-3"></div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" style={{ backgroundColor: '#ef4444' }}></span>
+                                <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">Churned:</span>
+                                <span className="text-red-700 font-extrabold text-xs">{churn.churned}</span>
+                            </div>
                         </div>
                         <div className="overflow-x-auto flex-1">
                             {churn.atRiskList?.length > 0 ? (
