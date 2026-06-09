@@ -300,7 +300,9 @@ export default function AdminLayout({ title, children }) {
 
                 {/* Scrollable Content */}
                 <main className="flex-1 w-full px-4 pt-4 pb-8 sm:px-6 lg:px-8 space-y-6 animate-page-enter">
-                    {children}
+                    <div className="max-w-[90rem] mx-auto w-full">
+                        {children}
+                    </div>
                 </main>
             </div>
             </div>

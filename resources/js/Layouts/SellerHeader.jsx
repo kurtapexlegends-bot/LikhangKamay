@@ -33,7 +33,7 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                     <div className="flex min-w-0 items-center gap-3">
                         <button
                             onClick={onMenuClick}
-                            className="lg:hidden text-gray-500 hover:text-clay-600 transition-all active:scale-95"
+                            className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 hover:text-clay-600 transition-all active:scale-95"
                         >
                             <Menu size={24} />
                         </button>
@@ -63,7 +63,7 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                                     <span className="inline-flex rounded-xl">
                                         <button
                                             type="button"
-                                            className="inline-flex items-center gap-2 p-1 border border-transparent rounded-xl text-stone-600 bg-transparent hover:bg-stone-50 hover:text-stone-800 focus:outline-none transition-all active:scale-95"
+                                            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1 border border-transparent rounded-xl text-stone-600 bg-transparent hover:bg-stone-50 hover:text-stone-800 focus:outline-none transition-all active:scale-95"
                                         >
                                             {auth?.user && <UserAvatar user={auth.user} />}
                                         </button>

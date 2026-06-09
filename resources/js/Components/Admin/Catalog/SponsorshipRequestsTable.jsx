@@ -176,7 +176,7 @@ export default function SponsorshipRequestsTable({ requests }) {
                     </div>
                     <div>
                         <h2 className="text-lg font-bold text-stone-900">All Requests</h2>
-                        <p className="text-sm text-stone-505 mt-1">Manage 7-day product sponsorship approvals from artisan shops.</p>
+                        <p className="text-sm text-stone-500 mt-1">Manage 7-day product sponsorship approvals from artisan shops.</p>
                     </div>
                 </div>
                 <div className="relative w-full lg:w-80">
@@ -257,7 +257,7 @@ export default function SponsorshipRequestsTable({ requests }) {
                                         </td>
                                         <td className="py-4 px-6 align-middle">
                                             <p className="text-sm font-bold text-stone-900">{req.user?.shop_name || req.user?.name}</p>
-                                            <p className="text-[10px] text-stone-550">ID: {req.user?.id}</p>
+                                            <p className="text-[10px] text-stone-500">ID: {req.user?.id}</p>
                                         </td>
                                         <td className="py-4 px-6 align-middle text-sm text-stone-500 font-medium">
                                             {new Date(req.created_at).toLocaleDateString()}

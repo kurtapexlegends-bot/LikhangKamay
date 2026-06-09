@@ -26,7 +26,7 @@ const Tab = ({ label, count, active, onClick }) => (
                 className={`text-[10px] px-2 py-0.5 rounded-full font-bold tabular-nums transition-colors ${
                     active
                         ? "bg-clay-600 text-white shadow-sm"
-                        : "bg-stone-250 text-stone-600"
+                        : "bg-stone-200 text-stone-600"
                 }`}
             >
                 {count}
@@ -204,7 +204,7 @@ export default function OrderFilterPanel({
                         className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                             quickFilter === "all"
                                 ? "border-clay-300 bg-clay-50/50 text-clay-700"
-                                : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                         }`}
                     >
                         All visible
@@ -216,7 +216,7 @@ export default function OrderFilterPanel({
                             className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                                 quickFilter === "urgent" && activeTab === "Pending"
                                     ? "border-amber-300/80 bg-[#FAF3E0] text-[#A66E2E]"
-                                    : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                    : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                             }`}
                         >
                             Pending queue
@@ -228,8 +228,8 @@ export default function OrderFilterPanel({
                             onClick={() => applyQuickFilter("payment_hold", "Accepted")}
                             className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                                 quickFilter === "payment_hold"
-                                    ? "border-orange-350/80 bg-[#FDF2F0] text-[#B83E28]"
-                                    : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                    ? "border-orange-300 bg-[#FDF2F0] text-[#B83E28]"
+                                    : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                             }`}
                         >
                             Payment hold
@@ -242,7 +242,7 @@ export default function OrderFilterPanel({
                             className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                                 quickFilter === "returns"
                                     ? "border-emerald-300 bg-[#EEF5F1] text-[#2D6A4F]"
-                                    : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                    : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                             }`}
                         >
                             Return queue

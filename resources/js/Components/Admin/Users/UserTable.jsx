@@ -39,7 +39,7 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                                         <UserAvatar user={staffMember} className="h-10 w-10 border border-[#E8D9CB]" />
                                         <div className="min-w-0">
                                             <p className="truncate text-sm font-semibold text-stone-900">{staffMember.name}</p>
-                                            <p className="truncate text-xs text-stone-505 font-medium">{staffMember.email}</p>
+                                            <p className="truncate text-xs text-stone-500 font-medium">{staffMember.email}</p>
                                         </div>
                                     </div>
                                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-widest ${stateClasses[staffMember.account_state_tone] || stateClasses.neutral}`}>
@@ -149,7 +149,7 @@ export default function UserTable({
                                             {user.account_state}
                                         </span>
                                         {user.role === 'artisan' && user.shop_name && (
-                                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-[9px] font-bold text-stone-550 uppercase tracking-wider">
+                                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-[9px] font-bold text-stone-500 uppercase tracking-wider">
                                                 {user.shop_name}
                                             </span>
                                         )}
@@ -225,7 +225,7 @@ export default function UserTable({
                                                  <UserAvatar user={user} className="h-8 w-8 border border-stone-200 transition-all" />
                                                  <div className="min-w-0">
                                                      <p className="text-xs font-semibold text-stone-900 truncate">{user.name}</p>
-                                                     <p className="text-xs text-stone-505 truncate font-medium">{user.email}</p>
+                                                     <p className="text-xs text-stone-500 truncate font-medium">{user.email}</p>
                                                  </div>
                                              </div>
                                          </td>

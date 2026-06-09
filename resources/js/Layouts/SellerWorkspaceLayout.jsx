@@ -63,7 +63,9 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                 />
 
                 <div scroll-region="true" className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:ml-52">
-                    {children}
+                    <div className="max-w-[90rem] mx-auto w-full flex-1 flex flex-col min-w-0">
+                        {children}
+                    </div>
                 </div>
             </div>
         </SellerWorkspaceShellContext.Provider>

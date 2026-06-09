@@ -373,7 +373,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                 <PrimaryButton 
                                     disabled={processing}
                                     onClick={submit}
-                                    className="py-2.5 px-4 bg-clay-600 hover:bg-clay-550 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
+                                    className="py-2.5 px-4 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
                                 >
                                     <Save size={12} />
                                     {processing ? 'Saving...' : 'Apply Config'}
@@ -444,7 +444,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                             
                                             <PrimaryButton 
                                                 disabled={processing}
-                                                className="w-full py-3 bg-clay-600 hover:bg-clay-550 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
+                                                className="w-full py-3 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
                                             >
                                                 <Save size={14} className="transition-transform duration-200 group-hover:scale-110" />
                                                 {processing ? 'Processing...' : 'Apply Tier Update'}
@@ -491,7 +491,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                 <PrimaryButton 
                                     disabled={processing}
                                     onClick={submit}
-                                    className="py-2.5 px-4 bg-clay-600 hover:bg-clay-550 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
+                                    className="py-2.5 px-4 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
                                 >
                                     <Save size={12} />
                                     {processing ? 'Saving...' : 'Apply Config'}

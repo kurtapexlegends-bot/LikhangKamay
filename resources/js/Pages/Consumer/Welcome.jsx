@@ -438,7 +438,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                                             <span className="text-[10px] font-bold flex items-center gap-1"><Star size={10} className="fill-amber-400 text-amber-400"/> {hasRating(store.products[0].rating) ? formatRating(store.products[0].rating) : 'New'}</span>
                                                         </div>
                                                         <div className="absolute bottom-2 inset-x-0 flex justify-center">
-                                                           <span className={`text-[10px] uppercase tracking-wide font-black px-3 py-1 rounded-full border text-white shadow-md ${isFirst ? 'bg-gradient-to-r from-amber-505 to-orange-505 border-amber-202' : 'bg-clay-606 border-clay-404'}`}>#1 Product</span>
+                                                           <span className={`text-[10px] uppercase tracking-wide font-black px-3 py-1 rounded-full border text-white shadow-md ${isFirst ? 'bg-gradient-to-r from-amber-500 to-orange-500 border-amber-400' : 'bg-clay-600 border-clay-500'}`}>#1 Product</span>
                                                         </div>
                                                     </div>
                                                     <div className="mt-2 flex flex-col items-center">

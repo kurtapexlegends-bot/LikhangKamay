@@ -31,7 +31,7 @@ export default function UserManagerFilters({
                                     className={`relative flex items-center justify-center gap-1.5 whitespace-nowrap px-4 py-2.5 min-h-[44px] text-xs font-bold transition-all rounded-lg ${
                                         filters.role === role
                                             ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
-                                            : 'text-stone-505 hover:text-stone-700 hover:bg-stone-200/50'
+                                            : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'
                                     }`}
                                 >
                                     {role === 'all' && 'All'}
@@ -71,7 +71,7 @@ export default function UserManagerFilters({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="text-sm font-semibold text-stone-900">Platform Accounts</p>
-                        <p className="text-xs font-medium text-stone-55">
+                        <p className="text-xs font-medium text-stone-500">
                             Staff accounts stay grouped under their parent shop rows.
                         </p>
                     </div>
@@ -81,7 +81,7 @@ export default function UserManagerFilters({
                             <Dropdown.Trigger>
                                 <button
                                     type="button"
-                                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-[12px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-55 hover:border-stone-300 min-h-[44px]"
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-[12px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 hover:border-stone-300 min-h-[44px]"
                                 >
                                     <Filter size={14} className="text-stone-400" />
                                     Filter: {
@@ -120,7 +120,7 @@ export default function UserManagerFilters({
                             {usersTotal} total accounts
                         </span>
                         {deferredSearch.trim() !== search.trim() && (
-                            <span className="inline-flex items-center rounded-md bg-clay-55 border border-clay-100 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-700 animate-pulse">
+                            <span className="inline-flex items-center rounded-md bg-clay-50 border border-clay-100 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-clay-700 animate-pulse">
                                 Search pending...
                             </span>
                         )}

@@ -346,7 +346,7 @@ export default function BuyerNavbar() {
                         {/* Search overlay trigger */}
                         <button
                             onClick={() => setIsMobileSearchOpen(true)}
-                            className="p-2 text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50"
                             aria-label="Open Search"
                         >
                             <Search size={20} strokeWidth={2.2} />
@@ -356,7 +356,7 @@ export default function BuyerNavbar() {
                         {user && showBuyerChat && (
                             <Link
                                 href={route('buyer.chat')}
-                                className="p-2 text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50 relative"
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50 relative"
                             >
                                 <MessageCircle size={20} strokeWidth={2} />
                                 {localUnreadMessageCount > 0 && (
@@ -370,7 +370,7 @@ export default function BuyerNavbar() {
                         {/* Cart */}
                         <Link
                             href={route('cart.index')}
-                            className="p-2 text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50 relative"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-stone-500 hover:text-clay-600 active:scale-90 transition-transform rounded-full hover:bg-stone-50 relative"
                             id="mobile-cart-icon-nav"
                         >
                             <ShoppingCart size={20} strokeWidth={2} className="cart-icon-svg" />
@@ -385,7 +385,7 @@ export default function BuyerNavbar() {
                         {user ? (
                             <button 
                                 onClick={() => window.dispatchEvent(new CustomEvent('toggle-mobile-account'))}
-                                className="flex items-center pl-1 pr-1 py-1 rounded-full hover:bg-stone-50 active:scale-95"
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-stone-50 active:scale-95"
                                 aria-label="Open Account Drawer"
                             >
                                 <UserAvatar 
@@ -396,7 +396,7 @@ export default function BuyerNavbar() {
                         ) : (
                             <Link 
                                 href={route('login')}
-                                className="text-xs font-black text-clay-600 hover:text-clay-700 bg-clay-50/80 px-3 py-1.5 rounded-full border border-clay-100"
+                                className="min-h-[44px] flex items-center justify-center text-xs font-black text-clay-600 hover:text-clay-700 bg-clay-50/80 px-4 rounded-full border border-clay-100"
                             >
                                 Login
                             </Link>

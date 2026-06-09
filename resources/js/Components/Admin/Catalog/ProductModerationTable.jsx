@@ -189,11 +189,11 @@ export default function ProductModerationTable({ products, filters }) {
                                             </td>
                                             <td className="py-4 px-6 align-middle text-sm font-bold text-stone-850">
                                                 <div>
-                                                    <p className="text-stone-905">{product.user?.shop_name || 'Individual Seller'}</p>
+                                                    <p className="text-stone-900">{product.user?.shop_name || 'Individual Seller'}</p>
                                                     <p className="text-[10px] text-stone-500 font-medium mt-0.5">{product.user?.name}</p>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6 align-middle text-xs font-semibold text-stone-550">
+                                            <td className="py-4 px-6 align-middle text-xs font-semibold text-stone-500">
                                                 {product.created_at ? new Date(product.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                                             </td>
                                             <td className="py-4 px-6 align-middle">

@@ -378,7 +378,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                                     quickFilter === "urgent"
                                         ? "border-amber-300/80 bg-[#FAF3E0] text-[#A66E2E]"
-                                        : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                                 }`}
                             >
                                 <AlertCircle size={13} />
@@ -391,8 +391,8 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                                 onClick={() => applyQuickFilter("payment_hold", "Accepted")}
                                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                                     quickFilter === "payment_hold"
-                                        ? "border-orange-350/80 bg-[#FDF2F0] text-[#B83E28]"
-                                        : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                        ? "border-orange-300 bg-[#FDF2F0] text-[#B83E28]"
+                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                                 }`}
                             >
                                 <CreditCard size={13} />
@@ -405,8 +405,8 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                                 onClick={() => applyQuickFilter("live_courier", "All")}
                                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                                     quickFilter === "live_courier"
-                                        ? "border-sky-305 bg-[#F0F7FD] text-[#2B6CB0]"
-                                        : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                        ? "border-sky-300 bg-[#F0F7FD] text-[#2B6CB0]"
+                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                                 }`}
                             >
                                 <Truck size={13} />
@@ -420,7 +420,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
                                     quickFilter === "returns"
                                         ? "border-emerald-300 bg-[#EEF5F1] text-[#2D6A4F]"
-                                        : "border-stone-200 bg-white text-stone-550 hover:bg-stone-50 hover:border-stone-300"
+                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
                                 }`}
                             >
                                 <RotateCcw size={13} />

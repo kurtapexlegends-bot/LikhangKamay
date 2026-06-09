@@ -129,7 +129,7 @@ export default function CategoryManagerTable({ categories }) {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold ${category.products_count > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-550'}`}>
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold ${category.products_count > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>
                                                     <Tag size={12} />
                                                     {category.products_count} product{category.products_count !== 1 ? 's' : ''}
                                                 </span>

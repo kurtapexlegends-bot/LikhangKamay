@@ -62,7 +62,7 @@ export default function ProductModerationModal({
                         <h2 className="text-sm font-bold text-stone-900">
                             {isReject ? 'Provide Rejection Feedback' : 'Provide Flag Reason'}
                         </h2>
-                        <p className="text-xs text-stone-550 mt-1 font-medium leading-relaxed">
+                        <p className="text-xs text-stone-500 mt-1 font-medium leading-relaxed">
                             Enter the feedback or reason for this moderation action on the selected {ids?.length || 1} product(s). Sellers will be notified of this message.
                         </p>
                     </div>

@@ -390,7 +390,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                                                             <div className="p-1 rounded-md bg-stone-100/50 text-stone-400 group-hover/contact:bg-clay-50 group-hover/contact:text-clay-500 transition-colors">
                                                                 <MapPin size={10} />
                                                             </div>
-                                                            <span className="text-[11px] text-stone-505 truncate leading-relaxed">{artisan.address}</span>
+                                                            <span className="text-[11px] text-stone-500 truncate leading-relaxed">{artisan.address}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -437,7 +437,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                                                 <div className="col-span-1 flex justify-start md:justify-end">
                                                     <button
                                                         onClick={() => openReviewModal(artisan)}
-                                                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-[11px] font-bold text-stone-700 shadow-sm transition-all hover:border-clay-300 hover:bg-stone-55 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 min-h-[44px]"
+                                                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-[11px] font-bold text-stone-700 shadow-sm transition-all hover:border-clay-300 hover:bg-stone-50 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 min-h-[44px]"
                                                     >
                                                         <Eye size={13} className="text-clay-500" />
                                                         <span>Review</span>

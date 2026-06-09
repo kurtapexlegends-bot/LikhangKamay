@@ -306,7 +306,7 @@ export default function StaffTable({
                                             disabled={!canEditHrRecords}
                                             onClick={() => openEditModal(emp)}
                                             aria-label={`Edit ${emp.name}`}
-                                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-[11px] font-bold text-stone-700 hover:bg-stone-55 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto min-h-[44px]"
+                                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-[11px] font-bold text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto min-h-[44px]"
                                         >
                                             <Pencil size={13} />
                                             Edit

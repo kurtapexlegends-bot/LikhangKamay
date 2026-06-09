@@ -130,7 +130,7 @@ export default function CreateCategoryModal({ show, onClose }) {
                         >
                             <div className="pt-4 space-y-4">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-stone-550 uppercase tracking-widest mb-1.5">
+                                    <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
                                         URL Slug (Optional)
                                     </label>
                                     <input
@@ -140,7 +140,7 @@ export default function CreateCategoryModal({ show, onClose }) {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-stone-550 uppercase tracking-widest mb-1.5">
+                                    <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
                                         Internal Priority
                                     </label>
                                     <select className="w-full px-3 py-2 bg-stone-50/50 border border-stone-200 rounded-xl text-xs outline-none focus:border-clay-300 transition-colors min-h-[44px]">

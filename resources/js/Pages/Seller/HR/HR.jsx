@@ -387,7 +387,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                             </button>
                             <button
                                 onClick={openPayrollModal}
-                                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-55 min-h-[44px]"
+                                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 min-h-[44px]"
                             >
                                 <Banknote size={16} /> Generate Payroll
                             </button>
@@ -405,7 +405,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                 <Dropdown.Trigger>
                                     <button
                                         type="button"
-                                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-500 shadow-sm transition hover:bg-stone-55"
+                                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-500 shadow-sm transition hover:bg-stone-50"
                                         title="Actions"
                                     >
                                         <SettingsIcon size={18} />

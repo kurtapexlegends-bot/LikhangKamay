@@ -208,7 +208,7 @@ export default function ArtisanVerificationDrawer({
                                     <p className="text-stone-500 text-[11px]">Specify a reason for <span className="font-bold text-stone-700">{rejectingArtisan.shop_name}</span></p>
                                 </div>
                             </div>
-                            <button onClick={() => setRejectingArtisan(null)} className="rounded border border-stone-200 bg-white p-2 text-stone-400 transition hover:bg-stone-55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[36px] min-w-[36px] flex items-center justify-center">
+                            <button onClick={() => setRejectingArtisan(null)} className="rounded border border-stone-200 bg-white p-2 text-stone-400 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[36px] min-w-[36px] flex items-center justify-center">
                                 <X size={14} />
                             </button>
                         </div>
