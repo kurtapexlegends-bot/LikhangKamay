@@ -39,9 +39,12 @@ trait Searchable
         }
 
         if ($driver === 'mysql') {
-            // MySQL Full-Text Search fallback
-            $columnsList = implode(',', $columns);
-            return $query->whereRaw("MATCH($columnsList) AGAINST(? IN BOOLEAN MODE)", [$search]);
+            // Fallback to LIKE for MySQL to avoid "Can't find FULLTEXT index matching the column list" errors
+            return $query->where(function ($q) use ($search, $columns) {
+                foreach ($columns as $column) {
+                    $q->orWhere($column, 'like', "%{$search}%");
+                }
+            });
         }
 
         // Generic fallback for SQLite or other drivers

@@ -23,9 +23,14 @@ class CatalogController extends Controller
         Gate::authorize('admin-action');
 
         $statusFilter = $request->input('product_status', 'pending_review');
+        $search = $request->input('search');
+
         $productQuery = Product::with('user:id,name,shop_name')
             ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
                 $q->where('status', $statusFilter);
+            })
+            ->when($search, function ($q) use ($search) {
+                $q->search($search, ['name', 'sku']);
             })
             ->latest();
 
@@ -36,7 +41,8 @@ class CatalogController extends Controller
                 ->paginate(10, ['*'], 'requests_page'),
             'products' => $productQuery->paginate(10, ['*'], 'products_page'),
             'filters' => [
-                'product_status' => $statusFilter
+                'product_status' => $statusFilter,
+                'search' => $search
             ]
         ]);
     }

@@ -87,8 +87,9 @@ class ValidationController extends Controller
             return response()->json(['valid' => false, 'message' => 'Shop name must be at least 3 characters.']);
         }
 
+        $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
         $exists = User::where('role', 'artisan')
-            ->where('shop_name', 'ILIKE', $name)
+            ->where('shop_name', $like, $name)
             ->exists();
 
         return response()->json([
@@ -141,7 +142,8 @@ class ValidationController extends Controller
             return response()->json(['valid' => false, 'message' => 'Category name is too short.']);
         }
 
-        $query = \App\Models\Category::where('name', 'ILIKE', $name);
+        $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+        $query = \App\Models\Category::where('name', $like, $name);
         if ($categoryId) {
             $query->where('id', '!=', $categoryId);
         }
