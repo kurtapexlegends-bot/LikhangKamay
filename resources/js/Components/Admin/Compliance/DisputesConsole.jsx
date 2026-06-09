@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, MessageSquare } from 'lucide-react';
+import { Search, X, MessageSquare, ChevronDown, Check } from 'lucide-react';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
 import { 
@@ -8,6 +9,15 @@ import {
     outcomeClasses, 
     getModerationOutcome 
 } from '@/utils/contentSafetyHelpers';
+
+const statusOptions = [
+    { value: 'all', label: 'All statuses' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'under_review', label: 'Under review' },
+    { value: 'resolved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+];
+
 
 export default function DisputesConsole({
     disputes = [],
@@ -80,20 +90,41 @@ export default function DisputesConsole({
                             </button>
                         )}
                     </div>
-                    <select
+                    <Listbox
                         value={disputeStatusFilter}
-                        onChange={(event) => {
-                            setDisputeStatusFilter(event.target.value);
+                        onChange={(value) => {
+                            setDisputeStatusFilter(value);
                             setDisputesCurrentPage(1);
                         }}
-                        className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wider text-stone-600 outline-none shadow-sm focus:border-clay-300 focus:ring-0 min-h-[44px] sm:min-h-0"
                     >
-                        <option value="all">All statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="under_review">Under review</option>
-                        <option value="resolved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+                        <div className="relative">
+                            <ListboxButton className="inline-flex items-center justify-between w-full sm:w-44 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-stone-600 outline-none shadow-sm hover:bg-stone-50 hover:border-stone-300 transition-all focus:outline-none min-h-[44px] sm:min-h-0 text-left">
+                                <span>{statusOptions.find(opt => opt.value === disputeStatusFilter)?.label || 'All statuses'}</span>
+                                <ChevronDown size={14} className="text-stone-400 shrink-0 ml-2" />
+                            </ListboxButton>
+                            <ListboxOptions className="absolute right-0 mt-1.5 w-full sm:w-48 rounded-xl border border-stone-100 bg-white p-1 shadow-xl z-50 focus:outline-none focus:ring-0">
+                                {statusOptions.map((opt) => (
+                                    <ListboxOption
+                                        key={opt.value}
+                                        value={opt.value}
+                                        className={({ focus, selected }) =>
+                                            `flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors ${
+                                                selected ? 'bg-clay-50 text-clay-700' :
+                                                focus ? 'bg-stone-50 text-stone-800' : 'text-stone-600'
+                                            }`
+                                        }
+                                    >
+                                        {({ selected }) => (
+                                            <>
+                                                <span>{opt.label}</span>
+                                                {selected && <Check size={14} className="text-clay-600 shrink-0" />}
+                                            </>
+                                        )}
+                                    </ListboxOption>
+                                ))}
+                            </ListboxOptions>
+                        </div>
+                    </Listbox>
                 </div>
             </div>
 
