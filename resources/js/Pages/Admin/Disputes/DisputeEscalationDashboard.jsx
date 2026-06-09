@@ -72,23 +72,6 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
             <Head title="Dispute Arbitration Dashboard" />
 
             <div className="space-y-6">
-                {/* Header info */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h2 className="text-sm font-bold text-stone-400 uppercase tracking-widest">Platform Governance</h2>
-                        <h1 className="text-2xl font-black text-stone-900 tracking-tight">Dispute Arbitration Dashboard</h1>
-                        <p className="text-xs text-stone-500 font-medium mt-1">
-                            Review escalated order disputes with evidence and arbitrate final rulings.
-                        </p>
-                    </div>
-                    {disputes.length > 0 && (
-                        <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-2xl text-xs font-bold shadow-sm self-start sm:self-auto">
-                            <ShieldAlert size={14} />
-                            {disputes.length} Escalated {disputes.length === 1 ? 'dispute' : 'disputes'} active
-                        </div>
-                    )}
-                </div>
-
                 {disputes.length === 0 ? (
                     <WorkspaceEmptyState
                         icon={CheckCircle2}
@@ -99,8 +82,13 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         {/* LEFT COLUMN: Queue list */}
                         <div className={`lg:col-span-4 bg-white border border-stone-200 rounded-3xl overflow-hidden shadow-sm h-[70vh] flex flex-col ${showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
-                            <div className="px-4 py-3 border-b border-stone-100 bg-stone-50/50">
+                            <div className="px-4 py-3 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Escalation Queue</span>
+                                {disputes.length > 0 && (
+                                    <span className="bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                        {disputes.length} Active
+                                    </span>
+                                )}
                             </div>
                             <div className="flex-1 overflow-y-auto divide-y divide-stone-100 custom-scrollbar">
                                 {disputes.map((dispute) => {
