@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "@inertiajs/react";
 import {
     Users,
@@ -68,7 +68,7 @@ const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
     const derivedTrend = trend || (growth > 0 ? "up" : growth < 0 ? "down" : "neutral");
 
     return (
-        <div className="flex items-start justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <div className="flex items-start justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
             <div>
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                     {title}
@@ -107,6 +107,14 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
     const isLoadingUsers = !recentUsers;
     const isLoadingActivities = !activities;
 
+    const [roleFilter, setRoleFilter] = useState("all");
+
+    const filteredUsers = useMemo(() => {
+        if (!recentUsers) return [];
+        if (roleFilter === "all") return recentUsers;
+        return recentUsers.filter((u) => u.role === roleFilter);
+    }, [recentUsers, roleFilter]);
+
     const pendingCount = !isLoadingStats ? (typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans) : 0;
 
     return (
@@ -125,32 +133,32 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                             title="Artisans"
                             metric={stats.totalArtisans}
                             icon={Store}
-                            bg="bg-blue-50"
-                            text="text-blue-600"
+                            bg="bg-[#FCF7F2]"
+                            text="text-clay-600"
                             subtitle="Registered"
                         />
                         <StatCard
                             title="Buyers"
                             metric={stats.totalBuyers}
                             icon={Users}
-                            bg="bg-purple-50"
-                            text="text-purple-600"
+                            bg="bg-stone-50"
+                            text="text-stone-600"
                             subtitle="Customers"
                         />
                         <StatCard
                             title="Pending"
                             metric={stats.pendingArtisans}
                             icon={Clock}
-                            bg="bg-amber-50"
-                            text="text-amber-600"
+                            bg="bg-amber-50/70"
+                            text="text-amber-800"
                             subtitle="Reviews"
                         />
                         <StatCard
                             title="Active"
                             metric={stats.approvedArtisans}
                             icon={CheckCircle}
-                            bg="bg-green-50"
-                            text="text-green-600"
+                            bg="bg-emerald-50"
+                            text="text-emerald-700"
                             subtitle="Verified"
                         />
                     </>
@@ -158,7 +166,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
             </div>
 
             {!isLoadingStats && pendingCount > 0 && (
-                <div className="mb-8 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/50 shadow-sm transition hover:shadow-md">
+                <div className="mb-8 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/50 shadow-sm transition hover:shadow-md animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4">
                         <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 border border-amber-200">
@@ -186,16 +194,47 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Recent Registrations Table */}
                 <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col">
-                    <div className="flex items-center justify-between border-b border-gray-50 px-4 sm:px-6 py-3.5 sm:py-5 shrink-0">
-                        <h3 className="text-sm sm:text-lg font-bold text-gray-900">
-                            Recent Registrations
-                        </h3>
-                        <Link
-                            href={route("admin.users")}
-                            className="flex items-center gap-1 text-[11px] font-bold text-clay-600 transition hover:text-clay-800"
-                        >
-                            View All <ChevronRight size={14} />
-                        </Link>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-50 px-4 sm:px-6 py-4 shrink-0 gap-4">
+                        <div className="flex items-center justify-between w-full sm:w-auto">
+                            <h3 className="text-sm sm:text-lg font-bold text-gray-900">
+                                Recent Registrations
+                            </h3>
+                            <Link
+                                href={route("admin.users")}
+                                className="sm:hidden flex items-center gap-1 text-[11px] font-bold text-clay-600 transition hover:text-clay-800"
+                            >
+                                View All <ChevronRight size={14} />
+                            </Link>
+                        </div>
+                        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                                {[
+                                    { id: 'all', label: 'All' },
+                                    { id: 'artisan', label: 'Artisans' },
+                                    { id: 'buyer', label: 'Buyers' },
+                                    { id: 'staff', label: 'Staff' }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setRoleFilter(tab.id)}
+                                        className={`px-3 py-1 rounded-full text-[10px] font-bold border transition whitespace-nowrap min-h-[30px] ${
+                                            roleFilter === tab.id
+                                                ? 'bg-clay-700 border-clay-700 text-white shadow-sm'
+                                                : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <Link
+                                href={route("admin.users")}
+                                className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-clay-600 transition hover:text-clay-800 whitespace-nowrap"
+                            >
+                                View All <ChevronRight size={14} />
+                            </Link>
+                        </div>
                     </div>
                     <div className="overflow-x-auto flex-1">
                         <table className="w-full text-left sm:min-w-[760px]">
@@ -222,11 +261,10 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                     <UserRowSkeleton />
                                     <UserRowSkeleton />
                                     <UserRowSkeleton />
-                                    <UserRowSkeleton />
                                 </>
-                            ) : (
-                                recentUsers.map((user) => (
-                                    <tr key={user.id} className="flex flex-col sm:table-row p-4 sm:p-0 transition hover:bg-stone-50">
+                            ) : filteredUsers.length > 0 ? (
+                                filteredUsers.map((user) => (
+                                    <tr key={user.id} className="flex flex-col sm:table-row p-4 sm:p-0 transition hover:bg-[#FCF7F2]/40 group">
                                     <td className="sm:px-6 sm:py-4 mb-3 sm:mb-0">
                                         <div className="flex items-center gap-3">
                                             <UserAvatar user={user} className="h-9 w-9 sm:h-10 sm:w-10 border border-clay-200" />
@@ -284,22 +322,43 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="sm:px-6 sm:py-4 text-[11px] sm:text-xs font-medium text-gray-400">
-                                        <div className="flex items-center justify-between sm:justify-start">
+                                    <td className="sm:px-6 sm:py-4 text-[11px] sm:text-xs font-medium text-gray-400 relative">
+                                        <div className="flex items-center justify-between sm:justify-start gap-4">
                                             <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Joined</span>
-                                            {new Date(user.created_at).toLocaleDateString("en-US", {
-                                                month: "short",
-                                                day: "numeric",
-                                                year: "numeric",
-                                            })}
+                                            <span>
+                                                {new Date(user.created_at).toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })}
+                                            </span>
+                                            <div className="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                <Link
+                                                    href={user.role === "artisan" && user.artisan_status === "pending" ? route("admin.pending") : route("admin.users")}
+                                                    className="inline-flex items-center gap-1 rounded-lg bg-clay-50 hover:bg-clay-100 border border-[#E7D8C9] px-2.5 py-1 text-[10px] font-bold text-clay-700 transition"
+                                                >
+                                                    {user.role === "artisan" && user.artisan_status === "pending" ? "Verify" : "Manage"} <ChevronRight size={10} />
+                                                </Link>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
-                            )))}
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-12 text-center w-full block sm:table-cell">
+                                        <div className="flex flex-col items-center justify-center space-y-2">
+                                            <Users className="h-8 w-8 text-stone-300 animate-pulse" />
+                                            <p className="text-sm font-bold text-stone-600">No registrations found</p>
+                                            <p className="text-xs text-stone-400">There are no recently registered users matching this role filter.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
                 {/* Live Activity Ticker */}
                 <div className="lg:col-span-1 h-[500px]">

@@ -67,7 +67,7 @@ class AdminAnalyticsService
         $premiumPrice = (float) \App\Facades\Settings::get('tier_premium_price', 199.00);
         $elitePrice = (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00);
 
-        $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->endOfMonth());
+        $months = collect(range(11, 0))->map(fn($i) => now()->subMonths($i)->endOfMonth());
         $snapshots = app(\App\Services\Admin\AdminMetricsService::class)->getHistoricalTierSnapshots($months->toArray());
 
         $history = [];
