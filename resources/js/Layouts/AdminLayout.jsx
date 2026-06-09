@@ -334,7 +334,7 @@ const CategoryGroup = ({ title, open, onToggle, isFirst, children }) => (
         <motion.button
             type="button"
             onClick={onToggle}
-            whileTap={{ scale: 0.98, x: 1 }}
+            whileTap={{ scale: 0.98 }}
             className="flex w-full items-center justify-between px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400 transition-all hover:text-stone-600 focus:outline-none"
         >
             <span>{title}</span>
@@ -366,12 +366,12 @@ const NavItem = ({ href, icon: Icon, active, badge, onClick, children }) => {
             prefetch="hover"
             preserveScroll
             onClick={onClick}
-            whileTap={{ scale: 0.97, x: 2 }}
+            whileTap={{ scale: 0.98 }}
             className={`
                 flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300
                 ${active
-                    ? 'bg-clay-600 text-white shadow-[0_8px_20px_rgba(182,107,76,0.3)] ring-1 ring-clay-500/50'
-                    : 'text-stone-500 hover:bg-clay-50 hover:text-clay-700 group hover:translate-x-1'}
+                    ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
+                    : 'text-stone-500 hover:bg-clay-50 hover:text-clay-700 group'}
             `}
         >
             <div className="flex items-center gap-3">
