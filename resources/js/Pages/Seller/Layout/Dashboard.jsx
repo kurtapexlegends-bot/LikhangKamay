@@ -203,7 +203,7 @@ export default function Dashboard({ auth }) {
                         if (hour < 18) return `Good afternoon, ${auth.user.name.split(' ')[0]}`;
                         return `Good evening, ${auth.user.name.split(' ')[0]}`;
                     })()}
-                    subtitle="Here's what's happening with your shop today."
+                    subtitle="Monitor daily sales, active orders, and shop performance."
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                 />

@@ -370,7 +370,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             <Head title="People & Payroll" />
             <SellerHeader
                 title="People & Payroll"
-                subtitle="Manage employees, payroll, and workspace access."
+                subtitle="Manage staff profiles, payroll runs, and account access."
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-clay-400' }}

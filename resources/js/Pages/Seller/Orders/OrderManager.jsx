@@ -338,7 +338,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             <Head title="Order Manager" />
             <SellerHeader
                 title="Orders"
-                subtitle="Process fulfillment, courier updates, and returns."
+                subtitle="Manage order fulfillment, delivery tracking, and returns."
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={selectedOrderIds.length > 0 ? null : (

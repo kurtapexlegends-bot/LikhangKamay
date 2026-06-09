@@ -288,7 +288,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                             )}
                         </div>
                     }
-                    subtitle="Communicate with your customers"
+                    subtitle="Chat directly with customers and buyers."
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                 />

@@ -286,7 +286,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
             <Head title="Finance & Approvals" />
             <SellerHeader
                 title="Finance"
-                subtitle="Business funds, payroll review, and inventory approvals"
+                subtitle="Track shop payouts, release requests, and billing."
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}

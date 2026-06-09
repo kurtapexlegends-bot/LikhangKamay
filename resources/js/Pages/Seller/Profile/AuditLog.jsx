@@ -367,7 +367,7 @@ export default function AuditLog({ auth, auditLog }) {
             <Head title="Audit Log Center" />
             <SellerHeader
                 title="Activity Log Center"
-                subtitle="Owner-only record for staff access, operations, finance reviews, and billing activity."
+                subtitle="Review security actions, staff access logs, and billing history."
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Workspace Oversight', iconColor: 'text-stone-400' }}

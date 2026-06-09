@@ -91,7 +91,7 @@ export default function ShopSettings({ auth, user, stats }) {
             <Head title="Shop Settings - Artisan Dashboard" />
             <SellerHeader
                 title="Shop Settings"
-                subtitle="Edit your shop directly - what you see is what buyers see"
+                subtitle="Configure shop branding, contact info, and customization."
                 auth={auth}
                 onMenuClick={openSidebar}
             />

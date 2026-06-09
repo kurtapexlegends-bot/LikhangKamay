@@ -199,7 +199,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
             <div className="flex min-h-screen flex-col">
                 <SellerHeader
                     title="Team Inbox"
-                    subtitle="Internal messages only."
+                    subtitle="Chat with other staff members inside your shop."
                     auth={auth}
                     onMenuClick={openSidebar}
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}

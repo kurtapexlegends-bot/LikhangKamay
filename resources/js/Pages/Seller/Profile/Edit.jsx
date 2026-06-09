@@ -109,7 +109,7 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
             <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-300">
                 <SellerHeader
                     title="Profile Settings"
-                    subtitle="Manage your shop identity, security, and preferences"
+                    subtitle="Update account settings, password, and security preferences."
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                 />

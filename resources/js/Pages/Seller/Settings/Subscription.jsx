@@ -238,7 +238,7 @@ export default function Subscription({ auth, currentPlan, activeProductsCount, l
             <div className="flex min-h-screen flex-col">
                 <SellerHeader
                     title="Subscription Plan"
-                    subtitle=" Manage capacity, access, and upgrades."
+                    subtitle="Manage shop capacity, tier limits, and billing."
                     auth={auth}
                     onMenuClick={openSidebar}
                 />

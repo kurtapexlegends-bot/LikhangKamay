@@ -209,7 +209,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
             <Head title="3D Asset Manager" />
             <SellerHeader
                 title="3D Asset Manager"
-                subtitle="Manage your digital twins and AR assets"
+                subtitle="Manage 3D models and augmented reality assets."
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={(

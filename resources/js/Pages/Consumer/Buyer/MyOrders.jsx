@@ -7,7 +7,8 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import Modal from '@/Components/Modal';
 import RatingModal from '@/Components/Consumer/RatingModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
-import { Clock, Store, MapPin, Search, ShoppingBag, AlertCircle, AlertTriangle, MessageCircle, ExternalLink, Hash, CheckCircle, PackageCheck, Truck, RotateCcw, XCircle, CreditCard, Star, Activity, Printer, UploadCloud, ChevronDown, ChevronRight } from 'lucide-react';
+import { Clock, Store, MapPin, Search, ShoppingBag, AlertCircle, AlertTriangle, MessageCircle, ExternalLink, Hash, CheckCircle, PackageCheck, Truck, RotateCcw, XCircle, CreditCard, Star, Activity, Printer, UploadCloud, ChevronDown, ChevronRight, EllipsisVertical } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // --- RETURN REQUEST MODAL COMPONENT ---
 // --- RETURN REQUEST MODAL COMPONENT (MULTI-PHOTO) ---
@@ -588,6 +589,79 @@ const buyerCourierTrackingState = (order) => {
     return base;
 };
 
+// --- COURIER PROGRESS BAR COMPONENT ---
+const CourierProgressBar = ({ status }) => {
+    const normalized = String(status || '').toUpperCase();
+    
+    // Define steps
+    const steps = [
+        { key: 'ASSIGNING', label: 'Assigning' },
+        { key: 'TRANSIT', label: 'In Transit' },
+        { key: 'COMPLETED', label: 'Delivered' }
+    ];
+
+    let currentStepIndex = 0; // default assigning
+    if (normalized === 'ON_GOING' || normalized === 'PICKED_UP') {
+        currentStepIndex = 1;
+    } else if (normalized === 'COMPLETED') {
+        currentStepIndex = 2;
+    } else if (['CANCELED', 'REJECTED', 'EXPIRED'].includes(normalized)) {
+        return null; // Don't show progress bar for terminal failure states
+    }
+
+    return (
+        <div className="py-4 px-2">
+            <div className="relative flex items-center justify-between">
+                {/* Background line */}
+                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-stone-100 rounded-full" />
+                
+                {/* Active progress line */}
+                <div 
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-clay-500 rounded-full transition-all duration-700 ease-in-out" 
+                    style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+                />
+
+                {steps.map((step, idx) => {
+                    const isActive = idx === currentStepIndex;
+                    const isCompleted = idx < currentStepIndex;
+                    
+                    return (
+                        <div key={step.key} className="relative z-10 flex flex-col items-center">
+                            {/* Circle Indicator */}
+                            <div className={`
+                                w-7 h-7 rounded-full flex items-center justify-center transition-all duration-500
+                                ${isCompleted 
+                                    ? 'bg-clay-600 text-white shadow-sm' 
+                                    : isActive 
+                                        ? 'bg-white text-clay-600 border border-clay-500 shadow-sm ring-4 ring-clay-100/50' 
+                                        : 'bg-white text-stone-300 border border-stone-200'}
+                            `}>
+                                {isCompleted ? (
+                                    <CheckCircle size={12} strokeWidth={3} />
+                                ) : (
+                                    <span className="text-[10px] font-black">{idx + 1}</span>
+                                )}
+                            </div>
+                            
+                            {/* Label */}
+                            <span className={`
+                                mt-1.5 text-[10px] font-bold tracking-tight transition-colors duration-300
+                                ${isActive 
+                                    ? 'text-clay-700 font-extrabold' 
+                                    : isCompleted 
+                                        ? 'text-stone-600' 
+                                        : 'text-stone-400'}
+                            `}>
+                                {step.label}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 const formatTimelineStamp = (value) => {
     if (!value) return null;
 
@@ -861,6 +935,85 @@ export default function MyOrders({ auth, orders }) {
         setExpandedOrders(newSet);
     };
 
+    // Mobile Secondary Actions Selector
+    const getMobileSecondaryActions = (order) => {
+        const actions = [];
+        
+        // Receipt (Always available)
+        actions.push({
+            label: 'Receipt',
+            icon: Printer,
+            href: `/my-orders/${order.id}/receipt`,
+            type: 'link'
+        });
+
+        // Chat (Only if order is not completed)
+        if (order.status !== 'Completed') {
+            actions.push({
+                label: 'Chat',
+                icon: MessageCircle,
+                onClick: () => contactSeller(order.seller_id),
+                type: 'button'
+            });
+        }
+
+        // Cancel Order
+        if (order.can_cancel) {
+            actions.push({
+                label: 'Cancel Order',
+                icon: XCircle,
+                onClick: () => openModal('cancel', order.id),
+                type: 'button',
+                danger: true
+            });
+        }
+
+        // Buy Again
+        if (order.status === 'Completed') {
+            actions.push({
+                label: 'Buy Again',
+                icon: ShoppingBag,
+                onClick: () => buyAgain(order.id),
+                type: 'button'
+            });
+        }
+
+        // Return
+        if (order.status === 'Completed' && order.can_return) {
+            actions.push({
+                label: 'Return',
+                icon: RotateCcw,
+                onClick: () => setReturnModalState({ isOpen: true, order }),
+                type: 'button',
+                warning: true
+            });
+        }
+
+        // Escalate to Admin
+        if (order.status === 'Refund/Return' && ['seller_proposed_replacement', 'seller_rejected'].includes(order.dispute?.status)) {
+            actions.push({
+                label: 'Escalate to Admin',
+                icon: AlertTriangle,
+                onClick: () => setEscalateModalState({ isOpen: true, disputeId: order.dispute.id }),
+                type: 'button',
+                warning: true
+            });
+        }
+
+        // Cancel Return
+        if (order.status === 'Refund/Return') {
+            actions.push({
+                label: 'Cancel Return',
+                icon: XCircle,
+                onClick: () => openModal('cancelReturn', order.id),
+                type: 'button',
+                danger: true
+            });
+        }
+
+        return actions;
+    };
+
     // Modal state
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
@@ -1033,19 +1186,28 @@ export default function MyOrders({ auth, orders }) {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex min-w-[85px] flex-1 items-center justify-center gap-2 border-b-2 px-2 py-3 text-center text-[10px] font-bold transition-all sm:min-w-[100px] sm:text-sm sm:py-4 ${
+                                    className={`relative flex min-w-[85px] flex-1 items-center justify-center gap-2 px-2 py-3 text-center text-[10px] font-bold transition-all sm:min-w-[100px] sm:text-sm sm:py-4 focus:outline-none ${
                                         activeTab === tab.id 
-                                        ? 'border-clay-600 text-clay-700 bg-clay-50/50' 
-                                        : 'border-transparent text-gray-400 hover:text-clay-600 hover:bg-gray-50'
+                                        ? 'text-clay-700 bg-clay-50/50' 
+                                        : 'text-gray-400 hover:text-clay-600 hover:bg-gray-50'
                                     }`}
                                 >
-                                    {tab.label}
-                                    {count > 0 && (
-                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
-                                            activeTab === tab.id ? 'bg-clay-600 text-white' : 'bg-gray-100 text-gray-500'
-                                        }`}>
-                                            {count}
-                                        </span>
+                                    <span className="relative z-10 flex items-center gap-2">
+                                        {tab.label}
+                                        {count > 0 && (
+                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold transition-colors ${
+                                                activeTab === tab.id ? 'bg-clay-600 text-white' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                                {count}
+                                            </span>
+                                        )}
+                                    </span>
+                                    {activeTab === tab.id && (
+                                        <motion.div 
+                                            layoutId="activeTabUnderline"
+                                            className="absolute bottom-0 left-0 right-0 h-[2px] bg-clay-600"
+                                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                        />
                                     )}
                                 </button>
                             );
@@ -1260,6 +1422,8 @@ export default function MyOrders({ auth, orders }) {
                                                                 )}
                                                             </div>
 
+                                                            <CourierProgressBar status={order.delivery.status} />
+
                                                             <p className="text-[11px] leading-relaxed text-stone-600 mb-2.5 font-medium">{buyerCourierTrackingState(order).detail}</p>
 
                                                             {order.delivery.flow_type === 'replacement_exchange' && order.delivery.route_legs?.length > 0 && (
@@ -1409,16 +1573,16 @@ export default function MyOrders({ auth, orders }) {
                                 <div className="flex flex-col gap-4 border-t border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="w-full sm:w-auto">
                                         <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Order Breakdown</p>
-                                        <div className="space-y-1 text-[12px] text-stone-500 sm:space-y-1">
-                                            <div className="flex items-center justify-between gap-4 rounded-lg bg-white/70 px-2.5 py-2 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:justify-start">
+                                        <div className="divide-y divide-stone-200/60 sm:divide-y-0 text-[12px] text-stone-500 sm:space-y-1">
+                                            <div className="flex items-center justify-between gap-4 py-2 sm:py-0 sm:justify-start">
                                                 <span className="min-w-[120px]">Subtotal</span>
                                                 <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">PHP {order.merchandise_subtotal}</span>
                                             </div>
-                                            <div className="flex items-center justify-between gap-4 rounded-lg bg-white/70 px-2.5 py-2 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:justify-start">
+                                            <div className="flex items-center justify-between gap-4 py-2 sm:py-0 sm:justify-start">
                                                 <span className="min-w-[120px]">Fee (3%)</span>
                                                 <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">PHP {order.convenience_fee_amount}</span>
                                             </div>
-                                            <div className="flex items-center justify-between gap-4 rounded-lg bg-white/70 px-2.5 py-2 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:justify-start">
+                                            <div className="flex items-center justify-between gap-4 py-2 sm:py-0 sm:justify-start">
                                                 <span className="min-w-[120px]">Shipping Fee</span>
                                                 <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">
                                                     {order.shipping_method === 'Pick Up'
@@ -1426,20 +1590,18 @@ export default function MyOrders({ auth, orders }) {
                                                         : `PHP ${order.shipping_fee_amount}`}
                                                 </span>
                                             </div>
-                                            <div className="mt-1.5 flex items-center justify-between gap-4 rounded-lg border-t border-stone-200/60 bg-white px-2.5 py-2 pt-2.5 sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:pt-1.5 sm:justify-start">
+                                            <div className="flex items-center justify-between gap-4 py-2.5 pt-3 sm:py-0 sm:pt-1.5 sm:justify-start border-t border-stone-200/60 sm:border-t-0">
                                                 <span className="min-w-[120px] font-bold text-stone-900 text-[13px]">Total</span>
                                                 <span className="shrink-0 whitespace-nowrap text-right text-[15px] font-black tracking-tight text-[#c8764b]">PHP {order.total}</span>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="flex w-full flex-row items-center gap-2 overflow-x-auto scrollbar-hide py-1 sm:flex-wrap sm:justify-end sm:overflow-visible">
-                                        
+                                    </div>                                    {/* --- DESKTOP FOOTER ACTIONS (Strictly Preserved) --- */}
+                                    <div className="hidden sm:flex flex-row items-center gap-2 flex-wrap justify-end overflow-visible">
                                         {/* Download Receipt */}
                                         <a 
                                             href={`/my-orders/${order.id}/receipt`}
                                             target="_blank"
-                                            className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 text-[12px] font-bold text-gray-600 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+                                            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 text-[12px] font-bold text-gray-600 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
                                         >
                                             <Printer size={15} /> Receipt
                                         </a>
@@ -1448,7 +1610,7 @@ export default function MyOrders({ auth, orders }) {
                                         {order.status !== 'Completed' && (
                                             <button 
                                                 onClick={() => contactSeller(order.seller_id)}
-                                                className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-gray-200 bg-white rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
+                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-gray-200 bg-white rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
                                             >
                                                 <MessageCircle size={15} /> Chat
                                             </button>
@@ -1458,7 +1620,7 @@ export default function MyOrders({ auth, orders }) {
                                         {['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
                                             <a 
                                                 href={route('payment.pay', order.order_number)}
-                                                className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all hover:-translate-y-0.5"
+                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all hover:-translate-y-0.5"
                                             >
                                                 <CreditCard size={15} /> Pay Now
                                             </a>
@@ -1468,7 +1630,7 @@ export default function MyOrders({ auth, orders }) {
                                         {order.can_cancel && (
                                             <button 
                                                 onClick={() => openModal('cancel', order.id)}
-                                                className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-red-200 bg-red-50 rounded-lg text-[12px] font-bold text-red-600 hover:bg-red-100 transition"
+                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-red-200 bg-red-50 rounded-lg text-[12px] font-bold text-red-655 hover:bg-red-100 transition"
                                             >
                                                 <XCircle size={15} /> Cancel
                                             </button>
@@ -1478,7 +1640,7 @@ export default function MyOrders({ auth, orders }) {
                                         {(order.status === 'Delivered' && !order.received_at) && (
                                             <button 
                                                 onClick={() => openModal('receive', order.id)}
-                                                className={`inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-5 rounded-lg text-[12px] font-bold shadow-md transition-all hover:-translate-y-0.5 ${
+                                                className={`inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 rounded-lg text-[12px] font-bold shadow-md transition-all hover:-translate-y-0.5 ${
                                                     order.shipping_method === 'Pick Up'
                                                     ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-200'
                                                     : 'bg-green-600 text-white hover:bg-green-700 shadow-green-200'
@@ -1494,7 +1656,7 @@ export default function MyOrders({ auth, orders }) {
                                             <>
                                                 <button 
                                                     onClick={() => buyAgain(order.id)}
-                                                    className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-clay-200 bg-clay-50 text-clay-700 rounded-lg text-[12px] font-bold hover:bg-clay-100 transition shadow-sm"
+                                                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-clay-200 bg-clay-50 text-clay-700 rounded-lg text-[12px] font-bold hover:bg-clay-100 transition shadow-sm"
                                                 >
                                                     <ShoppingBag size={15} /> Buy Again
                                                 </button>
@@ -1505,7 +1667,7 @@ export default function MyOrders({ auth, orders }) {
                                                 )) && (
                                                     <button 
                                                         onClick={() => setRatingModal({ isOpen: true, order })}
-                                                        className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all hover:-translate-y-0.5"
+                                                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all hover:-translate-y-0.5"
                                                     >
                                                         <Star size={15} /> {order.items.some(item => item.review?.can_manage_review) ? 'Manage Reviews' : 'Rate'}
                                                     </button>
@@ -1514,7 +1676,7 @@ export default function MyOrders({ auth, orders }) {
                                                 {order.can_return && (
                                                     <button 
                                                         onClick={() => setReturnModalState({ isOpen: true, order })}
-                                                        className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-orange-200 bg-orange-50 rounded-lg text-[12px] font-bold text-orange-600 hover:bg-orange-100 transition"
+                                                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-orange-200 bg-orange-50 rounded-lg text-[12px] font-bold text-orange-655 hover:bg-orange-100 transition"
                                                     >
                                                         <RotateCcw size={15} /> Return
                                                     </button>
@@ -1528,7 +1690,7 @@ export default function MyOrders({ auth, orders }) {
                                                 {order.dispute?.status === 'seller_proposed_replacement' && (
                                                     <button 
                                                         onClick={() => router.post(route('disputes.react', order.dispute.id), { action: 'accept_replacement' })}
-                                                        className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-teal-600 text-white rounded-lg text-[12px] font-bold hover:bg-teal-700 shadow-md shadow-teal-200 transition-all hover:-translate-y-0.5 animate-pulse"
+                                                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-teal-600 text-white rounded-lg text-[12px] font-bold hover:bg-teal-700 shadow-md shadow-teal-200 transition-all hover:-translate-y-0.5 animate-pulse"
                                                     >
                                                         <CheckCircle size={15} /> Accept Replacement
                                                     </button>
@@ -1537,7 +1699,7 @@ export default function MyOrders({ auth, orders }) {
                                                 {['seller_proposed_replacement', 'seller_rejected'].includes(order.dispute?.status) && (
                                                     <button 
                                                         onClick={() => setEscalateModalState({ isOpen: true, disputeId: order.dispute.id })}
-                                                        className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-amber-200 bg-amber-50 text-amber-700 rounded-lg text-[12px] font-bold hover:bg-amber-100 transition shadow-sm animate-pulse"
+                                                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-amber-200 bg-amber-50 text-amber-700 rounded-lg text-[12px] font-bold hover:bg-amber-100 transition shadow-sm animate-pulse"
                                                     >
                                                         <AlertTriangle size={15} /> Escalate to Admin
                                                     </button>
@@ -1545,23 +1707,225 @@ export default function MyOrders({ auth, orders }) {
 
                                                 <button 
                                                     onClick={() => openModal('cancelReturn', order.id)}
-                                                    className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-red-200 bg-red-50 text-red-600 rounded-lg text-[12px] font-bold hover:bg-red-100 transition shadow-sm"
+                                                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-red-200 bg-red-50 text-red-655 rounded-lg text-[12px] font-bold hover:bg-red-100 transition shadow-sm"
                                                 >
                                                     <XCircle size={15} /> Cancel Return
                                                 </button>
                                                 <button 
                                                     onClick={() => contactSeller(order.seller_id)}
-                                                    className="inline-flex h-11 sm:h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-orange-500 text-white rounded-lg text-[12px] font-bold hover:bg-orange-600 shadow-md shadow-orange-200 transition-all hover:-translate-y-0.5"
+                                                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-orange-500 text-white rounded-lg text-[12px] font-bold hover:bg-orange-600 shadow-md shadow-orange-200 transition-all hover:-translate-y-0.5"
                                                 >
                                                     <MessageCircle size={15} /> Negotiate Return
                                                 </button>
                                             </>
                                         )}
                                     </div>
+
+                                    {/* --- MOBILE FOOTER ACTIONS WITH DROPDOWN --- */}
+                                    <div className="flex sm:hidden w-full flex-row items-center gap-2 py-1 justify-end">
+                                        {/* Primary Actions Promoted directly on Mobile */}
+                                        {/* 1. Pay Now */}
+                                        {['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
+                                            <a 
+                                                href={route('payment.pay', order.order_number)}
+                                                className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95"
+                                            >
+                                                <CreditCard size={15} /> Pay Now
+                                            </a>
+                                        )}
+
+                                        {/* 2. Confirm Receipt / Pick Up */}
+                                        {(order.status === 'Delivered' && !order.received_at) && (
+                                            <button 
+                                                onClick={() => openModal('receive', order.id)}
+                                                className={`flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 rounded-lg text-[12px] font-bold shadow-md transition-all active:scale-95 ${
+                                                    order.shipping_method === 'Pick Up'
+                                                    ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-200'
+                                                    : 'bg-green-600 text-white hover:bg-green-700 shadow-green-200'
+                                                }`}
+                                            >
+                                                {order.shipping_method === 'Pick Up' ? <PackageCheck size={16} /> : <CheckCircle size={16} />}
+                                                {order.shipping_method === 'Pick Up' ? 'Confirm Pick Up' : 'Order Received'}
+                                            </button>
+                                        )}
+
+                                        {/* 3. Rate / Manage Reviews */}
+                                        {(order.status === 'Completed' && !order.replacement_in_progress && (
+                                            order.items.some(item => !item.is_rated) ||
+                                            order.items.some(item => item.review?.can_manage_review)
+                                        )) && (
+                                            <button 
+                                                onClick={() => setRatingModal({ isOpen: true, order })}
+                                                className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all active:scale-95"
+                                            >
+                                                <Star size={15} /> {order.items.some(item => item.review?.can_manage_review) ? 'Manage Reviews' : 'Rate'}
+                                            </button>
+                                        )}
+
+                                        {/* 4. Accept Replacement */}
+                                        {(order.status === 'Refund/Return' && order.dispute?.status === 'seller_proposed_replacement') && (
+                                            <button 
+                                                onClick={() => router.post(route('disputes.react', order.dispute.id), { action: 'accept_replacement' })}
+                                                className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-teal-600 text-white rounded-lg text-[12px] font-bold hover:bg-teal-700 shadow-md shadow-teal-200 transition-all active:scale-95 animate-pulse"
+                                            >
+                                                <CheckCircle size={15} /> Accept Replacement
+                                            </button>
+                                        )}
+
+                                        {/* 5. Negotiate Return */}
+                                        {(order.status === 'Refund/Return') && (
+                                            <button 
+                                                onClick={() => contactSeller(order.seller_id)}
+                                                className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-orange-500 text-white rounded-lg text-[12px] font-bold hover:bg-orange-600 shadow-md shadow-orange-200 transition-all active:scale-95"
+                                            >
+                                                <MessageCircle size={15} /> Negotiate Return
+                                            </button>
+                                        )}
+
+                                        {/* Promoted Secondary Actions when no direct primary action is available */}
+                                        {/* Promoting Chat */}
+                                        {(!(['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD') &&
+                                         !(order.status === 'Delivered' && !order.received_at) &&
+                                         !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review))) &&
+                                         !(order.status === 'Refund/Return') &&
+                                         order.status !== 'Completed') && (
+                                            <button 
+                                                onClick={() => contactSeller(order.seller_id)}
+                                                className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-4 border border-gray-200 bg-white rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm active:scale-95"
+                                            >
+                                                <MessageCircle size={15} /> Chat
+                                            </button>
+                                        )}
+
+                                        {/* Promoting Buy Again */}
+                                        {(order.status === 'Completed' && 
+                                          !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review)))) && (
+                                            <button 
+                                                onClick={() => buyAgain(order.id)}
+                                                className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-4 border border-clay-200 bg-clay-50 text-clay-700 rounded-lg text-[12px] font-bold hover:bg-clay-100 transition shadow-sm active:scale-95"
+                                            >
+                                                <ShoppingBag size={15} /> Buy Again
+                                            </button>
+                                        )}
+
+                                        {/* Secondary Dropdown Actions */}
+                                        {(() => {
+                                            const actions = getMobileSecondaryActions(order);
+                                            
+                                            // Determine if Chat has been promoted
+                                            const isChatPromoted = !(['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD') &&
+                                                 !(order.status === 'Delivered' && !order.received_at) &&
+                                                 !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review))) &&
+                                                 !(order.status === 'Refund/Return') &&
+                                                 order.status !== 'Completed';
+
+                                            // Determine if Buy Again has been promoted
+                                            const isBuyAgainPromoted = order.status === 'Completed' && 
+                                                 !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review)));
+
+                                            const finalMobileSecondaryActions = actions.filter(act => {
+                                                if (isChatPromoted && act.label === 'Chat') return false;
+                                                if (isBuyAgainPromoted && act.label === 'Buy Again') return false;
+                                                return true;
+                                            });
+
+                                            if (finalMobileSecondaryActions.length === 0) return null;
+
+                                            // If there's exactly 1 action remaining, we can render it directly or keep it in the dropdown. 
+                                            // Standardizing to dropdown keeps the layout neat, but if it's just "Receipt" (e.g. for completed & rated orders), 
+                                            // showing it directly as a button next to "Buy Again" is extremely clean.
+                                            if (finalMobileSecondaryActions.length === 1) {
+                                                const act = finalMobileSecondaryActions[0];
+                                                const Icon = act.icon;
+                                                if (act.type === 'link') {
+                                                    return (
+                                                        <a
+                                                            href={act.href}
+                                                            target="_blank"
+                                                            className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 text-[12px] font-bold text-gray-600 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 active:scale-95"
+                                                        >
+                                                            <Icon size={15} /> {act.label}
+                                                        </a>
+                                                    );
+                                                }
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        onClick={act.onClick}
+                                                        className={`inline-flex h-11 shrink-0 items-center justify-center gap-1.5 px-4 border rounded-lg text-[12px] font-bold shadow-sm transition active:scale-95 ${
+                                                            act.danger
+                                                                ? 'border-red-200 bg-red-50 text-red-655 hover:bg-red-100'
+                                                                : act.warning
+                                                                    ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+                                                        }`}
+                                                    >
+                                                        <Icon size={15} /> {act.label}
+                                                    </button>
+                                                );
+                                            }
+
+                                            return (
+                                                <Dropdown>
+                                                    <Dropdown.Trigger>
+                                                        <button 
+                                                            type="button" 
+                                                            className="flex h-11 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 text-stone-500 hover:bg-stone-50 transition shadow-sm min-w-[44px] active:scale-95"
+                                                        >
+                                                            <EllipsisVertical size={16} />
+                                                        </button>
+                                                    </Dropdown.Trigger>
+                                                    <Dropdown.Content align="top-right" width="48" contentClasses="py-1 bg-white">
+                                                        {finalMobileSecondaryActions.map((act, i) => {
+                                                            const Icon = act.icon;
+                                                            if (act.type === 'link') {
+                                                                return (
+                                                                    <a
+                                                                        key={i}
+                                                                        href={act.href}
+                                                                        target="_blank"
+                                                                        className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold text-stone-700 hover:bg-stone-50 transition-colors"
+                                                                    >
+                                                                        <Icon size={14} className="text-stone-400" />
+                                                                        {act.label}
+                                                                    </a>
+                                                                );
+                                                            }
+                                                            return (
+                                                                <button
+                                                                    key={i}
+                                                                    type="button"
+                                                                    onClick={act.onClick}
+                                                                    className={`flex items-center gap-2 w-full px-4 py-2.5 text-left text-[13px] font-bold transition-colors ${
+                                                                        act.danger 
+                                                                            ? 'text-red-655 hover:bg-red-50' 
+                                                                            : act.warning 
+                                                                                ? 'text-amber-700 hover:bg-amber-50' 
+                                                                                : 'text-stone-700 hover:bg-stone-50'
+                                                                    }`}
+                                                                >
+                                                                    <Icon size={14} className={act.danger ? 'text-red-400' : act.warning ? 'text-amber-400' : 'text-stone-400'} />
+                                                                    {act.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </Dropdown.Content>
+                                                </Dropdown>
+                                            );
+                                        })()}
+                                    </div>
                                 </div>
                             </div>
                             );
                         })
+                    ) : searchQuery.trim() ? (
+                        <WorkspaceEmptyState
+                            icon={Search}
+                            title="No matching orders"
+                            description={`We couldn't find any orders matching "${searchQuery}". Try using different terms or click below to clear the search.`}
+                            actionLabel="Clear Search"
+                            onAction={() => setSearchQuery('')}
+                        />
                     ) : (
                         <WorkspaceEmptyState
                             icon={ShoppingBag}

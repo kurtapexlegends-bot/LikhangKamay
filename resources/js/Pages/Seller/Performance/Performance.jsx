@@ -114,7 +114,7 @@ export default function Analytics({
             <Head title="Shop Analytics" />
             <SellerHeader
                 title="Analytics"
-                subtitle="Revenue, orders, and category performance in one view."
+                subtitle="View shop sales, active orders, and category performance."
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={sellerSubscription?.canExportAnalytics ? (

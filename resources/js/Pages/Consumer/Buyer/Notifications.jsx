@@ -252,7 +252,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
         <div className="flex-1 flex flex-col min-w-0">
             <SellerHeader 
                 title="Notifications"
-                subtitle="Stay updated with your shop activity"
+                subtitle="Manage notifications and workspace alerts."
                 auth={auth}
             />
             <main className="flex-1 overflow-y-auto">

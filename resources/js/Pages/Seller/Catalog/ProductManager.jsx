@@ -663,7 +663,7 @@ export default function ProductManager({
             <Head title="Product Manager" />
             <SellerHeader
                 title="Products"
-                subtitle="Manage inventory, publishing readiness, and catalog actions."
+                subtitle="Manage product listings, inventory levels, and prices."
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={

@@ -47,7 +47,7 @@ export default function PayrollRunShow({ payroll }) {
 
             <SellerHeader
                 title="Payroll Run"
-                subtitle="Review the generated payroll request and its line items."
+                subtitle="Review staff payroll items and release payouts."
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}

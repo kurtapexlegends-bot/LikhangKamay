@@ -303,7 +303,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:ml-52">
                 <SellerHeader 
                     title="Customer Ratings"
-                    subtitle="Shop quality feedback & reviews"
+                    subtitle="Manage customer reviews and feedback."
                     auth={auth}
                     onMenuClick={openSidebar}
                 />

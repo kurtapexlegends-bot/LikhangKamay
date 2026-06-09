@@ -193,7 +193,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
                 <SellerHeader 
                     title="Inventory"
-                    subtitle="Manage materials, stock levels, and restock actions"
+                    subtitle="Track raw materials, inventory levels, and stock purchase orders."
                     auth={auth}
                     onMenuClick={openSidebar}
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
