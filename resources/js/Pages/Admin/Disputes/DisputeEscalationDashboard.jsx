@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import UserAvatar from '@/Components/UserAvatar';
 import { useToast } from '@/Components/ToastContext';
 import {
     RotateCcw, ShieldAlert, Clock, User, Store, FileText, Camera,
     Check, X, ExternalLink, ChevronRight, Info, CheckCircle2,
-    XCircle, AlertTriangle, Loader2
+    XCircle, AlertTriangle, Loader2, ArrowLeft
 } from 'lucide-react';
 
 export default function DisputeEscalationDashboard({ disputes = [] }) {
@@ -15,6 +16,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [showMobileDetail, setShowMobileDetail] = useState(false);
 
     const selectedDispute = disputes.find(d => d.id === selectedId);
 
@@ -22,6 +24,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
         setSelectedId(dispute.id);
         setNotes('');
         setError('');
+        setShowMobileDetail(true);
     };
 
     const handleArbitrate = (decision) => {
@@ -45,6 +48,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                 onSuccess: () => {
                     addToast(`Dispute resolved successfully: ${decision === 'refund' ? 'Full Refund Ruled' : 'Claim Rejected'}.`, 'success');
                     setNotes('');
+                    setShowMobileDetail(false);
                     // Select another dispute if any
                     const remaining = disputes.filter(d => d.id !== selectedDispute.id);
                     if (remaining.length > 0) {
@@ -78,7 +82,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                         </p>
                     </div>
                     {disputes.length > 0 && (
-                        <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-2xl text-xs font-bold shadow-sm animate-pulse">
+                        <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-2xl text-xs font-bold shadow-sm self-start sm:self-auto">
                             <ShieldAlert size={14} />
                             {disputes.length} Escalated {disputes.length === 1 ? 'dispute' : 'disputes'} active
                         </div>
@@ -89,12 +93,12 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                     <WorkspaceEmptyState
                         icon={CheckCircle2}
                         title="All disputes resolved"
-                        description="There are currently no active escalated disputes awaiting arbitration. Nice job!"
+                        description="There are currently no active escalated disputes awaiting arbitration."
                     />
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         {/* LEFT COLUMN: Queue list */}
-                        <div className="lg:col-span-4 bg-white border border-stone-200 rounded-3xl overflow-hidden shadow-sm h-[70vh] flex flex-col">
+                        <div className={`lg:col-span-4 bg-white border border-stone-200 rounded-3xl overflow-hidden shadow-sm h-[70vh] flex flex-col ${showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
                             <div className="px-4 py-3 border-b border-stone-100 bg-stone-50/50">
                                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Escalation Queue</span>
                             </div>
@@ -137,9 +141,20 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                         </div>
 
                         {/* RIGHT COLUMN: Selected Detail & Action */}
-                        <div className="lg:col-span-8 space-y-6">
+                        <div className={`lg:col-span-8 space-y-6 ${showMobileDetail ? 'block' : 'hidden lg:block'}`}>
                             {selectedDispute ? (
                                 <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                                    {/* Mobile Back Button */}
+                                    {showMobileDetail && (
+                                        <button
+                                            onClick={() => setShowMobileDetail(false)}
+                                            className="lg:hidden inline-flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-3.5 py-2 rounded-xl transition-all shadow-sm mb-4 min-h-[44px]"
+                                        >
+                                            <ArrowLeft size={14} />
+                                            Back to Queue
+                                        </button>
+                                    )}
+
                                     {/* Detail Header */}
                                     <div className="border-b border-stone-100 pb-5 flex flex-wrap items-start justify-between gap-4">
                                         <div>
@@ -147,7 +162,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                 <span className="font-mono text-xs font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
                                                     Order ID: {selectedDispute.order?.order_number || selectedDispute.order_id}
                                                 </span>
-                                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm animate-pulse">
+                                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm">
                                                     <ShieldAlert size={10} />
                                                     Escalated
                                                 </span>
@@ -168,16 +183,19 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                             </h4>
                                             
                                             <div className="bg-stone-50/50 rounded-2xl border border-stone-200/60 p-4 space-y-3.5">
-                                                <div>
-                                                    <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
-                                                        Buyer Profile
-                                                    </span>
-                                                    <p className="text-xs font-bold text-stone-900">
-                                                        {selectedDispute.order?.user?.name || selectedDispute.order?.customer_name || 'Buyer'}
-                                                    </p>
-                                                    <p className="text-[10px] text-stone-500 font-medium mt-0.5">
-                                                        {selectedDispute.order?.user?.email || ''}
-                                                    </p>
+                                                <div className="flex items-center gap-3">
+                                                    <UserAvatar user={selectedDispute.order?.user} className="h-9 w-9 border border-stone-200" />
+                                                    <div>
+                                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                                                            Buyer Profile
+                                                        </span>
+                                                        <p className="text-xs font-bold text-stone-900">
+                                                            {selectedDispute.order?.user?.name || selectedDispute.order?.customer_name || 'Buyer'}
+                                                        </p>
+                                                        <p className="text-[10px] text-stone-500 font-medium">
+                                                            {selectedDispute.order?.user?.email || ''}
+                                                        </p>
+                                                    </div>
                                                 </div>
 
                                                 <div>
@@ -194,7 +212,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                         <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
                                                             Escalation Statement
                                                         </span>
-                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap italic">
+                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap italic bg-white border border-stone-200/60 p-3 rounded-xl">
                                                             "{selectedDispute.escalation_reason}"
                                                         </p>
                                                     </div>
@@ -237,23 +255,26 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                             </h4>
                                             
                                             <div className="bg-stone-50/50 rounded-2xl border border-stone-200/60 p-4 space-y-3.5">
-                                                <div>
-                                                    <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
-                                                        Seller Shop Name
-                                                    </span>
-                                                    <p className="text-xs font-bold text-stone-900">
-                                                        {selectedDispute.order?.artisan?.shop_name || 'Artisan Shop'}
-                                                    </p>
-                                                    <p className="text-[10px] text-stone-500 font-medium mt-0.5">
-                                                        Owner: {selectedDispute.order?.artisan?.name || ''}
-                                                    </p>
+                                                <div className="flex items-center gap-3">
+                                                    <UserAvatar user={selectedDispute.order?.artisan} className="h-9 w-9 border border-stone-200" />
+                                                    <div>
+                                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                                                            Seller Shop Name
+                                                        </span>
+                                                        <p className="text-xs font-bold text-stone-900">
+                                                            {selectedDispute.order?.artisan?.shop_name || 'Artisan Shop'}
+                                                        </p>
+                                                        <p className="text-[10px] text-stone-500 font-medium">
+                                                            Owner: {selectedDispute.order?.artisan?.name || ''}
+                                                        </p>
+                                                    </div>
                                                 </div>
 
                                                 <div>
                                                     <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
                                                         Response Type
                                                     </span>
-                                                    <span className="inline-flex rounded-md border border-stone-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-700 shadow-sm">
+                                                    <span className="inline-flex rounded-md border border-stone-200 bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-stone-700 shadow-sm">
                                                         {selectedDispute.seller_response_type || 'No counter offered'}
                                                     </span>
                                                 </div>
@@ -263,7 +284,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                         <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
                                                             Proposed Replacement Counter
                                                         </span>
-                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap">
+                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap bg-white border border-stone-200/60 p-3 rounded-xl">
                                                             {selectedDispute.seller_proposed_description}
                                                         </p>
                                                     </div>
@@ -274,7 +295,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                         <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
                                                             Rejection Reasoning
                                                         </span>
-                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap">
+                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap bg-white border border-stone-200/60 p-3 rounded-xl">
                                                             {selectedDispute.seller_explanation}
                                                         </p>
                                                     </div>
@@ -290,13 +311,13 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                     </div>
 
                                     {/* Arbitration Action Panel */}
-                                    <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-4">
-                                        <div className="flex items-center gap-2 text-stone-800 font-bold text-xs">
-                                            <Info size={14} className="text-stone-500" />
-                                            <span>Arbitration Panel</span>
+                                    <div className="bg-stone-50 border border-stone-200 rounded-3xl p-5 sm:p-6 space-y-4">
+                                        <div className="flex items-center gap-2 text-stone-900 font-bold text-xs sm:text-sm">
+                                            <Info size={16} className="text-stone-500" />
+                                            <span>Arbitration Ruling Panel</span>
                                         </div>
-                                        <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
-                                            Evaluate both statements and photos. Ruling for Refund transfers payments back to the buyer, while Rejecting the claim completes the order transaction permanently for the seller.
+                                        <p className="text-xs text-stone-500 font-medium leading-relaxed">
+                                            Carefully evaluate both statements and proof photos. Approving the refund reverses the transaction and returns payment to the buyer. Rejecting the claim retains the funds for the seller and sets the order back to completed status.
                                         </p>
 
                                         <div>
@@ -310,11 +331,11 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                     setNotes(e.target.value);
                                                     setError('');
                                                 }}
-                                                placeholder="Explain the final ruling, findings, and evidence references. This will be saved in platform logs..."
-                                                className="w-full border-stone-200 rounded-xl focus:border-stone-900 focus:ring-stone-900 shadow-sm text-xs font-medium resize-none"
+                                                placeholder="Document the final decision reasoning, findings, and evidence references. This will be permanently recorded in the platform's audit logs..."
+                                                className="w-full border-stone-200 rounded-xl focus:border-clay-500 focus:ring-0 shadow-sm text-xs font-medium resize-none"
                                             />
                                             {error && (
-                                                <p className="mt-1 text-xs font-bold text-red-600">
+                                                <p className="mt-1 text-xs font-bold text-rose-600">
                                                     {error}
                                                 </p>
                                             )}
@@ -324,19 +345,19 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                             <button
                                                 onClick={() => handleArbitrate('reject')}
                                                 disabled={isSubmitting}
-                                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-sm active:scale-95 disabled:opacity-50"
+                                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-sm active:scale-95 disabled:opacity-50 min-h-[44px]"
                                             >
                                                 {isSubmitting ? (
                                                     <Loader2 size={14} className="animate-spin text-stone-500" />
                                                 ) : (
-                                                    <XCircle size={14} className="text-red-500" />
+                                                    <XCircle size={14} className="text-rose-500" />
                                                 )}
                                                 Reject Claim (Rule for Seller)
                                             </button>
                                             <button
                                                 onClick={() => handleArbitrate('refund')}
                                                 disabled={isSubmitting}
-                                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-clay-700 transition shadow-md active:scale-95 disabled:opacity-50"
+                                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-clay-700 transition shadow-md active:scale-95 disabled:opacity-50 min-h-[44px]"
                                             >
                                                 {isSubmitting ? (
                                                     <Loader2 size={14} className="animate-spin text-white" />
