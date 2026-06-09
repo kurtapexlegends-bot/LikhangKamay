@@ -113,17 +113,22 @@ class AdminAnalyticsService
             ->count();
 
         $atRiskList = User::where('role', 'artisan')
-            ->where('last_seen_at', '<', $activeThreshold)
-            ->where('last_seen_at', '>=', $atRiskThreshold)
+            ->where(function ($q) use ($activeThreshold) {
+                $q->where('last_seen_at', '<', $activeThreshold)
+                  ->orWhereNull('last_seen_at');
+            })
+            ->orderByRaw('last_seen_at IS NULL ASC, last_seen_at DESC') // Most recently active first, then never-active
             ->limit(5)
             ->get()
             ->map(fn($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
+                'email' => $u->email,
                 'shop_name' => $u->shop_name,
                 'avatar' => $u->avatar,
                 'premium_tier' => $u->premium_tier,
                 'last_seen' => $u->last_seen_at?->diffForHumans() ?? 'Never',
+                'status' => ($u->last_seen_at && $u->last_seen_at >= $atRiskThreshold) ? 'At Risk' : 'Churned',
             ]);
 
         return [

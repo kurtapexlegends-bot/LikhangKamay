@@ -322,9 +322,9 @@ export default function Insights({
                         <div className="px-4 sm:px-5 py-3 border-b border-stone-100 bg-stone-50/30">
                             <h3 className="font-bold text-stone-900 text-sm sm:text-base flex items-center gap-2">
                                 <AlertTriangle className="text-amber-500" size={16} />
-                                At-Risk Artisans
+                                Inactive Artisans
                             </h3>
-                            <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 mt-0.5">No recent activity for 30-60 days. Immediate follow-up recommended.</p>
+                            <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 mt-0.5">Artisans flagged as at-risk or churned due to inactivity.</p>
                         </div>
                         <div className="px-4 sm:px-5 py-2.5 bg-stone-50/50 border-b border-stone-100 flex items-center justify-around text-center text-xs">
                             <div className="flex items-center gap-1.5">
@@ -352,7 +352,7 @@ export default function Insights({
                                         <tr>
                                             <th className="px-4 py-1.5 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Artisan</th>
                                             <th className="px-4 py-1.5 text-center text-[9px] font-bold text-stone-400 uppercase tracking-widest">Tier</th>
-                                            <th className="px-4 py-1.5 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Last Seen</th>
+                                            <th className="px-4 py-1.5 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Status / Activity</th>
                                             <th className="px-4 py-1.5 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Contact</th>
                                         </tr>
                                     </thead>
@@ -377,11 +377,20 @@ export default function Insights({
                                                     </div>
                                                 </td>
                                                 <td className="sm:px-4 sm:py-2 mb-1 sm:mb-0">
-                                                    <div className="flex items-center justify-between sm:justify-start gap-4">
+                                                    <div className="flex items-center justify-between sm:justify-start gap-2">
                                                         <span className="sm:hidden text-[9px] font-bold text-stone-400 uppercase tracking-widest">Activity</span>
-                                                        <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                                                            {artisan.last_seen}
-                                                        </span>
+                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
+                                                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold ${
+                                                                artisan.status === 'At Risk' 
+                                                                    ? 'bg-amber-50 text-amber-700 border border-amber-250' 
+                                                                    : 'bg-red-50 text-red-700 border border-red-200'
+                                                            }`}>
+                                                                {artisan.status}
+                                                            </span>
+                                                            <span className="text-[10px] text-stone-500 font-bold whitespace-nowrap">
+                                                                {artisan.last_seen === 'Never' ? 'Never active' : artisan.last_seen}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="sm:px-4 sm:py-2 text-right">
@@ -406,7 +415,7 @@ export default function Insights({
                                     <div className="w-14 h-14 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full flex items-center justify-center mb-4 shadow-sm">
                                         <ClipboardCheck size={24} />
                                     </div>
-                                    <p className="text-sm font-bold text-stone-900">No At-Risk Artisans</p>
+                                    <p className="text-sm font-bold text-stone-900">No Inactive Artisans</p>
                                     <p className="text-[11px] font-medium text-stone-500 mt-1 max-w-[200px]">Excellent! All approved artisans have been actively engaging with their storefronts.</p>
                                 </div>
                             )}

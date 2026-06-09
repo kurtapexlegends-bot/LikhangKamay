@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { PlanModal } from '@/Components/PlanBadge';
 
+const MotionLink = motion(Link);
+
 const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
 const resolveActiveGroup = (active) => {
@@ -876,7 +878,6 @@ const ModuleToggle = ({ label, description, enabled, onToggle, icon: Icon, color
 );
 
 const NavItem = ({ href, icon: Icon, active, children, compact, onClick }) => {
-    const MotionLink = motion(Link);
     return (
         <MotionLink
             href={href}

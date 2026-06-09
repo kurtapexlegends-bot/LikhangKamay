@@ -33,6 +33,8 @@ import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 
+const MotionLink = motion(Link);
+
 const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 
 const resolveActiveGroup = (path) => {
@@ -358,7 +360,6 @@ const CategoryGroup = ({ title, open, onToggle, isFirst, children }) => (
 );
 
 const NavItem = ({ href, icon: Icon, active, badge, onClick, children }) => {
-    const MotionLink = motion(Link);
     return (
         <MotionLink
             href={href}

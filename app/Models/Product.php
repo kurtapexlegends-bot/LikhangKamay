@@ -212,6 +212,12 @@ class Product extends Model
      */
     public function scopeApproved(\Illuminate\Database\Eloquent\Builder $query)
     {
-        return $query->where('status', 'Active');
+        return $query->where('status', 'Active')
+            ->whereHas('user', function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('last_seen_at', '>=', now()->subDays(60))
+                        ->orWhereNull('last_seen_at');
+                });
+            });
     }
 }
