@@ -5,6 +5,7 @@ import {
     Transition,
     TransitionChild,
 } from '@headlessui/react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export default function Modal({
     children,
@@ -22,14 +23,7 @@ export default function Modal({
     };
 
     // Auto-enable bottomSheet on mobile for better ergonomics
-    const [isMobile, setIsMobile] = React.useState(false);
-    
-    React.useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 640);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+    const isMobile = useMediaQuery('(max-width: 639px)');
 
     const effectiveBottomSheet = bottomSheet || isMobile;
 

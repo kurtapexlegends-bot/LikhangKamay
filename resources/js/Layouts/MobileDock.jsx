@@ -131,6 +131,7 @@ export default function MobileDock() {
                     onClose={() => setIsAccountOpen(false)}
                     title="Account"
                     widthClass="max-w-[260px]"
+                    position="right"
                 >
                     <div className="flex flex-col -m-6 divide-y divide-stone-200/50 bg-[#FAF7F2] h-full min-h-screen">
                         {/* Compact User Profile */}

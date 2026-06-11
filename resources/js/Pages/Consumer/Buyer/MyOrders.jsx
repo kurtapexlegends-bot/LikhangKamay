@@ -169,7 +169,7 @@ export default function MyOrders({ auth, orders }) {
             <ImpersonationBanner />
             <BuyerNavbar />
 
-            <main className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
+            <main className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 min-w-0 flex-1">
                 
                 {/* --- FLASH MESSAGES --- */}
                 {flash?.success && (
@@ -200,7 +200,7 @@ export default function MyOrders({ auth, orders }) {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`relative flex min-w-[85px] flex-1 items-center justify-center gap-2 px-2 py-3 text-center text-[10px] font-bold transition-all sm:min-w-[100px] sm:text-sm sm:py-4 focus:outline-none ${
+                                    className={`relative flex min-w-[95px] flex-1 items-center justify-center gap-2 px-2.5 py-3 text-center text-[10px] font-bold transition-all sm:min-w-[100px] sm:text-sm sm:py-4 focus:outline-none ${
                                         activeTab === tab.id 
                                         ? 'text-clay-700 bg-clay-50/50' 
                                         : 'text-stone-400 hover:text-clay-600 hover:bg-stone-50'
@@ -237,7 +237,7 @@ export default function MyOrders({ auth, orders }) {
                         placeholder="Search items or order IDs..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white py-1.5 pl-8 pr-3 text-[11px] font-medium placeholder:text-stone-400 shadow-sm transition-all focus:border-clay-500 focus:ring-0 sm:py-2 sm:pl-9 sm:text-[12px]"
+                        className="w-full rounded-xl border border-stone-200 bg-white py-1.5 pl-8 pr-3 text-base font-medium placeholder:text-stone-400 shadow-sm transition-all focus:border-clay-500 focus:ring-0 sm:py-2 sm:pl-9 sm:text-[12px]"
                     />
                 </div>
 

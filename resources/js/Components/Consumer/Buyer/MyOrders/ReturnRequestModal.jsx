@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/react';
 import { RotateCcw, UploadCloud, XCircle } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export default function ReturnRequestModal({ isOpen, onClose, order }) {
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
@@ -11,16 +12,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
     });
 
     const [previewUrls, setPreviewUrls] = useState([]);
-    const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const handleResize = () => setIsMobileOrTablet(window.innerWidth < 1024);
-            handleResize();
-            window.addEventListener('resize', handleResize);
-            return () => window.removeEventListener('resize', handleResize);
-        }
-    }, []);
+    const isMobileOrTablet = useMediaQuery('(max-width: 1023px)');
 
     const revokePreviews = () => {
         previewUrls.forEach(url => {
@@ -128,9 +120,9 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveFile(index)}
-                                    className="absolute top-1 right-1 bg-red-655 text-white rounded-full p-1 shadow hover:bg-red-700 transition"
+                                    className="absolute -top-1 -right-1 bg-red-655 text-white rounded-full p-2.5 shadow hover:bg-red-700 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
                                 >
-                                    <XCircle size={12} />
+                                    <XCircle size={16} />
                                 </button>
                             </div>
                         ))}

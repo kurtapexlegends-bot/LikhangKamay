@@ -334,7 +334,7 @@ export default function OrderListItemCard({
                     <div className="overflow-hidden rounded-lg border border-stone-100 bg-[#FCFAF7]">
                         <div className="divide-y divide-stone-100/70">
                             {order.items.map((item, idx) => (
-                                <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 transition-colors hover:bg-white">
+                                <div key={idx} className="flex items-start sm:items-center gap-4 p-4 transition-colors hover:bg-white w-full min-w-0">
                                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg border border-stone-200 overflow-hidden shrink-0 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)]">
                                         <img 
                                             src={item.img} 
@@ -343,16 +343,21 @@ export default function OrderListItemCard({
                                             onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
                                         />
                                     </div>
-                                    <div className="flex-1 min-w-0 self-center">
-                                        <h4 className="font-bold text-stone-900 text-[14px] truncate">{item.name}</h4>
-                                        <div className="mt-1 flex items-center gap-3 text-[12px] text-stone-500">
-                                            <span>Var: {item.variant}</span>
-                                            <span className="h-1 w-1 rounded-full bg-stone-300"></span>
-                                            <span>Qty: {item.qty}</span>
+                                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <h4 className="font-bold text-stone-900 text-[14px] line-clamp-2 sm:truncate">{item.name}</h4>
+                                            <div className="mt-1 flex items-center gap-3 text-[12px] text-stone-500">
+                                                <span>Var: {item.variant}</span>
+                                                <span className="h-1 w-1 rounded-full bg-stone-300"></span>
+                                                <span>Qty: {item.qty}</span>
+                                            </div>
+                                            <div className="mt-1.5 sm:hidden">
+                                                <p className="font-black tracking-tight text-stone-900 text-[14px]">PHP {Number(item.price).toLocaleString()}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="w-full text-left sm:w-auto sm:text-right shrink-0 sm:self-center mt-3 sm:mt-0">
-                                        <p className="font-black tracking-tight text-stone-900 text-[16px]">PHP {Number(item.price).toLocaleString()}</p>
+                                        <div className="hidden sm:block shrink-0 text-right">
+                                            <p className="font-black tracking-tight text-stone-900 text-[16px]">PHP {Number(item.price).toLocaleString()}</p>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

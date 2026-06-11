@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/react';
 import { AlertTriangle } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
@@ -10,16 +11,7 @@ export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
         escalation_reason: '',
     });
 
-    const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const handleResize = () => setIsMobileOrTablet(window.innerWidth < 1024);
-            handleResize();
-            window.addEventListener('resize', handleResize);
-            return () => window.removeEventListener('resize', handleResize);
-        }
-    }, []);
+    const isMobileOrTablet = useMediaQuery('(max-width: 1023px)');
 
     useEffect(() => {
         if (!isOpen) {
