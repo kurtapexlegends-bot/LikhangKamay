@@ -6,6 +6,7 @@ use App\Support\StructuredAddress;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class AddressGeocodingService
 {
@@ -21,38 +22,42 @@ class AddressGeocodingService
             throw new \RuntimeException('Address is required for geocoding.');
         }
 
-        foreach ($seedQueries as $seedQuery) {
-            foreach ($this->candidateQueriesFor($seedQuery) as $candidateQuery) {
-                /** @var Response $response */
-                $response = Http::acceptJson()
-                    ->withUserAgent(config('app.name', 'LikhangKamay') . '/1.0 logistics')
-                    ->timeout(20)
-                    ->get(config('services.nominatim.base_url', 'https://nominatim.openstreetmap.org') . '/search', [
-                        'q' => $candidateQuery,
-                        'format' => 'jsonv2',
-                        'limit' => 1,
-                        'countrycodes' => 'ph',
-                    ]);
+        $cacheKey = 'geocode:' . md5(serialize($seedQueries));
 
-                if ($response->failed()) {
-                    throw new \RuntimeException('Address lookup failed. Please try again.');
-                }
+        return Cache::remember($cacheKey, now()->addDays(30), function () use ($seedQueries, $context) {
+            foreach ($seedQueries as $seedQuery) {
+                foreach ($this->candidateQueriesFor($seedQuery) as $candidateQuery) {
+                    /** @var Response $response */
+                    $response = Http::acceptJson()
+                        ->withUserAgent(config('app.name', 'LikhangKamay') . '/1.0 logistics')
+                        ->timeout(20)
+                        ->get(config('services.nominatim.base_url', 'https://nominatim.openstreetmap.org') . '/search', [
+                            'q' => $candidateQuery,
+                            'format' => 'jsonv2',
+                            'limit' => 1,
+                            'countrycodes' => 'ph',
+                        ]);
 
-                $result = $response->json();
+                    if ($response->failed()) {
+                        throw new \RuntimeException('Address lookup failed. Please try again.');
+                    }
 
-                if (is_array($result) && !empty($result[0]['lat']) && !empty($result[0]['lon'])) {
-                    return [
-                        'lat' => (string) $result[0]['lat'],
-                        'lng' => (string) $result[0]['lon'],
-                        'display_name' => (string) ($result[0]['display_name'] ?? $candidateQuery),
-                        'matched_query' => $candidateQuery,
-                        'normalized_matched_query' => StructuredAddress::normalizeForComparison($candidateQuery),
-                    ];
+                    $result = $response->json();
+
+                    if (is_array($result) && !empty($result[0]['lat']) && !empty($result[0]['lon'])) {
+                        return [
+                            'lat' => (string) $result[0]['lat'],
+                            'lng' => (string) $result[0]['lon'],
+                            'display_name' => (string) ($result[0]['display_name'] ?? $candidateQuery),
+                            'matched_query' => $candidateQuery,
+                            'normalized_matched_query' => StructuredAddress::normalizeForComparison($candidateQuery),
+                        ];
+                    }
                 }
             }
-        }
 
-        throw new \RuntimeException("Unable to locate the {$context} address for courier booking.");
+            throw new \RuntimeException("Unable to locate the {$context} address for courier booking.");
+        });
     }
 
     /**

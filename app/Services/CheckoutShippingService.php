@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Support\StructuredAddress;
+use Illuminate\Support\Facades\Cache;
 
 class CheckoutShippingService
 {
@@ -23,105 +24,109 @@ class CheckoutShippingService
             ];
         }
 
-        if ($this->shouldUseFlatFallback()) {
-            return [
-                'amount' => $this->flatFallbackAmount(),
-                'currency' => $currency,
-                'source' => 'fallback_flat',
-            ];
-        }
+        $cacheKey = 'shipping_estimate:' . $seller->id . ':' . md5(serialize($destination));
 
-        $pickupCandidates = $seller->getCourierPickupAddressCandidates();
-        $preferredPickupAddress = trim((string) ($seller->getPreferredCourierPickupAddress() ?? ($pickupCandidates[0] ?? '')));
-
-        $structuredDropoffAddress = StructuredAddress::formatPhilippineAddress([
-            'street_address' => $destination['shipping_street_address'] ?? null,
-            'barangay' => $destination['shipping_barangay'] ?? null,
-            'city' => $destination['shipping_city'] ?? null,
-            'region' => $destination['shipping_region'] ?? null,
-            'postal_code' => $destination['shipping_postal_code'] ?? null,
-        ]);
-
-        $dropoffCandidates = array_values(array_filter([
-            $structuredDropoffAddress,
-            trim((string) ($destination['shipping_address'] ?? '')),
-        ]));
-
-        if (empty($pickupCandidates) || empty($dropoffCandidates)) {
-            return [
-                'amount' => $this->flatFallbackAmount(),
-                'currency' => $currency,
-                'source' => 'fallback_flat',
-            ];
-        }
-
-        try {
-            $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
-            $dropoffCoordinates = $this->geocodingService()->geocode(
-                count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
-                'buyer drop-off'
-            );
-
-            $pickupAddress = $this->resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupCandidates);
-            $dropoffAddress = $this->resolveCourierStopAddress(
-                trim((string) ($structuredDropoffAddress !== '' ? $structuredDropoffAddress : ($dropoffCandidates[0] ?? ''))),
-                $dropoffCoordinates,
-                $dropoffCandidates
-            );
-
-            $quotation = $this->lalamoveService()->createQuotation([
-                'serviceType' => (string) config('services.lalamove.service_type', 'MOTORCYCLE'),
-                'language' => 'en_PH',
-                'stops' => [
-                    [
-                        'coordinates' => [
-                            'lat' => $pickupCoordinates['lat'],
-                            'lng' => $pickupCoordinates['lng'],
-                        ],
-                        'address' => $pickupAddress,
-                    ],
-                    [
-                        'coordinates' => [
-                            'lat' => $dropoffCoordinates['lat'],
-                            'lng' => $dropoffCoordinates['lng'],
-                        ],
-                        'address' => $dropoffAddress,
-                    ],
-                ],
-            ]);
-
-            $quotedTotal = round((float) data_get($quotation, 'priceBreakdown.total', 0), 2);
-
-            if ($quotedTotal > 0) {
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($seller, $destination, $currency) {
+            if ($this->shouldUseFlatFallback()) {
                 return [
-                    'amount' => $quotedTotal,
-                    'currency' => (string) (data_get($quotation, 'priceBreakdown.currency', $currency) ?: $currency),
-                    'source' => 'lalamove_quote',
+                    'amount' => $this->flatFallbackAmount(),
+                    'currency' => $currency,
+                    'source' => 'fallback_flat',
                 ];
             }
-        } catch (\Throwable) {
-            // Fall back to deterministic local estimate below.
-        }
 
-        try {
-            $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
-            $dropoffCoordinates = $this->geocodingService()->geocode(
-                count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
-                'buyer drop-off'
-            );
+            $pickupCandidates = $seller->getCourierPickupAddressCandidates();
+            $preferredPickupAddress = trim((string) ($seller->getPreferredCourierPickupAddress() ?? ($pickupCandidates[0] ?? '')));
 
-            return [
-                'amount' => $this->distanceFallbackAmount($pickupCoordinates, $dropoffCoordinates),
-                'currency' => $currency,
-                'source' => 'fallback_distance',
-            ];
-        } catch (\Throwable) {
-            return [
-                'amount' => $this->flatFallbackAmount(),
-                'currency' => $currency,
-                'source' => 'fallback_flat',
-            ];
-        }
+            $structuredDropoffAddress = StructuredAddress::formatPhilippineAddress([
+                'street_address' => $destination['shipping_street_address'] ?? null,
+                'barangay' => $destination['shipping_barangay'] ?? null,
+                'city' => $destination['shipping_city'] ?? null,
+                'region' => $destination['shipping_region'] ?? null,
+                'postal_code' => $destination['shipping_postal_code'] ?? null,
+            ]);
+
+            $dropoffCandidates = array_values(array_filter([
+                $structuredDropoffAddress,
+                trim((string) ($destination['shipping_address'] ?? '')),
+            ]));
+
+            if (empty($pickupCandidates) || empty($dropoffCandidates)) {
+                return [
+                    'amount' => $this->flatFallbackAmount(),
+                    'currency' => $currency,
+                    'source' => 'fallback_flat',
+                ];
+            }
+
+            try {
+                $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
+                $dropoffCoordinates = $this->geocodingService()->geocode(
+                    count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
+                    'buyer drop-off'
+                );
+
+                $pickupAddress = $this->resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupCandidates);
+                $dropoffAddress = $this->resolveCourierStopAddress(
+                    trim((string) ($structuredDropoffAddress !== '' ? $structuredDropoffAddress : ($dropoffCandidates[0] ?? ''))),
+                    $dropoffCoordinates,
+                    $dropoffCandidates
+                );
+
+                $quotation = $this->lalamoveService()->createQuotation([
+                    'serviceType' => (string) config('services.lalamove.service_type', 'MOTORCYCLE'),
+                    'language' => 'en_PH',
+                    'stops' => [
+                        [
+                            'coordinates' => [
+                                'lat' => $pickupCoordinates['lat'],
+                                'lng' => $pickupCoordinates['lng'],
+                            ],
+                            'address' => $pickupAddress,
+                        ],
+                        [
+                            'coordinates' => [
+                                'lat' => $dropoffCoordinates['lat'],
+                                'lng' => $dropoffCoordinates['lng'],
+                            ],
+                            'address' => $dropoffAddress,
+                        ],
+                    ],
+                ]);
+
+                $quotedTotal = round((float) data_get($quotation, 'priceBreakdown.total', 0), 2);
+
+                if ($quotedTotal > 0) {
+                    return [
+                        'amount' => $quotedTotal,
+                        'currency' => (string) (data_get($quotation, 'priceBreakdown.currency', $currency) ?: $currency),
+                        'source' => 'lalamove_quote',
+                    ];
+                }
+            } catch (\Throwable) {
+                // Fall back to deterministic local estimate below.
+            }
+
+            try {
+                $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
+                $dropoffCoordinates = $this->geocodingService()->geocode(
+                    count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
+                    'buyer drop-off'
+                );
+
+                return [
+                    'amount' => $this->distanceFallbackAmount($pickupCoordinates, $dropoffCoordinates),
+                    'currency' => $currency,
+                    'source' => 'fallback_distance',
+                ];
+            } catch (\Throwable) {
+                return [
+                    'amount' => $this->flatFallbackAmount(),
+                    'currency' => $currency,
+                    'source' => 'fallback_flat',
+                ];
+            }
+        });
     }
 
     private function shouldUseFlatFallback(): bool
