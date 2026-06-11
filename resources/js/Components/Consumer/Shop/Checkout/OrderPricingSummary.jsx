@@ -15,6 +15,7 @@ export default function OrderPricingSummary({
     processing,
     submitCheckout,
     setQuoteRetryNonce,
+    hideSubmitButton = false,
 }) {
     const shippingFeeSummaryValue = shippingMethod === 'Pick Up'
         ? peso(0)
@@ -167,31 +168,35 @@ export default function OrderPricingSummary({
                 )}
             </div>
             
-            <button
-                onClick={submitCheckout}
-                disabled={submitDisabled || isPendingArtisan}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
-            >
-                {processing ? (
-                    <>
-                        <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        <span>Processing...</span>
-                    </>
-                ) : (
-                    <>
-                        <ShieldCheck size={18} />
-                        <span>{totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</span>
-                    </>
-                )}
-            </button>
-            {isPendingArtisan && <p className="mt-2 text-center text-xs font-bold text-amber-600">Checkout is disabled for pending shops.</p>}
-            <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400">
-                <MessageCircle size={12} />
-                Chat opens after ordering
-            </p>
+            {!hideSubmitButton && (
+                <div className="hidden md:block">
+                    <button
+                        onClick={submitCheckout}
+                        disabled={submitDisabled || isPendingArtisan}
+                        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
+                    >
+                        {processing ? (
+                            <>
+                                <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                <span>Processing...</span>
+                            </>
+                        ) : (
+                            <>
+                                <ShieldCheck size={18} />
+                                <span>{totalSellers > 1 ? `Place ${totalSellers} Orders` : 'Place Order'}</span>
+                            </>
+                        )}
+                    </button>
+                    {isPendingArtisan && <p className="mt-2 text-center text-xs font-bold text-amber-600">Checkout is disabled for pending shops.</p>}
+                    <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400">
+                        <MessageCircle size={12} />
+                        Chat opens after ordering
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

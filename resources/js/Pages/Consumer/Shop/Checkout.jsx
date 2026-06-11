@@ -1,10 +1,11 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, Info, ShieldCheck, Store, Truck } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Info, ShieldCheck, Store, Truck, ChevronUp } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import StickyActionBar from '@/Components/StickyActionBar';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
 
 // Extracted Subcomponents
 import ShippingMethodSelector from '@/Components/Consumer/Shop/Checkout/ShippingMethodSelector';
@@ -54,6 +55,8 @@ export default function Checkout({ auth, pricing }) {
     const convenienceFeeRate = pricing?.convenience_fee_rate ?? 0.03;
     const defaultAddress = auth.user.addresses?.find((address) => address.is_default) || null;
     const [quoteRetryNonce, setQuoteRetryNonce] = useState(0);
+    const [showMobileSummary, setShowMobileSummary] = useState(false);
+    const [showNotes, setShowNotes] = useState(false);
     const [shippingQuote, setShippingQuote] = useState({
         status: 'idle',
         totalShippingFee: 0,
@@ -283,8 +286,8 @@ export default function Checkout({ auth, pricing }) {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-7">
-                    <div className="space-y-4 lg:col-span-2">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6 lg:gap-7">
+                    <div className="space-y-4 md:col-span-2">
                         {/* 1. Shipping Method */}
                         <ShippingMethodSelector 
                             shippingMethod={data.shipping_method} 
@@ -318,19 +321,32 @@ export default function Checkout({ auth, pricing }) {
 
                         {/* 3. Delivery Notes */}
                         <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-                            <div className="mb-3 flex items-center gap-3 text-clay-700">
-                                <Truck size={18} />
-                                <h2 className="text-base font-bold">Delivery Notes</h2>
-                                <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Optional</span>
+                            <button
+                                type="button"
+                                onClick={() => setShowNotes(!showNotes)}
+                                className="w-full flex items-center justify-between text-clay-700 focus:outline-none"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Truck size={18} />
+                                    <h2 className="text-base font-bold text-stone-900">Delivery Notes</h2>
+                                    <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Optional</span>
+                                </div>
+                                <span className="text-xs font-bold text-clay-600 flex items-center gap-1">
+                                    {showNotes || data.shipping_notes ? 'Hide' : 'Add Notes'}
+                                </span>
+                            </button>
+                            <div className={`mt-3 space-y-2 transition-all duration-300 overflow-hidden ${
+                                showNotes || data.shipping_notes ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                            }`}>
+                                <textarea 
+                                    rows="2" 
+                                    className="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500" 
+                                    placeholder="e.g. Gate code, landmark, available time, or handoff instructions" 
+                                    value={data.shipping_notes} 
+                                    onChange={(event) => setData('shipping_notes', event.target.value)} 
+                                />
+                                <p className="flex items-center gap-1 text-[11px] text-gray-400"><Info size={12} className="shrink-0" />Shared with the seller and courier if this order is booked through Lalamove.</p>
                             </div>
-                            <textarea 
-                                rows="2" 
-                                className="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500" 
-                                placeholder="e.g. Gate code, landmark, available time, or handoff instructions" 
-                                value={data.shipping_notes} 
-                                onChange={(event) => setData('shipping_notes', event.target.value)} 
-                            />
-                            <p className="mt-2 flex items-center gap-1 text-xs text-gray-400"><Info size={12} />Shared with the seller and courier if this order is booked through Lalamove.</p>
                         </div>
 
                         {/* 4. Payment Method */}
@@ -343,7 +359,7 @@ export default function Checkout({ auth, pricing }) {
                     </div>
 
                     {/* Order Summary Column */}
-                    <div className="lg:col-span-1 self-start lg:sticky lg:top-24">
+                    <div className="hidden md:block md:col-span-1 self-start md:sticky md:top-24">
                         <OrderPricingSummary 
                             summary={summary}
                             shippingQuote={shippingQuote}
@@ -364,8 +380,10 @@ export default function Checkout({ auth, pricing }) {
             {/* Mobile Sticky Bar */}
             <div className="md:hidden">
                 <StickyActionBar>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Total Due</p>
+                    <div className="min-w-0 flex-1 cursor-pointer group" onClick={() => setShowMobileSummary(true)}>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400 flex items-center gap-1">
+                            Total Due <ChevronUp size={10} className="shrink-0 text-stone-400 transition group-hover:text-clay-600" />
+                        </p>
                         <p className="text-sm font-bold text-gray-900">{peso(summary.grandTotal)}</p>
                         <p className="text-[11px] text-stone-500">
                             {processing
@@ -374,7 +392,7 @@ export default function Checkout({ auth, pricing }) {
                                     ? 'Delivery quote still needed'
                                     : totalSellers > 1
                                         ? `${totalSellers} split orders`
-                                        : 'Ready to place'}
+                                        : 'Tap to view details'}
                         </p>
                     </div>
                     <button
@@ -399,6 +417,32 @@ export default function Checkout({ auth, pricing }) {
                     </button>
                 </StickyActionBar>
             </div>
+
+            {/* Mobile Summary Drawer */}
+            <SlideOverDrawer
+                show={showMobileSummary}
+                onClose={() => setShowMobileSummary(false)}
+                title="Order Summary"
+                position="bottom"
+                widthClass="max-w-xl"
+            >
+                <div className="space-y-4">
+                    <OrderPricingSummary 
+                        summary={summary}
+                        shippingQuote={shippingQuote}
+                        shippingMethod={data.shipping_method}
+                        convenienceFeeRate={convenienceFeeRate}
+                        showAggregateBreakdown={showAggregateBreakdown}
+                        totalSellers={totalSellers}
+                        submitDisabled={submitDisabled}
+                        isPendingArtisan={isPendingArtisan}
+                        processing={processing}
+                        submitCheckout={submitCheckout}
+                        setQuoteRetryNonce={setQuoteRetryNonce}
+                        hideSubmitButton={true}
+                    />
+                </div>
+            </SlideOverDrawer>
         </div>
     );
 }
