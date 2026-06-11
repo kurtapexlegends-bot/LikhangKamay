@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { MessageCircle, Store, MapPin } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 
 export default function SellerAboutPanel({ product, handleChatSeller, chatRequirementMessage }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
         <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
             {/* Seller Card (Left Col) */}
@@ -58,9 +60,27 @@ export default function SellerAboutPanel({ product, handleChatSeller, chatRequir
                     About This Piece
                 </h2>
                 <div className="prose prose-xs text-xs max-w-none text-gray-600 leading-relaxed">
-                    <p className="whitespace-pre-line">
+                    <p className={`whitespace-pre-line ${isExpanded ? '' : 'line-clamp-4 lg:line-clamp-none'}`}>
                         {product.description || "A beautifully handcrafted piece made with care and traditional techniques by a skilled Filipino artisan. Each piece is unique and may have slight variations that add to its character."}
                     </p>
+                    {!isExpanded && (
+                        <button
+                            type="button"
+                            onClick={() => setIsExpanded(true)}
+                            className="lg:hidden mt-2 text-xs font-bold text-clay-600 hover:text-clay-700 transition"
+                        >
+                            Read More
+                        </button>
+                    )}
+                    {isExpanded && (
+                        <button
+                            type="button"
+                            onClick={() => setIsExpanded(false)}
+                            className="lg:hidden mt-2 text-xs font-bold text-clay-600 hover:text-clay-700 transition"
+                        >
+                            Show Less
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

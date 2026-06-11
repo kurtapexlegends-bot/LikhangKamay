@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useRef, useEffect } from 'react';
 import { Image as ImageIcon, Box, Flag, Heart } from 'lucide-react';
 import ProductImageMagnifier from './ProductImageMagnifier';
 
@@ -17,16 +17,73 @@ export default function ProductImageGallery({
     auth,
     setIsReporting,
 }) {
+    const scrollRef = useRef(null);
+
+    const handleScroll = (e) => {
+        const width = e.target.offsetWidth;
+        if (width <= 0) return;
+        const index = Math.round(e.target.scrollLeft / width);
+        if (index !== activeImageIndex && index < gallery.length) {
+            setActiveImageIndex(index);
+        }
+    };
+
+    useEffect(() => {
+        if (scrollRef.current && viewMode === 'image') {
+            const width = scrollRef.current.offsetWidth;
+            if (width > 0) {
+                const targetScrollLeft = activeImageIndex * width;
+                if (Math.abs(scrollRef.current.scrollLeft - targetScrollLeft) > 5) {
+                    scrollRef.current.scrollTo({
+                        left: targetScrollLeft,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        }
+    }, [activeImageIndex, viewMode]);
+
     return (
         <div className="p-3.5 sm:p-4 lg:col-span-5 lg:border-r lg:border-gray-100">
             {/* Main Image */}
             <div className="relative aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3">
                 {viewMode === 'image' ? (
-                    <ProductImageMagnifier 
-                        id="main-product-image"
-                        src={gallery[activeImageIndex] || '/images/no-image.png'} 
-                        alt={product.name} 
-                    />
+                    <>
+                        {/* Desktop/Tablet View */}
+                        <div className="hidden md:block h-full">
+                            <ProductImageMagnifier 
+                                id="main-product-image"
+                                src={gallery[activeImageIndex] || '/images/no-image.png'} 
+                                alt={product.name} 
+                            />
+                        </div>
+
+                        {/* Mobile Swipe Carousel View */}
+                        <div className="block md:hidden relative h-full">
+                            <div 
+                                ref={scrollRef}
+                                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none h-full w-full"
+                                onScroll={handleScroll}
+                            >
+                                {gallery.map((img, index) => (
+                                    <div key={index} className="w-full h-full shrink-0 snap-center">
+                                        <img 
+                                            src={img} 
+                                            alt={`${product.name} - image ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            {/* Numerical Pager Overlay */}
+                            {gallery.length > 1 && (
+                                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-[10px] font-bold text-white px-2.5 py-1 rounded-full select-none z-10">
+                                    {activeImageIndex + 1} / {gallery.length}
+                                </div>
+                            )}
+                        </div>
+                    </>
                 ) : (
                     <Suspense fallback={<div className="flex h-full items-center justify-center bg-gradient-to-b from-gray-50 to-white text-sm font-medium text-gray-500">Loading 3D view...</div>}>
                         <ProductViewer3D

@@ -3,7 +3,7 @@ import { Head, Link, useForm, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import Modal from '@/Components/Modal';
 import StickyActionBar from '@/Components/StickyActionBar';
-import { ChevronRight, ChevronLeft, ShoppingCart, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ShoppingCart, Loader2, MessageCircle } from 'lucide-react';
 
 import { normalizeRating } from '@/utils/rating';
 import { getRecentlyViewedProducts, isProductWishlisted, rememberViewedProduct, toggleWishlistedProduct } from '@/utils/buyerSignals';
@@ -404,7 +404,19 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             Disabled for admins
                         </div>
                     ) : (
-                        <div className="flex gap-2.5">
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={handleChatSeller}
+                                aria-label={product?.viewer_can_chat_seller ? 'Open seller chat' : 'View seller chat policy'}
+                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                                    product?.viewer_can_chat_seller
+                                        ? 'border-stone-200 bg-white text-gray-700 hover:bg-stone-50'
+                                        : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                }`}
+                            >
+                                <MessageCircle size={16} />
+                            </button>
                             <button
                                 onClick={(e) => addToCart(e)}
                                 disabled={product.stock === 0 || isAddingToCart}
