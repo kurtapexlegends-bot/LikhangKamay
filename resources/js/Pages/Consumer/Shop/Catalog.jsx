@@ -230,9 +230,9 @@ export default function Catalog(props) {
             <ImpersonationBanner />
             <BuyerNavbar />
 
-            <main className="flex-1 max-w-7xl mx-auto w-full px-4 lg:px-8 py-6">
+            <main className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-6 min-w-0 flex-1">
                 
-                <div className="flex flex-col lg:flex-row gap-8 items-start">
+                <div className="w-full flex flex-col lg:flex-row gap-8 items-start">
                     
                     {/* --- LEFT SIDEBAR (Desktop) --- */}
                     <FilterSidebar 
@@ -261,6 +261,7 @@ export default function Catalog(props) {
                         onClose={() => setIsFilterOpen(false)}
                         title="Filters"
                         widthClass="max-w-[280px]"
+                        position="right"
                         footer={
                             <button 
                                 onClick={() => setIsFilterOpen(false)}
@@ -294,10 +295,10 @@ export default function Catalog(props) {
                     </SlideOverDrawer>
 
                     {/* --- RIGHT SIDE: GRID --- */}
-                    <div className="flex-1">
+                    <div className="w-full lg:flex-1 min-w-0">
                         
                         {/* --- HEADER TOOLBAR --- */}
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+                        <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
                             
                             {/* LEFT: Title */}
                             <div>
@@ -319,19 +320,8 @@ export default function Catalog(props) {
                                 )}
                             </div>
 
-                            {/* RIGHT: Sort & Filter (Mobile) Dropdown */}
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => setIsFilterOpen(true)}
-                                    className="lg:hidden flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:border-clay-300 transition-all active:scale-95"
-                                >
-                                    <SlidersHorizontal size={14} /> Filters
-                                    {activeFilterCount > 0 && (
-                                        <span className="bg-clay-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                                            {activeFilterCount}
-                                        </span>
-                                    )}
-                                </button>
+                            {/* RIGHT: Sort (Mobile) Dropdown */}
+                            <div className="flex items-center gap-2 ml-auto sm:ml-0">
                                 <ArrowUpDown size={14} className="text-gray-400" />
                                 <span className="text-xs text-gray-400">Sort:</span>
                                 <div className="relative">
@@ -351,24 +341,41 @@ export default function Catalog(props) {
                             </div>
                         </div>
 
-                        {/* Mobile Categories Swiper */}
-                        <div className="flex lg:hidden overflow-x-auto gap-2 pb-3 mb-4 -mx-4 px-4 scrollbar-hide snap-x border-b border-stone-100">
-                            {categories.map((cat) => {
-                                const isActive = activeCategory === cat;
-                                return (
-                                    <button
-                                        key={cat}
-                                        onClick={() => handleCategoryClick(cat)}
-                                        className={`snap-center flex-shrink-0 px-4 py-2 rounded-full text-xs font-black transition-all active:scale-95 border ${
-                                            isActive
-                                                ? 'bg-stone-900 border-stone-900 text-white shadow-sm'
-                                                : 'bg-white border-stone-200 text-stone-600 hover:text-stone-950'
-                                        }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                );
-                            })}
+                        {/* Mobile Sticky Category & Filter Header */}
+                        <div className="flex lg:hidden sticky top-14 z-30 bg-[#FDFBF9] py-3 -mx-4 px-4 border-b border-stone-100/80 items-center gap-3 mb-4">
+                            {/* Fixed Circular Filter Trigger */}
+                            <button 
+                                onClick={() => setIsFilterOpen(true)}
+                                className="flex-shrink-0 flex items-center justify-center bg-white border border-stone-200 text-stone-700 h-9 w-9 rounded-full hover:border-clay-300 transition active:scale-95 shadow-sm relative"
+                                aria-label="Open Filters"
+                            >
+                                <SlidersHorizontal size={14} strokeWidth={2.2} />
+                                {activeFilterCount > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 bg-clay-600 text-white text-[9px] font-black w-4.5 h-4.5 min-w-[18px] rounded-full flex items-center justify-center border border-white shadow-sm">
+                                        {activeFilterCount}
+                                    </span>
+                                )}
+                            </button>
+                            
+                            {/* Scrolling Category Swiper */}
+                            <div className="flex-1 overflow-x-auto scrollbar-hide flex gap-2">
+                                {categories.map((cat) => {
+                                    const isActive = activeCategory === cat;
+                                    return (
+                                        <button
+                                            key={cat}
+                                            onClick={() => handleCategoryClick(cat)}
+                                            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-black transition-all active:scale-95 border ${
+                                                isActive
+                                                    ? 'bg-stone-900 border-stone-900 text-white shadow-sm'
+                                                    : 'bg-white border-stone-200 text-stone-600 hover:text-stone-950'
+                                            }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         {/* Active Filters Chips */}
