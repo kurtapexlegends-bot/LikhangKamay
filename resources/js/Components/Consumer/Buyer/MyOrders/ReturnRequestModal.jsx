@@ -92,7 +92,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
                 <label className="block text-sm font-bold text-stone-700 mb-1">Proof Photos (Up to 5)</label>
                 <label className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-stone-300 rounded-xl cursor-pointer bg-stone-50 hover:border-stone-400 transition-colors">
                     <div className="space-y-1 text-center">
-                        <UploadCloud className="mx-auto h-10 w-10 text-stone-450" />
+                        <UploadCloud className="mx-auto h-10 w-10 text-stone-400" />
                         <div className="flex text-sm text-stone-600 justify-center">
                             <span className="relative rounded-md font-medium text-orange-600 hover:text-orange-500 focus-within:outline-none">
                                 <span>Upload images</span>
@@ -120,7 +120,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveFile(index)}
-                                    className="absolute -top-1 -right-1 bg-red-655 text-white rounded-full p-2.5 shadow hover:bg-red-700 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                    className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-2.5 shadow hover:bg-red-700 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
                                 >
                                     <XCircle size={16} />
                                 </button>

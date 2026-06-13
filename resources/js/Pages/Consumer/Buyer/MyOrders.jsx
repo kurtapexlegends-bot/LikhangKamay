@@ -10,7 +10,7 @@ import RatingModal from '@/Components/Consumer/RatingModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 // Extracted Subcomponents
-import OrderListItemCard from '@/Components/Consumer/Buyer/MyOrders/OrderListItemCard';
+import OrderListItemCard from '@/Components/Consumer/Buyer/MyOrders/OrderListItemCard/OrderListItemCard';
 import ReturnRequestModal from '@/Components/Consumer/Buyer/MyOrders/ReturnRequestModal';
 import EscalateDisputeModal from '@/Components/Consumer/Buyer/MyOrders/EscalateDisputeModal';
 
@@ -180,7 +180,7 @@ export default function MyOrders({ auth, orders }) {
                 )}
                 {flash?.error && (
                     <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm flex items-start gap-2.5">
-                        <XCircle className="h-5 w-5 text-red-655 shrink-0 mt-0.5" />
+                        <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                         <span className="text-sm font-medium">{flash.error}</span>
                     </div>
                 )}

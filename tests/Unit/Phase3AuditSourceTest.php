@@ -8,7 +8,7 @@ class Phase3AuditSourceTest extends TestCase
 {
     public function test_buyer_order_receive_action_only_shows_after_delivery(): void
     {
-        $source = file_get_contents(base_path('resources/js/Components/Consumer/Buyer/MyOrders/OrderListItemCard.jsx'));
+        $source = file_get_contents(base_path('resources/js/Components/Consumer/Buyer/MyOrders/OrderListItemCard/OrderCardActions.jsx'));
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString("(order.status === 'Delivered' && !order.received_at)", $source);

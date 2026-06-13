@@ -66,7 +66,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                 };
             case 'low_stock':
                 return {
-                    icon: <AlertTriangle size={20} className="text-red-650" />,
+                    icon: <AlertTriangle size={20} className="text-red-600" />,
                     bgClass: 'bg-red-50'
                 };
             case 'low_stock_warning':
@@ -97,7 +97,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                 };
             case 'accounting_rejected':
                 return {
-                    icon: <AlertTriangle size={20} className="text-red-650" />,
+                    icon: <AlertTriangle size={20} className="text-red-600" />,
                     bgClass: 'bg-red-50'
                 };
             case 'accounting_request':
@@ -107,7 +107,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                 };
             case 'artisan_application':
                 return {
-                    icon: <Store size={20} className="text-clay-650" />,
+                    icon: <Store size={20} className="text-clay-600" />,
                     bgClass: 'bg-clay-50'
                 };
             case 'shipment_deadline':
@@ -117,7 +117,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                 };
             case 'supply_depleted':
                 return {
-                    icon: <ArchiveX size={20} className="text-red-650" />,
+                    icon: <ArchiveX size={20} className="text-red-600" />,
                     bgClass: 'bg-red-50'
                 };
             case 'product_moderation':
@@ -129,7 +129,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
             case 'dispute_rejected':
             case 'dispute_arbitrated_rejected':
                 return {
-                    icon: <XCircle size={20} className="text-red-650" />,
+                    icon: <XCircle size={20} className="text-red-600" />,
                     bgClass: 'bg-red-50'
                 };
             default:
