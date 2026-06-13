@@ -16,6 +16,8 @@ export default function OrderPricingSummary({
     submitCheckout,
     setQuoteRetryNonce,
     hideSubmitButton = false,
+    hideTitle = false,
+    flat = false,
 }) {
     const shippingFeeSummaryValue = shippingMethod === 'Pick Up'
         ? peso(0)
@@ -32,8 +34,8 @@ export default function OrderPricingSummary({
             );
 
     return (
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-bold text-stone-900 tracking-tight">Order Summary</h3>
+        <div className={flat ? "" : "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"}>
+            {!hideTitle && <h3 className="mb-4 text-sm font-bold text-stone-900 tracking-tight">Order Summary</h3>}
             <div className="mb-5 max-h-88 space-y-4 overflow-y-auto pr-1.5 custom-scrollbar">
                 {summary.groups.map((group) => (
                     <div key={group.sellerId} className="space-y-4 rounded-xl border border-stone-100 bg-stone-50/35 p-4">

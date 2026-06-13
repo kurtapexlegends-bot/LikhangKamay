@@ -25,7 +25,7 @@ export default function SlideOverDrawer({
 
     return (
         <Transition show={show} as={Fragment}>
-            <Dialog as="div" className="relative z-50" onClose={onClose}>
+            <Dialog as="div" className="relative z-[80]" onClose={onClose}>
                 {/* Backdrop */}
                 <TransitionChild
                     as={Fragment}
