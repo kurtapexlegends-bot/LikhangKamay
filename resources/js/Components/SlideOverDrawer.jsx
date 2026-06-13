@@ -10,10 +10,18 @@ export default function SlideOverDrawer({
     footer = null,
     widthClass = 'max-w-md', // Default to medium width, can be overridden with 'max-w-2xl', etc.
     bodyClassName = 'relative flex-1 overflow-y-auto custom-scrollbar p-6',
-    heightClass = 'h-auto max-h-[85vh]', // Default bottom sheet height on mobile/tablet
+    heightClass = 'max-h-[85vh]', // Default bottom sheet height on mobile/tablet
     position = 'bottom' // 'bottom' (bottom sheet on mobile, right on desktop) or 'right' (right drawer on all screens)
 }) {
     const isRight = position === 'right';
+
+    const panelClass = isRight 
+        ? `h-full w-screen ${widthClass}` 
+        : `w-full lg:h-full lg:w-screen lg:max-h-none ${heightClass} ${widthClass}`;
+
+    const innerClass = isRight 
+        ? 'rounded-l-2xl h-full' 
+        : 'rounded-t-2xl lg:rounded-t-none lg:h-full';
 
     return (
         <Transition show={show} as={Fragment}>
@@ -48,16 +56,8 @@ export default function SlideOverDrawer({
                                 leaveFrom={isRight ? 'translate-x-0' : 'translate-y-0 lg:translate-x-0'}
                                 leaveTo={isRight ? 'translate-x-full' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'}
                             >
-                                <DialogPanel className={`pointer-events-auto ${
-                                    isRight 
-                                        ? `h-full w-screen ${widthClass}` 
-                                        : `w-full lg:h-full lg:w-screen ${heightClass} ${widthClass}`
-                                }`}>
-                                    <div className={`flex h-full flex-col bg-white shadow-2xl ${
-                                        isRight 
-                                            ? 'rounded-l-2xl' 
-                                            : 'rounded-t-2xl lg:rounded-t-none max-h-[85vh] lg:max-h-none lg:h-full'
-                                    }`}>
+                                <DialogPanel className={`pointer-events-auto flex flex-col ${panelClass}`}>
+                                    <div className={`flex flex-col flex-1 min-h-0 bg-white shadow-2xl ${innerClass}`}>
                                         {/* Header */}
                                         {title && (
                                             <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5 shrink-0">

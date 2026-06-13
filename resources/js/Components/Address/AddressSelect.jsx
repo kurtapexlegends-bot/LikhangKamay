@@ -59,7 +59,7 @@ export default function AddressSelect({
                         setTimeout(() => inputRef.current?.focus(), 50);
                     }
                 }}
-                className={`flex w-full items-center justify-between rounded-xl border border-gray-300 px-4 py-3 text-left shadow-sm transition active:scale-95 ${
+                className={`flex w-full h-11 sm:h-auto items-center justify-between rounded-xl border border-gray-300 px-4 py-3 text-left shadow-sm transition active:scale-95 ${
                     disabled
                         ? 'cursor-not-allowed bg-gray-100 text-gray-500 active:scale-100'
                         : 'bg-white focus:border-clay-500 focus:ring-1 focus:ring-clay-500'
@@ -92,7 +92,7 @@ export default function AddressSelect({
                                 <li
                                     key={option}
                                     onClick={() => handleSelect(option)}
-                                    className={`cursor-pointer px-4 py-2.5 text-sm transition hover:bg-clay-50 ${
+                                    className={`cursor-pointer px-4 py-3 sm:py-2.5 min-h-[44px] sm:min-h-0 flex items-center text-sm transition hover:bg-clay-50 ${
                                         value === option ? 'bg-clay-100 font-medium text-clay-700' : 'text-gray-700'
                                     }`}
                                 >

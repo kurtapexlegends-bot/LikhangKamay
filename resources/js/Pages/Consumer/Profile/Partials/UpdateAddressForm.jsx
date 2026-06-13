@@ -179,24 +179,24 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                                         </p>
                                     </div>
 
-                                    <div className="flex items-center gap-3 pt-3 border-t border-stone-100 mt-auto">
+                                    <div className="flex items-center gap-1 sm:gap-3 pt-3 border-t border-stone-100 mt-auto">
                                         {!addr.is_default && (
                                             <button
                                                 onClick={() => setDefault(addr.id)}
-                                                className="text-xs font-bold text-clay-600 hover:text-clay-700 transition-colors"
+                                                className="inline-flex h-11 px-3 sm:h-auto sm:px-0 items-center text-xs font-bold text-clay-600 hover:bg-stone-50 hover:text-clay-700 sm:hover:bg-transparent rounded-lg transition-colors"
                                             >
                                                 Set Primary
                                             </button>
                                         )}
                                         <button
                                             onClick={() => startEditing(addr)}
-                                            className="text-xs font-bold text-stone-500 hover:text-stone-900 transition-colors"
+                                            className="inline-flex h-11 px-3 sm:h-auto sm:px-0 items-center text-xs font-bold text-stone-500 hover:bg-stone-50 hover:text-stone-900 sm:hover:bg-transparent rounded-lg transition-colors"
                                         >
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => openDeleteAddressModal(addr)}
-                                            className="ml-auto text-stone-400 hover:text-red-600 transition-colors"
+                                            className="ml-auto inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-50 hover:text-red-600 transition-colors"
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -286,7 +286,7 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                             <button 
                                 type="button" 
                                 onClick={cancelForm}
-                                className="text-sm font-bold text-stone-500 hover:text-stone-700 transition-colors"
+                                className="inline-flex h-11 px-4 sm:h-auto sm:px-0 items-center justify-center text-sm font-bold text-stone-500 hover:text-stone-700 transition-colors"
                             >
                                 Cancel
                             </button>
@@ -304,6 +304,8 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                 onConfirm={deleteAddress}
                 title="Delete Address"
                 message={`Are you sure you want to delete this address? This action cannot be undone.`}
+                icon={AlertTriangle}
+                iconBg="bg-red-50 text-red-600"
                 confirmText="Delete"
                 confirmColor="bg-red-600 hover:bg-red-700"
             />

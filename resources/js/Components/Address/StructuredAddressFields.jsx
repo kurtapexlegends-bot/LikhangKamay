@@ -109,7 +109,7 @@ export default function StructuredAddressFields({
                         <button
                             type="button"
                             onClick={switchToCavite}
-                            className={`rounded-lg px-3 py-2 text-sm font-semibold transition active:scale-95 ${
+                            className={`rounded-lg px-4 h-11 sm:h-10 text-sm font-semibold transition active:scale-95 flex items-center justify-center ${
                                 mode === 'cavite'
                                     ? 'bg-clay-50 text-clay-700'
                                     : 'text-gray-500 hover:bg-gray-50'
@@ -120,7 +120,7 @@ export default function StructuredAddressFields({
                         <button
                             type="button"
                             onClick={switchToManual}
-                            className={`rounded-lg px-3 py-2 text-sm font-semibold transition active:scale-95 ${
+                            className={`rounded-lg px-4 h-11 sm:h-10 text-sm font-semibold transition active:scale-95 flex items-center justify-center ${
                                 mode === 'manual'
                                     ? 'bg-clay-50 text-clay-700'
                                     : 'text-gray-500 hover:bg-gray-50'

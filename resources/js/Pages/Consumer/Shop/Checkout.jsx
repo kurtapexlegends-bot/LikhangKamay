@@ -9,7 +9,7 @@ import SlideOverDrawer from '@/Components/SlideOverDrawer';
 
 // Extracted Subcomponents
 import ShippingMethodSelector from '@/Components/Consumer/Shop/Checkout/ShippingMethodSelector';
-import ShippingAddressSelector from '@/Components/Consumer/Shop/Checkout/ShippingAddressSelector';
+import ShippingAddressSelector from '@/Components/Consumer/Shop/Checkout/ShippingAddressSelector/ShippingAddressSelector';
 import PaymentMethodSelector from '@/Components/Consumer/Shop/Checkout/PaymentMethodSelector';
 import OrderPricingSummary from '@/Components/Consumer/Shop/Checkout/OrderPricingSummary';
 

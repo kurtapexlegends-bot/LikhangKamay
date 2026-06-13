@@ -16,9 +16,11 @@ export default function ConfirmationModal({
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="sm">
             <div className="p-6 text-center">
-                <div className={`w-16 h-16 ${iconBg} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                    <Icon size={28} />
-                </div>
+                {Icon && (
+                    <div className={`w-16 h-16 ${iconBg || ''} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                        <Icon size={28} />
+                    </div>
+                )}
                 <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
                 <p className="text-sm text-gray-500 mb-6 leading-relaxed">{message}</p>
                 <div className="flex justify-center gap-3">
