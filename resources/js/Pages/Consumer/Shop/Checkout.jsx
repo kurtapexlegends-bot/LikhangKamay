@@ -264,30 +264,33 @@ export default function Checkout({ auth, pricing }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] px-4 py-6 pb-32 font-sans text-gray-800 sm:px-6 sm:py-12 sm:pb-12 lg:px-8">
+        <div className="min-h-screen bg-stone-50/50 px-4 py-6 pb-32 font-sans text-stone-800 sm:px-6 sm:py-12 sm:pb-12 lg:px-8">
             <Head title="Checkout" />
             <div className="mx-auto max-w-6xl">
                 {/* Navigation and secure banner */}
                 <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-                    <button onClick={() => window.history.back()} className="flex items-center gap-2 text-gray-400 transition hover:text-clay-600">
-                        <div className="rounded-full border border-gray-100 bg-white p-2 shadow-sm"><ArrowLeft size={18} /></div>
-                        <span className="text-xs font-bold uppercase tracking-widest">Go Back</span>
+                    <button onClick={() => window.history.back()} className="group flex items-center gap-2.5 text-stone-500 transition hover:text-clay-600">
+                        <div className="rounded-xl border border-stone-200 bg-white p-2 shadow-sm transition-all group-hover:border-clay-200 group-hover:bg-clay-50/30 group-active:scale-90"><ArrowLeft size={16} /></div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Go Back</span>
                     </button>
-                    <div className="flex items-center gap-2 text-gray-400">
-                        <ShieldCheck size={16} className="text-emerald-500" />
-                        <span className="text-[11px] font-bold">Secure session</span>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/60 px-3.5 py-1.5 text-emerald-700">
+                        <ShieldCheck size={14} className="shrink-0" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Secure Checkout Session</span>
                     </div>
                 </div>
 
-                <div className="mb-6 flex items-center gap-3 sm:mb-8">
-                    <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-                        <img src="/images/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
-                        <h1 className="font-serif text-xl font-bold text-gray-900 sm:text-2xl">Secure Checkout</h1>
+                <div className="mb-8 flex items-center justify-between border-b border-stone-200/60 pb-6">
+                    <Link href="/" className="group flex items-center gap-3">
+                        <img src="/images/logo.png" alt="Logo" className="h-9 w-9 object-contain transition group-hover:scale-105" />
+                        <div>
+                            <h1 className="font-serif text-xl font-bold text-stone-900 sm:text-2xl tracking-tight">Checkout</h1>
+                            <p className="text-xs text-stone-500 mt-0.5">LikhangKamay Artisan Marketplace</p>
+                        </div>
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6 lg:gap-7">
-                    <div className="space-y-4 md:col-span-2">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:gap-10">
+                    <div className="space-y-6 md:col-span-2">
                         {/* 1. Shipping Method */}
                         <ShippingMethodSelector 
                             shippingMethod={data.shipping_method} 
@@ -304,15 +307,15 @@ export default function Checkout({ auth, pricing }) {
                                 needsDeliveryContactDetails={needsDeliveryContactDetails}
                             />
                         ) : (
-                            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
+                            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5">
                                 <div className="flex items-start gap-3.5">
-                                    <div className="rounded-full bg-blue-100 p-2.5 text-blue-600"><Store size={20} /></div>
+                                    <div className="rounded-xl bg-blue-100/60 p-2.5 text-blue-600"><Store size={20} /></div>
                                     <div>
                                         <h3 className="text-base font-bold text-blue-900">Store Pick Up Selected</h3>
-                                        <p className="mt-1 text-sm text-blue-800">No address needed. Coordinate pickup in chat.</p>
+                                        <p className="mt-1 text-sm text-blue-800">No delivery address is required. Coordinate pickup details with the artisan in chat after placing your order.</p>
                                         <div className="mt-3 flex flex-wrap gap-2">
-                                            <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">No Platform Fee</span>
-                                            <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">COD Only</span>
+                                            <span className="rounded-lg bg-blue-100/50 px-2.5 py-1 text-xs font-semibold text-blue-800">No Platform Fee</span>
+                                            <span className="rounded-lg bg-blue-100/50 px-2.5 py-1 text-xs font-semibold text-blue-800">COD Only</span>
                                         </div>
                                     </div>
                                 </div>
@@ -320,32 +323,37 @@ export default function Checkout({ auth, pricing }) {
                         )}
 
                         {/* 3. Delivery Notes */}
-                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+                        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-300">
                             <button
                                 type="button"
                                 onClick={() => setShowNotes(!showNotes)}
-                                className="w-full flex items-center justify-between text-clay-700 focus:outline-none"
+                                className="w-full flex items-center justify-between text-stone-700 focus:outline-none group"
                             >
                                 <div className="flex items-center gap-3">
-                                    <Truck size={18} />
-                                    <h2 className="text-base font-bold text-stone-900">Delivery Notes</h2>
-                                    <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Optional</span>
+                                    <div className="rounded-xl bg-stone-50 p-2 text-stone-500 transition group-hover:bg-clay-50 group-hover:text-clay-600"><Truck size={18} /></div>
+                                    <div className="text-left">
+                                        <h2 className="text-sm font-bold text-stone-900">Delivery Notes</h2>
+                                        <p className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">Optional Instructions</p>
+                                    </div>
                                 </div>
-                                <span className="text-xs font-bold text-clay-600 flex items-center gap-1">
-                                    {showNotes || data.shipping_notes ? 'Hide' : 'Add Notes'}
+                                <span className="text-xs font-bold text-clay-600 hover:text-clay-700 transition">
+                                    {showNotes || data.shipping_notes ? 'Collapse' : 'Add Instructions'}
                                 </span>
                             </button>
-                            <div className={`mt-3 space-y-2 transition-all duration-300 overflow-hidden ${
-                                showNotes || data.shipping_notes ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                            <div className={`transition-all duration-300 overflow-hidden ${
+                                showNotes || data.shipping_notes ? 'mt-4 max-h-48 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
                             }`}>
                                 <textarea 
-                                    rows="2" 
-                                    className="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500" 
+                                    rows="2.5" 
+                                    className="w-full rounded-xl border-stone-200 text-sm shadow-sm focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 placeholder-stone-400 transition" 
                                     placeholder="e.g. Gate code, landmark, available time, or handoff instructions" 
                                     value={data.shipping_notes} 
                                     onChange={(event) => setData('shipping_notes', event.target.value)} 
                                 />
-                                <p className="flex items-center gap-1 text-[11px] text-gray-400"><Info size={12} className="shrink-0" />Shared with the seller and courier if this order is booked through Lalamove.</p>
+                                <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-stone-50 p-3 text-[11px] leading-relaxed text-stone-500">
+                                    <Info size={14} className="shrink-0 text-stone-400 mt-0.5" />
+                                    <span>Notes will be shared with the artisan seller and the courier if this order is dispatched via unified Lalamove delivery.</span>
+                                </div>
                             </div>
                         </div>
 

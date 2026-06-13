@@ -32,18 +32,18 @@ export default function OrderPricingSummary({
             );
 
     return (
-        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-            <h3 className="mb-4 text-base font-bold text-gray-900">Order Summary</h3>
-            <div className="mb-5 max-h-80 space-y-5 overflow-y-auto pr-1.5 custom-scrollbar">
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-bold text-stone-900 tracking-tight">Order Summary</h3>
+            <div className="mb-5 max-h-88 space-y-4 overflow-y-auto pr-1.5 custom-scrollbar">
                 {summary.groups.map((group) => (
-                    <div key={group.sellerId} className="space-y-3">
-                        <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                    <div key={group.sellerId} className="space-y-4 rounded-xl border border-stone-100 bg-stone-50/35 p-4">
+                        <div className="flex items-center gap-2 border-b border-stone-200/60 pb-2">
                             <Store size={14} className="text-clay-500" />
-                            <span className="text-sm font-bold text-gray-700">{group.shopName}</span>
+                            <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">{group.shopName}</span>
                         </div>
                         {group.items.map((item, index) => (
                             <div key={`${group.sellerId}-${index}`} className="flex gap-3">
-                                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-stone-250 bg-stone-100">
                                     <img 
                                         src={item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : '/images/no-image.png'} 
                                         alt={item.name} 
@@ -52,29 +52,29 @@ export default function OrderPricingSummary({
                                     />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="line-clamp-1 text-sm font-bold text-gray-800">{item.name}</p>
-                                    <p className="text-xs text-gray-500">{item.variant} - x{item.qty}</p>
-                                    <p className="text-sm font-medium text-clay-600">{peso(item.price * item.qty)}</p>
+                                    <p className="line-clamp-1 text-sm font-bold text-stone-900">{item.name}</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5">{item.variant} - Qty: {item.qty}</p>
+                                    <p className="text-sm font-semibold text-clay-600 mt-1">{peso(item.price * item.qty)}</p>
                                 </div>
                             </div>
                         ))}
-                        <div className="space-y-1 border-t border-dashed border-gray-200 pt-2 text-xs text-gray-500">
+                        <div className="space-y-1.5 border-t border-stone-200/60 pt-3 text-xs text-stone-500">
                             {!showAggregateBreakdown && (
                                 <>
                                     <div className="flex justify-between">
                                         <span>Merchandise</span>
-                                        <span className="font-medium">{peso(group.subtotal)}</span>
+                                        <span className="font-semibold text-stone-800">{peso(group.subtotal)}</span>
                                     </div>
                                     {shippingMethod === 'Delivery' && (
                                         <div className="flex justify-between">
                                             <span>Platform Fee ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span>
-                                            <span className="font-medium">{peso(group.platformFee)}</span>
+                                            <span className="font-semibold text-stone-800">{peso(group.platformFee)}</span>
                                         </div>
                                     )}
                                     {shippingMethod === 'Delivery' && (
                                         <div className="flex justify-between">
                                             <span>Shipping Fee</span>
-                                            <span className={shippingQuote.status !== 'ready' ? 'italic text-gray-400 font-normal' : 'font-medium'}>
+                                            <span className={shippingQuote.status !== 'ready' ? 'italic text-stone-400 font-normal' : 'font-semibold text-stone-800'}>
                                                 {shippingQuote.status === 'ready' ? (
                                                     peso(group.shippingFee)
                                                 ) : shippingQuote.status === 'error' ? (
@@ -92,13 +92,13 @@ export default function OrderPricingSummary({
                                 </>
                             )}
                             {showAggregateBreakdown && (
-                                <div className="flex justify-between font-bold text-gray-700">
+                                <div className="flex justify-between font-bold text-stone-800">
                                     <span>Seller Total</span>
                                     <span>{peso(group.total)}</span>
                                 </div>
                             )}
                             {!showAggregateBreakdown && (
-                                <div className="flex justify-between font-bold text-gray-900">
+                                <div className="flex justify-between font-bold text-stone-900 pt-1 border-t border-dashed border-stone-150">
                                     <span>Order Total</span>
                                     <span>{peso(group.total)}</span>
                                 </div>
@@ -108,57 +108,58 @@ export default function OrderPricingSummary({
                 ))}
             </div>
             
-            <div className="space-y-2 border-t border-gray-100 pt-4 text-sm text-gray-600">
+            <div className="space-y-3 border-t border-stone-100 pt-4 text-sm text-stone-600">
                 {showAggregateBreakdown && (
                     <>
                         <div className="flex justify-between">
                             <span>Merchandise Subtotal</span>
-                            <span>{peso(summary.merchandiseSubtotal)}</span>
+                            <span className="font-semibold text-stone-900">{peso(summary.merchandiseSubtotal)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Platform Fee ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span>
-                            <span>{peso(summary.platformFeeTotal)}</span>
+                            <span className="font-semibold text-stone-900">{peso(summary.platformFeeTotal)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Shipping Fee</span>
-                            <span className={shippingMethod === 'Delivery' && shippingQuote.status !== 'ready' ? 'text-xs italic text-gray-400' : ''}>
+                            <span className={shippingMethod === 'Delivery' && shippingQuote.status !== 'ready' ? 'text-xs italic text-stone-400' : 'font-semibold text-stone-900'}>
                                 {shippingFeeSummaryValue}
                             </span>
                         </div>
                     </>
                 )}
                 {totalSellers > 1 && (
-                    <div className="flex justify-between text-xs text-blue-600">
-                        <span className="flex items-center gap-1">
-                            <Package size={12} />Order Split
-                        </span>
-                        <span className="font-bold">{totalSellers} separate orders</span>
+                    <div className="flex items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50/50 p-3.5 text-xs text-blue-700">
+                        <Package size={14} className="shrink-0 mt-0.5" />
+                        <div>
+                            <span className="font-bold">Split Orders</span>
+                            <p className="mt-0.5 text-blue-600 leading-relaxed">Your cart contains items from {totalSellers} different artisans. This will be placed as {totalSellers} separate orders to route payments and shipping directly.</p>
+                        </div>
                     </div>
                 )}
-                <div className="mt-2 flex justify-between border-t border-dashed border-gray-200 pt-2 text-lg font-bold text-gray-900">
+                <div className="mt-3 flex justify-between border-t border-stone-200/60 pt-3 text-base font-bold text-stone-900">
                     <span>Total Due Now</span>
-                    <span>{peso(summary.grandTotal)}</span>
+                    <span className="text-lg font-extrabold text-stone-900">{peso(summary.grandTotal)}</span>
                 </div>
                 
                 {shippingMethod === 'Delivery' && shippingQuote.status === 'error' ? (
-                    <div className="mt-3 rounded-xl border border-red-200 bg-red-50/40 p-3 text-xs">
+                    <div className="mt-4 rounded-xl border border-red-200 bg-red-50/40 p-3.5 text-xs">
                         <div className="flex gap-2 text-red-700">
                             <AlertTriangle size={14} className="shrink-0 mt-0.5 animate-bounce" />
                             <div>
                                 <p className="font-bold">Delivery Quote Failed</p>
-                                <p className="mt-0.5 text-red-600">Unable to calculate shipping. Please verify your address or connection and try again.</p>
+                                <p className="mt-0.5 text-red-655 leading-relaxed">Unable to calculate shipping. Please verify your address or connection and try again.</p>
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={() => setQuoteRetryNonce((current) => current + 1)}
-                            className="mt-2.5 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-center text-xs font-bold text-red-700 hover:bg-red-50 transition-colors shadow-sm"
+                            className="mt-2.5 w-full rounded-lg border border-red-250 bg-white px-3 py-2.5 text-center text-xs font-bold text-red-700 hover:bg-red-50 transition-colors shadow-sm"
                         >
                             Retry Quote Calculation
                         </button>
                     </div>
                 ) : (
-                    <p className="text-center text-[10px] text-gray-400">
+                    <p className="text-center text-[10px] text-stone-400 mt-1">
                         {shippingMethod === 'Pick Up'
                             ? 'Pickup orders have no shipping charge.'
                             : shippingQuote.status === 'ready'
@@ -173,7 +174,7 @@ export default function OrderPricingSummary({
                     <button
                         onClick={submitCheckout}
                         disabled={submitDisabled || isPendingArtisan}
-                        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
+                        className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl bg-clay-600 py-3.5 text-sm font-bold text-white shadow-md shadow-clay-200 transition-all duration-300 hover:bg-clay-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {processing ? (
                             <>
@@ -191,7 +192,7 @@ export default function OrderPricingSummary({
                         )}
                     </button>
                     {isPendingArtisan && <p className="mt-2 text-center text-xs font-bold text-amber-600">Checkout is disabled for pending shops.</p>}
-                    <p className="mt-3 flex items-center justify-center gap-1 text-center text-xs text-gray-400">
+                    <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-stone-400">
                         <MessageCircle size={12} />
                         Chat opens after ordering
                     </p>
