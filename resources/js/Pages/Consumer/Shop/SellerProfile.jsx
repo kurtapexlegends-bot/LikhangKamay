@@ -12,6 +12,7 @@ import { hasRating, formatRating } from '@/utils/rating';
 import { useToast } from '@/Components/ToastContext';
 import { isShopFollowed, toggleFollowedShop } from '@/utils/buyerSignals';
 import CompactPagination from '@/Components/CompactPagination';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
 export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     const { addToast } = useToast();
@@ -194,50 +195,53 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                 {/* --- BEST SELLERS --- */}
                 {bestSellers.length > 0 && (
                     <div className="mb-10">
-                        <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2 mb-5">
-                            <Trophy size={22} className="text-amber-500" />
-                            Store Best Sellers
-                        </h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                        <div className="mb-6 flex flex-col gap-1 px-1 select-none">
+                            <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2 tracking-tight">
+                                <Trophy size={18} className="text-amber-500 shrink-0" />
+                                Store Best Sellers
+                            </h2>
+                            <p className="text-xs text-stone-500 font-medium">Curated high-demand artisan pieces from this workshop</p>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             {bestSellers.map((product, idx) => {
                                 const isTop = idx === 0;
                                 return (
                                     <Link 
                                         href={route('product.show', product.slug)}
                                         key={product.id}
-                                        className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-500 hover:-translate-y-1.5 active:scale-[0.98] flex flex-col ${
-                                            isTop ? 'border-amber-200 ring-2 ring-amber-100 shadow-xl shadow-amber-900/5 hover:shadow-2xl hover:shadow-amber-900/10' : 'border-stone-200/60 shadow-sm hover:border-clay-200 hover:shadow-2xl hover:shadow-stone-900/10'
+                                        className={`group bg-white rounded-[24px] border overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-stone-200/80 active:scale-[0.98] flex flex-col ${
+                                            isTop ? 'border-amber-300 ring-2 ring-amber-100 shadow-sm shadow-amber-900/5' : 'border-stone-150 shadow-sm hover:border-clay-200'
                                         }`}
                                     >
-                                        <div className={`aspect-square relative overflow-hidden flex items-center justify-center p-3 ${isTop ? 'bg-amber-50/30' : 'bg-stone-50'}`}>
+                                        <div className={`aspect-square relative overflow-hidden flex items-center justify-center p-3 select-none ${isTop ? 'bg-amber-50/15' : 'bg-stone-50/50'}`}>
                                             <img 
                                                 src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'}
                                                 alt={product.name}
-                                                className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-110"
+                                                className="w-full h-full object-contain mix-blend-multiply transition duration-700 ease-out group-hover:scale-105"
                                                 onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                             />
                                             {/* Rank Badge */}
-                                            <div className={`absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow ${
-                                                isTop ? 'bg-amber-400 text-white' : 'bg-stone-600 text-white'
+                                            <div className={`absolute top-2.5 left-2.5 w-7 h-7 rounded-full flex items-center justify-center shadow-md backdrop-blur-md transition-transform group-hover:scale-105 ${
+                                                isTop ? 'bg-amber-500 text-white' : 'bg-stone-900/80 text-white'
                                             }`}>
-                                                {isTop ? <Crown size={12} /> : `#${idx + 1}`}
+                                                {isTop ? <Crown size={12} strokeWidth={2.5} /> : <span className="text-[10px] font-black">{idx + 1}</span>}
                                             </div>
                                             {hasRating(product.rating) && (
-                                                <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 text-stone-700">
-                                                    {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400" />
+                                                <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-md shadow-sm text-[10px] font-extrabold px-2 py-1 rounded-lg flex items-center gap-0.5 text-stone-700">
+                                                    {formatRating(product.rating)} <Star size={9} className="fill-amber-400 text-amber-400" />
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="p-3 flex flex-col flex-1">
-                                            <h3 className={`text-xs font-semibold line-clamp-2 leading-snug mb-2 transition ${
-                                                isTop ? 'text-amber-800 group-hover:text-amber-600' : 'text-stone-800 group-hover:text-orange-600'
+                                        <div className="p-4 flex flex-col flex-1">
+                                            <h3 className={`text-xs font-bold line-clamp-2 leading-snug mb-3 transition-colors ${
+                                                isTop ? 'text-amber-900 group-hover:text-amber-700' : 'text-stone-800 group-hover:text-clay-800'
                                             }`}>
                                                 {product.name}
                                             </h3>
-                                            <div className="flex items-end justify-between mt-auto">
-                                                <span className="font-bold text-sm text-stone-900">PHP {formatPrice(product.price)}</span>
-                                                <span className="text-[10px] text-stone-500 font-medium flex items-center gap-0.5">
-                                                    <Flame size={9} className="text-orange-400" />
+                                            <div className="flex items-end justify-between mt-auto pt-2 border-t border-stone-100/50">
+                                                <span className="font-black text-sm text-stone-900 tracking-tight">PHP {formatPrice(product.price)}</span>
+                                                <span className="text-[10px] text-stone-500 font-bold flex items-center gap-0.5 select-none bg-stone-50 border border-stone-100 rounded-md px-1.5 py-0.5">
+                                                    <Flame size={10} className="text-orange-500 fill-orange-500" />
                                                     {product.sold} sold
                                                 </span>
                                             </div>
@@ -250,59 +254,47 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                 )}
 
                 {/* --- PRODUCTS SECTION (COMPACT) --- */}
-                <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 px-3">
-                        <Package size={18} className="text-orange-600" />
-                        <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Products Collection</h2>
+                <div className="mb-6 flex flex-col gap-4 rounded-[24px] border border-stone-200/80 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-2 px-1">
+                        <Package size={17} className="text-clay-650 shrink-0" />
+                        <h2 className="text-base font-bold text-stone-900 tracking-tight">Products Collection</h2>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-1">
-                        <div className="relative w-full sm:w-64">
-                            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <div className="relative flex-1 min-w-[200px] w-full md:w-64">
+                            <Search size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                             <input
                                 type="text"
                                 value={searchTerm}
                                 onChange={(event) => setSearchTerm(event.target.value)}
                                 placeholder="Search products..."
-                                className="w-full rounded-xl border-none bg-stone-50 py-2 pl-9 pr-3 text-xs font-medium text-stone-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-clay-500/30"
+                                className="w-full rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-10 pr-3 text-xs font-semibold text-stone-600 transition-colors focus:bg-white focus:border-clay-500 focus:ring-clay-500/10 focus:ring-4 min-h-[44px]"
                             />
                         </div>
                         
-                        <div className="h-6 w-px bg-stone-200 hidden sm:block mx-1"></div>
-
-                        <div className="relative flex flex-1 items-center sm:flex-none">
-                            <div className="pointer-events-none absolute left-3 flex items-center justify-center text-stone-400">
-                                <Filter size={14} />
-                            </div>
-                            <select
-                                value={categoryFilter}
-                                onChange={(event) => setCategoryFilter(event.target.value)}
-                                className="w-full appearance-none rounded-xl border-none bg-stone-50 py-2 pl-9 pr-8 text-xs font-bold text-stone-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-clay-500/30 sm:w-auto cursor-pointer"
-                            >
-                                {categoryOptions.map((option) => (
-                                    <option key={option} value={option}>
-                                        {option === 'all' ? 'All Categories' : option}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <select
+                            value={categoryFilter}
+                            onChange={(event) => setCategoryFilter(event.target.value)}
+                            className="rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-3 pr-8 text-xs font-bold text-stone-600 transition-colors focus:bg-white focus:border-clay-500/10 focus:ring-4 cursor-pointer min-h-[44px]"
+                        >
+                            {categoryOptions.map((option) => (
+                                <option key={option} value={option}>
+                                    {option === 'all' ? 'All Categories' : option}
+                                </option>
+                            ))}
+                        </select>
                         
-                        <div className="relative flex flex-1 items-center sm:flex-none">
-                            <div className="pointer-events-none absolute left-3 flex items-center justify-center text-stone-400">
-                                <ArrowUpDown size={14} />
-                            </div>
-                            <select
-                                value={sortBy}
-                                onChange={(event) => setSortBy(event.target.value)}
-                                className="w-full appearance-none rounded-xl border-none bg-stone-50 py-2 pl-9 pr-8 text-xs font-bold text-stone-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-clay-500/30 sm:w-auto cursor-pointer"
-                            >
-                                <option value="featured">Featured</option>
-                                <option value="popular">Most Sold</option>
-                                <option value="rating">Top Rated</option>
-                                <option value="price_low">Price: Low to High</option>
-                                <option value="price_high">Price: High to Low</option>
-                            </select>
-                        </div>
+                        <select
+                            value={sortBy}
+                            onChange={(event) => setSortBy(event.target.value)}
+                            className="rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-3 pr-8 text-xs font-bold text-stone-600 transition-colors focus:bg-white focus:border-clay-500/10 focus:ring-4 cursor-pointer min-h-[44px]"
+                        >
+                            <option value="featured">Featured</option>
+                            <option value="popular">Most Sold</option>
+                            <option value="rating">Top Rated</option>
+                            <option value="price_low">Price: Low to High</option>
+                            <option value="price_high">Price: High to Low</option>
+                        </select>
                     </div>
                 </div>
 
@@ -313,31 +305,31 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                 <Link 
                                     href={route('product.show', product.slug)} 
                                     key={product.id} 
-                                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-sm transition-all duration-500 hover:-translate-y-1.5 active:scale-[0.98] hover:border-clay-200 hover:shadow-2xl hover:shadow-stone-900/10"
+                                    className="group relative flex flex-col overflow-hidden rounded-[24px] border border-stone-100/80 bg-stone-50/45 transition-all duration-500 hover:bg-white hover:-translate-y-1.5 active:scale-[0.98] hover:border-clay-200 hover:shadow-xl hover:shadow-stone-200/80"
                                 >
                                     {/* Image */}
-                                    <div className="aspect-[4/3] relative bg-stone-50 overflow-hidden flex items-center justify-center">
+                                    <div className="aspect-[4/3] relative bg-stone-50 overflow-hidden flex items-center justify-center rounded-t-[23px] select-none">
                                         <img 
                                             src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
                                             alt={product.name} 
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                             onError={(e) => { e.target.src = '/images/no-image.png'; }}
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                                         
                                         {product.is_new && (
-                                            <span className="absolute top-3 left-3 bg-clay-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">NEW</span>
+                                            <span className="absolute top-3 left-3 bg-clay-600 text-white text-[9px] font-extrabold px-2 py-1 rounded-lg shadow-sm tracking-wide">NEW</span>
                                         )}
                                         {hasRating(product.rating) && (
-                                            <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md shadow-sm text-[11px] font-bold px-2 py-1 rounded-md flex items-center gap-1 text-stone-700">
-                                                {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400 -mt-[1px]" />
+                                            <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-md shadow-sm text-[10px] font-extrabold px-2 py-1 rounded-lg flex items-center gap-0.5 text-stone-700">
+                                                {formatRating(product.rating)} <Star size={9} className="fill-amber-400 text-amber-400" />
                                             </div>
                                         )}
                                         
                                         {product.sold > 0 && (
-                                            <div className="absolute bottom-3 left-3 flex justify-between pointer-events-none opacity-0 transition-opacity group-hover:opacity-100 z-10">
-                                                <span className="text-[10px] text-white/90 font-medium flex items-center gap-1 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm shadow-sm">
-                                                    <Flame size={10} className="text-orange-400" />
+                                            <div className="absolute bottom-3 left-3 flex justify-between pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-10">
+                                                <span className="text-[9px] text-white/90 font-bold flex items-center gap-1 bg-stone-900/60 px-2 py-1 rounded-full backdrop-blur-sm shadow-sm">
+                                                    <Flame size={10} className="text-orange-400 fill-orange-400" />
                                                     {product.sold} sold
                                                 </span>
                                             </div>
@@ -345,19 +337,24 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     </div>
 
                                     {/* Content */}
-                                    <div className="flex flex-col flex-1 p-5 bg-white">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-clay-600 mb-1.5">{product.category || 'Product'}</p>
-                                        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-stone-900 group-hover:text-clay-800 transition-colors mb-3">
+                                    <div className="flex flex-col flex-1 p-5">
+                                        <p className="text-[9px] font-bold uppercase tracking-widest text-clay-600 mb-1.5">{product.category || 'Product'}</p>
+                                        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-stone-800 group-hover:text-clay-800 transition-colors mb-4">
                                             {product.name}
                                         </h3>
 
-                                        <div className="mt-auto flex items-end justify-between pt-2">
-                                            <div className="font-bold text-base text-stone-900 tracking-tight">
-                                                PHP {formatPrice(product.price)}
+                                        <div className="mt-auto pt-2 flex items-center justify-between border-t border-stone-100/50">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Price</span>
+                                                <p className="text-base font-black text-stone-900 tracking-tight">PHP {formatPrice(product.price)}</p>
                                             </div>
-                                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-50 text-stone-400 transition-colors group-hover:bg-clay-100 group-hover:text-clay-700 shadow-sm" title="View Product">
-                                                <ShoppingCart size={14} />
-                                            </span>
+                                            <button 
+                                                type="button"
+                                                className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-stone-50 border border-stone-100 text-stone-400 transition-colors group-hover:bg-clay-100 group-hover:text-clay-700 group-hover:border-clay-200 shadow-sm active:scale-90" 
+                                                title="View Product"
+                                            >
+                                                <ShoppingCart size={15} />
+                                            </button>
                                         </div>
                                     </div>
                                 </Link>
@@ -376,15 +373,12 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                         )}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-stone-300 bg-stone-50 py-16 px-4 text-center">
-                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-4 ring-stone-50">
-                            <Package size={24} className="text-stone-400" />
-                        </div>
-                        <h3 className="text-lg font-bold text-stone-900">No matching products found</h3>
-                        <p className="mt-2 text-sm text-stone-500 max-w-sm">
-                            {products.length > 0 ? "We couldn't find any products matching your search or filters. Try adjusting them." : "This artisan hasn't added any products to their shop yet."}
-                        </p>
-                    </div>
+                    <WorkspaceEmptyState
+                        icon={Package}
+                        title="No matching products found"
+                        description={products.length > 0 ? "We couldn't find any products matching your search or filters. Try adjusting them." : "This artisan hasn't added any products to their shop yet."}
+                        className="py-16"
+                    />
                 )}
 
             </main>
