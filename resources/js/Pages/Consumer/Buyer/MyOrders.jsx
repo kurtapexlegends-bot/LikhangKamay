@@ -313,7 +313,7 @@ export default function MyOrders({ auth, orders }) {
                         </div>
 
                         {/* --- ORDER LIST --- */}
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                             {filteredOrders.length > 0 ? (
                                 filteredOrders.map((order) => (
                                     <OrderListItemCard

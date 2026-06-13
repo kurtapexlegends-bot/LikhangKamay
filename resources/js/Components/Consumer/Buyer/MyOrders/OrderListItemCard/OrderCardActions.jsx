@@ -95,7 +95,7 @@ export default function OrderCardActions({
     };
 
     return (
-        <div className="flex flex-col gap-4 border-t border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:flex-row sm:items-center sm:justify-between w-full">
+        <div className="flex flex-col gap-4 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between w-full">
             {/* Total Pricing / Breakdown summary */}
             <div className="w-full sm:w-auto">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Order Breakdown</p>

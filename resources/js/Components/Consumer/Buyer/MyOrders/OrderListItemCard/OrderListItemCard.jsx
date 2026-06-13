@@ -33,7 +33,7 @@ export default function OrderListItemCard({
     };
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-colors hover:border-stone-300">
+        <div className="relative overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.07)] hover:border-stone-300 transition-all duration-300">
             {/* Header */}
             <OrderCardHeader order={order} />
 
