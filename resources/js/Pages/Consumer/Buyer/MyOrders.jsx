@@ -8,6 +8,7 @@ import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import RatingModal from '@/Components/Consumer/RatingModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import UserAvatar from '@/Components/UserAvatar';
 
 // Extracted Subcomponents
 import OrderListItemCard from '@/Components/Consumer/Buyer/MyOrders/OrderListItemCard/OrderListItemCard';
@@ -164,119 +165,191 @@ export default function MyOrders({ auth, orders }) {
     const currentConfig = confirmModal.type ? modalConfigs[confirmModal.type] : null;
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-805 flex flex-col">
+        <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-800 flex flex-col">
             <Head title="My Purchases" />
             <ImpersonationBanner />
             <BuyerNavbar />
 
-            <main className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 min-w-0 flex-1">
+            <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 min-w-0 flex-1">
                 
                 {/* --- FLASH MESSAGES --- */}
                 {flash?.success && (
-                    <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800 shadow-sm flex items-start gap-2.5">
+                    <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800 shadow-sm flex items-start gap-2.5 animate-in fade-in duration-200">
                         <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                         <span className="text-sm font-medium">{flash.success}</span>
                     </div>
                 )}
                 {flash?.error && (
-                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm flex items-start gap-2.5">
-                        <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm flex items-start gap-2.5 animate-in fade-in duration-200">
+                        <XCircle className="h-5 w-5 text-red-655 shrink-0 mt-0.5" />
                         <span className="text-sm font-medium">{flash.error}</span>
                     </div>
                 )}
                 
-                {/* Page Header */}
-                <div className="mb-3 flex items-center justify-between">
-                    <h1 className="text-lg font-black tracking-tight text-stone-900 sm:text-xl">My Purchases</h1>
-                    <p className="hidden sm:block text-xs text-stone-500">Track orders, delivery, and returns.</p>
-                </div>
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
+                    {/* Left Column: Account Profile & Navigation (Desktop sidebar, hidden on mobile) */}
+                    <aside className="hidden lg:flex flex-col w-full lg:w-64 shrink-0 lg:sticky lg:top-24 self-start bg-white border border-stone-200 rounded-2xl shadow-sm divide-y divide-stone-100">
+                        {/* Account Profile Section */}
+                        <div className="p-5">
+                            <div className="flex items-center gap-3.5">
+                                <UserAvatar user={auth?.user} className="w-12 h-12 shadow-sm border border-stone-100" />
+                                <div className="min-w-0 flex-1">
+                                    <h2 className="text-sm font-bold text-stone-900 truncate">{auth?.user?.name || 'My Account'}</h2>
+                                    <p className="text-[10px] text-stone-500 font-semibold truncate mt-0.5">{auth?.user?.email}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-center mt-4">
+                                <div className="bg-stone-50/50 border border-stone-100/80 rounded-xl p-2.5">
+                                    <p className="text-[10px] font-bold text-stone-400">Purchases</p>
+                                    <p className="text-base font-black text-clay-700 mt-0.5">{orders.length}</p>
+                                </div>
+                                <div className="bg-stone-50/50 border border-stone-100/80 rounded-xl p-2.5">
+                                    <p className="text-[10px] font-bold text-stone-400">Active</p>
+                                    <p className="text-base font-black text-clay-700 mt-0.5">
+                                        {orders.filter(o => !['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(o.status)).length}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
-                {/* --- TABS --- */}
-                <div className="mb-3 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-                    <div className="flex overflow-x-auto scrollbar-hide">
-                        {tabs.map(tab => {
-                            const count = getTabCount(tab.id);
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`relative flex min-w-[95px] flex-1 items-center justify-center gap-2 px-2.5 py-3 text-center text-[10px] font-bold transition-all sm:min-w-[100px] sm:text-sm sm:py-4 focus:outline-none ${
-                                        activeTab === tab.id 
-                                        ? 'text-clay-700 bg-clay-50/50' 
-                                        : 'text-stone-400 hover:text-clay-600 hover:bg-stone-50'
-                                    }`}
-                                >
-                                    <span className="relative z-10 flex items-center gap-2">
-                                        {tab.label}
+                        {/* Vertical Navigation Menu Section */}
+                        <nav className="p-3 flex flex-col gap-1 w-full">
+                            {tabs.map((tab) => {
+                                const count = getTabCount(tab.id);
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex items-center justify-between px-3.5 py-3 text-left text-xs font-bold rounded-xl transition-all w-full select-none ${
+                                            isActive 
+                                                ? 'bg-clay-50 text-clay-700 font-bold' 
+                                                : 'text-stone-500 hover:text-clay-650 hover:bg-stone-50/50'
+                                        }`}
+                                    >
+                                        <span>{tab.label}</span>
                                         {count > 0 && (
-                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold transition-colors ${
-                                                activeTab === tab.id ? 'bg-clay-600 text-white' : 'bg-stone-100 text-stone-500'
+                                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold leading-none ${
+                                                isActive ? 'bg-clay-600 text-white' : 'bg-stone-100 text-stone-500'
                                             }`}>
                                                 {count}
                                             </span>
                                         )}
-                                    </span>
-                                    {activeTab === tab.id && (
-                                        <motion.div 
-                                            layoutId="activeTabUnderline"
-                                            className="absolute bottom-0 left-0 right-0 h-[2px] bg-clay-600"
-                                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                                        />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </aside>
 
-                {/* --- SEARCH BAR --- */}
-                <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                    <input 
-                        type="text" 
-                        placeholder="Search items or order IDs..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white py-1.5 pl-8 pr-3 text-base font-medium placeholder:text-stone-400 shadow-sm transition-all focus:border-clay-500 focus:ring-0 sm:py-2 sm:pl-9 sm:text-[12px]"
-                    />
-                </div>
+                    {/* Right Column: Main Feed Area */}
+                    <div className="flex-1 min-w-0 w-full">
+                        {/* Page Header (Desktop version, hidden on mobile) */}
+                        <div className="hidden lg:flex items-center justify-between mb-6">
+                            <div>
+                                <h1 className="text-xl font-black tracking-tight text-stone-900">My Purchases</h1>
+                                <p className="text-xs text-stone-500 mt-1">Track orders, delivery, and returns.</p>
+                            </div>
+                            <span className="text-xs bg-clay-100 text-clay-700 px-3 py-1 rounded-full font-bold">
+                                {getTabCount(activeTab)} Orders
+                            </span>
+                        </div>
 
-                {/* --- ORDER LIST --- */}
-                <div className="space-y-6">
-                    {filteredOrders.length > 0 ? (
-                        filteredOrders.map((order) => (
-                            <OrderListItemCard
-                                key={order.id}
-                                order={order}
-                                onContactSeller={contactSeller}
-                                onBuyAgain={buyAgain}
-                                onOpenModal={openModal}
-                                onOpenReturnModal={(ord) => setReturnModalState({ isOpen: true, order: ord })}
-                                onOpenEscalateModal={(dispId) => setEscalateModalState({ isOpen: true, disputeId: dispId })}
-                                onOpenRatingModal={(ord) => setRatingModal({ isOpen: true, order: ord })}
+                        {/* Mobile-only Header */}
+                        <div className="mb-4 lg:hidden flex items-center justify-between">
+                            <h1 className="text-lg font-black tracking-tight text-stone-900">My Purchases</h1>
+                            <span className="text-[10px] bg-clay-100 text-clay-700 px-2 py-0.5 rounded-full font-bold">
+                                {getTabCount(activeTab)} Orders
+                            </span>
+                        </div>
+
+                        {/* Mobile-only Tabs Slider Container */}
+                        <div className="lg:hidden mb-4 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+                            <div className="flex overflow-x-auto scrollbar-hide">
+                                {tabs.map(tab => {
+                                    const count = getTabCount(tab.id);
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`relative flex min-w-[95px] flex-1 items-center justify-center gap-2 px-2.5 py-3.5 text-center text-[10px] font-bold transition-all sm:min-w-[100px] sm:text-sm sm:py-4 focus:outline-none ${
+                                                activeTab === tab.id 
+                                                ? 'text-clay-700 bg-clay-50/50' 
+                                                : 'text-stone-400 hover:text-clay-600 hover:bg-stone-50'
+                                            }`}
+                                        >
+                                            <span className="relative z-10 flex items-center gap-2">
+                                                {tab.label}
+                                                {count > 0 && (
+                                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold transition-colors ${
+                                                        activeTab === tab.id ? 'bg-clay-600 text-white' : 'bg-stone-100 text-stone-500'
+                                                    }`}>
+                                                        {count}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            {activeTab === tab.id && (
+                                                <motion.div 
+                                                    layoutId="activeTabUnderline"
+                                                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-clay-600"
+                                                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                                />
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* --- SEARCH BAR --- */}
+                        <div className="relative mb-5">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                            <input 
+                                type="text" 
+                                placeholder="Search items or order IDs..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full rounded-xl border border-stone-200 bg-white py-1.5 pl-8 pr-3 text-base font-medium placeholder:text-stone-400 shadow-sm transition-all focus:border-clay-500 focus:ring-0 sm:py-2.5 sm:pl-9 sm:text-[12px]"
                             />
-                        ))
-                    ) : searchQuery.trim() ? (
-                        <WorkspaceEmptyState
-                            icon={Search}
-                            title="No matching orders"
-                            description={`We couldn't find any orders matching "${searchQuery}". Try using different terms or click below to clear the search.`}
-                            actionLabel="Clear Search"
-                            onAction={() => setSearchQuery('')}
-                        />
-                    ) : (
-                        <WorkspaceEmptyState
-                            icon={ShoppingBag}
-                            title="No orders found"
-                            description={
-                                activeTab === 'All' 
-                                    ? "You haven't placed any orders yet. Start exploring artisan products." 
-                                    : `No orders found in the "${tabs.find(t => t.id === activeTab)?.label}" category.`
-                            }
-                            actionLabel="Start Shopping"
-                            actionHref="/shop"
-                        />
-                    )}
+                        </div>
+
+                        {/* --- ORDER LIST --- */}
+                        <div className="space-y-6">
+                            {filteredOrders.length > 0 ? (
+                                filteredOrders.map((order) => (
+                                    <OrderListItemCard
+                                        key={order.id}
+                                        order={order}
+                                        onContactSeller={contactSeller}
+                                        onBuyAgain={buyAgain}
+                                        onOpenModal={openModal}
+                                        onOpenReturnModal={(ord) => setReturnModalState({ isOpen: true, order: ord })}
+                                        onOpenEscalateModal={(dispId) => setEscalateModalState({ isOpen: true, disputeId: dispId })}
+                                        onOpenRatingModal={(ord) => setRatingModal({ isOpen: true, order: ord })}
+                                    />
+                                ))
+                            ) : searchQuery.trim() ? (
+                                <WorkspaceEmptyState
+                                    icon={Search}
+                                    title="No matching orders"
+                                    description={`We couldn't find any orders matching "${searchQuery}". Try using different terms or click below to clear the search.`}
+                                    actionLabel="Clear Search"
+                                    onAction={() => setSearchQuery('')}
+                                />
+                            ) : (
+                                <WorkspaceEmptyState
+                                    icon={ShoppingBag}
+                                    title="No orders found"
+                                    description={
+                                        activeTab === 'All' 
+                                            ? "You haven't placed any orders yet. Start exploring artisan products." 
+                                            : `No orders found in the "${tabs.find(t => t.id === activeTab)?.label}" category.`
+                                    }
+                                    actionLabel="Start Shopping"
+                                    actionHref="/shop"
+                                />
+                            )}
+                        </div>
+                    </div>
                 </div>
 
             </main>
