@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Head, router } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
@@ -20,6 +20,12 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     const [timeNow, setTimeNow] = useState(Date.now());
     const [activeMedia, setActiveMedia] = useState(null);
     const [isDesktop, setIsDesktop] = useState(false);
+    const messagesEndRef = useRef(null);
+
+    // Auto-scroll on new messages
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [activeMessages]);
 
     const currentChatUserShopHref = currentChatUser?.shop_slug
         ? route('shop.seller', currentChatUser.shop_slug)
@@ -148,6 +154,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                             showInfoPanel={showInfoPanel}
                             setShowInfoPanel={setShowInfoPanel}
                             timeNow={timeNow}
+                            messagesEndRef={messagesEndRef}
                         />
 
                         {currentChatUser && (

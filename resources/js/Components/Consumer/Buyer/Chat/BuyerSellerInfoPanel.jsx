@@ -64,14 +64,14 @@ function SellerInfoPanelContent({
                         <h5 className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-3">About Seller</h5>
                         <div className="space-y-4">
                             <div className="flex items-start gap-3">
-                                <User size={16} className="text-stone-450 mt-0.5 shrink-0" />
+                                <User size={16} className="text-stone-400 mt-0.5 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                     <p className="text-sm font-medium text-gray-900 truncate">{currentChatUser.name}</p>
                                     <p className="text-xs text-gray-500">Contact Person</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <MapPin size={16} className="text-stone-450 mt-0.5 shrink-0" />
+                                <MapPin size={16} className="text-stone-400 mt-0.5 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                     <p className="text-sm font-medium text-gray-900 break-words leading-relaxed">
                                         {currentChatUserAddress || 'No address provided'}
@@ -80,7 +80,7 @@ function SellerInfoPanelContent({
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <Phone size={16} className="text-stone-450 mt-0.5 shrink-0" />
+                                <Phone size={16} className="text-stone-400 mt-0.5 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                     <p className="text-sm font-medium text-gray-900 truncate">{currentChatUser.phone_number || 'No number provided'}</p>
                                     <p className="text-xs text-gray-500">Number</p>

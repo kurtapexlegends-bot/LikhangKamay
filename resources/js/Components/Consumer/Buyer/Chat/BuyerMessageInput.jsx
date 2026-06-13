@@ -129,7 +129,7 @@ export default function BuyerMessageInput({ currentChatUser }) {
                                     }
                                 }, 0);
                             }}
-                            className="px-4 py-2 bg-clay-55 border border-clay-100 hover:bg-clay-100 text-clay-700 text-xs font-bold rounded-full whitespace-nowrap min-h-[38px] flex items-center justify-center active:scale-95 transition-all"
+                            className="px-4 py-2 bg-clay-50 border border-clay-100 hover:bg-clay-100 text-clay-700 text-xs font-bold rounded-full whitespace-nowrap min-h-[38px] flex items-center justify-center active:scale-95 transition-all"
                         >
                             {replyText}
                         </button>

@@ -179,7 +179,7 @@ export default function BuyerMessageWindow({
                     )}
                     {currentChatUser.is_typing && (
                         <div className="flex justify-start mb-4 animate-in fade-in slide-in-from-left-2 duration-300">
-                            <div className="bg-white text-gray-505 border border-gray-100 rounded-2xl rounded-bl-md px-4 py-2 shadow-sm flex items-center gap-1.5">
+                            <div className="bg-white text-gray-500 border border-gray-100 rounded-2xl rounded-bl-md px-4 py-2 shadow-sm flex items-center gap-1.5">
                                 <div className="flex gap-1">
                                     <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                                     <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
