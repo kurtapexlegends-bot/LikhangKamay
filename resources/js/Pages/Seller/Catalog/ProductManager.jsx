@@ -21,7 +21,7 @@ import DeductModal from "@/Components/Seller/Catalog/DeductModal";
 import RestockModal from "@/Components/Seller/Catalog/RestockModal";
 import ArchiveModal from "@/Components/Seller/Catalog/ArchiveModal";
 import LimitModal from "@/Components/Seller/Catalog/LimitModal";
-import ProductFormModal from "@/Components/Seller/Catalog/ProductFormModal";
+import ProductFormModal from "@/Components/Seller/Catalog/ProductFormModal/ProductFormModal";
 
 import {
     STANDARD_PRODUCT_CATEGORIES,

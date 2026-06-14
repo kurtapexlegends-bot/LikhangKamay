@@ -79,7 +79,7 @@ export default function CatalogFilters({
                         className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 sm:px-3 sm:py-2 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50 min-h-[44px] sm:min-h-0 shrink-0"
                     >
                         <RefreshCw size={13} />
-                        <span className="hidden sm:inline">Reset saved view</span>
+                        <span className="hidden sm:inline">Reset</span>
                     </button>
                 </div>
             </div>

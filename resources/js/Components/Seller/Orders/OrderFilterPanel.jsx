@@ -192,7 +192,7 @@ export default function OrderFilterPanel({
                         className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[11px] font-bold text-stone-600 transition-all hover:bg-stone-50 hover:text-stone-800 hover:border-stone-350 active:scale-95 shadow-sm md:ml-auto"
                     >
                         <RefreshCw size={13} className="transition-transform active:rotate-180" />
-                        Reset saved view
+                        Reset
                     </button>
                 </div>
 
