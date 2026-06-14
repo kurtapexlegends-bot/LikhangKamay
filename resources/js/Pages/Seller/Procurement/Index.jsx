@@ -20,6 +20,13 @@ import DeleteSupplyModal from '@/Components/Seller/Procurement/DeleteSupplyModal
 const FALLBACK_CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other'];
 const FALLBACK_UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
 
+const generateSKU = () =>
+    "LK-" +
+    Math.floor(Math.random() * 0xffff)
+        .toString(16)
+        .toUpperCase()
+        .padStart(4, "0");
+
 export default function ProcurementIndex({ auth, supplies, totalItems, lowStockItems, totalValue, initTab, availableCategories = [], availableUnits = [] }) {
     const { addToast } = useToast();
     const { canEdit: canEditProcurement, isReadOnly: isProcurementReadOnly } = useSellerModuleAccess('procurement');
@@ -84,6 +91,23 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
 
     // Restock form
     const restockForm = useForm({ quantity: 0 });
+
+    const openAddModal = () => {
+        reset();
+        setData({
+            name: '',
+            category: 'Finished Goods',
+            quantity: 0,
+            unit: 'pcs',
+            min_stock: 10,
+            max_stock: 500,
+            unit_cost: '',
+            supplier: '',
+            notes: '',
+            sku: generateSKU()
+        });
+        setShowAddModal(true);
+    };
 
     const handleAddSubmit = (e) => {
         e.preventDefault();
@@ -188,7 +212,7 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                     actions={(
                         <button 
-                            onClick={() => canEditProcurement && setShowAddModal(true)} 
+                            onClick={() => canEditProcurement && openAddModal()} 
                             disabled={!canEditProcurement}
                             className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-500 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
                         >
@@ -229,7 +253,7 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                         onQuickRestock={handleQuickRestock}
                         onRequestRestock={handleRequestRestockClick}
                         onDelete={handleDeleteClick}
-                        onOpenAddSupply={() => setShowAddModal(true)}
+                        onOpenAddSupply={openAddModal}
                     />
                 </main>
             </div>

@@ -48,7 +48,7 @@ export default function AddSupplyModal({
                                         className={`w-full border-stone-200 bg-white rounded-xl text-xs py-2.5 focus:border-clay-500 focus:ring-clay-500/20 shadow-sm transition pr-10 min-h-[44px] ${skuValidation.isValid === false ? 'border-red-300 bg-red-50' : ''}`} 
                                         placeholder="e.g., CLAY-TER-01"
                                         value={data.sku} 
-                                        onChange={e => setData('sku', e.target.value)} 
+                                        onChange={e => setData('sku', e.target.value.toUpperCase())} 
                                         required 
                                     />
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
