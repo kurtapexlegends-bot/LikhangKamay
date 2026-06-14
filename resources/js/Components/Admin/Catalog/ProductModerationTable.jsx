@@ -195,7 +195,7 @@ export default function ProductModerationTable({ products, filters }) {
                                                     {product.status !== 'Active' && (
                                                         <button
                                                             onClick={() => triggerModeration(product.id, 'approve')}
-                                                            className="p-2 rounded-xl text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                                            className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                             title="Approve Listing"
                                                         >
                                                             <Check size={16} strokeWidth={2.5} />
@@ -204,7 +204,7 @@ export default function ProductModerationTable({ products, filters }) {
                                                     {product.status !== 'rejected' && (
                                                         <button
                                                             onClick={() => triggerModeration(product.id, 'reject')}
-                                                            className="p-2 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                                            className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                             title="Reject Listing"
                                                         >
                                                             <XCircle size={16} strokeWidth={2.5} />
@@ -213,7 +213,7 @@ export default function ProductModerationTable({ products, filters }) {
                                                     {product.status !== 'flagged' && (
                                                         <button
                                                             onClick={() => triggerModeration(product.id, 'flag')}
-                                                            className="p-2 rounded-xl text-stone-400 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                                            className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                             title="Flag Listing"
                                                         >
                                                             <ShieldAlert size={16} strokeWidth={2.5} />
