@@ -224,10 +224,10 @@ export default function ProductTable({
                         <td colSpan="7" className="px-6 py-12 text-center">
                             <WorkspaceEmptyState
                                 compact
+                                align="top"
                                 icon={Package}
                                 title="No products found"
                                 description="Create your first product or adjust the current filters."
-                                className="pb-28 lg:pb-36"
                             />
                         </td>
                     </tr>

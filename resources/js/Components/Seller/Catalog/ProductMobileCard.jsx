@@ -120,10 +120,10 @@ export default function ProductMobileCard({
                 <div className="px-4 py-8 bg-white border border-stone-100 rounded-2xl">
                     <WorkspaceEmptyState
                         compact
+                        align="top"
                         icon={Package}
                         title="No products found"
                         description="Create your first product or adjust the current filters."
-                        className="pb-20"
                     />
                 </div>
             )}

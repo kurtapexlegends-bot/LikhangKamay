@@ -13,9 +13,14 @@ export default function WorkspaceEmptyState({
     onSecondaryAction,
     compact = false,
     className = '',
+    align = 'center',
 }) {
     return (
-        <div className={`relative overflow-hidden rounded-3xl border border-dashed border-stone-200 bg-stone-50/50 flex flex-col items-center justify-center text-center ${compact ? 'px-6 py-12' : 'px-8 py-20'} ${className}`}>
+        <div className={`relative overflow-hidden rounded-3xl border border-dashed border-stone-200 bg-stone-50/50 flex flex-col items-center text-center ${
+            align === 'top'
+                ? (compact ? 'px-6 pt-12 pb-16 justify-start' : 'px-8 pt-16 lg:pt-24 pb-20 justify-start')
+                : (compact ? 'px-6 py-12 justify-center' : 'px-8 py-20 justify-center')
+        } ${className}`}>
             {/* Soft background glow */}
             <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-stone-100/50 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
             
