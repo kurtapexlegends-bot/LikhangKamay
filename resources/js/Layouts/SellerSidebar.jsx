@@ -178,7 +178,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
             {mobileOpen && (
                 <div 
-                    className="fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity"
+                    className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
                     onClick={onClose}
                 />
             )}

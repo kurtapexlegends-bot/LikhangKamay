@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import { ArrowRight, Clock3, LogOut, PauseCircle, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
+import Modal from '@/Components/Modal';
 
 function ActionTile({ icon: Icon, title, description, isPrimary, disabled, onClick }) {
     const baseStyles = isPrimary
@@ -147,22 +147,10 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
         </div>
     );
 }
-
 export default function StaffLogoutModal({ open, attendance = null, onClose }) {
-    const [mounted, setMounted] = useState(false);
-    
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!open || !mounted) return null;
-
-    return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/40 px-4 py-6 backdrop-blur-[2px]" onClick={onClose}>
-            <div onClick={(e) => e.stopPropagation()}>
-                <StaffLogoutDecisionPanel attendance={attendance} onClose={onClose} />
-            </div>
-        </div>,
-        document.body
+    return (
+        <Modal show={open} onClose={onClose} maxWidth="sm">
+            <StaffLogoutDecisionPanel attendance={attendance} onClose={onClose} />
+        </Modal>
     );
 }

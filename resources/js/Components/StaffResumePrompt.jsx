@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { Clock3, LogOut, PlayCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import Modal from '@/Components/Modal';
 
 function formatDateTime(value) {
     if (!value) {
@@ -124,15 +125,10 @@ export function StaffResumePromptCard({ prompt = null, compact = false }) {
         </div>
     );
 }
-
 export function StaffResumePromptOverlay({ prompt = null, open = false }) {
-    if (!open) {
-        return null;
-    }
-
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-stone-950/40 px-4 py-6 backdrop-blur-sm">
+        <Modal show={open} onClose={() => {}} maxWidth="md" closeable={false}>
             <StaffResumePromptCard prompt={prompt} compact />
-        </div>
+        </Modal>
     );
 }
