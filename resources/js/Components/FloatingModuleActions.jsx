@@ -51,10 +51,25 @@ export default function FloatingModuleActions({ actions }) {
         };
     }, [isCollapsed]);
 
-    if (!actions || !mounted) return null;
+    const allActionsHiddenOnMobile = React.useMemo(() => {
+        if (!actions) return true;
+        const children = React.Children.toArray(actions);
+        if (children.length === 0) return true;
+        
+        return children.every(child => {
+            if (!child || !child.props) return true;
+            const className = child.props.className;
+            if (typeof className !== 'string') return false;
+            return className.split(' ').some(cls => cls === 'hidden' || cls.startsWith('hidden:')); 
+        });
+    }, [actions]);
+
+    const isMobile = mounted && typeof window !== 'undefined' && window.innerWidth < 640;
+
+    if (!actions || !mounted || (isMobile && allActionsHiddenOnMobile)) return null;
 
     const content = (
-        <div className="fixed bottom-6 right-6 z-40 flex items-end justify-end group pointer-events-none">
+        <div className="fixed bottom-[4.75rem] sm:bottom-6 right-6 z-45 flex items-end justify-end group pointer-events-none">
             <div 
                 className={`
                     flex items-center gap-2.5 px-1 py-1 rounded-2xl shadow-xl transition-all duration-500 ease-out pointer-events-auto

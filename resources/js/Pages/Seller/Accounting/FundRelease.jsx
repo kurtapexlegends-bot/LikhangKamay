@@ -170,7 +170,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                 actions={(
-                    <ExportButton href={route('accounting.export')} className="hidden sm:inline-flex" variant="primary">
+                    <ExportButton href={route('accounting.export')} variant="primary">
                         Export Ledger
                     </ExportButton>
                 )}
@@ -299,13 +299,6 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 )}
             </main>
 
-            {/* Mobile Sticky Bottom Bar for main operations */}
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-t border-stone-200 px-4 py-3 flex items-center justify-between shadow-lg">
-                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Finance Operations</span>
-                <ExportButton href={route('accounting.export')} className="w-auto min-h-[44px]" variant="primary">
-                    Export Ledger
-                </ExportButton>
-            </div>
 
             {/* Base Funds Update Modal */}
             <BaseFundsModal
