@@ -19,8 +19,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🏺 LikhangKamay</div>
-            <div class="badge">📦 Your Order is On Its Way!</div>
+            <div class="logo">LikhangKamay</div>
+            <div class="badge">Your Order is On Its Way!</div>
         </div>
 
         <p>Hello {{ $order->customer_name }},</p>

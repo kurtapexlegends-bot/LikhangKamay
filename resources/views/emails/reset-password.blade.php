@@ -16,19 +16,19 @@
 <body>
     <div class="container">
         <div class="icon-circle">
-            <span>🔑</span>
+            <span style="color: white; font-weight: bold;">!</span>
         </div>
-        <div class="logo">🏺 LikhangKamay</div>
+        <div class="logo">LikhangKamay</div>
         <h1 style="font-size: 24px; color: #1f2937; margin-top: 16px;">Reset Your Password</h1>
 
         <p style="color: #6b7280;">
             You requested to reset your password. Click the button below to create a new password.
         </p>
 
-        <a href="{{ $url }}" class="button">🔐 Reset Password</a>
+        <a href="{{ $url }}" class="button">Reset Password</a>
 
         <div class="warning">
-            ⏰ This link will expire in <strong>60 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.
+            This link will expire in <strong>60 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.
         </div>
 
         <p style="font-size: 12px; color: #9ca3af;">
@@ -37,7 +37,7 @@
         </p>
 
         <div class="footer">
-            <p>LikhangKamay Security Team 🇵🇭</p>
+            <p>LikhangKamay Security Team</p>
             <p>Supporting Filipino artisans and handcrafted goods.</p>
             <p style="margin-top: 16px;">© {{ date('Y') }} LikhangKamay. All rights reserved.</p>
         </div>

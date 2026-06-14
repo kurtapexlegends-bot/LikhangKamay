@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import { MapPin, Star } from 'lucide-react';
 
 export default React.memo(function ArtisanCard({ name, location, rating, image, avatar, tags }) {
     return (
@@ -29,11 +30,11 @@ export default React.memo(function ArtisanCard({ name, location, rating, image, 
                     <div>
                         <h3 className="font-bold text-gray-900 text-lg">{name}</h3>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <span>📍</span> {location}
+                            <MapPin size={12} className="text-stone-400 shrink-0" /> {location}
                         </p>
                     </div>
-                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded text-xs font-bold text-yellow-700">
-                        <span>★</span> {rating}
+                    <div className="flex items-center gap-1.5 bg-yellow-50 px-2 py-1 rounded text-xs font-bold text-yellow-700">
+                        <Star size={12} className="fill-current text-yellow-500 shrink-0" /> {rating}
                     </div>
                 </div>
 

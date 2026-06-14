@@ -23,8 +23,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🏺 LikhangKamay</div>
-            <div class="badge">✅ Order Accepted!</div>
+            <div class="logo">LikhangKamay</div>
+            <div class="badge">Order Accepted!</div>
         </div>
 
         <p>Hello {{ $order->customer_name }},</p>
@@ -55,7 +55,7 @@
             <div>Seller Accepted</div>
         </div>
         <div class="step pending">
-            <div class="step-icon">📦</div>
+            <div class="step-icon">•</div>
             <div>Preparing & Shipping</div>
         </div>
 

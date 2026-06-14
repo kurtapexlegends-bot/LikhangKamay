@@ -21,15 +21,15 @@
 <body>
     <div class="container">
         <div class="icon-circle">
-            <span>📋</span>
+            <span style="font-size: 24px; color: white; font-weight: bold; line-height: 80px;">NEW</span>
         </div>
-        <div class="logo">🏺 LikhangKamay</div>
+        <div class="logo">LikhangKamay</div>
         <h1 style="font-size: 24px; color: #d97706; margin-top: 16px;">New Artisan Application</h1>
         
         <p style="color: #6b7280; font-size: 14px;">A new artisan has submitted their seller application and is waiting for your review.</p>
 
         <div class="info-box">
-            <div class="info-title">📝 Applicant Details</div>
+            <div class="info-title">Applicant Details</div>
             
             <div class="detail-row">
                 <span class="detail-label">Name</span>
@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <a href="{{ route('admin.pending') }}" class="button">📋 Review Applications</a>
+        <a href="{{ route('admin.pending') }}" class="button">Review Applications</a>
 
         <div class="footer">
             <p>LikhangKamay Admin Notification</p>

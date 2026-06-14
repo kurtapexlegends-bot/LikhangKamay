@@ -404,7 +404,7 @@ const ComposerContent = ({ formData, setFormData, handleSubmit, processing, edit
                                         <option value="warning">Warning (Amber)</option>
                                         <option value="danger">Alert (Red)</option>
                                         <option value="success">Success (Emerald)</option>
-                                        <option value="custom">✨ Custom Campaign</option>
+                                        <option value="custom">Custom Campaign</option>
                                     </select>
                                 </div>
                                 <div>

@@ -20,8 +20,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🏺 LikhangKamay</div>
-            <div class="badge">🎁 Order Delivered!</div>
+            <div class="logo">LikhangKamay</div>
+            <div class="badge">Order Delivered!</div>
         </div>
 
         <p>Hello {{ $order->customer_name }},</p>
@@ -44,7 +44,7 @@
         </div>
 
         <div class="warning">
-            ⏰ <strong>Return Window:</strong> You have until {{ $order->warranty_expires_at ? $order->warranty_expires_at->format('F d, Y h:i A') : now()->addDay()->format('F d, Y h:i A') }} to request a return if there are any issues with your order.
+            <strong>Return Window:</strong> You have until {{ $order->warranty_expires_at ? $order->warranty_expires_at->format('F d, Y h:i A') : now()->addDay()->format('F d, Y h:i A') }} to request a return if there are any issues with your order.
         </div>
 
         <p style="margin-top: 24px;">We'd love to hear your feedback! Consider leaving a review for the products you purchased.</p>
@@ -54,7 +54,7 @@
         </div>
 
         <div class="footer">
-            <p>Thank you for supporting Filipino artisans! 🇵🇭</p>
+            <p>Thank you for supporting Filipino artisans!</p>
             <p>© {{ date('Y') }} LikhangKamay. All rights reserved.</p>
         </div>
     </div>

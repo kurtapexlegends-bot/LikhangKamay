@@ -20,8 +20,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🏺 LikhangKamay</div>
-            <div class="badge">⚠️ Return Request Received</div>
+            <div class="logo">LikhangKamay</div>
+            <div class="badge">Return Request Received</div>
         </div>
 
         <p>Hello,</p>

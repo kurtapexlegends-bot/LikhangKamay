@@ -19,8 +19,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🏺 LikhangKamay</div>
-            <div class="badge">🎉 New Order Received!</div>
+            <div class="logo">LikhangKamay</div>
+            <div class="badge">New Order Received!</div>
         </div>
 
         <p>Hello,</p>

@@ -18,7 +18,7 @@
         <div class="icon-circle">
             <span>!</span>
         </div>
-        <div class="logo">🏺 LikhangKamay</div>
+        <div class="logo">LikhangKamay</div>
         <h1 style="font-size: 24px; color: #d97706; margin-top: 16px;">Application Needs Attention</h1>
 
         <p>Hi <strong>{{ $artisan->name }}</strong>,</p>
@@ -26,18 +26,18 @@
         <p>Thank you for applying to become a seller on LikhangKamay. Unfortunately, we couldn't approve your application at this time.</p>
 
         <div class="reason-box">
-            <p style="margin: 0 0 8px 0; font-weight: bold; color: #92400e;">📋 Reason:</p>
+            <p style="margin: 0 0 8px 0; font-weight: bold; color: #92400e;">Reason:</p>
             <p style="margin: 0; color: #78350f;">{{ $artisan->artisan_rejection_reason }}</p>
         </div>
 
         <p style="font-size: 14px; color: #6b7280;"><strong>Don't worry!</strong> You can update your application and resubmit. Please address the issues mentioned above and try again.</p>
 
-        <a href="{{ url('/artisan/setup') }}" class="button">📝 Update & Resubmit</a>
+        <a href="{{ url('/artisan/setup') }}" class="button">Update & Resubmit</a>
 
         <p style="font-size: 14px; color: #6b7280;">If you have questions or need assistance, please contact our support team.</p>
 
         <div class="footer">
-            <p>Thank you for your interest in LikhangKamay! 🇵🇭</p>
+            <p>Thank you for your interest in LikhangKamay!</p>
             <p>Supporting Filipino artisans and handcrafted goods.</p>
         </div>
     </div>

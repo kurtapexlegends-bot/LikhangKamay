@@ -18,15 +18,15 @@
         <div class="icon-circle">
             <span>✓</span>
         </div>
-        <div class="logo">🏺 LikhangKamay</div>
-        <h1 style="font-size: 24px; color: #16a34a; margin-top: 16px;">Congratulations! You're Approved! 🎉</h1>
+        <div class="logo">LikhangKamay</div>
+        <h1 style="font-size: 24px; color: #16a34a; margin-top: 16px;">Congratulations! You're Approved!</h1>
 
         <p>Hi <strong>{{ $artisan->name }}</strong>,</p>
 
         <p>Great news! Your seller account for <strong>{{ $artisan->shop_name }}</strong> has been verified and approved by our team.</p>
 
         <div class="highlight">
-            <p style="margin: 0; font-weight: bold; color: #16a34a;">🎊 What's Next?</p>
+            <p style="margin: 0; font-weight: bold; color: #16a34a;">What's Next?</p>
             <ul style="margin: 12px 0 0 0; padding-left: 20px;">
                 <li>Access your Seller Dashboard</li>
                 <li>Add your first products</li>
@@ -35,12 +35,12 @@
             </ul>
         </div>
 
-        <a href="{{ url('/dashboard') }}" class="button">🚀 Go to Dashboard</a>
+        <a href="{{ url('/dashboard') }}" class="button">Go to Dashboard</a>
 
         <p style="font-size: 14px; color: #6b7280;">Welcome to the LikhangKamay family! We're excited to have you as one of our valued artisan sellers.</p>
 
         <div class="footer">
-            <p>Thank you for choosing LikhangKamay! 🇵🇭</p>
+            <p>Thank you for choosing LikhangKamay!</p>
             <p>Supporting Filipino artisans and handcrafted goods.</p>
         </div>
     </div>
