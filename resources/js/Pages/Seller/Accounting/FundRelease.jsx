@@ -176,7 +176,7 @@ export default function FundRelease({ auth, pendingRequests, pendingPayrolls = [
                 )}
             />
 
-            <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6">
+            <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6 pb-28 sm:pb-20">
                 {isAccountingReadOnly && (
                     <ReadOnlyCapabilityNotice label="Finance review is read only for your account. Approval and fund actions are disabled." />
                 )}
