@@ -491,9 +491,9 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                 <ActionTooltip text="Approve Selected">
                     <button
                         onClick={bulkApprove}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-90 min-h-[44px]"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/40 text-emerald-600 hover:bg-emerald-100/60 hover:text-emerald-700 transition-all duration-205 active:scale-90 shadow-sm"
                     >
-                        <CheckCircle size={20} />
+                        <CheckCircle size={18} />
                     </button>
                 </ActionTooltip>
 
@@ -504,9 +504,9 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                                 setRejectingArtisan(localArtisans.find(a => a.id === selectedArtisans[0]));
                             }
                         }}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-90 min-h-[44px]"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-rose-50/40 text-rose-600 hover:bg-rose-100/60 hover:text-rose-700 transition-all duration-205 active:scale-90 shadow-sm"
                     >
-                        <XCircle size={20} />
+                        <XCircle size={18} />
                     </button>
                 </ActionTooltip>
             </BulkActionPill>

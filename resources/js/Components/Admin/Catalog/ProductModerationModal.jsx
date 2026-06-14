@@ -48,7 +48,7 @@ export default function ProductModerationModal({
         
         const renderModerationForm = () => (
             <div className="space-y-6">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                     <div
                         className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 ${
                             isReject
@@ -59,11 +59,8 @@ export default function ProductModerationModal({
                         {isReject ? <XCircle size={22} /> : <ShieldAlert size={22} />}
                     </div>
                     <div>
-                        <h2 className="text-sm font-bold text-stone-900">
-                            {isReject ? 'Provide Rejection Feedback' : 'Provide Flag Reason'}
-                        </h2>
-                        <p className="text-xs text-stone-500 mt-1 font-medium leading-relaxed">
-                            Enter the feedback or reason for this moderation action on the selected {ids?.length || 1} product(s). Sellers will be notified of this message.
+                        <p className="text-xs text-stone-500 font-medium leading-relaxed">
+                            Enter the feedback or reason for this moderation action on the selected {ids?.length || 1} product(s). Sellers will be notified of this message and can perform corrective actions.
                         </p>
                     </div>
                 </div>
@@ -76,7 +73,7 @@ export default function ProductModerationModal({
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
                         rows={5}
-                        className="w-full rounded-xl border border-stone-250 focus:border-clay-300 focus:ring-clay-200 text-sm"
+                        className="w-full rounded-xl border border-stone-200 focus:border-clay-400 focus:ring-clay-400/20 text-sm"
                         placeholder="Explain the listing adjustments or guidelines violated so the seller can take corrective actions."
                         autoFocus
                     />
@@ -110,10 +107,12 @@ export default function ProductModerationModal({
                 <SlideOverDrawer
                     show={isOpen && (type === 'reject' || type === 'flag')}
                     onClose={onClose}
-                    title={isReject ? 'Reject Product Listing(s)?' : 'Flag Product Listing(s)?'}
+                    title={isReject ? 'Reject Product Listing(s)' : 'Flag Product Listing(s)'}
                     widthClass="max-w-md"
                 >
-                    {renderModerationForm()}
+                    <div className="p-1">
+                        {renderModerationForm()}
+                    </div>
                 </SlideOverDrawer>
             );
         }
@@ -121,7 +120,7 @@ export default function ProductModerationModal({
         return (
             <Modal show={isOpen && (type === 'reject' || type === 'flag')} onClose={onClose} maxWidth="md">
                 <div className="p-6">
-                    <h2 className="text-lg font-bold text-stone-900 mb-1">
+                    <h2 className="text-lg font-bold text-stone-900 mb-4">
                         {isReject ? 'Reject Product Listing(s)' : 'Flag Product Listing(s)'}
                     </h2>
                     {renderModerationForm()}
@@ -129,6 +128,5 @@ export default function ProductModerationModal({
             </Modal>
         );
     }
-
     return null;
 }

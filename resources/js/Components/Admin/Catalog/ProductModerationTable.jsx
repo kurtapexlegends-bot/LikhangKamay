@@ -85,58 +85,34 @@ export default function ProductModerationTable({ products, filters }) {
 
     return (
         <div className="space-y-6">
-            {/* Filter Bar */}
-            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-                {/* Desktop view */}
-                <div className="hidden md:flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <label className="text-xs font-bold text-stone-500 uppercase tracking-widest whitespace-nowrap">Filter Status:</label>
-                        <select
-                            value={currentStatusFilter}
-                            onChange={(e) => handleProductStatusFilterChange(e.target.value)}
-                            className="rounded-xl border-stone-200 text-xs font-bold text-stone-700 bg-stone-50 focus:bg-white focus:border-clay-300 focus:ring-1 focus:ring-clay-300 transition min-h-[44px]"
-                        >
-                            <option value="pending_review">Pending Review</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="flagged">Flagged</option>
-                            <option value="Active">Approved / Active</option>
-                            <option value="all">All Listings</option>
-                        </select>
-                    </div>
-                </div>
-
-                {/* Mobile view: horizontal scroll filter pills */}
-                <div className="md:hidden flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Filter Status</label>
-                    <div className="flex overflow-x-auto no-scrollbar gap-2 pb-1 flex-nowrap -mx-4 px-4">
-                        {[
-                            { value: 'pending_review', label: 'Pending Review' },
-                            { value: 'Active', label: 'Approved' },
-                            { value: 'rejected', label: 'Rejected' },
-                            { value: 'flagged', label: 'Flagged' },
-                            { value: 'all', label: 'All Listings' }
-                        ].map(pill => (
-                            <button
-                                key={pill.value}
-                                type="button"
-                                onClick={() => handleProductStatusFilterChange(pill.value)}
-                                className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 border min-h-[44px] ${
-                                    currentStatusFilter === pill.value
-                                        ? 'bg-clay-600 text-white border-clay-600 shadow-sm'
-                                        : 'bg-stone-50 text-stone-600 border-stone-205 border-stone-200/60 hover:bg-stone-100'
-                                }`}
-                            >
-                                {pill.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+            {/* Status Pills */}
+            <div className="flex overflow-x-auto no-scrollbar gap-2 pb-1.5 flex-nowrap px-1">
+                {[
+                    { value: 'pending_review', label: 'Pending Review' },
+                    { value: 'Active', label: 'Approved / Active' },
+                    { value: 'rejected', label: 'Rejected' },
+                    { value: 'flagged', label: 'Flagged' },
+                    { value: 'all', label: 'All Listings' }
+                ].map((pill) => (
+                    <button
+                        key={pill.value}
+                        type="button"
+                        onClick={() => handleProductStatusFilterChange(pill.value)}
+                        className={`px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 min-h-[44px] sm:min-h-0 ${
+                            currentStatusFilter === pill.value
+                                ? 'bg-clay-600 text-white shadow-md shadow-clay-600/15'
+                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200/50'
+                        }`}
+                    >
+                        {pill.label}
+                    </button>
+                ))}
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto no-scrollbar -mx-4 sm:mx-0">
                 <div className="inline-block min-w-full align-middle px-4 sm:px-0">
-                    <div className="overflow-hidden bg-white rounded-2xl border border-stone-200 shadow-sm">
+                    <div className="overflow-hidden bg-white rounded-[24px] border border-stone-150 shadow-sm">
                         <table className="w-full min-w-[940px] text-left border-collapse">
                             <thead>
                                 <tr className="bg-stone-50 border-b border-stone-100">
@@ -145,7 +121,7 @@ export default function ProductModerationTable({ products, filters }) {
                                             type="checkbox"
                                             onChange={handleSelectAllProducts}
                                             checked={products?.data?.length > 0 && selectedProductIds.length === products.data.length}
-                                            className="rounded text-clay-600 focus:ring-clay-500"
+                                            className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
                                         />
                                     </th>
                                     <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-1/3">Product</th>
@@ -164,7 +140,7 @@ export default function ProductModerationTable({ products, filters }) {
                                                     type="checkbox"
                                                     checked={selectedProductIds.includes(product.id)}
                                                     onChange={() => handleSelectProduct(product.id)}
-                                                    className="rounded text-clay-600 focus:ring-clay-500"
+                                                    className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
                                                 />
                                             </td>
                                             <td className="py-4 px-6 align-middle">
@@ -183,7 +159,7 @@ export default function ProductModerationTable({ products, filters }) {
                                                     </div>
                                                     <div className="max-w-[200px]">
                                                         <p className="text-sm font-bold text-stone-900 truncate">{product.name}</p>
-                                                        <p className="text-[10px] text-stone-500 mt-0.5 truncate">SKU: {product.sku}</p>
+                                                        <p className="text-[10px] text-stone-500 font-mono tracking-wider bg-stone-100 rounded px-1.5 py-0.5 w-fit mt-1">SKU: {product.sku}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -196,51 +172,51 @@ export default function ProductModerationTable({ products, filters }) {
                                             <td className="py-4 px-6 align-middle text-xs font-semibold text-stone-500">
                                                 {product.created_at ? new Date(product.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                                             </td>
-                                            <td className="py-4 px-6 align-middle">
+                                            <td className="py-4 px-6 align-middle whitespace-nowrap">
                                                 {product.status === 'Active' ? (
-                                                    <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-emerald-100/30"><CheckCircle2 size={12}/> Active</span>
+                                                    <span className="inline-flex items-center gap-1.5 bg-emerald-50/50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-100/40"><CheckCircle2 size={12}/> Active</span>
                                                 ) : product.status === 'pending_review' ? (
-                                                    <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-amber-100/30"><Clock size={12}/> Pending Review</span>
+                                                    <span className="inline-flex items-center gap-1.5 bg-amber-50/50 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-amber-100/40"><Clock size={12}/> Pending Review</span>
                                                 ) : product.status === 'rejected' ? (
-                                                    <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-red-100/30"><XCircle size={12}/> Rejected</span>
+                                                    <span className="inline-flex items-center gap-1.5 bg-red-50/50 text-red-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100/40"><XCircle size={12}/> Rejected</span>
                                                 ) : product.status === 'flagged' ? (
-                                                    <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-rose-200/30"><ShieldAlert size={12}/> Flagged</span>
+                                                    <span className="inline-flex items-center gap-1.5 bg-rose-50/50 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-rose-200/40"><ShieldAlert size={12}/> Flagged</span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1.5 bg-stone-50 text-stone-705 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-stone-200/30"><AlertTriangle size={12}/> {product.status}</span>
+                                                    <span className="inline-flex items-center gap-1.5 bg-stone-50/50 text-stone-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-stone-200/40"><AlertTriangle size={12}/> {product.status}</span>
                                                 )}
                                                 {product.rejection_reason && (
-                                                    <p className="text-[10px] text-red-500 mt-1.5 max-w-[180px] truncate" title={product.rejection_reason}>
+                                                    <p className="text-[10px] text-red-500 mt-1.5 max-w-[180px] truncate font-medium" title={product.rejection_reason}>
                                                         Reason: {product.rejection_reason}
                                                     </p>
                                                 )}
                                             </td>
                                             <td className="py-4 px-6 align-middle text-right">
-                                                <div className="flex items-center justify-end gap-2.5">
+                                                <div className="flex items-center justify-end gap-2">
                                                     {product.status !== 'Active' && (
                                                         <button
                                                             onClick={() => triggerModeration(product.id, 'approve')}
-                                                            className="p-2.5 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+                                                            className="p-2 rounded-xl text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                             title="Approve Listing"
                                                         >
-                                                            <Check size={14} strokeWidth={2.5} />
+                                                            <Check size={16} strokeWidth={2.5} />
                                                         </button>
                                                     )}
                                                     {product.status !== 'rejected' && (
                                                         <button
                                                             onClick={() => triggerModeration(product.id, 'reject')}
-                                                            className="p-2.5 text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+                                                            className="p-2 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                             title="Reject Listing"
                                                         >
-                                                            <XCircle size={14} strokeWidth={2.5} />
+                                                            <XCircle size={16} strokeWidth={2.5} />
                                                         </button>
                                                     )}
                                                     {product.status !== 'flagged' && (
                                                         <button
                                                             onClick={() => triggerModeration(product.id, 'flag')}
-                                                            className="p-2.5 text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+                                                            className="p-2 rounded-xl text-stone-400 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                             title="Flag Listing"
                                                         >
-                                                            <ShieldAlert size={14} strokeWidth={2.5} />
+                                                            <ShieldAlert size={16} strokeWidth={2.5} />
                                                         </button>
                                                     )}
                                                 </div>
@@ -295,27 +271,27 @@ export default function ProductModerationTable({ products, filters }) {
                 <ActionTooltip text="Approve Selected">
                     <button
                         onClick={() => triggerModeration(selectedProductIds, 'approve')}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-90 min-h-[44px]"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/40 text-emerald-600 hover:bg-emerald-100/60 hover:text-emerald-700 transition-all duration-205 active:scale-90 shadow-sm"
                     >
-                        <Check size={20} />
+                        <Check size={18} strokeWidth={2.5} />
                     </button>
                 </ActionTooltip>
 
                 <ActionTooltip text="Reject Selected">
                     <button
                         onClick={() => triggerModeration(selectedProductIds, 'reject')}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-90 min-h-[44px]"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-rose-50/40 text-rose-600 hover:bg-rose-100/60 hover:text-rose-700 transition-all duration-205 active:scale-90 shadow-sm"
                     >
-                        <XCircle size={20} />
+                        <XCircle size={18} />
                     </button>
                 </ActionTooltip>
 
                 <ActionTooltip text="Flag Selected">
                     <button
                         onClick={() => triggerModeration(selectedProductIds, 'flag')}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-600 active:scale-90 min-h-[44px]"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-100 bg-amber-50/40 text-amber-600 hover:bg-amber-100/60 hover:text-amber-700 transition-all duration-205 active:scale-90 shadow-sm"
                     >
-                        <ShieldAlert size={20} />
+                        <ShieldAlert size={18} />
                     </button>
                 </ActionTooltip>
             </BulkActionPill>

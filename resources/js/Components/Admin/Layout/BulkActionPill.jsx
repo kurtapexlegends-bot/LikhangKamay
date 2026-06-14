@@ -60,21 +60,20 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
         <AnimatePresence>
             {selectedCount > 0 && (
                 <motion.div 
-                    initial={{ y: 100, x: '-50%', opacity: 0, scale: 0.9 }}
+                    initial={{ y: 24, opacity: 0, scale: 0.9 }}
                     animate={{ 
                         y: 0, 
-                        x: '-50%', 
                         opacity: isScrolling ? 0.6 : 1, 
                         scale: isScrolling ? 0.98 : 1
                     }}
-                    exit={{ y: 100, x: '-50%', opacity: 0, scale: 0.9 }}
+                    exit={{ y: 24, opacity: 0, scale: 0.9 }}
                     transition={{ 
                         type: "spring",
                         stiffness: 400,
                         damping: 30,
                         opacity: { duration: 0.2 }
                     }}
-                    className="fixed left-1/2 z-45 sm:z-50 pointer-events-none"
+                    className="fixed left-0 right-0 mx-auto z-45 sm:z-50 w-max pointer-events-none"
                     style={{
                         bottom: isMobile ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : '2rem'
                     }}
