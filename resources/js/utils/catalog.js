@@ -34,3 +34,16 @@ export function readStoredProductManagerView() {
         return null;
     }
 }
+
+/**
+ * Format product sold count to a compact string (e.g. 1.2k).
+ * 
+ * @param {number|string} sold
+ * @returns {string}
+ */
+export const formatSold = (sold) => {
+    const soldNum = typeof sold === 'string' ? parseInt(sold, 10) : sold;
+    if (soldNum >= 1000) return `${(soldNum / 1000).toFixed(1)}k`;
+    return soldNum?.toString() || '0';
+};
+
