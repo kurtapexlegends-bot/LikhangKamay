@@ -171,7 +171,7 @@ export default function ProductTable({
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openRestockModal(product)}
-                                        className="rounded-md p-1.5 text-emerald-600 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                                         title={canEditProducts ? "Restock" : "Read only"}
                                     >
                                         <RefreshCw size={14} />
@@ -180,7 +180,7 @@ export default function ProductTable({
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openDeductModal(product)}
-                                        className="rounded-md p-1.5 text-orange-600 transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="p-2 rounded-xl text-orange-600 hover:bg-orange-50 border border-transparent hover:border-orange-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                                         title={canEditProducts ? "Manual Deduct" : "Read only"}
                                     >
                                         <TrendingUp size={14} className="rotate-180" />
@@ -189,7 +189,7 @@ export default function ProductTable({
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openEditModal(product)}
-                                        className="rounded-md p-1.5 text-sky-600 transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="p-2 rounded-xl text-sky-600 hover:bg-sky-50 border border-transparent hover:border-sky-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                                         title={canEditProducts ? "Edit" : "Read only"}
                                     >
                                         <Edit3 size={14} />
@@ -199,7 +199,7 @@ export default function ProductTable({
                                             type="button"
                                             disabled={!canEditProducts}
                                             onClick={() => openArchiveModal(product)}
-                                            className="rounded-md p-1.5 text-amber-500 transition-colors hover:bg-amber-50 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                                             title={canEditProducts ? "Unarchive" : "Read only"}
                                         >
                                             <RotateCcw size={14} />
@@ -209,7 +209,7 @@ export default function ProductTable({
                                             type="button"
                                             disabled={!canEditProducts}
                                             onClick={() => openArchiveModal(product)}
-                                            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="p-2 rounded-xl text-clay-600 hover:bg-clay-50 border border-transparent hover:border-clay-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                                             title={canEditProducts ? "Archive" : "Read only"}
                                         >
                                             <Archive size={14} />

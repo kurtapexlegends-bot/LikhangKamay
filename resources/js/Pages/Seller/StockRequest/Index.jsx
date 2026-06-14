@@ -394,7 +394,7 @@ export default function StockRequestIndex({ auth, requests }) {
                                                 </button>
                                             )}
                                             {(req.status === 'received' && (req.received_quantity - req.transferred_quantity > 0)) && (
-                                                <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-stone-700 text-white text-[11px] font-bold rounded-lg hover:bg-stone-800 transition-all disabled:cursor-not-allowed disabled:opacity-50">
+                                                <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-sky-600 text-white text-[11px] font-bold rounded-lg hover:bg-sky-700 active:scale-95 shadow-sm shadow-sky-100 transition-all disabled:cursor-not-allowed disabled:opacity-50">
                                                     <ArrowRight size={13} /> Transfer
                                                 </button>
                                             )}
@@ -509,7 +509,7 @@ export default function StockRequestIndex({ auth, requests }) {
                                                             </button>
                                                         )}
                                                         {(req.status === 'received' && (req.received_quantity - req.transferred_quantity > 0)) && (
-                                                            <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-stone-700 text-white text-[10px] font-bold rounded-lg hover:bg-stone-800 transition-all active:scale-95 shadow-sm shadow-stone-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
+                                                            <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-600 text-white text-[10px] font-bold rounded-lg hover:bg-sky-700 transition-all active:scale-95 shadow-sm shadow-sky-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
                                                                 <ArrowRight size={13} /> Transfer
                                                             </button>
                                                         )}

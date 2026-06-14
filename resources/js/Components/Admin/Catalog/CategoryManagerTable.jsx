@@ -139,7 +139,7 @@ export default function CategoryManagerTable({ categories }) {
                                                     <div className="flex items-center justify-end gap-2.5">
                                                         <button
                                                             onClick={() => setEditingCategory(null)}
-                                                            className="p-2.5 text-stone-400 hover:text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+                                                            className="p-2 rounded-xl text-stone-500 hover:bg-stone-50 border border-transparent hover:border-stone-100 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
                                                             title="Cancel"
                                                         >
                                                             <X size={16} />
@@ -147,7 +147,7 @@ export default function CategoryManagerTable({ categories }) {
                                                         <button
                                                             onClick={() => handleUpdateCategory(category)}
                                                             disabled={isProcessingEdit}
-                                                            className="p-2.5 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition disabled:opacity-50 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+                                                            className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
                                                             title="Save"
                                                         >
                                                             <Save size={16} />
@@ -160,7 +160,7 @@ export default function CategoryManagerTable({ categories }) {
                                                                 setEditingCategory(category.id);
                                                                 setEditName(category.name);
                                                             }}
-                                                            className="p-2.5 text-stone-500 hover:text-clay-700 bg-white hover:bg-clay-50 border border-stone-200 hover:border-clay-200 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                                            className="p-2 rounded-xl text-clay-600 hover:bg-clay-50/50 border border-transparent hover:border-clay-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm hover:scale-105 active:scale-95"
                                                             title="Rename Category"
                                                         >
                                                             <Edit2 size={14} strokeWidth={2.5} />
@@ -168,10 +168,10 @@ export default function CategoryManagerTable({ categories }) {
                                                         <button
                                                             onClick={() => handleDeleteCategory(category)}
                                                             disabled={category.products_count > 0}
-                                                            className={`p-2.5 rounded-xl border shadow-sm transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                                                            className={`p-2 rounded-xl border transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 ${
                                                                 category.products_count > 0
-                                                                    ? 'text-stone-300 bg-stone-50 border-stone-100 cursor-not-allowed'
-                                                                    : 'text-stone-500 hover:text-red-700 bg-white hover:bg-red-50 border-stone-200 hover:border-red-200 hover:scale-105 active:scale-95'
+                                                                    ? 'text-stone-300 bg-stone-50 border-stone-100 cursor-not-allowed hover:scale-100 active:scale-100 shadow-none'
+                                                                    : 'text-rose-600 hover:bg-rose-50 border-transparent hover:border-rose-100/30'
                                                             }`}
                                                             title={category.products_count > 0 ? "Cannot delete category with active products" : "Delete Category"}
                                                         >

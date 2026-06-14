@@ -85,7 +85,7 @@ export default function PendingApprovalsList({
                                 <button
                                     type="button"
                                     onClick={() => onReview(item, 'pending')}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-clay-700 sm:w-auto min-h-[44px]"
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-clay-700 hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-clay-600/15 sm:w-auto min-h-[44px]"
                                 >
                                     <Eye size={14} strokeWidth={2.5} /> Review
                                 </button>

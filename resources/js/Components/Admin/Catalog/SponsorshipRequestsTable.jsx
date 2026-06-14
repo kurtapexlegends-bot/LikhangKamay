@@ -282,14 +282,14 @@ export default function SponsorshipRequestsTable({ requests }) {
                                                     <button
                                                         onClick={() => handleSponsorshipAction(req, 'reject')}
                                                         disabled={processingSponsorship && pendingActionId === req.id}
-                                                        className="px-3.5 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition disabled:opacity-50 min-h-[44px]"
+                                                        className="px-3.5 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition disabled:opacity-50 min-h-[44px]"
                                                     >
                                                         {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Rejecting...' : 'Reject'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleSponsorshipAction(req, 'approve')}
                                                         disabled={processingSponsorship && pendingActionId === req.id}
-                                                        className="px-4.5 py-2.5 text-xs font-bold bg-stone-900 text-white hover:bg-black rounded-xl transition shadow-sm disabled:opacity-50 min-h-[44px]"
+                                                        className="px-4.5 py-2.5 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-emerald-600/15 rounded-xl disabled:opacity-50 min-h-[44px]"
                                                     >
                                                         {processingSponsorship && pendingActionId === req.id && modalData.type === 'approve' ? 'Approving...' : 'Approve'}
                                                     </button>

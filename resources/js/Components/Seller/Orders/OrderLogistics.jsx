@@ -31,7 +31,7 @@ export default function OrderLogistics({ order, canEditOrders, markAsPaidAction 
                             href={order.proof_of_delivery}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-stone-600 hover:bg-stone-105 transition shadow-sm min-h-[44px] sm:min-h-[28px]"
+                            className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition shadow-sm min-h-[44px] sm:min-h-[28px]"
                         >
                             <PackageCheck size={10} /> {sellerProofLabel(order)}
                         </a>

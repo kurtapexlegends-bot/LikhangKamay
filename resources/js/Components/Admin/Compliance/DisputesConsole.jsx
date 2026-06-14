@@ -222,7 +222,7 @@ export default function DisputesConsole({
                                         <button
                                             type="button"
                                             onClick={() => openDisputeActionModal(dispute, 'under_review')}
-                                            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
+                                            className="px-4 py-2 rounded-xl text-sky-700 bg-sky-50 border border-transparent hover:border-sky-100/30 hover:bg-sky-100/70 min-h-[44px] transition-all duration-200 flex items-center justify-center font-bold text-xs w-full sm:w-auto"
                                         >
                                             Start Review
                                         </button>
@@ -232,14 +232,14 @@ export default function DisputesConsole({
                                             <button
                                                 type="button"
                                                 onClick={() => openDisputeActionModal(dispute, 'resolved')}
-                                                className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
+                                                className="px-4 py-2 rounded-xl text-emerald-700 bg-emerald-50 border border-transparent hover:border-emerald-100/30 hover:bg-emerald-100/70 min-h-[44px] transition-all duration-200 flex items-center justify-center font-bold text-xs w-full sm:w-auto"
                                             >
                                                 Approve Request
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => openDisputeActionModal(dispute, 'rejected')}
-                                                className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
+                                                className="px-4 py-2 rounded-xl text-rose-700 bg-rose-50 border border-transparent hover:border-rose-100/30 hover:bg-rose-100/70 min-h-[44px] transition-all duration-200 flex items-center justify-center font-bold text-xs w-full sm:w-auto"
                                             >
                                                 Reject Request
                                             </button>
@@ -248,7 +248,7 @@ export default function DisputesConsole({
                                     <button
                                         type="button"
                                         onClick={() => setDisputeDeleteState({ open: true, dispute })}
-                                        className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
+                                        className="px-4 py-2 rounded-xl text-rose-700 bg-rose-50 border border-transparent hover:border-rose-100/30 hover:bg-rose-100/70 min-h-[44px] transition-all duration-200 flex items-center justify-center font-bold text-xs w-full sm:w-auto"
                                     >
                                         Remove Request
                                     </button>

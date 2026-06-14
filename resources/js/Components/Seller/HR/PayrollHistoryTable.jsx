@@ -70,7 +70,7 @@ export default function PayrollHistoryTable({
                                 <div className="flex justify-end gap-2">
                                     <button 
                                         onClick={() => router.get(route('hr.payroll.show', payroll.id))} 
-                                        className="inline-flex items-center justify-center rounded-xl bg-stone-100 px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-200 transition min-h-[44px] min-w-[100px]"
+                                        className="inline-flex items-center justify-center rounded-xl bg-clay-50/50 border border-clay-100 text-clay-700 hover:bg-clay-100 hover:text-clay-800 transition min-h-[44px] min-w-[100px]"
                                     >
                                         View Details
                                     </button>
@@ -158,7 +158,7 @@ export default function PayrollHistoryTable({
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => router.get(route('hr.payroll.show', payroll.id))}
-                                                className="inline-flex items-center justify-center rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-200 transition"
+                                                className="inline-flex items-center justify-center rounded-xl bg-clay-50/50 border border-clay-100/50 px-3 py-1.5 text-xs font-bold text-clay-700 hover:bg-clay-100 hover:text-clay-800 transition min-h-[36px]"
                                             >
                                                 View
                                             </button>

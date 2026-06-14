@@ -437,7 +437,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                                                 <div className="col-span-1 flex justify-start md:justify-end">
                                                     <button
                                                         onClick={() => openReviewModal(artisan)}
-                                                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-[11px] font-bold text-stone-700 shadow-sm transition-all hover:border-clay-300 hover:bg-stone-50 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 min-h-[44px]"
+                                                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent hover:border-clay-100/30 bg-clay-50/50 hover:bg-clay-100 px-4 text-[11px] font-bold text-clay-700 shadow-sm transition-all min-h-[44px]"
                                                     >
                                                         <Eye size={13} className="text-clay-500" />
                                                         <span>Review</span>

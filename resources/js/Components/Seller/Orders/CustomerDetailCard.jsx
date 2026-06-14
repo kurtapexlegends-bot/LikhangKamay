@@ -19,7 +19,7 @@ export default function CustomerDetailCard({ order, canAccessMessages, openChat 
                 {canAccessMessages && (
                     <button
                         onClick={() => openChat(order.user_id)}
-                        className="p-2 text-stone-400 hover:text-clay-600 hover:bg-clay-50 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center border border-stone-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] active:scale-95"
+                        className="p-2 text-clay-600 hover:text-clay-700 bg-clay-50/50 hover:bg-clay-100/60 border border-transparent hover:border-clay-100/30 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
                         title="Chat with customer"
                         type="button"
                     >

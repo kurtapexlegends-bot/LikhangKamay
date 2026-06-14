@@ -106,7 +106,7 @@ export default function TransactionLedgerTable({
                                     <button
                                         type="button"
                                         onClick={() => onView(item, 'history')}
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-stone-700 shadow-sm transition hover:bg-stone-50 hover:text-stone-900 sm:w-auto min-h-[44px]"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-clay-200/80 bg-[#FCF8F5] px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-clay-700 shadow-sm hover:bg-clay-100 hover:text-clay-800 hover:scale-[1.01] active:scale-98 transition-all sm:w-auto min-h-[44px]"
                                     >
                                         <Eye size={14} strokeWidth={2.5} /> View
                                     </button>

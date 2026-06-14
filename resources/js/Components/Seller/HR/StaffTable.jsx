@@ -455,7 +455,7 @@ export default function StaffTable({
                                                     <button
                                                         onClick={() => openEditModal(emp)}
                                                         aria-label={`Update ${emp.name}`}
-                                                        className="p-1.5 text-stone-500 hover:text-clay-600 bg-white border border-stone-200 shadow-sm hover:bg-[#FCF7F2] hover:border-[#E7D8C9] rounded-lg transition min-w-[32px] min-h-[32px] flex items-center justify-center"
+                                                        className="p-2 text-clay-600 hover:bg-clay-50/50 border border-transparent hover:border-clay-100/30 shadow-sm transition-all duration-200 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center"
                                                         title="Update Data"
                                                         type="button"
                                                     >
@@ -465,10 +465,10 @@ export default function StaffTable({
                                                         onClick={() => deleteEmployee(emp.id)}
                                                         disabled={emp.has_login_account && !canDeleteStaffAccounts}
                                                         aria-label={emp.has_login_account && !canDeleteStaffAccounts ? `Cannot remove ${emp.name}` : `Remove ${emp.name}`}
-                                                        className={`p-1.5 rounded-lg border shadow-sm transition min-w-[32px] min-h-[32px] flex items-center justify-center ${
+                                                        className={`p-2 rounded-xl border shadow-sm transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center ${
                                                             emp.has_login_account && !canDeleteStaffAccounts
-                                                                ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300'
-                                                                : 'bg-white border-stone-200 text-stone-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+                                                                ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300 shadow-none'
+                                                                : 'text-rose-600 hover:bg-rose-50 border-transparent hover:border-rose-100/30'
                                                         }`}
                                                         title={emp.has_login_account && !canDeleteStaffAccounts
                                                             ? 'Only the shop owner or a user with the proper staff account access level can remove employees with login access'
