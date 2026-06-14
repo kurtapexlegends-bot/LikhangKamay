@@ -123,8 +123,6 @@ export default function ProductMobileCard({
                         icon={Package}
                         title="No products found"
                         description="Create your first product or adjust the current filters."
-                        actionLabel="Create Product"
-                        onAction={openAddModal}
                     />
                 </div>
             )}

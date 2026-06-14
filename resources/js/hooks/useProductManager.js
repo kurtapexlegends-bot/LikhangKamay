@@ -589,6 +589,11 @@ export default function useProductManager({
         setQuickFilter("all");
         setSortConfig({ key: "name", direction: "asc" });
         setCurrentPage(1);
+
+        router.get(route("products.index"), {}, {
+            preserveState: false,
+            preserveScroll: true,
+        });
     };
 
     const selectVisibleProducts = () => {
