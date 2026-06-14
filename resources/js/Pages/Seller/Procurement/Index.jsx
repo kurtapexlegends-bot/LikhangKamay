@@ -1,64 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import axios from 'axios';
-
-import Modal from '@/Components/Modal';
-import QuickRestock from '@/Components/Seller/Shared/QuickRestock';
-import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
-import { 
-    Package, AlertTriangle, TrendingUp, Plus, Search, ChevronDown, 
-    Edit2, Trash2, RefreshCw, Box, 
-    Banknote, Check, Users, CheckCircle, AlertCircle, 
-    FileText, Clock, X, Loader2
-} from 'lucide-react';
+import { Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerHeader from '@/Layouts/SellerHeader';
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import useConstraintValidation from '@/hooks/useConstraintValidation';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useFlashToast from '@/hooks/useFlashToast';
-import TextInput from '@/Components/TextInput';
-import InputLabel from '@/Components/InputLabel';
-import KPICard from '@/Components/KPICard';
-import { TableBodySkeleton } from '@/Components/Skeleton';
+import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
+
+// Import refactored domain components using absolute path aliases
+import ProcurementMetrics from '@/Components/Seller/Procurement/ProcurementMetrics';
+import SuppliesTable from '@/Components/Seller/Procurement/SuppliesTable';
+import AddSupplyModal from '@/Components/Seller/Procurement/AddSupplyModal';
+import RestockSupplyModal from '@/Components/Seller/Procurement/RestockSupplyModal';
+import RequestRestockModal from '@/Components/Seller/Procurement/RequestRestockModal';
+import DeleteSupplyModal from '@/Components/Seller/Procurement/DeleteSupplyModal';
 
 const FALLBACK_CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other'];
 const FALLBACK_UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
 
-export default function ProcurementIndex({ auth, supplies, requests, finances, totalItems, lowStockItems, totalValue, categories, initTab, availableCategories = [], availableUnits = [] }) {
+export default function ProcurementIndex({ auth, supplies, totalItems, lowStockItems, totalValue, initTab, availableCategories = [], availableUnits = [] }) {
     const { addToast } = useToast();
     const { canEdit: canEditProcurement, isReadOnly: isProcurementReadOnly } = useSellerModuleAccess('procurement');
     const { canEdit: canEditStockRequests } = useSellerModuleAccess('stock_requests');
-    const [showAddModal, setShowAddModal] = useState(false);
     const { openSidebar } = useSellerWorkspaceShell();
-    const [actionNotice, setActionNotice] = useState(null);
+    const { flash, filters = {} } = usePage().props;
+
+    const [showAddModal, setShowAddModal] = useState(false);
     const [showRestockModal, setShowRestockModal] = useState(false);
     const [showConfirmRequest, setShowConfirmRequest] = useState(false);
-    const [selectedSupply, setSelectedSupply] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    const [selectedSupply, setSelectedSupply] = useState(null);
     const [supplyToDelete, setSupplyToDelete] = useState(null);
     const [supplyToRequest, setSupplyToRequest] = useState(null);
-    const [requestQuantity, setRequestQuantity] = useState(0);
-    const { flash, filters = {} } = usePage().props;
     
+    const [requestQuantity, setRequestQuantity] = useState(0);
+    const [actionNotice, setActionNotice] = useState(null);
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [filterCategory, setFilterCategory] = useState('all');
+    const [isNavigating, setIsNavigating] = useState(false);
+
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
     useEffect(() => {
         const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
         return () => clearTimeout(timer);
     }, []);
-    const [searchTerm, setSearchTerm] = useState(filters.search || '');
-    const [filterCategory, setFilterCategory] = useState('all');
-    const [isNavigating, setIsNavigating] = useState(false);
 
     useEffect(() => {
         const unbindStart = router.on('start', () => setIsNavigating(true));
         const unbindFinish = router.on('finish', () => setIsNavigating(false));
         return () => { unbindStart(); unbindFinish(); };
     }, []);
-
 
     // Sync search from URL (for Global Search support)
     useEffect(() => {
@@ -69,24 +63,14 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
 
     useFlashToast(flash, addToast);
 
-    // --- TABS & FINANCE STATE ---
-    const [activeTab, setActiveTab] = useState(initTab || 'inventory');
-
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-        const url = new URL(window.location);
-        url.searchParams.set('tab', tab);
-        window.history.replaceState({}, '', url);
-    };
-
     // Form for adding new supply
     const { data, setData, post, processing, reset, errors } = useForm({
         name: '',
-        category: 'Finished Goods', // Phase 1: Default
+        category: 'Finished Goods',
         quantity: 0,
         unit: 'pcs',
         min_stock: 10,
-        max_stock: 500, // Phase 1: Added max_stock
+        max_stock: 500,
         unit_cost: '',
         supplier: '',
         notes: '',
@@ -101,15 +85,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
     // Restock form
     const restockForm = useForm({ quantity: 0 });
 
-    // Filter supplies
-    const filteredSupplies = supplies.filter(s => {
-        const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           s.supplier?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchCategory = filterCategory === 'all' || s.category === filterCategory;
-        return matchSearch && matchCategory;
-    });
-
-    const handleAdd = (e) => {
+    const handleAddSubmit = (e) => {
         e.preventDefault();
         if (!canEditProcurement) return;
         post(route('supplies.store'), {
@@ -125,7 +101,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         });
     };
 
-    const handleRestock = (e) => {
+    const handleRestockSubmit = (e) => {
         e.preventDefault();
         if (!canEditProcurement) return;
         restockForm.post(route('supplies.restock', selectedSupply.id), {
@@ -142,7 +118,7 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         });
     };
 
-    const handleDelete = (supply) => {
+    const handleDeleteClick = (supply) => {
         if (!canEditProcurement) return;
         setSupplyToDelete(supply);
         setShowDeleteModal(true);
@@ -163,15 +139,29 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         });
     };
 
-    const openRestockModal = (supply) => {
-        if (!canEditProcurement) return;
-        setSelectedSupply(supply);
-        setShowRestockModal(true);
+    const handleRequestRestockClick = (supply) => {
+        setSupplyToRequest(supply);
+        setRequestQuantity(supply.min_stock * 2);
+        setShowConfirmRequest(true);
+    };
+
+    const handleRequestRestockSubmit = () => {
+        if (!canEditStockRequests) return;
+        router.post(route('supplies.request', supplyToRequest.id), { quantity: requestQuantity }, { 
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowConfirmRequest(false);
+                setActionNotice(null);
+            },
+            onError: () => {
+                setActionNotice('Restock request could not be submitted right now.');
+                addToast('Restock request failed.', 'error');
+            }
+        });
     };
 
     const handleQuickRestock = (supply, amount) => {
         if (!canEditProcurement) return;
-        
         router.post(route('supplies.restock', supply.id), { 
             quantity: amount 
         }, {
@@ -189,7 +179,6 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
             <Head title="Inventory" />
 
-            {/* MAIN CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
                 <SellerHeader 
                     title="Inventory"
@@ -201,13 +190,12 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         <button 
                             onClick={() => canEditProcurement && setShowAddModal(true)} 
                             disabled={!canEditProcurement}
-                            className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-500 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-500 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
                         >
                             <Plus size={14} strokeWidth={3} /> Add Supply
                         </button>
                     )}
                 />
-
 
                 <main className="p-4 sm:p-6 space-y-6">
                     {isProcurementReadOnly && (
@@ -221,574 +209,81 @@ export default function ProcurementIndex({ auth, supplies, requests, finances, t
                         </div>
                     )}
                     
+                    <ProcurementMetrics 
+                        totalItems={totalItems}
+                        lowStockItems={lowStockItems}
+                        totalValue={totalValue}
+                        shouldAnimateKPI={shouldAnimateKPI}
+                    />
 
-
-
-                    {/* --- INVENTORY TAB --- */}
-                    {activeTab === 'inventory' && (
-                        <>
-                    
-
-
-                    {/* KPI CARDS */}
-                    <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
-                            <KPICard 
-                                title="Total Items"
-                                value={totalItems}
-                                icon={Box}
-                                bg="bg-blue-50"
-                                color="text-blue-600"
-                                animate={shouldAnimateKPI}
-                            />
-                        </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
-                            <KPICard 
-                                title="Low Stock Alerts"
-                                value={lowStockItems}
-                                icon={AlertTriangle}
-                                bg={lowStockItems > 0 ? 'bg-red-50' : 'bg-green-50'}
-                                color={lowStockItems > 0 ? 'text-red-600' : 'text-green-600'}
-                                animate={shouldAnimateKPI}
-                            />
-                        </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
-                            <KPICard 
-                                title="Total Value"
-                                value={`₱${parseFloat(totalValue).toLocaleString()}`}
-                                icon={TrendingUp}
-                                bg="bg-emerald-50"
-                                color="text-emerald-600"
-                                animate={shouldAnimateKPI}
-                            />
-                        </div>
-                    </div>
-
-                    {/* SUPPLIES TABLE */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-                        
-                        {/* Table Header / Toolbar */}
-                        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/30">
-                            <div className="flex items-center gap-3">
-                                <h3 className="font-bold text-gray-900 text-xs">Supply Inventory</h3>
-                                <select 
-                                    value={filterCategory}
-                                    onChange={e => setFilterCategory(e.target.value)}
-                                    className="text-[11px] font-bold border border-gray-200 bg-white rounded-xl focus:ring-clay-500 focus:border-clay-500 px-3 py-1.5 text-gray-600 transition-colors cursor-pointer"
-                                >
-                                    <option value="all">All Categories</option>
-                                    {categoriesList.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="relative w-full sm:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                                <input 
-                                    type="text" 
-                                    disabled={!canEditProcurement}
-                                    placeholder="Search supplies..." 
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
-                                />
-                                {searchTerm && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchTerm('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                                        title="Clear search"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Table Body */}
-                        <div className="space-y-3 p-4 sm:hidden">
-                            {filteredSupplies.length > 0 ? (
-                                filteredSupplies.map((supply) => (
-                                    <div key={supply.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex min-w-0 items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200 shrink-0">
-                                                    {supply.product && supply.product.img ? (
-                                                        <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
-                                                    ) : (
-                                                        <Package size={14} />
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-bold text-gray-900">{supply.name}</p>
-                                                    <p className="mt-1 text-[11px] text-gray-500">{supply.category}</p>
-                                                </div>
-                                            </div>
-                                            <div className="shrink-0">
-                                                {supply.quantity <= supply.min_stock ? (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                                                        <AlertTriangle size={10} /> Low Stock
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
-                                                        In Stock
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 text-xs">
-                                            <div>
-                                                <p className="font-bold uppercase tracking-wide text-gray-400">Stock</p>
-                                                <div className="mt-1">
-                                                    <QuickRestock 
-                                                        item={supply}
-                                                        canEdit={canEditProcurement}
-                                                        onRestock={handleQuickRestock}
-                                                        unit={supply.unit}
-                                                        type="supply"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="font-bold uppercase tracking-wide text-gray-400">Unit Cost</p>
-                                                <p className="mt-1 font-semibold text-gray-700">{supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString()}` : '-'}</p>
-                                            </div>
-                                            <div className="col-span-2">
-                                                <p className="font-bold uppercase tracking-wide text-gray-400">Supplier</p>
-                                                <p className="mt-1 font-semibold text-gray-700">{supply.supplier || '-'}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3 flex items-center justify-end gap-2">
-
-                                            <button
-                                                disabled={!canEditStockRequests}
-                                                onClick={() => {
-                                                    setSupplyToRequest(supply);
-                                                    setRequestQuantity(supply.min_stock * 2);
-                                                    setShowConfirmRequest(true);
-                                                }}
-                                                className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                title="Request Restock"
-                                            >
-                                                <Banknote size={14} />
-                                            </button>
-                                            <button
-                                                disabled={!canEditProcurement}
-                                                onClick={() => handleDelete(supply)}
-                                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <WorkspaceEmptyState
-                                    icon={Package}
-                                    title="No supplies found"
-                                    description="Start by adding inventory items so Procurement can track stock levels, restocks, and accounting requests."
-                                    actionLabel={canEditProcurement ? 'Add New Supply' : 'Read Only'}
-                                    onAction={canEditProcurement ? () => setShowAddModal(true) : undefined}
-                                />
-                            )}
-                        </div>
-                        <div className="hidden overflow-x-auto flex-1 sm:block">
-                            <table className="w-full min-w-[900px] text-left">
-                                <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                    <tr>
-                                        <th className="px-4 py-3">Item Name</th>
-                                        <th className="px-4 py-3">Category</th>
-                                        <th className="px-4 py-3">Stock</th>
-                                        <th className="px-4 py-3">Unit Cost</th>
-                                        <th className="px-4 py-3">Supplier</th>
-                                        <th className="px-4 py-3">Status</th>
-                                        <th className="px-4 py-3 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {isNavigating && filteredSupplies.length === 0 ? (
-                                        <TableBodySkeleton rows={5} cols={7} />
-                                    ) : filteredSupplies.length > 0 ? (
-                                        <AnimatePresence initial={false}>
-                                            {filteredSupplies.map((supply) => (
-                                                <motion.tr 
-                                                    key={supply.id} 
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    className="hover:bg-gray-50/50 transition duration-150"
-                                                >
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200">
-                                                                {supply.product && supply.product.img ? (
-                                                                    <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
-                                                                ) : (
-                                                                    <Package size={14} />
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-gray-900 text-xs">{supply.name}</p>
-                                                                {supply.notes && <p className="text-[10px] text-gray-500">{supply.notes}</p>}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-[10px] text-gray-600">{supply.category}</td>
-                                                    <td className="px-4 py-3">
-                                                        <QuickRestock 
-                                                            item={supply}
-                                                            canEdit={canEditProcurement}
-                                                            onRestock={handleQuickRestock}
-                                                            unit={supply.unit}
-                                                            type="supply"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-[10px] text-gray-600">
-                                                        {supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString()}` : '-'}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-[10px] text-gray-600">{supply.supplier || '-'}</td>
-                                                    <td className="px-4 py-3">
-                                                        {supply.quantity <= supply.min_stock ? (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                                                                <AlertTriangle size={10} /> Low Stock
-                                                            </span>
-                                                        ) : (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
-                                                                In Stock
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                disabled={!canEditStockRequests}
-                                                                onClick={() => {
-                                                                    setSupplyToRequest(supply);
-                                                                    setRequestQuantity(supply.min_stock * 2);
-                                                                    setShowConfirmRequest(true);
-                                                                }}
-                                                                className="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                                title="Request Restock"
-                                                            >
-                                                                <Banknote size={14} />
-                                                            </button>
-                                                            <button
-                                                                disabled={!canEditProcurement}
-                                                                onClick={() => handleDelete(supply)}
-                                                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                                                title="Delete"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </motion.tr>
-                                            ))}
-                                        </AnimatePresence>
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="7" className="px-6 py-20 text-center">
-                                                <WorkspaceEmptyState
-                                                    icon={Package}
-                                                    title="No supplies found"
-                                                    description="Start by adding inventory items so Procurement can track stock levels, restocks, and accounting requests."
-                                                    actionLabel={canEditProcurement ? 'Add New Supply' : 'Read Only'}
-                                                    onAction={canEditProcurement ? () => setShowAddModal(true) : undefined}
-                                                />
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    </>
-                    )}
-
-
-
+                    <SuppliesTable 
+                        supplies={supplies}
+                        categoriesList={categoriesList}
+                        canEditProcurement={canEditProcurement}
+                        canEditStockRequests={canEditStockRequests}
+                        isNavigating={isNavigating}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        filterCategory={filterCategory}
+                        setFilterCategory={setFilterCategory}
+                        onQuickRestock={handleQuickRestock}
+                        onRequestRestock={handleRequestRestockClick}
+                        onDelete={handleDeleteClick}
+                        onOpenAddSupply={() => setShowAddModal(true)}
+                    />
                 </main>
             </div>
 
+            {/* Modal Subcomponents */}
+            <AddSupplyModal 
+                show={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                canEditProcurement={canEditProcurement}
+                categoriesList={categoriesList}
+                unitsList={unitsList}
+                data={data}
+                setData={setData}
+                errors={errors}
+                processing={processing}
+                onSubmit={handleAddSubmit}
+                skuValidation={skuValidation}
+            />
 
+            <RestockSupplyModal 
+                show={showRestockModal}
+                onClose={() => {
+                    setShowRestockModal(false);
+                    setSelectedSupply(null);
+                }}
+                canEditProcurement={canEditProcurement}
+                selectedSupply={selectedSupply}
+                restockForm={restockForm}
+                onSubmit={handleRestockSubmit}
+            />
 
+            <RequestRestockModal 
+                show={showConfirmRequest}
+                onClose={() => {
+                    setShowConfirmRequest(false);
+                    setSupplyToRequest(null);
+                }}
+                canEditStockRequests={canEditStockRequests}
+                supply={supplyToRequest}
+                requestQuantity={requestQuantity}
+                setRequestQuantity={setRequestQuantity}
+                onSubmit={handleRequestRestockSubmit}
+            />
 
-            {/* ADD SUPPLY MODAL */}
-            <Modal show={showAddModal} onClose={() => setShowAddModal(false)} maxWidth="md">
-                <form onSubmit={handleAdd} className="p-5">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-bold text-gray-900">Add New Supply</h2>
-                        <button type="button" onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <InputLabel value="Item SKU" />
-                                <div className="relative">
-                                    <input 
-                                        type="text" 
-                                        className={`w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition pr-10 ${skuValidation.isValid === false ? 'border-red-300 bg-red-50' : ''}`} 
-                                        placeholder="e.g., CLAY-TER-01"
-                                        value={data.sku} 
-                                        onChange={e => setData('sku', e.target.value)} 
-                                        required 
-                                    />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                                        {data.sku && (
-                                            skuValidation.isValid === null ? (
-                                                <Loader2 size={14} className="animate-spin text-gray-400" />
-                                            ) : skuValidation.isValid ? (
-                                                <CheckCircle size={14} className="text-emerald-500" />
-                                            ) : (
-                                                <AlertCircle size={14} className="text-red-500" />
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-                                {skuValidation.isValid === false && (
-                                    <p className="mt-1 text-[10px] font-bold text-red-600 uppercase tracking-tight">
-                                        {skuValidation.message}
-                                    </p>
-                                )}
-                                {errors.sku && <p className="mt-1 text-xs text-red-500 font-medium">{errors.sku}</p>}
-                            </div>
-
-                            <div className="sm:col-span-2">
-                                <InputLabel value="Item Name" />
-                                <input 
-                                    type="text" 
-                                    className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
-                                    placeholder="e.g., Terracotta Clay"
-                                    value={data.name} 
-                                    onChange={e => setData('name', e.target.value)} 
-                                    required 
-                                />
-                                {errors.name && <p className="mt-1 text-xs text-red-500 font-medium">{errors.name}</p>}
-                            </div>
-                            <div>
-                                <InputLabel value="Category" />
-                                <select 
-                                    disabled={!canEditProcurement}
-                                    className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
-                                    value={data.category} 
-                                    onChange={e => setData('category', e.target.value)}
-                                >
-                                    {categoriesList.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <InputLabel value="Quantity" />
-                                <input 
-                                    type="number" 
-                                    disabled={!canEditProcurement}
-                                    className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
-                                    value={data.quantity} 
-                                    onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
-                                    onChange={e => setData('quantity', e.target.value.replace(/[-.]/g, ""))} 
-                                    required 
-                                    min="0"
-                                />
-                            </div>
-                            <div>
-                                <InputLabel value="Unit" />
-                                <select 
-                                    disabled={!canEditProcurement}
-                                    className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
-                                    value={data.unit} 
-                                    onChange={e => setData('unit', e.target.value)}
-                                >
-                                    {unitsList.map(u => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <InputLabel value="Unit Cost (₱)" />
-                                <input 
-                                    type="number" 
-                                    min="0"
-                                    step="0.01"
-                                    disabled={!canEditProcurement}
-                                    className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
-                                    placeholder="0.00"
-                                    value={data.unit_cost} 
-                                    onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                    onChange={e => setData('unit_cost', e.target.value.replace(/-/g, ""))} 
-                                />
-                            </div>
-                            <div>
-                                <InputLabel value="Supplier" />
-                                <input 
-                                    type="text" 
-                                    disabled={!canEditProcurement}
-                                    className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
-                                    placeholder="Supplier name"
-                                    value={data.supplier} 
-                                    onChange={e => setData('supplier', e.target.value)} 
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <InputLabel value="Notes" />
-                            <textarea 
-                                disabled={!canEditProcurement}
-                                className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition resize-none" 
-                                rows={2}
-                                placeholder="Optional notes..."
-                                value={data.notes} 
-                                onChange={e => setData('notes', e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mt-6 flex justify-end gap-3 pt-3 border-t border-gray-100">
-                        {Object.keys(errors).length > 0 && (
-                            <p className="mr-auto inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700">
-                                <AlertCircle size={13} />
-                                Review the highlighted supply fields first.
-                            </p>
-                        )}
-                        <button type="button" onClick={() => setShowAddModal(false)} className="px-3 py-1.5 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={!canEditProcurement || processing} className="px-4 py-1.5 text-xs bg-clay-600 text-white rounded-lg font-bold hover:bg-clay-700 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50">
-                            {processing ? 'Adding...' : 'Add Supply'}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
-
-            {/* RESTOCK MODAL */}
-            <Modal show={showRestockModal} onClose={() => setShowRestockModal(false)} maxWidth="sm">
-                <form onSubmit={handleRestock} className="p-5">
-                    <h2 className="text-lg font-bold text-gray-900 mb-1">Restock Supply</h2>
-                    <p className="text-xs text-gray-500 mb-4">
-                        Add stock to <strong>{selectedSupply?.name}</strong>
-                    </p>
-
-                    <div>
-                        <InputLabel value="Quantity to Add" />
-                        <input 
-                            type="number" 
-                            disabled={!canEditProcurement}
-                            className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-clay-500 focus:ring-clay-500 shadow-sm transition" 
-                            value={restockForm.data.quantity} 
-                            onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
-                            onChange={e => restockForm.setData('quantity', e.target.value.replace(/[-.]/g, ""))} 
-                            required 
-                            min="1"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">Current: {selectedSupply?.quantity} {selectedSupply?.unit}</p>
-                    </div>
-
-                    <div className="mt-4 flex justify-end gap-3">
-                        <button type="button" onClick={() => setShowRestockModal(false)} className="px-3 py-1.5 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button type="submit" disabled={!canEditProcurement || restockForm.processing} className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-50">
-                            {restockForm.processing ? 'Adding...' : 'Add Stock'}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
-
-            {/* CONFIRMATION MODAL FOR REQUEST */}
-            <Modal 
-                show={showConfirmRequest} 
-                onClose={() => setShowConfirmRequest(false)}
-                maxWidth="sm"
-            >
-                <div className="p-5">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-3 text-amber-600 mx-auto">
-                        <Banknote size={20} />
-                    </div>
-                    <div className="text-center">
-                        <h2 className="text-lg font-bold text-gray-900 mb-1">Request Restock?</h2>
-                        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                            This will create a purchase request for <strong>{supplyToRequest?.name}</strong>.
-                            <br/>
-                            The request will be sent to <strong>Accounting</strong> for budget approval.
-                        </p>
-
-                        <div className="mb-4 text-left">
-                            <InputLabel value="Quantity to Request" />
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    disabled={!canEditStockRequests}
-                                    className="w-full border-gray-300 rounded-lg text-xs py-1.5 focus:border-amber-500 focus:ring-amber-500 shadow-sm transition pr-12 font-bold" 
-                                    value={requestQuantity} 
-                                    onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
-                                    onChange={e => setRequestQuantity(e.target.value.replace(/[-.]/g, ""))} 
-                                    required 
-                                    min="1"
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">{supplyToRequest?.unit}</span>
-                            </div>
-                            <p className="text-[10px] text-gray-400 mt-1">Recommended: {supplyToRequest ? supplyToRequest.min_stock * 2 : 0} {supplyToRequest?.unit}</p>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-center gap-3">
-                        <button onClick={() => setShowConfirmRequest(false)} className="px-3 py-1.5 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                        <button 
-                            disabled={!canEditStockRequests}
-                            onClick={() => {
-                                if (!canEditStockRequests) return;
-                                router.post(route('supplies.request', supplyToRequest.id), { quantity: requestQuantity }, { 
-                                    preserveScroll: true,
-                                    onSuccess: () => {
-                                        setShowConfirmRequest(false);
-                                        setActionNotice(null);
-                                    },
-                                    onError: () => {
-                                        setActionNotice('Restock request could not be submitted right now.');
-                                        addToast('Restock request failed.', 'error');
-                                    }
-                                });
-                            }} 
-                            className="px-4 py-1.5 text-xs bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Submit Request
-                        </button>
-                    </div>
-                </div>
-            </Modal>
-            
-            {/* DELETE CONFIRMATION MODAL */}
-            <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} maxWidth="sm">
-                <div className="p-6 text-center">
-                    <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-sm animate-pulse-slow">
-                        <Trash2 size={28} />
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-900 mb-2">Delete Supply?</h2>
-                    <p className="text-xs text-gray-500 mb-6 leading-relaxed px-2">
-                        Are you sure you want to delete <strong className="text-gray-900">"{supplyToDelete?.name}"</strong>? 
-                        <br/><br/>
-                        This action is irreversible and will remove high-level tracking for this item from your inventory.
-                    </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-3 px-4">
-                        <button 
-                            onClick={() => setShowDeleteModal(false)}
-                            className="w-full sm:w-auto px-6 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition duration-200"
-                        >
-                            Cancel, Keep it
-                        </button>
-                        <button 
-                            disabled={!canEditProcurement}
-                            onClick={confirmDelete}
-                            className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition duration-200 shadow-lg shadow-red-200 active:scale-95 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <Trash2 size={18} /> Yes, Delete
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+            <DeleteSupplyModal 
+                show={showDeleteModal}
+                onClose={() => {
+                    setShowDeleteModal(false);
+                    setSupplyToDelete(null);
+                }}
+                canEditProcurement={canEditProcurement}
+                supply={supplyToDelete}
+                onConfirm={confirmDelete}
+            />
         </div>
     );
 }
