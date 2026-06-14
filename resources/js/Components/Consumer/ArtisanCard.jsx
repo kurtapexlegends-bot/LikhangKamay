@@ -55,4 +55,4 @@ export default React.memo(function ArtisanCard({ name, location, rating, image, 
             </div>
         </div>
     );
-}
+});
