@@ -9,8 +9,8 @@ export default function CatalogMetrics({
     animate = true,
 }) {
     return (
-        <div className="flex overflow-x-auto pb-2.5 gap-3 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-3 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
+        <div className="flex overflow-x-auto pb-2.5 gap-3 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
                 <KPICard
                     title="Total Products"
                     value={totalItems}
@@ -20,7 +20,7 @@ export default function CatalogMetrics({
                     animate={animate}
                 />
             </div>
-            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
+            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
                 <KPICard
                     title="Active Products"
                     value={activeCount}
@@ -30,7 +30,7 @@ export default function CatalogMetrics({
                     animate={animate}
                 />
             </div>
-            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
+            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
                 <KPICard
                     title="Available Slots"
                     value={remainingActivationSlots}

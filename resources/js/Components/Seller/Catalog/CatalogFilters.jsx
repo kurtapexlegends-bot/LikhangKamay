@@ -237,60 +237,6 @@ export default function CatalogFilters({
                 )}
             </div>
 
-            {/* Mobile Fixed Sticky Bulk Action Bar */}
-            {selectedProductIds.length > 0 && (
-                <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center pointer-events-none px-4 md:hidden">
-                    <div className="pointer-events-auto flex flex-col items-center gap-2.5 rounded-2xl border border-stone-200 bg-white/95 px-3.5 py-3 shadow-2xl backdrop-blur-xl w-full max-w-[540px]">
-                        <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-clay-50 border border-clay-100 text-clay-700 shadow-sm">
-                                    <Check size={14} className="text-clay-600" />
-                                </div>
-                                <span className="text-xs font-extrabold tracking-tight text-stone-900">{selectedProductIds.length} Selected</span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedProductIds([])}
-                                className="rounded-lg px-2 py-1 text-xs font-bold text-stone-500 hover:text-stone-850 hover:bg-stone-50 transition active:scale-95"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 w-full pt-1.5 border-t border-stone-100">
-                            <button
-                                type="button"
-                                disabled={!canEditProducts}
-                                onClick={() => {
-                                    runBulkStatusUpdate("Active");
-                                }}
-                                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-2 py-2.5 text-[11px] font-bold text-emerald-700 shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[44px]"
-                            >
-                                <CheckCircle size={12} /> Activate
-                            </button>
-                            <button
-                                type="button"
-                                disabled={!canEditProducts}
-                                onClick={() => {
-                                    runBulkStatusUpdate("Draft");
-                                }}
-                                className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-250 bg-amber-50 px-2 py-2.5 text-[11px] font-bold text-amber-700 shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[44px]"
-                            >
-                                <RotateCcw size={12} /> Draft
-                            </button>
-                            <button
-                                type="button"
-                                disabled={!canEditProducts}
-                                onClick={() => {
-                                    runBulkStatusUpdate("Archived");
-                                }}
-                                className="flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-2 py-2.5 text-[11px] font-bold text-stone-700 shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[44px]"
-                            >
-                                <Archive size={12} className="text-stone-400" /> Archive
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

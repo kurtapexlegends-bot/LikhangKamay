@@ -12,15 +12,15 @@ export default function ProductMobileCard({
     openAddModal,
 }) {
     return (
-        <div className="space-y-3 p-3 md:hidden">
+        <div className="space-y-3 p-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 md:hidden">
             {products.length > 0 ? (
                 products.map((product) => (
                     <div
                         key={product.id}
-                        className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
+                        className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm flex flex-col justify-between"
                     >
                         <div className="flex gap-4">
-                            <div className="pt-1 select-none">
+                            <div className="pt-1 select-none min-w-[44px] min-h-[44px] flex items-start justify-center shrink-0">
                                 <Checkbox
                                     checked={selectedProductIds.includes(product.id)}
                                     onChange={() => toggleProductSelection(product.id)}
