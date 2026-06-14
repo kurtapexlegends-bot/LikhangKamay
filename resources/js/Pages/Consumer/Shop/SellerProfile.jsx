@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import Footer from '@/Layouts/Footer';
@@ -80,13 +80,17 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
 
     useEffect(() => setPage(1), [searchTerm, categoryFilter, sortBy]);
 
+    const handleChatSeller = () => {
+        router.visit(route('buyer.chat', { user_id: seller.id }));
+    };
+
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
+        <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 animate-in fade-in duration-500">
             <ImpersonationBanner />
             <Head title={`${seller.name} - LikhangKamay Store`} />
-            <BuyerNavbar />
+            <BuyerNavbar hideMobileDock={true} />
 
-            <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8 pb-24 md:pb-8">
                 
                 {/* BACK BUTTON */}
                 <Link href={route('shop.index')} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-clay-600 mb-6 transition">
@@ -130,7 +134,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                             {/* Profile Info */}
                             <div className="text-center md:text-left flex-1">
                                 <div className="mb-2 flex flex-col items-center gap-3 md:flex-row md:items-center">
-                                    <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-stone-900 md:text-2xl">
+                                    <h1 className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tight text-stone-900 md:text-2xl">
                                         {seller.name}
                                         {seller.premium_tier === 'premium' && (
                                             <div title="Premium Artisan" className="flex items-center justify-center bg-amber-100 text-amber-500 rounded-full p-1.5 shadow-sm">
@@ -196,20 +200,20 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                 {bestSellers.length > 0 && (
                     <div className="mb-10">
                         <div className="mb-6 flex flex-col gap-1 px-1 select-none">
-                            <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2 tracking-tight">
+                            <h2 className="text-xl font-serif font-bold text-stone-900 flex items-center gap-2 tracking-tight">
                                 <Trophy size={18} className="text-amber-500 shrink-0" />
                                 Store Best Sellers
                             </h2>
                             <p className="text-xs text-stone-500 font-medium">Curated high-demand artisan pieces from this workshop</p>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                        <div className="flex overflow-x-auto flex-nowrap lg:grid lg:grid-cols-5 gap-4 pb-4 scrollbar-none snap-x snap-mandatory -mx-4 px-4 lg:mx-0 lg:px-0">
                             {bestSellers.map((product, idx) => {
                                 const isTop = idx === 0;
                                 return (
                                     <Link 
                                         href={route('product.show', product.slug)}
                                         key={product.id}
-                                        className={`group bg-white rounded-[24px] border overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-stone-200/80 active:scale-[0.98] flex flex-col ${
+                                        className={`group bg-white rounded-[24px] border overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-stone-200/80 active:scale-[0.98] flex flex-col w-[170px] sm:w-[200px] lg:w-auto shrink-0 snap-start ${
                                             isTop ? 'border-amber-300 ring-2 ring-amber-100 shadow-sm shadow-amber-900/5' : 'border-stone-150 shadow-sm hover:border-clay-200'
                                         }`}
                                     >
@@ -257,44 +261,64 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                 <div className="mb-6 flex flex-col gap-4 rounded-[24px] border border-stone-200/80 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-2 px-1">
                         <Package size={17} className="text-clay-650 shrink-0" />
-                        <h2 className="text-base font-bold text-stone-900 tracking-tight">Products Collection</h2>
+                        <h2 className="text-base font-serif font-bold text-stone-900 tracking-tight">Products Collection</h2>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        <div className="relative flex-1 min-w-[200px] w-full md:w-64">
-                            <Search size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(event) => setSearchTerm(event.target.value)}
-                                placeholder="Search products..."
-                                className="w-full rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-10 pr-3 text-xs font-semibold text-stone-600 transition-colors focus:bg-white focus:border-clay-500 focus:ring-clay-500/10 focus:ring-4 min-h-[44px]"
-                            />
-                        </div>
-                        
-                        <select
-                            value={categoryFilter}
-                            onChange={(event) => setCategoryFilter(event.target.value)}
-                            className="rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-3 pr-8 text-xs font-bold text-stone-600 transition-colors focus:bg-white focus:border-clay-500/10 focus:ring-4 cursor-pointer min-h-[44px]"
-                        >
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                        {/* Mobile/Tablet Category Tag pills (horizontal scroll) */}
+                        <div className="flex md:hidden items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none pb-1 max-w-full -mx-4 px-4 select-none">
                             {categoryOptions.map((option) => (
-                                <option key={option} value={option}>
-                                    {option === 'all' ? 'All Categories' : option}
-                                </option>
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => setCategoryFilter(option)}
+                                    className={`inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-bold transition-all min-h-[40px] shrink-0 border ${
+                                        categoryFilter === option
+                                            ? 'bg-clay-650 border-clay-700 text-white shadow-sm shadow-clay-600/10'
+                                            : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                                    }`}
+                                >
+                                    {option === 'all' ? 'All' : option}
+                                </button>
                             ))}
-                        </select>
-                        
-                        <select
-                            value={sortBy}
-                            onChange={(event) => setSortBy(event.target.value)}
-                            className="rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-3 pr-8 text-xs font-bold text-stone-600 transition-colors focus:bg-white focus:border-clay-500/10 focus:ring-4 cursor-pointer min-h-[44px]"
-                        >
-                            <option value="featured">Featured</option>
-                            <option value="popular">Most Sold</option>
-                            <option value="rating">Top Rated</option>
-                            <option value="price_low">Price: Low to High</option>
-                            <option value="price_high">Price: High to Low</option>
-                        </select>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                            <div className="relative flex-1 min-w-[200px] w-full md:w-64">
+                                <Search size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(event) => setSearchTerm(event.target.value)}
+                                    placeholder="Search products..."
+                                    className="w-full rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-10 pr-3 text-xs font-semibold text-stone-600 transition-colors focus:bg-white focus:border-clay-500 focus:ring-clay-500/10 focus:ring-4 min-h-[44px]"
+                                />
+                            </div>
+                            
+                            <select
+                                value={categoryFilter}
+                                onChange={(event) => setCategoryFilter(event.target.value)}
+                                className="hidden md:block rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-3 pr-8 text-xs font-bold text-stone-600 transition-colors focus:bg-white focus:border-clay-500/10 focus:ring-4 cursor-pointer min-h-[44px]"
+                            >
+                                {categoryOptions.map((option) => (
+                                    <option key={option} value={option}>
+                                        {option === 'all' ? 'All Categories' : option}
+                                    </option>
+                                ))}
+                            </select>
+                            
+                            <select
+                                value={sortBy}
+                                onChange={(event) => setSortBy(event.target.value)}
+                                className="rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-3 pr-8 text-xs font-bold text-stone-600 transition-colors focus:bg-white focus:border-clay-500/10 focus:ring-4 cursor-pointer min-h-[44px]"
+                            >
+                                <option value="featured">Featured</option>
+                                <option value="popular">Most Sold</option>
+                                <option value="rating">Top Rated</option>
+                                <option value="price_low">Price: Low to High</option>
+                                <option value="price_high">Price: High to Low</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -383,6 +407,38 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
 
             </main>
             <Footer />
+
+            {/* Mobile Sticky Shop Dock */}
+            <div className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-stone-200/85 px-4 py-3.5 flex items-center justify-between gap-3 z-40 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] select-none">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <UserAvatar user={seller} className="w-9 h-9 rounded-full border border-stone-100 shrink-0" />
+                    <div className="min-w-0">
+                        <h4 className="truncate text-xs font-bold text-stone-900 tracking-tight">{seller.name}</h4>
+                        <p className="text-[9px] text-stone-400 font-semibold uppercase tracking-wider">{seller.location}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                        type="button"
+                        onClick={toggleFollow}
+                        className={`inline-flex items-center justify-center rounded-xl px-3 py-2 text-[10px] font-bold border transition-all active:scale-95 min-h-[36px] ${
+                            isFollowed
+                                ? 'border-rose-100 bg-rose-50 text-rose-600'
+                                : 'border-stone-200 bg-white text-stone-600'
+                        }`}
+                    >
+                        <Heart size={11} className={`mr-1 ${isFollowed ? 'fill-rose-500 text-rose-500' : ''}`} />
+                        {isFollowed ? 'Following' : 'Follow'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleChatSeller}
+                        className="inline-flex items-center justify-center rounded-xl bg-stone-950 text-white px-3 py-2 text-[10px] font-bold transition-all active:scale-95 min-h-[36px]"
+                    >
+                        Chat
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

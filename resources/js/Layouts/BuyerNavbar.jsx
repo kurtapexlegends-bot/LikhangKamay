@@ -11,7 +11,7 @@ import {
 import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
 
-export default function BuyerNavbar() {
+export default function BuyerNavbar({ hideMobileDock = false }) {
     // Enable Real-time synchronization
     useRealtime();
 
@@ -500,7 +500,7 @@ export default function BuyerNavbar() {
             </div>
         )}
 
-        <MobileDock />
+        {!hideMobileDock && <MobileDock />}
         </>
     );
 }
