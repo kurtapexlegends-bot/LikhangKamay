@@ -221,7 +221,7 @@ export default function ProductTable({
                     ))
                 ) : (
                     <tr>
-                        <td colSpan="7" className="px-6 py-12 text-center">
+                        <td colSpan="7" className="px-6 py-12 text-center align-top">
                             <WorkspaceEmptyState
                                 compact
                                 align="top"

@@ -73,7 +73,7 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
                         damping: 30,
                         opacity: { duration: 0.2 }
                     }}
-                    className="fixed left-0 right-0 mx-auto z-45 sm:z-50 w-max pointer-events-none"
+                    className="fixed left-0 right-0 mx-auto z-[45] sm:z-50 w-max pointer-events-none"
                     style={{
                         bottom: isMobile ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : '2rem'
                     }}
