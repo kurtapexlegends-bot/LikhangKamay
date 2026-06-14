@@ -123,6 +123,7 @@ export default function ProductMobileCard({
                         icon={Package}
                         title="No products found"
                         description="Create your first product or adjust the current filters."
+                        className="pb-20"
                     />
                 </div>
             )}
