@@ -204,15 +204,7 @@ export default function ReleaseRequestModal({
                     <p className="mt-0.5 text-lg font-bold tracking-tight text-clay-900">{formatMoney(item.amount)}</p>
                 </div>
             )}
-            {isSale && (
-                <button
-                    type="button"
-                    onClick={handlePrintStatement}
-                    className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-teal-700 min-h-[44px]"
-                >
-                    <Download size={14} strokeWidth={2.5} /> Download PDF
-                </button>
-            )}
+            {/* Sale download action moved contextually to table card header */}
         </div>
     );
 
@@ -265,15 +257,7 @@ export default function ReleaseRequestModal({
         </div>
     ) : (
         <div className="flex items-center justify-between w-full gap-2">
-            {isSale && (
-                <button
-                    type="button"
-                    onClick={handlePrintStatement}
-                    className="inline-flex sm:hidden items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-teal-700 min-h-[44px]"
-                >
-                    <Download size={14} strokeWidth={2.5} /> Download PDF
-                </button>
-            )}
+            {/* Download PDF button moved to card header */}
             <button
                 type="button"
                 onClick={onClose}
@@ -375,9 +359,18 @@ export default function ReleaseRequestModal({
                 {/* 2. Order settlement layout */}
                 {isSale && (
                     <div className="rounded-[1.5rem] border border-stone-200 bg-white shadow-sm overflow-hidden">
-                        <div className="px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-stone-800">Financial Ledger Breakdown</p>
-                            <p className="mt-1 text-[12px] font-medium text-stone-500">Gross Sales - Platform Fees - Shipping - Tax = Net Payout</p>
+                        <div className="px-6 py-5 border-b border-stone-100 bg-[#FDFBF9] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-stone-800">Financial Ledger Breakdown</p>
+                                <p className="mt-1 text-[12px] font-medium text-stone-500">Gross Sales - Platform Fees - Shipping - Tax = Net Payout</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handlePrintStatement}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-clay-100/50 bg-clay-50/50 px-4 py-2 text-xs font-bold text-clay-700 hover:bg-clay-100 hover:text-clay-800 transition-all duration-200 min-h-[44px] w-full sm:w-auto shrink-0"
+                            >
+                                <Download size={14} strokeWidth={2.5} /> Download PDF
+                            </button>
                         </div>
                         <div className="p-6 bg-white space-y-6">
                             <div className="grid grid-cols-2 gap-4">
