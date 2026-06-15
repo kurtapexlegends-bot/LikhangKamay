@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import SellerSidebar from '@/Layouts/SellerSidebar';
 import SellerHeader from '@/Layouts/SellerHeader';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
@@ -147,6 +148,15 @@ export default function Dashboard({ auth }) {
                 show={showWelcome} 
                 onClose={closeWelcomeModal} 
             />
+
+            {/* Mobile/Tablet Floating Action Button (FAB) */}
+            <Link
+                href={route('products.index')}
+                className="fixed bottom-6 right-6 z-40 lg:hidden bg-clay-600 hover:bg-clay-700 text-white rounded-full p-4 shadow-xl active:scale-95 transition-all flex items-center justify-center min-h-[56px] min-w-[56px] border border-clay-500/20"
+                title="Manage Products"
+            >
+                <Plus size={24} />
+            </Link>
         </div>
     );
 }
