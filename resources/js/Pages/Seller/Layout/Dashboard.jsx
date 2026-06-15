@@ -1,126 +1,25 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Head, Link, usePage, router } from '@inertiajs/react';
-import { motion, animate } from 'framer-motion';
+import { Head, router, usePage } from '@inertiajs/react';
 import SellerSidebar from '@/Layouts/SellerSidebar';
 import SellerHeader from '@/Layouts/SellerHeader';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
-import Dropdown from '@/Components/Dropdown';
-import NotificationDropdown from '@/Components/NotificationDropdown';
-import Modal from '@/Components/Modal';
-import { 
-    LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
-    Search, Calendar, ChevronDown, 
-    TrendingUp, TrendingDown, DollarSign, Users, CreditCard,
-    MoreHorizontal, Filter, ArrowUpRight, XCircle, CheckCircle2, Truck, AlertCircle, Check,
-    LogOut, User, Download, Plus, Menu, Crown, Minus, Sparkles
-} from 'lucide-react';
-import { 
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend
-} from 'recharts';
-import ArtisanSkeleton from '@/Components/Consumer/ArtisanSkeleton';
-import CompactPagination from '@/Components/CompactPagination';
-import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
-const AnimatedCounter = ({ value, formatter = (v) => Math.round(v).toLocaleString(), duration = 1.5 }) => {
-    const nodeRef = useRef(null);
-
-    useEffect(() => {
-        if (!nodeRef.current) return;
-        
-        const controls = animate(0, value, {
-            duration: duration,
-            onUpdate(value) {
-                if (nodeRef.current) {
-                    nodeRef.current.textContent = formatter(value);
-                }
-            }
-        });
-
-        return () => controls.stop();
-    }, [value]);
-
-    return <span ref={nodeRef}>{formatter(0)}</span>;
-};
-
-const COLORS = ['#c07251', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
-
-const MetricCard = ({ title, value, growth, icon: Icon, bg, text, animate = true }) => {
-    let growthColor = 'text-gray-500';
-    let GrowthIcon = Minus;
-    let growthPrefix = '';
-
-    if (growth > 0) {
-        growthColor = 'text-emerald-600';
-        GrowthIcon = TrendingUp;
-        growthPrefix = '+';
-    } else if (growth < 0) {
-        growthColor = 'text-rose-600';
-        GrowthIcon = TrendingDown;
-        growthPrefix = ''; // The negative sign is inherently part of the number
-    }
-    
-    return (
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow group"
-        >
-            <div>
-                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
-                    {animate && (typeof value === 'number' || (typeof value === 'string' && value.includes('₱'))) ? (
-                        typeof value === 'number' ? (
-                            <AnimatedCounter value={value} />
-                        ) : (
-                            <AnimatedCounter value={parseFloat(value.replace(/[^\d.]/g, ''))} formatter={(v) => `₱${Math.round(v).toLocaleString()}`} />
-                        )
-                    ) : (
-                        value
-                    )}
-                </h3>
-                
-                {growth !== undefined && (
-                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>
-                        <GrowthIcon size={12}/>
-                        <span>{growthPrefix}{growth}% vs last month</span>
-                    </div>
-                )}
-                {growth === undefined && <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>}
-            </div>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} ${text} group-hover:scale-110 transition-transform`}>
-                <Icon size={20} />
-            </div>
-        </motion.div>
-    );
-};
-
-const StatusBadge = ({ status }) => {
-    const styles = {
-        'Pending': 'bg-amber-50 text-amber-700 border-amber-100',
-        'Accepted': 'bg-clay-50 text-clay-700 border-clay-100',
-        'Shipped': 'bg-blue-50 text-blue-700 border-blue-100',
-        'Delivered': 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        'Rejected': 'bg-rose-50 text-rose-700 border-rose-100',
-        'Cancelled': 'bg-stone-100 text-stone-600 border-stone-200',
-    };
-    return (
-        <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${styles[status] || 'bg-gray-100'}`}>
-            {status}
-        </span>
-    );
-};
+// Subcomponents
+import DashboardKPIs from '@/Components/Seller/Dashboard/DashboardKPIs';
+import ShopHealthStrip from '@/Components/Seller/Dashboard/ShopHealthStrip';
+import RevenueAnalyticsChart from '@/Components/Seller/Dashboard/RevenueAnalyticsChart';
+import SalesByCategoryChart from '@/Components/Seller/Dashboard/SalesByCategoryChart';
+import RecentOrdersPreview from '@/Components/Seller/Dashboard/RecentOrdersPreview';
+import WelcomeModal from '@/Components/Seller/Dashboard/WelcomeModal';
+import MobileActionBar from '@/Components/Seller/Dashboard/MobileActionBar';
 
 export default function Dashboard({ auth }) {
-    const { metrics: initialMetrics, chartData, categoryData, recentOrders, filters, subscription } = usePage().props;
+    const { metrics, chartData, categoryData, recentOrders, filters } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [chartFilter, setChartFilter] = useState('Monthly');
-    const [metrics, setMetrics] = useState(initialMetrics);
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || 'All');
     const [date, setDate] = useState(filters.date || '');
-    const [pendingRequests, setPendingRequests] = useState(initialMetrics.pending_requests || 0);
     const [isLoading, setIsLoading] = useState(false);
     const searchTimeoutRef = useRef(null);
     
@@ -187,10 +86,8 @@ export default function Dashboard({ auth }) {
         applyFilters({ date: val });
     };
 
-    // Polling API logic has been removed as it was hitting a 404.
-
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800 pb-16 lg:pb-0">
             <ImpersonationBanner />
             <Head title="Dashboard" />
             <SellerSidebar active="overview" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -207,458 +104,53 @@ export default function Dashboard({ auth }) {
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
-                <main className="flex-1 p-6 overflow-y-auto space-y-6">
-                    {/* 1. KEY METRICS CARDS (STRATEGIC PRIORITY) */}
-                    <div className="flex overflow-x-auto pb-2.5 gap-6 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-                        {isLoading ? (
-                            <ArtisanSkeleton variant="stat" count={4} />
-                        ) : (
-                            <>
-                                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
-                                    <MetricCard 
-                                        title="Total Revenue" 
-                                        value={`₱${Number(metrics.revenue).toLocaleString()}`} 
-                                        growth={metrics.revenue_growth} 
-                                        icon={DollarSign} 
-                                        bg="bg-emerald-50" 
-                                        text="text-emerald-600" 
-                                        animate={shouldAnimateKPI}
-                                    />
-                                </div>
-                                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
-                                    <MetricCard 
-                                        title="Total Orders" 
-                                        value={metrics.orders} 
-                                        growth={metrics.orders_growth} 
-                                        icon={ShoppingBag} 
-                                        bg="bg-clay-50" 
-                                        text="text-clay-600" 
-                                        animate={shouldAnimateKPI}
-                                    />
-                                </div>
-                                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
-                                    <MetricCard 
-                                        title="Total Customers" 
-                                        value={metrics.customers} 
-                                        growth={metrics.customers_growth} 
-                                        icon={Users} 
-                                        bg="bg-rose-50" 
-                                        text="text-rose-600" 
-                                        animate={shouldAnimateKPI}
-                                    />
-                                </div>
-                                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
-                                    <MetricCard 
-                                        title="Avg. Order Value" 
-                                        value={`₱${Number(metrics.avg_value).toLocaleString()}`} 
-                                        growth={metrics.avg_growth} 
-                                        icon={CreditCard} 
-                                        bg="bg-stone-100" 
-                                        text="text-stone-600" 
-                                        animate={shouldAnimateKPI}
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </div>
+                <main className="flex-1 p-6 overflow-y-auto space-y-6 pb-24 lg:pb-6">
+                    {/* Key Metrics Overview Grid */}
+                    <DashboardKPIs 
+                        metrics={metrics} 
+                        isLoading={isLoading} 
+                        shouldAnimateKPI={shouldAnimateKPI} 
+                    />
 
-                    {/* 2. COMPACT SHOP HEALTH STRIP (OPERATIONAL INSIGHTS) */}
-                    {(metrics.pending_orders > 0 || metrics.stalled_orders > 0 || metrics.low_stock_count > 0) && (
-                        <motion.div 
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-wrap items-center gap-3 bg-white/40 backdrop-blur-md border border-stone-200/60 rounded-2xl p-3 px-4 shadow-sm"
-                        >
-                            <div className="flex items-center gap-2 pr-4 border-r border-stone-200">
-                                <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Shop Health</span>
-                            </div>
+                    {/* Shop Operational Health Strip */}
+                    <ShopHealthStrip metrics={metrics} />
 
-                            <div className="flex flex-wrap items-center gap-2">
-                                {metrics.stalled_orders > 0 && (
-                                    <Link 
-                                        href={route('orders.index')}
-                                        className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-rose-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    >
-                                        <AlertCircle size={14} />
-                                        <span>{metrics.stalled_orders} Stalled Orders</span>
-                                    </Link>
-                                )}
-
-                                {metrics.pending_orders > 0 && (
-                                    <Link 
-                                        href={route('orders.index', { status: 'Pending' })}
-                                        className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    >
-                                        <ShoppingBag size={14} />
-                                        <span>{metrics.pending_orders} New Orders</span>
-                                    </Link>
-                                )}
-
-                                {metrics.low_stock_count > 0 && (
-                                    <Link 
-                                        href={route('products.index', { tab: 'Low Stock' })}
-                                        className="flex items-center gap-2 bg-clay-50 hover:bg-clay-100 text-clay-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-clay-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    >
-                                        <Box size={14} />
-                                        <span>{metrics.low_stock_count} Low Stock Items</span>
-                                    </Link>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-
+                    {/* Charts Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* 2. REVENUE ANALYTICS CHART */}
-                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">Revenue Analytics</h3>
-                                    <p className="text-sm text-gray-500">Income over time</p>
-                                </div>
-                                <div className="flex bg-gray-100 p-1 rounded-lg">
-                                    {['Monthly', 'Yearly'].map((filter) => (
-                                        <button
-                                            key={filter}
-                                            onClick={() => setChartFilter(filter)}
-                                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all active:scale-95 ${chartFilter === filter ? 'bg-white text-clay-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                        >
-                                            {filter}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div className="h-80 w-full relative">
-                                {isLoading ? (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl transition-all">
-                                        <div className="h-full w-full relative overflow-hidden rounded-xl bg-stone-50/50">
-                                            <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
-                                        </div>
-                                    </div>
-                                ) : null}
-                                
-                                {currentChartData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                        <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#c07251" stopOpacity={0.15}/>
-                                                    <stop offset="95%" stopColor="#c07251" stopOpacity={0}/>
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={15} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} tickFormatter={(val) => `₱${val}`} />
-                                            <Tooltip 
-                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(value) => `₱${Number(value).toLocaleString()}`} 
-                                                cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }}
-                                            />
-                                            <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-gray-400">
-                                        No revenue data available for this period.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* 3. SALES BY CATEGORY */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-                            <div className="flex justify-between items-center mb-4">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">Sales by Category</h3>
-                                    <p className="text-sm text-gray-500">Total items sold</p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex-1 min-h-[220px] relative">
-                                {isLoading ? (
-                                    <div className="absolute inset-0 flex items-center justify-center z-10">
-                                        <ArtisanSkeleton variant="circle" className="w-40 h-40" />
-                                    </div>
-                                ) : null}
-
-                                {categoryData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                        <PieChart>
-                                            <Pie
-                                                data={categoryData}
-                                                innerRadius={55}
-                                                outerRadius={85}
-                                                paddingAngle={4}
-                                                dataKey="value"
-                                                stroke="none"
-                                            >
-                                                {categoryData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip 
-                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 600 }}
-                                                formatter={(value, name) => [`${value} items`, name]}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-2">
-                                        <Package size={32} className="text-gray-300" />
-                                        <span className="text-sm font-medium">No sales data yet</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Custom Legend */}
-                            {categoryData.length > 0 && (
-                                <div className="mt-2 space-y-2 pt-4 border-t border-gray-50">
-                                    {(() => {
-                                        const total = categoryData.reduce((sum, item) => sum + item.value, 0);
-                                        return categoryData.map((item, index) => (
-                                            <div key={index} className="flex items-center justify-between text-xs">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                                                    <span className="font-medium text-gray-700 truncate max-w-[120px]">{item.name}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-gray-900">{item.value}</span>
-                                                    <span className="text-gray-400 w-10 text-right">{total > 0 ? Math.round((item.value / total) * 100) : 0}%</span>
-                                                </div>
-                                            </div>
-                                        ));
-                                    })()}
-                                </div>
-                            )}
-                        </div>
+                        <RevenueAnalyticsChart 
+                            chartFilter={chartFilter} 
+                            setChartFilter={setChartFilter} 
+                            currentChartData={currentChartData} 
+                            isLoading={isLoading} 
+                        />
+                        <SalesByCategoryChart 
+                            categoryData={categoryData} 
+                            isLoading={isLoading} 
+                        />
                     </div>
 
-                    {/* 4. RECENT ORDERS TABLE */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            <h3 className="text-lg font-bold text-gray-900">Recent Orders</h3>
-                            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                                {/* Search input */}
-                                <div className="relative flex-1 sm:flex-none sm:min-w-[200px]">
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Order ID or Name..." 
-                                        value={search}
-                                        onChange={handleSearchChange}
-                                        className="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-gray-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-clay-500/20" 
-                                    />
-                                </div>
-
-                                {/* Status filter */}
-                                <div className="relative flex-1 sm:flex-none min-w-[120px]">
-                                    <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    <select 
-                                        value={status}
-                                        onChange={handleStatusChange}
-                                        className="w-full pl-9 pr-8 py-2.5 min-h-[44px] bg-gray-50 border-none rounded-xl text-xs appearance-none focus:ring-2 focus:ring-clay-500/20 cursor-pointer"
-                                    >
-                                        <option value="All">All Status</option>
-                                        <option value="Pending">Pending</option>
-                                        <option value="Accepted">Accepted</option>
-                                        <option value="Shipped">Shipped</option>
-                                        <option value="Delivered">Delivered</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Rejected">Rejected</option>
-                                        <option value="Cancelled">Cancelled</option>
-                                    </select>
-                                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                </div>
-
-                                {/* Date filter */}
-                                <div className="relative flex-1 sm:flex-none min-w-[140px]">
-                                    <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    <input 
-                                        type="date" 
-                                        value={date}
-                                        onChange={handleDateChange}
-                                        className="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-gray-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-clay-500/20 cursor-pointer" 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="min-h-[300px] relative">
-                            {isLoading ? (
-                                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 transition-all flex flex-col">
-                                    <ArtisanSkeleton variant="list" count={5} />
-                                </div>
-                            ) : null}
-
-                            {/* Mobile Card Stack View */}
-                            <div className="p-4 space-y-4 sm:hidden">
-                                {recentOrders.data.length > 0 ? (
-                                    recentOrders.data.map((order, idx) => (
-                                        <div 
-                                            key={order.id}
-                                            className="rounded-2xl border border-stone-150 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
-                                        >
-                                            <div className="flex items-center justify-between gap-3">
-                                                <span className="text-xs font-black text-stone-900">
-                                                    #{order.id}
-                                                </span>
-                                                <StatusBadge status={order.status} />
-                                            </div>
-
-                                            <div className="mt-3 flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold text-xs overflow-hidden border border-clay-200 shrink-0">
-                                                    {order.customer_avatar ? (
-                                                        <img 
-                                                            src={order.customer_avatar.startsWith('http') || order.customer_avatar.startsWith('/storage') ? order.customer_avatar : `/storage/${order.customer_avatar}`} 
-                                                            alt={order.customer} 
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        order.customer.charAt(0)
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-bold text-stone-850">{order.customer}</p>
-                                                    <p className="text-[10px] text-stone-400 mt-0.5">{order.date}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-3.5 pt-3.5 border-t border-stone-100 flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Amount</p>
-                                                    <p className="text-xs font-black text-stone-900">₱{Number(order.amount).toLocaleString()}</p>
-                                                </div>
-                                                <Link 
-                                                    href={route('orders.index')} 
-                                                    className="inline-flex items-center justify-center rounded-xl bg-stone-50 px-3 py-2 text-[10px] font-bold text-stone-600 border border-stone-200 transition hover:bg-stone-100 min-h-[40px]"
-                                                >
-                                                    Details <ArrowUpRight size={12} className="ml-1" />
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <WorkspaceEmptyState
-                                        icon={ShoppingBag}
-                                        title={search || status !== 'All' ? "No matching orders" : "No orders yet"}
-                                        description={search || status !== 'All' ? "Try adjusting your filters to find what you're looking for." : "When customers buy your products, they will appear here."}
-                                        action={null}
-                                    />
-                                )}
-                            </div>
-
-                            {/* Desktop Table View */}
-                            <div className="hidden sm:block overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4">Order ID</th>
-                                            <th className="px-6 py-4">Customer</th>
-                                            <th className="px-6 py-4">Date</th>
-                                            <th className="px-6 py-4">Amount</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-50">
-                                            {recentOrders.data.length > 0 ? (
-                                            recentOrders.data.map((order, idx) => (
-                                                <motion.tr 
-                                                    key={order.id} 
-                                                    initial={{ opacity: 0, x: -10 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: idx * 0.05 }}
-                                                    className="hover:bg-stone-50 transition-colors"
-                                                >
-                                                    <td className="px-6 py-4 font-bold text-gray-900">{order.id}</td>
-                                                    <td className="px-6 py-4 flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-clay-100 flex items-center justify-center text-clay-700 font-bold text-xs overflow-hidden border border-clay-200">
-                                                            {order.customer_avatar ? (
-                                                                <img 
-                                                                    src={order.customer_avatar.startsWith('http') || order.customer_avatar.startsWith('/storage') ? order.customer_avatar : `/storage/${order.customer_avatar}`} 
-                                                                    alt={order.customer} 
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            ) : (
-                                                                order.customer.charAt(0)
-                                                            )}
-                                                        </div>
-                                                        <span className="text-sm font-medium text-gray-700">{order.customer}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{order.date}</td>
-                                                    <td className="px-6 py-4 font-bold text-gray-900">₱{Number(order.amount).toLocaleString()}</td>
-                                                    <td className="px-6 py-4">
-                                                        <StatusBadge status={order.status} />
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <Link href={route('orders.index')} className="text-clay-600 hover:text-clay-800 font-bold text-xs flex items-center gap-1 justify-end">
-                                                            Details <ArrowUpRight size={14} />
-                                                        </Link>
-                                                    </td>
-                                                </motion.tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="6" className="px-6 py-12">
-                                                    <WorkspaceEmptyState
-                                                        icon={ShoppingBag}
-                                                        title={search || status !== 'All' ? "No matching orders" : "No orders yet"}
-                                                        description={search || status !== 'All' ? "Try adjusting your filters to find what you're looking for." : "When customers buy your products, they will appear here."}
-                                                        action={null}
-                                                    />
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        {/* Pagination Links */}
-                        {recentOrders.total > 0 && (
-                            <CompactPagination 
-                                links={recentOrders.links}
-                                total={recentOrders.total}
-                                currentCount={recentOrders.data.length}
-                                label="orders"
-                                only={['recentOrders', 'filters']}
-                            />
-                        )}
-                    </div>
-
+                    {/* Recent Orders Preview Card Grid/Table */}
+                    <RecentOrdersPreview 
+                        recentOrders={recentOrders}
+                        search={search}
+                        handleSearchChange={handleSearchChange}
+                        status={status}
+                        handleStatusChange={handleStatusChange}
+                        date={date}
+                        handleDateChange={handleDateChange}
+                        isLoading={isLoading}
+                    />
                 </main>
             </div>
 
-            <Modal show={showWelcome} onClose={closeWelcomeModal} maxWidth="md">
-                <div className="p-8 text-center relative overflow-hidden bg-white">
-                    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-amber-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-amber-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-                    
-                    <div className="relative z-10">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 border border-amber-200 shadow-sm mb-6">
-                            <Sparkles className="h-8 w-8 text-amber-600" aria-hidden="true" />
-                        </div>
-                        
-                        <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2 tracking-tight">
-                            Welcome to LikhangKamay!
-                        </h2>
-                        
-                        <p className="text-sm text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed">
-                            Congratulations! Your artisan application has been approved. You are now officially part of our growing community of local craftsmen. Let's start setting up your store and showcasing your handcrafted items.
-                        </p>
-                        
-                        <div className="flex flex-col gap-3 mt-4">
-                            <button
-                                type="button"
-                                className="w-full inline-flex justify-center rounded-xl bg-clay-600 px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-clay-700 transition-colors focus:outline-none focus:ring-2 focus:ring-clay-500 focus:ring-offset-2"
-                                onClick={closeWelcomeModal}
-                            >
-                                Get Started
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Modal>
+            {/* Welcome Flow Modal / SlideOverDrawer */}
+            <WelcomeModal 
+                show={showWelcome} 
+                onClose={closeWelcomeModal} 
+            />
+
+            {/* Sticky Mobile/Tablet Navigation Dock */}
+            <MobileActionBar active="overview" />
         </div>
     );
 }
