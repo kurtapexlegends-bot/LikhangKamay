@@ -1,39 +1,22 @@
 import React, { useDeferredValue, useState, useEffect } from 'react';
-import { Head, usePage, router } from '@inertiajs/react';
+import { Head, usePage, router, Link } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
-import Modal from '@/Components/Modal';
-import { 
-    FileQuestion, CheckCircle, Clock, XCircle, AlertTriangle, 
-    Search, ChevronDown, Banknote, ShoppingBag, Truck, Package, ArrowRight, 
-    ClipboardList, Timer, BadgeCheck, PackageCheck, RotateCcw, Inbox
-} from 'lucide-react';
+import { AlertTriangle, Truck } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 
-const STATUS_TABS = [
-    { id: 'all', label: 'All Requests', icon: ClipboardList },
-    { id: 'pending', label: 'Pending Approval', icon: Timer },
-    { id: 'finance_approved', label: 'Budget Approved', icon: Banknote },
-    { id: 'accounting_approved', label: 'Ready to Order', icon: BadgeCheck },
-    { id: 'ordered', label: 'On Process', icon: Truck },
-    { id: 'partially_received', label: 'Partially Received', icon: PackageCheck },
-    { id: 'received', label: 'In Buffer', icon: Inbox },
-    { id: 'completed', label: 'Completed', icon: CheckCircle },
-    { id: 'rejected', label: 'Rejected', icon: XCircle },
-];
+// Global shared components
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
-const pesoFormatter = new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-});
-
-const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
+// Subcomponents and helpers
+import StockRequestMetrics from '@/Components/Seller/StockRequest/StockRequestMetrics';
+import StockRequestsFilter from '@/Components/Seller/StockRequest/StockRequestsFilter';
+import StockRequestsList from '@/Components/Seller/StockRequest/StockRequestsList';
+import ReceiveRequestModal from '@/Components/Seller/StockRequest/ReceiveRequestModal';
+import TransferRequestModal from '@/Components/Seller/StockRequest/TransferRequestModal';
 
 export default function StockRequestIndex({ auth, requests }) {
     const { addToast } = useToast();
@@ -62,14 +45,7 @@ export default function StockRequestIndex({ auth, requests }) {
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [qtyInput, setQtyInput] = useState('');
 
-    // Counts per status
-    const getCount = (status) => {
-        if (status === 'all') return requests.length;
-        if (status === 'pending') return requests.filter(r => r.status === 'pending').length;
-        return requests.filter(r => r.status === status).length;
-    };
-
-    // Filter requests based on tab
+    // Filter requests based on tab & search term
     const filteredRequests = requests.filter((req) => {
         const matchesTab = activeTab === 'all'
             ? true
@@ -149,7 +125,7 @@ export default function StockRequestIndex({ auth, requests }) {
         if (!canEditStockRequests) return;
         const available = req.received_quantity - req.transferred_quantity;
         setTransferModal({ open: true, id: req.id, max: available });
-        setQtyInput(available); // Default to max available
+        setQtyInput(available);
     };
 
     const submitTransfer = (e) => {
@@ -169,53 +145,8 @@ export default function StockRequestIndex({ auth, requests }) {
         });
     };
 
-    const getStatusBadge = (status) => {
-        const styles = {
-            'pending': 'bg-amber-50 text-amber-700 border-amber-200 ring-1 ring-amber-100',
-            'finance_approved': 'bg-stone-100 text-stone-700 border-stone-200 ring-1 ring-stone-100',
-            'accounting_approved': 'bg-[#F8EEE6] text-clay-700 border-[#E7D8C9] ring-1 ring-[#F4E7DB]',
-            'ordered': 'bg-[#FBF1E8] text-clay-700 border-[#E7D8C9] ring-1 ring-[#F4E7DB]',
-            'partially_received': 'bg-orange-50 text-orange-700 border-orange-200 ring-1 ring-orange-100',
-            'received': 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-100',
-            'completed': 'bg-green-50 text-green-700 border-green-200 ring-1 ring-green-100',
-            'rejected': 'bg-red-50 text-red-700 border-red-200 ring-1 ring-red-100',
-        };
-
-        const labels = {
-            'pending': 'Pending Accounting',
-            'finance_approved': 'Pending Accounting',
-            'accounting_approved': 'Funds Released',
-            'ordered': 'Ordered',
-            'partially_received': 'Partially Received',
-            'received': 'Received (Buffer)',
-            'completed': 'Completed',
-            'rejected': 'Rejected',
-        };
-
-        return (
-            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${styles[status] || styles['pending']}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                    status === 'completed' ? 'bg-green-500' :
-                    status === 'rejected' ? 'bg-red-500' :
-                    status === 'ordered' || status === 'accounting_approved' ? 'bg-clay-500' :
-                    status === 'received' ? 'bg-emerald-500' :
-                    'bg-amber-500'
-                }`} />
-                {labels[status] || status}
-            </span>
-        );
-    };
-
-    // KPI Data
-    const kpiCards = [
-        { label: 'Total Requests', value: requests.length, icon: ClipboardList, color: 'text-stone-600', bg: 'bg-stone-50' },
-        { label: 'Pending', value: getCount('pending'), icon: Timer, color: 'text-amber-500', bg: 'bg-amber-50' },
-        { label: 'In Process', value: getCount('ordered') + getCount('partially_received'), icon: Truck, color: 'text-[#C8A08A]', bg: 'bg-[#FBF1E8]' },
-        { label: 'Completed', value: getCount('completed'), icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-    ];
-
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
+        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800 pb-16 lg:pb-0">
             <Head title="Restock Requests" />
 
             <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
@@ -227,398 +158,92 @@ export default function StockRequestIndex({ auth, requests }) {
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                 />
 
-
-                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-4">
+                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-4 pb-20 lg:pb-6">
                     {isStockRequestsReadOnly && (
                         <ReadOnlyCapabilityNotice label="Restock requests are read only for your account. Ordering, receiving, and transfer actions are disabled." />
                     )}
+                    
                     {actionNotice && (
                         <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700">
                             <AlertTriangle size={13} />
                             {actionNotice}
                         </div>
                     )}
-                    {/* KPI SUMMARY CARDS */}
-                    <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
-                        {kpiCards.map((card, i) => (
-                            <div key={i} className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-                                <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{card.label}</p>
-                                    <h3 className="text-2xl font-bold text-gray-900 mt-1.5">{card.value}</h3>
-                                </div>
-                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${card.bg} ${card.color}`}>
-                                    <card.icon size={22} strokeWidth={2.5} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    
+                    {/* KPI Metrics Summary Grid */}
+                    <StockRequestMetrics requests={requests} />
 
-                    {/* STATUS TABS */}
-                    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm">
-                        <div className="overflow-x-auto border-b border-gray-100">
-                            <div className="flex min-w-max gap-1 p-1.5">
-                            {STATUS_TABS.map(tab => {
-                                const count = getCount(tab.id);
-                                const isActive = activeTab === tab.id;
-                                const TabIcon = tab.icon;
-                                return (
-                                    <button 
-                                        key={tab.id} 
-                                        onClick={() => setActiveTab(tab.id)} 
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all duration-200 ${
-                                            isActive 
-                                                ? 'bg-clay-600 text-white shadow-sm shadow-clay-100' 
-                                                : 'text-gray-500 hover:bg-[#FCF7F2] hover:text-clay-700'
-                                        }`}
-                                    >
-                                        <TabIcon size={12} />
-                                        {tab.label}
-                                        {count > 0 && (
-                                            <span className={`ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                                                isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-                                            }`}>
-                                                {count}
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                            <label className="relative block w-full sm:max-w-sm">
-                                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(event) => setSearchTerm(event.target.value)}
-                                    placeholder="Search item, supplier, requester, or request ID"
-                                    className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-10 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:border-clay-400 focus:ring-clay-400"
-                                />
-                                {searchTerm && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchTerm('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 transition hover:text-stone-700"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </label>
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
-                                <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-stone-600">
-                                    {filteredRequests.length} visible
-                                </span>
-                                {searchTerm && (
-                                    <span className="inline-flex items-center rounded-full border border-clay-200 bg-[#FCF7F2] px-3 py-1 text-clay-700">
-                                        Filtered queue
-                                    </span>
-                                )}
-                            </div>
-                        </div>
+                    {/* Status Tabs and Search Filter Bar */}
+                    <StockRequestsFilter
+                        requests={requests}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        filteredCount={filteredRequests.length}
+                    />
 
-                        {/* TABLE */}
-                        <div className="space-y-3 p-4 sm:hidden">
-                            {filteredRequests.length > 0 ? (
-                                filteredRequests.map((req) => (
-                                    <div key={req.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                                                        #{req.id}
-                                                    </span>
-                                                    {getStatusBadge(req.status)}
-                                                </div>
-                                                <p className="mt-3 text-sm font-bold text-gray-900">{req.supply?.name || 'Unknown Item'}</p>
-                                                <p className="mt-1 text-[11px] text-gray-500">{req.supply?.category}</p>
-                                                <p className="mt-1 text-[11px] text-gray-500">
-                                                    Requested by <span className="font-bold text-gray-600">{req.requester?.name || 'Seller owner'}</span>
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 text-xs">
-                                            <div>
-                                                <p className="font-bold uppercase tracking-wide text-gray-400">Requested</p>
-                                                <p className="mt-1 font-semibold text-gray-700">{req.quantity} {req.supply?.unit}</p>
-                                            </div>
-                                            <div>
-                                                <p className="font-bold uppercase tracking-wide text-gray-400">Total Cost</p>
-                                                <p className="mt-1 font-semibold text-clay-700">{formatPeso(req.total_cost)}</p>
-                                            </div>
-                                            <div className="col-span-2 space-y-2">
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <span className="text-gray-400">Received</span>
-                                                    <span className="font-semibold text-green-600">{req.received_quantity || 0}</span>
-                                                </div>
-                                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-green-500 rounded-full" style={{ width: `${req.quantity > 0 ? ((req.received_quantity || 0) / req.quantity * 100) : 0}%` }} />
-                                                </div>
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <span className="text-gray-400">Transferred</span>
-                                                    <span className="font-semibold text-clay-700">{req.transferred_quantity || 0}</span>
-                                                </div>
-                                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-clay-500 rounded-full" style={{ width: `${req.quantity > 0 ? ((req.transferred_quantity || 0) / req.quantity * 100) : 0}%` }} />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {req.status === 'rejected' && req.rejection_reason && (
-                                            <div className="mt-3 rounded-xl border border-red-200 bg-[#FFFBFB] px-3.5 py-3 shadow-sm">
-                                                <div className="flex items-center gap-1.5 mb-1.5 text-red-500">
-                                                    <AlertTriangle size={12} strokeWidth={2.5} />
-                                                    <span className="text-[9px] font-bold uppercase tracking-[0.16em]">Reason for Rejection</span>
-                                                </div>
-                                                <span className="block text-[11px] font-medium leading-relaxed text-red-700">{req.rejection_reason}</span>
-                                            </div>
-                                        )}
-
-                                        <div className="mt-3 flex items-center justify-end gap-2">
-                                            {req.status === 'accounting_approved' && (
-                                                <button 
-                                                    disabled={!canEditStockRequests || processingId === `ordered-${req.id}`}
-                                                    onClick={() => {
-                                                        setSelectedRequest(req);
-                                                        setShowOrderModal(true);
-                                                    }} 
-                                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <Truck size={13} /> {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
-                                                </button>
-                                            )}
-                                            {(req.status === 'ordered' || req.status === 'partially_received' || req.status === 'received') && (
-                                                <button disabled={!canEditStockRequests || processingId === `receive-${req.id}`} onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 text-white text-[11px] font-bold rounded-lg hover:bg-amber-700 transition-all disabled:cursor-not-allowed disabled:opacity-50">
-                                                    <Package size={13} /> Receive
-                                                </button>
-                                            )}
-                                            {(req.status === 'received' && (req.received_quantity - req.transferred_quantity > 0)) && (
-                                                <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-sky-600 text-white text-[11px] font-bold rounded-lg hover:bg-sky-700 active:scale-95 shadow-sm shadow-sky-100 transition-all disabled:cursor-not-allowed disabled:opacity-50">
-                                                    <ArrowRight size={13} /> Transfer
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="flex flex-col items-center justify-center text-center py-10">
-                                    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-4">
-                                        <Inbox size={28} className="text-gray-300" />
-                                    </div>
-                                    <p className="text-sm font-bold text-gray-400">No requests found</p>
-                                    <p className="text-xs text-gray-300 mt-1 max-w-xs">
-                                        {activeTab === 'all'
-                                            ? 'Stock requests from inventory will appear here once created.'
-                                            : `No requests with "${STATUS_TABS.find(t => t.id === activeTab)?.label}" status.`}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        <div className="hidden overflow-x-auto sm:block">
-                            <table className="w-full min-w-[980px] text-left">
-                                <thead>
-                                    <tr className="border-b border-gray-100">
-                                        <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Request ID</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Item</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Requested</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Progress</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Cost</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {filteredRequests.length > 0 ? (
-                                        filteredRequests.map((req) => (
-                                            <tr key={req.id} className="group hover:bg-[#FCF7F2] transition-colors duration-150">
-                                                <td className="px-4 py-3">
-                                                    <span className="inline-flex items-center gap-1 font-mono text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                                                        #{req.id}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <p className="font-bold text-gray-900 text-sm">{req.supply?.name || 'Unknown Item'}</p>
-                                                    <p className="text-[11px] text-gray-400 mt-0.5">{req.supply?.category}</p>
-                                                    <p className="text-[11px] text-gray-400 mt-1">
-                                                        Requested by <span className="font-bold text-gray-600">{req.requester?.name || 'Seller owner'}</span>
-                                                    </p>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span className="text-sm font-bold text-gray-900">{req.quantity}</span>
-                                                    <span className="text-xs text-gray-400 ml-1">{req.supply?.unit}</span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-2 text-xs">
-                                                            <span className="text-gray-400 w-20">Received</span>
-                                                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[80px]">
-                                                                <div 
-                                                                    className="h-full bg-green-500 rounded-full transition-all duration-500" 
-                                                                    style={{ width: `${req.quantity > 0 ? ((req.received_quantity || 0) / req.quantity * 100) : 0}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="font-bold text-green-600 min-w-[20px]">{req.received_quantity || 0}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-xs">
-                                                            <span className="text-gray-400 w-20">Transferred</span>
-                                                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[80px]">
-                                                                <div 
-                                                                    className="h-full bg-clay-500 rounded-full transition-all duration-500" 
-                                                                    style={{ width: `${req.quantity > 0 ? ((req.transferred_quantity || 0) / req.quantity * 100) : 0}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="font-bold text-clay-700 min-w-[20px]">{req.transferred_quantity || 0}</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span className="text-sm font-bold text-clay-700">{formatPeso(req.total_cost)}</span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex flex-col items-start gap-2 max-w-[220px]">
-                                                        {getStatusBadge(req.status)}
-                                                        {req.status === 'rejected' && req.rejection_reason && (
-                                                            <div className="rounded-[0.85rem] border border-red-200 bg-[#FFFBFB] p-2.5 shadow-sm w-full transition-shadow hover:shadow-md">
-                                                                <div className="flex items-center gap-1.5 mb-1 text-red-500">
-                                                                    <AlertTriangle size={10} strokeWidth={2.5} />
-                                                                    <span className="text-[8px] font-bold uppercase tracking-[0.16em]">Rejection Reason</span>
-                                                                </div>
-                                                                <span className="block text-[10px] font-medium leading-[1.4] text-red-700 break-words line-clamp-3" title={req.rejection_reason}>{req.rejection_reason}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {req.status === 'accounting_approved' && (
-                                                            <button 
-                                                                disabled={!canEditStockRequests || processingId === `ordered-${req.id}`}
-                                                                onClick={() => {
-                                                                    setSelectedRequest(req);
-                                                                    setShowOrderModal(true);
-                                                                }} 
-                                                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-clay-600 text-white text-[10px] font-bold rounded-lg hover:bg-clay-700 transition-all active:scale-95 shadow-sm shadow-clay-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
-                                                            >
-                                                                <Truck size={13} /> {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
-                                                            </button>
-                                                        )}
-                                                        {(req.status === 'ordered' || req.status === 'partially_received' || req.status === 'received') && (
-                                                            <button disabled={!canEditStockRequests || processingId === `receive-${req.id}`} onClick={() => openReceiveModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-600 text-white text-[10px] font-bold rounded-lg hover:bg-amber-700 transition-all active:scale-95 shadow-sm shadow-amber-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
-                                                                <Package size={13} /> Receive
-                                                            </button>
-                                                        )}
-                                                        {(req.status === 'received' && (req.received_quantity - req.transferred_quantity > 0)) && (
-                                                            <button disabled={!canEditStockRequests || processingId === `transfer-${req.id}`} onClick={() => openTransferModal(req)} className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-600 text-white text-[10px] font-bold rounded-lg hover:bg-sky-700 transition-all active:scale-95 shadow-sm shadow-sky-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
-                                                                <ArrowRight size={13} /> Transfer
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="7" className="px-4 py-16">
-                                                <div className="flex flex-col items-center justify-center text-center">
-                                                    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-4">
-                                                        <Inbox size={28} className="text-gray-300" />
-                                                    </div>
-                                                    <p className="text-sm font-bold text-gray-400">No requests found</p>
-                                                    <p className="text-xs text-gray-300 mt-1 max-w-xs">
-                                                        {activeTab === 'all' 
-                                                            ? 'Stock requests from inventory will appear here once created.'
-                                                            : `No requests with "${STATUS_TABS.find(t => t.id === activeTab)?.label}" status.`
-                                                        }
-                                                    </p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* TABLE FOOTER */}
-                        {filteredRequests.length > 0 && (
-                            <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
-                                <p className="text-xs text-gray-400">
-                                    Showing <span className="font-bold text-gray-600">{filteredRequests.length}</span> of <span className="font-bold text-gray-600">{requests.length}</span> requests
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                    {/* Stock Requests List Renderer (Responsive viewports layout) */}
+                    <StockRequestsList 
+                        filteredRequests={filteredRequests}
+                        requests={requests}
+                        activeTab={activeTab}
+                        canEditStockRequests={canEditStockRequests}
+                        processingId={processingId}
+                        setSelectedRequest={setSelectedRequest}
+                        setShowOrderModal={setShowOrderModal}
+                        openReceiveModal={openReceiveModal}
+                        openTransferModal={openTransferModal}
+                    />
                 </main>
 
-                {/* RECEIVE MODAL */}
-                <Modal show={receiveModal.open} onClose={() => setReceiveModal({ open: false, id: null, max: null })}>
-                    <form onSubmit={submitReceive} className="p-5 sm:p-6">
-                        <div className="w-10 h-10 bg-[#F8EEE6] text-clay-700 rounded-lg flex items-center justify-center mb-3 border border-[#E7D8C9]">
-                            <Package size={20} />
-                        </div>
-                        <h2 className="text-base font-bold text-gray-900 mb-1">Receive Items into Buffer</h2>
-                        <p className="text-xs text-gray-400 mb-4">Record items received from the supplier</p>
-                        <div className="mb-4">
-                            <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Quantity Received</label>
-                            <input type="number" min="1" max={receiveModal.max} value={qtyInput} onChange={(e) => setQtyInput(e.target.value)} disabled={!canEditStockRequests} className="w-full border-gray-200 rounded-lg shadow-sm focus:border-clay-500 focus:ring-clay-500 font-bold text-base py-2" required />
-                            <p className="text-xs text-gray-400 mt-2">Remaining needed: <span className="font-bold text-clay-700">{receiveModal.max}</span></p>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button type="button" onClick={() => setReceiveModal({ open: false, id: null, max: null })} className="px-3 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                            <button type="submit" disabled={!canEditStockRequests || processingId === `receive-${receiveModal.id}`} className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">{processingId === `receive-${receiveModal.id}` ? 'Receiving...' : 'Receive Items'}</button>
-                        </div>
-                    </form>
-                </Modal>
+                {/* Mobile Sticky Action Dock */}
+                <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white/95 backdrop-blur-md border-t border-stone-200 z-30 p-3 shadow-lg">
+                    <Link
+                        href={route('procurement.index')}
+                        className="w-full inline-flex items-center justify-center rounded-xl bg-clay-600 px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-clay-700 transition min-h-[44px]"
+                    >
+                        Create Stock Request (Inventory)
+                    </Link>
+                </div>
 
-                {/* TRANSFER MODAL */}
-                <Modal show={transferModal.open} onClose={() => setTransferModal({ open: false, id: null, max: null })}>
-                    <form onSubmit={submitTransfer} className="p-5 sm:p-6">
-                        <div className="w-10 h-10 bg-[#FBF1E8] text-clay-700 rounded-lg flex items-center justify-center mb-3 border border-[#E7D8C9]">
-                            <ArrowRight size={20} />
-                        </div>
-                        <h2 className="text-base font-bold text-gray-900 mb-1">Transfer to Active Inventory</h2>
-                        <p className="text-xs text-gray-400 mb-4">Move items from buffer stock to your active inventory</p>
-                        <div className="mb-4">
-                            <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Quantity to Transfer</label>
-                            <input type="number" min="1" max={transferModal.max} value={qtyInput} onChange={(e) => setQtyInput(e.target.value)} disabled={!canEditStockRequests} className="w-full border-gray-200 rounded-lg shadow-sm focus:border-clay-500 focus:ring-clay-500 font-bold text-base py-2" required />
-                            <p className="text-xs text-gray-400 mt-2">Available in Buffer: <span className="font-bold text-clay-700">{transferModal.max}</span></p>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button type="button" onClick={() => setTransferModal({ open: false, id: null, max: null })} className="px-3 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition">Cancel</button>
-                            <button type="submit" disabled={!canEditStockRequests || processingId === `transfer-${transferModal.id}`} className="px-4 py-2 bg-clay-600 text-white text-xs font-bold rounded-lg hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">{processingId === `transfer-${transferModal.id}` ? 'Transferring...' : 'Transfer'}</button>
-                        </div>
-                    </form>
-                </Modal>
+                {/* Receive Items Dialog */}
+                <ReceiveRequestModal 
+                    isOpen={receiveModal.open}
+                    onClose={() => setReceiveModal({ open: false, id: null, max: null })}
+                    max={receiveModal.max}
+                    value={qtyInput}
+                    onChange={(e) => setQtyInput(e.target.value)}
+                    onSubmit={submitReceive}
+                    processing={processingId === `receive-${receiveModal.id}`}
+                    canEdit={canEditStockRequests}
+                />
 
-                {/* ORDER MODAL */}
-                <Modal show={showOrderModal} onClose={() => setShowOrderModal(false)} maxWidth="sm">
-                    <div className="p-5 sm:p-6 text-center">
-                        <div className="w-12 h-12 bg-[#FBF1E8] text-clay-700 rounded-xl flex items-center justify-center mx-auto mb-3 border border-[#E7D8C9] shadow-sm">
-                            <Truck size={24} />
-                        </div>
-                        <h2 className="text-lg font-bold text-gray-900 mb-2">Confirm Order Placed?</h2>
-                        <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-                            Are you sure you have placed the order for <strong>{selectedRequest?.supply?.name}</strong> with the supplier?
-                            <br/><br/>
-                            This will move the request to <strong>On Process</strong> status.
-                        </p>
-                        <div className="flex justify-center gap-3">
-                            <button 
-                                onClick={() => setShowOrderModal(false)}
-                                className="px-4 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                disabled={!canEditStockRequests || processingId === `ordered-${selectedRequest?.id}`}
-                                onClick={handleMarkAsOrdered}
-                                className="px-4 py-2 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
-                            >
-                                {processingId === `ordered-${selectedRequest?.id}` ? 'Confirming...' : 'Confirm Order'}
-                            </button>
-                        </div>
-                    </div>
-                </Modal>
+                {/* Transfer to Inventory Dialog */}
+                <TransferRequestModal 
+                    isOpen={transferModal.open}
+                    onClose={() => setTransferModal({ open: false, id: null, max: null })}
+                    max={transferModal.max}
+                    value={qtyInput}
+                    onChange={(e) => setQtyInput(e.target.value)}
+                    onSubmit={submitTransfer}
+                    processing={processingId === `transfer-${transferModal.id}`}
+                    canEdit={canEditStockRequests}
+                />
+
+                {/* Confirm Order Placement Modal */}
+                <ConfirmationModal 
+                    isOpen={showOrderModal}
+                    onClose={() => setShowOrderModal(false)}
+                    onConfirm={handleMarkAsOrdered}
+                    title="Confirm Order Placed?"
+                    message={`Are you sure you have placed the order for "${selectedRequest?.supply?.name}" with the supplier? This will move the request to "On Process" status.`}
+                    icon={Truck}
+                    iconBg="bg-clay-50 text-clay-700"
+                    confirmText={processingId === `ordered-${selectedRequest?.id}` ? 'Confirming...' : 'Confirm Order'}
+                    confirmColor="bg-clay-600 hover:bg-clay-700"
+                    processing={processingId === `ordered-${selectedRequest?.id}`}
+                />
             </div>
         </div>
     );
