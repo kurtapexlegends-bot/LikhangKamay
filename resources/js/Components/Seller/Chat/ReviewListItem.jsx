@@ -68,9 +68,9 @@ export default function ReviewListItem({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 mb-1.5">
-                        <div>
-                            <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex justify-between items-start gap-4 mb-2">
+                        <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
                                 <h4 className="font-bold text-sm text-stone-900">{review.customer}</h4>
                                 <div className="flex items-center gap-0.5">
                                     {[1, 2, 3, 4, 5].map((s) => (
@@ -82,18 +82,19 @@ export default function ReviewListItem({
                                     ))}
                                 </div>
                             </div>
-                            <p className="text-[11px] text-stone-500">Item: <span className="font-medium text-stone-700">{review.product_name}</span></p>
+                            <p className="text-[11px] text-stone-500 mb-0.5">Item: <span className="font-medium text-stone-700">{review.product_name}</span></p>
+                            <span className="text-[10px] text-stone-400 block sm:hidden mt-1">{review.date}</span>
                         </div>
                         
                         {/* Actions buttons */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-medium text-stone-400">{review.date}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[11px] font-medium text-stone-400 hidden sm:inline">{review.date}</span>
                             {!review.dispute && (
                                 <button
                                     type="button"
                                     disabled={!canEditReviews}
                                     onClick={() => canEditReviews && onOpenDispute(review)}
-                                    className="rounded-xl border border-rose-100 bg-rose-50 p-2.5 sm:p-1.5 text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                    className="rounded-xl border border-rose-100 bg-rose-50 p-2.5 sm:p-1.5 text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] flex items-center justify-center"
                                     title="Request moderation"
                                 >
                                     <ShieldAlert size={14} />
@@ -103,7 +104,7 @@ export default function ReviewListItem({
                             <button
                                 disabled={!canEditReviews || review.is_hidden_from_marketplace}
                                 onClick={() => onTogglePin(review.id)}
-                                className={`p-2.5 sm:p-1.5 rounded-xl transition-all disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] min-w-[44px] flex items-center justify-center ${review.is_pinned ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'text-stone-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                                className={`p-2.5 sm:p-1.5 rounded-xl transition-all disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] flex items-center justify-center ${review.is_pinned ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'text-stone-400 hover:text-amber-500 hover:bg-amber-50'}`}
                                 title={review.is_hidden_from_marketplace ? 'Hidden reviews cannot be pinned' : review.is_pinned ? 'Unpin review' : 'Pin to top'}
                             >
                                 {review.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
