@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -48,15 +49,19 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
     }, []);
 
     const [isMobile, setIsMobile] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         const checkMobile = () => setIsMobile(window.innerWidth < 640);
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <AnimatePresence>
             {selectedCount > 0 && (
                 <motion.div 
@@ -73,7 +78,7 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
                         damping: 30,
                         opacity: { duration: 0.2 }
                     }}
-                    className="fixed left-0 right-0 mx-auto z-[45] sm:z-50 w-max pointer-events-none"
+                    className="fixed left-0 right-0 mx-auto z-[999] w-max pointer-events-none"
                     style={{
                         bottom: isMobile ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : '2rem'
                     }}
@@ -105,6 +110,7 @@ export default function BulkActionPill({ selectedCount, onClear, children }) {
                     </div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }

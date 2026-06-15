@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import { Head, router, usePage } from "@inertiajs/react";
 import { motion } from "framer-motion";
@@ -56,8 +57,10 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [isPrintingSlips, setIsPrintingSlips] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
         return () => clearTimeout(timer);
     }, []);
@@ -495,8 +498,8 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             <DisputeResponseModal isOpen={disputeModalState.isOpen} onClose={() => setDisputeModalState(prev => ({ ...prev, isOpen: false }))} disputeModalState={disputeModalState} setDisputeModalState={setDisputeModalState} submitDisputeResponse={submitDisputeResponse} canEditOrders={canEditOrders} />
 
             {/* Floating Bulk Actions Bar */}
-            {selectedOrderIds.length > 0 && (
-                <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center pointer-events-none px-4">
+            {mounted && selectedOrderIds.length > 0 && createPortal(
+                <div className="fixed bottom-6 inset-x-0 z-[999] flex justify-center pointer-events-none px-4">
                     <motion.div
                         initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
                         className="pointer-events-auto flex flex-col items-center gap-2.5 rounded-2xl border border-stone-200 bg-white/95 px-3 py-2 shadow-2xl backdrop-blur-xl w-full max-w-[540px] sm:flex-row sm:justify-between sm:gap-4 sm:px-4 sm:py-2.5"
@@ -514,7 +517,8 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                             <button type="button" onClick={handleBulkFulfill} disabled={!canEditOrders} className="flex items-center gap-1 rounded-lg bg-clay-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition hover:bg-clay-700 disabled:opacity-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]"><Truck size={12} /> Fulfill</button>
                         </div>
                     </motion.div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

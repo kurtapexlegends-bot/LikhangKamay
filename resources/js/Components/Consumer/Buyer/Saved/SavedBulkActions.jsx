@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ShoppingBag, ShoppingCart, Trash2, X } from 'lucide-react';
 
 export default function SavedBulkActions({
@@ -10,9 +11,16 @@ export default function SavedBulkActions({
     onBulkRemove,
     onCancel,
 }) {
-    if (!isBulkEdit) return null;
+    const [mounted, setMounted] = useState(false);
 
-    return (
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
+    if (!isBulkEdit || !mounted) return null;
+
+    return createPortal(
         <div className="fixed bottom-0 inset-x-0 z-50 animate-in slide-in-from-bottom-6 duration-300 ease-out md:bottom-6 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-xl md:px-4">
             <div className="flex items-center justify-between gap-3 bg-stone-900/95 backdrop-blur-xl px-5 py-3.5 border-t border-stone-800 md:border md:border-white/10 md:rounded-2xl md:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.45)]">
                 {/* Count indicator */}
@@ -71,6 +79,7 @@ export default function SavedBulkActions({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
