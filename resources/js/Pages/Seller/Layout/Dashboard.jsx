@@ -11,7 +11,6 @@ import RevenueAnalyticsChart from '@/Components/Seller/Dashboard/RevenueAnalytic
 import SalesByCategoryChart from '@/Components/Seller/Dashboard/SalesByCategoryChart';
 import RecentOrdersPreview from '@/Components/Seller/Dashboard/RecentOrdersPreview';
 import WelcomeModal from '@/Components/Seller/Dashboard/WelcomeModal';
-import MobileActionBar from '@/Components/Seller/Dashboard/MobileActionBar';
 
 export default function Dashboard({ auth }) {
     const { metrics, chartData, categoryData, recentOrders, filters } = usePage().props;
@@ -87,7 +86,7 @@ export default function Dashboard({ auth }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800 pb-16 lg:pb-0">
+        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
             <ImpersonationBanner />
             <Head title="Dashboard" />
             <SellerSidebar active="overview" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -104,7 +103,7 @@ export default function Dashboard({ auth }) {
                     auth={auth}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
-                <main className="flex-1 p-6 overflow-y-auto space-y-6 pb-24 lg:pb-6">
+                <main className="flex-1 p-6 overflow-y-auto space-y-6">
                     {/* Key Metrics Overview Grid */}
                     <DashboardKPIs 
                         metrics={metrics} 
@@ -148,9 +147,6 @@ export default function Dashboard({ auth }) {
                 show={showWelcome} 
                 onClose={closeWelcomeModal} 
             />
-
-            {/* Sticky Mobile/Tablet Navigation Dock */}
-            <MobileActionBar active="overview" />
         </div>
     );
 }
