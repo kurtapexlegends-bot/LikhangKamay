@@ -344,12 +344,12 @@ export default function StaffTable({
                 <table className="w-full table-fixed">
                     <thead className="bg-[#FDFBF9] text-[9px] font-bold text-stone-400 uppercase tracking-widest border-b border-stone-100">
                         <tr>
-                            <th className="px-6 py-3.5 w-[22%] text-center">Employee</th>
-                            <th className="px-5 py-3.5 w-[15%] text-center">Monthly Salary</th>
-                            <th className="px-5 py-3.5 w-[13%] text-center">Status</th>
-                            <th className="px-5 py-3.5 w-[22%] text-center">Login Access</th>
-                            <th className="px-5 py-3.5 w-[20%] text-center">Attendance</th>
-                            <th className="px-6 py-3.5 w-[8%] text-center">Actions</th>
+                            <th className="px-6 py-3.5 w-[20%] text-center">Employee</th>
+                            <th className="px-5 py-3.5 w-[12%] text-center">Monthly Salary</th>
+                            <th className="px-5 py-3.5 w-[12%] text-center">Status</th>
+                            <th className="px-5 py-3.5 w-[20%] text-center">Login Access</th>
+                            <th className="px-5 py-3.5 w-[22%] text-center">Attendance</th>
+                            <th className="px-6 py-3.5 w-[14%] text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100 bg-white">
@@ -402,24 +402,8 @@ export default function StaffTable({
                                             {emp.has_login_account ? (
                                                 <div className="flex flex-col items-center justify-center gap-1 w-full">
                                                     <div className="flex flex-wrap items-center justify-center gap-1.5">
-                                                        <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase whitespace-nowrap ${
-                                                            emp.login_account?.workspace_access_enabled === false
-                                                                ? 'border-red-200 bg-red-50 text-red-700'
-                                                                : emp.login_account?.is_verified
-                                                                    ? emp.login_account?.must_change_password
-                                                                        ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                                                        : 'border-[#E7D8C9] bg-[#FCF7F2] text-clay-700'
-                                                                    : 'border-stone-200 bg-stone-100 text-stone-600'
-                                                        }`}>
-                                                            <span className={`h-1.5 w-1.5 rounded-full ${
-                                                                emp.login_account?.workspace_access_enabled === false
-                                                                    ? 'bg-red-500'
-                                                                    : emp.login_account?.is_verified
-                                                                        ? emp.login_account?.must_change_password
-                                                                            ? 'bg-amber-500'
-                                                                            : 'bg-clay-500'
-                                                                        : 'bg-stone-400'
-                                                            }`}></span>
+                                                        <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase whitespace-nowrap ${loginAccessStatus.className}`}>
+                                                            <span className={`h-1.5 w-1.5 rounded-full ${loginAccessStatus.dotClassName}`}></span>
                                                             {loginAccessStatus.label}
                                                         </span>
                                                         <span className="rounded-full bg-stone-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-stone-500 uppercase border border-stone-200 whitespace-nowrap">

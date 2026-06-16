@@ -120,7 +120,7 @@ export default function AttendanceCalendarModal({
         <Modal show={!!employee} onClose={onClose} maxWidth="3xl">
             <div className="flex flex-col bg-white">
                 {/* Premium Header */}
-                <div className="bg-gradient-to-r from-[#FCF7F2]/80 to-white px-5 py-4 border-b border-stone-100 flex items-start justify-between gap-4">
+                <div className="bg-[#FDFBF9] px-5 py-4 border-b border-stone-100 flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3.5">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-clay-600 shadow-sm border border-[#E7D8C9]">
                             <CalendarDays size={18} />

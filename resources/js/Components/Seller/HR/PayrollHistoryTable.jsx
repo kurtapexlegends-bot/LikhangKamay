@@ -158,14 +158,14 @@ export default function PayrollHistoryTable({
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => router.get(route('hr.payroll.show', payroll.id))}
-                                                className="inline-flex items-center justify-center rounded-xl bg-clay-50/50 border border-clay-100/50 px-3 py-1.5 text-xs font-bold text-clay-700 hover:bg-clay-100 hover:text-clay-800 transition min-h-[36px]"
+                                                className="inline-flex items-center justify-center rounded-xl bg-clay-50/50 border border-clay-100/50 px-4 py-2 text-xs font-bold text-clay-700 hover:bg-clay-100 hover:text-clay-800 transition min-h-[44px] min-w-[70px]"
                                             >
                                                 View
                                             </button>
                                             {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) && (
                                                 <button 
                                                     onClick={() => deletePayroll(payroll.id)} 
-                                                    className="inline-flex items-center justify-center rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100 transition"
+                                                    className="inline-flex items-center justify-center rounded-xl bg-red-50 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100 transition min-h-[44px] min-w-[70px]"
                                                 >
                                                     Delete
                                                 </button>

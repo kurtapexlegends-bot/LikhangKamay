@@ -19,7 +19,7 @@ export default function ImpersonationBanner() {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-[300] flex items-end justify-end group">
+        <div className="fixed bottom-28 sm:bottom-6 right-6 z-[300] flex items-end justify-end group">
             {/* Main Container */}
             <div 
                 className={`

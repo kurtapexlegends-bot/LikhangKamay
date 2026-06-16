@@ -202,7 +202,7 @@ export default function EmployeeFormModal({
                                         onChange={(e) => handleProvisionToggle(e.target.checked)}
                                     />
                                     <div className="h-full w-full rounded-full bg-stone-200 border border-stone-300 transition-colors peer-checked:bg-clay-700 peer-checked:border-clay-700 peer-focus:ring-2 peer-focus:ring-clay-500 peer-focus:ring-offset-2" />
-                                    <div className="pointer-events-none absolute left-[4px] top-[4px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[20px]" />
+                                    <div className="pointer-events-none absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
                                 </div>
                             </label>
                         </div>
@@ -405,7 +405,7 @@ export default function EmployeeFormModal({
                                                 value={data.email}
                                                 pattern="[a-zA-Z0-9._%+-]+@[gG][mM][aA][iI][lL]\.[cC][oO][mM]"
                                                 onChange={(e) => setData('email', e.target.value)}
-                                                required
+                                                required={showLinkedLoginUpdateFields}
                                             />
                                             <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                                 {data.email && isEmailGmail && !isEmailSaved && emailValidation && (
