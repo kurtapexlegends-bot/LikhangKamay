@@ -380,3 +380,33 @@ export const modalFieldClass = 'w-full rounded-xl border-stone-200 bg-white px-3
 export const modalFieldWithIconClass = `${modalFieldClass} pr-11`;
 export const modalSelectClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 shadow-none transition focus:border-clay-500 focus:ring-clay-500';
 export const modalCloseButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 text-stone-400 transition hover:border-stone-300 hover:text-stone-700';
+
+export const buildModuleSelection = (presetKey, rolePresets = FALLBACK_ROLE_PRESETS, availableModules = FALLBACK_MODULES) => {
+    const preset = rolePresets.find((item) => item.key === presetKey) || rolePresets.find((item) => item.key === 'custom');
+    const presetModules = new Set(preset?.modules || []);
+    return availableModules.reduce((acc, module) => {
+        acc[module.key] = presetModules.has(module.key) ? 'can_edit' : null;
+        return acc;
+    }, {});
+};
+
+export const getModuleSelectionFromLogin = (loginAccount, presetKey, rolePresets = FALLBACK_ROLE_PRESETS, availableModules = FALLBACK_MODULES) => {
+    const defaultSelection = buildModuleSelection(presetKey, rolePresets, availableModules);
+    return availableModules.reduce((acc, module) => {
+        const explicitValue = loginAccount?.module_permissions?.[module.key];
+        acc[module.key] = normalizeModulePermissionLevel(explicitValue) ?? defaultSelection[module.key] ?? null;
+        return acc;
+    }, {});
+};
+
+export const generateRandomEmployeeId = () => {
+    const randomNum = Math.floor(100000 + Math.random() * 900000); // 6 digits
+    return `EMP-${randomNum}`;
+};
+
+export const getHrAccessSummary = (canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts) => {
+    if (!canEditHrRecords) return { tone: 'border-stone-200 bg-stone-50 text-stone-600', label: 'View only access' };
+    if (canProvisionStaffAccounts) return { tone: 'border-emerald-200 bg-emerald-50 text-emerald-700', label: 'Editable people access' };
+    if (canUpdateStaffAccounts) return { tone: 'border-amber-200 bg-amber-50 text-amber-700', label: 'Editable people access' };
+    return { tone: 'border-stone-200 bg-stone-50 text-stone-600', label: 'Records only' };
+};
