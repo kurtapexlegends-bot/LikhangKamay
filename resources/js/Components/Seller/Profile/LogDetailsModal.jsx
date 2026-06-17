@@ -29,6 +29,9 @@ export default function LogDetailsModal({ isOpen, onClose, entry }) {
             widthClass="max-w-xl"
         >
             <div className="space-y-6 pb-6">
+                {/* Mobile Drag Indicator Handle */}
+                <div className="w-12 h-1 bg-stone-300 rounded-full mx-auto -mt-2 mb-2 sm:hidden" />
+
                 {/* Badges Row */}
                 <div className="flex flex-wrap items-center gap-1.5">
                     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${meta.chip}`}>

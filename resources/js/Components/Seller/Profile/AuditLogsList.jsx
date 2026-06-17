@@ -32,7 +32,7 @@ export default function AuditLogsList({ groupedEntries, onEntryClick }) {
                                 <article
                                     key={entry.id}
                                     onClick={() => onEntryClick(entry)}
-                                    className="group px-5 py-4 sm:px-8 hover:bg-stone-50/50 transition-colors cursor-pointer lg:cursor-default"
+                                    className="group px-5 py-4 sm:px-8 hover:bg-stone-50/50 active:bg-stone-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer lg:cursor-default lg:active:scale-100 lg:active:bg-transparent"
                                 >
                                     <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                                         <div className="flex min-w-0 gap-3 flex-1">

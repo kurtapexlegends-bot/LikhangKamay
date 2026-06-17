@@ -257,6 +257,29 @@ export default function AuditLog({ auth, auditLog }) {
                         </div>
                     </div>
 
+                    {/* Mobile Category Pill Swiper */}
+                    <div className="block lg:hidden border-b border-stone-100 bg-[#FCF7F2]/30 px-5 py-3">
+                        <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2">
+                            {categoryOptions.map((option) => {
+                                const isActive = selectedCategory === option.key;
+                                return (
+                                    <button
+                                        key={option.key}
+                                        type="button"
+                                        onClick={() => setSelectedCategory(option.key)}
+                                        className={`inline-flex items-center justify-center h-9 px-4 rounded-full text-xs font-bold transition-all active:scale-95 ${
+                                            isActive
+                                                ? 'bg-clay-700 text-white shadow-sm'
+                                                : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300'
+                                        }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     {/* Unified Filters Component */}
                     <AuditLogFilters
                         searchTerm={searchTerm}
