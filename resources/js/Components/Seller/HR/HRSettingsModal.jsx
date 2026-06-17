@@ -67,7 +67,7 @@ export default function HRSettingsModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-gray-55 min-h-[44px] flex items-center justify-center"
+                        className="rounded-xl px-4 py-2.5 text-sm font-bold text-gray-500 transition hover:bg-stone-50 min-h-[44px] flex items-center justify-center"
                     >
                         Cancel
                     </button>
