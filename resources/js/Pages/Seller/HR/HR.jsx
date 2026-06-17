@@ -19,7 +19,6 @@ import PayrollGenerator from '@/Components/Seller/HR/PayrollGenerator';
 import HRSettingsModal from '@/Components/Seller/HR/HRSettingsModal';
 import HRHeaderActions from '@/Components/Seller/HR/HRHeaderActions';
 import HRTabs from '@/Components/Seller/HR/HRTabs';
-import HRStickyActionBar from '@/Components/Seller/HR/HRStickyActionBar';
 import HRTabContentWrapper from '@/Components/Seller/HR/HRTabContentWrapper';
 
 export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [] }) {
@@ -148,6 +147,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 actions={
                     <HRHeaderActions
                         canEditHrRecords={canEditHrRecords}
+                        activeTab={activeTab}
                         onSettingsClick={() => setIsSettingsOpen(true)}
                         onPayrollClick={openPayrollModal}
                         onAddClick={openAddModal}
@@ -252,13 +252,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 confirmColor="bg-red-600 hover:bg-red-700"
             />
 
-            <HRStickyActionBar
-                canEditHrRecords={canEditHrRecords}
-                activeTab={activeTab}
-                onAddClick={openAddModal}
-                onPayrollClick={openPayrollModal}
-                onSettingsClick={() => setIsSettingsOpen(true)}
-            />
+
         </>
     );
 }
