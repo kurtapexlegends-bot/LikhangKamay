@@ -197,7 +197,8 @@ export default function EmployeeFormModal({
                                 <div className="relative h-6 w-11 shrink-0">
                                     <input
                                         type="checkbox"
-                                        className="peer sr-only"
+                                        className="peer"
+                                        style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}
                                         checked={data.create_login_account}
                                         onChange={(e) => handleProvisionToggle(e.target.checked)}
                                     />
