@@ -11,7 +11,7 @@ export function RolePresetCard({ preset, isSelected, radioName, onSelect, disabl
 
     return (
         <label
-            className={`relative rounded-[1.25rem] border p-4 transition-all duration-300 focus-within:ring-2 focus-within:ring-clay-500/50 focus-within:outline-none ${
+            className={`block relative rounded-[1.25rem] border p-4 transition-all duration-300 focus-within:ring-2 focus-within:ring-clay-500/50 focus-within:outline-none ${
                 disabled
                     ? 'border-stone-200 bg-stone-50/50 opacity-60 cursor-not-allowed'
                     : isSelected
@@ -224,9 +224,9 @@ export default function RolePermissionSelector({
                         {rolePresets.find(p => p.key === presetKey)?.label || 'Custom'}
                     </span>
                 </div>
-                <div className="flex overflow-x-auto pb-2.5 gap-3 flex-nowrap snap-x snap-mandatory md:grid md:gap-2.5 md:grid-cols-2 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex overflow-x-auto pt-2 pb-2.5 gap-3 flex-nowrap snap-x snap-mandatory md:grid md:gap-2.5 md:grid-cols-2 md:overflow-x-visible md:overflow-y-visible no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
                     {rolePresets.map((preset) => (
-                        <div key={preset.key} className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto md:max-w-none">
+                        <div key={preset.key} className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-full md:max-w-none">
                             <RolePresetCard
                                 preset={preset}
                                 radioName={radioName}
