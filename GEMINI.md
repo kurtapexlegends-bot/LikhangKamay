@@ -51,3 +51,4 @@
 - **No Lazy Placeholders:** Never use `// Your logic here`. Provide complete implementations.
 - **Trade-offs:** Briefly state pros/cons of major architectural decisions before coding.
 - **Diffs:** Provide clear file paths and diffs for modifications rather than full file rewrites.
+- **Task Focus:** Focus strictly on the assigned task. Do not make random, unrelated, or unnecessary changes to the codebase unless they are absolutely required to complete the specified task.
