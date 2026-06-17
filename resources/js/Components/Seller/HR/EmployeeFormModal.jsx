@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 import { X, UserPlus, CheckCircle2, AlertTriangle, Loader2, Eye, EyeOff, Pencil, ShieldAlert, RefreshCw, Sparkles } from 'lucide-react';
+import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import RolePermissionSelector from './RolePermissionSelector';
+import useConstraintValidation from '@/hooks/useConstraintValidation';
+import { useToast } from '@/Components/ToastContext';
 import {
     DEFAULT_EMPLOYEE_ROLE,
     EMPLOYEE_ROLE_OPTIONS,
     modalFieldClass,
     modalFieldWithIconClass,
-    modalSelectClass
+    modalSelectClass,
+    buildModuleSelection,
+    getModuleSelectionFromLogin,
+    generateRandomEmployeeId
 } from '@/utils/hrHelpers';
 
 export default function EmployeeFormModal({
@@ -15,32 +21,96 @@ export default function EmployeeFormModal({
     onClose,
     mode = 'add', // 'add' or 'edit'
     employee = null, // for edit mode
-    onSubmit,
-    data,
-    setData,
-    processing,
-    errors,
     rolePresets,
     availableModules,
     canProvisionStaffAccounts,
     canUpdateStaffAccounts,
     requiresStaffSchemaUpdate,
-    canEditHrRecords,
-    employeeIdValidation,
-    emailValidation
+    canEditHrRecords
 }) {
+    const { addToast } = useToast();
     const [showPassword, setShowPassword] = useState(false);
+    
+    const initialPresetKey = rolePresets[0]?.key || 'hr';
+    
+    const { data, setData, post, patch, processing, errors } = useForm({
+        employee_id: '',
+        name: '',
+        role: DEFAULT_EMPLOYEE_ROLE,
+        salary: '',
+        create_login_account: false,
+        email: '',
+        default_password: '',
+        staff_role_preset_key: initialPresetKey,
+        module_overrides: {},
+    });
+
     const [manualEmployeeRole, setManualEmployeeRole] = useState(data.role || DEFAULT_EMPLOYEE_ROLE);
-    const isEmailGmail = !data.email || data.email.toLowerCase().endsWith('@gmail.com');
-    const isEmployeeIdSaved = mode === 'edit' && employee && data.employee_id === employee.employee_id;
-    const isEmailSaved = mode === 'edit' && employee?.login_account && data.email === employee.login_account.email;
 
     React.useEffect(() => {
         if (isOpen) {
             setShowPassword(false);
-            setManualEmployeeRole(data.role || DEFAULT_EMPLOYEE_ROLE);
+            
+            if (mode === 'add') {
+                const newEmpId = generateRandomEmployeeId();
+                setManualEmployeeRole(DEFAULT_EMPLOYEE_ROLE);
+                setData({
+                    employee_id: newEmpId,
+                    name: '',
+                    role: DEFAULT_EMPLOYEE_ROLE,
+                    salary: '',
+                    create_login_account: false,
+                    email: '',
+                    default_password: '',
+                    staff_role_preset_key: initialPresetKey,
+                    module_overrides: buildModuleSelection(initialPresetKey, rolePresets, availableModules),
+                });
+            } else if (mode === 'edit' && employee) {
+                const hasLoginAccount = !!employee.has_login_account;
+                const workspaceAccessEnabled = employee.login_account?.workspace_access_enabled !== false;
+                const presetKey = employee.login_account?.role_preset_key || initialPresetKey;
+                const moduleOverrides = hasLoginAccount 
+                    ? getModuleSelectionFromLogin(employee.login_account, presetKey, rolePresets, availableModules) 
+                    : buildModuleSelection(presetKey, rolePresets, availableModules);
+
+                const activeRole = hasLoginAccount ? (rolePresets.find(p => p.key === presetKey)?.label || 'Custom') : (employee.role || DEFAULT_EMPLOYEE_ROLE);
+                setManualEmployeeRole(activeRole);
+                
+                setData({
+                    employee_id: employee.employee_id || generateRandomEmployeeId(),
+                    name: employee.name || '',
+                    role: activeRole,
+                    salary: employee.salary ?? '',
+                    create_login_account: hasLoginAccount ? workspaceAccessEnabled : false,
+                    email: employee.login_account?.email || '',
+                    default_password: '',
+                    staff_role_preset_key: presetKey,
+                    module_overrides: moduleOverrides,
+                });
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, mode, employee, rolePresets, availableModules]);
+
+    const shouldValidateEmployeeId = isOpen && data.employee_id && (mode === 'add' || data.employee_id !== employee?.employee_id);
+    const shouldValidateEmail = isOpen && data.create_login_account && data.email && (mode === 'add' || !employee?.login_account || data.email !== employee.login_account.email);
+
+    const employeeIdValidation = useConstraintValidation(
+        'employee_id_uniqueness',
+        data.employee_id,
+        { employee_id: employee?.id },
+        shouldValidateEmployeeId
+    );
+
+    const emailValidation = useConstraintValidation(
+        'email_availability',
+        data.email,
+        { user_id: employee?.login_account?.id },
+        shouldValidateEmail
+    );
+
+    const isEmailGmail = !data.email || data.email.toLowerCase().endsWith('@gmail.com');
+    const isEmployeeIdSaved = mode === 'edit' && employee && data.employee_id === employee.employee_id;
+    const isEmailSaved = mode === 'edit' && employee?.login_account && data.email === employee.login_account.email;
 
     React.useEffect(() => {
         if (!isOpen) return;
@@ -83,7 +153,6 @@ export default function EmployeeFormModal({
         setManualEmployeeRole(data.role || DEFAULT_EMPLOYEE_ROLE);
         setData('role', getPresetRoleLabel(presetKey));
         if (mode === 'add' || !employee?.has_login_account) {
-            // Build module selection
             const preset = rolePresets.find((item) => item.key === presetKey) || rolePresets.find((item) => item.key === 'custom');
             const presetModules = new Set(preset?.modules || []);
             const selection = availableModules.reduce((acc, module) => {
@@ -99,7 +168,6 @@ export default function EmployeeFormModal({
         if (data.create_login_account || (employee && employee.has_login_account)) {
             setData('role', getPresetRoleLabel(presetKey));
         }
-        // Build module selection
         const preset = rolePresets.find((item) => item.key === presetKey) || rolePresets.find((item) => item.key === 'custom');
         const presetModules = new Set(preset?.modules || []);
         const selection = availableModules.reduce((acc, module) => {
@@ -116,6 +184,29 @@ export default function EmployeeFormModal({
         });
     };
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!canEditHrRecords) return;
+
+        if (mode === 'add') {
+            const isProvisioningLogin = data.create_login_account;
+            post(route('hr.store'), {
+                onSuccess: (page) => {
+                    onClose();
+                    addToast(page?.props?.flash?.success || (isProvisioningLogin ? 'Employee and staff login created. Verification code sent.' : 'Employee added.'), 'success');
+                }
+            });
+        } else {
+            if (!employee) return;
+            patch(route('hr.update', employee.id), {
+                onSuccess: (page) => {
+                    onClose();
+                    addToast(page?.props?.flash?.success || 'Employee details updated.', 'success');
+                }
+            });
+        }
+    };
+
     const hasLinkedLogin = mode === 'edit' && !!employee?.has_login_account;
     const editLinkedLoginIsSuspended = hasLinkedLogin && employee?.login_account?.workspace_access_enabled === false;
     const isSuspendingLinkedLogin = hasLinkedLogin && canUpdateStaffAccounts && !data.create_login_account;
@@ -124,7 +215,7 @@ export default function EmployeeFormModal({
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="2xl">
-            <form onSubmit={onSubmit} className="flex flex-col max-h-[85vh]">
+            <form onSubmit={handleSubmit} className="flex flex-col max-h-[85vh]">
                 {/* Header */}
                 <div className="shrink-0 flex justify-between items-start px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
                     <div className="flex items-start gap-4">

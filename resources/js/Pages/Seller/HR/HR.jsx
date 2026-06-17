@@ -1,37 +1,26 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
-import axios from 'axios';
+import { Head, router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
-import useConstraintValidation from '@/hooks/useConstraintValidation';
 
 import {
     FALLBACK_ROLE_PRESETS,
     FALLBACK_MODULES,
-    DEFAULT_EMPLOYEE_ROLE,
-    normalizeModulePermissionLevel,
-    summarizeModulePermissions,
-    buildModuleSelection,
-    getModuleSelectionFromLogin,
-    generateRandomEmployeeId,
     getHrAccessSummary,
 } from '@/utils/hrHelpers';
 
 import HRMetrics from '@/Components/Seller/HR/HRMetrics';
-import StaffTable from '@/Components/Seller/HR/StaffTable';
-import PayrollHistoryTable from '@/Components/Seller/HR/PayrollHistoryTable';
-import AccessAuditLog from '@/Components/Seller/HR/AccessAuditLog';
 import AttendanceCalendarModal from '@/Components/Seller/HR/AttendanceCalendarModal';
 import EmployeeFormModal from '@/Components/Seller/HR/EmployeeFormModal';
 import PayrollGenerator from '@/Components/Seller/HR/PayrollGenerator';
 import HRSettingsModal from '@/Components/Seller/HR/HRSettingsModal';
-
 import HRHeaderActions from '@/Components/Seller/HR/HRHeaderActions';
 import HRTabs from '@/Components/Seller/HR/HRTabs';
 import HRStickyActionBar from '@/Components/Seller/HR/HRStickyActionBar';
+import HRTabContentWrapper from '@/Components/Seller/HR/HRTabContentWrapper';
 
 export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,20 +29,17 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const { openSidebar } = useSellerWorkspaceShell();
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceModalEmployee, setAttendanceModalEmployee] = useState(null);
-    const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);    const activeAttendanceEmployee = useMemo(() => attendanceModalEmployee ? (staff.find(emp => emp.id === attendanceModalEmployee.id) || attendanceModalEmployee) : null, [attendanceModalEmployee, staff]);
+    const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
+    
+    const activeAttendanceEmployee = useMemo(() => 
+        attendanceModalEmployee 
+            ? (staff.find(emp => emp.id === attendanceModalEmployee.id) || attendanceModalEmployee) 
+            : null, 
+        [attendanceModalEmployee, staff]
+    );
+
     const openAddModal = () => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        setData({
-            employee_id: generateRandomEmployeeId(),
-            name: '',
-            role: DEFAULT_EMPLOYEE_ROLE,
-            salary: '',
-            create_login_account: false,
-            email: '',
-            default_password: '',
-            staff_role_preset_key: initialPresetKey,
-            module_overrides: buildModuleSelection(initialPresetKey, rolePresets, availableModules),
-        });
         setIsModalOpen(true);
     };
 
@@ -72,8 +58,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
-    const [dryRunResults, setDryRunResults] = useState(null);
-    const [isDryRunning, setIsDryRunning] = useState(false);
     const [activeTab, setActiveTab] = useState('directory');
     const { addToast } = useToast();
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
@@ -89,131 +73,28 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     const rolePresets = staffProvisioning.rolePresets?.length ? staffProvisioning.rolePresets : FALLBACK_ROLE_PRESETS;
     const availableModules = staffProvisioning.availableModules?.length ? staffProvisioning.availableModules : FALLBACK_MODULES;
-    const initialPresetKey = rolePresets[0]?.key || 'hr';
     const presetLabelByKey = useMemo(() => Object.fromEntries(rolePresets.map(p => [p.key, p.label])), [rolePresets]);
     const showReadOnlyToast = () => addToast('Read-only people access can only view records.', 'error');
+    
     const pendingPayrollCount = useMemo(() => {
         const list = Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
         return list.filter((p) => p.status === 'Pending').length;
     }, [payrolls]);
-    const hrAccessSummary = useMemo(() => getHrAccessSummary(canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts), [canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts]);
-
-    // settings form
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const { data: settingsData, setData: setSettingsData, post: postSettings, processing: settingsProcessing } = useForm({
-        overtime_rate: sellerSettings.overtime_rate || 50.00,
-        payroll_working_days: sellerSettings.payroll_working_days || 22,
-    });
-
-    const submitSettings = (e) => {
-        e.preventDefault();
-        if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        postSettings(route('hr.settings'), {
-            onSuccess: () => {
-                setIsSettingsOpen(false);
-                addToast('Payroll settings updated.', 'success');
-            }
-        });
-    };
-
-    // ADD form
-    const { data, setData, post, processing, reset, errors } = useForm({
-        employee_id: '',
-        name: '',
-        role: DEFAULT_EMPLOYEE_ROLE,
-        salary: '',
-        create_login_account: false,
-        email: '',
-        default_password: '',
-        staff_role_preset_key: initialPresetKey,
-        module_overrides: buildModuleSelection(initialPresetKey, rolePresets, availableModules),
-    });
-
-    const employeeIdValidation = useConstraintValidation('employee_id_uniqueness', data.employee_id, { employee_id: editingEmployee?.id });
-    const emailValidation = useConstraintValidation(
-        'email_availability',
-        data.email,
-        { user_id: editingEmployee?.login_account?.id },
-        data.create_login_account
+    
+    const hrAccessSummary = useMemo(() => 
+        getHrAccessSummary(canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts), 
+        [canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts]
     );
 
-    const submit = (e) => {
-        e.preventDefault();
-        if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        const isProvisioningLogin = data.create_login_account;
-        post(route('hr.store'), {
-            onSuccess: (page) => {
-                setIsModalOpen(false);
-                reset();
-                addToast(page?.props?.flash?.success || (isProvisioningLogin ? 'Employee and staff login created. Verification code sent.' : 'Employee added.'), 'success');
-            }
-        });
-    };
-
-    // EDIT form
-    const { data: editData, setData: setEditData, patch, processing: editProcessing, reset: resetEdit, errors: editErrors } = useForm({
-        employee_id: '',
-        name: '',
-        role: DEFAULT_EMPLOYEE_ROLE,
-        salary: '',
-        create_login_account: false,
-        email: '',
-        default_password: '',
-        staff_role_preset_key: initialPresetKey,
-        module_overrides: buildModuleSelection(initialPresetKey, rolePresets, availableModules),
-    });
-    const editEmployeeIdValidation = useConstraintValidation(
-        'employee_id_uniqueness',
-        editData.employee_id,
-        { employee_id: editingEmployee?.id },
-        !!editingEmployee && editData.employee_id !== editingEmployee.employee_id
-    );
-    const editEmailValidation = useConstraintValidation(
-        'email_availability',
-        editData.email,
-        { user_id: editingEmployee?.login_account?.id },
-        editData.create_login_account && (!editingEmployee?.login_account || editData.email !== editingEmployee.login_account.email)
-    );
     const openEditModal = (employee) => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        const hasLoginAccount = !!employee.has_login_account;
-        const workspaceAccessEnabled = employee.login_account?.workspace_access_enabled !== false;
-        const presetKey = employee.login_account?.role_preset_key || initialPresetKey;
-        const moduleOverrides = hasLoginAccount 
-            ? getModuleSelectionFromLogin(employee.login_account, presetKey, rolePresets, availableModules) 
-            : buildModuleSelection(presetKey, rolePresets, availableModules);
-
         setEditingEmployee(employee);
-        setEditData({
-            employee_id: employee.employee_id || generateRandomEmployeeId(),
-            name: employee.name || '',
-            role: hasLoginAccount ? (rolePresets.find(p => p.key === presetKey)?.label || 'Custom') : (employee.role || DEFAULT_EMPLOYEE_ROLE),
-            salary: employee.salary ?? '',
-            create_login_account: hasLoginAccount ? workspaceAccessEnabled : false,
-            email: employee.login_account?.email || '',
-            default_password: '',
-            staff_role_preset_key: presetKey,
-            module_overrides: moduleOverrides,
-        });
         setIsEditModalOpen(true);
     };
 
     const closeEditModal = () => {
         setIsEditModalOpen(false);
         setEditingEmployee(null);
-        resetEdit();
-    };
-
-    const submitEdit = (e) => {
-        e.preventDefault();
-        if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        if (!editingEmployee) return;
-        patch(route('hr.update', editingEmployee.id), {
-            onSuccess: (page) => {
-                closeEditModal();
-                addToast(page?.props?.flash?.success || 'Employee details updated.', 'success');
-            },
-        });
     };
 
     const deleteEmployee = (id) => {
@@ -221,88 +102,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         setConfirmModal({ isOpen: true, type: 'employee', id });
     };
 
-    // PAYROLL Form
     const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
-    const { data: payrollData, setData: setPayrollData, post: postPayroll, processing: payrollProcessing, reset: resetPayroll, transform: transformPayroll } = useForm({
-        month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
-        items: []
-    });
 
     const openPayrollModal = () => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        const initialItems = staff.map(emp => ({
-            employee_id: emp.id,
-            name: emp.name,
-            salary: Number(emp.salary),
-            absences_days: Number(emp.payroll_prefill?.absences_days ?? 0),
-            undertime_hours: Number(emp.payroll_prefill?.undertime_hours ?? 0),
-            overtime_hours: Number(emp.payroll_prefill?.overtime_hours ?? 0),
-            attendance_days_worked: Number(emp.payroll_prefill?.days_worked ?? 0),
-            has_attendance_source: !!emp.attendance?.has_attendance_source,
-            isSelected: true
-        }));
-        setPayrollData('month', sellerSettings.attendance_month_label || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }));
-        setPayrollData('items', initialItems);
         setIsPayrollModalOpen(true);
-    };
-
-    const handleDryRun = () => {
-        if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        const selectedItems = payrollData.items.filter(i => i.isSelected);
-        if (selectedItems.length === 0) { addToast("Please select at least one employee.", "error"); return; }
-        setIsDryRunning(true);
-        setDryRunResults(null);
-
-        axios.post(route('hr.generate'), {
-            action: 'dry_run',
-            month: payrollData.month,
-            items: selectedItems.map(i => ({
-                employee_id: i.employee_id,
-                absences_days: i.absences_days || 0,
-                undertime_hours: i.undertime_hours || 0,
-                overtime_hours: i.overtime_hours || 0
-            }))
-        })
-        .then(response => {
-            setDryRunResults(response.data);
-            addToast('Dry run calculation complete.', 'success');
-        })
-        .catch(() => {
-            addToast('Dry run failed. Please check inputs.', 'error');
-        })
-        .finally(() => {
-            setIsDryRunning(false);
-        });
-    };
-
-    const submitPayroll = (e) => {
-        e.preventDefault();
-        if (!canEditHrRecords) { showReadOnlyToast(); return; }
-        const selectedItems = payrollData.items.filter(i => i.isSelected);
-        if (selectedItems.length === 0) { addToast("Please select at least one employee.", "error"); return; }
-
-        transformPayroll((data) => ({
-            month: data.month,
-            items: data.items.filter(i => i.isSelected).map(i => ({
-                employee_id: i.employee_id,
-                absences_days: i.absences_days || 0,
-                undertime_hours: i.undertime_hours || 0,
-                overtime_hours: i.overtime_hours || 0
-            }))
-        }));
-
-        postPayroll(route('hr.generate'), {
-            onSuccess: (page) => {
-                if (page?.props?.flash?.error) { addToast(page.props.flash.error, 'error'); return; }
-                setIsPayrollModalOpen(false);
-                resetPayroll();
-                addToast(page?.props?.flash?.success || 'Payroll request sent to Accounting.', "success");
-            },
-            onError: (errors) => {
-                const firstError = errors.items || errors.month || Object.values(errors)[0];
-                addToast(firstError || 'Unable to generate payroll right now.', 'error');
-            },
-        });
     };
 
     const deletePayroll = (id) => {
@@ -329,6 +133,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             });
         }
     };
+
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     return (
         <>
@@ -362,35 +168,23 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
                 <HRTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                {activeTab === 'directory' && (
-                    <StaffTable
-                        staff={staff}
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        canEditHrRecords={canEditHrRecords}
-                        canDeleteStaffAccounts={canDeleteStaffAccounts}
-                        openEditModal={openEditModal}
-                        deleteEmployee={deleteEmployee}
-                        openAttendanceModal={setAttendanceModalEmployee}
-                        presetLabelByKey={presetLabelByKey}
-                        monthLabel={sellerSettings.attendance_month_label || 'Current Month'}
-                        onAddClick={openAddModal}
-                    />
-                )}
-
-                {activeTab === 'payroll' && (
-                    <PayrollHistoryTable
-                        payrolls={payrolls}
-                        canEditHrRecords={canEditHrRecords}
-                        deletePayroll={deletePayroll}
-                    />
-                )}
-
-                {activeTab === 'access' && (
-                    <AccessAuditLog
-                        auditEntries={staffAccessAudits}
-                    />
-                )}
+                <HRTabContentWrapper
+                    activeTab={activeTab}
+                    staff={staff}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    canEditHrRecords={canEditHrRecords}
+                    canDeleteStaffAccounts={canDeleteStaffAccounts}
+                    openEditModal={openEditModal}
+                    deleteEmployee={deleteEmployee}
+                    openAttendanceModal={setAttendanceModalEmployee}
+                    presetLabelByKey={presetLabelByKey}
+                    monthLabel={sellerSettings.attendance_month_label || 'Current Month'}
+                    openAddModal={openAddModal}
+                    payrolls={payrolls}
+                    deletePayroll={deletePayroll}
+                    staffAccessAudits={staffAccessAudits}
+                />
             </main>
 
             <AttendanceCalendarModal
@@ -406,19 +200,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 mode="add"
-                onSubmit={submit}
-                data={data}
-                setData={setData}
-                processing={processing}
-                errors={errors}
                 rolePresets={rolePresets}
                 availableModules={availableModules}
                 canProvisionStaffAccounts={canProvisionStaffAccounts}
                 canUpdateStaffAccounts={canUpdateStaffAccounts}
                 requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                 canEditHrRecords={canEditHrRecords}
-                employeeIdValidation={employeeIdValidation}
-                emailValidation={emailValidation}
             />
 
             {editingEmployee && (
@@ -427,47 +214,30 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     onClose={closeEditModal}
                     mode="edit"
                     employee={editingEmployee}
-                    onSubmit={submitEdit}
-                    data={editData}
-                    setData={setEditData}
-                    processing={editProcessing}
-                    errors={editErrors}
                     rolePresets={rolePresets}
                     availableModules={availableModules}
                     canProvisionStaffAccounts={canProvisionStaffAccounts}
                     canUpdateStaffAccounts={canUpdateStaffAccounts}
                     requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                     canEditHrRecords={canEditHrRecords}
-                    employeeIdValidation={editEmployeeIdValidation}
-                    emailValidation={editEmailValidation}
                 />
             )}
 
             <PayrollGenerator
                 isOpen={isPayrollModalOpen}
-                onClose={() => { setIsPayrollModalOpen(false); setDryRunResults(null); }}
-                onSubmit={submitPayroll}
-                data={payrollData}
-                setData={setPayrollData}
-                processing={payrollProcessing}
-                errors={errors}
+                onClose={() => setIsPayrollModalOpen(false)}
                 staff={staff}
                 sellerSettings={sellerSettings}
-                isDryRunning={isDryRunning}
-                dryRunResults={dryRunResults}
-                handleDryRun={handleDryRun}
                 canEditHrRecords={canEditHrRecords}
             />
 
             <HRSettingsModal
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                onSubmit={submitSettings}
-                data={settingsData}
-                setData={setSettingsData}
-                processing={settingsProcessing}
+                sellerSettings={sellerSettings}
                 canEditHrRecords={canEditHrRecords}
             />
+
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal({ isOpen: false, type: null, id: null })}

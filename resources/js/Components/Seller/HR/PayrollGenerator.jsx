@@ -1,6 +1,9 @@
 import React from 'react';
 import { Banknote, X, Clock3, Users } from 'lucide-react';
+import { useForm } from '@inertiajs/react';
+import axios from 'axios';
 import Modal from '@/Components/Modal';
+import { useToast } from '@/Components/ToastContext';
 import {
     formatPeso,
     formatPrecisePeso,
@@ -10,18 +13,40 @@ import {
 export default function PayrollGenerator({
     isOpen,
     onClose,
-    onSubmit,
-    data,
-    setData,
-    processing,
-    errors,
     staff = [],
     sellerSettings = {},
-    isDryRunning = false,
-    dryRunResults = null,
-    handleDryRun,
     canEditHrRecords
 }) {
+    const { addToast } = useToast();
+    const [dryRunResults, setDryRunResults] = React.useState(null);
+    const [isDryRunning, setIsDryRunning] = React.useState(false);
+
+    const { data, setData, post, processing, errors, transform } = useForm({
+        month: sellerSettings.attendance_month_label || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+        items: []
+    });
+
+    React.useEffect(() => {
+        if (isOpen) {
+            const initialItems = staff.map(emp => ({
+                employee_id: emp.id,
+                name: emp.name,
+                salary: Number(emp.salary),
+                absences_days: Number(emp.payroll_prefill?.absences_days ?? 0),
+                undertime_hours: Number(emp.payroll_prefill?.undertime_hours ?? 0),
+                overtime_hours: Number(emp.payroll_prefill?.overtime_hours ?? 0),
+                attendance_days_worked: Number(emp.payroll_prefill?.days_worked ?? 0),
+                has_attendance_source: !!emp.attendance?.has_attendance_source,
+                isSelected: true
+            }));
+            setData({
+                month: sellerSettings.attendance_month_label || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+                items: initialItems
+            });
+            setDryRunResults(null);
+        }
+    }, [isOpen, staff, sellerSettings]);
+
     const updatePayrollItem = (index, field, value) => {
         const newItems = [...data.items];
         newItems[index][field] = value;
@@ -34,9 +59,80 @@ export default function PayrollGenerator({
             .reduce((acc, item) => acc + calculateNetPay(item, sellerSettings), 0);
     };
 
+    const handleDryRun = () => {
+        if (!canEditHrRecords) return;
+        const selectedItems = data.items.filter(i => i.isSelected);
+        if (selectedItems.length === 0) {
+            addToast("Please select at least one employee.", "error");
+            return;
+        }
+        setIsDryRunning(true);
+        setDryRunResults(null);
+
+        axios.post(route('hr.generate'), {
+            action: 'dry_run',
+            month: data.month,
+            items: selectedItems.map(i => ({
+                employee_id: i.employee_id,
+                absences_days: i.absences_days || 0,
+                undertime_hours: i.undertime_hours || 0,
+                overtime_hours: i.overtime_hours || 0
+            }))
+        })
+        .then(response => {
+            if (response.data?.success && response.data?.data) {
+                setDryRunResults(response.data.data);
+                addToast('Dry run calculation complete.', 'success');
+            } else {
+                addToast('Failed to retrieve preview details.', 'error');
+            }
+        })
+        .catch(() => {
+            addToast('Dry run failed. Please check inputs.', 'error');
+        })
+        .finally(() => {
+            setIsDryRunning(false);
+        });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!canEditHrRecords) return;
+        const selectedItems = data.items.filter(i => i.isSelected);
+        if (selectedItems.length === 0) {
+            addToast("Please select at least one employee.", "error");
+            return;
+        }
+
+        transform((data) => ({
+            month: data.month,
+            items: data.items.filter(i => i.isSelected).map(i => ({
+                employee_id: i.employee_id,
+                absences_days: i.absences_days || 0,
+                undertime_hours: i.undertime_hours || 0,
+                overtime_hours: i.overtime_hours || 0
+            }))
+        }));
+
+        post(route('hr.generate'), {
+            onSuccess: (page) => {
+                if (page?.props?.flash?.error) {
+                    addToast(page.props.flash.error, 'error');
+                    return;
+                }
+                onClose();
+                addToast(page?.props?.flash?.success || 'Payroll request sent to Accounting.', "success");
+            },
+            onError: (errors) => {
+                const firstError = errors.items || errors.month || Object.values(errors)[0];
+                addToast(firstError || 'Unable to generate payroll right now.', 'error');
+            },
+        });
+    };
+
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="5xl">
-            <form onSubmit={onSubmit} className="flex max-h-[85vh] flex-col">
+            <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col">
                 {/* Header */}
                 <div className="shrink-0 flex items-start justify-between px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
                     <div className="flex items-start gap-4">
@@ -242,7 +338,7 @@ export default function PayrollGenerator({
                     </div>
 
                     {/* Dry Run / Preview Results */}
-                    {dryRunResults && (
+                    {dryRunResults && dryRunResults.items && (
                         <div className="mt-6 animate-fade-in border-t border-stone-100 pt-6">
                             <div className="mb-4 flex items-center justify-between">
                                 <div>
@@ -254,20 +350,20 @@ export default function PayrollGenerator({
                                 </div>
                             </div>
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {dryRunResults.results.map(res => (
-                                    <div key={`dry-run-${res.employee_id}`} className="rounded-2xl border border-stone-200 bg-white p-3.5 shadow-sm">
+                                {dryRunResults.items.map(res => (
+                                    <div key={`dry-run-${res.employee_name}`} className="rounded-2xl border border-stone-200 bg-white p-3.5 shadow-sm">
                                         <div className="flex items-center justify-between gap-2 border-b border-stone-50 pb-2 mb-2">
-                                            <span className="text-[12px] font-bold text-stone-800 truncate">{res.name}</span>
+                                            <span className="text-[12px] font-bold text-stone-800 truncate">{res.employee_name}</span>
                                             <span className="text-[12px] font-bold text-clay-700">{formatPrecisePeso(res.net_pay)}</span>
                                         </div>
                                         <div className="space-y-1.5 text-[10px] font-medium text-stone-500">
                                             <div className="flex justify-between">
                                                 <span>Base Salary</span>
-                                                <span className="text-stone-700">{formatPeso(res.salary)}</span>
+                                                <span className="text-stone-700">{formatPeso(res.base_salary)}</span>
                                             </div>
                                             <div className="flex justify-between text-red-600">
                                                 <span>Deductions</span>
-                                                <span>- {formatPrecisePeso(res.absences_deduction + res.undertime_deduction)}</span>
+                                                <span>- {formatPrecisePeso(res.deductions)}</span>
                                             </div>
                                             <div className="flex justify-between text-emerald-600">
                                                 <span>OT Pay</span>

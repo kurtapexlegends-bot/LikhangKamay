@@ -1,21 +1,47 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
+import { useToast } from '@/Components/ToastContext';
 import { modalCloseButtonClass } from '@/utils/hrHelpers';
 
 export default function HRSettingsModal({
     isOpen,
     onClose,
-    onSubmit,
-    data,
-    setData,
-    processing,
+    sellerSettings = {},
     canEditHrRecords
 }) {
+    const { addToast } = useToast();
+
+    const { data, setData, post, processing } = useForm({
+        overtime_rate: sellerSettings.overtime_rate || 50.00,
+        payroll_working_days: sellerSettings.payroll_working_days || 22,
+    });
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setData({
+                overtime_rate: sellerSettings.overtime_rate || 50.00,
+                payroll_working_days: sellerSettings.payroll_working_days || 22,
+            });
+        }
+    }, [isOpen, sellerSettings]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!canEditHrRecords) return;
+        post(route('hr.settings'), {
+            onSuccess: () => {
+                onClose();
+                addToast('Payroll settings updated.', 'success');
+            }
+        });
+    };
+
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="sm">
-            <form onSubmit={onSubmit} className="flex max-h-[85vh] flex-col">
+            <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col">
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
                     <div>
