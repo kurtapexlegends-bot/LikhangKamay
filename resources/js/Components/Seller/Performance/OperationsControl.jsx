@@ -106,51 +106,51 @@ export default function OperationsControl({ metrics, insights }) {
                 {activeTab === 'stock' && (
                     <div className="space-y-4">
                         {/* Low Stock Alerts */}
-                        <div className="bg-rose-50/50 p-3 rounded-xl border border-rose-100/50">
-                            <p className="text-[10px] text-rose-700 mb-2.5 font-bold uppercase tracking-wider flex justify-between">
+                        <div className="bg-rose-50/30 p-3 rounded-xl border border-rose-100/50">
+                            <p className="text-[10px] text-rose-700 mb-2.5 font-black uppercase tracking-wider flex justify-between">
                                 <span className="flex items-center gap-1.5"><ShieldAlert size={11} /> Critical Low Stock</span>
                                 {lowStockProducts.length > 0 && <span className="bg-rose-600 text-white rounded-full px-1.5 text-[8px] font-black">{lowStockProducts.length}</span>}
                             </p>
-                            <div className="space-y-2 max-h-[110px] overflow-y-auto pr-1">
+                            <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
                                 {lowStockProducts.length > 0 ? lowStockProducts.map((p, i) => (
-                                    <div key={i} className="flex items-center justify-between text-xs">
+                                    <div key={i} className="flex items-center justify-between text-xs bg-white/70 p-2 rounded-lg border border-rose-100/20 hover:border-rose-200 hover:shadow-sm transition-all duration-300">
                                         <div className="min-w-0">
-                                            <p className="font-bold text-stone-900 truncate max-w-[120px]">{p.name}</p>
-                                            <p className="text-[9px] text-stone-400 font-medium">SKU: {p.sku || 'N/A'}</p>
+                                            <p className="font-extrabold text-stone-900 truncate max-w-[120px]">{p.name}</p>
+                                            <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider">SKU: {p.sku || 'N/A'}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="text-right">
                                                 <p className="font-black text-rose-600">{p.stock} left</p>
                                             </div>
-                                            <Link href={route('products.index')} className="p-1 bg-white border border-stone-200/50 rounded text-stone-500 hover:bg-stone-50 transition-colors">
+                                            <Link href={route('products.index')} className="p-1 bg-white border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-50 transition-colors">
                                                 <ArrowUpRight size={10} />
                                             </Link>
                                         </div>
                                     </div>
-                                )) : <p className="text-[10px] text-stone-500 text-center py-2 italic font-medium">All items have healthy stock.</p>}
+                                )) : <p className="text-[10px] text-stone-400 text-center py-3 italic font-medium">All items have healthy stock.</p>}
                             </div>
                         </div>
 
                         {/* Slow Movers */}
-                        <div className="bg-stone-50/50 p-3 rounded-xl border border-stone-100">
+                        <div className="bg-stone-50/50 p-3 rounded-xl border border-stone-150">
                             <p className="text-[10px] text-stone-600 mb-2.5 font-bold uppercase tracking-wider">Slow Movers (0 sales in 30 days)</p>
-                            <div className="space-y-2 max-h-[110px] overflow-y-auto pr-1">
+                            <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
                                 {slowMovers.length > 0 ? slowMovers.map((p, i) => (
-                                    <div key={i} className="flex items-center justify-between text-xs">
+                                    <div key={i} className="flex items-center justify-between text-xs bg-white/60 p-2 rounded-lg border border-stone-200/20 hover:border-stone-300 hover:shadow-sm transition-all duration-300">
                                         <div className="min-w-0">
-                                            <p className="font-bold text-stone-900 truncate max-w-[120px]">{p.name}</p>
+                                            <p className="font-extrabold text-stone-900 truncate max-w-[120px]">{p.name}</p>
                                             <p className="text-[9px] text-stone-400 font-medium">Inactive {p.days_inactive} days</p>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="text-right">
                                                 <p className="font-black text-stone-700">{p.stock} units</p>
                                             </div>
-                                            <Link href={route('products.index')} className="p-1 bg-white border border-stone-200/50 rounded text-stone-500 hover:bg-stone-50 transition-colors">
+                                            <Link href={route('products.index')} className="p-1 bg-white border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-50 transition-colors">
                                                 <ArrowUpRight size={10} />
                                             </Link>
                                         </div>
                                     </div>
-                                )) : <p className="text-[10px] text-stone-500 text-center py-2 italic font-medium">All products are moving healthy!</p>}
+                                )) : <p className="text-[10px] text-stone-400 text-center py-3 italic font-medium">All products are moving healthy!</p>}
                             </div>
                         </div>
                     </div>

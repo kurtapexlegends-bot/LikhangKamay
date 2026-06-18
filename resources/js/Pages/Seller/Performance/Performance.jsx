@@ -490,24 +490,30 @@ export default function Analytics({
                         </div>
 
                         {categoryData.length > 0 && (
-                            <div className="mt-4 space-y-2 pt-3 border-t border-stone-100 max-h-[140px] overflow-y-auto pr-1">
+                            <div className="mt-4 space-y-2.5 pt-3 border-t border-stone-100 max-h-[140px] overflow-y-auto pr-1">
                                 {(() => {
                                     const total = categoryData.reduce((sum, item) => sum + item.value, 0);
-                                    return categoryData.map((item, index) => (
-                                        <div key={index} className="flex flex-col gap-0.5">
-                                            <div className="flex items-center justify-between text-[11px]">
-                                                <div className="flex items-center gap-1.5 min-w-0">
-                                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                                                    <span className="font-bold text-stone-900 truncate max-w-[120px]">{item.category || item.name}</span>
+                                    return categoryData.map((item, index) => {
+                                        const displayShare = total > 0 ? Math.round((item.value / total) * 100) : 0;
+                                        return (
+                                            <div key={index} className="flex flex-col gap-1">
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                                        <span className="font-bold text-stone-900 truncate max-w-[120px]">{item.category || item.name}</span>
+                                                    </div>
+                                                    <span className="font-black text-clay-700">{formatPeso(item.profit)}</span>
                                                 </div>
-                                                <span className="font-black text-clay-700">{formatPeso(item.profit)}</span>
+                                                <div className="flex items-center justify-between text-[10px] text-stone-400">
+                                                    <span>{item.value} sold • {item.margin}% margin</span>
+                                                    <span className="font-bold">{displayShare}% share</span>
+                                                </div>
+                                                <div className="w-full bg-stone-50 h-1 rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${displayShare}%`, backgroundColor: COLORS[index % COLORS.length] }} />
+                                                </div>
                                             </div>
-                                            <div className="flex items-center justify-between text-[10px] text-stone-400">
-                                                <span>{item.value} sold • {item.margin}% margin</span>
-                                                <span className="font-bold">{total > 0 ? Math.round((item.value / total) * 100) : 0}% share</span>
-                                            </div>
-                                        </div>
-                                    ));
+                                        );
+                                    });
                                 })()}
                             </div>
                         )}
@@ -555,10 +561,10 @@ export default function Analytics({
                                             return (
                                                 <div 
                                                     key={hour} 
-                                                    className={`h-7 rounded-md ${opacity} transition-all hover:scale-105 cursor-help flex items-center justify-center`}
+                                                    className={`h-7 rounded-[4px] ${opacity} transition-all duration-300 hover:scale-[1.12] hover:shadow-sm cursor-help flex items-center justify-center`}
                                                     title={`${count} orders at ${hour}:00 on ${day}`}
                                                 >
-                                                    {count > 0 && <span className={`text-[9px] font-bold ${count > 4 ? 'text-white' : 'text-clay-800'}`}>{count}</span>}
+                                                    {count > 0 && <span className={`text-[9px] font-black ${count > 4 ? 'text-white' : 'text-clay-900'}`}>{count}</span>}
                                                 </div>
                                             );
                                         })}
@@ -566,7 +572,14 @@ export default function Analytics({
                                 ))}
                             </div>
                         </div>
-                        <p className="mt-3 text-[9px] text-stone-400 italic">Recommendation: Schedule product updates or campaigns matching dark heatmap blocks.</p>
+                        <div className="mt-4 p-3 bg-stone-50 border border-stone-150 rounded-xl flex items-start gap-2.5 print:hidden">
+                            <div className="p-0.5 bg-clay-50 border border-clay-100 rounded text-clay-600 shrink-0 mt-0.5">
+                                <Activity size={12} />
+                            </div>
+                            <p className="text-[10px] text-stone-500 leading-relaxed">
+                                <span className="font-bold text-stone-700">Logistics Recommendation:</span> Schedule campaign launches or catalog updates during highlighted dark heatmap windows to capture maximum buyer conversion.
+                            </p>
+                        </div>
                     </div>
 
                     {/* Operations Control (Tabbed fulfillment, low stock, and velocity) */}
