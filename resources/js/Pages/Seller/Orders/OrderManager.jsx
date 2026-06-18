@@ -65,6 +65,22 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         return () => clearTimeout(timer);
     }, []);
 
+    useEffect(() => {
+        const handleResize = () => {
+            if (selectedOrderIds.length > 0 && window.innerWidth < 640) {
+                document.body.classList.add('has-sticky-action-bar');
+            } else {
+                document.body.classList.remove('has-sticky-action-bar');
+            }
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            document.body.classList.remove('has-sticky-action-bar');
+        };
+    }, [selectedOrderIds]);
+
     const [expandedTimelines, setExpandedTimelines] = useState(new Set());
     const [expandedCourierTrackings, setExpandedCourierTrackings] = useState(new Set());
     const [expandedPricingDetails, setExpandedPricingDetails] = useState(new Set());
@@ -508,7 +524,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-clay-50 border border-clay-100 text-clay-700 shadow-sm"><CheckCircle2 size={14} className="text-clay-600" /></div>
                             <span className="text-xs font-extrabold tracking-tight text-stone-900 whitespace-nowrap">{selectedOrderIds.length} Selected</span>
                         </div>
-                        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-start sm:justify-end overflow-x-auto no-scrollbar py-0.5">
                             <button type="button" onClick={() => setSelectedOrderIds([])} className="rounded-lg px-2 py-1 text-[11px] font-bold text-stone-500 hover:text-stone-800 transition hover:bg-stone-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]">Cancel</button>
                             <button type="button" onClick={handleBulkPrintLabels} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-[11px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]"><Printer size={12} /> Print Labels</button>
                             <button type="button" onClick={handleBulkPrintPackingSlips} disabled={isPrintingSlips} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-[11px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 disabled:opacity-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]">

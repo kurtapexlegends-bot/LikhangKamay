@@ -152,7 +152,7 @@ export default function StockRequestIndex({ auth, requests }) {
     const headerActions = canEditStockRequests ? (
         <Link 
             href={route('procurement.index')} 
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all min-h-[36px]"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all min-h-[44px] sm:min-h-[36px]"
         >
             <ShoppingBag size={13} />
             Request Stock

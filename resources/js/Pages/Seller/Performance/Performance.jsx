@@ -118,14 +118,13 @@ export default function Analytics({
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={sellerSubscription?.canExportAnalytics ? (
-                    <ExportButton href={route('analytics.export')} icon={Download} variant="primary" className="hidden sm:inline-flex">
+                    <ExportButton href={route('analytics.export')} icon={Download} variant="primary">
                         Download Report
                     </ExportButton>
                 ) : (
-                    <div className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-stone-100 bg-stone-50 px-4 py-2 text-[11px] font-bold text-stone-500 shadow-sm">
-                        <DollarSign size={15} />
-                        <span>Premium Export</span>
-                    </div>
+                    <ExportButton icon={DollarSign} disabled>
+                        Premium Export
+                    </ExportButton>
                 )}
             />
 

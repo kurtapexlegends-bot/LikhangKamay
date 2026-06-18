@@ -53,14 +53,16 @@ export default function ProductManager({
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => (window.location.href = route("products.export-csv"))}
-                            className="hidden lg:inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 min-h-[40px] select-none"
+                            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-stone-50 min-h-[44px] sm:min-h-[40px] select-none"
                         >
                             <FileDown size={16} />
-                            Export CSV
+                            <span className="hidden sm:inline">Export CSV</span>
+                            <span className="sm:hidden">Export</span>
                         </button>
-                        <label className="hidden lg:inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 cursor-pointer min-h-[40px] select-none">
+                        <label className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-stone-50 cursor-pointer min-h-[44px] sm:min-h-[40px] select-none">
                             <Upload size={16} />
-                            Import CSV
+                            <span className="hidden sm:inline">Import CSV</span>
+                            <span className="sm:hidden">Import</span>
                             <input
                                 type="file"
                                 className="hidden"
@@ -80,10 +82,11 @@ export default function ProductManager({
                         <button
                             onClick={state.openAddModal}
                             disabled={!state.canEditProducts}
-                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[40px]"
+                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[40px]"
                         >
                             <Plus size={16} />
                             <span className="hidden sm:inline">Add Product</span>
+                            <span className="sm:hidden">Add</span>
                         </button>
                     </div>
                 }

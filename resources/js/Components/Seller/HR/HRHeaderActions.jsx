@@ -11,7 +11,7 @@ export default function HRHeaderActions({
 }) {
     if (!canEditHrRecords) {
         return (
-            <span className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-500 min-h-[44px]">
+            <span className={`inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-500 min-h-[44px] ${className}`}>
                 <EyeOff size={14} />
                 View Only
             </span>
