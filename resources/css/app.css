@@ -82,6 +82,13 @@ body.has-sticky-action-bar .mobile-dock {
     pointer-events: none !important;
 }
 
+/* Ensure content is not obscured on mobile screens when sticky action bar is present */
+@media (max-width: 639px) {
+    body.has-sticky-action-bar main {
+        padding-bottom: 6.5rem !important;
+    }
+}
+
 @media (max-width: 767px) {
 .table-card-mobile {
     display: block;

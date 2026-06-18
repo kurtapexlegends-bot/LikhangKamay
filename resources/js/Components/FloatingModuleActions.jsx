@@ -1,6 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { LayoutGrid, ChevronRight, ChevronLeft } from 'lucide-react';
+import StickyActionBar from '@/Components/StickyActionBar';
+
+function adjustActionsForMobile(element) {
+    if (!React.isValidElement(element)) {
+        return element;
+    }
+
+    if (element.type === React.Fragment) {
+        return React.Children.map(element.props.children, child => adjustActionsForMobile(child));
+    }
+
+    const isContainer = typeof element.type === 'string' && ['div', 'span', 'section'].includes(element.type);
+    const elementClass = element.props.className || '';
+
+    if (isContainer) {
+        let updatedClass = elementClass;
+        if (elementClass.includes('flex')) {
+            updatedClass = elementClass
+                .replace(/flex-row|flex-col/g, '')
+                .replace(/gap-[0-9.]+/g, 'gap-3')
+                .replace(/items-[a-z]+/g, 'items-center')
+                .replace(/justify-[a-z]+/g, 'justify-between');
+            if (!updatedClass.includes('w-full')) {
+                updatedClass += ' w-full';
+            }
+        } else if (!updatedClass.includes('flex')) {
+            updatedClass += ' flex w-full items-center gap-3 justify-between';
+        }
+        
+        const children = React.Children.map(element.props.children, child => adjustActionsForMobile(child));
+        return React.cloneElement(element, { className: updatedClass }, children);
+    }
+
+    let updatedClass = elementClass;
+    const classesToAdd = [];
+
+    if (!elementClass.match(/\bmin-h-\[?\d+px\]?/)) {
+        classesToAdd.push('min-h-[44px]');
+    }
+    
+    if (!elementClass.includes('flex-1') && !elementClass.match(/\bw-\[?\d+|auto|full\]?/)) {
+        classesToAdd.push('flex-1 w-full');
+    }
+    
+    if (!elementClass.includes('justify-')) {
+        classesToAdd.push('justify-center');
+    }
+
+    if (classesToAdd.length > 0) {
+        updatedClass = `${elementClass} ${classesToAdd.join(' ')}`.trim().replace(/\s+/g, ' ');
+    }
+
+    return React.cloneElement(element, { className: updatedClass });
+}
 
 /**
  * FloatingModuleActions
@@ -15,9 +69,17 @@ import { LayoutGrid, ChevronRight, ChevronLeft } from 'lucide-react';
 export default function FloatingModuleActions({ actions }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 640);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
         
         let lastScrollY = window.scrollY;
         
@@ -44,6 +106,7 @@ export default function FloatingModuleActions({ actions }) {
 
         return () => {
             setMounted(false);
+            window.removeEventListener('resize', checkMobile);
             window.removeEventListener('scroll', handleScroll);
             if (scrollRegion) {
                 scrollRegion.removeEventListener('scroll', handleScroll);
@@ -64,9 +127,12 @@ export default function FloatingModuleActions({ actions }) {
         });
     }, [actions]);
 
-    const isMobile = mounted && typeof window !== 'undefined' && window.innerWidth < 640;
-
     if (!actions || !mounted || (isMobile && allActionsHiddenOnMobile)) return null;
+
+    if (isMobile) {
+        const adjustedActions = adjustActionsForMobile(actions);
+        return <StickyActionBar>{adjustedActions}</StickyActionBar>;
+    }
 
     const content = (
         <div className="fixed bottom-[4.75rem] sm:bottom-6 right-6 z-[45] flex items-end justify-end group pointer-events-none">

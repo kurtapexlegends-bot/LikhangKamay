@@ -171,22 +171,6 @@ export default function ProductManager({
                 </div>
             </main>
 
-            {/* Mobile Sticky Bottom Bar for main operations */}
-            {state.selectedProductIds.length === 0 && (
-                <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-t border-stone-200 px-4 py-3 flex items-center justify-between shadow-lg">
-                    <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Catalog Operations</span>
-                    <button
-                        type="button"
-                        onClick={state.openAddModal}
-                        disabled={!state.canEditProducts}
-                        className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
-                    >
-                        <Plus size={16} />
-                        Add Product
-                    </button>
-                </div>
-            )}
-
             {/* Mobile Selection Drawer (Bulk actions bottom sheet drawer) */}
             <SlideOverDrawer
                 show={state.selectedProductIds.length > 0 && state.isMobileOrTablet}

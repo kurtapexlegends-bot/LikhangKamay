@@ -7,6 +7,7 @@ export default function HRHeaderActions({
     onSettingsClick,
     onPayrollClick,
     onAddClick,
+    className = '',
 }) {
     if (!canEditHrRecords) {
         return (
@@ -22,7 +23,7 @@ export default function HRHeaderActions({
     const showAdd = activeTab === 'directory' || activeTab === 'access';
 
     return (
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 w-full sm:w-auto ${className}`}>
             {showSettings && (
                 <button
                     onClick={onSettingsClick}
@@ -37,7 +38,7 @@ export default function HRHeaderActions({
             {showPayroll && (
                 <button
                     onClick={onPayrollClick}
-                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 min-h-[44px]"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 min-h-[44px] flex-1 w-full sm:flex-initial sm:w-auto justify-center"
                     type="button"
                 >
                     <Banknote size={16} />
@@ -55,7 +56,7 @@ export default function HRHeaderActions({
             {showAdd && (
                 <button
                     onClick={onAddClick}
-                    className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700 min-h-[44px]"
+                    className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-clay-200 transition hover:bg-clay-700 min-h-[44px] flex-1 w-full sm:flex-initial sm:w-auto justify-center"
                     type="button"
                 >
                     <UserPlus size={16} />
