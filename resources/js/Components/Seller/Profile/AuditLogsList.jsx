@@ -65,13 +65,13 @@ export default function AuditLogsList({ groupedEntries, onEntryClick }) {
                                                     </p>
                                                 </div>
 
-                                                <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                                                    <CompactMeta label="Logged" value={formatDateTime(entry.occurred_at)} />
+                                                <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                                                    <CompactMeta label="Logged" value={formatDateTime(entry.occurred_at)} className="hidden sm:inline-flex" />
                                                     <CompactMeta label="Actor" value={entry.actor_name || 'System'} />
-                                                    <CompactMeta label="Actor Type" value={actorTypeLabel[entry.actor_type] || formatStatusLabel(entry.actor_type)} />
+                                                    <CompactMeta label="Actor Type" value={actorTypeLabel[entry.actor_type] || formatStatusLabel(entry.actor_type)} className="hidden md:inline-flex" />
                                                     <CompactMeta label="Module" value={moduleLabel[entry.module] || formatStatusLabel(entry.module)} />
-                                                    {entry.subject && <CompactMeta label="Subject" value={entry.subject} />}
-                                                    {entry.reference && <CompactMeta label="Ref" value={entry.reference} />}
+                                                    {entry.subject && <CompactMeta label="Subject" value={entry.subject} className="hidden sm:inline-flex" />}
+                                                    {entry.reference && <CompactMeta label="Ref" value={entry.reference} className="hidden md:inline-flex" />}
                                                     {entry.amount_label && <CompactMeta label="Amount" value={entry.amount_label} color="text-emerald-700" />}
                                                 </div>
 
@@ -123,9 +123,9 @@ export default function AuditLogsList({ groupedEntries, onEntryClick }) {
     );
 }
 
-function CompactMeta({ label, value, color = 'text-stone-700' }) {
+function CompactMeta({ label, value, color = 'text-stone-700', className = '' }) {
     return (
-        <div className="flex items-center gap-1.5 whitespace-nowrap bg-stone-50 px-2 py-1 rounded border border-stone-200">
+        <div className={`flex items-center gap-1.5 whitespace-nowrap bg-stone-50 px-2 py-1 rounded border border-stone-200/40 sm:border-stone-200 ${className}`}>
             <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">{label}</span>
             <span className={`text-[10px] font-bold ${color}`}>{value}</span>
         </div>

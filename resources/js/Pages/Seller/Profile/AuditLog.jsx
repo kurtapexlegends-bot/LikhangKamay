@@ -220,14 +220,14 @@ export default function AuditLog({ auth, auditLog }) {
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                 {/* KPI summary cards */}
-                <section className="mb-6">
-                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+                <section className="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-4 pb-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
                         {summaryCards.map(({ key, label, icon: Icon, tone }) => (
-                            <div key={key} className="flex flex-col justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">{label}</p>
-                                        <h3 className="text-2xl font-bold text-gray-900 mt-1">{auditLog?.summary?.[key] ?? 0}</h3>
+                            <div key={key} className="flex flex-col justify-between rounded-2xl border border-stone-200 bg-white p-4 lg:p-5 shadow-sm w-[200px] shrink-0 sm:w-auto sm:shrink">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 truncate">{label}</p>
+                                        <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mt-1">{auditLog?.summary?.[key] ?? 0}</h3>
                                     </div>
                                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone}`}>
                                         <Icon size={20} strokeWidth={2.5} />
