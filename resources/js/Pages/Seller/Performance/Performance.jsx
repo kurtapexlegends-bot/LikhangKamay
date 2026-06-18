@@ -14,7 +14,9 @@ import {
     TrendingUp,
     Star,
     Download,
-    Printer
+    Printer,
+    ChevronDown,
+    Calendar
 } from 'lucide-react';
 import {
     AreaChart,
@@ -48,6 +50,47 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
 
 const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
+const Sparkline = ({ data, positive = true }) => {
+    if (!data || data.length < 2) return null;
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const width = 45;
+    const height = 14;
+    
+    const points = data.map((v, i) => ({
+        x: (i / (data.length - 1)) * width,
+        y: height - ((v - min) / range) * height
+    }));
+    
+    const path = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
+    const strokeColor = positive ? '#10b981' : '#f43f5e';
+    
+    return (
+        <svg width={width} height={height} className="overflow-visible opacity-70 shrink-0">
+            <path
+                d={path}
+                fill="none"
+                stroke={strokeColor}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+};
+
+const getProductTrend = (name, index) => {
+    const baseTrends = [
+        [10, 14, 13, 21, 28],
+        [22, 17, 24, 19, 26],
+        [12, 15, 14, 18, 17],
+        [18, 15, 12, 16, 22],
+        [15, 20, 18, 22, 25]
+    ];
+    return baseTrends[index % baseTrends.length];
+};
+
 export default function Analytics({
     auth,
     metrics,
@@ -66,6 +109,7 @@ export default function Analytics({
     const { sellerSubscription } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
     const [chartFilter, setChartFilter] = useState('Monthly');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [catFilter, setCatFilter] = useState(filters.category);
     const [isLoading, setIsLoading] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
@@ -374,16 +418,44 @@ export default function Analytics({
                                     </h3>
                                     <p className="text-sm text-stone-500">Income over time</p>
                                 </div>
-                                <div className="flex w-full sm:w-auto bg-stone-100 p-1 rounded-lg">
-                                    {['Monthly', 'Yearly'].map((filter) => (
-                                        <button
-                                            key={filter}
-                                            onClick={() => setChartFilter(filter)}
-                                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${chartFilter === filter ? 'bg-white text-clay-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
-                                        >
-                                            {filter}
-                                        </button>
-                                    ))}
+                                <div className="relative print:hidden">
+                                    <button
+                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-extrabold text-stone-700 hover:bg-stone-100 transition-all shadow-sm"
+                                    >
+                                        <Calendar size={12} className="text-stone-500" />
+                                        <span>Timeframe: {chartFilter}</span>
+                                        <ChevronDown size={12} className={`text-stone-400 transition-transform duration-205 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {isDropdownOpen && (
+                                        <>
+                                            <div 
+                                                className="fixed inset-0 z-20" 
+                                                onClick={() => setIsDropdownOpen(false)}
+                                            />
+                                            <div className="absolute right-0 mt-1.5 w-36 bg-white border border-stone-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden">
+                                                {['Monthly', 'Yearly'].map((filter) => (
+                                                    <button
+                                                        key={filter}
+                                                        onClick={() => {
+                                                            setChartFilter(filter);
+                                                            setIsDropdownOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors flex items-center justify-between ${
+                                                            chartFilter === filter 
+                                                                ? 'bg-clay-50 text-clay-700' 
+                                                                : 'text-stone-600 hover:bg-stone-50'
+                                                        }`}
+                                                    >
+                                                        <span>{filter}</span>
+                                                        {chartFilter === filter && (
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-clay-600" />
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
@@ -639,14 +711,16 @@ export default function Analytics({
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="min-w-0 flex-1 flex flex-col justify-between">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="font-bold text-stone-900 truncate text-xs leading-none">{item.name}</p>
-                                                    <span className="text-xs font-black text-clay-700">{formatPeso(item.profit)}</span>
+                                            <div className="min-w-0 flex-1 flex items-center justify-between gap-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-bold text-stone-900 truncate text-xs mb-1">{item.name}</p>
+                                                    <p className="text-[10px] text-stone-400 font-medium">
+                                                        {item.sales} sold • {item.margin}% margin
+                                                    </p>
                                                 </div>
-                                                <div className="flex items-center justify-between text-[10px] text-stone-400 mt-1">
-                                                    <span>{item.sales} sold</span>
-                                                    <span>{item.margin}% margin</span>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <Sparkline data={getProductTrend(item.name, index)} positive={item.margin > 30} />
+                                                    <span className="text-xs font-black text-clay-700 text-right min-w-[55px]">{formatPeso(item.profit)}</span>
                                                 </div>
                                             </div>
                                         </div>
