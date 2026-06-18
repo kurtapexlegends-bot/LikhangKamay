@@ -162,6 +162,97 @@ class StaffAuthorizationMiddlewareTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_csv_import_enforces_active_limits_and_media_requirements(): void
+    {
+        \App\Models\Product::$bypassReview = true;
+        $owner = $this->createOwner();
+        $owner->update(['premium_tier' => 'free']); // Active limit is 3
+
+        // 1. Missing Media validation (should be forced to Draft)
+        $csvFileMissingMedia = UploadedFile::fake()->createWithContent('products_missing.csv', 
+            "SKU,Name,Category,Price,Cost Price,Stock,Lead Time,Status\n" .
+            "PROD-M1,Missing Media Vase,Finished Goods,250.00,100.00,10,2,Active"
+        );
+
+        $this->actingAs($owner)
+            ->post(route('products.import-csv'), ['file' => $csvFileMissingMedia])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('products', [
+            'user_id' => $owner->id,
+            'sku' => 'PROD-M1',
+            'status' => 'Draft',
+        ]);
+
+        // 2. Active limit enforcement (import 4 valid products, limit is 3)
+        $productA = \App\Models\Product::factory()->create([
+            'user_id' => $owner->id,
+            'sku' => 'PROD-A',
+            'name' => 'Product A',
+            'category' => 'Finished Goods',
+            'price' => 100.0,
+            'cover_photo_path' => 'photos/cover.jpg',
+            'gallery_paths' => ['photos/g1.jpg', 'photos/g2.jpg', 'photos/g3.jpg'],
+            'model_3d_path' => 'models/m1.glb',
+            'status' => 'Draft',
+        ]);
+        $productB = \App\Models\Product::factory()->create([
+            'user_id' => $owner->id,
+            'sku' => 'PROD-B',
+            'name' => 'Product B',
+            'category' => 'Finished Goods',
+            'price' => 100.0,
+            'cover_photo_path' => 'photos/cover.jpg',
+            'gallery_paths' => ['photos/g1.jpg', 'photos/g2.jpg', 'photos/g3.jpg'],
+            'model_3d_path' => 'models/m1.glb',
+            'status' => 'Draft',
+        ]);
+        $productC = \App\Models\Product::factory()->create([
+            'user_id' => $owner->id,
+            'sku' => 'PROD-C',
+            'name' => 'Product C',
+            'category' => 'Finished Goods',
+            'price' => 100.0,
+            'cover_photo_path' => 'photos/cover.jpg',
+            'gallery_paths' => ['photos/g1.jpg', 'photos/g2.jpg', 'photos/g3.jpg'],
+            'model_3d_path' => 'models/m1.glb',
+            'status' => 'Draft',
+        ]);
+        $productD = \App\Models\Product::factory()->create([
+            'user_id' => $owner->id,
+            'sku' => 'PROD-D',
+            'name' => 'Product D',
+            'category' => 'Finished Goods',
+            'price' => 100.0,
+            'cover_photo_path' => 'photos/cover.jpg',
+            'gallery_paths' => ['photos/g1.jpg', 'photos/g2.jpg', 'photos/g3.jpg'],
+            'model_3d_path' => 'models/m1.glb',
+            'status' => 'Draft',
+        ]);
+
+        $csvFileLimit = UploadedFile::fake()->createWithContent('products_limit.csv', 
+            "SKU,Name,Category,Price,Cost Price,Stock,Lead Time,Status\n" .
+            "PROD-A,Product A,Finished Goods,100,50,10,2,Active\n" .
+            "PROD-B,Product B,Finished Goods,100,50,10,2,Active\n" .
+            "PROD-C,Product C,Finished Goods,100,50,10,2,Active\n" .
+            "PROD-D,Product D,Finished Goods,100,50,10,2,Active"
+        );
+
+        $this->actingAs($owner)
+            ->post(route('products.import-csv'), ['file' => $csvFileLimit])
+            ->assertRedirect();
+
+        // The first 3 should be active
+        $this->assertDatabaseHas('products', ['sku' => 'PROD-A', 'status' => 'Active']);
+        $this->assertDatabaseHas('products', ['sku' => 'PROD-B', 'status' => 'Active']);
+        $this->assertDatabaseHas('products', ['sku' => 'PROD-C', 'status' => 'Active']);
+
+        // The 4th one should remain Draft since the active limit (3) was already reached
+        $this->assertDatabaseHas('products', ['sku' => 'PROD-D', 'status' => 'Draft']);
+
+        \App\Models\Product::$bypassReview = false;
+    }
+
     private function createOwner(): User
     {
         $owner = User::factory()->artisanApproved()->create([

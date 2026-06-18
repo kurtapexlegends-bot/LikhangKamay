@@ -1200,24 +1200,50 @@ class ProductController extends Controller
         $data = array_map('str_getcsv', file($path));
         $header = array_shift($data);
 
+        // Map column headers dynamically to support flexible CSV formatting
+        $headerMap = array_change_key_case(array_flip(array_map('trim', $header)), CASE_LOWER);
+
+        $skuIdx = $headerMap['sku'] ?? null;
+        $nameIdx = $headerMap['name'] ?? null;
+        $categoryIdx = $headerMap['category'] ?? null;
+        $priceIdx = $headerMap['price'] ?? null;
+        $costPriceIdx = $headerMap['cost price'] ?? $headerMap['cost_price'] ?? null;
+        $stockIdx = $headerMap['stock'] ?? null;
+        $leadTimeIdx = $headerMap['lead time'] ?? $headerMap['lead_time'] ?? null;
+        $statusIdx = $headerMap['status'] ?? null;
+
+        if (is_null($skuIdx) || is_null($nameIdx) || is_null($categoryIdx) || is_null($priceIdx) || is_null($stockIdx) || is_null($statusIdx)) {
+            return back()->with('error', 'Invalid CSV format. Missing required headers: SKU, Name, Category, Price, Stock, Status.');
+        }
+
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $count = 0;
-        $errors = [];
+        $draftedForMissingMedia = 0;
+        $skippedForLimit = 0;
+
+        $activeProductCount = Product::where('user_id', $seller->id)->where('status', 'Active')->count();
+        $productLimit = $seller->getActiveProductLimit();
 
         DB::beginTransaction();
         try {
             foreach ($data as $row) {
-                if (count($row) < 8) continue;
-                
-                $sku = $row[0];
-                $name = $row[1];
-                $category = $row[2];
-                $price = (float) $row[3];
-                $costPrice = (float) $row[4];
-                $stock = (int) $row[5];
-                $leadTime = (int) $row[6];
-                $status = $row[7];
+                // Safely fetch by mapped header indices
+                $sku = $row[$skuIdx] ?? null;
+                $name = $row[$nameIdx] ?? null;
+                $category = $row[$categoryIdx] ?? null;
+                $price = isset($row[$priceIdx]) ? (float) $row[$priceIdx] : 0.0;
+                $costPrice = isset($row[$costPriceIdx]) ? (float) $row[$costPriceIdx] : 0.0;
+                $stock = isset($row[$stockIdx]) ? (int) $row[$stockIdx] : 0;
+                $leadTime = isset($row[$leadTimeIdx]) ? (int) $row[$leadTimeIdx] : null;
+                $status = $row[$statusIdx] ?? 'Draft';
+
+                if (empty($sku) || empty($name)) continue;
+
+                // Find existing product first to check original status and track_as_supply
+                $existingProduct = Product::where('user_id', $seller->id)->where('sku', $sku)->first();
+                $originalStatus = $existingProduct ? $existingProduct->status : 'Draft';
+                $trackAsSupply = $existingProduct ? (bool)$existingProduct->track_as_supply : true;
 
                 $product = Product::updateOrCreate(
                     ['user_id' => $seller->id, 'sku' => $sku],
@@ -1229,17 +1255,94 @@ class ProductController extends Controller
                         'stock' => $stock,
                         'lead_time' => $leadTime,
                         'status' => $status,
+                        'track_as_supply' => $trackAsSupply,
                     ]
                 );
+
+                // Enforce quality media controls and subscription limits for Active status
+                $finalStatus = $status;
+                if ($status === 'Active') {
+                    $activationReadiness = $this->evaluateActivationReadiness(
+                        filled($product->cover_photo_path),
+                        count($product->gallery_paths ?? []),
+                        filled($product->model_3d_path)
+                    );
+
+                    if (!$activationReadiness['canBeActive']) {
+                        $finalStatus = 'Draft';
+                        $draftedForMissingMedia++;
+                    } else {
+                        $currentlyActive = $originalStatus === 'Active';
+                        if (!$currentlyActive) {
+                            if ($activeProductCount >= $productLimit) {
+                                $finalStatus = 'Draft';
+                                $skippedForLimit++;
+                            } else {
+                                $activeProductCount++;
+                            }
+                        }
+                    }
+                }
+
+                if ($product->status !== $finalStatus) {
+                    $product->update(['status' => $finalStatus]);
+                }
+
+                // Sync Finished Goods supply record
+                if ($product->track_as_supply) {
+                    $supply = $this->findSupplyForProduct($product, $seller->id);
+                    if (!$supply) {
+                        $supply = new Supply($this->supplyLookupAttributes($product, $seller->id));
+                    }
+                    $supply->fill(Supply::filterSchemaCompatibleAttributes([
+                        'name' => $product->name,
+                        'category' => 'Finished Goods',
+                        'quantity' => $product->stock,
+                        'unit' => 'pcs',
+                        'min_stock' => 5,
+                        'max_stock' => 500,
+                        'unit_cost' => $product->cost_price ?? 0,
+                        'supplier' => 'Self/External',
+                        'notes' => 'Auto-generated from Product SKU: ' . $product->sku,
+                    ]));
+                    $supply->save();
+                }
+
                 $count++;
             }
+
+            // Record activity log for bulk import
+            if ($count > 0) {
+                SellerActivityLog::recordEvent([
+                    'seller_owner_id' => $seller->id,
+                    'actor_user_id' => Auth::id(),
+                    'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+                    'category' => 'operations',
+                    'module' => 'products',
+                    'event_type' => 'product_bulk_status',
+                    'severity' => 'info',
+                    'status' => 'active',
+                    'title' => 'Bulk Product CSV Import',
+                    'summary' => "Imported/updated {$count} products from CSV.",
+                    'details' => [
+                        'lines' => array_values(array_filter([
+                            "Successfully parsed and processed {$count} product(s) from CSV upload.",
+                            $draftedForMissingMedia > 0 ? "{$draftedForMissingMedia} product(s) were forced to Draft due to incomplete media requirements (missing cover, gallery, or 3D models)." : null,
+                            $skippedForLimit > 0 ? "{$skippedForLimit} product(s) were forced to Draft because the active product limit of {$productLimit} has been reached." : null,
+                        ])),
+                    ],
+                    'target_url' => route('products.index'),
+                    'target_label' => 'Open Products',
+                ]);
+            }
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error during import: ' . $e->getMessage());
         }
 
-        return back()->with('success', "Successfully imported/updated $count products.");
+        return back()->with('success', $this->bulkActivationMessage($count - $draftedForMissingMedia - $skippedForLimit, $draftedForMissingMedia, $skippedForLimit));
     }
 
     private function bulkActivationMessage(int $activated, int $drafted, int $skipped): string
