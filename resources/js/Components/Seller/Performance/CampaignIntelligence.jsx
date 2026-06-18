@@ -76,7 +76,7 @@ export default function CampaignIntelligence({
                 ) : (
                     <div className="space-y-6">
                         {/* Grid parameters */}
-                        <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
+                        <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 campaign-kpis-container">
                             <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
                                 <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" animate={animate} />
                             </div>
@@ -91,7 +91,7 @@ export default function CampaignIntelligence({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 campaign-details-container">
                             {/* Chart */}
                             <div className="xl:col-span-2 bg-stone-50/50 rounded-2xl border border-stone-100 p-4 min-h-[250px]">
                                 <div className="flex items-center justify-between mb-4">

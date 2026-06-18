@@ -86,14 +86,19 @@ const KPICard = ({
                     {title}
                 </p>
                 <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
-                    {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.]/g, ''))))) ? (
-                        <AnimatedCounter 
-                            value={typeof value === 'number' ? value : parseFloat(value.replace(/[^\d.]/g, ''))} 
-                            formatter={displayFormatter}
-                        />
-                    ) : (
-                        typeof value === 'number' ? displayFormatter(value) : value
-                    )}
+                    <span className="print:hidden">
+                        {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.]/g, ''))))) ? (
+                            <AnimatedCounter 
+                                value={typeof value === 'number' ? value : parseFloat(value.replace(/[^\d.]/g, ''))} 
+                                formatter={displayFormatter}
+                            />
+                        ) : (
+                            typeof value === 'number' ? displayFormatter(value) : value
+                        )}
+                    </span>
+                    <span className="hidden print:block">
+                        {typeof value === 'number' ? displayFormatter(value) : value}
+                    </span>
                 </h3>
                 <div className="flex items-center gap-3 mt-1.5">
                     {growth !== undefined && (

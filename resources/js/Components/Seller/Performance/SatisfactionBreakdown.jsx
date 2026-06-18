@@ -17,7 +17,7 @@ export default function SatisfactionBreakdown({ stats }) {
             </div>
 
             <div className="flex-1 flex flex-col justify-center">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center satisfaction-breakdown-grid">
                     {/* Left: Score Box */}
                     <div className="sm:col-span-5 flex flex-col items-center justify-center p-4 rounded-2xl bg-stone-50 border border-stone-200/50 shadow-inner">
                         <h1 className="text-5xl font-black text-stone-900 tracking-tight mb-1">{Number(averageRating).toFixed(1)}</h1>

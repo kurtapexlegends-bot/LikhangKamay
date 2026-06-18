@@ -173,31 +173,115 @@ export default function Analytics({
                             margin-left: 0 !important;
                         }
 
-                        /* Force grid layout for KPIs and charts on print pages */
-                        .grid,
-                        .lg\\:grid-cols-3 {
-                            display: grid !important;
-                            grid-template-columns: 1fr 1fr !important;
-                            gap: 20px !important;
-                        }
-
-                        /* Avoid breaking cards in the middle of a page */
+                        /* Apply border styles to white boxes in print and avoid breaking */
                         .bg-white {
                             border: 1px solid #e5e7eb !important;
                             box-shadow: none !important;
                             page-break-inside: avoid !important;
                             break-inside: avoid !important;
                             border-radius: 12px !important;
-                            padding: 15px !important;
                         }
 
-                        /* Ensure charts fit nicely */
+                        /* Page-Break Helpers */
+                        .print-page-1 {
+                            page-break-after: always !important;
+                            break-after: page !important;
+                        }
+                        .print-page-2 {
+                            page-break-after: always !important;
+                            break-after: page !important;
+                        }
+
+                        /* 1. KPIs Layout */
+                        .performance-kpis-container {
+                            display: grid !important;
+                            grid-template-columns: repeat(4, 1fr) !important;
+                            gap: 16px !important;
+                            width: 100% !important;
+                            margin-bottom: 24px !important;
+                        }
+
+                        /* 2. Charts Layout */
+                        .performance-charts-container {
+                            display: grid !important;
+                            grid-template-columns: 2fr 1fr !important;
+                            gap: 20px !important;
+                            width: 100% !important;
+                        }
+
+                        /* Force chart responsiveness under print */
                         .recharts-responsive-container {
                             width: 100% !important;
-                            height: 280px !important;
+                            height: 250px !important;
+                        }
+                        .recharts-wrapper,
+                        .recharts-surface {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            height: 100% !important;
                         }
 
-                        /* Image fixes: ensure aspect ratio, sizing, and colors print correctly */
+                        /* 3. Heatmap & Operations Control Layout */
+                        .performance-heatmap-ops-container {
+                            display: flex !important;
+                            flex-direction: column !important;
+                            gap: 24px !important;
+                            width: 100% !important;
+                        }
+                        
+                        /* Heatmap Row Alignment */
+                        .performance-heatmap-row {
+                            display: grid !important;
+                            grid-template-columns: 60px repeat(7, 1fr) !important;
+                            gap: 4px !important;
+                            align-items: center !important;
+                            width: 100% !important;
+                        }
+
+                        /* Operations print layout grid */
+                        .operations-print-grid {
+                            display: grid !important;
+                            grid-template-columns: repeat(3, 1fr) !important;
+                            gap: 16px !important;
+                            width: 100% !important;
+                        }
+
+                        /* 4. Campaign Intelligence Print Rules */
+                        .campaign-kpis-container {
+                            display: grid !important;
+                            grid-template-columns: repeat(4, 1fr) !important;
+                            gap: 16px !important;
+                            width: 100% !important;
+                            margin-bottom: 16px !important;
+                        }
+                        .campaign-details-container {
+                            display: grid !important;
+                            grid-template-columns: 2fr 1fr !important;
+                            gap: 20px !important;
+                            width: 100% !important;
+                        }
+
+                        /* 5. Loyalty, Ratings, and Top Products Row */
+                        .performance-loyalty-ratings-container {
+                            display: grid !important;
+                            grid-template-columns: repeat(3, 1fr) !important;
+                            gap: 20px !important;
+                            width: 100% !important;
+                        }
+
+                        /* Nested card ratios */
+                        .customer-loyalty-grid {
+                            display: grid !important;
+                            grid-template-columns: 1.1fr 1.9fr !important;
+                            gap: 16px !important;
+                        }
+                        .satisfaction-breakdown-grid {
+                            display: grid !important;
+                            grid-template-columns: 5fr 7fr !important;
+                            gap: 16px !important;
+                        }
+
+                        /* Image Sizing and rendering constraints */
                         img {
                             max-width: 100% !important;
                             display: inline-block !important;
@@ -205,13 +289,11 @@ export default function Analytics({
                             -webkit-print-color-adjust: exact !important;
                             print-color-adjust: exact !important;
                         }
-
                         .w-10 {
                             width: 40px !important;
                             min-width: 40px !important;
                             height: 40px !important;
                         }
-
                         .w-9 {
                             width: 36px !important;
                             min-width: 36px !important;
@@ -234,7 +316,7 @@ export default function Analytics({
                 </div>
                 
                 {/* Level 1: Key Performance Indicators */}
-                <StaggerContainer className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                <StaggerContainer className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 performance-kpis-container">
                     {isLoading ? (
                         <ArtisanSkeleton variant="stat" count={4} />
                     ) : (
@@ -275,7 +357,7 @@ export default function Analytics({
                 </StaggerContainer>
 
                 {/* Level 2: Financial Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-charts-container print-page-1">
                     <div className="min-w-0 lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col relative overflow-hidden">
                         <ContentTransition
                             isShowingPlaceholder={isLoading}
@@ -413,7 +495,7 @@ export default function Analytics({
                 </div>
 
                 {/* Level 3: Peak Heatmap & Operations Control (Side-by-Side Balance) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-heatmap-ops-container print-page-2">
                     {/* Peak Sales Heatmap */}
                     <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between">
                         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
@@ -435,14 +517,14 @@ export default function Analytics({
 
                         <div className="flex-1 overflow-x-auto pb-2">
                             <div className="min-w-[500px]">
-                                <div className="grid grid-cols-8 gap-1">
+                                <div className="grid grid-cols-8 gap-1 performance-heatmap-row">
                                     <div className="col-span-1" />
                                     {['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM', '11 PM'].map((h, i) => (
                                         <div key={i} className="text-[9px] font-bold text-stone-400 text-center uppercase">{h}</div>
                                     ))}
                                 </div>
                                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                                    <div key={day} className="grid grid-cols-8 gap-1 mt-1">
+                                    <div key={day} className="grid grid-cols-8 gap-1 mt-1 performance-heatmap-row">
                                         <div className="text-[10px] font-bold text-stone-600 flex items-center pr-2">{day}</div>
                                         {[0, 4, 8, 12, 16, 20, 23].map((hour) => {
                                             const match = salesHeatmap.find(h => h.day === day && h.hour === hour);
@@ -483,7 +565,7 @@ export default function Analytics({
                 />
 
                 {/* Level 5: Customer Retention, VIP Patrons, Customer Ratings & Top Products (Side-by-Side Balance) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-loyalty-ratings-container">
                     {/* Retention & VIP Card */}
                     <div className="lg:col-span-1">
                         <CustomerLoyalty vipCustomers={vipCustomers} loyaltyStats={loyaltyStats} />
