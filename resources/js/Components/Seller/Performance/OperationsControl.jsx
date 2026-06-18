@@ -58,61 +58,47 @@ export default function OperationsControl({ metrics, insights }) {
             {/* Tab content area */}
             <div className="flex-1 flex flex-col justify-between print:hidden">
                 {activeTab === 'fulfillment' && (
-                    <div className="relative pl-6 border-l-2 border-stone-100 space-y-4 py-1.5 my-1">
-                        {/* Step 1: Order Placed */}
-                        <div className="relative">
-                            <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-stone-100 ring-4 ring-white">
-                                <span className="h-1.5 w-1.5 rounded-full bg-stone-400" />
-                            </span>
-                            <div className="flex justify-between items-start text-xs">
-                                <div>
-                                    <p className="font-extrabold text-stone-900 leading-none">Order Placed</p>
-                                    <p className="text-[9px] text-stone-400 font-medium mt-1 leading-none">Checkout checkout complete</p>
-                                </div>
-                                <span className="bg-stone-50 text-[9px] font-bold text-stone-400 px-1.5 py-0.5 rounded border border-stone-200/50">Start</span>
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-stone-600">Acceptance Latency</span>
+                                <span className="font-black text-clay-700">{Number(latency.avg_acceptance_hours).toFixed(1)}h</span>
                             </div>
+                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-clay-500 rounded-full transition-all duration-500" 
+                                    style={{ width: `${Math.min(100, (Number(latency.avg_acceptance_hours) / 24) * 100)}%` }} 
+                                />
+                            </div>
+                            <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time to accept new orders</span>
                         </div>
 
-                        {/* Step 2: Accepted */}
-                        <div className="relative">
-                            <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-clay-100 ring-4 ring-white">
-                                <span className="h-1.5 w-1.5 rounded-full bg-clay-500" />
-                            </span>
-                            <div className="flex justify-between items-start text-xs">
-                                <div>
-                                    <p className="font-extrabold text-stone-900 leading-none">Accepted</p>
-                                    <p className="text-[9px] text-stone-400 font-medium mt-1 leading-none">Review & accept latency</p>
-                                </div>
-                                <span className="bg-clay-50 text-[10px] font-black text-clay-700 px-1.5 py-0.5 rounded border border-clay-100/50">{Number(latency.avg_acceptance_hours).toFixed(1)}h</span>
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-stone-600">Fulfillment Latency</span>
+                                <span className="font-black text-emerald-600">{Number(latency.avg_fulfillment_hours).toFixed(1)}h</span>
                             </div>
+                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                    style={{ width: `${Math.min(100, (Number(latency.avg_fulfillment_hours) / 48) * 100)}%` }} 
+                                />
+                            </div>
+                            <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time to ship accepted orders</span>
                         </div>
 
-                        {/* Step 3: Shipped */}
-                        <div className="relative">
-                            <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-white">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            </span>
-                            <div className="flex justify-between items-start text-xs">
-                                <div>
-                                    <p className="font-extrabold text-stone-900 leading-none">Shipped</p>
-                                    <p className="text-[9px] text-stone-400 font-medium mt-1 leading-none">Fulfill & pack speed</p>
-                                </div>
-                                <span className="bg-emerald-50 text-[10px] font-black text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-100/50">{Number(latency.avg_fulfillment_hours).toFixed(1)}h</span>
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-stone-600">Transit/Delivery Latency</span>
+                                <span className="font-black text-amber-600">{Number(latency.avg_delivery_hours).toFixed(1)}h</span>
                             </div>
-                        </div>
-
-                        {/* Step 4: Delivered */}
-                        <div className="relative">
-                            <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-100 ring-4 ring-white">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            </span>
-                            <div className="flex justify-between items-start text-xs">
-                                <div>
-                                    <p className="font-extrabold text-stone-900 leading-none">Delivered</p>
-                                    <p className="text-[9px] text-stone-400 font-medium mt-1 leading-none">Transit logistics duration</p>
-                                </div>
-                                <span className="bg-amber-50 text-[10px] font-black text-amber-700 px-1.5 py-0.5 rounded border border-amber-100/50">{Number(latency.avg_delivery_hours).toFixed(1)}h</span>
+                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-amber-500 rounded-full transition-all duration-500" 
+                                    style={{ width: `${Math.min(100, (Number(latency.avg_delivery_hours) / 72) * 100)}%` }} 
+                                />
                             </div>
+                            <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time in transit to customer</span>
                         </div>
                     </div>
                 )}
