@@ -472,6 +472,12 @@ class AnalyticsController extends Controller
             'Analytics export is available on Premium and Elite plans.'
         );
 
+        abort_unless(
+            $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE),
+            403,
+            'You do not have permission to view or export financial analytics data.'
+        );
+
         $filename = 'analytics_report_' . date('Y-m-d_H-i-s') . '.csv';
 
         $headers = [
@@ -529,9 +535,11 @@ class AnalyticsController extends Controller
             fputcsv($file, ['MONTHLY PERFORMANCE (LAST 12 MONTHS)']);
             fputcsv($file, ['Month', 'Revenue', 'Cost', 'Gross Profit', 'Margin (%)', 'Orders']);
             foreach ($revenueData as $data) {
-                $profit = $data->revenue - $data->cost;
-                $margin = $data->revenue > 0 ? ($profit / $data->revenue) * 100 : 0;
-                fputcsv($file, [$data->month, $data->revenue, $data->cost, $profit, round($margin, 1), $data->order_count]);
+                $revenue = (float) ($data->revenue ?? 0);
+                $cost = (float) ($data->cost ?? 0);
+                $profit = $revenue - $cost;
+                $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
+                fputcsv($file, [$data->month, $revenue, $cost, $profit, round($margin, 1), $data->order_count]);
             }
 
             fputcsv($file, []);
@@ -540,9 +548,11 @@ class AnalyticsController extends Controller
             fputcsv($file, ['TOP SELLING PRODUCTS']);
             fputcsv($file, ['Product Name', 'Units Sold', 'Total Revenue', 'Total Cost', 'Gross Profit', 'Margin (%)']);
             foreach ($topProducts as $product) {
-                $profit = $product->total_revenue - $product->total_cost;
-                $margin = $product->total_revenue > 0 ? ($profit / $product->total_revenue) * 100 : 0;
-                fputcsv($file, [$product->product_name, $product->total_sold, $product->total_revenue, $product->total_cost, $profit, round($margin, 1)]);
+                $totalRevenue = (float) ($product->total_revenue ?? 0);
+                $totalCost = (float) ($product->total_cost ?? 0);
+                $profit = $totalRevenue - $totalCost;
+                $margin = $totalRevenue > 0 ? ($profit / $totalRevenue) * 100 : 0;
+                fputcsv($file, [$product->product_name, $product->total_sold, $totalRevenue, $totalCost, $profit, round($margin, 1)]);
             }
 
             if ($includeSponsorshipAnalytics) {

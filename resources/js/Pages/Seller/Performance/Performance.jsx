@@ -60,6 +60,7 @@ export default function Analytics({
     sponsorshipMetrics,
     sponsorshipChartData,
     sponsorshipAnalyticsAvailability,
+    financials_masked,
 }) {
     const { sellerSubscription } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
@@ -117,7 +118,11 @@ export default function Analytics({
                 subtitle="View shop sales, active orders, and category performance."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={sellerSubscription?.canExportAnalytics ? (
+                actions={financials_masked ? (
+                    <ExportButton icon={Download} disabled>
+                        Revenue View Required
+                    </ExportButton>
+                ) : sellerSubscription?.canExportAnalytics ? (
                     <ExportButton href={route('analytics.export')} icon={Download} variant="primary">
                         Download Report
                     </ExportButton>

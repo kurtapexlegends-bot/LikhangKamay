@@ -253,6 +253,41 @@ class StaffAuthorizationMiddlewareTest extends TestCase
         \App\Models\Product::$bypassReview = false;
     }
 
+    public function test_staff_export_analytics_requires_revenue_view_capability(): void
+    {
+        $owner = $this->createOwner();
+        $owner->update(['premium_tier' => 'premium']); // Premium tier is required to export analytics
+
+        // 1. Staff with analytics access but NO accounting (view revenue) capability
+        $staffNoRevenue = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag([
+                'analytics' => true,
+            ], true),
+        ]);
+
+        $this->actingAs($staffNoRevenue)
+            ->get(route('analytics.export'))
+            ->assertForbidden();
+
+        // 2. Staff with BOTH analytics access and accounting (view revenue) capability
+        $staffWithRevenue = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag([
+                'analytics' => true,
+                'accounting' => true,
+            ], true),
+        ]);
+
+        $this->actingAs($staffWithRevenue)
+            ->get(route('analytics.export'))
+            ->assertOk();
+    }
+
     private function createOwner(): User
     {
         $owner = User::factory()->artisanApproved()->create([
