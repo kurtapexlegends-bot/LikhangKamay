@@ -95,7 +95,12 @@ export default function CampaignIntelligence({
                             {/* Chart */}
                             <div className="xl:col-span-2 bg-stone-50/50 rounded-2xl border border-stone-100 p-4 min-h-[250px]">
                                 <div className="flex items-center justify-between mb-4">
-                                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Growth Performance</p>
+                                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-1.5">
+                                        <span>Growth Performance</span>
+                                        <span className="hidden print:inline-block normal-case font-extrabold text-[8px] tracking-wider text-amber-700 bg-amber-50/50 px-1.5 py-0.5 rounded border border-amber-100">
+                                            {sponsorshipFilter}
+                                        </span>
+                                    </p>
                                     <div className="flex gap-4">
                                         <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-clay-500" /><span className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">Impressions</span></div>
                                         <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /><span className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">Clicks</span></div>

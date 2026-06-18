@@ -366,7 +366,12 @@ export default function Analytics({
                         >
                             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
                                 <div>
-                                    <h3 className="text-lg font-bold text-stone-900">Revenue Analytics</h3>
+                                    <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                                        <span>Revenue Analytics</span>
+                                        <span className="hidden print:inline-block text-[10px] font-extrabold uppercase tracking-wider text-clay-700 bg-stone-50 px-2 py-0.5 rounded border border-stone-200">
+                                            {chartFilter}
+                                        </span>
+                                    </h3>
                                     <p className="text-sm text-stone-500">Income over time</p>
                                 </div>
                                 <div className="flex w-full sm:w-auto bg-stone-100 p-1 rounded-lg">
