@@ -157,30 +157,20 @@ export default function Analytics({
                             display: none !important;
                         }
 
-                        /* Reset layout containers margins and paddings */
-                        body, html, #app {
+                        /* Reset layout containers margins, paddings, and heights to prevent page cutting */
+                        html, body, #app, .h-screen, .overflow-hidden, [scroll-region="true"], main {
                             background: white !important;
                             color: black !important;
                             height: auto !important;
+                            min-height: 0 !important;
                             overflow: visible !important;
+                            position: static !important;
                             margin: 0 !important;
                             padding: 0 !important;
                         }
 
                         .lg\\:ml-52 {
                             margin-left: 0 !important;
-                        }
-
-                        [scroll-region="true"],
-                        .overflow-y-auto,
-                        .overflow-x-auto,
-                        main {
-                            overflow: visible !important;
-                            height: auto !important;
-                            max-height: none !important;
-                            position: relative !important;
-                            margin: 0 !important;
-                            padding: 0 !important;
                         }
 
                         /* Force grid layout for KPIs and charts on print pages */
@@ -191,10 +181,12 @@ export default function Analytics({
                             gap: 20px !important;
                         }
 
+                        /* Avoid breaking cards in the middle of a page */
                         .bg-white {
                             border: 1px solid #e5e7eb !important;
                             box-shadow: none !important;
                             page-break-inside: avoid !important;
+                            break-inside: avoid !important;
                             border-radius: 12px !important;
                             padding: 15px !important;
                         }
@@ -203,6 +195,27 @@ export default function Analytics({
                         .recharts-responsive-container {
                             width: 100% !important;
                             height: 280px !important;
+                        }
+
+                        /* Image fixes: ensure aspect ratio, sizing, and colors print correctly */
+                        img {
+                            max-width: 100% !important;
+                            display: inline-block !important;
+                            object-fit: cover !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+
+                        .w-10 {
+                            width: 40px !important;
+                            min-width: 40px !important;
+                            height: 40px !important;
+                        }
+
+                        .w-9 {
+                            width: 36px !important;
+                            min-width: 36px !important;
+                            height: 36px !important;
                         }
 
                         * {
