@@ -171,7 +171,7 @@ const KPICard = ({
 
                 {breakdown && (
                     <div 
-                        className="absolute inset-0 h-full w-full rounded-3xl border border-clay-100 bg-clay-50/30 p-5 shadow-inner [backface-visibility:hidden] [transform:rotateY(180deg)] backdrop-blur-sm"
+                        className="absolute inset-0 h-full w-full rounded-3xl border border-clay-100 bg-clay-50/30 p-5 shadow-inner [backface-visibility:hidden] [transform:rotateY(180deg)] backdrop-blur-sm print:hidden"
                     >
                         {Back}
                     </div>

@@ -103,32 +103,57 @@ export default function CampaignIntelligence({
                                 </div>
                                 <div className="h-[200px] w-full">
                                     {sponsorshipHasActivity ? (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                                <defs>
-                                                    <linearGradient id="colorImp" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
-                                                        <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
-                                                    </linearGradient>
-                                                    <linearGradient id="colorClk" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#d97706" stopOpacity={0.15} />
-                                                        <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10 }} dy={10} />
-                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10 }} />
-                                                <Tooltip
-                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
-                                                    formatter={(value, name) => {
-                                                        const labels = { impressions: 'Impressions', clicks: 'Clicks' };
-                                                        return [name === 'sponsored_revenue' ? formatPeso(value) : value, labels[name] || name];
-                                                    }}
-                                                />
-                                                <Area type="monotone" dataKey="impressions" stroke="#c07251" strokeWidth={2} fillOpacity={1} fill="url(#colorImp)" activeDot={{ r: 4, strokeWidth: 0 }} />
-                                                <Area type="monotone" dataKey="clicks" stroke="#d97706" strokeWidth={2} fillOpacity={1} fill="url(#colorClk)" activeDot={{ r: 4, strokeWidth: 0 }} />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
+                                        <>
+                                            {/* Screen Chart */}
+                                            <div className="print:hidden h-full w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                        <defs>
+                                                            <linearGradient id="colorImp" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
+                                                                <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
+                                                            </linearGradient>
+                                                            <linearGradient id="colorClk" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#d97706" stopOpacity={0.15} />
+                                                                <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10 }} dy={10} />
+                                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10 }} />
+                                                        <Tooltip
+                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
+                                                            formatter={(value, name) => {
+                                                                const labels = { impressions: 'Impressions', clicks: 'Clicks' };
+                                                                return [name === 'sponsored_revenue' ? formatPeso(value) : value, labels[name] || name];
+                                                            }}
+                                                        />
+                                                        <Area type="monotone" dataKey="impressions" stroke="#c07251" strokeWidth={2} fillOpacity={1} fill="url(#colorImp)" activeDot={{ r: 4, strokeWidth: 0 }} />
+                                                        <Area type="monotone" dataKey="clicks" stroke="#d97706" strokeWidth={2} fillOpacity={1} fill="url(#colorClk)" activeDot={{ r: 4, strokeWidth: 0 }} />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                            {/* Print Chart (Fixed width to bypass ResponsiveContainer collapse) */}
+                                            <div className="hidden print:flex print:justify-center w-full h-[190px]">
+                                                <AreaChart width={445} height={180} data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                    <defs>
+                                                        <linearGradient id="colorImpPrint" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
+                                                            <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
+                                                        </linearGradient>
+                                                        <linearGradient id="colorClkPrint" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#d97706" stopOpacity={0.15} />
+                                                            <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10 }} dy={10} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10 }} />
+                                                    <Area type="monotone" dataKey="impressions" stroke="#c07251" strokeWidth={2} fillOpacity={1} fill="url(#colorImpPrint)" dot={{ r: 3, fill: '#c07251', strokeWidth: 1.5, stroke: '#fff' }} />
+                                                    <Area type="monotone" dataKey="clicks" stroke="#d97706" strokeWidth={2} fillOpacity={1} fill="url(#colorClkPrint)" dot={{ r: 3, fill: '#d97706', strokeWidth: 1.5, stroke: '#fff' }} />
+                                                </AreaChart>
+                                            </div>
+                                        </>
                                     ) : (
                                         <div className="h-full flex items-center justify-center border border-dashed border-stone-200 rounded-xl bg-stone-50 py-10">
                                             <p className="text-[10px] text-stone-400 italic">Awaiting active data session history...</p>

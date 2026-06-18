@@ -214,12 +214,6 @@ export default function Analytics({
                             width: 100% !important;
                             height: 250px !important;
                         }
-                        .recharts-wrapper,
-                        .recharts-surface {
-                            width: 100% !important;
-                            max-width: 100% !important;
-                            height: 100% !important;
-                        }
 
                         /* 3. Heatmap & Operations Control Layout */
                         .performance-heatmap-ops-container {
@@ -271,14 +265,15 @@ export default function Analytics({
 
                         /* Nested card ratios */
                         .customer-loyalty-grid {
-                            display: grid !important;
-                            grid-template-columns: 1.1fr 1.9fr !important;
+                            display: flex !important;
+                            flex-direction: column !important;
                             gap: 16px !important;
                         }
                         .satisfaction-breakdown-grid {
-                            display: grid !important;
-                            grid-template-columns: 5fr 7fr !important;
+                            display: flex !important;
+                            flex-direction: column !important;
                             gap: 16px !important;
+                            align-items: center !important;
                         }
 
                         /* Image Sizing and rendering constraints */
@@ -389,25 +384,45 @@ export default function Analytics({
 
                             <div className="h-64 min-h-[250px] w-full min-w-0">
                                 {currentChartData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                        <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
-                                                    <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={15} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
-                                            <RechartsTooltip
-                                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(value) => formatPeso(value)}
-                                                cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }}
-                                            />
-                                            <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    <>
+                                        {/* Screen Chart */}
+                                        <div className="print:hidden h-full w-full">
+                                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                                                <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                    <defs>
+                                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
+                                                            <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={15} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
+                                                    <RechartsTooltip
+                                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                        formatter={(value) => formatPeso(value)}
+                                                        cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                                    />
+                                                    <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                        {/* Print Chart (Fixed width to bypass ResponsiveContainer collapse) */}
+                                        <div className="hidden print:flex print:justify-center w-full h-[230px]">
+                                            <AreaChart width={445} height={220} data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="colorRevenuePrint" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
+                                                        <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={15} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
+                                                <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenuePrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} />
+                                            </AreaChart>
+                                        </div>
+                                    </>
                                 ) : (
                                     <div className="h-full">
                                         <WorkspaceEmptyState
