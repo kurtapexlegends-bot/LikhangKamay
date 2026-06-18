@@ -14,9 +14,7 @@ import {
     TrendingUp,
     Star,
     Download,
-    Printer,
-    ChevronDown,
-    Calendar
+    Printer
 } from 'lucide-react';
 import {
     AreaChart,
@@ -50,47 +48,6 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
 
 const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
-const Sparkline = ({ data, positive = true }) => {
-    if (!data || data.length < 2) return null;
-    const min = Math.min(...data);
-    const max = Math.max(...data);
-    const range = max - min || 1;
-    const width = 45;
-    const height = 14;
-    
-    const points = data.map((v, i) => ({
-        x: (i / (data.length - 1)) * width,
-        y: height - ((v - min) / range) * height
-    }));
-    
-    const path = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
-    const strokeColor = positive ? '#10b981' : '#f43f5e';
-    
-    return (
-        <svg width={width} height={height} className="overflow-visible opacity-70 shrink-0">
-            <path
-                d={path}
-                fill="none"
-                stroke={strokeColor}
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </svg>
-    );
-};
-
-const getProductTrend = (name, index) => {
-    const baseTrends = [
-        [10, 14, 13, 21, 28],
-        [22, 17, 24, 19, 26],
-        [12, 15, 14, 18, 17],
-        [18, 15, 12, 16, 22],
-        [15, 20, 18, 22, 25]
-    ];
-    return baseTrends[index % baseTrends.length];
-};
-
 export default function Analytics({
     auth,
     metrics,
@@ -109,7 +66,6 @@ export default function Analytics({
     const { sellerSubscription } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
     const [chartFilter, setChartFilter] = useState('Monthly');
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [catFilter, setCatFilter] = useState(filters.category);
     const [isLoading, setIsLoading] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
@@ -418,44 +374,16 @@ export default function Analytics({
                                     </h3>
                                     <p className="text-sm text-stone-500">Income over time</p>
                                 </div>
-                                <div className="relative print:hidden">
-                                    <button
-                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-extrabold text-stone-700 hover:bg-stone-100 transition-all shadow-sm"
-                                    >
-                                        <Calendar size={12} className="text-stone-500" />
-                                        <span>Timeframe: {chartFilter}</span>
-                                        <ChevronDown size={12} className={`text-stone-400 transition-transform duration-205 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {isDropdownOpen && (
-                                        <>
-                                            <div 
-                                                className="fixed inset-0 z-20" 
-                                                onClick={() => setIsDropdownOpen(false)}
-                                            />
-                                            <div className="absolute right-0 mt-1.5 w-36 bg-white border border-stone-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden">
-                                                {['Monthly', 'Yearly'].map((filter) => (
-                                                    <button
-                                                        key={filter}
-                                                        onClick={() => {
-                                                            setChartFilter(filter);
-                                                            setIsDropdownOpen(false);
-                                                        }}
-                                                        className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors flex items-center justify-between ${
-                                                            chartFilter === filter 
-                                                                ? 'bg-clay-50 text-clay-700' 
-                                                                : 'text-stone-600 hover:bg-stone-50'
-                                                        }`}
-                                                    >
-                                                        <span>{filter}</span>
-                                                        {chartFilter === filter && (
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-clay-600" />
-                                                        )}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
+                                <div className="flex w-full sm:w-auto bg-stone-100 p-1 rounded-lg">
+                                    {['Monthly', 'Yearly'].map((filter) => (
+                                        <button
+                                            key={filter}
+                                            onClick={() => setChartFilter(filter)}
+                                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${chartFilter === filter ? 'bg-white text-clay-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+                                        >
+                                            {filter}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -562,30 +490,24 @@ export default function Analytics({
                         </div>
 
                         {categoryData.length > 0 && (
-                            <div className="mt-4 space-y-2.5 pt-3 border-t border-stone-100 max-h-[140px] overflow-y-auto pr-1">
+                            <div className="mt-4 space-y-2 pt-3 border-t border-stone-100 max-h-[140px] overflow-y-auto pr-1">
                                 {(() => {
                                     const total = categoryData.reduce((sum, item) => sum + item.value, 0);
-                                    return categoryData.map((item, index) => {
-                                        const displayShare = total > 0 ? Math.round((item.value / total) * 100) : 0;
-                                        return (
-                                            <div key={index} className="flex flex-col gap-1">
-                                                <div className="flex items-center justify-between text-[11px]">
-                                                    <div className="flex items-center gap-1.5 min-w-0">
-                                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                                                        <span className="font-bold text-stone-900 truncate max-w-[120px]">{item.category || item.name}</span>
-                                                    </div>
-                                                    <span className="font-black text-clay-700">{formatPeso(item.profit)}</span>
+                                    return categoryData.map((item, index) => (
+                                        <div key={index} className="flex flex-col gap-0.5">
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                                    <span className="font-bold text-stone-900 truncate max-w-[120px]">{item.category || item.name}</span>
                                                 </div>
-                                                <div className="flex items-center justify-between text-[10px] text-stone-400">
-                                                    <span>{item.value} sold • {item.margin}% margin</span>
-                                                    <span className="font-bold">{displayShare}% share</span>
-                                                </div>
-                                                <div className="w-full bg-stone-50 h-1 rounded-full overflow-hidden">
-                                                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${displayShare}%`, backgroundColor: COLORS[index % COLORS.length] }} />
-                                                </div>
+                                                <span className="font-black text-clay-700">{formatPeso(item.profit)}</span>
                                             </div>
-                                        );
-                                    });
+                                            <div className="flex items-center justify-between text-[10px] text-stone-400">
+                                                <span>{item.value} sold • {item.margin}% margin</span>
+                                                <span className="font-bold">{total > 0 ? Math.round((item.value / total) * 100) : 0}% share</span>
+                                            </div>
+                                        </div>
+                                    ));
                                 })()}
                             </div>
                         )}
@@ -633,10 +555,10 @@ export default function Analytics({
                                             return (
                                                 <div 
                                                     key={hour} 
-                                                    className={`h-7 rounded-[4px] ${opacity} transition-all duration-300 hover:scale-[1.12] hover:shadow-sm cursor-help flex items-center justify-center`}
+                                                    className={`h-7 rounded-md ${opacity} transition-all hover:scale-105 cursor-help flex items-center justify-center`}
                                                     title={`${count} orders at ${hour}:00 on ${day}`}
                                                 >
-                                                    {count > 0 && <span className={`text-[9px] font-black ${count > 4 ? 'text-white' : 'text-clay-900'}`}>{count}</span>}
+                                                    {count > 0 && <span className={`text-[9px] font-bold ${count > 4 ? 'text-white' : 'text-clay-800'}`}>{count}</span>}
                                                 </div>
                                             );
                                         })}
@@ -644,14 +566,7 @@ export default function Analytics({
                                 ))}
                             </div>
                         </div>
-                        <div className="mt-4 p-3 bg-stone-50 border border-stone-150 rounded-xl flex items-start gap-2.5 print:hidden">
-                            <div className="p-0.5 bg-clay-50 border border-clay-100 rounded text-clay-600 shrink-0 mt-0.5">
-                                <Activity size={12} />
-                            </div>
-                            <p className="text-[10px] text-stone-500 leading-relaxed">
-                                <span className="font-bold text-stone-700">Logistics Recommendation:</span> Schedule campaign launches or catalog updates during highlighted dark heatmap windows to capture maximum buyer conversion.
-                            </p>
-                        </div>
+                        <p className="mt-3 text-[9px] text-stone-400 italic">Recommendation: Schedule product updates or campaigns matching dark heatmap blocks.</p>
                     </div>
 
                     {/* Operations Control (Tabbed fulfillment, low stock, and velocity) */}
@@ -711,16 +626,14 @@ export default function Analytics({
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="min-w-0 flex-1 flex items-center justify-between gap-3">
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="font-bold text-stone-900 truncate text-xs mb-1">{item.name}</p>
-                                                    <p className="text-[10px] text-stone-400 font-medium">
-                                                        {item.sales} sold • {item.margin}% margin
-                                                    </p>
+                                            <div className="min-w-0 flex-1 flex flex-col justify-between">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="font-bold text-stone-900 truncate text-xs leading-none">{item.name}</p>
+                                                    <span className="text-xs font-black text-clay-700">{formatPeso(item.profit)}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    <Sparkline data={getProductTrend(item.name, index)} positive={item.margin > 30} />
-                                                    <span className="text-xs font-black text-clay-700 text-right min-w-[55px]">{formatPeso(item.profit)}</span>
+                                                <div className="flex items-center justify-between text-[10px] text-stone-400 mt-1">
+                                                    <span>{item.sales} sold</span>
+                                                    <span>{item.margin}% margin</span>
                                                 </div>
                                             </div>
                                         </div>

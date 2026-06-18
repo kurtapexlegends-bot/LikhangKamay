@@ -1,17 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from '@inertiajs/react';
 import { Star } from 'lucide-react';
-
-const mockReviews = [
-    { id: 1, author: "Kurt Stanley T.", rating: 5, comment: "Beautiful clay vases! Truly handcrafted feel.", date: "1 month ago" },
-    { id: 2, author: "Arianne C.", rating: 5, comment: "Excellent packaging and quick shipment.", date: "2 weeks ago" },
-    { id: 3, author: "Maria L.", rating: 4, comment: "Very satisfied. Unique texture, looks great.", date: "3 weeks ago" }
-];
 
 export default function SatisfactionBreakdown({ stats }) {
     const totalReviews = stats?.total || 0;
     const averageRating = stats?.average || 0.0;
-    const [reviewIndex, setReviewIndex] = useState(0);
 
     return (
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col h-full min-h-[300px]">
@@ -59,47 +52,6 @@ export default function SatisfactionBreakdown({ stats }) {
                                 </div>
                             );
                         })}
-                    </div>
-                </div>
-            </div>
-
-            {/* Testimonials Slider */}
-            <div className="mt-4 pt-4 border-t border-stone-100 flex flex-col gap-2">
-                <p className="text-[9px] font-black uppercase tracking-wider text-stone-450">Featured Feedback</p>
-                <div className="bg-stone-50/50 rounded-xl p-3 border border-stone-150 flex flex-col justify-between min-h-[90px] relative">
-                    <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] font-extrabold text-stone-700">{mockReviews[reviewIndex].author}</span>
-                            <div className="flex gap-0.5">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                        key={star}
-                                        size={9}
-                                        className={star <= mockReviews[reviewIndex].rating ? 'fill-amber-500 text-amber-500' : 'text-stone-200'}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        <p className="text-[11px] text-stone-500 italic leading-relaxed">
-                            "{mockReviews[reviewIndex].comment}"
-                        </p>
-                    </div>
-                    <div className="flex justify-between items-center mt-2 text-[9px] text-stone-400">
-                        <span>{mockReviews[reviewIndex].date}</span>
-                        <div className="flex gap-1.5 print:hidden">
-                            <button 
-                                onClick={() => setReviewIndex((prev) => (prev - 1 + mockReviews.length) % mockReviews.length)}
-                                className="px-1.5 py-0.5 hover:bg-stone-200/50 border border-stone-200 bg-white rounded transition-colors text-stone-500 font-extrabold"
-                            >
-                                &larr;
-                            </button>
-                            <button 
-                                onClick={() => setReviewIndex((prev) => (prev + 1) % mockReviews.length)}
-                                className="px-1.5 py-0.5 hover:bg-stone-200/50 border border-stone-200 bg-white rounded transition-colors text-stone-500 font-extrabold"
-                            >
-                                &rarr;
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>

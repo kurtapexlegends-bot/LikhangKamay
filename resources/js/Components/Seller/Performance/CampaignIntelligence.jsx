@@ -168,29 +168,29 @@ export default function CampaignIntelligence({
                             </div>
 
                             {/* Info */}
-                            <div className="bg-stone-50/40 rounded-2xl p-5 border border-stone-150 flex flex-col justify-between">
+                            <div className="bg-gradient-to-br from-white to-amber-50/10 rounded-2xl p-5 border border-stone-100 flex flex-col justify-between">
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="text-xs font-bold text-stone-900">Impact Summary</h4>
-                                        <span className="bg-amber-50 border border-amber-100 px-2 py-0.5 rounded text-[8px] font-black uppercase text-amber-700">Premium Campaign</span>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600/80 leading-none">Premium Campaign</p>
+                                        <h4 className="text-xs font-bold text-stone-900 mt-1">Impact Summary</h4>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-white/60 p-3 rounded-xl border border-stone-150 hover:shadow-sm transition-all duration-300">
-                                            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">Ad Sales</p>
-                                            <p className="text-xl font-black text-stone-950">{Number(sponsorshipMetrics?.sponsored_orders || 0).toLocaleString()}</p>
+                                        <div>
+                                            <p className="text-[10px] text-stone-400 font-medium">Ad Sales</p>
+                                            <p className="text-xl font-bold text-stone-950">{Number(sponsorshipMetrics?.sponsored_orders || 0).toLocaleString()}</p>
                                         </div>
-                                        <div className="bg-white/60 p-3 rounded-xl border border-stone-150 hover:shadow-sm transition-all duration-300">
-                                            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">LTV Attribution</p>
-                                            <p className="text-xl font-black text-clay-700">{formatPeso(sponsorshipMetrics?.sponsored_revenue || 0)}</p>
+                                        <div>
+                                            <p className="text-[10px] text-stone-400 font-medium">LTV Attribution</p>
+                                            <p className="text-xl font-bold text-clay-700">{formatPeso(sponsorshipMetrics?.sponsored_revenue || 0)}</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="pt-4 border-t border-stone-150 mt-4">
-                                    <div className="flex justify-between items-center text-[10px] font-extrabold text-stone-500 uppercase">
+                                <div className="pt-4 border-t border-stone-100 mt-4">
+                                    <div className="flex justify-between items-center text-[10px] font-bold text-stone-500 uppercase">
                                         <span>Click Conversion CTR</span>
-                                        <span className="text-emerald-650 font-black">{Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%</span>
+                                        <span className="text-emerald-600 font-black">{Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%</span>
                                     </div>
                                 </div>
                             </div>
