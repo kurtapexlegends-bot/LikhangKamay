@@ -13,7 +13,8 @@ import {
     DollarSign,
     TrendingUp,
     Star,
-    Download
+    Download,
+    Printer
 } from 'lucide-react';
 import {
     AreaChart,
@@ -118,22 +119,106 @@ export default function Analytics({
                 subtitle="View shop sales, active orders, and category performance."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={financials_masked ? (
-                    <ExportButton icon={Download} disabled>
-                        Revenue View Required
-                    </ExportButton>
-                ) : sellerSubscription?.canExportAnalytics ? (
-                    <ExportButton href={route('analytics.export')} icon={Download} variant="primary">
-                        Download Report
-                    </ExportButton>
-                ) : (
-                    <ExportButton icon={DollarSign} disabled>
-                        Premium Export
-                    </ExportButton>
-                )}
+                actions={
+                    <div className="flex items-center gap-2">
+                        <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
+                            Print Report
+                        </ExportButton>
+                        {financials_masked ? (
+                            <ExportButton icon={Download} disabled>
+                                Revenue View Required
+                            </ExportButton>
+                        ) : sellerSubscription?.canExportAnalytics ? (
+                            <ExportButton href={route('analytics.export')} icon={Download} variant="primary">
+                                Download Report
+                            </ExportButton>
+                        ) : (
+                            <ExportButton icon={DollarSign} disabled>
+                                Premium Export
+                            </ExportButton>
+                        )}
+                    </div>
+                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">
+                <style dangerouslySetInnerHTML={{__html: `
+                    @media print {
+                        /* Hide layout sidebar, header navigation, buttons, and system controls */
+                        aside,
+                        nav,
+                        header,
+                        .no-print,
+                        .mobile-dock,
+                        #nprogress,
+                        .fixed,
+                        button,
+                        a {
+                            display: none !important;
+                        }
+
+                        /* Reset layout containers margins and paddings */
+                        body, html, #app {
+                            background: white !important;
+                            color: black !important;
+                            height: auto !important;
+                            overflow: visible !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                        }
+
+                        .lg\\:ml-52 {
+                            margin-left: 0 !important;
+                        }
+
+                        [scroll-region="true"],
+                        .overflow-y-auto,
+                        .overflow-x-auto,
+                        main {
+                            overflow: visible !important;
+                            height: auto !important;
+                            max-height: none !important;
+                            position: relative !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                        }
+
+                        /* Force grid layout for KPIs and charts on print pages */
+                        .grid,
+                        .lg\\:grid-cols-3 {
+                            display: grid !important;
+                            grid-template-columns: 1fr 1fr !important;
+                            gap: 20px !important;
+                        }
+
+                        .bg-white {
+                            border: 1px solid #e5e7eb !important;
+                            box-shadow: none !important;
+                            page-break-inside: avoid !important;
+                            border-radius: 12px !important;
+                            padding: 15px !important;
+                        }
+
+                        /* Ensure charts fit nicely */
+                        .recharts-responsive-container {
+                            width: 100% !important;
+                            height: 280px !important;
+                        }
+
+                        * {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                    }
+                `}} />
+
+                {/* Print-Only Document Header */}
+                <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
+                    <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Shop Performance Report</h1>
+                    <p className="text-xs text-stone-500 mt-1">
+                        Generated on: {new Date(dataContext.generated_at).toLocaleString()} • Plan: {sellerSubscription?.tierLabel || 'Standard'}
+                    </p>
+                </div>
                 
                 {/* Level 1: Key Performance Indicators */}
                 <StaggerContainer className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
