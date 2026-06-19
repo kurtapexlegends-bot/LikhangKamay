@@ -180,12 +180,12 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
             {mobileOpen && (
                 <div 
-                    className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+                    className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[90] lg:hidden transition-opacity"
                     onClick={onClose}
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-50 w-52 bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 z-[100] w-52 bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="relative flex shrink-0 items-center justify-between border-b border-clay-100/30 bg-transparent px-4 py-3">
                     <div className="flex min-w-0 items-center gap-2">
                         <img 
