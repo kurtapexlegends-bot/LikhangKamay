@@ -152,8 +152,7 @@ export default function Analytics({
                 }
             />
 
-            <main className="flex-1 w-full px-4 pt-2 pb-4 sm:px-6 sm:pt-3 sm:pb-6 lg:px-8 lg:pt-3 lg:pb-8 overflow-y-auto space-y-6">
-                <style dangerouslySetInnerHTML={{__html: `
+            <style dangerouslySetInnerHTML={{__html: `
                     @media print {
                         /* Hide layout sidebar, header navigation, buttons, and system controls */
                         aside,
@@ -279,7 +278,7 @@ export default function Analytics({
                             display: flex !important;
                             flex-direction: column !important;
                             gap: 16px !important;
-                        }
+                            }
                         .satisfaction-breakdown-grid {
                             display: flex !important;
                             flex-direction: column !important;
@@ -313,13 +312,15 @@ export default function Analytics({
                     }
                 `}} />
 
-                {/* Print-Only Document Header */}
-                <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
-                    <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Shop Performance Report</h1>
-                    <p className="text-xs text-stone-500 mt-1">
-                        Generated on: {new Date(dataContext.generated_at).toLocaleString()} • Plan: {sellerSubscription?.tierLabel || 'Standard'}
-                    </p>
-                </div>
+            {/* Print-Only Document Header */}
+            <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6 mx-4 sm:mx-6 lg:mx-8">
+                <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Shop Performance Report</h1>
+                <p className="text-xs text-stone-500 mt-1">
+                    Generated on: {new Date(dataContext.generated_at).toLocaleString()} • Plan: {sellerSubscription?.tierLabel || 'Standard'}
+                </p>
+            </div>
+
+            <main className="flex-1 w-full px-4 pt-0 pb-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-8 lg:pt-0 lg:pb-8 overflow-y-auto space-y-6">
                 
                 {/* Tab Switcher */}
                 <div className="print:hidden flex justify-center sm:justify-start">

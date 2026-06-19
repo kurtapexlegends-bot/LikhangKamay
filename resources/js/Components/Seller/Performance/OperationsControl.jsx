@@ -180,7 +180,7 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                                         <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100 hover:shadow-sm transition-shadow">
                                             <div className="min-w-0">
                                                 <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
-                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {p.days_inactive} days</p>
+                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(2)} days</p>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <div className="text-right">

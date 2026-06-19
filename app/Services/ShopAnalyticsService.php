@@ -189,7 +189,7 @@ class ShopAnalyticsService
         $lowStockProducts = Product::query()
             ->where('user_id', $sellerId)
             ->where('status', 'Active')
-            ->where('stock', '<', $threshold)
+            ->where('stock', '<=', $threshold)
             ->select(['id', 'sku', 'name', 'stock', 'price'])
             ->get();
 
