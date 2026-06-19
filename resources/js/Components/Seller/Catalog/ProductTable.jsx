@@ -80,7 +80,7 @@ export default function ProductTable({
                             key={product.id}
                             className="hover:bg-gray-50/50 transition"
                         >
-                            <td className="px-5 py-3 align-top">
+                            <td className="px-5 py-3">
                                 <Checkbox
                                     checked={selectedProductIds.includes(product.id)}
                                     onChange={() => toggleProductSelection(product.id)}
@@ -128,11 +128,6 @@ export default function ProductTable({
                             </td>
                             <td className="px-5 py-3">
                                 <div className="flex flex-col items-center gap-1">
-                                    {product.stock < 10 && (
-                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 border border-rose-200 uppercase tracking-wide whitespace-nowrap">
-                                            Low Stock
-                                        </span>
-                                    )}
                                     <span
                                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${
                                             product.status === "Active"
@@ -158,10 +153,12 @@ export default function ProductTable({
                                     </span>
                                     {(product.status === "rejected" || product.status === "flagged") &&
                                         product.rejection_reason && (
-                                            <div className="mt-1 flex items-start gap-1 text-[10px] text-rose-600 bg-rose-50/50 p-1.5 rounded-lg border border-rose-100 max-w-[180px] break-words">
-                                                <AlertTriangle size={10} className="shrink-0 mt-0.5" />
-                                                <span>Reason: {product.rejection_reason}</span>
-                                            </div>
+                                            <span 
+                                                className="mt-1 text-[10px] font-medium text-rose-600 max-w-[160px] break-words text-center leading-normal"
+                                                title={product.rejection_reason}
+                                            >
+                                                Reason: {product.rejection_reason}
+                                            </span>
                                         )}
                                 </div>
                             </td>
