@@ -63,7 +63,7 @@ export default function ProductFormRecipePanel({
                                     <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 border border-stone-100 p-3.5 rounded-2xl sm:border-0 sm:p-0 sm:rounded-none animate-fadeIn">
                                         <div className="flex-1">
                                             <select
-                                                className="w-full rounded-xl border-gray-300 text-sm focus:border-clay-500 focus:ring-clay-500 min-h-[44px] sm:min-h-0"
+                                                className="w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 focus:border-clay-500 focus:ring-clay-500 py-3 pl-4 pr-10 min-h-[44px]"
                                                 value={item.supply_id}
                                                 onChange={(e) => updateRecipeItem(idx, "supply_id", e.target.value)}
                                             >
@@ -81,7 +81,7 @@ export default function ProductFormRecipePanel({
                                             <div className="w-24 sm:w-24 flex-1 sm:flex-none">
                                                 <input
                                                     type="number"
-                                                    className="w-full rounded-xl border-gray-300 text-sm focus:border-clay-500 focus:ring-clay-500 min-h-[44px] sm:min-h-0"
+                                                    className="w-full rounded-xl border-gray-300 text-sm focus:border-clay-500 focus:ring-clay-500 py-3 px-4 min-h-[44px]"
                                                     placeholder="Qty"
                                                     value={item.quantity_required}
                                                     onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}

@@ -5,6 +5,8 @@ import Checkbox from "@/Components/Checkbox";
 
 const modalFieldClass =
     "w-full mt-1 rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500";
+const modalSelectClass =
+    "w-full mt-1 rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500 py-3 pl-4 pr-10 min-h-[44px]";
 
 export default function ProductFormClaySpecs({
     data,
@@ -17,7 +19,7 @@ export default function ProductFormClaySpecs({
                 <div>
                     <InputLabel value="Clay Type" />
                     <select
-                        className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
+                        className={modalSelectClass}
                         value={data.clay_type}
                         onChange={(e) => setData("clay_type", e.target.value)}
                     >
@@ -31,7 +33,7 @@ export default function ProductFormClaySpecs({
                 <div>
                     <InputLabel value="Glaze Type" />
                     <select
-                        className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
+                        className={modalSelectClass}
                         value={data.glaze_type}
                         onChange={(e) => setData("glaze_type", e.target.value)}
                     >
@@ -45,7 +47,7 @@ export default function ProductFormClaySpecs({
                 <div>
                     <InputLabel value="Firing Method" />
                     <select
-                        className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
+                        className={modalSelectClass}
                         value={data.firing_method}
                         onChange={(e) => setData("firing_method", e.target.value)}
                     >

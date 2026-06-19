@@ -7,6 +7,8 @@ import TextAreaWithCounter from "@/Components/TextAreaWithCounter";
 const modalFieldClass =
     "w-full mt-1 rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500";
 const modalTextareaClass = `${modalFieldClass} min-h-[110px]`;
+const modalSelectClass =
+    "w-full mt-1 rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500 py-3 pl-4 pr-10 min-h-[44px]";
 
 export default function ProductFormBasicDetails({
     data,
@@ -47,7 +49,7 @@ export default function ProductFormBasicDetails({
                 <div>
                     <InputLabel value="Category *" />
                     <select
-                        className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
+                        className={modalSelectClass}
                         value={data.category}
                         onChange={(e) => setData("category", e.target.value)}
                     >
@@ -66,7 +68,7 @@ export default function ProductFormBasicDetails({
                 <div>
                     <InputLabel value="Status" />
                     <select
-                        className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
+                        className={modalSelectClass}
                         value={data.status}
                         onChange={(e) => handleStatusChange(e.target.value)}
                     >
