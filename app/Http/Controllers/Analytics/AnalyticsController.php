@@ -228,17 +228,24 @@ class AnalyticsController extends Controller
         }
 
         $yearExpr = $this->yearNumberExpression('orders.created_at');
-        $yearlyData = $chartBaseQuery()
+        $yearlyRaw = $chartBaseQuery()
             ->selectRaw("{$yearExpr} as year_num, SUM(orders.seller_net_amount) as value")
             ->groupByRaw($yearExpr)
             ->orderByRaw($yearExpr)
             ->get()
-            ->map(function ($item) {
-                return [
-                    'name' => (string) ((int) $item->year_num),
-                    'value' => (float) $item->value,
-                ];
-            });
+            ->keyBy(fn ($row) => (int) $row->year_num);
+
+        $currentYear = (int) Carbon::now()->format('Y');
+        $oldestYear = $yearlyRaw->keys()->min() ?: $currentYear;
+        $startYear = min($oldestYear, $currentYear - 2);
+
+        $yearlyData = [];
+        for ($year = $startYear; $year <= $currentYear; $year++) {
+            $yearlyData[] = [
+                'name' => (string) $year,
+                'value' => $yearlyRaw->has($year) ? (float) $yearlyRaw[$year]->value : 0.0,
+            ];
+        }
 
         return [
             'monthly' => $monthlyData,
