@@ -18,7 +18,7 @@ class ShopAnalyticsService
      * @param int $stockThreshold
      * @return array<string, mixed>
      */
-    public function getAnalyticsRollup(int $sellerId, ?string $date = null, int $stockThreshold = 5): array
+    public function getAnalyticsRollup(int $sellerId, ?string $date = null, int $stockThreshold = 10): array
     {
         $today = Carbon::now(config('app.timezone'))->toDateString();
         $targetDate = $date ?: $today;
@@ -188,8 +188,8 @@ class ShopAnalyticsService
     {
         $lowStockProducts = Product::query()
             ->where('user_id', $sellerId)
-            ->where('status', 'Active')
-            ->where('stock', '<=', $threshold)
+            ->whereIn('status', ['Active', 'pending_review', 'flagged', 'rejected'])
+            ->where('stock', '<', $threshold)
             ->select(['id', 'sku', 'name', 'stock', 'price'])
             ->get();
 

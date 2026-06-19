@@ -305,8 +305,8 @@ class DashboardController extends Controller
                 ->count();
 
             $lowStockProducts = \App\Models\Product::where('user_id', $userId)
-                ->where('status', 'Active')
-                ->where('stock', '<=', 5)
+                ->whereIn('status', ['Active', 'pending_review', 'flagged', 'rejected'])
+                ->where('stock', '<', 10)
                 ->count();
 
             return compact(
