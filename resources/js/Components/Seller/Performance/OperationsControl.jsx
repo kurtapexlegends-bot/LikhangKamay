@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from '@inertiajs/react';
-import { Activity, Package, ArrowUpRight, ShieldAlert, Sparkles } from 'lucide-react';
+import { Activity, Package, ArrowUpRight, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 
-export default function OperationsControl({ metrics, insights }) {
-    const [activeTab, setActiveTab] = useState('fulfillment');
+const pesoFormatter = new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+});
 
+const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
+
+export default function OperationsControl({ metrics, insights, topProducts = [], salesHeatmap = [] }) {
     const lowStockProducts = insights?.low_stock_products || [];
     const slowMovers = insights?.slow_movers || [];
     const salesVelocity = insights?.sales_velocity || [];
@@ -14,168 +21,261 @@ export default function OperationsControl({ metrics, insights }) {
         avg_delivery_hours: 0
     };
 
-    const tabs = [
-        { id: 'fulfillment', label: 'Fulfillment', icon: Activity },
-        { id: 'stock', label: 'Stock Health', icon: Package, badge: lowStockProducts.length > 0 ? lowStockProducts.length : null },
-        { id: 'velocity', label: 'Sales Velocity', icon: Sparkles }
-    ];
-
     return (
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col h-full min-h-[350px]">
-            {/* Header with Navigation */}
-            <div className="flex flex-col gap-3 pb-3 border-b border-stone-100 mb-4">
-                <div>
-                    <h3 className="text-base font-bold text-stone-900 leading-none">Operations Control</h3>
-                    <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Key workspace logistics & health indicators</p>
-                </div>
-                <div className="grid grid-cols-3 bg-stone-100 p-1 rounded-xl border border-stone-200/50 w-full text-center print:hidden">
-                    {tabs.map((tab) => {
-                        const Icon = tab.icon;
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-extrabold transition-all relative ${
-                                    isActive 
-                                        ? 'bg-white text-clay-700 shadow-sm border border-stone-200/10' 
-                                        : 'text-stone-500 hover:text-stone-700'
-                                    }`}
-                            >
-                                <Icon size={11} className="shrink-0" />
-                                <span className="truncate">{tab.label}</span>
-                                {tab.badge && (
-                                    <span className="bg-rose-500 text-white rounded-full px-1 text-[8px] font-black min-w-[12px] h-3 flex items-center justify-center">
-                                        {tab.badge}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Tab content area */}
-            <div className="flex-1 flex flex-col justify-between print:hidden">
-                {activeTab === 'fulfillment' && (
-                    <div className="space-y-4">
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-stone-600">Acceptance Latency</span>
-                                <span className="font-black text-clay-700">{Number(latency.avg_acceptance_hours).toFixed(1)}h</span>
-                            </div>
-                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-clay-500 rounded-full transition-all duration-500" 
-                                    style={{ width: `${Math.min(100, (Number(latency.avg_acceptance_hours) / 24) * 100)}%` }} 
-                                />
-                            </div>
-                            <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time to accept new orders</span>
+        <>
+            <div className="space-y-6 print:hidden">
+                {/* Row 1: Fulfillment Latency (1/3) & Peak Sales Heatmap (2/3) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* Fulfillment Latency */}
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px]">
+                        <div>
+                            <h3 className="text-base font-bold text-stone-900 leading-none">Fulfillment Latency</h3>
+                            <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Time track for order fulfillment stages</p>
                         </div>
 
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-stone-600">Fulfillment Latency</span>
-                                <span className="font-black text-emerald-600">{Number(latency.avg_fulfillment_hours).toFixed(1)}h</span>
+                        <div className="space-y-4 my-4 flex-1 flex flex-col justify-center">
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="font-bold text-stone-600">Acceptance Latency</span>
+                                    <span className="font-black text-clay-700">{Number(latency.avg_acceptance_hours).toFixed(1)}h</span>
+                                </div>
+                                <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-clay-500 rounded-full transition-all duration-500" 
+                                        style={{ width: `${Math.min(100, (Number(latency.avg_acceptance_hours) / 24) * 100)}%` }} 
+                                    />
+                                </div>
+                                <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time to accept new orders</span>
                             </div>
-                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
-                                    style={{ width: `${Math.min(100, (Number(latency.avg_fulfillment_hours) / 48) * 100)}%` }} 
-                                />
-                            </div>
-                            <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time to ship accepted orders</span>
-                        </div>
 
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-stone-600">Transit/Delivery Latency</span>
-                                <span className="font-black text-amber-600">{Number(latency.avg_delivery_hours).toFixed(1)}h</span>
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="font-bold text-stone-600">Fulfillment Latency</span>
+                                    <span className="font-black text-emerald-600">{Number(latency.avg_fulfillment_hours).toFixed(1)}h</span>
+                                </div>
+                                <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                        style={{ width: `${Math.min(100, (Number(latency.avg_fulfillment_hours) / 48) * 100)}%` }} 
+                                    />
+                                </div>
+                                <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time to ship accepted orders</span>
                             </div>
-                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-amber-500 rounded-full transition-all duration-500" 
-                                    style={{ width: `${Math.min(100, (Number(latency.avg_delivery_hours) / 72) * 100)}%` }} 
-                                />
-                            </div>
-                            <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time in transit to customer</span>
-                        </div>
-                    </div>
-                )}
 
-                {activeTab === 'stock' && (
-                    <div className="space-y-4">
-                        {/* Low Stock Alerts */}
-                        <div className="bg-rose-50/50 p-3 rounded-xl border border-rose-100/50">
-                            <p className="text-[10px] text-rose-700 mb-2.5 font-bold uppercase tracking-wider flex justify-between">
-                                <span className="flex items-center gap-1.5"><ShieldAlert size={11} /> Critical Low Stock</span>
-                                {lowStockProducts.length > 0 && <span className="bg-rose-600 text-white rounded-full px-1.5 text-[8px] font-black">{lowStockProducts.length}</span>}
-                            </p>
-                            <div className="space-y-2 max-h-[110px] overflow-y-auto pr-1">
-                                {lowStockProducts.length > 0 ? lowStockProducts.map((p, i) => (
-                                    <div key={i} className="flex items-center justify-between text-xs">
-                                        <div className="min-w-0">
-                                            <p className="font-bold text-stone-900 truncate max-w-[120px]">{p.name}</p>
-                                            <p className="text-[9px] text-stone-400 font-medium">SKU: {p.sku || 'N/A'}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-right">
-                                                <p className="font-black text-rose-600">{p.stock} left</p>
-                                            </div>
-                                            <Link href={route('products.index')} className="p-1 bg-white border border-stone-200/50 rounded text-stone-500 hover:bg-stone-50 transition-colors">
-                                                <ArrowUpRight size={10} />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                )) : <p className="text-[10px] text-stone-500 text-center py-2 italic font-medium">All items have healthy stock.</p>}
-                            </div>
-                        </div>
-
-                        {/* Slow Movers */}
-                        <div className="bg-stone-50/50 p-3 rounded-xl border border-stone-100">
-                            <p className="text-[10px] text-stone-600 mb-2.5 font-bold uppercase tracking-wider">Slow Movers (0 sales in 30 days)</p>
-                            <div className="space-y-2 max-h-[110px] overflow-y-auto pr-1">
-                                {slowMovers.length > 0 ? slowMovers.map((p, i) => (
-                                    <div key={i} className="flex items-center justify-between text-xs">
-                                        <div className="min-w-0">
-                                            <p className="font-bold text-stone-900 truncate max-w-[120px]">{p.name}</p>
-                                            <p className="text-[9px] text-stone-400 font-medium">Inactive {p.days_inactive} days</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-right">
-                                                <p className="font-black text-stone-700">{p.stock} units</p>
-                                            </div>
-                                            <Link href={route('products.index')} className="p-1 bg-white border border-stone-200/50 rounded text-stone-500 hover:bg-stone-50 transition-colors">
-                                                <ArrowUpRight size={10} />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                )) : <p className="text-[10px] text-stone-500 text-center py-2 italic font-medium">All products are moving healthy!</p>}
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="font-bold text-stone-600">Transit/Delivery Latency</span>
+                                    <span className="font-black text-amber-600">{Number(latency.avg_delivery_hours).toFixed(1)}h</span>
+                                </div>
+                                <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-amber-500 rounded-full transition-all duration-500" 
+                                        style={{ width: `${Math.min(100, (Number(latency.avg_delivery_hours) / 72) * 100)}%` }} 
+                                    />
+                                </div>
+                                <span className="text-[9px] text-stone-400 font-medium uppercase tracking-wider">Time in transit to customer</span>
                             </div>
                         </div>
                     </div>
-                )}
 
-                {activeTab === 'velocity' && (
-                    <div className="space-y-3 flex-1 flex flex-col justify-center">
-                        {salesVelocity.length > 0 ? salesVelocity.map((v, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-stone-600 truncate max-w-[150px]">{v.name}</span>
-                                <div className="flex items-center gap-2">
-                                    <span className={`text-xs font-black ${v.avg_days_to_sell <= 3 ? 'text-emerald-600' : 'text-stone-900'}`}>
-                                        {Math.round(v.avg_days_to_sell)} days
-                                    </span>
-                                    <div className="w-12 h-1 bg-stone-100 rounded-full overflow-hidden">
-                                        <div 
-                                            className={`h-full ${v.avg_days_to_sell <= 3 ? 'bg-emerald-500' : 'bg-stone-400'}`} 
-                                            style={{ width: `${Math.min(100, (3 / v.avg_days_to_sell) * 100)}%` }} 
-                                        />
-                                    </div>
+                    {/* Peak Activity Heatmap */}
+                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px]">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-stone-900 leading-none">Peak Activity Heatmap</h3>
+                                <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">When your customers are most likely to buy</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">
+                                <span>Quiet</span>
+                                <div className="flex gap-0.5">
+                                    <div className="w-2.5 h-2.5 rounded-sm bg-stone-50 border border-stone-100" />
+                                    <div className="w-2.5 h-2.5 rounded-sm bg-clay-100" />
+                                    <div className="w-2.5 h-2.5 rounded-sm bg-clay-300" />
+                                    <div className="w-2.5 h-2.5 rounded-sm bg-clay-500" />
+                                </div>
+                                <span>Peak</span>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-x-auto pb-2 flex items-center">
+                            <div className="min-w-[500px] w-full">
+                               <div className="grid grid-cols-8 gap-1">
+                                   <div className="col-span-1" />
+                                   {['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM', '11 PM'].map((h, i) => (
+                                       <div key={i} className="text-[9px] font-bold text-stone-400 text-center uppercase">{h}</div>
+                                   ))}
+                               </div>
+                               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                                   <div key={day} className="grid grid-cols-8 gap-1 mt-1">
+                                       <div className="text-[10px] font-bold text-stone-600 flex items-center pr-2">{day}</div>
+                                       {[0, 4, 8, 12, 16, 20, 23].map((hour) => {
+                                           const match = salesHeatmap.find(h => h.day === day && h.hour === hour);
+                                           const count = match ? match.count : 0;
+                                           const opacity = count === 0 ? 'bg-stone-50' : 
+                                                           count < 2 ? 'bg-clay-100' :
+                                                           count < 5 ? 'bg-clay-300' : 'bg-clay-600 shadow-sm';
+                                           return (
+                                               <div 
+                                                   key={hour} 
+                                                   className={`h-7 rounded-md ${opacity} transition-all hover:scale-105 cursor-help flex items-center justify-center`}
+                                                   title={`${count} orders at ${hour}:00 on ${day}`}
+                                               >
+                                                   {count > 0 && <span className={`text-[9px] font-bold ${count > 4 ? 'text-white' : 'text-clay-800'}`}>{count}</span>}
+                                               </div>
+                                           );
+                                       })}
+                                   </div>
+                               ))}
+                           </div>
+                        </div>
+                        <p className="mt-3 text-[9px] text-stone-400 italic">Recommendation: Schedule product updates or campaigns matching dark heatmap blocks.</p>
+                    </div>
+                </div>
+
+                {/* Row 2: Inventory Alert Hub (2/3) & Product Performance (1/3) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* Inventory Alert Hub */}
+                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between">
+                        <div className="pb-3 border-b border-stone-100 mb-4">
+                            <h3 className="text-base font-bold text-stone-900 leading-none">Inventory Alert Hub</h3>
+                            <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Critical stock items and slow moving catalog</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+                            {/* Low Stock Alerts */}
+                            <div className="bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50 flex flex-col">
+                                <p className="text-[10px] text-rose-700 mb-3 font-bold uppercase tracking-wider flex justify-between items-center shrink-0">
+                                    <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Critical Low Stock</span>
+                                    {lowStockProducts.length > 0 && <span className="bg-rose-600 text-white rounded-full px-2 py-0.5 text-[9px] font-black">{lowStockProducts.length}</span>}
+                                </p>
+                                <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
+                                    {lowStockProducts.length > 0 ? lowStockProducts.map((p, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100 hover:shadow-sm transition-shadow">
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
+                                                <p className="text-[9px] text-stone-400 font-medium">SKU: {p.sku || 'N/A'}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-right">
+                                                    <p className="font-black text-rose-600">{p.stock} left</p>
+                                                </div>
+                                                <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
+                                                    <ArrowUpRight size={11} />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All items have healthy stock.</p>}
                                 </div>
                             </div>
-                        )) : <p className="text-[10px] text-stone-400 text-center py-6 italic">Waiting for more sales data...</p>}
+
+                            {/* Slow Movers */}
+                            <div className="bg-stone-50/50 p-4 rounded-2xl border border-stone-100 flex flex-col">
+                                <p className="text-[10px] text-stone-600 mb-3 font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+                                    <Package size={12} /> Slow Movers (0 sales in 30 days)
+                                </p>
+                                <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
+                                    {slowMovers.length > 0 ? slowMovers.map((p, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100 hover:shadow-sm transition-shadow">
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
+                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {p.days_inactive} days</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-right">
+                                                    <p className="font-black text-stone-700">{p.stock} units</p>
+                                                </div>
+                                                <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
+                                                    <ArrowUpRight size={11} />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All products are moving healthy!</p>}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                )}
+
+                    {/* Product Performance & Velocity */}
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[300px]">
+                        <div className="pb-3 border-b border-stone-50 mb-3">
+                            <h3 className="text-base font-bold text-stone-900 leading-none">Velocity & Top Volume</h3>
+                            <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Delivery velocity & top items</p>
+                        </div>
+
+                        <div className="flex-1 space-y-4 flex flex-col justify-between">
+                            {/* Sales Velocity */}
+                            <div className="space-y-2 border-b border-stone-50 pb-3">
+                                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <Sparkles size={11} /> Avg Days to Sell
+                                </p>
+                                <div className="space-y-2.5 max-h-[110px] overflow-y-auto pr-1">
+                                    {salesVelocity.length > 0 ? salesVelocity.slice(0, 3).map((v, i) => (
+                                        <div key={i} className="flex items-center justify-between">
+                                            <span className="text-xs font-semibold text-stone-700 truncate max-w-[130px]">{v.name}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-black ${v.avg_days_to_sell <= 3 ? 'text-emerald-600' : 'text-stone-900'}`}>
+                                                    {Math.round(v.avg_days_to_sell)}d
+                                                </span>
+                                                <div className="w-12 h-1 bg-stone-100 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className={`h-full ${v.avg_days_to_sell <= 3 ? 'bg-emerald-500' : 'bg-stone-400'}`} 
+                                                        style={{ width: `${Math.min(100, (3 / v.avg_days_to_sell) * 100)}%` }} 
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )) : <p className="text-[10px] text-stone-400 text-center py-4 italic">Waiting for sales...</p>}
+                                </div>
+                            </div>
+
+                            {/* Top Products Volume */}
+                            <div className="space-y-2">
+                                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <TrendingUp size={11} /> Top Sales Volume
+                                </p>
+                                <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+                                    {topProducts.length > 0 ? (
+                                        topProducts.slice(0, 2).map((item, index) => {
+                                            const imageUrl = item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : null;
+                                            return (
+                                                <div key={index} className="flex items-center gap-2.5 bg-stone-50/50 p-2 rounded-xl border border-stone-100 hover:bg-white hover:shadow-sm transition-all duration-300">
+                                                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-stone-200 border border-white shrink-0">
+                                                        {imageUrl ? (
+                                                            <img 
+                                                                src={imageUrl} 
+                                                                alt="" 
+                                                                className="w-full h-full object-cover" 
+                                                                onError={(e) => { e.target.style.display = 'none'; }} 
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-stone-400 bg-stone-100"><Package size={12} /></div>
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1 flex flex-col justify-between">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="font-bold text-stone-900 truncate text-[11px] leading-none">{item.name}</p>
+                                                            <span className="text-[11px] font-black text-clay-700">{formatPeso(item.profit)}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-[9px] text-stone-400 mt-1">
+                                                            <span>{item.sales} sold</span>
+                                                            <span>{item.margin}% margin</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center py-2 bg-stone-50 border border-stone-100 rounded-xl">
+                                            <p className="text-[10px] text-stone-400 italic">No sales recorded yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Print-Only Expanded View */}
@@ -264,6 +364,6 @@ export default function OperationsControl({ metrics, insights }) {
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
