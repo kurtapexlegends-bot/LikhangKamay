@@ -43,7 +43,7 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className={`fixed inset-0 z-50 flex transform transition-all p-0 sm:px-4 sm:py-4 justify-center ${effectiveBottomSheet ? 'items-end sm:items-center' : 'items-center overflow-y-auto px-3 py-3'}`}
+                className={`fixed inset-0 z-[150] flex transform transition-all p-0 sm:px-4 sm:py-4 justify-center ${effectiveBottomSheet ? 'items-end sm:items-center' : 'items-center overflow-y-auto px-3 py-3'}`}
                 onClose={close}
             >
                 <TransitionChild
