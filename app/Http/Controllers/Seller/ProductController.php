@@ -130,6 +130,11 @@ class ProductController extends Controller
                 'track_as_supply' => (bool) $product->track_as_supply,
                 'production_method' => $product->production_method ?? 'resell',
                 'rejection_reason' => $product->rejection_reason,
+                'monthly_resubmission_count' => DB::table('product_resubmissions')
+                    ->where('product_id', $product->id)
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', now()->month)
+                    ->count(),
                 'recipes' => $product->recipes->map(fn($r) => [
                     'id' => $r->id,
                     'supply_id' => $r->supply_id,
@@ -1372,5 +1377,76 @@ class ProductController extends Controller
         }
 
         return trim($message);
+    }
+
+    public function resubmit(Request $request, int|string $id)
+    {
+        $sellerId = $this->sellerOwnerId();
+        /** @var \App\Models\Product $product */
+        $product = Product::where('user_id', $sellerId)->findOrFail($id);
+
+        if ($product->status !== 'rejected' && $product->status !== 'flagged') {
+            return back()->with('error', 'Only rejected or flagged products can be resubmitted.');
+        }
+
+        // Count resubmissions this calendar month
+        $monthlyCount = DB::table('product_resubmissions')
+            ->where('product_id', $product->id)
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+
+        if ($monthlyCount >= 3) {
+            return back()->withErrors(['resubmit' => 'You have reached the monthly limit of 3 resubmissions for this product.']);
+        }
+
+        $validated = $request->validate([
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        DB::transaction(function () use ($product, $validated) {
+            // Log resubmission
+            \App\Models\ProductResubmission::create([
+                'product_id' => $product->id,
+                'notes' => strip_tags($validated['notes'] ?? ''),
+                'rejection_reason' => $product->rejection_reason,
+            ]);
+
+            Product::$bypassReview = true;
+            $product->update([
+                'status' => 'pending_review',
+                'rejection_reason' => null,
+            ]);
+            Product::$bypassReview = false;
+
+            // Notify super admins
+            User::query()
+                ->where('role', 'super_admin')
+                ->each(function (User $admin) use ($product) {
+                    $admin->notify(new \App\Notifications\ProductPendingReviewNotification($product));
+                });
+
+            // Log seller activity
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $product->user_id,
+                'actor_user_id' => Auth::id(),
+                'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+                'category' => 'operations',
+                'module' => 'products',
+                'event_type' => 'product_resubmitted',
+                'severity' => 'info',
+                'status' => 'pending_review',
+                'title' => 'Product Resubmitted',
+                'summary' => "{$product->name} was resubmitted for review.",
+                'subject_type' => Product::class,
+                'subject_id' => $product->id,
+                'subject_label' => $product->name,
+                'reference' => $product->sku,
+                'target_url' => route('products.index', ['highlight_product' => $product->id]),
+                'target_label' => 'Open Products',
+            ]);
+        });
+
+        return back()->with('success', 'Product resubmitted for review successfully!');
     }
 }

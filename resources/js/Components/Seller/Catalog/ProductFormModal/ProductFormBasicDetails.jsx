@@ -110,7 +110,7 @@ export default function ProductFormBasicDetails({
                                 </p>
                             )}
                             <p className="mt-1 text-[10px] text-stone-500 font-medium">
-                                Saving updates to this product will automatically resubmit it for review.
+                                Saving updates will keep the listing as {data.status === 'rejected' ? 'Rejected' : 'Flagged'}. You must explicitly click the status in the products table to resubmit it.
                             </p>
                         </div>
                     )}

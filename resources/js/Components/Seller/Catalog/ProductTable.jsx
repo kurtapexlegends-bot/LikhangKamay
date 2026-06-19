@@ -30,6 +30,7 @@ export default function ProductTable({
     sortConfig,
     requestSort,
     openAddModal,
+    onResubmitClick,
 }) {
     return (
         <table className="w-full min-w-[900px] text-left">
@@ -129,7 +130,21 @@ export default function ProductTable({
                             <td className="px-5 py-3">
                                 <div className="flex flex-col items-center gap-1">
                                     <span
+                                        onClick={() => {
+                                            if (product.status === "rejected" || product.status === "flagged") {
+                                                onResubmitClick?.(product);
+                                            }
+                                        }}
+                                        title={
+                                            product.status === "rejected" || product.status === "flagged"
+                                                ? "Click to view reason and resubmit"
+                                                : undefined
+                                        }
                                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${
+                                            product.status === "rejected" || product.status === "flagged"
+                                                ? "cursor-pointer hover:opacity-85 transition-opacity"
+                                                : ""
+                                        } ${
                                             product.status === "Active"
                                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                                 : product.status === "Archived"
@@ -151,15 +166,6 @@ export default function ProductTable({
                                             ? "Flagged"
                                             : product.status}
                                     </span>
-                                    {(product.status === "rejected" || product.status === "flagged") &&
-                                        product.rejection_reason && (
-                                            <span 
-                                                className="mt-1 text-[10px] font-medium text-rose-600 max-w-[160px] break-words text-center leading-normal"
-                                                title={product.rejection_reason}
-                                            >
-                                                Reason: {product.rejection_reason}
-                                            </span>
-                                        )}
                                 </div>
                             </td>
                             <td className="px-5 py-3 text-center">

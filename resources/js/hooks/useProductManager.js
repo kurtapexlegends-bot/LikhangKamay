@@ -68,7 +68,9 @@ export default function useProductManager({
     const [archiveModalOpen, setArchiveModalOpen] = useState(false);
     const [limitModalOpen, setLimitModalOpen] = useState(false);
     const [deductModalOpen, setDeductModalOpen] = useState(false);
+    const [resubmitModalOpen, setResubmitModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [selectedResubmitProduct, setSelectedResubmitProduct] = useState(null);
     const [restockAmount, setRestockAmount] = useState("");
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
 
@@ -120,6 +122,10 @@ export default function useProductManager({
     const deductForm = useForm({
         quantity: "",
         reason: "Physical Store Sale",
+    });
+
+    const resubmitForm = useForm({
+        notes: "",
     });
 
     const { data, setData, post, processing, errors, reset, clearErrors } = productForm;
@@ -561,6 +567,30 @@ export default function useProductManager({
         setDeductModalOpen(true);
     };
 
+    const openResubmitModal = (p) => {
+        if (!canEditProducts) return;
+        setSelectedResubmitProduct(p);
+        resubmitForm.setData("notes", "");
+        resubmitForm.clearErrors();
+        setResubmitModalOpen(true);
+    };
+
+    const closeResubmitModal = () => {
+        setResubmitModalOpen(false);
+        resubmitForm.reset();
+    };
+
+    const submitResubmission = (e) => {
+        e?.preventDefault();
+        resubmitForm.post(route("products.resubmit", selectedResubmitProduct.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setResubmitModalOpen(false);
+                resubmitForm.reset();
+            },
+        });
+    };
+
     const toggleProductSelection = (productId) => {
         setSelectedProductIds((current) =>
             current.includes(productId) ? current.filter((id) => id !== productId) : [...current, productId],
@@ -730,5 +760,12 @@ export default function useProductManager({
         handlePageChange,
         canEditProducts,
         isProductsReadOnly,
+        resubmitModalOpen,
+        setResubmitModalOpen,
+        selectedResubmitProduct,
+        resubmitForm,
+        openResubmitModal,
+        closeResubmitModal,
+        submitResubmission,
     };
 }

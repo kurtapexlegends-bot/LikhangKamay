@@ -10,6 +10,7 @@ export default function ProductMobileCard({
     canEditProducts,
     openEditModal,
     openAddModal,
+    onResubmitClick,
 }) {
     return (
         <div className="space-y-3 p-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 md:hidden">
@@ -43,7 +44,21 @@ export default function ProductMobileCard({
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
                                         <span
+                                            onClick={() => {
+                                                if (product.status === "rejected" || product.status === "flagged") {
+                                                    onResubmitClick?.(product);
+                                                }
+                                            }}
+                                            title={
+                                                product.status === "rejected" || product.status === "flagged"
+                                                    ? "Click to view reason and resubmit"
+                                                    : undefined
+                                            }
                                             className={`rounded-full border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${
+                                                product.status === "rejected" || product.status === "flagged"
+                                                    ? "cursor-pointer hover:opacity-85 transition-opacity"
+                                                    : ""
+                                            } ${
                                                 product.status === "Active"
                                                     ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                                     : product.status === "Archived"
@@ -65,13 +80,6 @@ export default function ProductMobileCard({
                                                 ? "Flagged"
                                                 : product.status}
                                         </span>
-                                        {(product.status === "rejected" || product.status === "flagged") &&
-                                            product.rejection_reason && (
-                                                <div className="mt-1 flex items-start gap-1 text-[10px] text-rose-600 bg-rose-50/50 p-1.5 rounded-lg border border-rose-100 max-w-[150px] break-words">
-                                                    <AlertTriangle size={10} className="shrink-0 mt-0.5" />
-                                                    <span>Reason: {product.rejection_reason}</span>
-                                                </div>
-                                            )}
                                     </div>
                                 </div>
 

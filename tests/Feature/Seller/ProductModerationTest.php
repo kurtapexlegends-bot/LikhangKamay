@@ -414,4 +414,116 @@ class ProductModerationTest extends TestCase
             }
         );
     }
+
+    public function test_seller_can_resubmit_rejected_product_with_notes(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $seller = User::factory()->artisanApproved()->create();
+        $admin = User::factory()->superAdmin()->create();
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'RESUB-TEST-1',
+            'name' => 'Rejected Pot',
+            'category' => 'Vases',
+            'price' => 100,
+            'stock' => 5,
+            'status' => 'rejected',
+            'rejection_reason' => 'Fix spelling.',
+        ]);
+
+        $response = $this->actingAs($seller)->post(route('products.resubmit', $product->id), [
+            'notes' => 'I have corrected the spelling.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionDoesntHaveErrors();
+
+        $product->refresh();
+        $this->assertSame('pending_review', $product->status);
+        $this->assertNull($product->rejection_reason);
+
+        $this->assertDatabaseHas('product_resubmissions', [
+            'product_id' => $product->id,
+            'notes' => 'I have corrected the spelling.',
+            'rejection_reason' => 'Fix spelling.',
+        ]);
+    }
+
+    public function test_seller_resubmission_limit_enforced(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $seller = User::factory()->artisanApproved()->create();
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'RESUB-TEST-2',
+            'name' => 'Rejected Bowl',
+            'category' => 'Vases',
+            'price' => 100,
+            'stock' => 5,
+            'status' => 'rejected',
+            'rejection_reason' => 'Bad image quality.',
+        ]);
+
+        // Resubmit 3 times
+        for ($i = 1; $i <= 3; $i++) {
+            // Ensure model state in memory matches DB before we simulate rejection update
+            $product->refresh();
+
+            // Set status back to rejected manually to simulate admin rejecting it again
+            $product->update(['status' => 'rejected', 'rejection_reason' => 'Still bad image.']);
+
+            $response = $this->actingAs($seller)->post(route('products.resubmit', $product->id), [
+                'notes' => "Attempt {$i}",
+            ]);
+            
+            $response->assertRedirect();
+            $response->assertSessionDoesntHaveErrors();
+        }
+
+        // 4th attempt should fail
+        $product->refresh();
+        $product->update(['status' => 'rejected', 'rejection_reason' => 'Still bad image.']);
+        
+        $response = $this->actingAs($seller)->post(route('products.resubmit', $product->id), [
+            'notes' => '4th Attempt',
+        ]);
+        
+        $response->assertSessionHasErrors(['resubmit']);
+    }
+
+    public function test_seller_updating_rejected_product_does_not_force_pending_review(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'RESUB-TEST-3',
+            'name' => 'Rejected Pot before edit',
+            'category' => 'Vases',
+            'price' => 100,
+            'stock' => 5,
+            'status' => 'rejected',
+            'rejection_reason' => 'Incorrect dimensions.',
+        ]);
+
+        $response = $this->actingAs($seller)->post(route('products.update', $product->id), [
+            'name' => 'Rejected Pot after edit',
+            'category' => 'Vases',
+            'price' => 120,
+            'cost_price' => 50,
+            'stock' => 10,
+            'status' => 'rejected',
+            'retained_gallery' => [],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionDoesntHaveErrors();
+
+        $product->refresh();
+        $this->assertSame('rejected', $product->status);
+        $this->assertSame('Incorrect dimensions.', $product->rejection_reason);
+        $this->assertSame('Rejected Pot after edit', $product->name);
+    }
 }

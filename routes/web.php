@@ -160,6 +160,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/products/import-csv', [ProductController::class, 'importCsv'])->middleware(['seller.module:products', 'throttle:bulk.ops'])->name('products.import-csv');
         Route::post('/products', [ProductController::class, 'store'])->middleware('seller.module:products')->name('products.store');
         Route::post('/products/{id}/update', [ProductController::class, 'update'])->middleware('seller.module:products')->name('products.update'); 
+        Route::post('/products/{id}/resubmit', [ProductController::class, 'resubmit'])->middleware('seller.module:products')->name('products.resubmit');
         Route::post('/products/bulk-status', [ProductController::class, 'bulkUpdateStatus'])->middleware('seller.module:products')->name('products.bulk-status');
         Route::post('/products/{id}/archive', [ProductController::class, 'archive'])->middleware('seller.module:products')->name('products.archive');
         Route::post('/products/{id}/activate', [ProductController::class, 'activate'])->middleware('seller.module:products')->name('products.activate'); // New

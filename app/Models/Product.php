@@ -92,6 +92,16 @@ class Product extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function resubmissions()
+    {
+        return $this->hasMany(ProductResubmission::class);
+    }
+
+    public function latestResubmission()
+    {
+        return $this->hasOne(ProductResubmission::class)->latestOfMany();
+    }
+
     public function reviews()
     {
         return $this->hasMany(Review::class)->latest();
@@ -153,7 +163,12 @@ class Product extends Model
             if (!static::$bypassReview) {
                 $user = \Illuminate\Support\Facades\Auth::guard()->user();
                 if ($user && ($user->role === 'artisan' || $user->role === 'staff')) {
-                    if ($product->status !== 'Draft' && $product->status !== 'Archived') {
+                    if (
+                        $product->status !== 'Draft' && 
+                        $product->status !== 'Archived' &&
+                        $product->status !== 'rejected' &&
+                        $product->status !== 'flagged'
+                    ) {
                         $product->status = 'pending_review';
                         $product->rejection_reason = null;
                     }

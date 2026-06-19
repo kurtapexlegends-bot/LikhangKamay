@@ -189,6 +189,11 @@ export default function ProductModerationTable({ products, filters }) {
                                                         Reason: {product.rejection_reason}
                                                     </p>
                                                 )}
+                                                {product.status === 'pending_review' && product.latest_resubmission?.notes && (
+                                                    <div className="mt-1.5 text-[10px] text-stone-600 bg-stone-50 p-1.5 rounded-lg border border-stone-200 max-w-[200px] break-words font-medium">
+                                                        <span className="font-bold text-stone-700">Seller Notes:</span> "{product.latest_resubmission.notes}"
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="py-4 px-6 align-middle text-right">
                                                 <div className="flex items-center justify-end gap-2">
