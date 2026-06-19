@@ -124,7 +124,7 @@ export default function Analytics({
             <main className="flex-1 w-full px-4 pt-0 pb-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-8 lg:pt-0 lg:pb-8 overflow-y-auto space-y-6">
                 
                 {/* Tab Switcher */}
-                <div className="print:hidden flex justify-center sm:justify-start">
+                <div className="print:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 justify-start">
                     <div className="inline-flex bg-stone-100/60 p-1 rounded-2xl border border-stone-200/30">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
@@ -134,7 +134,7 @@ export default function Analytics({
                                     key={tab.id}
                                     type="button"
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95 ${
                                         isActive
                                             ? 'bg-white text-clay-800 shadow-sm'
                                             : 'text-stone-600 hover:text-stone-900'

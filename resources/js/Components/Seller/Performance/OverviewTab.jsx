@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import KPICard from '@/Components/KPICard';
 import StaggerContainer from '@/Components/StaggerContainer';
 import ContentTransition from '@/Components/ContentTransition';
@@ -48,69 +48,97 @@ export default function OverviewTab({
     categoryData,
     updateCategoryFilter,
 }) {
+    const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+    const handleCardScroll = (e) => {
+        const scrollLeft = e.currentTarget.scrollLeft;
+        const width = e.currentTarget.getBoundingClientRect().width;
+        if (width > 0) {
+            const index = Math.round(scrollLeft / width);
+            setActiveCardIndex(index);
+        }
+    };
+
     return (
         <>
             {/* Level 1: Key Performance Indicators */}
-            <StaggerContainer className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-                {isLoading ? (
-                    <ArtisanSkeleton variant="stat" count={4} />
-                ) : (
-                    <>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
-                            <KPICard 
-                                title="Total Revenue" 
-                                value={metrics.total_revenue} 
-                                growth={metrics.growth?.revenue} 
-                                growthSuffix=" vs last month"
-                                trendData={revenueTrend}
-                                breakdown={Object.keys(revenueBreakdown || {}).length > 0 ? revenueBreakdown : null}
-                                icon={DollarSign} 
-                                bg="bg-stone-50" 
-                                color="text-clay-600" 
-                                animate={shouldAnimateKPI}
-                            />
-                        </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
-                            <KPICard 
-                                title="Gross Profit" 
-                                value={metrics.gross_profit} 
-                                growth={metrics.growth?.profit} 
-                                growthSuffix=" vs last month"
-                                trendData={profitTrend}
-                                icon={TrendingUp} 
-                                bg="bg-emerald-50" 
-                                color="text-emerald-600" 
-                                animate={shouldAnimateKPI}
-                            />
-                        </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
-                            <KPICard 
-                                title="Profit Margin" 
-                                value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} 
-                                growth={metrics.growth?.margin} 
-                                growthSuffix=" vs last month"
-                                icon={Activity} 
-                                bg="bg-emerald-50" 
-                                color="text-emerald-600" 
-                                animate={shouldAnimateKPI} 
-                            />
-                        </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
-                            <KPICard 
-                                title="Shop Rating" 
-                                value={`${metrics.average_rating} / 5.0`} 
-                                growth={metrics.growth?.rating} 
-                                growthSuffix=" vs last month"
-                                icon={Star} 
-                                bg="bg-amber-50" 
-                                color="text-amber-600" 
-                                formatter={(v) => v.toFixed(1)} 
-                                animate={shouldAnimateKPI} 
-                            />
-                        </div>
-                    </>
-                )}
-            </StaggerContainer>
+            <div className="space-y-2">
+                <StaggerContainer 
+                    onScroll={handleCardScroll}
+                    className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0"
+                >
+                    {isLoading ? (
+                        <ArtisanSkeleton variant="stat" count={4} />
+                    ) : (
+                        <>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                                <KPICard 
+                                    title="Total Revenue" 
+                                    value={metrics.total_revenue} 
+                                    growth={metrics.growth?.revenue} 
+                                    growthSuffix=" vs last month"
+                                    trendData={revenueTrend}
+                                    breakdown={Object.keys(revenueBreakdown || {}).length > 0 ? revenueBreakdown : null}
+                                    icon={DollarSign} 
+                                    bg="bg-stone-50" 
+                                    color="text-clay-600" 
+                                    animate={shouldAnimateKPI}
+                                />
+                            </div>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                                <KPICard 
+                                    title="Gross Profit" 
+                                    value={metrics.gross_profit} 
+                                    growth={metrics.growth?.profit} 
+                                    growthSuffix=" vs last month"
+                                    trendData={profitTrend}
+                                    icon={TrendingUp} 
+                                    bg="bg-emerald-50" 
+                                    color="text-emerald-600" 
+                                    animate={shouldAnimateKPI}
+                                />
+                            </div>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                                <KPICard 
+                                    title="Profit Margin" 
+                                    value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} 
+                                    growth={metrics.growth?.margin} 
+                                    growthSuffix=" vs last month"
+                                    icon={Activity} 
+                                    bg="bg-emerald-50" 
+                                    color="text-emerald-600" 
+                                    animate={shouldAnimateKPI} 
+                                />
+                            </div>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                                <KPICard 
+                                    title="Shop Rating" 
+                                    value={`${metrics.average_rating} / 5.0`} 
+                                    growth={metrics.growth?.rating} 
+                                    growthSuffix=" vs last month"
+                                    icon={Star} 
+                                    bg="bg-amber-50" 
+                                    color="text-amber-600" 
+                                    formatter={(v) => v.toFixed(1)} 
+                                    animate={shouldAnimateKPI} 
+                                />
+                            </div>
+                        </>
+                    )}
+                </StaggerContainer>
+
+                {/* Page Indicator Dots on Mobile */}
+                <div className="flex justify-center gap-1.5 mt-1 sm:hidden">
+                    {[0, 1, 2, 3].map((i) => (
+                        <span
+                            key={i}
+                            className={`h-1 rounded-full transition-all duration-300 ${
+                                activeCardIndex === i ? 'w-3.5 bg-orange-600' : 'w-1 bg-stone-200'
+                            }`}
+                        />
+                    ))}
+                </div>
+            </div>
 
             {/* Level 2: Financial Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
