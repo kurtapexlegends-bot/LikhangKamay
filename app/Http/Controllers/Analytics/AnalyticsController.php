@@ -54,12 +54,16 @@ class AnalyticsController extends Controller
                 'total_revenue' => $canViewRevenue ? $financials['current']['revenue'] : 0,
                 'gross_profit' => $canViewRevenue ? $financials['current']['profit'] : 0,
                 'profit_margin' => $canViewRevenue ? round($financials['current']['margin'], 1) : 0,
-                'growth' => $canViewRevenue ? $financials['growth'] : [
-                    'revenue' => 0,
-                    'orders' => $financials['growth']['orders'],
-                    'avg' => 0,
-                    'profit' => 0,
-                ],
+                'growth' => array_merge(
+                    $canViewRevenue ? $financials['growth'] : [
+                        'revenue' => 0,
+                        'orders' => $financials['growth']['orders'],
+                        'avg' => 0,
+                        'profit' => 0,
+                        'margin' => 0,
+                    ],
+                    ['rating' => $reviewStats['growth']]
+                ),
                 'average_rating' => $reviewStats['average'],
                 'review_stats' => $reviewStats,
                 'fulfillment_latency' => $rollup['fulfillment_latency'] ?? [
@@ -144,6 +148,7 @@ class AnalyticsController extends Controller
                 'orders' => $this->calculatePercentage($current['orders'], $previous['orders']),
                 'avg' => $this->calculatePercentage($current['avg'], $previous['avg']),
                 'profit' => $this->calculatePercentage($current['profit'], $previous['profit']),
+                'margin' => round($current['margin'] - $previous['margin'], 1),
             ]
         ];
     }
@@ -306,15 +311,25 @@ class AnalyticsController extends Controller
 
     private function getReviewStats(int $sellerId): array
     {
+        $now = Carbon::now();
+        $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
+
         $reviews = Review::whereHas('product', function ($query) use ($sellerId) {
             $query->where('user_id', $sellerId);
         })->get();
 
+        $reviewsLastMonth = $reviews->filter(function ($r) use ($endOfLastMonth) {
+            return $r->created_at <= $endOfLastMonth;
+        });
+
         $averageRating = $reviews->count() > 0 ? $reviews->avg('rating') : 0;
-        
+        $averageRatingLastMonth = $reviewsLastMonth->count() > 0 ? $reviewsLastMonth->avg('rating') : 0;
+        $ratingGrowth = $averageRatingLastMonth > 0 ? $this->calculatePercentage($averageRating, $averageRatingLastMonth) : 0;
+
         return [
             'total' => $reviews->count(),
             'average' => $averageRating ? round($averageRating, 1) : 0,
+            'growth' => $ratingGrowth,
             'breakdown' => [
                 '5' => $reviews->where('rating', 5)->count(),
                 '4' => $reviews->where('rating', 4)->count(),

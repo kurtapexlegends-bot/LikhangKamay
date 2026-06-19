@@ -44,6 +44,7 @@ const KPICard = ({
     color = 'text-clay-600', 
     bg = 'bg-clay-50',
     growth,
+    growthSuffix = '',
     trendData = [],
     breakdown = null,
     animate = true,
@@ -104,7 +105,7 @@ const KPICard = ({
                     {growth !== undefined && (
                         <div className={`flex items-center gap-1 text-[10px] font-bold ${growthColor}`}>
                             <GrowthIcon size={12} />
-                            <span>{growthPrefix}{growth}%</span>
+                            <span>{growthPrefix}{growth}%{growthSuffix}</span>
                         </div>
                     )}
                     {trendData.length > 0 && (
