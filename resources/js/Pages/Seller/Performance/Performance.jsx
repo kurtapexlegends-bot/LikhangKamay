@@ -497,8 +497,8 @@ export default function Analytics({
                                                 <Pie
                                                     data={categoryData}
                                                     nameKey="category"
-                                                    cx="50%"
-                                                    cy="50%"
+                                                    cx={80}
+                                                    cy={80}
                                                     innerRadius={45}
                                                     outerRadius={70}
                                                     paddingAngle={4}
@@ -755,8 +755,8 @@ export default function Analytics({
                                         <Pie
                                             data={categoryData}
                                             nameKey="category"
-                                            cx="50%"
-                                            cy="50%"
+                                            cx={80}
+                                            cy={80}
                                             innerRadius={45}
                                             outerRadius={70}
                                             paddingAngle={4}

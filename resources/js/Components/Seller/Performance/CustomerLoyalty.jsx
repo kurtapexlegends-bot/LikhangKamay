@@ -71,8 +71,8 @@ export default function CustomerLoyalty({ vipCustomers, loyaltyStats }) {
                                 <PieChart width={110} height={110}>
                                     <Pie
                                         data={loyaltyData}
-                                        cx="50%"
-                                        cy="50%"
+                                        cx={55}
+                                        cy={55}
                                         innerRadius={20}
                                         outerRadius={35}
                                         paddingAngle={5}
