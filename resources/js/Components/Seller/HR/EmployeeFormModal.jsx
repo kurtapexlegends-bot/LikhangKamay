@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { X, UserPlus, CheckCircle2, AlertTriangle, Loader2, Eye, EyeOff, Pencil, ShieldAlert, RefreshCw, Sparkles } from 'lucide-react';
+import { X, UserPlus, Pencil, ShieldAlert, RefreshCw, Loader2 } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import RolePermissionSelector from './RolePermissionSelector';
+import BasicEmployeeInfoSection from './BasicEmployeeInfoSection';
+import PortalCredentialsSection from './PortalCredentialsSection';
 import useConstraintValidation from '@/hooks/useConstraintValidation';
 import { useToast } from '@/Components/ToastContext';
 import {
     DEFAULT_EMPLOYEE_ROLE,
-    EMPLOYEE_ROLE_OPTIONS,
-    modalFieldClass,
-    modalFieldWithIconClass,
-    modalSelectClass,
     buildModuleSelection,
     getModuleSelectionFromLogin,
     generateRandomEmployeeId
 } from '@/utils/hrHelpers';
+
 
 export default function EmployeeFormModal({
     isOpen,
@@ -365,107 +364,16 @@ export default function EmployeeFormModal({
                     )}
 
                     {/* Basic Info Section */}
-                    <div className="space-y-4">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-1.5">
-                            Basic Employee Information
-                        </h3>
-                        <div className="grid gap-5 md:grid-cols-2">
-                            {/* Employee ID */}
-                            <div>
-                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Employee ID</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        className={`${modalFieldWithIconClass} ${employeeIdValidation.isValid === false || errors.employee_id ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''} min-h-[44px]`}
-                                        placeholder="e.g. EMP-001"
-                                        value={data.employee_id}
-                                        maxLength={12}
-                                        onChange={e => {
-                                            const cleaned = e.target.value.replace(/[^a-zA-Z0-9-]/g, '').slice(0, 12);
-                                            setData('employee_id', cleaned);
-                                        }}
-                                        required
-                                    />
-                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                        {data.employee_id && !isEmployeeIdSaved && (
-                                            employeeIdValidation.isValid === null ? (
-                                                <Loader2 size={16} className="animate-spin text-stone-400" />
-                                            ) : employeeIdValidation.isValid ? (
-                                                <CheckCircle2 size={16} className="text-emerald-500" />
-                                            ) : (
-                                                <AlertTriangle size={16} className="text-red-500" />
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-                                {employeeIdValidation.isValid === false && (
-                                    <p className="mt-1 text-[10px] font-bold text-red-600 uppercase tracking-tight flex items-center gap-1">
-                                        {employeeIdValidation.message}
-                                    </p>
-                                )}
-                                {errors.employee_id && <p className="mt-1 text-xs text-red-500 font-medium">{errors.employee_id}</p>}
-                            </div>
-
-                            {/* Legal Name */}
-                            <div>
-                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Legal Full Name</label>
-                                <input
-                                    type="text"
-                                    className={`${modalFieldClass} ${errors.name ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''} min-h-[44px]`}
-                                    placeholder="e.g. Maria Clara"
-                                    value={data.name}
-                                    onChange={e => setData('name', e.target.value)}
-                                    required
-                                />
-                                {errors.name && <p className="mt-1 text-xs text-red-500 font-medium">{errors.name}</p>}
-                            </div>
-
-                            {/* Job Title / Preset Role */}
-                            {showLinkedLoginUpdateFields ? (
-                                <div>
-                                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-400">Job Title (Preset)</label>
-                                    <input
-                                        type="text"
-                                        className="w-full rounded-xl border border-stone-200 bg-stone-50/50 px-3 py-2 text-xs text-stone-500 cursor-not-allowed min-h-[44px] shadow-sm"
-                                        value={getPresetRoleLabel(data.staff_role_preset_key)}
-                                        disabled
-                                    />
-                                    <p className="mt-1 text-[10px] text-stone-400 font-medium">Synchronized with the active security preset role below.</p>
-                                </div>
-                            ) : (
-                                <div>
-                                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Job Title</label>
-                                    <select
-                                        className={`${modalSelectClass} ${errors.role ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''} min-h-[44px]`}
-                                        value={data.role}
-                                        onChange={e => handleManualRoleChange(e.target.value)}
-                                    >
-                                        {EMPLOYEE_ROLE_OPTIONS.map((roleOption) => (
-                                            <option key={roleOption}>{roleOption}</option>
-                                        ))}
-                                    </select>
-                                    {errors.role && <p className="mt-1 text-xs text-red-500 font-medium">{errors.role}</p>}
-                                </div>
-                            )}
-
-                            {/* Monthly Salary */}
-                            <div>
-                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Monthly Salary (PHP)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="any"
-                                    className={`${modalFieldClass} ${errors.salary ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''} min-h-[44px]`}
-                                    placeholder="0"
-                                    value={data.salary}
-                                    onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                    onChange={e => setData('salary', e.target.value.replace(/-/g, ""))}
-                                    required
-                                />
-                                {errors.salary && <p className="mt-1 text-xs text-red-500 font-medium">{errors.salary}</p>}
-                            </div>
-                        </div>
-                    </div>
+                    <BasicEmployeeInfoSection
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        showLinkedLoginUpdateFields={showLinkedLoginUpdateFields}
+                        getPresetRoleLabel={getPresetRoleLabel}
+                        handleManualRoleChange={handleManualRoleChange}
+                        employeeIdValidation={employeeIdValidation}
+                        isEmployeeIdSaved={isEmployeeIdSaved}
+                    />
 
                     {/* Collapsible Portal Configuration Section */}
                     <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
@@ -475,97 +383,19 @@ export default function EmployeeFormModal({
                     }`}>
                         <div className="space-y-6 pt-5 border-t border-stone-200/60 mt-6">
                             {/* Portal Credentials Section */}
-                            <div className="space-y-4">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-1.5">
-                                    Seller Portal Credentials
-                                </h3>
-                                <div className="grid gap-5 md:grid-cols-2">
-                                    <div>
-                                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Email Address</label>
-                                        <div className="relative">
-                                            <input
-                                                id={mode === 'add' ? 'staff_email_add' : 'staff_email_edit'}
-                                                type="email"
-                                                className={`${modalFieldWithIconClass} ${
-                                                    errors.email || (emailValidation && emailValidation.isValid === false)
-                                                        ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' 
-                                                        : !isEmailGmail && data.email
-                                                            ? 'border-amber-300 bg-amber-50/10 focus:ring-amber-500 focus:border-amber-500' 
-                                                            : ''
-                                                } min-h-[44px]`}
-                                                placeholder="maria@gmail.com"
-                                                value={data.email}
-                                                pattern="[a-zA-Z0-9._%+-]+@[gG][mM][aA][iI][lL]\.[cC][oO][mM]"
-                                                onChange={(e) => setData('email', e.target.value)}
-                                                required={showLinkedLoginUpdateFields}
-                                            />
-                                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                                {data.email && isEmailGmail && !isEmailSaved && emailValidation && (
-                                                    emailValidation.isValid === null ? (
-                                                        <Loader2 size={16} className="animate-spin text-stone-400" />
-                                                    ) : emailValidation.isValid ? (
-                                                        <CheckCircle2 size={16} className="text-emerald-500" />
-                                                    ) : (
-                                                        <AlertTriangle size={16} className="text-red-500" />
-                                                    )
-                                                )}
-                                            </div>
-                                        </div>
-                                        {!isEmailGmail && data.email && (
-                                            <p className="mt-1 text-[10px] font-bold text-amber-600 uppercase tracking-tight">
-                                                Email address should end with @gmail.com.
-                                            </p>
-                                        )}
-                                        {isEmailGmail && data.email && emailValidation && emailValidation.isValid === false && (
-                                            <p className="mt-1 text-[10px] font-bold text-red-600 uppercase tracking-tight">
-                                                {emailValidation.message}
-                                            </p>
-                                        )}
-                                        {errors.email && <p className="mt-1 text-xs text-red-500 font-medium">{errors.email}</p>}
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1.5">
-                                            <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                                                {hasLinkedLogin ? 'Reset Password (Optional)' : 'Initial Password'}
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
-                                                    let generatedPassword = '';
-                                                    for (let i = 0; i < 12; i++) {
-                                                        generatedPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-                                                    }
-                                                    setData('default_password', generatedPassword);
-                                                    setShowPassword(true);
-                                                }}
-                                                className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-clay-600 hover:text-clay-800 transition"
-                                            >
-                                                <Sparkles size={11} /> Generate
-                                            </button>
-                                        </div>
-                                        <div className="relative">
-                                            <input
-                                                type={showPassword ? 'text' : 'password'}
-                                                className={`${modalFieldWithIconClass} ${errors.default_password ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''} min-h-[44px]`}
-                                                placeholder={hasLinkedLogin ? 'Leave blank to keep password' : 'Set temp password'}
-                                                value={data.default_password}
-                                                onChange={(e) => setData('default_password', e.target.value)}
-                                                required={!hasLinkedLogin && data.create_login_account}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword((value) => !value)}
-                                                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                                className="absolute right-0.5 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-stone-700 h-11 w-11 flex items-center justify-center"
-                                            >
-                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                            </button>
-                                        </div>
-                                        {errors.default_password && <p className="mt-1 text-xs text-red-500 font-medium">{errors.default_password}</p>}
-                                    </div>
-                                </div>
-                            </div>
+                            <PortalCredentialsSection
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                                mode={mode}
+                                showLinkedLoginUpdateFields={showLinkedLoginUpdateFields}
+                                emailValidation={emailValidation}
+                                isEmailGmail={isEmailGmail}
+                                isEmailSaved={isEmailSaved}
+                                showPassword={showPassword}
+                                setShowPassword={setShowPassword}
+                                hasLinkedLogin={hasLinkedLogin}
+                            />
 
                             {/* Permissions Block */}
                             <RolePermissionSelector
