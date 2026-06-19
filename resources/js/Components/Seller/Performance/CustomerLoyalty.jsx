@@ -44,12 +44,37 @@ export default function CustomerLoyalty({ vipCustomers, loyaltyStats }) {
                     </div>
                     <div className="flex-1 flex flex-col justify-center py-2">
                         <div className="h-28 w-full relative">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
+                            {/* Screen Chart */}
+                            <div className="print:hidden h-full w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={loyaltyData}
+                                            innerRadius={25}
+                                            outerRadius={40}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {loyaltyData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '10px' }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            {/* Print Chart */}
+                            <div className="hidden print:flex print:justify-center w-full h-[110px]">
+                                <PieChart width={110} height={110}>
                                     <Pie
                                         data={loyaltyData}
-                                        innerRadius={25}
-                                        outerRadius={40}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={20}
+                                        outerRadius={35}
                                         paddingAngle={5}
                                         dataKey="value"
                                         stroke="none"
@@ -58,11 +83,8 @@ export default function CustomerLoyalty({ vipCustomers, loyaltyStats }) {
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '10px' }}
-                                    />
                                 </PieChart>
-                            </ResponsiveContainer>
+                            </div>
                         </div>
                         <div className="space-y-1 mt-2">
                             <div className="flex items-center justify-between text-[11px]">

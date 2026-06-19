@@ -279,88 +279,100 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
             </div>
 
             {/* Print-Only Expanded View */}
-            <div className="hidden print:grid print:grid-cols-3 print:gap-6 print:flex-1 operations-print-grid">
-                {/* Fulfillment */}
-                <div className="border-r border-stone-100 pr-4">
-                    <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Fulfillment Latency</h4>
-                    <div className="space-y-4">
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-stone-600">Acceptance Latency</span>
-                                <span className="font-black text-clay-700">{Number(latency.avg_acceptance_hours).toFixed(1)}h</span>
+            <div className="hidden print:block bg-white p-5 rounded-2xl border border-stone-100 mt-6 page-break-inside-avoid">
+                <div className="pb-3 border-b border-stone-100 mb-4">
+                    <h3 className="text-base font-bold text-stone-900 leading-none">Operations Control Dashboard</h3>
+                    <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Key logistics, inventory health, and delivery metrics</p>
+                </div>
+                <div className="grid grid-cols-3 gap-6 operations-print-grid">
+                    {/* Fulfillment */}
+                    <div className="border-r border-stone-100 pr-4">
+                        <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Fulfillment Latency</h4>
+                        <div className="space-y-4">
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="font-bold text-stone-600">Acceptance Latency</span>
+                                    <span className="font-black text-clay-700">{Number(latency.avg_acceptance_hours).toFixed(1)}h</span>
+                                </div>
+                                <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-clay-500 rounded-full" style={{ width: `${Math.min(100, (Number(latency.avg_acceptance_hours) / 24) * 100)}%` }} />
+                                </div>
                             </div>
-                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                <div className="h-full bg-clay-500 rounded-full" style={{ width: `${Math.min(100, (Number(latency.avg_acceptance_hours) / 24) * 100)}%` }} />
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="font-bold text-stone-600">Fulfillment Latency</span>
+                                    <span className="font-black text-emerald-600">{Number(latency.avg_fulfillment_hours).toFixed(1)}h</span>
+                                </div>
+                                <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, (Number(latency.avg_fulfillment_hours) / 48) * 100)}%` }} />
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-stone-600">Fulfillment Latency</span>
-                                <span className="font-black text-emerald-600">{Number(latency.avg_fulfillment_hours).toFixed(1)}h</span>
-                            </div>
-                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, (Number(latency.avg_fulfillment_hours) / 48) * 100)}%` }} />
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-stone-600">Transit/Delivery Latency</span>
-                                <span className="font-black text-amber-600">{Number(latency.avg_delivery_hours).toFixed(1)}h</span>
-                            </div>
-                            <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(100, (Number(latency.avg_delivery_hours) / 72) * 100)}%` }} />
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="font-bold text-stone-600">Transit/Delivery Latency</span>
+                                    <span className="font-black text-amber-600">{Number(latency.avg_delivery_hours).toFixed(1)}h</span>
+                                </div>
+                                <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(100, (Number(latency.avg_delivery_hours) / 72) * 100)}%` }} />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Stock Health */}
-                <div className="border-r border-stone-100 px-4">
-                    <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Stock Health</h4>
-                    <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                        {lowStockProducts.length > 0 ? (
-                            lowStockProducts.slice(0, 3).map((p, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs">
-                                    <span className="font-bold text-stone-900 truncate max-w-[100px]">{p.name}</span>
-                                    <span className="font-black text-rose-600 shrink-0">{p.stock} left</span>
+                    {/* Stock Health */}
+                    <div className="border-r border-stone-100 px-4">
+                        <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Stock Health</h4>
+                        <div className="space-y-3 max-h-[140px] overflow-y-auto pr-1">
+                            {lowStockProducts.length > 0 ? (
+                                <div>
+                                    <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Low Stock Alerts</p>
+                                    {lowStockProducts.slice(0, 3).map((p, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs mt-1">
+                                            <span className="font-bold text-stone-900 truncate max-w-[100px]">{p.name}</span>
+                                            <span className="font-black text-rose-600 shrink-0">{p.stock} left</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))
-                        ) : (
-                            <p className="text-[10px] text-stone-400 italic">Stock is healthy.</p>
-                        )}
-                        {slowMovers.length > 0 && (
-                            <div className="border-t border-stone-100 pt-2 mt-2">
-                                <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Slow Movers</p>
-                                {slowMovers.slice(0, 2).map((p, i) => (
-                                    <div key={i} className="flex items-center justify-between text-xs">
-                                        <span className="font-bold text-stone-900 truncate max-w-[100px]">{p.name}</span>
-                                        <span className="font-bold text-stone-500 shrink-0">{p.stock} units</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                            ) : (
+                                <p className="text-[10px] text-stone-400 italic">Stock is healthy.</p>
+                            )}
+                            {slowMovers.length > 0 && (
+                                <div className="border-t border-stone-100 pt-2 mt-2">
+                                    <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Slow Movers</p>
+                                    {slowMovers.slice(0, 2).map((p, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs gap-2 mt-1">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-bold text-stone-900 truncate">{p.name}</p>
+                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(2)} days</p>
+                                            </div>
+                                            <span className="font-bold text-stone-500 shrink-0">{p.stock} units</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
 
-                {/* Sales Velocity */}
-                <div className="pl-4">
-                    <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Sales Velocity</h4>
-                    <div className="space-y-3">
-                        {salesVelocity.length > 0 ? (
-                            salesVelocity.slice(0, 3).map((v, i) => (
-                                <div key={i} className="flex flex-col gap-1.5">
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="font-medium text-stone-600 truncate max-w-[95px]">{v.name}</span>
-                                        <span className="font-black text-stone-900">{Math.round(v.avg_days_to_sell)}d</span>
+                    {/* Sales Velocity */}
+                    <div className="pl-4">
+                        <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Sales Velocity</h4>
+                        <div className="space-y-3">
+                            {salesVelocity.length > 0 ? (
+                                salesVelocity.slice(0, 3).map((v, i) => (
+                                    <div key={i} className="flex flex-col gap-1.5">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-medium text-stone-600 truncate max-w-[95px]">{v.name}</span>
+                                            <span className="font-black text-stone-900">{Math.round(v.avg_days_to_sell)}d</span>
+                                        </div>
+                                        <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-stone-400 rounded-full" style={{ width: `${Math.min(100, (3 / v.avg_days_to_sell) * 100)}%` }} />
+                                        </div>
                                     </div>
-                                    <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-stone-400 rounded-full" style={{ width: `${Math.min(100, (3 / v.avg_days_to_sell) * 100)}%` }} />
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-[10px] text-stone-400 italic">No activity yet.</p>
-                        )}
+                                ))
+                            ) : (
+                                <p className="text-[10px] text-stone-400 italic">No activity yet.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
