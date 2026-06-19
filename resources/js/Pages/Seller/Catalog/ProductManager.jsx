@@ -6,7 +6,7 @@ import SellerWorkspaceLayout, {
     useSellerWorkspaceShell,
 } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
-import { FileDown, Upload, Plus, CheckCircle2, RotateCcw, Archive } from "lucide-react";
+import { FileDown, Upload, Plus, CheckCircle2, RotateCcw, Archive, AlertTriangle, AlertOctagon } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 import Modal from "@/Components/Modal";
 
@@ -280,167 +280,128 @@ export default function ProductManager({
 
             {/* Resubmit Modal / Drawer */}
             {state.resubmitModalOpen && (
-                state.isMobileOrTablet ? (
-                    <SlideOverDrawer
-                        show={state.resubmitModalOpen}
-                        onClose={state.closeResubmitModal}
-                        title="Resubmit Product Listing"
-                        widthClass="max-w-md"
-                    >
-                        <div className="p-4">
-                            {(() => {
-                                if (!state.selectedResubmitProduct) return null;
-                                const count = state.selectedResubmitProduct.monthly_resubmission_count || 0;
-                                const limitReached = count >= 3;
-                                const remaining = Math.max(0, 3 - count);
-                                return (
-                                    <form onSubmit={state.submitResubmission} className="space-y-6 animate-fadeIn">
-                                        <div className="space-y-4">
-                                            <div className="rounded-xl border border-red-100 bg-rose-50/50 p-4">
-                                                <p className="text-xs font-bold text-red-800 uppercase tracking-wider">
-                                                    Rejection/Flagged Reason
-                                                </p>
-                                                <p className="mt-1 text-sm text-red-750 font-medium leading-relaxed">
-                                                    {state.selectedResubmitProduct.rejection_reason || "No specific reason provided."}
-                                                </p>
-                                            </div>
+                (() => {
+                    const isFlagged = state.selectedResubmitProduct?.status === "flagged";
+                    const titleText = isFlagged ? "Resolve Flagged Listing" : "Resubmit Rejected Listing";
+                    const reasonLabel = isFlagged ? "Flag Reason" : "Rejection Reason";
+                    const notesLabel = isFlagged ? "Clarification Notes (Explain flagged issues resolved)" : "Resubmit Notes (Explain corrections made)";
+                    const notesPlaceholder = isFlagged 
+                        ? "Provide explanation or detail changes made to address the flagged issues so administrators can approve the listing."
+                        : "Detail the corrections you have made to address the rejection reason so administrators can approve the listing.";
+                    const buttonText = isFlagged ? "Resolve Flag & Resubmit" : "Resubmit Product";
+                    const getResetDate = () => {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() + 1);
+                        d.setDate(1);
+                        return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+                    };
 
-                                            <div className="rounded-xl border border-stone-250 bg-stone-50 p-4 space-y-2">
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="font-bold text-stone-600 uppercase tracking-wider">
-                                                        Monthly Resubmission Limit
-                                                    </span>
-                                                    <span className={`font-extrabold ${limitReached ? "text-rose-600" : "text-stone-700"}`}>
-                                                        {count} / 3 resubmitted
-                                                    </span>
-                                                </div>
-                                                <p className="text-[11px] text-stone-500 leading-normal">
-                                                    You can only resubmit this product 3 times per calendar month.
-                                                    {limitReached 
-                                                        ? " You have reached the limit for this month." 
-                                                        : ` You have ${remaining} resubmission(s) remaining for this month.`}
-                                                </p>
-                                            </div>
-
-                                            {!limitReached && (
-                                                <div>
-                                                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-                                                        Resubmission Notes (Explain changes made)
-                                                    </label>
-                                                    <textarea
-                                                        value={state.resubmitForm.data.notes}
-                                                        onChange={(e) => state.resubmitForm.setData("notes", e.target.value)}
-                                                        rows={4}
-                                                        className="w-full rounded-xl border border-stone-200 focus:border-clay-400 focus:ring-clay-400/20 text-sm placeholder-stone-400"
-                                                        placeholder="Detail the modifications so administrators can approve the listing."
-                                                    />
-                                                </div>
+                    const renderForm = () => {
+                        if (!state.selectedResubmitProduct) return null;
+                        const count = state.selectedResubmitProduct.monthly_resubmission_count || 0;
+                        const limitReached = count >= 3;
+                        const remaining = Math.max(0, 3 - count);
+                        return (
+                            <form onSubmit={state.submitResubmission} className="space-y-6 animate-fadeIn">
+                                <div className="space-y-4">
+                                    <div className={`rounded-xl border p-4 ${isFlagged ? "border-amber-100 bg-amber-50/50" : "border-red-100 bg-rose-50/50"}`}>
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            {isFlagged ? (
+                                                <AlertTriangle className="h-4 w-4 text-amber-800 shrink-0" />
+                                            ) : (
+                                                <AlertOctagon className="h-4 w-4 text-red-800 shrink-0" />
                                             )}
+                                            <p className={`text-xs font-bold uppercase tracking-wider ${isFlagged ? "text-amber-800" : "text-red-800"}`}>
+                                                {reasonLabel}
+                                            </p>
                                         </div>
+                                        <p className={`text-sm font-medium leading-relaxed ${isFlagged ? "text-stone-700" : "text-red-750"}`}>
+                                            {state.selectedResubmitProduct.rejection_reason || "No specific reason provided."}
+                                        </p>
+                                    </div>
 
-                                        <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
-                                            <button
-                                                type="button"
-                                                onClick={state.closeResubmitModal}
-                                                className="px-4 py-2.5 border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition min-h-[44px]"
-                                            >
-                                                Cancel
-                                            </button>
-                                            {!limitReached && (
-                                                <button
-                                                    type="submit"
-                                                    disabled={state.resubmitForm.processing}
-                                                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-clay-600 hover:bg-clay-700 transition disabled:opacity-50 min-h-[44px]"
-                                                >
-                                                    {state.resubmitForm.processing ? "Submitting..." : "Resubmit Product"}
-                                                </button>
-                                            )}
+                                    <div className="rounded-xl border border-stone-250 bg-stone-50 p-4 space-y-2">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-stone-600 uppercase tracking-wider">
+                                                Monthly Resubmission Limit
+                                            </span>
+                                            <span className={`font-extrabold ${limitReached ? "text-rose-600" : "text-stone-700"}`}>
+                                                {count} / 3 resubmitted
+                                            </span>
                                         </div>
-                                    </form>
-                                );
-                            })()}
-                        </div>
-                    </SlideOverDrawer>
-                ) : (
-                    <Modal show={state.resubmitModalOpen} onClose={state.closeResubmitModal} maxWidth="md">
-                        <div className="p-6">
-                            <h2 className="text-lg font-bold text-stone-900 mb-4">
-                                Resubmit Product Listing
-                            </h2>
-                            {(() => {
-                                if (!state.selectedResubmitProduct) return null;
-                                const count = state.selectedResubmitProduct.monthly_resubmission_count || 0;
-                                const limitReached = count >= 3;
-                                const remaining = Math.max(0, 3 - count);
-                                return (
-                                    <form onSubmit={state.submitResubmission} className="space-y-6 animate-fadeIn">
-                                        <div className="space-y-4">
-                                            <div className="rounded-xl border border-red-100 bg-rose-50/50 p-4">
-                                                <p className="text-xs font-bold text-red-800 uppercase tracking-wider">
-                                                    Rejection/Flagged Reason
-                                                </p>
-                                                <p className="mt-1 text-sm text-red-750 font-medium leading-relaxed">
-                                                    {state.selectedResubmitProduct.rejection_reason || "No specific reason provided."}
-                                                </p>
-                                            </div>
+                                        <p className="text-[11px] text-stone-500 leading-normal">
+                                            You can only resubmit this product 3 times per calendar month.
+                                            {limitReached 
+                                                ? " You have reached the limit for this month." 
+                                                : ` You have ${remaining} resubmission(s) remaining for this month.`}
+                                        </p>
+                                        {count > 0 && (
+                                            <p className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
+                                                <span>•</span> Resubmission limit resets on {getResetDate()}.
+                                            </p>
+                                        )}
+                                    </div>
 
-                                            <div className="rounded-xl border border-stone-250 bg-stone-50 p-4 space-y-2">
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="font-bold text-stone-600 uppercase tracking-wider">
-                                                        Monthly Resubmission Limit
-                                                    </span>
-                                                    <span className={`font-extrabold ${limitReached ? "text-rose-600" : "text-stone-700"}`}>
-                                                        {count} / 3 resubmitted
-                                                    </span>
-                                                </div>
-                                                <p className="text-[11px] text-stone-500 leading-normal">
-                                                    You can only resubmit this product 3 times per calendar month.
-                                                    {limitReached 
-                                                        ? " You have reached the limit for this month." 
-                                                        : ` You have ${remaining} resubmission(s) remaining for this month.`}
-                                                </p>
-                                            </div>
-
-                                            {!limitReached && (
-                                                <div>
-                                                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-                                                        Resubmission Notes (Explain changes made)
-                                                    </label>
-                                                    <textarea
-                                                        value={state.resubmitForm.data.notes}
-                                                        onChange={(e) => state.resubmitForm.setData("notes", e.target.value)}
-                                                        rows={4}
-                                                        className="w-full rounded-xl border border-stone-200 focus:border-clay-400 focus:ring-clay-400/20 text-sm placeholder-stone-400"
-                                                        placeholder="Detail the modifications so administrators can approve the listing."
-                                                    />
-                                                </div>
-                                            )}
+                                    {!limitReached && (
+                                        <div>
+                                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                                                {notesLabel}
+                                            </label>
+                                            <textarea
+                                                value={state.resubmitForm.data.notes}
+                                                onChange={(e) => state.resubmitForm.setData("notes", e.target.value)}
+                                                rows={4}
+                                                className="w-full rounded-xl border border-stone-200 focus:border-clay-400 focus:ring-clay-400/20 text-sm placeholder-stone-400"
+                                                placeholder={notesPlaceholder}
+                                            />
                                         </div>
+                                    )}
+                                </div>
 
-                                        <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
-                                            <button
-                                                type="button"
-                                                onClick={state.closeResubmitModal}
-                                                className="px-4 py-2.5 border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition min-h-[44px]"
-                                            >
-                                                Cancel
-                                            </button>
-                                            {!limitReached && (
-                                                <button
-                                                    type="submit"
-                                                    disabled={state.resubmitForm.processing}
-                                                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-clay-600 hover:bg-clay-700 transition disabled:opacity-50 min-h-[44px]"
-                                                >
-                                                    {state.resubmitForm.processing ? "Submitting..." : "Resubmit Product"}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </form>
-                                );
-                            })()}
-                        </div>
-                    </Modal>
-                )
+                                <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
+                                    <button
+                                        type="button"
+                                        onClick={state.closeResubmitModal}
+                                        className="px-4 py-2.5 border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition min-h-[44px]"
+                                    >
+                                        Cancel
+                                    </button>
+                                    {!limitReached && (
+                                        <button
+                                            type="submit"
+                                            disabled={state.resubmitForm.processing}
+                                            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-clay-600 hover:bg-clay-700 transition disabled:opacity-50 min-h-[44px]"
+                                        >
+                                            {state.resubmitForm.processing ? "Submitting..." : buttonText}
+                                        </button>
+                                    )}
+                                </div>
+                            </form>
+                        );
+                    };
+
+                    return state.isMobileOrTablet ? (
+                        <SlideOverDrawer
+                            show={state.resubmitModalOpen}
+                            onClose={state.closeResubmitModal}
+                            title={titleText}
+                            widthClass="max-w-md"
+                        >
+                            <div className="p-4">
+                                {renderForm()}
+                            </div>
+                        </SlideOverDrawer>
+                    ) : (
+                        <Modal show={state.resubmitModalOpen} onClose={state.closeResubmitModal} maxWidth="md">
+                            <div className="p-6">
+                                <h2 className="text-lg font-bold text-stone-900 mb-4">
+                                    {titleText}
+                                </h2>
+                                {renderForm()}
+                            </div>
+                        </Modal>
+                    );
+                })()
             )}
         </>
     );
