@@ -288,6 +288,62 @@ class StaffAuthorizationMiddlewareTest extends TestCase
             ->assertOk();
     }
 
+    public function test_staff_notifications_are_isolated_by_roles(): void
+    {
+        $owner = $this->createOwner();
+
+        // 1. Create database notifications belonging to the owner
+        // Order Notification (requires 'orders' capability)
+        \Illuminate\Notifications\DatabaseNotification::create([
+            'id' => \Illuminate\Support\Str::uuid()->toString(),
+            'type' => 'App\Notifications\NewOrderNotification',
+            'notifiable_type' => 'App\Models\User',
+            'notifiable_id' => $owner->id,
+            'data' => [
+                'type' => 'new_order',
+                'title' => 'New Order Alert',
+                'message' => 'Order #9999 has been received.',
+            ],
+        ]);
+
+        // Product Notification (requires 'products' capability)
+        \Illuminate\Notifications\DatabaseNotification::create([
+            'id' => \Illuminate\Support\Str::uuid()->toString(),
+            'type' => 'App\Notifications\LowStockNotification',
+            'notifiable_type' => 'App\Models\User',
+            'notifiable_id' => $owner->id,
+            'data' => [
+                'type' => 'low_stock',
+                'title' => 'Low Stock Warning',
+                'message' => 'Product X is low on stock.',
+            ],
+        ]);
+
+        // 2. Create staff user who ONLY has products permission
+        $staff = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag([
+                'products' => User::STAFF_ACCESS_PERMISSION_READ_ONLY,
+            ], true),
+        ]);
+
+        // 3. Act as staff and fetch notifications
+        $response = $this->actingAs($staff)
+            ->getJson(route('notifications.index'))
+            ->assertOk();
+
+        $notifications = $response->json('notifications');
+
+        // 4. Assert isolation:
+        // - 'low_stock' notification MUST be present
+        // - 'new_order' notification MUST NOT be present
+        $this->assertCount(1, $notifications);
+        $this->assertEquals('low_stock', $notifications[0]['type']);
+        $this->assertEquals('Low Stock Warning', $notifications[0]['title']);
+    }
+
     private function createOwner(): User
     {
         $owner = User::factory()->artisanApproved()->create([
