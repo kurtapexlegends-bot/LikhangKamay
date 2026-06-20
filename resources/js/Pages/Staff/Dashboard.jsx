@@ -1,151 +1,38 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import SellerSidebar from '@/Layouts/SellerSidebar';
 import SellerHeader from '@/Layouts/SellerHeader';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import {
     ArrowRight,
-    Briefcase,
-    Calculator,
-    ClipboardList,
-    MessageSquareText,
-    PackageSearch,
     PlayCircle,
-    ShieldCheck,
-    Users,
+    Compass,
+    Calendar,
+    Plus,
 } from 'lucide-react';
-
-const themeConfig = {
-    clay: {
-        banner: 'bg-stone-900 border border-stone-800',
-        bannerIconRing: 'bg-clay-500/20 text-clay-400 ring-1 ring-clay-500/30',
-        bannerEyebrow: 'text-clay-400',
-        bannerTitle: 'text-white',
-        bannerSubtitle: 'text-stone-400',
-        cardGlow: 'group-hover:border-clay-200',
-        statBorder: 'border-clay-100',
-        statValue: 'text-clay-700',
-        statBar: 'bg-clay-500',
-        icon: Users,
-    },
-    emerald: {
-        banner: 'bg-[#15231c] border border-[#1e3328]',
-        bannerIconRing: 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30',
-        bannerEyebrow: 'text-emerald-400',
-        bannerTitle: 'text-white',
-        bannerSubtitle: 'text-emerald-100/50',
-        cardGlow: 'group-hover:border-emerald-200',
-        statBorder: 'border-emerald-100',
-        statValue: 'text-emerald-700',
-        statBar: 'bg-emerald-500',
-        icon: Calculator,
-    },
-    amber: {
-        banner: 'bg-[#2a1c12] border border-[#3f2716]',
-        bannerIconRing: 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30',
-        bannerEyebrow: 'text-amber-500',
-        bannerTitle: 'text-white',
-        bannerSubtitle: 'text-amber-100/50',
-        cardGlow: 'group-hover:border-amber-200',
-        statBorder: 'border-amber-100',
-        statValue: 'text-amber-700',
-        statBar: 'bg-amber-500',
-        icon: PackageSearch,
-    },
-    sky: {
-        banner: 'bg-[#111e29] border border-[#1a2d3d]',
-        bannerIconRing: 'bg-sky-500/20 text-sky-400 ring-1 ring-sky-500/30',
-        bannerEyebrow: 'text-sky-400',
-        bannerTitle: 'text-white',
-        bannerSubtitle: 'text-sky-100/50',
-        cardGlow: 'group-hover:border-sky-200',
-        statBorder: 'border-sky-100',
-        statValue: 'text-sky-700',
-        statBar: 'bg-sky-500',
-        icon: MessageSquareText,
-    },
-};
-
-const toneChipMap = {
-    clay: 'bg-[#FCF7F2] text-clay-700 border-[#E7D8C9]',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    sky: 'bg-sky-50 text-sky-700 border-sky-200',
-    violet: 'bg-violet-50 text-violet-700 border-violet-200',
-    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    rose: 'bg-rose-50 text-rose-700 border-rose-200',
-    slate: 'bg-stone-50 text-stone-700 border-stone-200',
-    red: 'bg-red-50 text-red-700 border-red-200',
-};
-
-const cardIconMap = {
-    hr: Users,
-    accounting: Calculator,
-    procurement: PackageSearch,
-    stock_requests: ClipboardList,
-    orders: Briefcase,
-    reviews: ShieldCheck,
-    products: PackageSearch,
-    analytics: Briefcase,
-    team_messages: MessageSquareText,
-};
-
-function StatCard({ stat, theme }) {
-    return (
-        <div className={`rounded-[1.25rem] border bg-white px-5 py-4 transition hover:border-stone-300 ${theme.statBorder}`}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                {stat.label}
-            </p>
-            <p className={`mt-2 text-2xl font-bold tracking-tight ${theme.statValue}`}>
-                {stat.value}
-            </p>
-        </div>
-    );
-}
-
-function ActionCard({ card, theme }) {
-    const Icon = cardIconMap[card.module] || Briefcase;
-    const tone = toneChipMap[card.tone] || toneChipMap.slate;
-
-    return (
-        <Link
-            href={route(card.routeName)}
-            className={`group flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 transition duration-300 ${theme.cardGlow}`}
-        >
-            <div className="flex items-start justify-between gap-3">
-                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-stone-100 bg-stone-50 text-stone-600 transition duration-300`}>
-                    <Icon size={18} strokeWidth={2.5} />
-                </div>
-                <div className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] ${tone}`}>
-                    {card.metricLabel}
-                </div>
-            </div>
-
-            <div className="mt-5">
-                <h3 className="text-[17px] font-bold text-gray-900">{card.title}</h3>
-                <p className="mt-1.5 text-xs font-medium leading-5 text-stone-500">{card.description}</p>
-            </div>
-
-            <div className="mt-5 flex items-end justify-between gap-3 pt-4 border-t border-stone-50">
-                <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
-                        {card.metricLabel}
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-gray-900">{card.metricValue}</p>
-                </div>
-                
-                {/* Minimal pill action reveal */}
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-stone-50 border border-stone-200 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-stone-500 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:bg-gray-900 group-hover:text-white group-hover:border-gray-900">
-                    Open <ArrowRight size={12} className="transition group-hover:translate-x-0.5" />
-                </div>
-            </div>
-        </Link>
-    );
-}
+import { themeConfig } from '@/Components/Staff/Dashboard/WorkspaceCards';
+import WorkspaceTools from '@/Components/Staff/Dashboard/WorkspaceTools';
+import TaskChecklist from '@/Components/Staff/Dashboard/TaskChecklist';
+import StaffAttendanceDock from '@/Components/Seller/Sidebar/StaffAttendanceDock';
 
 export default function StaffDashboard({ auth, hub }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('tools'); // 'tools' or 'checklist'
+    const [isShiftSheetOpen, setIsShiftSheetOpen] = useState(false);
     const { sellerSidebar, attendance } = usePage().props;
+
+    // Body scroll lock when mobile shift sheet is open
+    useEffect(() => {
+        if (isShiftSheetOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isShiftSheetOpen]);
 
     const theme = themeConfig[hub.theme] || themeConfig.sky;
     const BannerIcon = theme.icon;
@@ -164,8 +51,75 @@ export default function StaffDashboard({ auth, hub }) {
         router.post(route('staff.attendance.resume'));
     };
 
+    // Checklist logic
+    const defaultChecklist = useMemo(() => {
+        if (hub.variant === 'hr') {
+            return [
+                { id: '1', text: 'Clock in for your shift schedule', completed: true },
+                { id: '2', text: 'Review employee attendance records', completed: false },
+                { id: '3', text: 'Check pending payroll approvals', completed: false }
+            ];
+        }
+        if (hub.variant === 'accounting') {
+            return [
+                { id: '1', text: 'Clock in for your shift schedule', completed: true },
+                { id: '2', text: 'Inspect base fund release requests', completed: false },
+                { id: '3', text: 'Audit recent payroll release log ledger', completed: false }
+            ];
+        }
+        if (hub.variant === 'procurement') {
+            return [
+                { id: '1', text: 'Clock in for your shift schedule', completed: true },
+                { id: '2', text: 'Check low-stock supply alert logs', completed: false },
+                { id: '3', text: 'Review incoming stock request documents', completed: false }
+            ];
+        }
+        return [
+            { id: '1', text: 'Clock in for your shift schedule', completed: true },
+            { id: '2', text: 'Review open active customer orders', completed: false },
+            { id: '3', text: 'Respond to new message tickets', completed: false }
+        ];
+    }, [hub.variant]);
+
+    const [tasks, setTasks] = useState(() => {
+        if (typeof window === 'undefined') return defaultChecklist;
+        try {
+            const saved = window.localStorage.getItem(`staff_checklist_${auth.user.id}`);
+            return saved ? JSON.parse(saved) : defaultChecklist;
+        } catch {
+            return defaultChecklist;
+        }
+    });
+
+    const [newTaskText, setNewTaskText] = useState('');
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem(`staff_checklist_${auth.user.id}`, JSON.stringify(tasks));
+    }, [tasks, auth.user.id]);
+
+    const handleAddTask = (e) => {
+        e.preventDefault();
+        if (!newTaskText.trim()) return;
+        const newTask = {
+            id: Date.now().toString(),
+            text: newTaskText.trim(),
+            completed: false
+        };
+        setTasks(prev => [...prev, newTask]);
+        setNewTaskText('');
+    };
+
+    const handleToggleTask = (taskId) => {
+        setTasks(prev => prev.map(task => task.id === taskId ? { ...task, completed: !task.completed } : task));
+    };
+
+    const handleDeleteTask = (taskId) => {
+        setTasks(prev => prev.filter(task => task.id !== taskId));
+    };
+
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-800">
+        <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-850">
             <ImpersonationBanner />
             <Head title={hub.title} />
 
@@ -184,162 +138,434 @@ export default function StaffDashboard({ auth, hub }) {
                     onMenuClick={() => setSidebarOpen(true)}
                     badge={{ label: hub.focus, iconColor: 'text-white' }}
                 />
-
-                <main className="flex-1 space-y-5 px-4 py-6 sm:px-6 lg:px-8">
-                    {/* Bespoke Dark Theme Banner */}
-                    <section className={`relative overflow-hidden rounded-[2rem] ${theme.banner} p-6 sm:p-8`}>
-                        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                            <div className="max-w-2xl">
-                                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-[1rem] ${theme.bannerIconRing}`}>
-                                    <BannerIcon size={22} strokeWidth={2.5} />
-                                </div>
-                                <p className={`mt-4 text-[10px] font-bold uppercase tracking-[0.24em] ${theme.bannerEyebrow}`}>
-                                    {hub.eyebrow}
-                                </p>
-                                <h1 className={`mt-2 text-3xl font-bold tracking-tight sm:text-4xl ${theme.bannerTitle}`}>
-                                    {hub.title}
-                                </h1>
-                                <p className={`mt-3 max-w-xl text-sm leading-6 ${theme.bannerSubtitle}`}>
-                                    {hub.subtitle} Only your allowed tools are shown for {hub.sellerName}.
-                                </p>
-                            </div>
-
-                            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-md lg:min-w-[260px]">
-                                <div className="flex items-center gap-2">
-                                    <span className="relative flex h-2 w-2">
-                                      {hasActiveSession && (
-                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                      )}
-                                      <span className={`relative inline-flex rounded-full h-2 w-2 ${hasActiveSession ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
-                                    </span>
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/60">
-                                        {hasActiveSession ? 'Active Privileges' : 'Workspace Status'}
-                                    </p>
-                                </div>
-                                {hasActiveSession ? (
-                                    <div className="mt-1 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
-                                            <span
-                                                key={module}
-                                                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
-                                            >
-                                                {module.replace(/_/g, ' ')}
-                                            </span>
-                                        ))}
+                <main className="flex-1 px-4 pt-3 pb-24 sm:py-6 lg:pt-6 lg:px-8">
+                    <div className="grid gap-6 xl:grid-cols-[1.75fr,0.85fr] items-start">
+                        
+                        {/* LEFT COLUMN: Main Workspace Desk */}
+                        <div className="flex flex-col gap-4 lg:gap-6">
+                            
+                            {/* Refined Banner Header (Sleeker and premium) */}
+                            <section className={`hidden lg:block relative overflow-hidden rounded-[2rem] ${theme.banner} p-6 sm:p-8 shadow-sm transition-all duration-300`}>
+                                {/* Ambient Background Glows */}
+                                <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-clay-500/10 opacity-35 blur-3xl pointer-events-none" />
+                                <div className="absolute -left-12 -bottom-12 w-64 h-64 rounded-full bg-stone-500/10 opacity-20 blur-3xl pointer-events-none" />
+                                
+                                <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                                    <div>
+                                        <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${theme.bannerIconRing}`}>
+                                            <BannerIcon size={20} strokeWidth={2.5} />
+                                        </div>
+                                        <p className={`mt-3.5 text-[9px] font-bold uppercase tracking-[0.24em] ${theme.bannerEyebrow}`}>
+                                            {hub.eyebrow}
+                                        </p>
+                                        <h1 className={`mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl ${theme.bannerTitle}`}>
+                                            {hub.title}
+                                        </h1>
+                                        <p className={`mt-2.5 max-w-xl text-xs leading-relaxed ${theme.bannerSubtitle} opacity-90`}>
+                                            {hub.subtitle} Unlocked capabilities are displayed on your status console.
+                                        </p>
                                     </div>
-                                ) : (
-                                    <p className="mt-2 text-sm leading-6 text-white/75">
-                                        {isPaused
-                                            ? 'You are currently on break. Resume work to reopen your assigned modules.'
-                                            : 'Clock in to open your assigned modules and start your workspace session.'}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </section>
-
-                    {hasActiveSession ? (
-                        <>
-                            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                {hub.stats.map((stat) => (
-                                    <StatCard key={stat.label} stat={stat} theme={theme} />
-                                ))}
+                                </div>
                             </section>
 
-                            <section className="grid gap-5 xl:grid-cols-[1.8fr,0.85fr] animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="rounded-[2rem] border border-stone-200 bg-white p-6">
-                                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between border-b border-stone-100 pb-4 mb-5">
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                                                Directory
-                                            </p>
-                                            <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">
-                                                Open your modules
-                                            </h2>
-                                        </div>
-                                        <p className="max-w-md text-sm font-medium leading-5 text-stone-500 sm:text-right">
-                                            Only spaces explicitly assigned to your role are available.
-                                        </p>
+                            {/* Split Tab Container */}
+                            {hasActiveSession ? (
+                                <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
+                                    
+                                    {/* Custom Segmented Tab Headings */}
+                                    <div className="bg-stone-100/60 p-1 rounded-xl flex mb-6 max-w-md mx-auto xl:max-w-none xl:mx-0 w-full relative">
+                                        {[
+                                            { id: 'tools', label: 'Workspace Tools' },
+                                            { id: 'checklist', label: 'Daily Checklist', badge: tasks.filter(t => !t.completed).length },
+                                            { id: 'console', label: 'Shift Desk', mobileOnly: true }
+                                        ].map((tab) => {
+                                            const isActive = activeTab === tab.id;
+                                            return (
+                                                <button
+                                                    key={tab.id}
+                                                    type="button"
+                                                    onClick={() => setActiveTab(tab.id)}
+                                                    className={`relative flex-1 py-2 text-xs font-bold rounded-lg transition-colors duration-300 min-h-[36px] ${
+                                                        tab.mobileOnly ? 'xl:hidden' : ''
+                                                    } ${isActive ? 'text-stone-900' : 'text-stone-500 hover:text-stone-850'}`}
+                                                >
+                                                    <span className="relative z-10 flex items-center justify-center gap-1.5">
+                                                        {tab.label}
+                                                        {tab.badge > 0 && (
+                                                            <span className="inline-flex items-center justify-center h-4.5 min-w-[18px] px-1.5 rounded-full text-[9px] font-black bg-clay-50 text-clay-700 border border-clay-100/60">
+                                                                {tab.badge}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    {isActive && (
+                                                        <motion.div
+                                                            layoutId="activeTabBackground"
+                                                            className="absolute inset-0 bg-white rounded-lg shadow-sm border border-stone-200/50"
+                                                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                                        />
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
 
-                                    <div className="grid gap-4 lg:grid-cols-2">
-                                        {hub.cards.map((card) => (
-                                            <ActionCard key={`${card.module}-${card.routeName}`} card={card} theme={theme} />
-                                        ))}
-                                    </div>
-                                </div>
+                                    {/* TAB 1: Tools Grid */}
+                                    {activeTab === 'tools' && (
+                                        <WorkspaceTools
+                                            stats={hub.stats}
+                                            cards={hub.cards}
+                                            theme={theme}
+                                        />
+                                    )}
 
-                                <div className="flex flex-col gap-4">
-                                    <div className="rounded-[2rem] border border-stone-200 bg-white p-6">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                                            Quick Notes
-                                        </p>
-                                        <h2 className="mt-1.5 text-xl font-bold tracking-tight text-gray-900 border-b border-stone-100 pb-3">
-                                            Keep workflows tight
-                                        </h2>
+                                    {/* TAB 2: Task Checklist */}
+                                    {activeTab === 'checklist' && (
+                                        <TaskChecklist
+                                            tasks={tasks}
+                                            newTaskText={newTaskText}
+                                            setNewTaskText={setNewTaskText}
+                                            onAddTask={handleAddTask}
+                                            onToggleTask={handleToggleTask}
+                                            onDeleteTask={handleDeleteTask}
+                                        />
+                                    )}
 
-                                        <div className="mt-4 space-y-3">
-                                            {hub.highlights.map((item) => (
-                                                <div key={item} className="flex gap-3 items-start group">
-                                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-clay-400 transition group-hover:bg-clay-600"></span>
-                                                    <p className="text-sm font-medium leading-relaxed text-stone-600">{item}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col justify-between rounded-[2rem] border border-[#26332d] bg-[#1a231f] p-6">
-                                        <div className="relative z-10">
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-400">
-                                                Team Messaging
-                                            </p>
-                                            <h3 className="mt-2 text-xl font-bold tracking-tight text-white">
-                                                Coordinate directly
-                                            </h3>
-                                            <p className="mt-2 text-sm leading-relaxed text-emerald-100/70">
-                                                Use internal chats for staff synergy. Buyer order messages remain separated in the Inbox.
-                                            </p>
-                                        </div>
-                                        <Link
-                                            href={route(hub.teamMessagesRoute)}
-                                            className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-white transition hover:border-emerald-500/50 hover:bg-emerald-500/20"
-                                        >
-                                            Access Team Inbox
-                                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50">
-                                                <ArrowRight size={12} className="text-emerald-800" />
+                                    {/* TAB 3: Shift Desk & Info (Mobile/Tablet only) */}
+                                    {activeTab === 'console' && (
+                                        <div className="space-y-6 xl:hidden animate-in fade-in duration-300">
+                                            {/* Mobile attendance control card */}
+                                            <div className="p-5 rounded-[2rem] border border-stone-200 bg-stone-50/45">
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-3">
+                                                    Attendance Control
+                                                </p>
+                                                <StaffAttendanceDock attendance={attendance} />
                                             </div>
-                                        </Link>
+
+                                            {/* Workspace Privileges Cloud */}
+                                            <div className="p-5 rounded-[2rem] border border-stone-200 bg-white">
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">
+                                                    Workspace Privileges
+                                                </p>
+                                                {(sellerSidebar?.visibleModules || hub.visibleModules || []).length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
+                                                            <span
+                                                                key={module}
+                                                                className="rounded-lg border border-stone-200 bg-stone-50/60 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-stone-600"
+                                                            >
+                                                                {module.replace(/_/g, ' ')}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-[11px] text-stone-400 font-medium">Privileges will list here after clocking in.</p>
+                                                )}
+                                            </div>
+
+                                            {/* Operational Reminders */}
+                                            <div className="p-5 rounded-[2rem] border border-stone-200 bg-white">
+                                                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                                    Operational Reminders
+                                                </p>
+                                                <h4 className="mt-1 text-xs font-bold text-stone-900 border-b border-stone-100 pb-2.5 mb-3.5">
+                                                    Daily Focus Guidelines
+                                                </h4>
+                                                <div className="space-y-3">
+                                                    {hub.highlights.map((item) => (
+                                                        <div key={item} className="flex gap-3 items-start group">
+                                                            <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-md bg-clay-50 text-clay-600 border border-clay-100/50 transition-colors duration-300 group-hover:bg-clay-100 group-hover:text-clay-700">
+                                                                <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                                </svg>
+                                                            </span>
+                                                            <p className="text-xs font-medium leading-relaxed text-stone-600 group-hover:text-stone-850 transition-colors duration-300">{item}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Team Messaging */}
+                                            <div className="group/msg flex flex-col justify-between rounded-[2rem] border border-[#23352b] bg-gradient-to-br from-stone-900 via-stone-950 to-[#0e1a14] p-5 relative overflow-hidden">
+                                                <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-emerald-500/10 opacity-30 blur-2xl pointer-events-none" />
+                                                <div className="relative z-10">
+                                                    <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-emerald-400">
+                                                        Staff Network
+                                                    </p>
+                                                    <h3 className="mt-1.5 text-base font-bold tracking-tight text-white">
+                                                        Direct Messaging
+                                                    </h3>
+                                                    <p className="mt-2 text-xs leading-relaxed text-emerald-100/60">
+                                                        Communicate securely with the shop owner and other active staff members.
+                                                    </p>
+                                                </div>
+                                                <Link
+                                                    href={route(hub.teamMessagesRoute)}
+                                                    className="relative z-10 mt-5 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-bold text-white transition hover:border-emerald-500/50 hover:bg-emerald-500/20 active:scale-95 duration-300"
+                                                >
+                                                    Access Team Inbox
+                                                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 transition-transform duration-300 group-hover/msg:translate-x-1">
+                                                        <ArrowRight size={10} className="text-emerald-800" />
+                                                    </div>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                </div>
+                            ) : (
+                                <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm animate-in fade-in duration-300">
+                                    <div className="flex items-start gap-4">
+                                        <div className="h-10 w-10 flex shrink-0 items-center justify-center rounded-xl bg-clay-50 text-clay-600 border border-clay-100">
+                                            <Compass size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                                Workspace Offline
+                                            </p>
+                                            <h2 className="mt-1 text-lg font-bold text-stone-900">
+                                                {isPaused ? 'You are currently on break.' : 'Clock in to start working.'}
+                                            </h2>
+                                            <p className="mt-1.5 text-xs leading-relaxed text-stone-500 max-w-xl">
+                                                {isPaused
+                                                    ? 'Your assigned modules remain locked while you are on break. Click the button to resume your active workspace shift.'
+                                                    : 'Your session has not started. Please clock in to unlock your capabilities and access your assigned operational tools.'}
+                                            </p>
+
+                                            <button
+                                                type="button"
+                                                onClick={resumeWork}
+                                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-clay-700 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-clay-800 active:scale-95 duration-300 shadow-md shadow-clay-700/10 min-h-[44px]"
+                                            >
+                                                <PlayCircle size={14} />
+                                                {isPaused ? 'Resume Shift' : 'Clock In Now'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
+
+                        </div>
+
+                        {/* RIGHT COLUMN: Console sidebar */}
+                        <div className="hidden xl:grid gap-6 xl:grid-cols-1">
+                            
+                            {/* Shift Console & Attendance */}
+                            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                                <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar size={14} className="text-stone-400" />
+                                        <h3 className="text-xs font-black uppercase tracking-wider text-stone-500">Shift Desk</h3>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="relative flex h-2 w-2">
+                                            {hasActiveSession && (
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            )}
+                                            <span className={`relative inline-flex rounded-full h-2 w-2 ${hasActiveSession ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
+                                        </span>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600">
+                                            {hasActiveSession ? 'Clocked In' : 'Clocked Out'}
+                                        </span>
                                     </div>
                                 </div>
-                            </section>
-                        </>
-                    ) : (
-                        <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <div className="rounded-[2rem] border border-stone-200 bg-white p-6">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                                    Workspace Access
-                                </p>
-                                <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">
-                                    {isPaused ? 'You are currently on break.' : 'Clock in to start working.'}
-                                </h2>
-                                <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-500">
-                                    {isPaused
-                                        ? 'Your assigned modules stay hidden while you are on break. Resume work when you are ready to continue.'
-                                        : 'Only Workspace is available before attendance starts. Clock in to reveal your assigned modules and continue with your normal workflow.'}
-                                </p>
 
-                                <button
-                                    type="button"
-                                    onClick={resumeWork}
-                                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-clay-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-clay-700"
+                                <div className="space-y-4">
+                                    {hasActiveSession ? (
+                                        <div className="p-3 bg-emerald-50/30 border border-emerald-100 rounded-2xl flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Session Status</p>
+                                                <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">Shift Active & Tracked</p>
+                                            </div>
+                                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        </div>
+                                    ) : (
+                                        <div className="p-3 bg-amber-50/30 border border-amber-100 rounded-2xl">
+                                            <p className="text-[9px] font-bold uppercase tracking-wider text-amber-600">Action Required</p>
+                                            <p className="text-xs font-bold text-[#4c311c] mt-0.5">Please clock in to start your shift.</p>
+                                        </div>
+                                    )}
+
+                                    {/* Module Privileges Cloud */}
+                                    <div className="pt-2">
+                                        <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-2">Workspace Privileges</p>
+                                        {hasActiveSession && (sellerSidebar?.visibleModules || hub.visibleModules || []).length > 0 ? (
+                                            <div className="flex overflow-x-auto xl:flex-wrap xl:overflow-x-visible gap-1.5 pb-1.5 scrollbar-none snap-x">
+                                                {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
+                                                    <span
+                                                        key={module}
+                                                        className="rounded-lg border border-stone-200 bg-stone-50/60 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-stone-600 shrink-0 snap-start"
+                                                    >
+                                                        {module.replace(/_/g, ' ')}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-[11px] text-stone-400 font-medium">Privileges will list here after clocking in.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sticky Reminders & Highlights */}
+                            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                    Operational Reminders
+                                </p>
+                                <h4 className="mt-1.5 text-sm font-bold text-stone-900 border-b border-stone-100 pb-2.5">
+                                    Daily Focus Guidelines
+                                </h4>
+
+                                <div className="mt-4 space-y-3.5">
+                                    {hub.highlights.map((item) => (
+                                        <div key={item} className="flex gap-3 items-start group">
+                                            <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-md bg-clay-50 text-clay-600 border border-clay-100/50 transition-colors duration-300 group-hover:bg-clay-100 group-hover:text-clay-700">
+                                                <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                            </span>
+                                            <p className="text-xs font-medium leading-relaxed text-stone-600 group-hover:text-stone-850 transition-colors duration-300">{item}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Refined Team Messaging card */}
+                            <div className="group/msg flex flex-col justify-between rounded-[2rem] border border-[#23352b] bg-gradient-to-br from-stone-900 via-stone-950 to-[#0e1a14] p-6 shadow-sm md:col-span-2 xl:col-span-1 overflow-hidden relative">
+                                <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-emerald-500/10 opacity-30 blur-2xl pointer-events-none" />
+                                <div className="relative z-10">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-emerald-400">
+                                        Staff Network
+                                    </p>
+                                    <h3 className="mt-1.5 text-base font-bold tracking-tight text-white">
+                                        Direct Messaging
+                                    </h3>
+                                    <p className="mt-2 text-xs leading-relaxed text-emerald-100/60">
+                                        Communicate securely with the shop owner and other active staff members.
+                                    </p>
+                                </div>
+                                <Link
+                                    href={route(hub.teamMessagesRoute)}
+                                    className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-bold text-white transition hover:border-emerald-500/50 hover:bg-emerald-500/20 active:scale-95 duration-300"
                                 >
-                                    <PlayCircle size={16} />
-                                    {isPaused ? 'Resume Work' : 'Clock In'}
+                                    Access Team Inbox
+                                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 transition-transform duration-300 group-hover/msg:translate-x-1">
+                                        <ArrowRight size={10} className="text-emerald-800" />
+                                    </div>
+                                </Link>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </main>
+            </div>
+
+            {/* Checklist Floating Action Button (FAB) */}
+            {hasActiveSession && activeTab === 'checklist' && (
+                <button
+                    onClick={() => {
+                        const inputEl = document.querySelector('input[placeholder="Add a new checklist task..."]');
+                        if (inputEl) {
+                            inputEl.focus();
+                            inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }}
+                    className="lg:hidden fixed bottom-20 right-4 z-40 bg-clay-700 hover:bg-clay-800 text-white rounded-full p-4 shadow-lg active:scale-90 transition-all duration-350 flex items-center justify-center"
+                    title="Add new task"
+                >
+                    <Plus size={20} strokeWidth={2.5} />
+                </button>
+            )}
+
+            {/* Mobile/Tablet Slide-Up Bottom Sheet */}
+            <AnimatePresence>
+                {isShiftSheetOpen && (
+                    <>
+                        {/* Backdrop overlay */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsShiftSheetOpen(false)}
+                            className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs lg:hidden"
+                        />
+                        
+                        {/* Slide-up sheet panel */}
+                        <motion.div
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+                            className="fixed inset-x-0 bottom-0 z-50 rounded-t-[2rem] border-t border-stone-200 bg-white p-6 shadow-2xl pb-10 lg:hidden max-h-[85vh] overflow-y-auto"
+                        >
+                            {/* Drag / Pull indicator */}
+                            <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-stone-200" />
+                            
+                            <div className="flex items-center justify-between border-b border-stone-150 pb-3.5 mb-5">
+                                <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-stone-400">Shift Management</h3>
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsShiftSheetOpen(false)}
+                                    className="text-stone-500 hover:text-stone-700 text-xs font-extrabold uppercase tracking-wider"
+                                >
+                                    Done
                                 </button>
                             </div>
-                        </section>
-                    )}
-                </main>
+
+                            <div className="space-y-5">
+                                <StaffAttendanceDock attendance={attendance} />
+                                
+                                <div className="rounded-2xl border border-stone-200 bg-stone-50/50 p-4">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mb-2">
+                                        Session Privileges
+                                    </p>
+                                    {(sellerSidebar?.visibleModules || hub.visibleModules || []).length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
+                                                <span
+                                                    key={module}
+                                                    className="rounded-lg border border-stone-200 bg-white px-2 py-1 text-[8.5px] font-extrabold uppercase tracking-wide text-stone-600"
+                                                >
+                                                    {module.replace(/_/g, ' ')}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[10px] text-stone-400">Privileges will list here after clocking in.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Sticky Shift Status & Action Dock for Mobile/Tablet */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FDFBF9] border-t border-stone-200 px-4 py-3 shadow-lg flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                        {hasActiveSession && (
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        )}
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${hasActiveSession ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
+                    </span>
+                    <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 leading-none">Shift Session</p>
+                        <p className="text-[11px] font-bold text-stone-700 mt-1">
+                            {hasActiveSession ? 'Clocked In' : 'Clocked Out'}
+                        </p>
+                    </div>
+                </div>
+                
+                <button
+                    type="button"
+                    onClick={hasActiveSession ? () => setIsShiftSheetOpen(true) : resumeWork}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold text-white transition active:scale-95 duration-200 flex items-center gap-1.5 shadow-sm min-h-[38px] ${
+                        hasActiveSession ? 'bg-stone-800 hover:bg-stone-900' : 'bg-clay-700 hover:bg-clay-800'
+                    }`}
+                >
+                    {hasActiveSession ? 'Manage Shift' : 'Clock In Now'}
+                </button>
             </div>
         </div>
     );
