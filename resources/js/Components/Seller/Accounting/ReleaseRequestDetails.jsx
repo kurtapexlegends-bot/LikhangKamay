@@ -28,7 +28,7 @@ function AuditSheet({ title, rows }) {
                 {rows.map(({ label, value }) => (
                     <div key={label} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mt-0.5">{label}</span>
-                        <span className="max-w-[70%] text-right text-[13px] font-medium text-stone-900">{value ?? 'N/A'}</span>
+                        <span className="max-w-[70%] text-right text-[13px] font-medium text-stone-900 whitespace-nowrap">{value ?? 'N/A'}</span>
                     </div>
                 ))}
             </div>
@@ -197,7 +197,7 @@ export default function ReleaseRequestDetails({
                 {isPayroll && (
                     <div className="rounded-[1.25rem] border border-[#E7D8C9] bg-[#FCF7F2] px-4 py-2 text-right hidden sm:block">
                         <p className="text-[9px] font-bold uppercase tracking-widest text-clay-500">Requested Amount</p>
-                        <p className="mt-0.5 text-lg font-bold tracking-tight text-clay-900">{formatMoney(item.amount)}</p>
+                        <p className="mt-0.5 text-lg font-bold tracking-tight text-clay-900 whitespace-nowrap">{formatMoney(item.amount)}</p>
                     </div>
                 )}
             </div>
@@ -281,7 +281,7 @@ export default function ReleaseRequestDetails({
             {isPayroll && (
                 <div className="rounded-[1.25rem] border border-[#E7D8C9] bg-[#FCF7F2] p-4 text-center sm:hidden">
                     <p className="text-[9px] font-bold uppercase tracking-widest text-clay-500">Requested Amount</p>
-                    <p className="mt-0.5 text-2xl font-bold tracking-tight text-clay-900">{formatMoney(item.amount)}</p>
+                    <p className="mt-0.5 text-2xl font-bold tracking-tight text-clay-900 whitespace-nowrap">{formatMoney(item.amount)}</p>
                 </div>
             )}
 
@@ -371,24 +371,24 @@ export default function ReleaseRequestDetails({
                             <table className="w-full text-left border-collapse min-w-[320px]">
                                 <tbody className="divide-y divide-stone-100 text-[13px] font-medium text-stone-700">
                                     <tr>
-                                        <td className="py-3.5">Gross Merchandise Sales</td>
-                                        <td className="py-3.5 text-right font-bold text-stone-900">{formatMoney(item.financials?.gross_sales)}</td>
+                                        <td className="py-3.5 text-stone-500">Gross Merchandise Sales</td>
+                                        <td className="py-3.5 text-right font-bold text-stone-900 whitespace-nowrap">{formatMoney(item.financials?.gross_sales)}</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-3.5">Shipping Fee Paid</td>
-                                        <td className="py-3.5 text-right font-bold text-stone-900">{formatMoney(item.financials?.shipping_fee)}</td>
+                                        <td className="py-3.5 text-stone-500">Shipping Fee Paid</td>
+                                        <td className="py-3.5 text-right font-bold text-stone-900 whitespace-nowrap">{formatMoney(item.financials?.shipping_fee)}</td>
                                     </tr>
                                     <tr>
                                         <td className="py-3.5 text-rose-600">Platform Commission Fee</td>
-                                        <td className="py-3.5 text-right font-bold text-rose-600">- {formatMoney(item.financials?.platform_fee)}</td>
+                                        <td className="py-3.5 text-right font-bold text-rose-600 whitespace-nowrap">- {formatMoney(item.financials?.platform_fee)}</td>
                                     </tr>
                                     <tr>
                                         <td className="py-3.5 text-rose-600">Transaction & Convenience Fee</td>
-                                        <td className="py-3.5 text-right font-bold text-rose-600">- {formatMoney(item.financials?.convenience_fee)}</td>
+                                        <td className="py-3.5 text-right font-bold text-rose-600 whitespace-nowrap">- {formatMoney(item.financials?.convenience_fee)}</td>
                                     </tr>
                                     <tr className="bg-emerald-50/50">
                                         <td className="py-4 font-bold text-emerald-800 pl-4 rounded-l-xl">Net Payout to Shop</td>
-                                        <td className="py-4 text-right font-bold text-emerald-700 text-base pr-4 rounded-r-xl">{formatMoney(item.financials?.net_payout)}</td>
+                                        <td className="py-4 text-right font-bold text-emerald-700 text-base pr-4 rounded-r-xl whitespace-nowrap">{formatMoney(item.financials?.net_payout)}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -404,7 +404,7 @@ export default function ReleaseRequestDetails({
                     <div className="rounded-[1.5rem] bg-stone-900 text-white shadow-lg overflow-hidden relative">
                         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-white/5 rounded-full blur-3xl pointer-events-none" />
                         <div className="p-6 relative z-10">
-                            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                            <div className={`flex flex-col gap-6 ${inline ? 'w-full' : 'md:flex-row md:items-start md:justify-between'}`}>
                                 {/* Requester Info */}
                                 <div>
                                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Payroll Requester</p>
@@ -422,13 +422,13 @@ export default function ReleaseRequestDetails({
                                 </div>
 
                                 {/* Prominent KPI Metrics */}
-                                <div className="flex gap-6 bg-white/5 rounded-2xl p-4 border border-white/10 shrink-0">
-                                    <div>
+                                <div className={`flex gap-6 bg-white/5 rounded-2xl p-4 border border-white/10 shrink-0 ${inline ? 'w-full justify-between' : ''}`}>
+                                    <div className={inline ? 'flex-1' : ''}>
                                         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Total Disbursed</p>
-                                        <p className="mt-1 text-xl font-bold tracking-tight text-emerald-400">{formatMoney(item.amount)}</p>
+                                        <p className="mt-1 text-xl font-bold tracking-tight text-emerald-400 whitespace-nowrap">{formatMoney(item.amount)}</p>
                                     </div>
                                     <div className="w-px bg-white/10" />
-                                    <div>
+                                    <div className={inline ? 'flex-1 pl-4' : ''}>
                                         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Employees</p>
                                         <p className="mt-1 text-xl font-bold tracking-tight text-white">{item.employee_count}</p>
                                     </div>
@@ -436,17 +436,17 @@ export default function ReleaseRequestDetails({
                             </div>
 
                             {/* Treasury Check */}
-                            <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 md:grid-cols-3 gap-6">
+                            <div className={`mt-6 pt-6 border-t border-white/10 grid gap-6 ${inline ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3'}`}>
                                 <div>
                                     <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Current Balance</p>
-                                    <p className="mt-1 text-[15px] font-bold tracking-tight text-white">{formatMoney(item.fund_snapshot?.available_balance)}</p>
+                                    <p className="mt-1 text-[15px] font-bold tracking-tight text-white whitespace-nowrap">{formatMoney(item.fund_snapshot?.available_balance)}</p>
                                 </div>
                                 <div>
                                     <p className={`text-[9px] font-bold uppercase tracking-widest ${Number(item.fund_snapshot?.remaining_balance) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>After Release</p>
-                                    <p className={`mt-1 text-[15px] font-bold tracking-tight ${Number(item.fund_snapshot?.remaining_balance) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatMoney(item.fund_snapshot?.remaining_balance)}</p>
+                                    <p className={`mt-1 text-[15px] font-bold tracking-tight whitespace-nowrap ${Number(item.fund_snapshot?.remaining_balance) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatMoney(item.fund_snapshot?.remaining_balance)}</p>
                                 </div>
                                 {item.activity?.last_reviewed_at && (
-                                    <div className="col-span-2 md:col-span-1 md:text-right">
+                                    <div className={`col-span-2 ${inline ? 'col-span-2 border-t border-white/5 pt-4 mt-2' : 'md:col-span-1 md:text-right'}`}>
                                         <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Reviewed Status</p>
                                         <p className="mt-1 text-[11px] font-medium text-stone-300">{formatDateTime(item.activity.last_reviewed_at)}</p>
                                     </div>
@@ -492,14 +492,14 @@ export default function ReleaseRequestDetails({
                                                 <td className="px-4 py-4 font-bold text-stone-900 sticky left-0 bg-white group-hover:bg-stone-50 transition-colors z-10 border-r border-stone-100">
                                                     {line.employee_name}
                                                 </td>
-                                                <td className="px-3 py-4 text-right">{formatMoney(line.base_salary)}</td>
-                                                <td className="px-3 py-4 text-right text-rose-600 font-semibold">
+                                                <td className="px-3 py-4 text-right whitespace-nowrap">{formatMoney(line.base_salary)}</td>
+                                                <td className="px-3 py-4 text-right text-rose-600 font-semibold whitespace-nowrap">
                                                     -{formatMoney(Number(line.absence_deduction) + Number(line.undertime_deduction))}
                                                 </td>
-                                                <td className="px-3 py-4 text-right text-emerald-600 font-semibold">
+                                                <td className="px-3 py-4 text-right text-emerald-600 font-semibold whitespace-nowrap">
                                                     +{formatMoney(line.overtime_pay)}
                                                 </td>
-                                                <td className="px-4 py-4 text-right text-[14px] font-bold tracking-tight text-emerald-800 bg-emerald-50/30">
+                                                <td className="px-4 py-4 text-right text-[14px] font-bold tracking-tight text-emerald-800 bg-emerald-50/30 whitespace-nowrap">
                                                     {formatMoney(line.net_pay)}
                                                 </td>
                                             </tr>
