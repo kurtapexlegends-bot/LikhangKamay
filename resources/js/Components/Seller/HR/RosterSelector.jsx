@@ -46,7 +46,7 @@ export default function RosterSelector({
                         <div
                             key={item.employee_id}
                             onClick={() => updatePayrollItem(index, 'isSelected', !isSelected)}
-                            className={`flex items-start gap-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer select-none ${
+                            className={`flex items-start gap-4 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] cursor-pointer select-none ${
                                 isSelected
                                     ? 'border-clay-600 bg-[#FCF7F2]/50 shadow-[0_4px_12px_rgba(137,67,45,0.04)]'
                                     : 'border-stone-200 bg-white hover:border-stone-250 hover:bg-stone-50/50'

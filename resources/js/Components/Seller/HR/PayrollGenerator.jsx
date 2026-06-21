@@ -7,49 +7,16 @@ import { useToast } from '@/Components/ToastContext';
 import {
     formatPeso,
     formatPrecisePeso,
-    calculateNetPay
+    calculateNetPay,
+    calculatePayrollBreakdown
 } from '@/utils/hrHelpers';
 
 import RosterSelector from './RosterSelector';
 import AdjustmentsSubForm from './AdjustmentsSubForm';
 import LiveCalculationInspector from './LiveCalculationInspector';
+import Stepper from './Stepper';
 
-function Stepper({ activeStep, steps }) {
-    return (
-        <div className="flex items-center justify-between w-full max-w-md mx-auto py-2">
-            {steps.map((step, idx) => {
-                const stepNum = idx + 1;
-                const isCompleted = activeStep > stepNum;
-                const isActive = activeStep === stepNum;
-                return (
-                    <React.Fragment key={step}>
-                        <div className="flex items-center gap-2.5">
-                            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold border transition-all duration-300 ${
-                                isCompleted
-                                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                                    : isActive
-                                    ? 'bg-clay-700 border-clay-700 text-white shadow-sm ring-4 ring-clay-100'
-                                    : 'bg-white border-stone-200 text-stone-400'
-                            }`}>
-                                {isCompleted ? '✓' : stepNum}
-                            </div>
-                            <span className={`text-[11px] font-bold transition-colors uppercase tracking-wider ${
-                                isActive ? 'text-clay-800' : isCompleted ? 'text-emerald-700' : 'text-stone-400'
-                            }`}>
-                                {step}
-                            </span>
-                        </div>
-                        {idx < steps.length - 1 && (
-                            <div className={`h-0.5 flex-1 mx-4 border-t border-dashed transition-colors duration-500 ${
-                                activeStep > stepNum ? 'border-emerald-500' : 'border-stone-200'
-                            }`} />
-                        )}
-                    </React.Fragment>
-                );
-            })}
-        </div>
-    );
-}
+
 
 export default function PayrollGenerator({
     isOpen,
@@ -112,60 +79,7 @@ export default function PayrollGenerator({
             .reduce((acc, item) => acc + calculateNetPay(item, sellerSettings), 0);
     };
 
-    const getBreakdown = (item) => {
-        if (!item) return null;
-        
-        const workingDays = sellerSettings.payroll_working_days || 22;
-        const factorMethod = sellerSettings.payroll_factor_method || 'custom';
-        const otMultiplier = sellerSettings.overtime_multiplier || 1.25;
-        const restDayOtMultiplier = sellerSettings.rest_day_ot_multiplier || 1.69;
-        const holidayOtMultiplier = sellerSettings.holiday_ot_multiplier || 2.60;
 
-        let dailyRate = 0;
-        let formulaText = '';
-        if (factorMethod === '261') {
-            dailyRate = (item.salary * 12) / 261;
-            formulaText = `(₱${item.salary.toLocaleString()} * 12) / 261`;
-        } else if (factorMethod === '313') {
-            dailyRate = (item.salary * 12) / 313;
-            formulaText = `(₱${item.salary.toLocaleString()} * 12) / 313`;
-        } else {
-            dailyRate = item.salary / workingDays;
-            formulaText = `₱${item.salary.toLocaleString()} / ${workingDays}`;
-        }
-
-        const hourlyRate = dailyRate / 8;
-        
-        const regularOtRate = hourlyRate * otMultiplier;
-        const restDayOtRate = hourlyRate * restDayOtMultiplier;
-        const holidayOtRate = hourlyRate * holidayOtMultiplier;
-
-        const regularOtPay = (Number(item.overtime_hours) || 0) * regularOtRate;
-        const restDayOtPay = (Number(item.rest_day_ot_hours) || 0) * restDayOtRate;
-        const holidayOtPay = (Number(item.holiday_ot_hours) || 0) * holidayOtRate;
-        const totalOtPay = regularOtPay + restDayOtPay + holidayOtPay;
-
-        const absenceDeduction = (Number(item.absences_days) || 0) * dailyRate;
-        const undertimeDeduction = (Number(item.undertime_hours) || 0) * hourlyRate;
-        
-        const net = item.salary + totalOtPay - absenceDeduction - undertimeDeduction;
-
-        return {
-            dailyRate,
-            hourlyRate,
-            formulaText,
-            regularOtRate,
-            restDayOtRate,
-            holidayOtRate,
-            regularOtPay,
-            restDayOtPay,
-            holidayOtPay,
-            totalOtPay,
-            absenceDeduction,
-            undertimeDeduction,
-            net: net > 0 ? net : 0
-        };
-    };
 
     const handleDryRun = () => {
         if (!canEditHrRecords) return;
@@ -254,7 +168,7 @@ export default function PayrollGenerator({
     }, [activeStep, activeInspectorId, selectedStaffItems]);
 
     const activeInspectorItem = data.items.find(i => i.employee_id === activeInspectorId);
-    const activeBreakdown = getBreakdown(activeInspectorItem);
+    const activeBreakdown = calculatePayrollBreakdown(activeInspectorItem, sellerSettings);
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="5xl" closeable={!isCalendarOpen}>
@@ -311,21 +225,31 @@ export default function PayrollGenerator({
                             
                             {/* Mobile tabs for Viewport < md */}
                             <div className="md:hidden w-full flex flex-col h-full">
-                                <div className="grid grid-cols-2 border-b border-stone-150 bg-stone-50 text-xs font-bold text-stone-500">
-                                    <button
-                                        type="button"
-                                        onClick={() => setMobileTab('adjust')}
-                                        className={`py-3 text-center transition-colors ${mobileTab === 'adjust' ? 'bg-[#FCF7F2] text-clay-800 border-b-2 border-clay-700' : 'hover:bg-stone-100'}`}
-                                    >
-                                        1. Enter Adjustments
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setMobileTab('inspector')}
-                                        className={`py-3 text-center transition-colors ${mobileTab === 'inspector' ? 'bg-[#FCF7F2] text-clay-800 border-b-2 border-clay-700' : 'hover:bg-stone-100'}`}
-                                    >
-                                        2. Live Breakdown
-                                    </button>
+                                <div className="px-4 py-3 bg-[#FDFBF9] border-b border-stone-150">
+                                    <div className="bg-stone-200/60 rounded-xl p-1 flex gap-1 text-xs font-bold">
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileTab('adjust')}
+                                            className={`flex-1 py-2 text-center rounded-lg transition-all ${
+                                                mobileTab === 'adjust'
+                                                    ? 'bg-white text-stone-900 shadow-sm'
+                                                    : 'text-stone-500 hover:text-stone-850'
+                                            }`}
+                                        >
+                                            1. Enter Adjustments
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileTab('inspector')}
+                                            className={`flex-1 py-2 text-center rounded-lg transition-all ${
+                                                mobileTab === 'inspector'
+                                                    ? 'bg-white text-stone-900 shadow-sm'
+                                                    : 'text-stone-500 hover:text-stone-850'
+                                            }`}
+                                        >
+                                            2. Live Breakdown
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -337,8 +261,8 @@ export default function PayrollGenerator({
                                                 <div 
                                                     key={`mobile-adjust-${item.employee_id}`}
                                                     onClick={() => setActiveInspectorId(item.employee_id)}
-                                                    className={`p-4 rounded-2xl border transition-all duration-300 ${
-                                                        isActive ? 'border-clay-650 bg-white ring-2 ring-clay-200' : 'border-stone-200 bg-white'
+                                                    className={`p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] cursor-pointer ${
+                                                        isActive ? 'border-clay-650 bg-white ring-2 ring-clay-200 shadow-sm' : 'border-stone-200 bg-white'
                                                     }`}
                                                 >
                                                     <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-3">
@@ -403,7 +327,7 @@ export default function PayrollGenerator({
                                             <div
                                                 key={`desktop-adjust-${item.employee_id}`}
                                                 onClick={() => setActiveInspectorId(item.employee_id)}
-                                                className={`p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                                                className={`p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] cursor-pointer ${
                                                     isActive 
                                                         ? 'border-clay-600 bg-white shadow-[0_6px_16px_-4px_rgba(137,67,45,0.08)] ring-1 ring-clay-500/10'
                                                         : 'border-stone-200 bg-stone-50/20 hover:border-stone-300 hover:bg-white'

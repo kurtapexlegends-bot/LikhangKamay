@@ -392,6 +392,62 @@ export const calculateNetPay = (item, sellerSettings = {}) => {
     return net > 0 ? net : 0;
 };
 
+export const calculatePayrollBreakdown = (item, sellerSettings = {}) => {
+    if (!item) return null;
+    
+    const workingDays = sellerSettings.payroll_working_days || 22;
+    const factorMethod = sellerSettings.payroll_factor_method || 'custom';
+    const otMultiplier = sellerSettings.overtime_multiplier || 1.25;
+    const restDayOtMultiplier = sellerSettings.rest_day_ot_multiplier || 1.69;
+    const holidayOtMultiplier = sellerSettings.holiday_ot_multiplier || 2.60;
+
+    let dailyRate = 0;
+    let formulaText = '';
+    if (factorMethod === '261') {
+        dailyRate = (item.salary * 12) / 261;
+        formulaText = `(₱${item.salary.toLocaleString()} * 12) / 261`;
+    } else if (factorMethod === '313') {
+        dailyRate = (item.salary * 12) / 313;
+        formulaText = `(₱${item.salary.toLocaleString()} * 12) / 313`;
+    } else {
+        dailyRate = item.salary / workingDays;
+        formulaText = `₱${item.salary.toLocaleString()} / ${workingDays}`;
+    }
+
+    const hourlyRate = dailyRate / 8;
+    
+    const regularOtRate = hourlyRate * otMultiplier;
+    const restDayOtRate = hourlyRate * restDayOtMultiplier;
+    const holidayOtRate = hourlyRate * holidayOtMultiplier;
+
+    const regularOtPay = (Number(item.overtime_hours) || 0) * regularOtRate;
+    const restDayOtPay = (Number(item.rest_day_ot_hours) || 0) * restDayOtRate;
+    const holidayOtPay = (Number(item.holiday_ot_hours) || 0) * holidayOtRate;
+    const totalOtPay = regularOtPay + restDayOtPay + holidayOtPay;
+
+    const absenceDeduction = (Number(item.absences_days) || 0) * dailyRate;
+    const undertimeDeduction = (Number(item.undertime_hours) || 0) * hourlyRate;
+    
+    const net = item.salary + totalOtPay - absenceDeduction - undertimeDeduction;
+
+    return {
+        dailyRate,
+        hourlyRate,
+        formulaText,
+        regularOtRate,
+        restDayOtRate,
+        holidayOtRate,
+        regularOtPay,
+        restDayOtPay,
+        holidayOtPay,
+        totalOtPay,
+        absenceDeduction,
+        undertimeDeduction,
+        net: net > 0 ? net : 0
+    };
+};
+
+
 export const modalFieldClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 placeholder-stone-400 shadow-none transition focus:border-clay-500 focus:ring-clay-500';
 export const modalFieldWithIconClass = `${modalFieldClass} pr-11`;
 export const modalSelectClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 shadow-none transition focus:border-clay-500 focus:ring-clay-500';
