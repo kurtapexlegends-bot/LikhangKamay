@@ -9,7 +9,12 @@ import { useState, useEffect } from 'react';
  * @returns {boolean} Whether the media query matches the screen dimensions
  */
 export function useMediaQuery(query) {
-    const [matches, setMatches] = useState(false);
+    const [matches, setMatches] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.matchMedia(query).matches;
+        }
+        return false;
+    });
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
