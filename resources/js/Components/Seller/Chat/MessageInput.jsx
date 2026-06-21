@@ -1,308 +1,238 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import EmojiPicker from 'emoji-picker-react';
-import { 
-    Send, Paperclip, Image as ImageIcon, Smile, 
-    MessageCircle, FileIcon, X, LoaderCircle 
+import {
+    AlertCircle,
+    FileIcon,
+    Image as ImageIcon,
+    Paperclip,
+    Send,
+    Smile,
+    X,
 } from 'lucide-react';
-import { SellerOrderActionBar } from '@/Components/Chat/OrderContextCard';
-import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 
-export default function MessageInput({
-    currentChatUser,
-    currentOrderContext,
-    data,
-    setData,
-    post,
-    reset,
-    processing,
-    inputRef,
-    fileInputRef,
-    imageInputRef,
-    emojiPickerRef,
-    templateSelectorRef,
-    showEmojiPicker,
-    setShowEmojiPicker,
-    showTemplateSelector,
-    setShowTemplateSelector,
-    showTemplateManager,
-    setShowTemplateManager,
-    chatTemplates,
-    isMessagesReadOnly,
-    handleOrderDecision,
-    handleFileChange,
-    removeAttachment,
-    attachmentPreview,
-    signalTyping,
-    onEmojiClick,
-    injectTemplate
-}) {
-    if (!currentChatUser) return null;
+export default function MessageInput({ currentChatUser, form }) {
+    const { data, setData, post, processing, reset, errors } = form;
 
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (isMessagesReadOnly) return;
-        if (!data.message.trim() && !data.attachment) return;
-        
-        post(route('chat.store'), {
-            onSuccess: () => {
-                reset('message', 'attachment');
-                removeAttachment();
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [attachmentPreview, setAttachmentPreview] = useState(null);
+    const [attachmentPreviewBroken, setAttachmentPreviewBroken] = useState(false);
+
+    const inputRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const imageInputRef = useRef(null);
+    const emojiPickerRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
                 setShowEmojiPicker(false);
-                if (inputRef.current) inputRef.current.style.height = 'auto';
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => () => {
+        if (attachmentPreview?.url) {
+            URL.revokeObjectURL(attachmentPreview.url);
+        }
+    }, [attachmentPreview]);
+
+    // When chat user changes, focus input
+    useEffect(() => {
+        if (currentChatUser) {
+            inputRef.current?.focus();
+        }
+    }, [currentChatUser]);
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        if (!data.message.trim() && !data.attachment) return;
+
+        post(route('team-messages.store'), {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => {
+                if (attachmentPreview?.url) {
+                    URL.revokeObjectURL(attachmentPreview.url);
+                }
+                reset('message', 'attachment');
+                setAttachmentPreview(null);
+                setShowEmojiPicker(false);
+                if (inputRef.current) {
+                    inputRef.current.style.height = 'auto';
+                    inputRef.current.focus();
+                }
             },
-            preserveScroll: true
         });
     };
 
+    const handleFileChange = (event) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        if (attachmentPreview?.url) {
+            URL.revokeObjectURL(attachmentPreview.url);
+        }
+
+        setData('attachment', file);
+        setAttachmentPreviewBroken(false);
+        setAttachmentPreview({
+            url: URL.createObjectURL(file),
+            name: file.name,
+            type: file.type.startsWith('image/') ? 'image' : 'document',
+        });
+        setShowEmojiPicker(false);
+        inputRef.current?.focus();
+    };
+
+    const removeAttachment = () => {
+        if (attachmentPreview?.url) {
+            URL.revokeObjectURL(attachmentPreview.url);
+        }
+
+        setData('attachment', null);
+        setAttachmentPreview(null);
+    };
+
+    const onEmojiClick = (emojiObject) => {
+        setData('message', data.message + emojiObject.emoji);
+        inputRef.current?.focus();
+    };
+
     return (
-        <div className="p-3 sm:p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 shrink-0 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
-            <div className="max-w-4xl mx-auto flex flex-col">
-                <SellerOrderActionBar
-                    order={currentOrderContext}
-                    onApprove={() => handleOrderDecision('Accepted')}
-                    onReject={() => handleOrderDecision('Rejected')}
-                />
-
-                {/* Mobile Quick Templates Carousel: Swipable scroll tags on mobile */}
-                {!isMessagesReadOnly && (
-                    <div className="flex sm:hidden overflow-x-auto flex-nowrap gap-2 pb-2.5 mb-2.5 no-scrollbar">
-                        {chatTemplates.length > 0 ? (
-                            <>
-                                {chatTemplates.map((tpl) => (
-                                    <button
-                                        key={tpl.id}
-                                        type="button"
-                                        onClick={() => injectTemplate(tpl.content)}
-                                        className="px-4 py-2 bg-clay-50 border border-clay-100 hover:bg-clay-100 text-clay-700 text-xs font-bold rounded-full whitespace-nowrap min-h-[38px] flex items-center justify-center active:scale-95 transition-all"
-                                    >
-                                        {tpl.title}
-                                    </button>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => setShowTemplateManager(true)}
-                                    className="px-4 py-2 bg-stone-100 border border-stone-200 hover:bg-stone-200 text-stone-600 text-xs font-bold rounded-full whitespace-nowrap min-h-[38px] flex items-center justify-center active:scale-95 transition-all"
-                                >
-                                    Manage
-                                </button>
-                            </>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => setShowTemplateManager(true)}
-                                className="px-4 py-2 bg-clay-50 border border-clay-100 hover:bg-clay-100 text-clay-700 text-xs font-bold rounded-full whitespace-nowrap min-h-[38px] flex items-center justify-center active:scale-95 transition-all"
-                            >
-                                + Add Message Template
-                            </button>
-                        )}
-                    </div>
-                )}
-
-                {/* Emoji Picker Popover */}
-                {showEmojiPicker && !isMessagesReadOnly && (
-                    <div ref={emojiPickerRef} className="absolute bottom-full right-3 sm:right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
-                        <EmojiPicker 
+        <div className="relative z-10 w-full shrink-0 border-t border-gray-100 bg-white/90 p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] backdrop-blur-md sm:p-4">
+            <div className="relative mx-auto flex w-full max-w-4xl flex-col">
+                {showEmojiPicker && (
+                    <div ref={emojiPickerRef} className="absolute bottom-full right-3 z-50 mb-2 overflow-hidden rounded-2xl border border-gray-100 shadow-2xl sm:right-4">
+                        <EmojiPicker
                             onEmojiClick={onEmojiClick}
                             autoFocusSearch={false}
                             theme="light"
-                            lazyLoadEmojis={true}
+                            lazyLoadEmojis
                         />
                     </div>
                 )}
 
-                {/* Attachment Preview bar */}
                 {attachmentPreview && (
-                    <div className="mb-3 mt-1 p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-start justify-between group animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="group mb-3 mt-3 flex items-start justify-between rounded-xl border border-gray-200 bg-gray-50 p-3 animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex min-w-0 items-center gap-3 overflow-hidden">
                             {attachmentPreview.type === 'image' ? (
-                                <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-gray-200 shadow-sm bg-white">
-                                    <img src={attachmentPreview.url} alt="Preview" className="w-full h-full object-cover" />
+                                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                                    {attachmentPreviewBroken ? (
+                                        <div className="flex h-full w-full items-center justify-center bg-stone-50 text-stone-400">
+                                            <FileIcon size={18} />
+                                        </div>
+                                    ) : (
+                                        <img src={attachmentPreview.url} alt="Preview" className="h-full w-full object-cover" onError={() => setAttachmentPreviewBroken(true)} />
+                                    )}
                                 </div>
                             ) : (
-                                <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm text-clay-500">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-clay-500 shadow-sm">
                                     <FileIcon size={24} />
                                 </div>
                             )}
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-gray-800 truncate mb-0.5">{attachmentPreview.name}</p>
+                                <p className="mb-0.5 truncate text-sm font-medium text-gray-800">{attachmentPreview.name}</p>
                                 <p className="text-xs text-gray-500">
                                     {attachmentPreview.type === 'image' ? 'Image File' : 'Document File'}
                                 </p>
                             </div>
                         </div>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={removeAttachment}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                         >
                             <X size={16} />
                         </button>
                     </div>
                 )}
 
-                <form onSubmit={handleSendMessage} className="flex w-full flex-col gap-3">
-                    {isMessagesReadOnly && (
-                        <div className="w-full">
-                            <ReadOnlyCapabilityNotice label="Messages is read only for your account." />
-                        </div>
-                    )}
-                    <div className="flex items-end gap-2 sm:gap-3 w-full">
-                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all shadow-sm">
-                            {/* Template Selector Dropdown (Desktop Only) */}
-                            {showTemplateSelector && !isMessagesReadOnly && (
-                                <div ref={templateSelectorRef} className="absolute bottom-full left-0 mb-2 z-50 w-72 max-h-80 overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-2 duration-200">
-                                    <div className="p-3 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-sm z-10">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Message Templates</span>
-                                        <button 
-                                            onClick={() => { setShowTemplateSelector(false); setShowTemplateManager(true); }}
-                                            className="text-[10px] font-bold text-clay-600 hover:text-clay-700 underline min-h-[32px] px-2 flex items-center"
-                                            type="button"
-                                        >
-                                            Manage
-                                        </button>
-                                    </div>
-                                    <div className="p-1">
-                                        {chatTemplates.length > 0 ? (
-                                            chatTemplates.map((tpl) => (
-                                                <button
-                                                    key={tpl.id}
-                                                    onClick={() => injectTemplate(tpl.content)}
-                                                    className="w-full text-left p-3 hover:bg-clay-50 rounded-xl transition-all group min-h-[44px]"
-                                                    type="button"
-                                                >
-                                                    <p className="text-xs font-bold text-gray-900 mb-0.5 group-hover:text-clay-700 transition-colors">{tpl.title}</p>
-                                                    <p className="text-[10px] text-gray-500 line-clamp-2">{tpl.content}</p>
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <div className="p-6 text-center">
-                                                <p className="text-[11px] text-gray-400 font-medium">No templates found.</p>
-                                                <button 
-                                                    onClick={() => { setShowTemplateSelector(false); setShowTemplateManager(true); }}
-                                                    className="mt-2 text-[11px] font-bold text-clay-600 hover:text-clay-700"
-                                                    type="button"
-                                                >
-                                                    Create your first template
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                {(errors.message || errors.attachment) && (
+                    <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700">
+                        <AlertCircle size={13} />
+                        {errors.message || errors.attachment}
+                    </p>
+                )}
 
-                            <div className="flex items-center gap-0.5 px-1">
-                                <button 
-                                    type="button"
-                                    onClick={() => !isMessagesReadOnly && setShowTemplateSelector(!showTemplateSelector)}
-                                    disabled={isMessagesReadOnly}
-                                    className={`hidden sm:flex p-2 rounded-xl transition-all duration-200 min-h-[44px] min-w-[44px] items-center justify-center ${
-                                        isMessagesReadOnly
-                                            ? 'cursor-not-allowed text-gray-300'
-                                            : showTemplateSelector 
-                                                ? 'bg-white text-clay-600 shadow-sm'
-                                                : 'text-gray-400 hover:bg-white hover:text-clay-600'
-                                    }`}
-                                    title="Quick Templates"
-                                >
-                                    <MessageCircle size={20} />
-                                </button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => imageInputRef.current?.click()}
-                                    disabled={isMessagesReadOnly}
-                                    className={`p-2 rounded-xl transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                        isMessagesReadOnly
-                                            ? 'cursor-not-allowed text-gray-300'
-                                            : 'text-gray-400 hover:bg-white hover:text-clay-600'
-                                    }`}
-                                    title="Attach Image"
-                                >
-                                    <ImageIcon size={20} />
-                                </button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isMessagesReadOnly}
-                                    className={`p-2 rounded-xl transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                        isMessagesReadOnly
-                                            ? 'cursor-not-allowed text-gray-300'
-                                            : 'text-gray-400 hover:bg-white hover:text-clay-600'
-                                    }`}
-                                    title="Attach Document"
-                                >
-                                    <Paperclip size={20} />
-                                </button>
-                            </div>
-
-                            <textarea 
-                                ref={inputRef}
-                                rows={1}
-                                value={data.message}
-                                onChange={(e) => {
-                                    setData('message', e.target.value);
-                                    e.target.style.height = 'auto';
-                                    e.target.style.height = Math.min(e.target.scrollHeight, window.innerWidth < 640 ? 70 : 120) + 'px';
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleSendMessage(e);
-                                    } else {
-                                        signalTyping();
-                                    }
-                                }}
-                                disabled={isMessagesReadOnly}
-                                placeholder={isMessagesReadOnly ? "Chat is read-only..." : "Type a message..."}
-                                className="flex-1 bg-transparent border-0 focus:ring-0 focus:outline-none resize-none py-3 px-3 text-sm text-gray-800 placeholder-gray-400 font-medium max-h-[70px] sm:max-h-32 min-h-[44px]"
-                            />
-
-                            <div className="flex items-center px-1">
-                                <button 
-                                    type="button" 
-                                    onClick={() => !isMessagesReadOnly && setShowEmojiPicker(!showEmojiPicker)}
-                                    disabled={isMessagesReadOnly}
-                                    className={`p-2 rounded-xl transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                        isMessagesReadOnly
-                                            ? 'cursor-not-allowed text-gray-300'
-                                            : showEmojiPicker 
-                                                ? 'bg-white text-clay-600 shadow-sm'
-                                                : 'text-gray-400 hover:bg-white hover:text-clay-600'
-                                    }`}
-                                    title="Emoji Picker"
-                                >
-                                    <Smile size={20} />
-                                </button>
-                            </div>
+                <form onSubmit={handleSubmit} className="flex w-full items-end gap-2 sm:gap-3">
+                    <div className="relative flex flex-1 items-center overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 p-1 shadow-sm transition-all focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50">
+                        <div className="flex items-center gap-0.5 px-1">
+                            <button
+                                type="button"
+                                onClick={() => imageInputRef.current?.click()}
+                                className="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-white hover:text-clay-600"
+                                title="Attach image"
+                            >
+                                <ImageIcon size={20} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-white hover:text-clay-600"
+                                title="Attach file"
+                            >
+                                <Paperclip size={20} />
+                            </button>
                         </div>
 
-                        <button 
-                            type="submit"
-                            disabled={processing || isMessagesReadOnly || (!data.message.trim() && !attachmentPreview)}
-                            className="p-3 bg-clay-600 text-white rounded-2xl hover:bg-clay-700 active:scale-95 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none"
+                        <textarea
+                            ref={inputRef}
+                            rows={1}
+                            value={data.message}
+                            onChange={(event) => {
+                                setData('message', event.target.value);
+                                event.target.style.height = 'auto';
+                                event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
+                            }}
+                            placeholder="Message your team..."
+                            className="custom-scrollbar max-h-[120px] min-h-[42px] w-full flex-1 resize-none border-none bg-transparent px-3 py-2.5 text-sm font-medium leading-relaxed text-gray-700 placeholder-gray-400 focus:ring-0"
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' && !event.shiftKey) {
+                                    event.preventDefault();
+                                    handleSubmit(event);
+                                }
+                            }}
+                        />
+
+                        <button
+                            type="button"
+                            onClick={() => setShowEmojiPicker((value) => !value)}
+                            className={`mx-1 shrink-0 rounded-xl p-2 transition-all ${showEmojiPicker ? 'bg-white text-clay-600 shadow-sm' : 'text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm'}`}
+                            title="Add emoji"
                         >
-                            {processing ? (
-                                <LoaderCircle size={18} className="animate-spin" />
-                            ) : (
-                                <Send size={18} />
-                            )}
+                            <Smile size={20} />
                         </button>
                     </div>
+
+                    <button
+                        type="submit"
+                        disabled={processing || (!data.message.trim() && !data.attachment)}
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-clay-600 text-white transition-all hover:bg-clay-700 hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-none"
+                    >
+                        <Send size={20} className="ml-1" />
+                    </button>
                 </form>
 
-                {/* Hidden File Upload Inputs */}
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
+                <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
                     onChange={handleFileChange}
-                    className="hidden" 
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" 
+                    className="hidden"
                 />
-                <input 
-                    type="file" 
-                    ref={imageInputRef} 
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.zip"
                     onChange={handleFileChange}
-                    className="hidden" 
-                    accept="image/*" 
+                    className="hidden"
                 />
             </div>
         </div>
