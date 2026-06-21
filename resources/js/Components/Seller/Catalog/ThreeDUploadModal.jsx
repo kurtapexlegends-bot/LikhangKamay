@@ -99,12 +99,12 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
         }
         setFileError('');
         
-        setData({
-            ...data,
+        setData(prevData => ({
+            ...prevData,
             model: file,
             model_assets: [],
             model_asset_paths: [],
-        });
+        }));
         setPreviewUrl(URL.createObjectURL(file));
     };
 
@@ -112,12 +112,12 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
         if (previewUrl?.startsWith('blob:')) {
             URL.revokeObjectURL(previewUrl);
         }
-        setData({
-            ...data,
+        setData(prevData => ({
+            ...prevData,
             model: null,
             model_assets: [],
             model_asset_paths: [],
-        });
+        }));
         setPreviewUrl(null);
         setFileError('');
     };
@@ -136,11 +136,11 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
             }))
             .filter(({ relativePath }) => Boolean(relativePath));
 
-        setData({
-            ...data,
+        setData(prevData => ({
+            ...prevData,
             model_assets: normalizedFiles.map(({ file }) => file),
             model_asset_paths: normalizedFiles.map(({ relativePath }) => relativePath),
-        });
+        }));
     };
 
     return (
