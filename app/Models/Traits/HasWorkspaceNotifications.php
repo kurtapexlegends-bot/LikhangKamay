@@ -4,6 +4,9 @@ namespace App\Models\Traits;
 
 use Illuminate\Notifications\DatabaseNotification;
 
+/**
+ * @mixin \App\Models\User
+ */
 trait HasWorkspaceNotifications
 {
     public function getNotificationsQuery()

@@ -59,8 +59,12 @@ use App\Models\Traits\HasWorkspaceNotifications;
  * @property bool $must_change_password
  * @property \Illuminate\Support\Carbon|null $staff_plan_suspended_at
  * @property array|null $document_flags
+ * @property int|null $employee_id
+ * @property string|null $staff_role_preset_key
  * @property-read string|null $avatar_url
  * @property-read \App\Models\User|null $sellerOwner
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {

@@ -5,6 +5,27 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * @property int $id
+ * @property int $payroll_id
+ * @property int $employee_id
+ * @property float|string $base_salary
+ * @property float $days_worked
+ * @property float $absences_days
+ * @property float $undertime_hours
+ * @property float $overtime_hours
+ * @property float $overtime_pay
+ * @property float $rest_day_ot_hours
+ * @property float $rest_day_ot_pay
+ * @property float $holiday_ot_hours
+ * @property float $holiday_ot_pay
+ * @property float $paid_leave_days
+ * @property float $deductions
+ * @property float $bonus
+ * @property float $net_pay
+ * @property-read \App\Models\Payroll $payroll
+ * @property-read \App\Models\Employee|null $employee
+ */
 class PayrollItem extends Model
 {
     protected $fillable = [

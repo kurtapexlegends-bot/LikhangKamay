@@ -31,10 +31,10 @@ class HRController extends Controller
         Request $request,
         SellerEntitlementService $entitlementService,
         StaffAttendanceService $attendanceService
-    ): \Inertia\Response {
-        /** @var \App\Models\User $seller */
+    ): Response {
+        /** @var User $seller */
         $seller = $this->sellerOwner();
-        /** @var \App\Models\User $actor */
+        /** @var User $actor */
         $actor = $this->sellerActor();
         
         $monthQuery = $request->query('month');

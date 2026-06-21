@@ -7,6 +7,13 @@ use App\Models\UserAddress;
 use App\Support\StructuredAddress;
 use Illuminate\Support\Str;
 
+/**
+ * @property array|null $modules_enabled
+ * @property-read string|null $formatted_primary_address
+ * 
+ * @mixin \App\Models\User
+ * @mixin \App\Models\Traits\ManagesStaffAccountFlags
+ */
 trait HasArtisanSubscriptions
 {
     public function isPendingApproval(): bool
@@ -179,7 +186,7 @@ trait HasArtisanSubscriptions
         }
 
         return in_array($module, app(SellerEntitlementService::class)->getGrantedStaffModules($this), true)
-            && $this->getStaffModuleAccessLevel($module) === self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+            && $this->getStaffModuleAccessLevel($module) === static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
     }
 
     public function canAccessSellerWorkspace(): bool
@@ -218,7 +225,7 @@ trait HasArtisanSubscriptions
         }
 
         return in_array('hr', app(SellerEntitlementService::class)->getGrantedStaffModules($this), true)
-            && $this->getStaffModuleAccessLevel('hr') === self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+            && $this->getStaffModuleAccessLevel('hr') === static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
     }
 
     public function canCreateStaffAccounts(): bool
@@ -261,7 +268,7 @@ trait HasArtisanSubscriptions
 
     public function getPreferredCourierPickupAddress(): ?string
     {
-        /** @var \App\Models\UserAddress|null $defaultAddress */
+        /** @var UserAddress|null $defaultAddress */
         $defaultAddress = $this->getDefaultAddress();
         $address = trim((string) ($defaultAddress?->full_address ?? ''));
 
@@ -295,7 +302,7 @@ trait HasArtisanSubscriptions
      */
     public function getCourierPickupAddressCandidates(): array
     {
-        /** @var \App\Models\UserAddress|null $defaultAddress */
+        /** @var UserAddress|null $defaultAddress */
         $defaultAddress = $this->getDefaultAddress();
         $candidates = [];
         /** @var array<string, bool> $seen */

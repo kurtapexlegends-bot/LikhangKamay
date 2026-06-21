@@ -6,6 +6,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int|null $requested_by_user_id
+ * @property string $month
+ * @property float|string $total_amount
+ * @property int $employee_count
+ * @property string $status
+ * @property string|null $rejection_reason
+ * @property string|null $run_number
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon|null $pay_date
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\PayrollItem[] $items
+ * @property-read \App\Models\User|null $user
+ * @property-read \App\Models\User|null $requester
+ */
 class Payroll extends Model
 {
     use HasFactory;

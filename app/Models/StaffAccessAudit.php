@@ -6,6 +6,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $seller_owner_id
+ * @property int $actor_user_id
+ * @property int|null $staff_user_id
+ * @property int $employee_id
+ * @property string $event
+ * @property string $summary
+ * @property array|null $details
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User $sellerOwner
+ * @property-read \App\Models\User $actor
+ * @property-read \App\Models\User|null $staffUser
+ * @property-read \App\Models\Employee $employee
+ */
 class StaffAccessAudit extends Model
 {
     use HasFactory;

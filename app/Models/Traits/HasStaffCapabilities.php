@@ -4,6 +4,11 @@ namespace App\Models\Traits;
 
 use App\Services\SellerEntitlementService;
 
+/**
+ * @mixin \App\Models\User
+ * @mixin \App\Models\Traits\ManagesStaffAccountFlags
+ * @mixin \App\Models\Traits\HasArtisanSubscriptions
+ */
 trait HasStaffCapabilities
 {
     /**
@@ -32,7 +37,7 @@ trait HasStaffCapabilities
         $permissions = (array) $this->staff_module_permissions;
 
         // Shop Manager Level has all capabilities
-        if ($this->getStaffUserLevel() === self::STAFF_MANAGER_USER_LEVEL) {
+        if ($this->getStaffUserLevel() === static::STAFF_MANAGER_USER_LEVEL) {
             return true;
         }
 
@@ -65,11 +70,11 @@ trait HasStaffCapabilities
 
         $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
 
-        if (!array_key_exists(self::STAFF_WORKSPACE_ACCESS_FLAG, $permissions)) {
+        if (!array_key_exists(static::STAFF_WORKSPACE_ACCESS_FLAG, $permissions)) {
             return true;
         }
 
-        return (bool) $permissions[self::STAFF_WORKSPACE_ACCESS_FLAG];
+        return (bool) $permissions[static::STAFF_WORKSPACE_ACCESS_FLAG];
     }
 
     public function isPlanWorkspaceSuspended(): bool
@@ -80,27 +85,27 @@ trait HasStaffCapabilities
     public function getStaffUserLevel(): string
     {
         if (!$this->isStaff()) {
-            return self::STAFF_MANAGER_USER_LEVEL;
+            return static::STAFF_MANAGER_USER_LEVEL;
         }
 
         if ($this->hasStaffManagementPermission()) {
-            return self::STAFF_MANAGER_USER_LEVEL;
+            return static::STAFF_MANAGER_USER_LEVEL;
         }
 
         $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
 
-        return static::normalizeStaffUserLevel($permissions[self::STAFF_USER_LEVEL_FLAG] ?? null);
+        return static::normalizeStaffUserLevel($permissions[static::STAFF_USER_LEVEL_FLAG] ?? null);
     }
 
     public function isStaffManager(): bool
     {
-        return $this->isStaff() && $this->getStaffUserLevel() === self::STAFF_MANAGER_USER_LEVEL;
+        return $this->isStaff() && $this->getStaffUserLevel() === static::STAFF_MANAGER_USER_LEVEL;
     }
 
     public function getStaffModuleAccessLevel(string $module): ?string
     {
         if ($this->isSellerOwner()) {
-            return self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+            return static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
         }
 
         if (!$this->isStaff()) {
@@ -138,7 +143,7 @@ trait HasStaffCapabilities
             $seller = $this->getEffectiveSeller();
 
             if ($seller?->isPremiumTier()) {
-                return self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+                return static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
             }
         }
 
@@ -149,29 +154,29 @@ trait HasStaffCapabilities
     {
         $permissions = is_array($this->staff_module_permissions) ? $this->staff_module_permissions : [];
 
-        if (array_key_exists(self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG, $permissions)) {
-            return static::normalizeStaffAccessPermissionLevel($permissions[self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG]);
+        if (array_key_exists(static::STAFF_ACCESS_PERMISSION_LEVEL_FLAG, $permissions)) {
+            return static::normalizeStaffAccessPermissionLevel($permissions[static::STAFF_ACCESS_PERMISSION_LEVEL_FLAG]);
         }
 
-        if (array_key_exists(self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG, $permissions)) {
-            return (bool) $permissions[self::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG]
-                ? self::STAFF_ACCESS_PERMISSION_CAN_EDIT
-                : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        if (array_key_exists(static::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG, $permissions)) {
+            return (bool) $permissions[static::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG]
+                ? static::STAFF_ACCESS_PERMISSION_CAN_EDIT
+                : static::STAFF_ACCESS_PERMISSION_READ_ONLY;
         }
 
-        return static::normalizeStaffUserLevel($permissions[self::STAFF_USER_LEVEL_FLAG] ?? null) === self::STAFF_MANAGER_USER_LEVEL
-            ? self::STAFF_ACCESS_PERMISSION_CAN_EDIT
-            : self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+        return static::normalizeStaffUserLevel($permissions[static::STAFF_USER_LEVEL_FLAG] ?? null) === static::STAFF_MANAGER_USER_LEVEL
+            ? static::STAFF_ACCESS_PERMISSION_CAN_EDIT
+            : static::STAFF_ACCESS_PERMISSION_READ_ONLY;
     }
 
     public function getStaffAccessPermissionLevel(): string
     {
         if ($this->isSellerOwner()) {
-            return self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+            return static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
         }
 
         if (!$this->isStaff()) {
-            return self::STAFF_ACCESS_PERMISSION_READ_ONLY;
+            return static::STAFF_ACCESS_PERMISSION_READ_ONLY;
         }
 
         return $this->resolveLegacyStaffModuleAccessLevel();
@@ -179,7 +184,7 @@ trait HasStaffCapabilities
 
     public function hasStaffManagementPermission(): bool
     {
-        return $this->getStaffModuleAccessLevel('hr') === self::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+        return $this->getStaffModuleAccessLevel('hr') === static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
     }
 
     public function hasCompletedStaffSecurityGate(): bool
