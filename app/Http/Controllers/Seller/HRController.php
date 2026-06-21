@@ -67,6 +67,9 @@ class HRController extends Controller
             'sellerSettings' => [
                 'overtime_rate' => $seller->overtime_rate ?? 50.00,
                 'overtime_multiplier' => $seller->overtime_multiplier ?? 1.25,
+                'payroll_factor_method' => $seller->payroll_factor_method ?? 'custom',
+                'rest_day_ot_multiplier' => $seller->rest_day_ot_multiplier ?? 1.69,
+                'holiday_ot_multiplier' => $seller->holiday_ot_multiplier ?? 2.60,
                 'payroll_working_days' => $seller->payroll_working_days ?? 22,
                 'attendance_month_label' => $activePeriod->format('F Y'),
                 'attendance_month_value' => $activePeriod->format('Y-m'),
@@ -721,12 +724,18 @@ class HRController extends Controller
         $request->validate([
             'overtime_rate' => 'nullable|numeric|min:0',
             'overtime_multiplier' => 'nullable|numeric|min:0.01|max:10',
+            'payroll_factor_method' => ['nullable', 'string', Rule::in(['custom', '261', '313'])],
+            'rest_day_ot_multiplier' => 'nullable|numeric|min:0.01|max:10',
+            'holiday_ot_multiplier' => 'nullable|numeric|min:0.01|max:10',
             'payroll_working_days' => 'required|integer|min:1|max:31',
         ]);
 
         User::where('id', $this->sellerOwnerId())->update([
             'overtime_rate' => $request->overtime_rate,
             'overtime_multiplier' => $request->overtime_multiplier ?? 1.25,
+            'payroll_factor_method' => $request->payroll_factor_method ?? 'custom',
+            'rest_day_ot_multiplier' => $request->rest_day_ot_multiplier ?? 1.69,
+            'holiday_ot_multiplier' => $request->holiday_ot_multiplier ?? 2.60,
             'payroll_working_days' => $request->payroll_working_days,
         ]);
 
@@ -747,8 +756,11 @@ class HRController extends Controller
             'items' => 'required|array',
             'items.*.employee_id' => 'required|exists:employees,id',
             'items.*.absences_days' => 'nullable|numeric|min:0',
+            'items.*.paid_leave_days' => 'nullable|numeric|min:0',
             'items.*.undertime_hours' => 'nullable|numeric|min:0',
             'items.*.overtime_hours' => 'nullable|numeric|min:0',
+            'items.*.rest_day_ot_hours' => 'nullable|numeric|min:0',
+            'items.*.holiday_ot_hours' => 'nullable|numeric|min:0',
             'items.*.isSelected' => 'nullable|boolean',
         ]);
 
@@ -769,8 +781,11 @@ class HRController extends Controller
                 return [
                     'employee_id' => $item['employee_id'],
                     'absences_days' => (float) ($item['absences_days'] ?? 0),
+                    'paid_leave_days' => (float) ($item['paid_leave_days'] ?? 0),
                     'undertime_hours' => (float) ($item['undertime_hours'] ?? 0),
                     'overtime_hours' => (float) ($item['overtime_hours'] ?? 0),
+                    'rest_day_ot_hours' => (float) ($item['rest_day_ot_hours'] ?? 0),
+                    'holiday_ot_hours' => (float) ($item['holiday_ot_hours'] ?? 0),
                 ];
             })
             ->values()
@@ -829,11 +844,16 @@ class HRController extends Controller
                         'base_salary' => $calculated['base_salary'],
                         'days_worked' => round($calculated['days_worked']),
                         'absences_days' => round($calculated['absences_days']),
-                        'absence_deduction' => $calculated['absence_deduction'],
+                        'paid_leave_days' => round($calculated['paid_leave_days']),
                         'undertime_hours' => $calculated['undertime_hours'],
                         'undertime_deduction' => $calculated['undertime_deduction'],
                         'overtime_hours' => $calculated['overtime_hours'],
                         'overtime_pay' => $calculated['overtime_pay'],
+                        'rest_day_ot_hours' => $calculated['rest_day_ot_hours'],
+                        'rest_day_ot_pay' => $calculated['rest_day_ot_pay'],
+                        'holiday_ot_hours' => $calculated['holiday_ot_hours'],
+                        'holiday_ot_pay' => $calculated['holiday_ot_pay'],
+                        'absence_deduction' => $calculated['absence_deduction'],
                         'bonus' => 0,
                         'net_pay' => $calculated['net_pay'],
                     ]));
@@ -1199,27 +1219,62 @@ class HRController extends Controller
 
     private function serializePayrollRun(Payroll $payroll, User $seller): array
     {
-        $workingDays = max((int) ($seller->payroll_working_days ?? 22), 1);
+        $payrollService = app(PayrollCalculationService::class);
 
-        $lineItems = $payroll->items->map(function (PayrollItem $item) use ($workingDays) {
-            $dailyRate = $workingDays > 0 ? ((float) $item->base_salary / $workingDays) : 0;
-            $hourlyRate = $dailyRate / 8;
-            $absenceDeduction = round((float) ($item->absences_days ?? 0) * $dailyRate, 2);
-            $undertimeDeduction = round((float) ($item->undertime_hours ?? 0) * $hourlyRate, 2);
+        $lineItems = $payroll->items->map(function (PayrollItem $item) use ($seller, $payrollService) {
+            if (!$item->employee) {
+                return [
+                    'id' => $item->id,
+                    'employee_name' => $item->employee_name ?? "Employee #{$item->employee_id}",
+                    'employee_role' => null,
+                    'base_salary' => (float) $item->base_salary,
+                    'days_worked' => (float) $item->days_worked,
+                    'absences_days' => (float) $item->absences_days,
+                    'paid_leave_days' => (float) $item->paid_leave_days,
+                    'absence_deduction' => 0.00,
+                    'undertime_hours' => (float) $item->undertime_hours,
+                    'undertime_deduction' => 0.00,
+                    'overtime_hours' => (float) $item->overtime_hours,
+                    'overtime_pay' => (float) $item->overtime_pay,
+                    'rest_day_ot_hours' => (float) $item->rest_day_ot_hours,
+                    'rest_day_ot_pay' => (float) $item->rest_day_ot_pay,
+                    'holiday_ot_hours' => (float) $item->holiday_ot_hours,
+                    'holiday_ot_pay' => (float) $item->holiday_ot_pay,
+                    'net_pay' => (float) $item->net_pay,
+                    'meta' => null,
+                ];
+            }
+
+            $inputs = [
+                'absences_days' => (float) $item->absences_days,
+                'paid_leave_days' => (float) $item->paid_leave_days,
+                'undertime_hours' => (float) $item->undertime_hours,
+                'overtime_hours' => (float) $item->overtime_hours,
+                'rest_day_ot_hours' => (float) $item->rest_day_ot_hours,
+                'holiday_ot_hours' => (float) $item->holiday_ot_hours,
+            ];
+
+            $calculated = $payrollService->calculateEmployeeRow($item->employee, $inputs, $seller);
 
             return [
                 'id' => $item->id,
-                'employee_name' => $item->employee?->name ?? "Employee #{$item->employee_id}",
-                'employee_role' => $item->employee?->role,
+                'employee_name' => $item->employee->name,
+                'employee_role' => $item->employee->role,
                 'base_salary' => (float) $item->base_salary,
                 'days_worked' => (float) $item->days_worked,
-                'absences_days' => (float) ($item->absences_days ?? 0),
-                'absence_deduction' => $absenceDeduction,
-                'undertime_hours' => (float) ($item->undertime_hours ?? 0),
-                'undertime_deduction' => $undertimeDeduction,
-                'overtime_hours' => (float) ($item->overtime_hours ?? 0),
+                'absences_days' => (float) $item->absences_days,
+                'paid_leave_days' => (float) $item->paid_leave_days,
+                'absence_deduction' => $calculated['absence_deduction'],
+                'undertime_hours' => (float) $item->undertime_hours,
+                'undertime_deduction' => $calculated['undertime_deduction'],
+                'overtime_hours' => (float) $item->overtime_hours,
                 'overtime_pay' => (float) $item->overtime_pay,
+                'rest_day_ot_hours' => (float) $item->rest_day_ot_hours,
+                'rest_day_ot_pay' => (float) $item->rest_day_ot_pay,
+                'holiday_ot_hours' => (float) $item->holiday_ot_hours,
+                'holiday_ot_pay' => (float) $item->holiday_ot_pay,
                 'net_pay' => (float) $item->net_pay,
+                'meta' => $calculated['meta'],
             ];
         })->values();
 
@@ -1244,7 +1299,7 @@ class HRController extends Controller
             'summary' => [
                 'base_pay' => (float) $lineItems->sum('base_salary'),
                 'deductions' => (float) $lineItems->sum(fn(array $item) => $item['absence_deduction'] + $item['undertime_deduction']),
-                'overtime' => (float) $lineItems->sum('overtime_pay'),
+                'overtime' => (float) $lineItems->sum(fn(array $item) => $item['overtime_pay'] + ($item['rest_day_ot_pay'] ?? 0) + ($item['holiday_ot_pay'] ?? 0)),
                 'net_pay' => (float) $lineItems->sum('net_pay'),
             ],
             'line_items' => $lineItems->all(),

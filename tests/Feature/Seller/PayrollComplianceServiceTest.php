@@ -157,4 +157,127 @@ class PayrollComplianceServiceTest extends TestCase
             'net_pay' => 17500.00,
         ]);
     }
+
+    public function test_calculate_employee_row_with_261_factor_method(): void
+    {
+        $seller = User::factory()->artisanApproved()->create([
+            'payroll_factor_method' => '261',
+            'overtime_multiplier' => 1.25,
+        ]);
+
+        $employee = Employee::create([
+            'user_id' => $seller->id,
+            'name' => 'EEMR 261 Test',
+            'role' => 'Weaver',
+            'salary' => 20000,
+            'status' => 'Active',
+            'join_date' => now(config('app.timezone'))->subMonths(1),
+        ]);
+
+        // Salary: 20,000. Under 261 method:
+        // Daily rate: (20,000 * 12) / 261 = 240,000 / 261 = 919.5402
+        // Hourly rate: 919.5402 / 8 = 114.9425
+        // Let's test with 2 days absences, 4 hours overtime.
+        // Absence deduction: 2 * 919.5402 = 1839.08
+        // Overtime pay: 4 * (114.9425 * 1.25) = 4 * 143.6781 = 574.71
+        // Expected Net Pay: 20000 + 574.71 - 1839.08 = 18735.63
+        $inputs = [
+            'absences_days' => 2,
+            'undertime_hours' => 0,
+            'overtime_hours' => 4,
+        ];
+
+        $result = $this->payrollService->calculateEmployeeRow($employee, $inputs, $seller);
+
+        $this->assertEquals(20000, $result['base_salary']);
+        $this->assertEquals(round(261.0/12.0 - 2, 1), $result['days_worked']);
+        $this->assertEquals(1839.08, $result['absence_deduction']);
+        $this->assertEquals(574.71, $result['overtime_pay']);
+        $this->assertEquals(18735.63, $result['net_pay']);
+    }
+
+    public function test_calculate_employee_row_with_313_factor_method(): void
+    {
+        $seller = User::factory()->artisanApproved()->create([
+            'payroll_factor_method' => '313',
+            'overtime_multiplier' => 1.25,
+        ]);
+
+        $employee = Employee::create([
+            'user_id' => $seller->id,
+            'name' => 'EEMR 313 Test',
+            'role' => 'Weaver',
+            'salary' => 20000,
+            'status' => 'Active',
+            'join_date' => now(config('app.timezone'))->subMonths(1),
+        ]);
+
+        // Salary: 20,000. Under 313 method:
+        // Daily rate: (20,000 * 12) / 313 = 240,000 / 313 = 766.77316
+        // Hourly rate: 766.77316 / 8 = 95.8466
+        // Let's test with 1 day absence, 8 hours regular overtime.
+        // Absence deduction: 1 * 766.77 = 766.77
+        // Overtime pay: 8 * (95.8466 * 1.25) = 8 * 119.808 = 958.47
+        // Expected Net Pay: 20000 + 958.47 - 766.77 = 20191.70
+        $inputs = [
+            'absences_days' => 1,
+            'undertime_hours' => 0,
+            'overtime_hours' => 8,
+        ];
+
+        $result = $this->payrollService->calculateEmployeeRow($employee, $inputs, $seller);
+
+        $this->assertEquals(20000, $result['base_salary']);
+        $this->assertEquals(round(313.0/12.0 - 1, 1), $result['days_worked']);
+        $this->assertEquals(766.77, $result['absence_deduction']);
+        $this->assertEquals(958.47, $result['overtime_pay']);
+        $this->assertEquals(20191.69, $result['net_pay']);
+    }
+
+    public function test_calculate_employee_row_with_paid_leaves_and_tiered_overtime(): void
+    {
+        $seller = User::factory()->artisanApproved()->create([
+            'payroll_working_days' => 20,
+            'overtime_multiplier' => 1.25,
+            'rest_day_ot_multiplier' => 1.69,
+            'holiday_ot_multiplier' => 2.60,
+        ]);
+
+        $employee = Employee::create([
+            'user_id' => $seller->id,
+            'name' => 'Paid Leaves & Tiered OT Test',
+            'role' => 'Weaver',
+            'salary' => 16000, // Daily rate = 16000 / 20 = 800. Hourly rate = 100
+            'status' => 'Active',
+            'join_date' => now(config('app.timezone'))->subMonths(1),
+        ]);
+
+        // Scenario:
+        // 2 days paid leaves (does not deduct salary, absence_deduction = 0)
+        // 1 day unpaid absence (deducts 1 day = 800)
+        // 2 hours regular workday OT => 2 * 100 * 1.25 = 250
+        // 3 hours rest day OT => 3 * 100 * 1.69 = 507
+        // 4 hours holiday OT => 4 * 100 * 2.60 = 1040
+        // Total Overtime Pay: 250 + 507 + 1040 = 1797
+        // Expected Net Pay: 16000 + 1797 - 800 = 16997
+        $inputs = [
+            'absences_days' => 1,
+            'paid_leave_days' => 2,
+            'undertime_hours' => 0,
+            'overtime_hours' => 2,
+            'rest_day_ot_hours' => 3,
+            'holiday_ot_hours' => 4,
+        ];
+
+        $result = $this->payrollService->calculateEmployeeRow($employee, $inputs, $seller);
+
+        $this->assertEquals(16000, $result['base_salary']);
+        $this->assertEquals(19, $result['days_worked']); // working days (20) - absences (1) = 19
+        $this->assertEquals(800.00, $result['absence_deduction']);
+        $this->assertEquals(2, $result['paid_leave_days']);
+        $this->assertEquals(250.00, $result['overtime_pay']);
+        $this->assertEquals(507.00, $result['rest_day_ot_pay']);
+        $this->assertEquals(1040.00, $result['holiday_ot_pay']);
+        $this->assertEquals(16997.00, $result['net_pay']);
+    }
 }

@@ -364,11 +364,27 @@ export const getEmployeeDirectoryStatus = (employee, attendanceStatus) => {
 
 export const calculateNetPay = (item, sellerSettings = {}) => {
     const workingDays = sellerSettings.payroll_working_days || 22;
-    const dailyRate = item.salary / workingDays;
-    const hourlyRate = dailyRate / 8;
+    const factorMethod = sellerSettings.payroll_factor_method || 'custom';
     const otMultiplier = sellerSettings.overtime_multiplier || 1.25;
+    const restDayOtMultiplier = sellerSettings.rest_day_ot_multiplier || 1.69;
+    const holidayOtMultiplier = sellerSettings.holiday_ot_multiplier || 2.60;
+
+    let dailyRate = 0;
+    if (factorMethod === '261') {
+        dailyRate = (item.salary * 12) / 261;
+    } else if (factorMethod === '313') {
+        dailyRate = (item.salary * 12) / 313;
+    } else {
+        dailyRate = item.salary / workingDays;
+    }
+
+    const hourlyRate = dailyRate / 8;
     
-    const otPay = (Number(item.overtime_hours) || 0) * (hourlyRate * otMultiplier);
+    const regularOtPay = (Number(item.overtime_hours) || 0) * (hourlyRate * otMultiplier);
+    const restDayOtPay = (Number(item.rest_day_ot_hours) || 0) * (hourlyRate * restDayOtMultiplier);
+    const holidayOtPay = (Number(item.holiday_ot_hours) || 0) * (hourlyRate * holidayOtMultiplier);
+    const otPay = regularOtPay + restDayOtPay + holidayOtPay;
+
     const absenceDeduction = (Number(item.absences_days) || 0) * dailyRate;
     const undertimeDeduction = (Number(item.undertime_hours) || 0) * hourlyRate;
     

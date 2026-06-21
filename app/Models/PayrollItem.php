@@ -16,6 +16,11 @@ class PayrollItem extends Model
         'undertime_hours',
         'overtime_hours',
         'overtime_pay',
+        'rest_day_ot_hours',
+        'rest_day_ot_pay',
+        'holiday_ot_hours',
+        'holiday_ot_pay',
+        'paid_leave_days',
         'deductions',
         'bonus',
         'net_pay'
