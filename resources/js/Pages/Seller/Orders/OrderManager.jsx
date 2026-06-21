@@ -1,16 +1,13 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { createPortal } from "react-dom";
 import axios from "axios";
 import { Head, router, usePage } from "@inertiajs/react";
-import { motion } from "framer-motion";
 import Modal from "@/Components/Modal";
 import ReadOnlyCapabilityNotice from "@/Components/Seller/Shared/ReadOnlyCapabilityNotice";
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
 import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
-import KPICard from "@/Components/KPICard";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
-import { AlertCircle, Package, Truck, CheckCircle2, Box, CreditCard, Printer, FileDown, LoaderCircle, AlertTriangle, RotateCcw, X } from "lucide-react";
+import { Box, Printer, LoaderCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/Components/ToastContext";
 import useFlashToast from "@/hooks/useFlashToast";
 import CompactPagination from "@/Components/CompactPagination";
@@ -22,6 +19,8 @@ import OrderCard from "@/Components/Seller/Orders/OrderCard";
 import FulfillmentModal from "@/Components/Seller/Orders/FulfillmentModal";
 import DisputeResponseModal from "@/Components/Seller/Orders/DisputeResponseModal";
 import ReplacementModal from "@/Components/Seller/Orders/ReplacementModal";
+import BulkActionsBar from "@/Components/Seller/Orders/BulkActionsBar";
+import OrderKPICards from "@/Components/Seller/Orders/OrderKPICards";
 
 const ORDER_MANAGER_VIEW_KEY = "seller-order-manager-view";
 
@@ -368,96 +367,16 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">
                 {isOrdersReadOnly && <ReadOnlyCapabilityNotice label="Orders is read only for your account." />}
 
-                {/* KPI CARDS */}
-                <div className="flex overflow-x-auto pb-2.5 gap-3 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
-                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
-                        <KPICard title="Needs Action" value={urgentCount} icon={AlertCircle} color="text-amber-600" bg="bg-amber-50" animate={shouldAnimateKPI} />
-                    </div>
-                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
-                        <KPICard title="Processing" value={getCount("Accepted") + getCount("Processing")} icon={Package} color="text-blue-600" bg="bg-blue-50" animate={shouldAnimateKPI} />
-                    </div>
-                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
-                        <KPICard title="In Transit / Ready" value={getCount("Shipped") + getCount("Delivered") + getCount("Ready for Pickup")} icon={Truck} color="text-sky-600" bg="bg-sky-50" animate={shouldAnimateKPI} />
-                    </div>
-                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
-                        <KPICard title="Completed" value={getCount("Completed")} icon={CheckCircle2} color="text-green-600" bg="bg-green-50" animate={shouldAnimateKPI} />
-                    </div>
-                </div>
-
-                {/* Quick Views / Attention Alerts */}
-                {(urgentCount > 0 ||
-                    paymentHoldCount > 0 ||
-                    hasActiveCourierTracking ||
-                    returnQueueCount > 0) && (
-                    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3">
-                        {urgentCount > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFilter("urgent", "All")}
-                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                                    quickFilter === "urgent"
-                                        ? "border-amber-300/80 bg-[#FAF3E0] text-[#A66E2E]"
-                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                                }`}
-                            >
-                                <AlertCircle size={13} />
-                                {urgentCount} need attention
-                            </button>
-                        )}
-                        {paymentHoldCount > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFilter("payment_hold", "Accepted")}
-                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                                    quickFilter === "payment_hold"
-                                        ? "border-orange-300 bg-[#FDF2F0] text-[#B83E28]"
-                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                                }`}
-                            >
-                                <CreditCard size={13} />
-                                {paymentHoldCount} payment hold
-                            </button>
-                        )}
-                        {hasActiveCourierTracking && (
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFilter("live_courier", "All")}
-                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                                    quickFilter === "live_courier"
-                                        ? "border-sky-300 bg-[#F0F7FD] text-[#2B6CB0]"
-                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                                }`}
-                            >
-                                <Truck size={13} />
-                                Live courier
-                            </button>
-                        )}
-                        {returnQueueCount > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFilter("returns", "Returns")}
-                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                                    quickFilter === "returns"
-                                        ? "border-emerald-300 bg-[#EEF5F1] text-[#2D6A4F]"
-                                        : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                                }`}
-                            >
-                                <RotateCcw size={13} />
-                                {returnQueueCount} return {returnQueueCount === 1 ? "case" : "cases"}
-                            </button>
-                        )}
-                        {quickFilter !== "all" && (
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFilter("all", "All")}
-                                className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold text-stone-600 transition-all duration-200 hover:bg-stone-50 hover:text-stone-850 hover:border-stone-300 active:scale-95 shadow-sm"
-                            >
-                                <X size={12} />
-                                Clear quick view
-                            </button>
-                        )}
-                    </div>
-                )}
+                <OrderKPICards
+                    urgentCount={urgentCount}
+                    shouldAnimateKPI={shouldAnimateKPI}
+                    getCount={getCount}
+                    paymentHoldCount={paymentHoldCount}
+                    hasActiveCourierTracking={hasActiveCourierTracking}
+                    returnQueueCount={returnQueueCount}
+                    quickFilter={quickFilter}
+                    applyQuickFilter={applyQuickFilter}
+                />
 
                 {/* Filter Panel Wrapper */}
                 <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm mb-6">
@@ -514,28 +433,16 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             <DisputeResponseModal isOpen={disputeModalState.isOpen} onClose={() => setDisputeModalState(prev => ({ ...prev, isOpen: false }))} disputeModalState={disputeModalState} setDisputeModalState={setDisputeModalState} submitDisputeResponse={submitDisputeResponse} canEditOrders={canEditOrders} />
 
             {/* Floating Bulk Actions Bar */}
-            {mounted && selectedOrderIds.length > 0 && createPortal(
-                <div className="fixed bottom-6 inset-x-0 z-[999] flex justify-center pointer-events-none px-4">
-                    <motion.div
-                        initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
-                        className="pointer-events-auto flex flex-col items-center gap-2.5 rounded-2xl border border-stone-200 bg-white/95 px-3 py-2 shadow-2xl backdrop-blur-xl w-full max-w-[540px] sm:flex-row sm:justify-between sm:gap-4 sm:px-4 sm:py-2.5"
-                    >
-                        <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-clay-50 border border-clay-100 text-clay-700 shadow-sm"><CheckCircle2 size={14} className="text-clay-600" /></div>
-                            <span className="text-xs font-extrabold tracking-tight text-stone-900 whitespace-nowrap">{selectedOrderIds.length} Selected</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-start sm:justify-end overflow-x-auto no-scrollbar py-0.5">
-                            <button type="button" onClick={() => setSelectedOrderIds([])} className="rounded-lg px-2 py-1 text-[11px] font-bold text-stone-500 hover:text-stone-800 transition hover:bg-stone-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]">Cancel</button>
-                            <button type="button" onClick={handleBulkPrintLabels} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-[11px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]"><Printer size={12} /> Print Labels</button>
-                            <button type="button" onClick={handleBulkPrintPackingSlips} disabled={isPrintingSlips} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-[11px] font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 disabled:opacity-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]">
-                                {isPrintingSlips ? <LoaderCircle className="animate-spin" size={12} /> : <FileDown size={12} />} Packing Slips
-                            </button>
-                            <button type="button" onClick={handleBulkFulfill} disabled={!canEditOrders} className="flex items-center gap-1 rounded-lg bg-clay-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition hover:bg-clay-700 disabled:opacity-50 active:scale-95 whitespace-nowrap flex-shrink-0 min-h-[44px]"><Truck size={12} /> Fulfill</button>
-                        </div>
-                    </motion.div>
-                </div>,
-                document.body
-            )}
+            <BulkActionsBar
+                mounted={mounted}
+                selectedOrderIds={selectedOrderIds}
+                setSelectedOrderIds={setSelectedOrderIds}
+                handleBulkPrintLabels={handleBulkPrintLabels}
+                handleBulkPrintPackingSlips={handleBulkPrintPackingSlips}
+                isPrintingSlips={isPrintingSlips}
+                handleBulkFulfill={handleBulkFulfill}
+                canEditOrders={canEditOrders}
+            />
         </>
     );
 }
