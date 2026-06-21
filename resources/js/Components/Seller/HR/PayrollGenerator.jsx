@@ -15,6 +15,8 @@ import RosterSelector from './RosterSelector';
 import AdjustmentsSubForm from './AdjustmentsSubForm';
 import LiveCalculationInspector from './LiveCalculationInspector';
 import Stepper from './Stepper';
+import AttendanceCalendarModal from './AttendanceCalendarModal';
+import DryRunPreviewPanel from './DryRunPreviewPanel';
 
 
 
@@ -24,8 +26,7 @@ export default function PayrollGenerator({
     staff = [],
     sellerSettings = {},
     canEditHrRecords,
-    onViewAttendanceLogs,
-    isCalendarOpen
+    onMonthChange
 }) {
     const { addToast } = useToast();
     const [activeStep, setActiveStep] = React.useState(1);
@@ -34,6 +35,23 @@ export default function PayrollGenerator({
     
     const [dryRunResults, setDryRunResults] = React.useState(null);
     const [isDryRunning, setIsDryRunning] = React.useState(false);
+    
+    const [localAttendanceEmployee, setLocalAttendanceEmployee] = React.useState(null);
+    const [localSelectedDate, setLocalSelectedDate] = React.useState(null);
+
+    const activeAttendanceEmployee = React.useMemo(() => 
+        localAttendanceEmployee 
+            ? (staff.find(emp => emp.id === localAttendanceEmployee.id) || localAttendanceEmployee) 
+            : null, 
+        [localAttendanceEmployee, staff]
+    );
+
+    const handleViewAttendanceLogs = (employeeId) => {
+        const emp = staff.find(e => e.id === employeeId);
+        if (emp) {
+            setLocalAttendanceEmployee(emp);
+        }
+    };
 
     const { data, setData, post, processing, errors, transform } = useForm({
         month: sellerSettings.attendance_month_label || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
@@ -171,7 +189,7 @@ export default function PayrollGenerator({
     const activeBreakdown = calculatePayrollBreakdown(activeInspectorItem, sellerSettings);
 
     return (
-        <Modal show={isOpen} onClose={onClose} maxWidth="5xl" closeable={!isCalendarOpen}>
+        <Modal show={isOpen} onClose={onClose} maxWidth="5xl" closeable={!activeAttendanceEmployee}>
             <form onSubmit={handleSubmit} className="flex h-[88vh] flex-col bg-[#FDFBF9]">
                 {/* Header */}
                 <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-stone-150 bg-[#FDFBF9] gap-3">
@@ -215,7 +233,7 @@ export default function PayrollGenerator({
                             updatePayrollItem={updatePayrollItem}
                             onSelectAll={() => setData('items', data.items.map(i => ({ ...i, isSelected: true })))}
                             onDeselectAll={() => setData('items', data.items.map(i => ({ ...i, isSelected: false })))}
-                            onViewAttendanceLogs={onViewAttendanceLogs}
+                            onViewAttendanceLogs={handleViewAttendanceLogs}
                         />
                     )}
 
@@ -394,35 +412,7 @@ export default function PayrollGenerator({
                 </div>
 
                 {/* Dry Run Estimates Panel */}
-                {dryRunResults && dryRunResults.items && activeStep === 2 && (
-                    <div className="shrink-0 border-t border-stone-150 bg-white p-5 animate-fade-in max-h-[220px] overflow-y-auto">
-                        <div className="flex items-center justify-between mb-3 border-b border-stone-100 pb-1.5">
-                            <div className="flex items-center gap-1.5">
-                                <FileCheck2 size={15} className="text-emerald-600" />
-                                <h4 className="text-xs font-bold text-stone-900">Server-Verified Estimates</h4>
-                            </div>
-                            <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded px-1.5 py-0.5 uppercase tracking-wider">
-                                Calculations Success
-                            </span>
-                        </div>
-                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                            {dryRunResults.items.map(res => {
-                                const totalOt = Number(res.overtime_pay || 0) + Number(res.rest_day_ot_pay || 0) + Number(res.holiday_ot_pay || 0);
-                                return (
-                                    <div key={`dry-run-${res.employee_name}`} className="rounded-xl border border-stone-200 bg-stone-50/50 p-3 flex justify-between items-center text-xs">
-                                        <div className="min-w-0">
-                                            <span className="font-bold text-stone-850 truncate block">{res.employee_name}</span>
-                                            <span className="text-[9px] text-stone-500 mt-0.5 block">
-                                                OT: +{formatPeso(totalOt)} | Ded: -{formatPeso(res.deductions)}
-                                            </span>
-                                        </div>
-                                        <span className="font-bold text-clay-700 shrink-0 text-right">{formatPrecisePeso(res.net_pay)}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
+                <DryRunPreviewPanel dryRunResults={dryRunResults} activeStep={activeStep} />
 
                 {/* Summary / Estimate Footer Row */}
                 {selectedStaffItems.length > 0 && (
@@ -490,6 +480,15 @@ export default function PayrollGenerator({
                     )}
                 </div>
             </form>
+
+            <AttendanceCalendarModal
+                employee={activeAttendanceEmployee}
+                selectedDate={localSelectedDate}
+                onSelectDate={setLocalSelectedDate}
+                onClose={() => setLocalAttendanceEmployee(null)}
+                sellerSettings={sellerSettings}
+                onMonthChange={onMonthChange}
+            />
         </Modal>
     );
 }
