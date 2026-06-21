@@ -379,11 +379,11 @@ export default function ReleaseRequestDetails({
                                         <td className="py-3.5 text-right font-bold text-stone-900">{formatMoney(item.financials?.shipping_fee)}</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-3.5 text-rose-505">Platform Commission Fee</td>
+                                        <td className="py-3.5 text-rose-600">Platform Commission Fee</td>
                                         <td className="py-3.5 text-right font-bold text-rose-600">- {formatMoney(item.financials?.platform_fee)}</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-3.5 text-rose-505">Transaction & Convenience Fee</td>
+                                        <td className="py-3.5 text-rose-600">Transaction & Convenience Fee</td>
                                         <td className="py-3.5 text-right font-bold text-rose-600">- {formatMoney(item.financials?.convenience_fee)}</td>
                                     </tr>
                                     <tr className="bg-emerald-50/50">

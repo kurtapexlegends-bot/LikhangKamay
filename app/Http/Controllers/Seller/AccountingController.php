@@ -175,7 +175,7 @@ class AccountingController extends Controller
             return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
         }
 
-        DB::transaction(function () use ($stockRequest) {
+        $error = DB::transaction(function () use ($stockRequest) {
             /** @var \App\Models\User $lockedUser */
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
             
@@ -186,11 +186,16 @@ class AccountingController extends Controller
             $currentBalance = $this->ledgerService->buildFinancialSnapshot($lockedUser)['balance'];
 
             if ($currentBalance < (float) $stockRequest->total_cost) {
-                return back()->with('error', 'Insufficient funds. Cannot release PHP '.number_format((float) $stockRequest->total_cost, 2));
+                return 'Insufficient funds. Cannot release PHP '.number_format((float) $stockRequest->total_cost, 2);
             }
 
             StockRequest::where('id', $stockRequest->id)->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
+            return null;
         });
+
+        if ($error) {
+            return back()->with('error', $error);
+        }
 
         return back()->with('success', 'Funds released. Procurement can now proceed.');
     }
@@ -243,7 +248,7 @@ class AccountingController extends Controller
             return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
         }
 
-        DB::transaction(function () use ($payroll) {
+        $error = DB::transaction(function () use ($payroll) {
             /** @var \App\Models\User $lockedUser */
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
             
@@ -254,11 +259,16 @@ class AccountingController extends Controller
             $currentBalance = $this->ledgerService->buildFinancialSnapshot($lockedUser)['balance'];
 
             if ($currentBalance < (float) $payroll->total_amount) {
-                return back()->with('error', 'Insufficient funds. Cannot release payroll of PHP '.number_format((float) $payroll->total_amount, 2));
+                return 'Insufficient funds. Cannot release payroll of PHP '.number_format((float) $payroll->total_amount, 2);
             }
 
             Payroll::where('id', $payroll->id)->update(['status' => 'Paid']);
+            return null;
         });
+
+        if ($error) {
+            return back()->with('error', $error);
+        }
 
         return back()->with('success', 'Payroll approved and funds released.');
     }

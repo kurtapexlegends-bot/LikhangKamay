@@ -91,6 +91,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
         const urlParams = new URLSearchParams(url.includes('?') ? url.substring(url.indexOf('?')) : '');
         const urlSearch = urlParams.get('search') || '';
         if (deferredSearch !== urlSearch) {
+            closeReviewModal();
             reload({
                 search: deferredSearch,
                 page_pending: 1,
@@ -101,6 +102,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
 
     const handleTabChange = (tabName) => {
         setActiveTab(tabName);
+        closeReviewModal();
         reload({
             tab: tabName,
             page_pending: 1,
@@ -110,6 +112,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
 
     const handleTypeChange = (typeVal) => {
         setEntryTypeFilter(typeVal);
+        closeReviewModal();
         reload({
             type: typeVal,
             page_pending: 1,
@@ -118,6 +121,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     };
 
     const handlePageChange = (pageNum) => {
+        closeReviewModal();
         if (activeTab === 'pending') {
             reload({ page_pending: pageNum });
         } else {
@@ -128,7 +132,20 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     useFlashToast(flash, addToast);
 
     const closeReviewModal = () => {
-        setReviewModal({ open: false, item: null, source: 'pending' });
+        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+        if (isDesktop) {
+            setReviewModal({ open: false, item: null, source: 'pending' });
+        } else {
+            setReviewModal((curr) => ({ ...curr, open: false }));
+            setTimeout(() => {
+                setReviewModal((curr) => {
+                    if (!curr.open) {
+                        return { open: false, item: null, source: 'pending' };
+                    }
+                    return curr;
+                });
+            }, 500);
+        }
     };
 
     const resetReviewModal = () => {
