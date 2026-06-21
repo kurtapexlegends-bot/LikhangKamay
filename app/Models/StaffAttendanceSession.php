@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property \Carbon\Carbon|null $clock_in_at
  * @property \Carbon\Carbon|null $clock_out_at
  * @property \Carbon\Carbon|null $last_heartbeat_at
+ * @property \Carbon\Carbon|null $last_activity_at
  * @property string|null $close_mode
  * @property string|null $close_reason
  * @property int $worked_minutes
@@ -32,6 +33,7 @@ class StaffAttendanceSession extends Model
         'clock_in_at',
         'clock_out_at',
         'last_heartbeat_at',
+        'last_activity_at',
         'close_mode',
         'close_reason',
         'worked_minutes',
@@ -44,6 +46,7 @@ class StaffAttendanceSession extends Model
             'clock_in_at' => 'datetime',
             'clock_out_at' => 'datetime',
             'last_heartbeat_at' => 'datetime',
+            'last_activity_at' => 'datetime',
             'worked_minutes' => 'integer',
         ];
     }

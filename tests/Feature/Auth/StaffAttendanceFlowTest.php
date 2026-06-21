@@ -243,13 +243,16 @@ class StaffAttendanceFlowTest extends TestCase
 
         Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(8, 0));
 
+        // Clock in at 6:00 AM, last heartbeat at 6:10 AM.
+        // Relative to 8:15 AM, silent for 125 minutes (exceeds 120-minute timeout).
         $staleSession = StaffAttendanceSession::create([
             'staff_user_id' => $staff->id,
             'seller_owner_id' => $owner->id,
             'employee_id' => $employee->id,
             'attendance_date' => now(config('app.timezone'))->toDateString(),
-            'clock_in_at' => now(config('app.timezone'))->subHours(2),
-            'last_heartbeat_at' => now(config('app.timezone'))->subMinutes(15),
+            'clock_in_at' => now(config('app.timezone'))->subHours(2), // 6:00 AM
+            'last_heartbeat_at' => now(config('app.timezone'))->subMinutes(110), // 6:10 AM
+            'last_activity_at' => now(config('app.timezone'))->subMinutes(110), // 6:10 AM
             'worked_minutes' => 0,
         ]);
 
@@ -266,6 +269,7 @@ class StaffAttendanceFlowTest extends TestCase
             'attendance_date' => now(config('app.timezone'))->toDateString(),
             'clock_in_at' => now(config('app.timezone'))->subHour(),
             'last_heartbeat_at' => now(config('app.timezone'))->copy()->setTime(8, 12),
+            'last_activity_at' => now(config('app.timezone'))->copy()->setTime(8, 12),
             'worked_minutes' => 0,
         ]);
 
@@ -278,7 +282,12 @@ class StaffAttendanceFlowTest extends TestCase
 
         $this->assertSame(StaffAttendanceService::MODE_PAUSED, $staleSession->close_mode);
         $this->assertSame(StaffAttendanceService::CLOSE_REASON_INACTIVITY_TIMEOUT, $staleSession->close_reason);
-        $this->assertNotNull($staleSession->clock_out_at);
+        // Capped at last heartbeat/activity + 15 minutes = 6:25 AM
+        $this->assertSame(
+            Carbon::parse($staleSession->clock_in_at)->addMinutes(25)->toIso8601String(),
+            $staleSession->clock_out_at?->toIso8601String()
+        );
+        $this->assertSame(25, $staleSession->worked_minutes);
         $this->assertNull($freshSession->clock_out_at);
     }
 
@@ -430,6 +439,39 @@ class StaffAttendanceFlowTest extends TestCase
                 ->whereNull('clock_out_at')
                 ->count()
         );
+    }
+
+    public function test_mutating_requests_update_last_activity_at(): void
+    {
+        [$owner, $employee, $staff] = $this->createVerifiedStaffWithEmployee();
+
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(9, 0));
+
+        $session = StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $owner->id,
+            'employee_id' => $employee->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone'))->subHour(),
+            'last_activity_at' => now(config('app.timezone'))->subHour(),
+            'worked_minutes' => 0,
+        ]);
+
+        $initialActivity = $session->last_activity_at;
+
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(9, 30));
+
+        $this->actingAs($staff)
+            ->post(route('hr.settings'), [
+                'overtime_rate' => 60,
+                'payroll_working_days' => 20,
+            ]);
+
+        $session->refresh();
+
+        $this->assertNotEquals($initialActivity->toIso8601String(), $session->last_activity_at?->toIso8601String());
+        $this->assertSame(now(config('app.timezone'))->toIso8601String(), $session->last_activity_at?->toIso8601String());
     }
 
     /**

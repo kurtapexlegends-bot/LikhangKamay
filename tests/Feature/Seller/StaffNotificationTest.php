@@ -18,6 +18,8 @@ class StaffNotificationTest extends TestCase
         $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['orders' => true], true),
         ]);
 
         // Create a notification for the owner (shop/seller level notification)
@@ -50,6 +52,8 @@ class StaffNotificationTest extends TestCase
         $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['products' => true], true),
         ]);
 
         $notification = $owner->notifications()->create([
@@ -87,6 +91,8 @@ class StaffNotificationTest extends TestCase
         $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
             'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['products' => true], true),
         ]);
 
         $notification = $owner->notifications()->create([

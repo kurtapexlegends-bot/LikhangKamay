@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             \App\Http\Middleware\CheckMaintenanceMode::class, // <--- Added
             \App\Http\Middleware\UpdateLastSeen::class,
+            \App\Http\Middleware\TrackStaffActivity::class,
         ]);
 
         // 2. MIDDLEWARE ALIASES

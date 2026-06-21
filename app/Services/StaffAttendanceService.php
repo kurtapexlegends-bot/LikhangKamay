@@ -40,6 +40,7 @@ class StaffAttendanceService
             'attendance_date' => $now->toDateString(),
             'clock_in_at' => $now,
             'last_heartbeat_at' => $now,
+            'last_activity_at' => $now,
             'worked_minutes' => 0,
         ]);
     }
@@ -136,54 +137,70 @@ class StaffAttendanceService
     public function autoPauseInactiveSessions(?CarbonInterface $referenceTime = null): int
     {
         $now = $referenceTime ? Carbon::parse($referenceTime) : $this->now();
-        $threshold = $now->copy()->subMinutes(self::INACTIVITY_TIMEOUT_MINUTES);
+        $timeoutMinutes = 120; // 2 hours of absolute silence
 
         $sessions = StaffAttendanceSession::query()
             ->whereNull('clock_out_at')
-            ->where(function ($query) use ($threshold) {
-                $query->where('last_heartbeat_at', '<=', $threshold)
-                    ->orWhere(function ($fallback) use ($threshold) {
-                        $fallback->whereNull('last_heartbeat_at')
-                            ->where('clock_in_at', '<=', $threshold);
-                    });
-            })
             ->get();
 
-        foreach ($sessions as $session) {
-            $closedAt = $session->last_heartbeat_at ?: $threshold;
-            $workedMinutes = max(0, $session->clock_in_at->diffInMinutes($closedAt));
+        $closedCount = 0;
 
-            $session->update([
-                'clock_out_at' => $closedAt,
-                'last_heartbeat_at' => $closedAt,
-                'close_mode' => self::MODE_PAUSED,
-                'close_reason' => self::CLOSE_REASON_INACTIVITY_TIMEOUT,
-                'worked_minutes' => $workedMinutes,
-            ]);
+        foreach ($sessions as $session) {
+            $lastSignOfLife = $session->clock_in_at;
+            if ($session->last_heartbeat_at && $session->last_heartbeat_at->gt($lastSignOfLife)) {
+                $lastSignOfLife = $session->last_heartbeat_at;
+            }
+            if ($session->last_activity_at && $session->last_activity_at->gt($lastSignOfLife)) {
+                $lastSignOfLife = $session->last_activity_at;
+            }
+
+            $minutesSilent = $lastSignOfLife->diffInMinutes($now);
+            $isPastDay = $session->attendance_date->lt($now->toDateString());
+
+            if ($minutesSilent >= $timeoutMinutes || ($isPastDay && $minutesSilent >= 60)) {
+                // Retroactively cap at last sign of life + 15 minutes
+                $closedAt = $lastSignOfLife->copy()->addMinutes(15);
+                if ($closedAt->gt($now)) {
+                    $closedAt = $now->copy();
+                }
+
+                $workedMinutes = max(0, $session->clock_in_at->diffInMinutes($closedAt));
+
+                $session->update([
+                    'clock_out_at' => $closedAt,
+                    'last_heartbeat_at' => $session->last_heartbeat_at && $session->last_heartbeat_at->gt($closedAt) ? $session->last_heartbeat_at : $closedAt,
+                    'last_activity_at' => $session->last_activity_at && $session->last_activity_at->gt($closedAt) ? $session->last_activity_at : $closedAt,
+                    'close_mode' => self::MODE_PAUSED,
+                    'close_reason' => self::CLOSE_REASON_INACTIVITY_TIMEOUT,
+                    'worked_minutes' => $workedMinutes,
+                ]);
+
+                $closedCount++;
+            }
         }
 
-        return $sessions->count();
+        return $closedCount;
     }
 
     public function getOpenSession(User $staff): ?StaffAttendanceSession
     {
         return StaffAttendanceSession::query()
-            ->where('staff_user_id', $staff->id)
+            ->where("staff_user_id", $staff->id)
             ->whereNull('clock_out_at')
-            ->latest('clock_in_at')
+            ->latest("clock_in_at")
             ->first();
     }
 
     public function getLatestSession(User $staff): ?StaffAttendanceSession
     {
         return StaffAttendanceSession::query()
-            ->where('staff_user_id', $staff->id)
-            ->latest('clock_in_at')
+            ->where("staff_user_id", $staff->id)
+            ->latest("clock_in_at")
             ->first();
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Employee>  $employees
+     * @param  Collection<int, \App\Models\Employee>  $employees
      * @return array<int, array<string, mixed>>
      */
     public function buildEmployeeMonthlySummaries(Collection $employees, User $seller, ?CarbonInterface $month = null): array
@@ -191,18 +208,18 @@ class StaffAttendanceService
         $period = $this->resolveMonth($month);
         $today = $this->now()->toDateString();
         $workingDays = (int) ($seller->payroll_working_days ?? 22);
-        $employeeIds = $employees->pluck('id')->filter()->values();
+        $employeeIds = $employees->pluck("id")->filter()->values();
 
         $sessions = $employeeIds->isEmpty()
             ? collect()
             : StaffAttendanceSession::query()
-                ->where('seller_owner_id', $seller->id)
-                ->whereIn('employee_id', $employeeIds)
+                ->where("seller_owner_id", $seller->id)
+                ->whereIn("employee_id", $employeeIds)
                 ->whereBetween('attendance_date', [$period->copy()->startOfMonth()->toDateString(), $period->copy()->endOfMonth()->toDateString()])
-                ->orderBy('clock_in_at')
+                ->orderBy("clock_in_at")
                 ->get();
 
-        $sessionsByEmployee = $sessions->groupBy('employee_id');
+        $sessionsByEmployee = $sessions->groupBy("employee_id");
 
         return $employees->mapWithKeys(function ($employee) use ($sessionsByEmployee, $today, $workingDays, $period) {
             return [
@@ -219,7 +236,7 @@ class StaffAttendanceService
 
     /**
      * @param \App\Models\Employee $employee
-     * @param \Illuminate\Support\Collection<int, \App\Models\StaffAttendanceSession> $employeeSessions
+     * @param Collection<int, StaffAttendanceSession> $employeeSessions
      * @return array<string, mixed>
      */
     private function buildEmployeeSummary($employee, Collection $employeeSessions, string $today, int $workingDays, CarbonInterface $period): array
@@ -243,9 +260,11 @@ class StaffAttendanceService
 
         $daysWorked = $dailyMinutes->filter(fn ($minutes) => $minutes > 0)->count();
         $undertimeMinutes = $dailyMinutes
+            ->filter(fn ($minutes) => $minutes > 0)
             ->map(fn ($minutes) => max(0, self::STANDARD_WORKDAY_MINUTES - $minutes))
             ->sum();
         $overtimeMinutes = $dailyMinutes
+            ->filter(fn ($minutes) => $minutes > 0)
             ->map(fn ($minutes) => max(0, $minutes - self::STANDARD_WORKDAY_MINUTES))
             ->sum();
         
@@ -319,7 +338,7 @@ class StaffAttendanceService
         $currentState = 'no_record';
         $todaySessions = $this->getTodaySessions($staff);
         $todayFirstClockIn = $todaySessions
-            ->sortBy('clock_in_at')
+            ->sortBy("clock_in_at")
             ->first()?->clock_in_at;
         $todayWorkedMinutes = $todaySessions->sum(function (StaffAttendanceSession $session) {
             return $this->resolveWorkedMinutes($session);
@@ -353,14 +372,14 @@ class StaffAttendanceService
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, \App\Models\StaffAttendanceSession>
+     * @return Collection<int, StaffAttendanceSession>
      */
     protected function getTodaySessions(User $staff): Collection
     {
         return StaffAttendanceSession::query()
-            ->where('staff_user_id', $staff->id)
+            ->where("staff_user_id", $staff->id)
             ->whereDate('attendance_date', $this->now()->toDateString())
-            ->orderBy('clock_in_at')
+            ->orderBy("clock_in_at")
             ->get();
     }
 
