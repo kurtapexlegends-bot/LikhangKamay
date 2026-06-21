@@ -6,6 +6,7 @@ use App\Services\SellerEntitlementService;
 use App\Models\UserAddress;
 use App\Support\StructuredAddress;
 use Illuminate\Support\Str;
+use App\Models\User;
 
 /**
  * @property array|null $modules_enabled
@@ -186,7 +187,7 @@ trait HasArtisanSubscriptions
         }
 
         return in_array($module, app(SellerEntitlementService::class)->getGrantedStaffModules($this), true)
-            && $this->getStaffModuleAccessLevel($module) === static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+            && $this->getStaffModuleAccessLevel($module) === User::STAFF_ACCESS_PERMISSION_CAN_EDIT;
     }
 
     public function canAccessSellerWorkspace(): bool
@@ -225,7 +226,7 @@ trait HasArtisanSubscriptions
         }
 
         return in_array('hr', app(SellerEntitlementService::class)->getGrantedStaffModules($this), true)
-            && $this->getStaffModuleAccessLevel('hr') === static::STAFF_ACCESS_PERMISSION_CAN_EDIT;
+            && $this->getStaffModuleAccessLevel('hr') === User::STAFF_ACCESS_PERMISSION_CAN_EDIT;
     }
 
     public function canCreateStaffAccounts(): bool
