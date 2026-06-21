@@ -229,6 +229,13 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 staff={staff}
                 sellerSettings={sellerSettings}
                 canEditHrRecords={canEditHrRecords}
+                onViewAttendanceLogs={(employeeId) => {
+                    const emp = staff.find(e => e.id === employeeId);
+                    if (emp) {
+                        setAttendanceModalEmployee(emp);
+                    }
+                }}
+                isCalendarOpen={!!attendanceModalEmployee}
             />
 
             <HRSettingsModal
