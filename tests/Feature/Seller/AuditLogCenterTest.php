@@ -132,6 +132,16 @@ class AuditLogCenterTest extends TestCase
             'occurred_at' => now()->subSeconds(30),
         ]);
 
+        \App\Models\CapitalAdjustment::create([
+            'user_id' => $seller->id,
+            'adjusted_by_user_id' => $seller->id,
+            'previous_amount' => 10000,
+            'new_amount' => 20000,
+            'memo' => 'Starting balance manually adjusted via accounting panel.',
+            'created_at' => now()->subSeconds(15),
+            'updated_at' => now()->subSeconds(15),
+        ]);
+
         $response = $this->actingAs($seller)
             ->get(route('audit-log.index'))
             ->assertOk()
@@ -139,17 +149,17 @@ class AuditLogCenterTest extends TestCase
                 ->component('Seller/Profile/AuditLog')
                 ->where('auditLog.summary.operations_events', 1)
                 ->where('auditLog.summary.staff_events', 1)
-                ->where('auditLog.summary.finance_events', 2)
+                ->where('auditLog.summary.finance_events', 3)
                 ->where('auditLog.summary.billing_events', 1)
-                ->has('auditLog.summary.coverage', 5)
-                ->has('auditLog.entries', 5)
+                ->has('auditLog.summary.coverage', 6)
+                ->has('auditLog.entries', 6)
             );
 
         $entries = collect($response->viewData('page')['props']['auditLog']['entries'] ?? []);
 
         $this->assertSame([
             'billing' => 1,
-            'finance' => 2,
+            'finance' => 3,
             'operations' => 1,
             'staff' => 1,
         ], $entries->groupBy('category')->map->count()->sortKeys()->all());

@@ -10,6 +10,7 @@ use App\Models\Payroll;
 use App\Models\PayrollItem;
 use App\Models\StockRequest;
 use App\Models\User;
+use App\Models\CapitalAdjustment;
 use App\Notifications\AccountingRejectedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,62 +20,45 @@ class AccountingController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index()
+    public function index(Request $request)
     {
         $seller = $this->sellerOwner();
         $financials = $this->buildFinancialSnapshot($seller);
 
-        $pendingRelease = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
-            ->where('user_id', $seller->id)
-            ->where('status', StockRequest::STATUS_PENDING)
-            ->latest()
-            ->get()
-            ->map(fn (StockRequest $request) => $this->serializeStockRequest($request, $financials['balance']));
+        $search = $request->query('search', '');
+        $type = $request->query('type', 'all');
+        $tab = $request->query('tab', 'pending');
 
-        $pendingPayrolls = Payroll::with(['items.employee', 'requester:id,name,role', 'user:id,name,role'])
-            ->where('user_id', $seller->id)
-            ->where('status', 'Pending')
-            ->latest()
-            ->get()
-            ->map(fn (Payroll $payroll) => $this->serializePayroll($payroll, $seller, $financials['balance']));
+        if ($tab === 'pending') {
+            $pendingQuery = $this->buildLedgerQuery($seller, 'pending', $type, $search);
+            $pendingPaginator = $pendingQuery->paginate(10, ['*'], 'page_pending');
+            $serializedPending = $this->enrichAndSerializeLedger($pendingPaginator->getCollection(), $seller, $financials['balance']);
+            $pendingPaginator->setCollection(collect($serializedPending));
 
-        $releasedHistory = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
-            ->where('user_id', $seller->id)
-            ->whereIn('status', [
-                StockRequest::STATUS_ACCOUNTING_APPROVED,
-                StockRequest::STATUS_ORDERED,
-                StockRequest::STATUS_PARTIALLY_RECEIVED,
-                StockRequest::STATUS_RECEIVED,
-                StockRequest::STATUS_COMPLETED,
-                StockRequest::STATUS_REJECTED,
-            ])
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (StockRequest $request) => $this->serializeStockRequest($request, $financials['balance']));
+            $historyPaginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1, [
+                'path' => route('accounting.index'),
+                'pageName' => 'page_history',
+                'query' => $request->query()
+            ]);
+        } else {
+            $historyQuery = $this->buildLedgerQuery($seller, 'history', $type, $search);
+            $historyPaginator = $historyQuery->paginate(10, ['*'], 'page_history');
+            $serializedHistory = $this->enrichAndSerializeLedger($historyPaginator->getCollection(), $seller, $financials['balance']);
+            $historyPaginator->setCollection(collect($serializedHistory));
 
-        $payrollHistory = Payroll::with(['items.employee', 'requester:id,name,role', 'user:id,name,role'])
-            ->where('user_id', $seller->id)
-            ->whereIn('status', ['Paid', 'Rejected'])
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (Payroll $payroll) => $this->serializePayroll($payroll, $seller, $financials['balance']));
-
-        $completedOrders = Order::query()
-            ->where('artisan_id', $seller->id)
-            ->where('status', 'Completed')
-            ->latest()
-            ->take(20)
-            ->get()
-            ->map(fn (Order $order) => $this->serializeOrder($order));
+            $pendingPaginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1, [
+                'path' => route('accounting.index'),
+                'pageName' => 'page_pending',
+                'query' => $request->query()
+            ]);
+        }
 
         return Inertia::render('Seller/Accounting/FundRelease', [
-            'pendingRequests' => $pendingRelease,
-            'pendingPayrolls' => $pendingPayrolls,
-            'history' => $releasedHistory,
-            'payrollHistory' => $payrollHistory,
-            'salesHistory' => $completedOrders,
+            'pendingRequests' => $pendingPaginator,
+            'pendingPayrolls' => [], // Combined in pendingRequests data list
+            'history' => $historyPaginator,
+            'payrollHistory' => [], // Combined in history data list
+            'salesHistory' => [], // Combined in history data list
             'finances' => [
                 'baseFunds' => $financials['base_funds'],
                 'revenue' => $financials['revenue'],
@@ -82,6 +66,160 @@ class AccountingController extends Controller
                 'balance' => $financials['balance'],
             ],
         ]);
+    }
+
+    private function buildLedgerQuery(User $seller, string $statusGroup, string $typeFilter, string $searchQuery)
+    {
+        $stockQuery = DB::table('stock_requests')
+            ->select([
+                'stock_requests.id',
+                DB::raw("'stock_request' as type"),
+                'stock_requests.status',
+                'stock_requests.created_at',
+                'stock_requests.updated_at',
+                'stock_requests.total_cost as amount',
+                'users.name as requester_name',
+                'users.role as requester_role',
+                'supplies.name as detail_name',
+                'supplies.category as detail_category',
+                DB::raw("NULL as order_number")
+            ])
+            ->leftJoin('users', 'stock_requests.requested_by_user_id', '=', 'users.id')
+            ->leftJoin('supplies', 'stock_requests.supply_id', '=', 'supplies.id')
+            ->where('stock_requests.user_id', $seller->id);
+
+        if ($statusGroup === 'pending') {
+            $stockQuery->where('stock_requests.status', StockRequest::STATUS_PENDING);
+        } else {
+            $stockQuery->whereIn('stock_requests.status', [
+                StockRequest::STATUS_ACCOUNTING_APPROVED,
+                StockRequest::STATUS_ORDERED,
+                StockRequest::STATUS_PARTIALLY_RECEIVED,
+                StockRequest::STATUS_RECEIVED,
+                StockRequest::STATUS_COMPLETED,
+                StockRequest::STATUS_REJECTED,
+            ]);
+        }
+
+        $payrollQuery = DB::table('payrolls')
+            ->select([
+                'payrolls.id',
+                DB::raw("'payroll' as type"),
+                'payrolls.status',
+                'payrolls.created_at',
+                'payrolls.updated_at',
+                'payrolls.total_amount as amount',
+                'users.name as requester_name',
+                'users.role as requester_role',
+                'payrolls.month as detail_name',
+                DB::raw("NULL as detail_category"),
+                DB::raw("NULL as order_number")
+            ])
+            ->leftJoin('users', 'payrolls.requested_by_user_id', '=', 'users.id')
+            ->where('payrolls.user_id', $seller->id);
+
+        if ($statusGroup === 'pending') {
+            $payrollQuery->where('payrolls.status', 'Pending');
+        } else {
+            $payrollQuery->whereIn('payrolls.status', ['Paid', 'Rejected']);
+        }
+
+        $salesQuery = null;
+        if ($statusGroup === 'history') {
+            $salesQuery = DB::table('orders')
+                ->select([
+                    'orders.id',
+                    DB::raw("'sale' as type"),
+                    'orders.status',
+                    'orders.created_at',
+                    'orders.updated_at',
+                    'orders.seller_net_amount as amount',
+                    'orders.customer_name as requester_name',
+                    DB::raw("'buyer' as requester_role"),
+                    DB::raw("NULL as detail_name"),
+                    DB::raw("NULL as detail_category"),
+                    'orders.order_number'
+                ])
+                ->where('orders.artisan_id', $seller->id)
+                ->where('orders.status', 'Completed');
+        }
+
+        if ($typeFilter !== 'all') {
+            if ($typeFilter === 'stock_request') {
+                $unionQuery = $stockQuery;
+            } elseif ($typeFilter === 'payroll') {
+                $unionQuery = $payrollQuery;
+            } elseif ($typeFilter === 'sale' && $salesQuery) {
+                $unionQuery = $salesQuery;
+            } else {
+                $unionQuery = $stockQuery->whereRaw('1 = 0');
+            }
+        } else {
+            if ($salesQuery) {
+                $unionQuery = $stockQuery->union($payrollQuery)->union($salesQuery);
+            } else {
+                $unionQuery = $stockQuery->union($payrollQuery);
+            }
+        }
+
+        $outerQuery = DB::table(DB::raw("({$unionQuery->toSql()}) as union_table"))
+            ->mergeBindings($unionQuery);
+
+        if (!empty($searchQuery)) {
+            $outerQuery->where(function ($q) use ($searchQuery) {
+                $term = '%' . $searchQuery . '%';
+                $q->where('id', 'like', $term)
+                  ->orWhere('status', 'like', $term)
+                  ->orWhere('requester_name', 'like', $term)
+                  ->orWhere('detail_name', 'like', $term)
+                  ->orWhere('detail_category', 'like', $term)
+                  ->orWhere('order_number', 'like', $term);
+            });
+        }
+
+        if ($statusGroup === 'pending') {
+            $outerQuery->orderBy('created_at', 'desc');
+        } else {
+            $outerQuery->orderBy(DB::raw("COALESCE(updated_at, created_at)"), 'desc');
+        }
+
+        return $outerQuery;
+    }
+
+    private function enrichAndSerializeLedger($items, User $seller, float $currentBalance): array
+    {
+        $items = collect($items);
+        $stockRequestIds = $items->where('type', 'stock_request')->pluck('id');
+        $payrollIds = $items->where('type', 'payroll')->pluck('id');
+        $orderIds = $items->where('type', 'sale')->pluck('id');
+
+        $stockRequests = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+            ->whereIn('id', $stockRequestIds)
+            ->get()
+            ->keyBy('id');
+
+        $payrolls = Payroll::with(['items.employee', 'requester:id,name,role', 'user:id,name,role'])
+            ->whereIn('id', $payrollIds)
+            ->get()
+            ->keyBy('id');
+
+        $orders = Order::whereIn('id', $orderIds)
+            ->get()
+            ->keyBy('id');
+
+        return $items->map(function ($item) use ($stockRequests, $payrolls, $orders, $seller, $currentBalance) {
+            if ($item->type === 'stock_request') {
+                $model = $stockRequests->get($item->id);
+                return $model ? $this->serializeStockRequest($model, $currentBalance) : null;
+            } elseif ($item->type === 'payroll') {
+                $model = $payrolls->get($item->id);
+                return $model ? $this->serializePayroll($model, $seller, $currentBalance) : null;
+            } elseif ($item->type === 'sale') {
+                $model = $orders->get($item->id);
+                return $model ? $this->serializeOrder($model) : null;
+            }
+            return null;
+        })->filter()->values()->all();
     }
 
     public function export()
@@ -209,6 +347,11 @@ class AccountingController extends Controller
             return back()->with('error', 'Request is not pending.');
         }
 
+        $actor = $this->sellerActor();
+        if ($stockRequest->requested_by_user_id && $stockRequest->requested_by_user_id === $actor->id) {
+            return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+        }
+
         DB::transaction(function () use ($stockRequest) {
             /** @var \App\Models\User $lockedUser */
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
@@ -272,6 +415,11 @@ class AccountingController extends Controller
             return back()->with('error', 'Payroll is not pending.');
         }
 
+        $actor = $this->sellerActor();
+        if ($payroll->requested_by_user_id && $payroll->requested_by_user_id === $actor->id) {
+            return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+        }
+
         DB::transaction(function () use ($payroll) {
             /** @var \App\Models\User $lockedUser */
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
@@ -331,9 +479,24 @@ class AccountingController extends Controller
             'base_funds' => 'required|numeric|min:0'
         ]);
 
-        User::where('id', $this->sellerOwnerId())->update([
-            'base_funds' => $request->base_funds
-        ]);
+        $seller = $this->sellerOwner();
+        $actor = $this->sellerActor();
+        $oldFunds = (float) ($seller->base_funds ?? 0);
+        $newFunds = (float) $request->base_funds;
+
+        if ($oldFunds !== $newFunds) {
+            DB::transaction(function () use ($seller, $actor, $oldFunds, $newFunds) {
+                User::where('id', $seller->id)->update(['base_funds' => $newFunds]);
+
+                CapitalAdjustment::create([
+                    'user_id' => $seller->id,
+                    'adjusted_by_user_id' => $actor->id,
+                    'previous_amount' => $oldFunds,
+                    'new_amount' => $newFunds,
+                    'memo' => 'Capital balance manually adjusted via accounting panel.',
+                ]);
+            });
+        }
 
         return back()->with('success', 'Starting balance updated successfully.');
     }

@@ -11,6 +11,7 @@ use App\Models\Supply;
 use App\Models\User;
 use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Notifications\AccountingRejectedNotification;
+use App\Models\CapitalAdjustment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -54,18 +55,18 @@ class AccountingTransparencyTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Seller/Accounting/FundRelease')
-                ->where('pendingRequests.0.requester.name', $requester->name)
-                ->where('pendingRequests.0.quantity', 10)
-                ->where('pendingRequests.0.supply.name', $supply->name)
-                ->where('pendingRequests.0.supply.category', $supply->category)
-                ->where('pendingRequests.0.supply.supplier', $supply->supplier)
-                ->where('pendingRequests.0.supply.current_stock', 12)
-                ->where('pendingRequests.0.supply.max_stock', 500)
-                ->where('pendingRequests.0.supply.available_capacity', 488)
-                ->where('pendingRequests.0.supply.unit_cost', 180)
-                ->where('pendingRequests.0.amount', 1800)
-                ->where('pendingRequests.0.fund_snapshot.available_balance', 25000)
-                ->where('pendingRequests.0.fund_snapshot.remaining_balance', 23200)
+                ->where('pendingRequests.data.0.requester.name', $requester->name)
+                ->where('pendingRequests.data.0.quantity', 10)
+                ->where('pendingRequests.data.0.supply.name', $supply->name)
+                ->where('pendingRequests.data.0.supply.category', $supply->category)
+                ->where('pendingRequests.data.0.supply.supplier', $supply->supplier)
+                ->where('pendingRequests.data.0.supply.current_stock', 12)
+                ->where('pendingRequests.data.0.supply.max_stock', 500)
+                ->where('pendingRequests.data.0.supply.available_capacity', 488)
+                ->where('pendingRequests.data.0.supply.unit_cost', 180)
+                ->where('pendingRequests.data.0.amount', 1800)
+                ->where('pendingRequests.data.0.fund_snapshot.available_balance', 25000)
+                ->where('pendingRequests.data.0.fund_snapshot.remaining_balance', 23200)
             );
     }
 
@@ -112,16 +113,16 @@ class AccountingTransparencyTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Seller/Accounting/FundRelease')
-                ->where('pendingPayrolls.0.requester.name', $requester->name)
-                ->where('pendingPayrolls.0.month', 'March 2026')
-                ->where('pendingPayrolls.0.employee_count', 1)
-                ->where('pendingPayrolls.0.line_items.0.employee_name', 'Ana Potter')
-                ->where('pendingPayrolls.0.line_items.0.absences_days', 1)
-                ->where('pendingPayrolls.0.line_items.0.absence_deduction', 1000)
-                ->where('pendingPayrolls.0.line_items.0.undertime_hours', 2)
-                ->where('pendingPayrolls.0.line_items.0.undertime_deduction', 250)
-                ->where('pendingPayrolls.0.line_items.0.overtime_hours', 3)
-                ->where('pendingPayrolls.0.line_items.0.overtime_pay', 468.75)
+                ->where('pendingRequests.data.0.requester.name', $requester->name)
+                ->where('pendingRequests.data.0.month', 'March 2026')
+                ->where('pendingRequests.data.0.employee_count', 1)
+                ->where('pendingRequests.data.0.line_items.0.employee_name', 'Ana Potter')
+                ->where('pendingRequests.data.0.line_items.0.absences_days', 1)
+                ->where('pendingRequests.data.0.line_items.0.absence_deduction', 1000)
+                ->where('pendingRequests.data.0.line_items.0.undertime_hours', 2)
+                ->where('pendingRequests.data.0.line_items.0.undertime_deduction', 250)
+                ->where('pendingRequests.data.0.line_items.0.overtime_hours', 3)
+                ->where('pendingRequests.data.0.line_items.0.overtime_pay', 468.75)
             );
     }
 
@@ -288,6 +289,88 @@ class AccountingTransparencyTest extends TestCase
         $this->assertStringContainsString('FINANCE SNAPSHOT', $content);
         $this->assertStringContainsString('PENDING INVENTORY REQUESTS', $content);
         $this->assertStringContainsString('PENDING PAYROLL', $content);
+    }
+
+    public function test_maker_checker_rule_blocks_requester_from_approving_their_own_requests(): void
+    {
+        $owner = $this->createSellerOwner();
+        
+        $procurementStaff = $this->createStaff($owner, 'procurement', [
+            'procurement' => true,
+            'stock_requests' => true,
+            'accounting' => true, // Give access to accounting to test approval route
+        ], User::STAFF_ACCESS_PERMISSION_CAN_EDIT);
+        $this->clockInStaff($procurementStaff);
+
+        $stockRequest = $this->createPendingStockRequest($owner, $procurementStaff);
+
+        // Try to approve their own request
+        $this->actingAs($procurementStaff)
+            ->post(route('accounting.approve', $stockRequest))
+            ->assertRedirect()
+            ->assertSessionHas('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+
+        $this->assertSame(StockRequest::STATUS_PENDING, $stockRequest->fresh()->status);
+
+        // A different user (owner) can approve it
+        $this->actingAs($owner)
+            ->post(route('accounting.approve', $stockRequest))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(StockRequest::STATUS_ACCOUNTING_APPROVED, $stockRequest->fresh()->status);
+
+        // Now test payroll
+        $hrStaff = $this->createStaff($owner, 'hr', [
+            'hr' => true,
+            'accounting' => true,
+        ], User::STAFF_ACCESS_PERMISSION_UPDATE);
+        $this->clockInStaff($hrStaff);
+
+        $payroll = $this->createPendingPayroll($owner, $hrStaff);
+
+        // Try to approve their own payroll
+        $this->actingAs($hrStaff)
+            ->post(route('accounting.approvePayroll', $payroll))
+            ->assertRedirect()
+            ->assertSessionHas('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+
+        $this->assertSame('Pending', $payroll->fresh()->status);
+
+        // A different user (owner) can approve it
+        $this->actingAs($owner)
+            ->post(route('accounting.approvePayroll', $payroll))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame('Paid', $payroll->fresh()->status);
+    }
+
+    public function test_adjusting_starting_balance_records_audit_trail_in_capital_adjustments(): void
+    {
+        $owner = $this->createSellerOwner();
+        $accountingStaff = $this->createStaff($owner, 'accounting', [
+            'accounting' => true,
+        ], User::STAFF_ACCESS_PERMISSION_CAN_EDIT);
+        $this->clockInStaff($accountingStaff);
+
+        $this->actingAs($accountingStaff)
+            ->post(route('accounting.update-funds'), [
+                'base_funds' => 35000,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $owner->refresh();
+        $this->assertEquals(35000, (float) $owner->base_funds);
+
+        $this->assertDatabaseHas('capital_adjustments', [
+            'user_id' => $owner->id,
+            'adjusted_by_user_id' => $accountingStaff->id,
+            'previous_amount' => 25000,
+            'new_amount' => 35000,
+            'memo' => 'Capital balance manually adjusted via accounting panel.',
+        ]);
     }
 
     private function createSellerOwner(): User

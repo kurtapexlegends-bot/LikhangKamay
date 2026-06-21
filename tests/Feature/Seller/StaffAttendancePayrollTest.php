@@ -154,9 +154,9 @@ class StaffAttendancePayrollTest extends TestCase
             ->get(route('accounting.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('pendingPayrolls.0.id', $payroll->id)
-                ->where('pendingPayrolls.0.month', now(config('app.timezone'))->format('F Y'))
-                ->where('pendingPayrolls.0.status', 'Pending')
+                ->where('pendingRequests.data.0.id', $payroll->id)
+                ->where('pendingRequests.data.0.month', now(config('app.timezone'))->format('F Y'))
+                ->where('pendingRequests.data.0.status', 'Pending')
             );
 
         PayrollItem::forgetSchemaSupportCache();

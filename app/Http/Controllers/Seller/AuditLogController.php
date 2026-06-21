@@ -32,6 +32,7 @@ class AuditLogController extends Controller
             'payroll' => $this->payrollPayload($seller),
             'procurement' => $this->procurementPayload($seller),
             'billing' => $this->subscriptionPayload($seller),
+            'capital' => $this->capitalPayload($seller),
         ];
 
         $entries = collect($sources)
@@ -61,7 +62,7 @@ class AuditLogController extends Controller
                     'total_events' => collect($sources)->sum('count'),
                     'operations_events' => $sources['operations']['count'],
                     'staff_events' => $sources['staff']['count'],
-                    'finance_events' => $sources['payroll']['count'] + $sources['procurement']['count'],
+                    'finance_events' => $sources['payroll']['count'] + $sources['procurement']['count'] + $sources['capital']['count'],
                     'billing_events' => $sources['billing']['count'],
                     'latest_event_at' => $entries[0]['occurred_at'] ?? null,
                     'coverage' => $coverage,
@@ -414,6 +415,65 @@ class AuditLogController extends Controller
             'entries' => $entries,
         ];
     }
+
+    /**
+     * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
+     */
+    private function capitalPayload(User $seller): array
+    {
+        $available = $this->tableExists('capital_adjustments');
+
+        if (!$available) {
+            return $this->emptyPayload('Capital Adjustments');
+        }
+
+        $entries = \App\Models\CapitalAdjustment::query()
+            ->with(['adjustedBy:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->latest()
+            ->limit(self::MAX_SOURCE_ENTRIES)
+            ->get()
+            ->map(function (\App\Models\CapitalAdjustment $adjustment): array {
+                return $this->entry(
+                    id: "capital-{$adjustment->id}",
+                    category: 'finance',
+                    module: 'accounting',
+                    eventType: 'capital_adjusted',
+                    title: 'Starting Balance Adjusted',
+                    summary: $adjustment->memo ?? 'Starting balance manually adjusted.',
+                    status: 'completed',
+                    severity: 'info',
+                    occurredAt: optional($adjustment->created_at)->toIso8601String(),
+                    actorName: $adjustment->adjustedBy?->name,
+                    actorType: $this->resolveActorType($adjustment->adjustedBy),
+                    subject: 'Base Funds',
+                    amountLabel: $this->formatPeso((float) $adjustment->new_amount),
+                    reference: 'Prev: ' . $this->formatPeso((float) $adjustment->previous_amount),
+                    detailLines: [
+                        'Previous Starting Balance: ' . $this->formatPeso((float) $adjustment->previous_amount),
+                        'New Starting Balance: ' . $this->formatPeso((float) $adjustment->new_amount),
+                    ],
+                    before: [
+                        'base funds' => $this->formatPeso((float) $adjustment->previous_amount),
+                    ],
+                    after: [
+                        'base funds' => $this->formatPeso((float) $adjustment->new_amount),
+                    ],
+                    targetUrl: route('accounting.index'),
+                    targetLabel: 'Open Finance',
+                );
+            });
+
+        return [
+            'label' => 'Capital Adjustments',
+            'available' => true,
+            'count' => \App\Models\CapitalAdjustment::query()
+                ->where('user_id', $seller->id)
+                ->count(),
+            'entries' => $entries,
+        ];
+    }
+
 
     /**
      * @param  array<int, string>  $detailLines
