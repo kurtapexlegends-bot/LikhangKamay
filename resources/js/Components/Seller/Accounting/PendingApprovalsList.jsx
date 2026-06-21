@@ -4,6 +4,26 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
 import { formatDate, formatRole, formatShortMoney, typeTone } from '@/utils/accountingFormatters';
 
+function ListSkeleton() {
+    return (
+        <div className="divide-y divide-stone-100 animate-pulse">
+            {[1, 2, 3].map((n) => (
+                <div key={n} className="px-6 py-5 flex items-center justify-between gap-4">
+                    <div className="flex items-start gap-4 w-2/3">
+                        <div className="h-10 w-10 bg-stone-100 rounded-xl shrink-0" />
+                        <div className="space-y-2 w-full">
+                            <div className="h-3 bg-stone-100 rounded w-1/4" />
+                            <div className="h-4 bg-stone-100 rounded w-3/4" />
+                            <div className="h-3 bg-stone-100 rounded w-1/2" />
+                        </div>
+                    </div>
+                    <div className="w-24 h-9 bg-stone-100 rounded-xl shrink-0" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export default function PendingApprovalsList({
     paginatedPending,
     totalPendingPages,
@@ -12,7 +32,10 @@ export default function PendingApprovalsList({
     onReview,
     filteredCount,
     searchTerm,
-    entryTypeFilter
+    entryTypeFilter,
+    selectedId = null,
+    selectedType = null,
+    isLoading = false
 }) {
     return (
         <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
@@ -26,12 +49,20 @@ export default function PendingApprovalsList({
 
             {/* List Body */}
             <div className="divide-y divide-stone-100">
-                {paginatedPending.length > 0 ? (
-                    paginatedPending.map((item) => (
-                        <div
-                            key={`${item.type}-${item.id}`}
-                            className="group px-6 py-4 transition-colors hover:bg-stone-50/50 lg:flex lg:items-center lg:justify-between lg:gap-4"
-                        >
+                {isLoading ? (
+                    <ListSkeleton />
+                ) : paginatedPending.length > 0 ? (
+                    paginatedPending.map((item) => {
+                        const isSelected = selectedId === item.id && selectedType === item.type;
+                        return (
+                            <div
+                                key={`${item.type}-${item.id}`}
+                                className={`group px-6 py-4 transition-all lg:flex lg:items-center lg:justify-between lg:gap-4 border-l-4 ${
+                                    isSelected
+                                        ? 'bg-clay-50/20 border-l-clay-650'
+                                        : 'hover:bg-stone-50/50 border-l-transparent'
+                                }`}
+                            >
                             <div className="flex items-start gap-4">
                                 <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 ${
                                     item.type === 'payroll'
@@ -91,7 +122,8 @@ export default function PendingApprovalsList({
                                 </button>
                             </div>
                         </div>
-                    ))
+                        );
+                    })
                 ) : (
                     <WorkspaceEmptyState
                         icon={CheckCircle}

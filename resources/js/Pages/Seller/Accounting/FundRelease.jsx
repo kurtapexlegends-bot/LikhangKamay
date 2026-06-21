@@ -15,6 +15,7 @@ import BaseFundsModal from '@/Components/Seller/Accounting/BaseFundsModal';
 import PendingApprovalsList from '@/Components/Seller/Accounting/PendingApprovalsList';
 import TransactionLedgerTable from '@/Components/Seller/Accounting/TransactionLedgerTable';
 import ReleaseRequestModal from '@/Components/Seller/Accounting/ReleaseRequestModal';
+import ReleaseRequestDetails from '@/Components/Seller/Accounting/ReleaseRequestDetails';
 
 export default function FundRelease({ auth, pendingRequests, history, finances }) {
     const { openSidebar } = useSellerWorkspaceShell();
@@ -22,6 +23,18 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     const { flash } = usePage().props;
     const { addToast } = useToast();
     const { canEdit: canEditAccounting, isReadOnly: isAccountingReadOnly } = useSellerModuleAccess('accounting');
+
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const removeStartListener = router.on('start', () => setIsLoading(true));
+        const removeFinishListener = router.on('finish', () => setIsLoading(false));
+
+        return () => {
+            removeStartListener();
+            removeFinishListener();
+        };
+    }, []);
 
     // Parse initial query params for state sync
     const getInitialQueryParam = (param, defaultVal) => {
@@ -115,7 +128,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     useFlashToast(flash, addToast);
 
     const closeReviewModal = () => {
-        setReviewModal((current) => ({ ...current, open: false }));
+        setReviewModal({ open: false, item: null, source: 'pending' });
     };
 
     const resetReviewModal = () => {
@@ -124,7 +137,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     };
 
     const openReviewModal = (item, source = 'pending') => {
-        setReviewModal({ open: true, item, source });
+        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+        setReviewModal({ open: !isDesktop, item, source });
         setRejectReason(item?.rejection_reason || '');
     };
 
@@ -276,34 +290,62 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                     </div>
                 </div>
 
-                {/* Tab content views */}
-                {activeTab === 'pending' && (
-                    <PendingApprovalsList
-                        paginatedPending={pendingRequests?.data || []}
-                        totalPendingPages={pendingRequests?.last_page || 1}
-                        currentPage={pendingRequests?.current_page || 1}
-                        onPageChange={handlePageChange}
-                        onReview={openReviewModal}
-                        filteredCount={pendingRequests?.total || 0}
-                        searchTerm={searchTerm}
-                        entryTypeFilter={entryTypeFilter}
-                    />
-                )}
+                {/* Responsive Split-Pane Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Left Column: List (Takes 7 columns on desktop if item is selected, 12 otherwise) */}
+                    <div className={reviewModal.item ? "lg:col-span-7 space-y-6" : "lg:col-span-12 space-y-6"}>
+                        {activeTab === 'pending' && (
+                            <PendingApprovalsList
+                                paginatedPending={pendingRequests?.data || []}
+                                totalPendingPages={pendingRequests?.last_page || 1}
+                                currentPage={pendingRequests?.current_page || 1}
+                                onPageChange={handlePageChange}
+                                onReview={openReviewModal}
+                                filteredCount={pendingRequests?.total || 0}
+                                searchTerm={searchTerm}
+                                entryTypeFilter={entryTypeFilter}
+                                selectedId={reviewModal.item?.id}
+                                selectedType={reviewModal.item?.type}
+                                isLoading={isLoading}
+                            />
+                        )}
 
-                {activeTab === 'history' && (
-                    <TransactionLedgerTable
-                        paginatedHistory={history?.data || []}
-                        totalHistoryPages={history?.last_page || 1}
-                        currentPage={history?.current_page || 1}
-                        onPageChange={handlePageChange}
-                        onView={openReviewModal}
-                        filteredCount={history?.total || 0}
-                        searchTerm={searchTerm}
-                        entryTypeFilter={entryTypeFilter}
-                    />
-                )}
+                        {activeTab === 'history' && (
+                            <TransactionLedgerTable
+                                paginatedHistory={history?.data || []}
+                                totalHistoryPages={history?.last_page || 1}
+                                currentPage={history?.current_page || 1}
+                                onPageChange={handlePageChange}
+                                onView={openReviewModal}
+                                filteredCount={history?.total || 0}
+                                searchTerm={searchTerm}
+                                entryTypeFilter={entryTypeFilter}
+                                selectedId={reviewModal.item?.id}
+                                selectedType={reviewModal.item?.type}
+                                isLoading={isLoading}
+                            />
+                        )}
+                    </div>
+
+                    {/* Right Column: Sticky Inspector on Desktop */}
+                    {reviewModal.item && (
+                        <div className="hidden lg:block lg:col-span-5 lg:sticky lg:top-6">
+                            <ReleaseRequestDetails
+                                item={reviewModal.item}
+                                source={reviewModal.source}
+                                canEditAccounting={canEditAccounting}
+                                rejectReason={rejectReason}
+                                setRejectReason={setRejectReason}
+                                onApprove={handleApprove}
+                                onReject={handleReject}
+                                reviewProcessing={reviewProcessing}
+                                onClose={closeReviewModal}
+                                inline={true}
+                            />
+                        </div>
+                    )}
+                </div>
             </main>
-
 
             {/* Base Funds Update Modal */}
             <BaseFundsModal
@@ -315,19 +357,21 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                 processing={baseFundsProcessing}
             />
 
-            {/* Release Request details modal drawer */}
-            <ReleaseRequestModal
-                isOpen={reviewModal.open}
-                onClose={closeReviewModal}
-                item={reviewModal.item}
-                source={reviewModal.source}
-                canEditAccounting={canEditAccounting}
-                rejectReason={rejectReason}
-                setRejectReason={setRejectReason}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                reviewProcessing={reviewProcessing}
-            />
+            {/* Release Request details modal drawer - Mobile/Tablet only */}
+            <div className="lg:hidden">
+                <ReleaseRequestModal
+                    isOpen={reviewModal.open}
+                    onClose={closeReviewModal}
+                    item={reviewModal.item}
+                    source={reviewModal.source}
+                    canEditAccounting={canEditAccounting}
+                    rejectReason={rejectReason}
+                    setRejectReason={setRejectReason}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    reviewProcessing={reviewProcessing}
+                />
+            </div>
         </>
     );
 }
