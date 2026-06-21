@@ -1,10 +1,10 @@
-import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
-import { AlertCircle, History, Search, X } from 'lucide-react';
+import { AlertCircle, History, Search, X, LoaderCircle } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import ExportButton from '@/Components/ExportButton';
@@ -24,17 +24,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     const { addToast } = useToast();
     const { canEdit: canEditAccounting, isReadOnly: isAccountingReadOnly } = useSellerModuleAccess('accounting');
 
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        const removeStartListener = router.on('start', () => setIsLoading(true));
-        const removeFinishListener = router.on('finish', () => setIsLoading(false));
-
-        return () => {
-            removeStartListener();
-            removeFinishListener();
-        };
-    }, []);
+    const [isTableShimmering, setIsTableShimmering] = useState(false);
+    const [isSearchLoading, setIsSearchLoading] = useState(false);
 
     // Parse initial query params for state sync
     const getInitialQueryParam = (param, defaultVal) => {
@@ -51,14 +42,35 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     const [reviewProcessing, setReviewProcessing] = useState(null);
     const [searchTerm, setSearchTerm] = useState(() => getInitialQueryParam('search', ''));
     const [entryTypeFilter, setEntryTypeFilter] = useState(() => getInitialQueryParam('type', 'all'));
-    const deferredSearch = useDeferredValue(searchTerm);
+    
+    // Debounce the search input to avoid spamming server requests on every keystroke
+    const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 400);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchTerm]);
 
     // Sync state with URL navigation (e.g. back/forward button)
     useEffect(() => {
         const urlParams = new URLSearchParams(url.includes('?') ? url.substring(url.indexOf('?')) : '');
-        setActiveTab(urlParams.get('tab') || 'pending');
-        setSearchTerm(urlParams.get('search') || '');
-        setEntryTypeFilter(urlParams.get('type') || 'all');
+        const urlTab = urlParams.get('tab') || 'pending';
+        const urlSearch = urlParams.get('search') || '';
+        const urlType = urlParams.get('type') || 'all';
+
+        if (urlTab !== activeTab) setActiveTab(urlTab);
+        if (urlType !== entryTypeFilter) setEntryTypeFilter(urlType);
+
+        // Only sync search term from URL if the search input is not currently focused.
+        // This avoids resetting the user's typing due to in-flight request race conditions.
+        if (document.activeElement?.id !== 'accounting-search' && urlSearch !== searchTerm) {
+            setSearchTerm(urlSearch);
+        }
     }, [url]);
 
     const reload = (newParams) => {
@@ -81,24 +93,37 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
             delete params.page_pending;
         }
 
+        const isSearchUpdate = 'search' in newParams;
+
         router.get(route('accounting.index'), params, {
             preserveState: true,
             preserveScroll: true,
+            onStart: () => {
+                if (isSearchUpdate) {
+                    setIsSearchLoading(true);
+                } else {
+                    setIsTableShimmering(true);
+                }
+            },
+            onFinish: () => {
+                setIsSearchLoading(false);
+                setIsTableShimmering(false);
+            }
         });
     };
 
     useEffect(() => {
         const urlParams = new URLSearchParams(url.includes('?') ? url.substring(url.indexOf('?')) : '');
         const urlSearch = urlParams.get('search') || '';
-        if (deferredSearch !== urlSearch) {
+        if (debouncedSearch !== urlSearch) {
             closeReviewModal();
             reload({
-                search: deferredSearch,
+                search: debouncedSearch,
                 page_pending: 1,
                 page_history: 1,
             });
         }
-    }, [deferredSearch]);
+    }, [debouncedSearch]);
 
     const handleTabChange = (tabName) => {
         setActiveTab(tabName);
@@ -258,8 +283,13 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                 {/* Search & Filter Controls */}
                 <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="relative w-full sm:max-w-sm">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        {isSearchLoading ? (
+                            <LoaderCircle size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-clay-600 animate-spin" />
+                        ) : (
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        )}
                         <input
+                            id="accounting-search"
                             type="text"
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
@@ -323,7 +353,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                                 entryTypeFilter={entryTypeFilter}
                                 selectedId={reviewModal.item?.id}
                                 selectedType={reviewModal.item?.type}
-                                isLoading={isLoading}
+                                isLoading={isTableShimmering}
+                                isSearching={isSearchLoading}
                             />
                         )}
 
@@ -339,7 +370,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                                 entryTypeFilter={entryTypeFilter}
                                 selectedId={reviewModal.item?.id}
                                 selectedType={reviewModal.item?.type}
-                                isLoading={isLoading}
+                                isLoading={isTableShimmering}
+                                isSearching={isSearchLoading}
                             />
                         )}
                     </div>

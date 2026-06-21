@@ -35,7 +35,8 @@ export default function TransactionLedgerTable({
     entryTypeFilter,
     selectedId = null,
     selectedType = null,
-    isLoading = false
+    isLoading = false,
+    isSearching = false
 }) {
     return (
         <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm">
@@ -48,7 +49,7 @@ export default function TransactionLedgerTable({
             </div>
 
             {/* Body */}
-            <div className="divide-y divide-stone-100">
+            <div className={`divide-y divide-stone-100 transition-opacity duration-200 ${isSearching ? 'opacity-50 pointer-events-none' : ''}`}>
                 {isLoading ? (
                     <ListSkeleton />
                 ) : paginatedHistory.length > 0 ? (
