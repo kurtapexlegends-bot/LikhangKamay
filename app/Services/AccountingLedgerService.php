@@ -87,6 +87,8 @@ class AccountingLedgerService
 
     private function buildLedgerQuery(User $seller, string $statusGroup, string $typeFilter, string $searchQuery)
     {
+        $hasSearch = !empty($searchQuery);
+
         $stockQuery = DB::table('stock_requests')
             ->select([
                 'stock_requests.id',
@@ -95,15 +97,18 @@ class AccountingLedgerService
                 'stock_requests.created_at',
                 'stock_requests.updated_at',
                 'stock_requests.total_cost as amount',
-                'users.name as requester_name',
-                'users.role as requester_role',
-                'supplies.name as detail_name',
-                'supplies.category as detail_category',
+                $hasSearch ? 'users.name as requester_name' : DB::raw("NULL as requester_name"),
+                $hasSearch ? 'users.role as requester_role' : DB::raw("NULL as requester_role"),
+                $hasSearch ? 'supplies.name as detail_name' : DB::raw("NULL as detail_name"),
+                $hasSearch ? 'supplies.category as detail_category' : DB::raw("NULL as detail_category"),
                 DB::raw("NULL as order_number")
             ])
-            ->leftJoin('users', 'stock_requests.requested_by_user_id', '=', 'users.id')
-            ->leftJoin('supplies', 'stock_requests.supply_id', '=', 'supplies.id')
             ->where('stock_requests.user_id', $seller->id);
+
+        if ($hasSearch) {
+            $stockQuery->leftJoin('users', 'stock_requests.requested_by_user_id', '=', 'users.id')
+                ->leftJoin('supplies', 'stock_requests.supply_id', '=', 'supplies.id');
+        }
 
         if ($statusGroup === 'pending') {
             $stockQuery->where('stock_requests.status', StockRequest::STATUS_PENDING);
@@ -126,14 +131,17 @@ class AccountingLedgerService
                 'payrolls.created_at',
                 'payrolls.updated_at',
                 'payrolls.total_amount as amount',
-                'users.name as requester_name',
-                'users.role as requester_role',
+                $hasSearch ? 'users.name as requester_name' : DB::raw("NULL as requester_name"),
+                $hasSearch ? 'users.role as requester_role' : DB::raw("NULL as requester_role"),
                 'payrolls.month as detail_name',
                 DB::raw("NULL as detail_category"),
                 DB::raw("NULL as order_number")
             ])
-            ->leftJoin('users', 'payrolls.requested_by_user_id', '=', 'users.id')
             ->where('payrolls.user_id', $seller->id);
+
+        if ($hasSearch) {
+            $payrollQuery->leftJoin('users', 'payrolls.requested_by_user_id', '=', 'users.id');
+        }
 
         if ($statusGroup === 'pending') {
             $payrollQuery->where('payrolls.status', 'Pending');
@@ -210,19 +218,25 @@ class AccountingLedgerService
         $payrollIds = $items->where('type', 'payroll')->pluck('id');
         $orderIds = $items->where('type', 'sale')->pluck('id');
 
-        $stockRequests = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
-            ->whereIn('id', $stockRequestIds)
-            ->get()
-            ->keyBy('id');
+        $stockRequests = $stockRequestIds->isEmpty()
+            ? collect()
+            : StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+                ->whereIn('id', $stockRequestIds)
+                ->get()
+                ->keyBy('id');
 
-        $payrolls = Payroll::with(['items.employee', 'requester:id,name,role', 'user:id,name,role'])
-            ->whereIn('id', $payrollIds)
-            ->get()
-            ->keyBy('id');
+        $payrolls = $payrollIds->isEmpty()
+            ? collect()
+            : Payroll::with(['items.employee', 'requester:id,name,role', 'user:id,name,role'])
+                ->whereIn('id', $payrollIds)
+                ->get()
+                ->keyBy('id');
 
-        $orders = Order::whereIn('id', $orderIds)
-            ->get()
-            ->keyBy('id');
+        $orders = $orderIds->isEmpty()
+            ? collect()
+            : Order::whereIn('id', $orderIds)
+                ->get()
+                ->keyBy('id');
 
         return $items->map(function ($item) use ($stockRequests, $payrolls, $orders, $seller, $currentBalance) {
             if ($item->type === 'stock_request') {
