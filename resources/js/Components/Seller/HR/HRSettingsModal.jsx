@@ -139,7 +139,7 @@ export default function HRSettingsModal({
                     </div>
 
                     {/* Live EEMR rate preview panel */}
-                    <div className="bg-stone-50 p-4.5 rounded-2xl border border-stone-200 text-xs text-stone-700 flex flex-col gap-1.5">
+                    <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200 text-xs text-stone-700 flex flex-col gap-1.5">
                         <span className="text-[10px] font-bold text-stone-400 block uppercase tracking-wider">Live EEMR Rate Preview (Sample Salary: ₱20,000.00)</span>
                         <div className="mt-1 flex flex-wrap items-center justify-between gap-2.5">
                             <span>
