@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Services\StaffAttendanceService;
 use App\Services\SellerEntitlementService;
+use App\Services\PayrollCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,7 @@ class HRController extends Controller
             'staffAccessAudits' => $recentAccessAudits,
             'sellerSettings' => [
                 'overtime_rate' => $seller->overtime_rate ?? 50.00,
+                'overtime_multiplier' => $seller->overtime_multiplier ?? 1.25,
                 'payroll_working_days' => $seller->payroll_working_days ?? 22,
                 'attendance_month_label' => $activePeriod->format('F Y'),
                 'attendance_month_value' => $activePeriod->format('Y-m'),
@@ -717,19 +719,21 @@ class HRController extends Controller
         abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $request->validate([
-            'overtime_rate' => 'required|numeric|min:0',
+            'overtime_rate' => 'nullable|numeric|min:0',
+            'overtime_multiplier' => 'nullable|numeric|min:0.01|max:10',
             'payroll_working_days' => 'required|integer|min:1|max:31',
         ]);
 
         User::where('id', $this->sellerOwnerId())->update([
             'overtime_rate' => $request->overtime_rate,
+            'overtime_multiplier' => $request->overtime_multiplier ?? 1.25,
             'payroll_working_days' => $request->payroll_working_days,
         ]);
 
         return redirect()->back()->with('success', 'Payroll settings updated successfully.');
     }
 
-    public function generatePayroll(Request $request)
+    public function generatePayroll(Request $request, PayrollCalculationService $payrollService)
     {
         abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
@@ -780,7 +784,7 @@ class HRController extends Controller
 
         // DRY RUN: Return calculated results without saving
         if (($validated['action'] ?? 'submit') === 'dry_run') {
-            $calcResults = $this->calculatePayrollItems($selectedItems);
+            $calcResults = $payrollService->calculatePayrollItems($selectedItems, $this->sellerOwner());
             
             return response()->json([
                 'success' => true,
@@ -794,12 +798,11 @@ class HRController extends Controller
         }
 
         try {
-            $payroll = DB::transaction(function () use ($validated, $selectedItems) {
+            $payroll = DB::transaction(function () use ($validated, $selectedItems, $payrollService) {
                 $totalAmount = 0;
                 $employeeCount = count($selectedItems);
                 $seller = $this->sellerOwner();
                 $sellerId = $seller->id;
-                $otRate = $seller->overtime_rate ?? 50.00;
                 $action = $validated['action'] ?? 'submit';
                 $isDraft = $action === 'draft';
 
@@ -815,43 +818,30 @@ class HRController extends Controller
                     'submitted_at' => $isDraft ? null : now(config('app.timezone')),
                 ]));
 
-                $workingDays = $seller->payroll_working_days ?? 22;
-
                 foreach ($selectedItems as $item) {
                     $employee = Employee::where('user_id', $sellerId)->findOrFail($item['employee_id']);
 
-                    $dailyRate = $employee->salary / $workingDays;
-                    $hourlyRate = $dailyRate / 8;
-                    $overtimePay = $item['overtime_hours'] * $otRate;
-                    $absenceDeduction = $item['absences_days'] * $dailyRate;
-                    $undertimeDeduction = $item['undertime_hours'] * $hourlyRate;
-                    $netPay = $employee->salary + $overtimePay - $absenceDeduction - $undertimeDeduction;
-
-                    if ($netPay < 0) {
-                        $netPay = 0;
-                    }
-
-                    $daysWorked = max(0, $workingDays - $item['absences_days']);
+                    $calculated = $payrollService->calculateEmployeeRow($employee, $item, $seller);
 
                     PayrollItem::create(PayrollItem::filterSchemaCompatibleAttributes([
                         'payroll_id' => $payroll->id,
                         'employee_id' => $employee->id,
-                        'base_salary' => $employee->salary,
-                        'days_worked' => round($daysWorked),
-                        'absences_days' => round($item['absences_days']),
-                        'absence_deduction' => $absenceDeduction,
-                        'undertime_hours' => $item['undertime_hours'],
-                        'undertime_deduction' => $undertimeDeduction,
-                        'overtime_hours' => $item['overtime_hours'],
-                        'overtime_pay' => $overtimePay,
+                        'base_salary' => $calculated['base_salary'],
+                        'days_worked' => round($calculated['days_worked']),
+                        'absences_days' => round($calculated['absences_days']),
+                        'absence_deduction' => $calculated['absence_deduction'],
+                        'undertime_hours' => $calculated['undertime_hours'],
+                        'undertime_deduction' => $calculated['undertime_deduction'],
+                        'overtime_hours' => $calculated['overtime_hours'],
+                        'overtime_pay' => $calculated['overtime_pay'],
                         'bonus' => 0,
-                        'net_pay' => $netPay,
+                        'net_pay' => $calculated['net_pay'],
                     ]));
 
-                    $totalAmount += $netPay;
+                    $totalAmount += $calculated['net_pay'];
                 }
 
-                $payroll->update(['total_amount' => $totalAmount]);
+                $payroll->update(['total_amount' => round($totalAmount, 2)]);
 
                 if (!$isDraft) {
                     $this->notifyAccountingOfPayrollRun($payroll, $seller, $validated['month']);
@@ -1258,47 +1248,6 @@ class HRController extends Controller
                 'net_pay' => (float) $lineItems->sum('net_pay'),
             ],
             'line_items' => $lineItems->all(),
-        ];
-    }
-    private function calculatePayrollItems(array $selectedItems): array
-    {
-        $seller = $this->sellerOwner();
-        $sellerId = $seller->id;
-        $otRate = $seller->overtime_rate ?? 50.00;
-        $workingDays = $seller->payroll_working_days ?? 22;
-        
-        $items = [];
-        $totalAmount = 0;
-
-        foreach ($selectedItems as $item) {
-            $employee = Employee::where('user_id', $sellerId)->findOrFail($item['employee_id']);
-
-            $dailyRate = $employee->salary / $workingDays;
-            $hourlyRate = $dailyRate / 8;
-            $overtimePay = $item['overtime_hours'] * $otRate;
-            $absenceDeduction = $item['absences_days'] * $dailyRate;
-            $undertimeDeduction = $item['undertime_hours'] * $hourlyRate;
-            $netPay = max(0, $employee->salary + $overtimePay - $absenceDeduction - $undertimeDeduction);
-
-            $items[] = [
-                'employee_name' => $employee->name,
-                'role' => $employee->role,
-                'base_salary' => $employee->salary,
-                'overtime_pay' => $overtimePay,
-                'deductions' => $absenceDeduction + $undertimeDeduction,
-                'net_pay' => $netPay,
-                'meta' => [
-                    'absences' => $item['absences_days'],
-                    'overtime' => $item['overtime_hours'],
-                    'undertime' => $item['undertime_hours'],
-                ]
-            ];
-            $totalAmount += $netPay;
-        }
-
-        return [
-            'items' => $items,
-            'total_amount' => $totalAmount,
         ];
     }
 }

@@ -142,7 +142,7 @@ export default function PayrollGenerator({
                         <div>
                             <h2 className="text-base font-bold text-stone-900 tracking-tight">Generate Payroll</h2>
                             <p className="mt-1 text-[11px] font-medium text-stone-500">
-                                Period: <span className="font-bold text-stone-700">{data.month}</span> (Standard {sellerSettings.payroll_working_days || 22} Days/Month) - Fixed OT Rate: {formatPrecisePeso(sellerSettings.overtime_rate || 50)}/hr
+                                Period: <span className="font-bold text-stone-700">{data.month}</span> (Standard {sellerSettings.payroll_working_days || 22} Days/Month) - OT Multiplier: {sellerSettings.overtime_multiplier || 1.25}x
                             </p>
                         </div>
                     </div>
@@ -269,7 +269,7 @@ export default function PayrollGenerator({
                                     <th className="px-5 py-3.5">Base Salary</th>
                                     <th className="px-4 py-3.5 w-28 bg-[#FCF3F3] text-red-700 border-l border-[#FCE8E8]" title="Deductions per day (Standard 8-hr shift). Reduces total days worked.">Absences (Days)</th>
                                     <th className="px-4 py-3.5 w-28 bg-orange-50/50 text-orange-700 border-l border-orange-100" title="Deductions per hour. Reduces gross salary based on hourly rate.">Undertime (Hrs)</th>
-                                    <th className="px-4 py-3.5 w-28 bg-[#FCF7F2] text-clay-700 border-l border-[#E7D8C9]" title={`Fixed Rate: ${formatPrecisePeso(sellerSettings.overtime_rate || 50)}/hour`}>Overtime (Hrs)</th>
+                                    <th className="px-4 py-3.5 w-28 bg-[#FCF7F2] text-clay-700 border-l border-[#E7D8C9]" title={`OT Rate = ${sellerSettings.overtime_multiplier || 1.25}x of regular hourly rate`}>Overtime (Hrs)</th>
                                     <th className="px-5 py-3.5 text-right w-[140px] border-l border-stone-100">Net Pay (Est)</th>
                                 </tr>
                             </thead>

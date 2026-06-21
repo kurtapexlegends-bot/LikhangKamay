@@ -366,9 +366,9 @@ export const calculateNetPay = (item, sellerSettings = {}) => {
     const workingDays = sellerSettings.payroll_working_days || 22;
     const dailyRate = item.salary / workingDays;
     const hourlyRate = dailyRate / 8;
-    const otRate = sellerSettings.overtime_rate || 50; 
+    const otMultiplier = sellerSettings.overtime_multiplier || 1.25;
     
-    const otPay = (Number(item.overtime_hours) || 0) * otRate;
+    const otPay = (Number(item.overtime_hours) || 0) * (hourlyRate * otMultiplier);
     const absenceDeduction = (Number(item.absences_days) || 0) * dailyRate;
     const undertimeDeduction = (Number(item.undertime_hours) || 0) * hourlyRate;
     

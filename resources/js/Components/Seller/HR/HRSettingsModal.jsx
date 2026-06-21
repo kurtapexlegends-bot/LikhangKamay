@@ -16,6 +16,7 @@ export default function HRSettingsModal({
 
     const { data, setData, post, processing } = useForm({
         overtime_rate: sellerSettings.overtime_rate || 50.00,
+        overtime_multiplier: sellerSettings.overtime_multiplier || 1.25,
         payroll_working_days: sellerSettings.payroll_working_days || 22,
     });
 
@@ -23,6 +24,7 @@ export default function HRSettingsModal({
         if (isOpen) {
             setData({
                 overtime_rate: sellerSettings.overtime_rate || 50.00,
+                overtime_multiplier: sellerSettings.overtime_multiplier || 1.25,
                 payroll_working_days: sellerSettings.payroll_working_days || 22,
             });
         }
@@ -46,7 +48,7 @@ export default function HRSettingsModal({
                 <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Payroll Settings</h2>
-                        <p className="mt-1 text-[13px] text-gray-500">Adjust the fixed overtime rate and standard working days used in payroll requests.</p>
+                        <p className="mt-1 text-[13px] text-gray-500">Adjust the overtime multiplier and standard working days used in payroll requests.</p>
                     </div>
                     <button
                         type="button"
@@ -61,17 +63,19 @@ export default function HRSettingsModal({
                 {/* Body */}
                 <div className="space-y-4 overflow-y-auto px-6 py-6">
                     <div>
-                        <InputLabel value="Fixed Overtime Rate (PHP/hr)" />
+                        <InputLabel value="Overtime Multiplier (x of hourly rate)" />
                         <input 
                             type="number" 
                             className="w-full rounded-xl border-gray-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500 min-h-[44px]" 
-                            value={data.overtime_rate ?? ''} 
+                            value={data.overtime_multiplier ?? ''} 
                             onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                            onChange={e => setData('overtime_rate', e.target.value.replace(/-/g, ""))} 
+                            onChange={e => setData('overtime_multiplier', e.target.value.replace(/-/g, ""))} 
                             required 
-                            min="0" 
-                            step="any"
+                            min="0.01" 
+                            max="10"
+                            step="0.01"
                         />
+                        <p className="mt-1 text-[11px] text-gray-500">Standard Philippines guideline is typically 1.25x of regular hourly rate.</p>
                     </div>
                     <div>
                         <InputLabel value="Standard Work Days / Month" />

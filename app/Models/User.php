@@ -147,6 +147,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'email_verified_at',
         'last_seen_at',
         'overtime_rate',
+        'overtime_multiplier',
         'payroll_working_days',
         'default_absences',
         'default_undertime',

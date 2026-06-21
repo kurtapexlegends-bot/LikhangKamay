@@ -121,7 +121,7 @@ class AccountingTransparencyTest extends TestCase
                 ->where('pendingPayrolls.0.line_items.0.undertime_hours', 2)
                 ->where('pendingPayrolls.0.line_items.0.undertime_deduction', 250)
                 ->where('pendingPayrolls.0.line_items.0.overtime_hours', 3)
-                ->where('pendingPayrolls.0.line_items.0.overtime_pay', 150)
+                ->where('pendingPayrolls.0.line_items.0.overtime_pay', 468.75)
             );
     }
 
