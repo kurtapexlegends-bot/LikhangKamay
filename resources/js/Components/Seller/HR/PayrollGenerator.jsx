@@ -1,5 +1,5 @@
 import React from 'react';
-import { Banknote, X, Users, Sparkles, ChevronRight, ChevronLeft, Eye, HelpCircle, FileCheck2 } from 'lucide-react';
+import { Banknote, X, Users, ChevronRight, ChevronLeft, HelpCircle, FileCheck2 } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 import axios from 'axios';
 import Modal from '@/Components/Modal';
@@ -9,6 +9,10 @@ import {
     formatPrecisePeso,
     calculateNetPay
 } from '@/utils/hrHelpers';
+
+import RosterSelector from './RosterSelector';
+import AdjustmentsSubForm from './AdjustmentsSubForm';
+import LiveCalculationInspector from './LiveCalculationInspector';
 
 function Stepper({ activeStep, steps }) {
     return (
@@ -292,90 +296,13 @@ export default function PayrollGenerator({
                     
                     {/* Step 1: Select Roster */}
                     {activeStep === 1 && (
-                        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                            <div className="rounded-2xl border border-[#E7D8C9] bg-[#FCF7F2] p-4 text-[11px] leading-relaxed text-clay-700 flex gap-3">
-                                <Sparkles className="shrink-0 mt-0.5 text-clay-600" size={16} />
-                                <div>
-                                    <span className="font-bold">Prefill Sync Active</span>: Absent days, undertime, and overtime are loaded automatically from linked staff work logs for the selected month. Verify the roster selection below to proceed.
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between border-b border-stone-150 pb-2">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400">Available Employees ({data.items.length})</h3>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('items', data.items.map(i => ({ ...i, isSelected: true })))}
-                                        className="text-[10px] font-bold text-clay-650 hover:underline"
-                                    >
-                                        Select All
-                                    </button>
-                                    <span className="text-stone-300">|</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('items', data.items.map(i => ({ ...i, isSelected: false })))}
-                                        className="text-[10px] font-bold text-stone-500 hover:underline"
-                                    >
-                                        Deselect All
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                                {data.items.map((item, index) => {
-                                    const isSelected = item.isSelected;
-                                    return (
-                                        <div
-                                            key={item.employee_id}
-                                            onClick={() => updatePayrollItem(index, 'isSelected', !isSelected)}
-                                            className={`flex items-start gap-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer select-none ${
-                                                isSelected
-                                                    ? 'border-clay-600 bg-[#FCF7F2]/50 shadow-[0_4px_12px_rgba(137,67,45,0.04)]'
-                                                    : 'border-stone-200 bg-white hover:border-stone-250 hover:bg-stone-50/50'
-                                            }`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="mt-0.5 w-4 h-4 text-clay-600 rounded border-stone-300 focus:ring-clay-500 cursor-pointer pointer-events-none"
-                                                checked={isSelected}
-                                                readOnly
-                                            />
-                                            <div className="min-w-0 flex-1">
-                                                <h4 className="text-xs font-bold text-stone-900 truncate">{item.name}</h4>
-                                                <p className="text-[10px] font-bold text-stone-500 mt-0.5">{formatPeso(item.salary)}</p>
-                                                
-                                                <div className="mt-2.5 flex items-center justify-between w-full">
-                                                    {item.has_attendance_source ? (
-                                                        <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-md px-1.5 py-0.5">
-                                                            Prefilled: {item.attendance_days_worked || 0}d worked
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-[9px] font-bold text-stone-500 bg-stone-50 border border-stone-150 rounded-md px-1.5 py-0.5">
-                                                            Manual Entry
-                                                        </span>
-                                                    )}
-                                                    
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (onViewAttendanceLogs) {
-                                                                onViewAttendanceLogs(item.employee_id);
-                                                            }
-                                                        }}
-                                                        className="inline-flex items-center gap-1 text-[9px] font-bold text-clay-700 hover:text-clay-800 transition bg-clay-50 hover:bg-[#FCF7F2] border border-[#E7D8C9] rounded-md px-1.5 py-0.5"
-                                                        title="View attendance logs"
-                                                    >
-                                                        <Eye size={10} />
-                                                        Logs
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        <RosterSelector
+                            items={data.items}
+                            updatePayrollItem={updatePayrollItem}
+                            onSelectAll={() => setData('items', data.items.map(i => ({ ...i, isSelected: true })))}
+                            onDeselectAll={() => setData('items', data.items.map(i => ({ ...i, isSelected: false })))}
+                            onViewAttendanceLogs={onViewAttendanceLogs}
+                        />
                     )}
 
                     {/* Step 2: Adjust & Preview Split-Pane */}
@@ -427,19 +354,17 @@ export default function PayrollGenerator({
                                                             }}
                                                             className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-clay-650 bg-clay-50 px-2.5 py-1 rounded-lg border border-clay-100"
                                                         >
-                                                            <Eye size={12} />
+                                                            <HelpCircle size={12} />
                                                             View Pay
                                                         </button>
                                                     </div>
                                                     
-                                                    {/* Adjustments Sub-Form */}
                                                     <AdjustmentsSubForm item={item} index={index} updateItem={updatePayrollItem} />
                                                 </div>
                                             );
                                         })
                                     ) : (
                                         <div className="space-y-4">
-                                            {/* Employee picker for inspector */}
                                             <div className="bg-white p-3 rounded-2xl border border-stone-200 flex items-center justify-between">
                                                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wide">Select Staff:</span>
                                                 <select
@@ -642,202 +567,5 @@ export default function PayrollGenerator({
                 </div>
             </form>
         </Modal>
-    );
-}
-
-/* Subcomponent for entering numeric hours and days adjustments */
-function AdjustmentsSubForm({ item, index, updateItem }) {
-    return (
-        <div className="grid grid-cols-2 gap-4">
-            {/* Time-Off Adjustments */}
-            <div className="space-y-3 bg-stone-50/50 p-3.5 rounded-2xl border border-stone-150">
-                <span className="text-[9px] font-bold text-stone-400 block uppercase tracking-wider">Leave & Absence Days</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                        <label className="text-[10px] font-bold text-red-650 block mb-1 uppercase tracking-wider">Unpaid Absences</label>
-                        <input
-                            type="number"
-                            className="w-full rounded-xl border border-red-200 bg-white p-2 text-xs font-bold text-red-900 text-center shadow-none focus:border-red-500 focus:ring-red-500 min-h-[40px]"
-                            value={item.absences_days ?? ''}
-                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                            onChange={(e) => updateItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                            min="0" max="31" step="0.5"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-bold text-emerald-650 block mb-1 uppercase tracking-wider">Paid Leaves</label>
-                        <input
-                            type="number"
-                            className="w-full rounded-xl border border-emerald-200 bg-white p-2 text-xs font-bold text-emerald-900 text-center shadow-none focus:border-emerald-500 focus:ring-emerald-500 min-h-[40px]"
-                            value={item.paid_leave_days ?? ''}
-                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                            onChange={(e) => updateItem(index, 'paid_leave_days', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                            min="0" max="31" step="0.5"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Overtime & Undertime Adjustments */}
-            <div className="space-y-3 bg-[#FCF7F2]/40 p-3.5 rounded-2xl border border-[#E7D8C9]/60">
-                <span className="text-[9px] font-bold text-clay-600 block uppercase tracking-wider">Hourly Adjustments</span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    <div className="col-span-1">
-                        <label className="text-[10px] font-bold text-orange-650 block mb-1 uppercase tracking-wider truncate" title="Undertime Hours">Undertime</label>
-                        <input
-                            type="number"
-                            className="w-full rounded-xl border border-orange-200 bg-white p-2 text-xs font-bold text-orange-900 text-center shadow-none focus:border-orange-500 focus:ring-orange-500 min-h-[40px]"
-                            value={item.undertime_hours ?? ''}
-                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                            onChange={(e) => updateItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                            min="0" step="0.5"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Regular OT Hours">Reg OT</label>
-                        <input
-                            type="number"
-                            className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-xs font-bold text-clay-950 text-center shadow-none focus:border-clay-500 focus:ring-clay-500 min-h-[40px]"
-                            value={item.overtime_hours ?? ''}
-                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                            onChange={(e) => updateItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                            min="0" step="0.5"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Rest Day OT Hours">Rest OT</label>
-                        <input
-                            type="number"
-                            className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-xs font-bold text-clay-950 text-center shadow-none focus:border-clay-500 focus:ring-clay-500 min-h-[40px]"
-                            value={item.rest_day_ot_hours ?? ''}
-                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                            onChange={(e) => updateItem(index, 'rest_day_ot_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                            min="0" step="0.5"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Holiday OT Hours">Hol OT</label>
-                        <input
-                            type="number"
-                            className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-xs font-bold text-clay-950 text-center shadow-none focus:border-clay-500 focus:ring-clay-500 min-h-[40px]"
-                            value={item.holiday_ot_hours ?? ''}
-                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                            onChange={(e) => updateItem(index, 'holiday_ot_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                            min="0" step="0.5"
-                        />
-                    </div>
-                </div>
-                <p className="text-[8px] text-stone-500 mt-1">Hint: Enter hours as decimals (e.g. 1.5 = 1 hour 30 mins, 2.25 = 2 hours 15 mins)</p>
-            </div>
-        </div>
-    );
-}
-
-/* Subcomponent for live calculations inspector */
-function LiveCalculationInspector({ item, breakdown, settings }) {
-    if (!item || !breakdown) return null;
-
-    const methodLabel = settings.payroll_factor_method === '261' 
-        ? '5-Day Factor' 
-        : settings.payroll_factor_method === '313' 
-        ? '6-Day Factor' 
-        : `Custom divisor (${settings.payroll_working_days || 22}d)`;
-
-    return (
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm space-y-4">
-            <div className="border-b border-stone-100 pb-3 flex justify-between items-center">
-                <div>
-                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest block">Reviewing Wages</span>
-                    <span className="font-bold text-xs text-stone-900 block mt-0.5">{item.name}</span>
-                </div>
-                <span className="text-[9px] font-bold text-clay-700 bg-clay-50 border border-clay-100 px-2 py-0.5 rounded uppercase">
-                    Live Audit
-                </span>
-            </div>
-
-            {/* Calculations Info */}
-            <div className="space-y-3">
-                <div className="space-y-2">
-                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Base Rates ({methodLabel})</span>
-                    <div className="bg-stone-50 p-3 rounded-xl border border-stone-100 text-[11px] space-y-1.5">
-                        <div className="flex justify-between">
-                            <span className="text-stone-500">Divisor Formula:</span>
-                            <span className="font-mono text-stone-800">{breakdown.formulaText}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-stone-200/40 pb-1.5 mb-1.5">
-                            <span className="text-stone-500">Resolved Daily Rate:</span>
-                            <span className="font-bold text-stone-900">{formatPrecisePeso(breakdown.dailyRate)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-stone-500">Hourly Rate Divisor:</span>
-                            <span className="text-stone-850">Daily Rate / 8 hrs</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-stone-500">Resolved Hourly Rate:</span>
-                            <span className="font-bold text-stone-900">{formatPrecisePeso(breakdown.hourlyRate)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Overtime Premiums (Multipliers)</span>
-                    <div className="bg-[#FCF7F2]/70 p-3 rounded-xl border border-[#E7D8C9]/50 text-[11px] space-y-1.5">
-                        <div className="flex justify-between">
-                            <span className="text-stone-500">Regular OT Rate ({settings.overtime_multiplier || 1.25}x):</span>
-                            <span className="font-semibold text-stone-800">{formatPrecisePeso(breakdown.regularOtRate)}/hr</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-stone-500">Rest Day OT Rate ({settings.rest_day_ot_multiplier || 1.69}x):</span>
-                            <span className="font-semibold text-stone-800">{formatPrecisePeso(breakdown.restDayOtRate)}/hr</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-stone-500">Holiday OT Rate ({settings.holiday_ot_multiplier || 2.60}x):</span>
-                            <span className="font-semibold text-stone-800">{formatPrecisePeso(breakdown.holidayOtRate)}/hr</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="border-t border-stone-100 pt-3 space-y-2">
-                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Calculation Summary</span>
-                    <div className="space-y-2">
-                        <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-150 flex justify-between items-center">
-                            <span className="text-[10px] text-stone-550 font-bold uppercase tracking-wider">Monthly Salary</span>
-                            <span className="text-xs font-bold text-stone-700">{formatPeso(item.salary)}</span>
-                        </div>
-                        
-                        <div className="bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-100 flex justify-between items-start">
-                            <div>
-                                <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Overtime Pay</span>
-                                <div className="text-[9px] text-stone-400 mt-0.5 space-y-0.5">
-                                    {(Number(item.overtime_hours) || 0) > 0 && <div>Reg: {item.overtime_hours}h x {formatPrecisePeso(breakdown.regularOtRate)}</div>}
-                                    {(Number(item.rest_day_ot_hours) || 0) > 0 && <div>Rest: {item.rest_day_ot_hours}h x {formatPrecisePeso(breakdown.restDayOtRate)}</div>}
-                                    {(Number(item.holiday_ot_hours) || 0) > 0 && <div>Hol: {item.holiday_ot_hours}h x {formatPrecisePeso(breakdown.holidayOtRate)}</div>}
-                                </div>
-                            </div>
-                            <span className="text-xs font-bold text-emerald-700 shrink-0">+{formatPrecisePeso(breakdown.totalOtPay)}</span>
-                        </div>
-
-                        <div className="bg-red-50/50 p-2.5 rounded-xl border border-red-100 flex justify-between items-start">
-                            <div>
-                                <span className="text-[10px] text-red-700 font-bold uppercase tracking-wider">Deductions</span>
-                                <div className="text-[9px] text-stone-400 mt-0.5 space-y-0.5">
-                                    {(Number(item.absences_days) || 0) > 0 && <div>Absence: {item.absences_days}d x {formatPrecisePeso(breakdown.dailyRate)}</div>}
-                                    {(Number(item.undertime_hours) || 0) > 0 && <div>Undertime: {item.undertime_hours}h x {formatPrecisePeso(breakdown.hourlyRate)}</div>}
-                                </div>
-                            </div>
-                            <span className="text-xs font-bold text-red-700 shrink-0">-{formatPrecisePeso(breakdown.absenceDeduction + breakdown.undertimeDeduction)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-stone-900 text-white p-3 rounded-xl flex items-center justify-between shadow-sm">
-                    <div>
-                        <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest block">Estimated Net Salary</span>
-                        <span className="text-[9px] text-stone-300 font-semibold block mt-0.5">Salary + OT - Deductions</span>
-                    </div>
-                    <span className="font-bold text-base text-clay-400 shrink-0">{formatPrecisePeso(breakdown.net)}</span>
-                </div>
-            </div>
-        </div>
     );
 }

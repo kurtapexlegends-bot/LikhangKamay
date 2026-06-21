@@ -187,15 +187,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 />
             </main>
 
-            <AttendanceCalendarModal
-                employee={activeAttendanceEmployee}
-                selectedDate={selectedAttendanceDate}
-                onSelectDate={setSelectedAttendanceDate}
-                onClose={() => setAttendanceModalEmployee(null)}
-                sellerSettings={sellerSettings}
-                onMonthChange={handleMonthChange}
-            />
-
             <EmployeeFormModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -259,7 +250,14 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 confirmColor="bg-red-600 hover:bg-red-700"
             />
 
-
+            <AttendanceCalendarModal
+                employee={activeAttendanceEmployee}
+                selectedDate={selectedAttendanceDate}
+                onSelectDate={setSelectedAttendanceDate}
+                onClose={() => setAttendanceModalEmployee(null)}
+                sellerSettings={sellerSettings}
+                onMonthChange={handleMonthChange}
+            />
         </>
     );
 }
