@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
-
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Employee;
 use App\Models\Payroll;
-use App\Models\PayrollItem;
 use App\Models\StaffAccessAudit;
 use App\Models\User;
-use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Services\StaffAttendanceService;
 use App\Services\SellerEntitlementService;
-use App\Services\PayrollCalculationService;
+use App\Services\HR\PayrollCalculatorService;
+use App\Actions\Seller\HR\ProvisionStaffAccount;
+use App\Support\HRWorkflowHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -28,8 +27,11 @@ class HRController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(Request $request, SellerEntitlementService $entitlementService, StaffAttendanceService $attendanceService): \Inertia\Response
-    {
+    public function index(
+        Request $request,
+        SellerEntitlementService $entitlementService,
+        StaffAttendanceService $attendanceService
+    ): \Inertia\Response {
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         /** @var \App\Models\User $actor */
@@ -47,18 +49,18 @@ class HRController extends Controller
 
         $activePeriod = $parsedMonth ?: now(config('app.timezone'));
 
-        $employeeRecords = $this->getEmployeeRecordsWithLogin($seller);
+        $employeeRecords = HRWorkflowHelper::getEmployeeRecordsWithLogin($seller);
         $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller, $parsedMonth);
-        $employees = $this->transformEmployeeRecords($employeeRecords, $attendanceSummaries);
+        $employees = $attendanceService->transformEmployeeRecords($employeeRecords, $attendanceSummaries);
 
         $payrolls = Payroll::with('requester:id,name')
             ->where('user_id', $seller->id)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        $supportsProvisioning = $this->supportsStaffProvisioningSchema();
-        $canEditHrRecords = $this->canEditHrRecords($actor);
-        $recentAccessAudits = $this->getRecentAccessAudits($seller);
+        $supportsProvisioning = HRWorkflowHelper::supportsStaffProvisioningSchema();
+        $canEditHrRecords = HRWorkflowHelper::canEditHrRecords($actor);
+        $recentAccessAudits = HRWorkflowHelper::getRecentAccessAudits($seller);
 
         return Inertia::render('Seller/HR/HR', [
             'staff' => $employees,
@@ -80,169 +82,23 @@ class HRController extends Controller
                 'canManageStaffAccounts' => $actor->canUpdateStaffAccounts() && $supportsProvisioning,
                 'canCreateStaffAccounts' => $actor->canCreateStaffAccounts() && $supportsProvisioning,
                 'canDeleteStaffAccounts' => $actor->canDeleteStaffAccounts() && $supportsProvisioning,
-                'rolePresets' => $this->rolePresetOptions($entitlementService),
-                'userLevels' => $this->userLevelOptions(),
-                'availableModules' => $this->moduleOptions($entitlementService),
+                'rolePresets' => HRWorkflowHelper::rolePresetOptions($entitlementService),
+                'userLevels' => HRWorkflowHelper::userLevelOptions(),
+                'availableModules' => HRWorkflowHelper::moduleOptions($entitlementService),
                 'requiresStaffSchemaUpdate' => !$supportsProvisioning,
             ],
         ]);
     }
 
-    private function getEmployeeRecordsWithLogin(User $seller)
-    {
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
-        $employeeQuery = Employee::query()
-            ->where('user_id', $seller->id)
-            ->orderBy('created_at', 'desc');
-
-        if ($supportsEmployeeLoginLinks) {
-            $loginAccountColumns = array_values(array_filter([
-                'id',
-                'name',
-                'email',
-                'role',
-                'avatar',
-                'updated_at',
-                'email_verified_at',
-                'employee_id',
-                'staff_plan_suspended_at',
-                Schema::hasColumn('users', 'must_change_password') ? 'must_change_password' : null,
-                Schema::hasColumn('users', 'staff_role_preset_key') ? 'staff_role_preset_key' : null,
-                Schema::hasColumn('users', 'staff_module_permissions') ? 'staff_module_permissions' : null,
-            ]));
-
-            $employeeQuery->with([
-                'loginAccount' => fn($query) => $query->select($loginAccountColumns),
-            ]);
-        }
-
-        return $employeeQuery->get();
-    }
-
-    private function transformEmployeeRecords(\Illuminate\Support\Collection $employeeRecords, array $attendanceSummaries)
-    {
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
-        $supportsMustChangePassword = Schema::hasColumn('users', 'must_change_password');
-        $supportsRolePresetKey = Schema::hasColumn('users', 'staff_role_preset_key');
-        $supportsStaffModulePermissions = Schema::hasColumn('users', 'staff_module_permissions');
-
-        return $employeeRecords->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
-            $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
-            $attendanceSummary = $attendanceSummaries[$employee->id] ?? [
-                'current_state' => 'manual',
-                'latest_action' => null,
-                'today_first_clock_in' => null,
-                'days_worked' => 0,
-                'attended_days' => 0,
-                'absences_days' => 0,
-                'undertime_hours' => 0,
-                'overtime_hours' => 0,
-                'worked_minutes' => 0,
-                'has_attendance_source' => false,
-                'open_session' => false,
-                'month_label' => $this->attendanceMonthLabel(),
-                'calendar_days' => [],
-            ];
-
-            return [
-                'id' => $employee->id,
-                'employee_id' => $employee->employee_id,
-                'name' => $employee->name,
-                'role' => $employee->role,
-                'salary' => $employee->salary,
-                'status' => $employee->status,
-                'join_date' => $employee->join_date,
-                'has_login_account' => $supportsEmployeeLoginLinks && (bool) $loginAccount,
-                'login_account' => $loginAccount ? [
-                    'id' => $loginAccount->id,
-                    'name' => $loginAccount->name,
-                    'email' => $loginAccount->email,
-                    'avatar' => $loginAccount->avatar,
-                    'updated_at' => $loginAccount->updated_at,
-                    'workspace_access_enabled' => $loginAccount->isWorkspaceAccessEnabled(),
-                    'plan_workspace_suspended' => $loginAccount->isPlanWorkspaceSuspended(),
-                    'is_verified' => (bool) $loginAccount->email_verified_at,
-                    'must_change_password' => $supportsMustChangePassword ? (bool) $loginAccount->must_change_password : false,
-                    'user_level' => $loginAccount->getStaffUserLevel(),
-                    'staff_access_permission_level' => $loginAccount->getStaffAccessPermissionLevel(),
-                    'role_preset_key' => $supportsRolePresetKey ? ($loginAccount->staff_role_preset_key ?: 'custom') : 'custom',
-                    'module_permissions' => $supportsStaffModulePermissions ? User::stripStaffControlFlags((array) $loginAccount->staff_module_permissions) : [],
-                ] : null,
-                'attendance' => [
-                    'current_state' => $attendanceSummary['current_state'],
-                    'latest_action' => $attendanceSummary['latest_action'],
-                    'today_first_clock_in' => $attendanceSummary['today_first_clock_in'],
-                    'days_worked' => $attendanceSummary['days_worked'],
-                    'worked_minutes' => $attendanceSummary['worked_minutes'],
-                    'has_attendance_source' => $attendanceSummary['has_attendance_source'],
-                    'open_session' => $attendanceSummary['open_session'],
-                    'month_label' => $attendanceSummary['month_label'],
-                    'calendar_days' => $attendanceSummary['calendar_days'],
-                ],
-                'payroll_prefill' => [
-                    'absences_days' => $attendanceSummary['absences_days'],
-                    'undertime_hours' => $attendanceSummary['undertime_hours'],
-                    'overtime_hours' => $attendanceSummary['overtime_hours'],
-                    'days_worked' => $attendanceSummary['days_worked'],
-                ],
-            ];
-        });
-    }
-
-    private function getRecentAccessAudits(User $seller)
-    {
-        if (!$this->supportsStaffAccessAuditSchema()) {
-            return [];
-        }
-
-        return StaffAccessAudit::query()
-            ->with([
-                'actor:id,name,avatar',
-                'staffUser:id,name,email,avatar',
-                'employee:id,name,role',
-            ])
-            ->where('seller_owner_id', $seller->id)
-            ->latest()
-            ->limit(8)
-            ->get()
-            ->map(fn (StaffAccessAudit $audit) => [
-                'id' => $audit->id,
-                'event' => $audit->event,
-                'summary' => $audit->summary,
-                'details' => $audit->details ?? [],
-                'created_at' => optional($audit->created_at)?->toIso8601String(),
-                'actor' => $audit->actor ? [
-                    'id' => $audit->actor->id,
-                    'name' => $audit->actor->name,
-                    'avatar' => $audit->actor->avatar,
-                ] : null,
-                'staff_user' => $audit->staffUser ? [
-                    'id' => $audit->staffUser->id,
-                    'name' => $audit->staffUser->name,
-                    'email' => $audit->staffUser->email,
-                    'avatar' => $audit->staffUser->avatar,
-                ] : null,
-                'employee' => $audit->employee ? [
-                    'id' => $audit->employee->id,
-                    'name' => $audit->employee->name,
-                    'role' => $audit->employee->role,
-                ] : null,
-            ])
-            ->values()
-            ->all();
-    }
-
-    protected function attendanceMonthLabel(): string
-    {
-        return now(config('app.timezone'))->format('F Y');
-    }
-
-    public function store(Request $request, SellerEntitlementService $entitlementService)
-    {
+    public function store(
+        Request $request,
+        SellerEntitlementService $entitlementService,
+        ProvisionStaffAccount $provisioner
+    ) {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
 
-        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
 
         $request->merge([
             'name' => trim((string) $request->input('name')),
@@ -267,7 +123,7 @@ class HRController extends Controller
             ]);
         } elseif ($request->boolean('create_login_account')) {
             $request->merge([
-                'staff_access_permission_level' => $this->resolveRequestedStaffAccessPermissionLevel($request),
+                'staff_access_permission_level' => HRWorkflowHelper::resolveRequestedStaffAccessPermissionLevel($request),
             ]);
         }
 
@@ -288,7 +144,7 @@ class HRController extends Controller
         ];
 
         if ($request->boolean('create_login_account')) {
-            if (!$this->supportsStaffProvisioningSchema()) {
+            if (!HRWorkflowHelper::supportsStaffProvisioningSchema()) {
                 return back()
                     ->withErrors([
                         'create_login_account' => 'Staff login provisioning needs the latest database migration before it can be used.',
@@ -314,70 +170,19 @@ class HRController extends Controller
         ]);
 
         $supportedModules = $entitlementService->getSupportedStaffModules();
-        $staffAccount = null;
-        $employee = null;
-
         $employeeId = $request->input('employee_id');
-        if (empty($employeeId)) {
-            do {
-                $employeeId = 'EMP-' . rand(100000, 900000);
-            } while (Employee::where('user_id', $sellerId)->where('employee_id', $employeeId)->exists());
-        }
 
-        DB::transaction(function () use (&$staffAccount, &$employee, $validated, $sellerId, $actor, $supportedModules, $employeeId) {
-            $employee = Employee::create([
-                'user_id' => $sellerId,
-                'employee_id' => $employeeId,
-                'name' => $validated['name'],
-                'role' => $validated['role'],
-                'salary' => $validated['salary'],
-                'join_date' => now(),
-                'status' => 'Active',
-            ]);
-
-            if (!($validated['create_login_account'] ?? false)) {
-                return;
-            }
-
-            $modulePermissions = $this->normalizeRequestedModuleOverrides(
-                $validated['module_overrides'] ?? [],
-                $supportedModules,
-                $validated['staff_role_preset_key'],
-                $validated['staff_access_permission_level'] ?? null
-            );
-            $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, true);
-            $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
-            $modulePermissions = User::withStaffAccessPermissionLevelFlag(
-                $modulePermissions,
-                data_get($modulePermissions, 'hr')
-            );
-            $modulePermissions = User::withManageStaffAccountsFlag(
-                $modulePermissions,
-                data_get($modulePermissions, 'hr') === User::STAFF_ACCESS_PERMISSION_CAN_EDIT
-            );
-
-            $staffAccount = User::create([
-                'name' => $employee->name,
-                'email' => $validated['email'],
-                'password' => $validated['default_password'],
-                'role' => 'staff',
-                'seller_owner_id' => $sellerId,
-                'staff_role_preset_key' => $validated['staff_role_preset_key'],
-                'staff_module_permissions' => $modulePermissions,
-                'must_change_password' => true,
-                'created_by_user_id' => $actor->id,
-                'employee_id' => $employee->id,
-                'email_verified_at' => null,
-            ]);
-        });
+        $result = $provisioner->create($validated, $supportedModules, $seller, $actor, $employeeId);
+        $employee = $result['employee'];
+        $staffAccount = $result['staffAccount'];
 
         if ($staffAccount && $employee instanceof Employee) {
-            $this->recordStaffAccessAudit($seller, $actor, 'login_created', $employee, $staffAccount, [
+            HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, 'login_created', $employee, $staffAccount, [
                 'changes' => [
                     'Created seller portal login',
                     'Assigned module-specific access levels',
                 ],
-                'after' => $this->buildStaffAccessSnapshot($staffAccount),
+                'after' => HRWorkflowHelper::buildStaffAccessSnapshot($staffAccount),
             ]);
 
             try {
@@ -402,7 +207,7 @@ class HRController extends Controller
     {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
-        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -414,7 +219,7 @@ class HRController extends Controller
 
         $employee = $employeeQuery->firstOrFail();
         $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
-        $linkedLoginSnapshot = $linkedLogin ? $this->buildStaffAccessSnapshot($linkedLogin) : null;
+        $linkedLoginSnapshot = $linkedLogin ? HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin) : null;
 
         if ($linkedLogin && !$actor->canDeleteStaffAccounts()) {
             abort(403, 'Only the shop owner or a user with editable People & Payroll access can remove staff login accounts.');
@@ -429,7 +234,7 @@ class HRController extends Controller
         });
 
         if ($linkedLoginSnapshot !== null) {
-            $this->recordStaffAccessAudit($seller, $actor, 'login_removed', $employee, null, [
+            HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, 'login_removed', $employee, null, [
                 'changes' => ['Removed seller portal login'],
                 'before' => $linkedLoginSnapshot,
             ]);
@@ -438,11 +243,15 @@ class HRController extends Controller
         return redirect()->back();
     }
 
-    public function update(Request $request, int $id, SellerEntitlementService $entitlementService)
-    {
+    public function update(
+        Request $request,
+        int $id,
+        SellerEntitlementService $entitlementService,
+        ProvisionStaffAccount $provisioner
+    ) {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
-        abort_unless($this->canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
         $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -454,12 +263,13 @@ class HRController extends Controller
 
         $employee = $employeeQuery->firstOrFail();
         $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
-        $supportsProvisioning = $this->supportsStaffProvisioningSchema();
+        $supportsProvisioning = HRWorkflowHelper::supportsStaffProvisioningSchema();
         $canManageLoginSettings = $actor->canUpdateStaffAccounts() && $supportsProvisioning;
         $canCreateLoginSettings = $actor->canCreateStaffAccounts() && $supportsProvisioning;
         $wantsLoginAccount = $linkedLogin
             ? ($canManageLoginSettings ? $request->boolean('create_login_account', $linkedLogin->isWorkspaceAccessEnabled()) : $linkedLogin->isWorkspaceAccessEnabled())
             : $request->boolean('create_login_account');
+
         if ($linkedLogin && $request->has('create_login_account') && !$canManageLoginSettings) {
             abort(403, 'Only the shop owner or a user with editable People & Payroll access can update seller login access.');
         }
@@ -493,7 +303,7 @@ class HRController extends Controller
             ]);
         } elseif ($request->boolean('create_login_account') || $linkedLogin) {
             $request->merge([
-                'staff_access_permission_level' => $this->resolveRequestedStaffAccessPermissionLevel($request),
+                'staff_access_permission_level' => HRWorkflowHelper::resolveRequestedStaffAccessPermissionLevel($request),
             ]);
         }
 
@@ -537,119 +347,33 @@ class HRController extends Controller
         ]);
 
         $supportedModules = $entitlementService->getSupportedStaffModules();
-
         $employeeId = $request->input('employee_id');
-        if ($employee->employee_id) {
-            $employeeId = $employee->employee_id;
-        } elseif (empty($employeeId)) {
-            do {
-                $employeeId = 'EMP-' . rand(100000, 900000);
-            } while (Employee::where('user_id', $sellerId)->where('employee_id', $employeeId)->exists());
-        }
-        $sendVerification = false;
-        $createdLogin = false;
-        $emailChanged = false;
-        $passwordReset = false;
-        $workspaceSuspended = false;
-        $workspaceRestored = false;
-        $auditBefore = $linkedLogin ? $this->buildStaffAccessSnapshot($linkedLogin) : null;
-        $auditAfter = null;
+
+        $auditBefore = $linkedLogin ? HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin) : null;
+
+        $result = $provisioner->update(
+            $employee,
+            $validated,
+            $supportedModules,
+            $seller,
+            $actor,
+            $linkedLogin,
+            $shouldManageLoginSettings,
+            $wantsLoginAccount,
+            $employeeId
+        );
+
+        $employee = $result['employee'];
+        $linkedLogin = $result['linkedLogin'];
+        $sendVerification = $result['sendVerification'];
+        $createdLogin = $result['createdLogin'];
+        $emailChanged = $result['emailChanged'];
+        $passwordReset = $result['passwordReset'];
+        $workspaceSuspended = $result['workspaceSuspended'];
+        $workspaceRestored = $result['workspaceRestored'];
+        $auditAfter = $result['auditAfter'];
+
         $auditChanges = [];
-
-        DB::transaction(function () use ($employee, &$linkedLogin, $validated, $shouldManageLoginSettings, $supportedModules, $wantsLoginAccount, &$sendVerification, &$createdLogin, &$emailChanged, &$passwordReset, &$workspaceSuspended, &$workspaceRestored, &$auditAfter, $actor, $employeeId) {
-            $employee->update([
-                'employee_id' => $employeeId,
-                'name' => trim($validated['name']),
-                'role' => trim($validated['role']),
-                'salary' => $validated['salary'],
-            ]);
-
-            if (!$shouldManageLoginSettings) {
-                if ($linkedLogin) {
-                    $linkedLogin->update([
-                        'name' => trim($validated['name']),
-                    ]);
-                }
-
-                return;
-            }
-
-            if (!$wantsLoginAccount) {
-                if (!$linkedLogin) {
-                    return;
-                }
-            }
-
-            $modulePermissions = $this->normalizeRequestedModuleOverrides(
-                $validated['module_overrides'] ?? [],
-                $supportedModules,
-                $validated['staff_role_preset_key'],
-                $validated['staff_access_permission_level'] ?? null
-            );
-            $modulePermissions = User::withWorkspaceAccessFlag($modulePermissions, $wantsLoginAccount);
-            $modulePermissions = User::withStaffUserLevelFlag($modulePermissions, $validated['staff_user_level'] ?? null);
-            $modulePermissions = User::withStaffAccessPermissionLevelFlag(
-                $modulePermissions,
-                data_get($modulePermissions, 'hr')
-            );
-            $modulePermissions = User::withManageStaffAccountsFlag(
-                $modulePermissions,
-                data_get($modulePermissions, 'hr') === User::STAFF_ACCESS_PERMISSION_CAN_EDIT
-            );
-
-            if ($linkedLogin) {
-                $previousWorkspaceAccess = $linkedLogin->isWorkspaceAccessEnabled();
-                $emailChanged = $linkedLogin->email !== $validated['email'];
-
-                $updatePayload = [
-                    'name' => trim($validated['name']),
-                    'email' => $validated['email'],
-                    'staff_role_preset_key' => $validated['staff_role_preset_key'],
-                    'staff_module_permissions' => $modulePermissions,
-                ];
-
-                if ($emailChanged) {
-                    $updatePayload['email_verified_at'] = null;
-                    $sendVerification = true;
-                }
-
-                if (!empty($validated['default_password'])) {
-                    $updatePayload['password'] = $validated['default_password'];
-                    $updatePayload['must_change_password'] = true;
-                    $passwordReset = true;
-                }
-
-                $linkedLogin->update($updatePayload);
-                $workspaceSuspended = $previousWorkspaceAccess && !$wantsLoginAccount;
-                $workspaceRestored = !$previousWorkspaceAccess && $wantsLoginAccount;
-                $linkedLogin->refresh();
-                $auditAfter = $this->buildStaffAccessSnapshot($linkedLogin);
-                return;
-            }
-
-            if (!$wantsLoginAccount) {
-                return;
-            }
-
-            $linkedLogin = User::create([
-                'name' => $employee->name,
-                'email' => $validated['email'],
-                'password' => $validated['default_password'],
-                'role' => 'staff',
-                'seller_owner_id' => $this->sellerOwnerId(),
-                'staff_role_preset_key' => $validated['staff_role_preset_key'],
-                'staff_module_permissions' => $modulePermissions,
-                'must_change_password' => true,
-                'created_by_user_id' => $actor->id,
-                'employee_id' => $employee->id,
-                'email_verified_at' => null,
-            ]);
-
-            $sendVerification = true;
-            $createdLogin = true;
-            $auditAfter = $this->buildStaffAccessSnapshot($linkedLogin);
-        });
-
         if ($createdLogin) {
             $auditChanges[] = 'Created seller portal login';
         }
@@ -667,7 +391,7 @@ class HRController extends Controller
         }
         if ($auditBefore !== null && $auditAfter !== null) {
             if (($auditBefore['permission_level'] ?? null) !== ($auditAfter['permission_level'] ?? null)) {
-                $auditChanges[] = 'Changed People & Payroll access to ' . $this->permissionLevelLabel($auditAfter['permission_level'] ?? null);
+                $auditChanges[] = 'Changed People & Payroll access to ' . HRWorkflowHelper::permissionLevelLabel($auditAfter['permission_level'] ?? null);
             }
             if (($auditBefore['role_preset_key'] ?? null) !== ($auditAfter['role_preset_key'] ?? null)) {
                 $auditChanges[] = 'Changed capability template';
@@ -687,7 +411,7 @@ class HRController extends Controller
                     ? 'login_suspended'
                     : ($workspaceRestored ? 'login_restored' : 'login_updated'));
 
-            $this->recordStaffAccessAudit($seller, $actor, $event, $employee, $linkedLogin, [
+            HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, $event, $employee, $linkedLogin, [
                 'changes' => array_values(array_unique($auditChanges)),
                 'before' => $auditBefore,
                 'after' => $auditAfter,
@@ -708,7 +432,7 @@ class HRController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', $this->buildEmployeeUpdateSuccessMessage(
+        return redirect()->back()->with('success', HRWorkflowHelper::buildEmployeeUpdateSuccessMessage(
             $createdLogin,
             $workspaceSuspended,
             $workspaceRestored,
@@ -719,7 +443,7 @@ class HRController extends Controller
 
     public function updateSettings(Request $request)
     {
-        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
+        abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $request->validate([
             'overtime_rate' => 'nullable|numeric|min:0',
@@ -742,9 +466,9 @@ class HRController extends Controller
         return redirect()->back()->with('success', 'Payroll settings updated successfully.');
     }
 
-    public function generatePayroll(Request $request, PayrollCalculationService $payrollService)
+    public function generatePayroll(Request $request, PayrollCalculatorService $payrollService)
     {
-        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
+        abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $validated = $request->validate([
             'action' => ['nullable', 'string', Rule::in(['draft', 'submit', 'dry_run'])],
@@ -797,78 +521,13 @@ class HRController extends Controller
             ]);
         }
 
-        // DRY RUN: Return calculated results without saving
         if (($validated['action'] ?? 'submit') === 'dry_run') {
-            $calcResults = $payrollService->calculatePayrollItems($selectedItems, $this->sellerOwner());
-            
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'month' => $validated['month'],
-                    'total_amount' => $calcResults['total_amount'],
-                    'employee_count' => count($calcResults['items']),
-                    'items' => $calcResults['items'],
-                ]
-            ]);
+            $dryRunData = $payrollService->dryRun($selectedItems, $this->sellerOwner(), $validated['month']);
+            return response()->json($dryRunData);
         }
 
         try {
-            $payroll = DB::transaction(function () use ($validated, $selectedItems, $payrollService) {
-                $totalAmount = 0;
-                $employeeCount = count($selectedItems);
-                $seller = $this->sellerOwner();
-                $sellerId = $seller->id;
-                $action = $validated['action'] ?? 'submit';
-                $isDraft = $action === 'draft';
-
-                $payroll = Payroll::create(Payroll::filterSchemaCompatibleAttributes([
-                    'user_id' => $sellerId,
-                    'requested_by_user_id' => $this->sellerActor()->id,
-                    'month' => $validated['month'],
-                    'pay_date' => $validated['pay_date'] ?? null,
-                    'notes' => $validated['notes'] ?? null,
-                    'total_amount' => 0,
-                    'employee_count' => $employeeCount,
-                    'status' => $isDraft ? 'Draft' : 'Pending',
-                    'submitted_at' => $isDraft ? null : now(config('app.timezone')),
-                ]));
-
-                foreach ($selectedItems as $item) {
-                    $employee = Employee::where('user_id', $sellerId)->findOrFail($item['employee_id']);
-
-                    $calculated = $payrollService->calculateEmployeeRow($employee, $item, $seller);
-
-                    PayrollItem::create(PayrollItem::filterSchemaCompatibleAttributes([
-                        'payroll_id' => $payroll->id,
-                        'employee_id' => $employee->id,
-                        'base_salary' => $calculated['base_salary'],
-                        'days_worked' => round($calculated['days_worked']),
-                        'absences_days' => round($calculated['absences_days']),
-                        'paid_leave_days' => round($calculated['paid_leave_days']),
-                        'undertime_hours' => $calculated['undertime_hours'],
-                        'undertime_deduction' => $calculated['undertime_deduction'],
-                        'overtime_hours' => $calculated['overtime_hours'],
-                        'overtime_pay' => $calculated['overtime_pay'],
-                        'rest_day_ot_hours' => $calculated['rest_day_ot_hours'],
-                        'rest_day_ot_pay' => $calculated['rest_day_ot_pay'],
-                        'holiday_ot_hours' => $calculated['holiday_ot_hours'],
-                        'holiday_ot_pay' => $calculated['holiday_ot_pay'],
-                        'absence_deduction' => $calculated['absence_deduction'],
-                        'bonus' => 0,
-                        'net_pay' => $calculated['net_pay'],
-                    ]));
-
-                    $totalAmount += $calculated['net_pay'];
-                }
-
-                $payroll->update(['total_amount' => round($totalAmount, 2)]);
-
-                if (!$isDraft) {
-                    $this->notifyAccountingOfPayrollRun($payroll, $seller, $validated['month']);
-                }
-
-                return $payroll;
-            });
+            $payroll = $payrollService->generate($selectedItems, $this->sellerOwner(), $this->sellerActor(), $validated);
 
             return redirect()
                 ->route('hr.payroll.show', $payroll)
@@ -886,7 +545,7 @@ class HRController extends Controller
         abort_unless((int) $payroll->user_id === (int) $seller->id, 404);
 
         return Inertia::render('Seller/HR/PayrollRunShow', [
-            'payroll' => $this->serializePayrollRun($payroll->loadMissing(['items.employee', 'requester']), $seller),
+            'payroll' => HRWorkflowHelper::serializePayrollRun($payroll->loadMissing(['items.employee', 'requester']), $seller),
         ]);
     }
 
@@ -904,7 +563,7 @@ class HRController extends Controller
             'submitted_at' => now(config('app.timezone')),
         ]));
 
-        $this->notifyAccountingOfPayrollRun($payroll->fresh(['requester']), $seller, $payroll->month);
+        HRWorkflowHelper::notifyAccountingOfPayrollRun($payroll->fresh(['requester']), $seller, $payroll->month, $this->sellerActor());
 
         return redirect()
             ->route('hr.payroll.show', $payroll)
@@ -913,7 +572,7 @@ class HRController extends Controller
 
     public function destroyPayroll(int $id)
     {
-        abort_unless($this->canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
+        abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
         $payroll = Payroll::query()
             ->where('user_id', $this->sellerOwnerId())
@@ -927,382 +586,5 @@ class HRController extends Controller
         $payroll->delete();
 
         return redirect()->route('hr.index')->with('success', 'Payroll request deleted.');
-    }
-
-    private function rolePresetOptions(SellerEntitlementService $entitlementService): array
-    {
-        $labels = [
-            'shop_manager' => ['label' => 'Shop Manager', 'description' => 'Full administrative control. Can manage products, financials, and staff.'],
-            'accountant' => ['label' => 'Accountant', 'description' => 'Focus on financials. Can view revenue, manage payroll, and approve payouts.'],
-            'stock_clerk' => ['label' => 'Stock Clerk', 'description' => 'Operations focus. Can manage inventory, process orders, and request supplies.'],
-            'customer_support' => ['label' => 'Customer Care', 'description' => 'Orders, buyer messages, team inbox, and customer review handling.'],
-            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
-            'accounting' => ['label' => 'Finance Review', 'description' => 'Legacy finance visibility role.'],
-            'procurement' => ['label' => 'Procurement', 'description' => 'Legacy inventory tracking role.'],
-            'custom' => ['label' => 'Custom Capability Mix', 'description' => 'Start blank and choose the exact capabilities manually.'],
-        ];
-
-        return collect($entitlementService->getRolePresetDefaults())
-            ->map(function (array $modules, string $key) use ($labels) {
-                return [
-                    'key' => $key,
-                    'label' => $labels[$key]['label'] ?? ucfirst(str_replace('_', ' ', $key)),
-                    'description' => $labels[$key]['description'] ?? '',
-                    'modules' => $modules,
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    private function moduleOptions(SellerEntitlementService $entitlementService): array
-    {
-        $labels = [
-            'overview' => ['label' => 'Overview', 'description' => 'Seller dashboard overview.'],
-            'products' => ['label' => 'Products', 'description' => 'Product manager and stock actions.'],
-            'analytics' => ['label' => 'Analytics', 'description' => 'Sales and product performance reports.'],
-            '3d' => ['label' => '3D Manager', 'description' => '3D asset uploads and management.'],
-            'orders' => ['label' => 'Orders', 'description' => 'Order processing and status updates.'],
-            'messages' => ['label' => 'Messages', 'description' => 'Buyer inbox and seller order conversations.'],
-            'team_messages' => ['label' => 'Team Inbox', 'description' => 'Internal seller workspace conversations.'],
-            'reviews' => ['label' => 'Reviews', 'description' => 'Customer review replies and moderation.'],
-            'shop_settings' => ['label' => 'Shop Settings', 'description' => 'Seller storefront profile settings.'],
-            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access management.'],
-            'accounting' => ['label' => 'Finance Approvals', 'description' => 'Finance review, fund visibility, and payroll approval.'],
-            'procurement' => ['label' => 'Inventory', 'description' => 'Inventory tracking, supply management, and purchasing workflows.'],
-            'stock_requests' => ['label' => 'Restock Requests', 'description' => 'Restock request tracking and approval flow.'],
-        ];
-
-        return collect($entitlementService->getSupportedStaffModules())
-            ->map(function (string $module) use ($labels) {
-                return [
-                    'key' => $module,
-                    'label' => $labels[$module]['label'] ?? ucfirst(str_replace('_', ' ', $module)),
-                    'description' => $labels[$module]['description'] ?? '',
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    private function supportsStaffProvisioningSchema(): bool
-    {
-        return Schema::hasColumn('users', 'seller_owner_id')
-            && Schema::hasColumn('users', 'staff_role_preset_key')
-            && Schema::hasColumn('users', 'staff_module_permissions')
-            && Schema::hasColumn('users', 'must_change_password')
-            && Schema::hasColumn('users', 'created_by_user_id')
-            && Schema::hasColumn('users', 'employee_id');
-    }
-
-    private function supportsStaffAccessAuditSchema(): bool
-    {
-        try {
-            return Schema::hasTable('staff_access_audits');
-        } catch (Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * @return array<int, array<string, string>>
-     */
-    private function userLevelOptions(): array
-    {
-        return [
-            [
-                'key' => User::DEFAULT_STAFF_USER_LEVEL,
-                'label' => 'Staff',
-                'description' => 'Can use the modules you grant, but cannot manage other staff logins or permissions.',
-            ],
-            [
-                'key' => User::STAFF_MANAGER_USER_LEVEL,
-                'label' => 'Staff Manager',
-                'description' => 'Can manage employee logins and staff permissions inside People & Payroll when that capability is enabled.',
-            ],
-        ];
-    }
-
-    private function buildEmployeeUpdateSuccessMessage(
-        bool $createdLogin,
-        bool $workspaceSuspended,
-        bool $workspaceRestored,
-        bool $emailChanged,
-        bool $passwordReset
-    ): string {
-        if ($createdLogin) {
-            return 'Employee updated and seller login created. A verification code was sent.';
-        }
-
-        if ($workspaceSuspended) {
-            return $this->appendLoginUpdateFollowUps(
-                'Employee updated and seller workspace access suspended. The linked login was kept for future reactivation.',
-                $emailChanged,
-                $passwordReset
-            );
-        }
-
-        if ($workspaceRestored) {
-            return $this->appendLoginUpdateFollowUps(
-                'Employee updated and seller workspace access restored.',
-                $emailChanged,
-                $passwordReset
-            );
-        }
-
-        $baseMessage = ($emailChanged || $passwordReset)
-            ? 'Employee and seller login updated successfully.'
-            : 'Employee details updated successfully.';
-
-        return $this->appendLoginUpdateFollowUps($baseMessage, $emailChanged, $passwordReset);
-    }
-
-    private function appendLoginUpdateFollowUps(string $message, bool $emailChanged, bool $passwordReset): string
-    {
-        $followUps = [];
-
-        if ($emailChanged) {
-            $followUps[] = 'A verification code was sent to the updated address.';
-        }
-
-        if ($passwordReset) {
-            $followUps[] = 'The employee must change the new password on next sign-in.';
-        }
-
-        if (empty($followUps)) {
-            return $message;
-        }
-
-        return $message . ' ' . implode(' ', $followUps);
-    }
-
-    private function canEditHrRecords(User $actor): bool
-    {
-        if ($actor->isSellerOwner()) {
-            return true;
-        }
-
-        if (!$actor->isStaff() || !$actor->isWorkspaceAccessEnabled()) {
-            return false;
-        }
-
-        if (!in_array('hr', app(SellerEntitlementService::class)->getGrantedStaffModules($actor), true)) {
-            return false;
-        }
-
-        return $actor->canEditSellerModule('hr');
-    }
-
-    private function permissionLevelLabel(?string $level): string
-    {
-        return match (User::normalizeStaffAccessPermissionLevel($level)) {
-            User::STAFF_ACCESS_PERMISSION_CAN_EDIT => 'Can Edit',
-            default => 'Read Only',
-        };
-    }
-
-    private function resolveRequestedStaffAccessPermissionLevel(Request $request): string
-    {
-        if ($request->boolean('manage_staff_accounts')) {
-            return User::STAFF_ACCESS_PERMISSION_CAN_EDIT;
-        }
-
-        return User::normalizeStaffUserLevel($request->input('staff_user_level')) === User::STAFF_MANAGER_USER_LEVEL
-            ? User::STAFF_ACCESS_PERMISSION_CAN_EDIT
-            : User::STAFF_ACCESS_PERMISSION_READ_ONLY;
-    }
-
-    /**
-     * @param  array<string, mixed>  $requestedOverrides
-     * @param  array<int, string>  $supportedModules
-     * @return array<string, mixed>
-     */
-    private function normalizeRequestedModuleOverrides(array $requestedOverrides, array $supportedModules, string $presetKey, ?string $legacyPermissionLevel = null): array
-    {
-        $presetModules = $this->rolePresetModules($presetKey);
-        $defaultLevel = $legacyPermissionLevel !== null
-            ? User::normalizeStaffAccessPermissionLevel($legacyPermissionLevel)
-            : User::STAFF_ACCESS_PERMISSION_CAN_EDIT;
-
-        $normalized = collect($supportedModules)
-            ->mapWithKeys(function (string $module) use ($presetModules, $defaultLevel) {
-                return [$module => in_array($module, $presetModules, true) ? $defaultLevel : false];
-            })
-            ->all();
-
-        foreach ($requestedOverrides as $module => $value) {
-            if (!in_array($module, $supportedModules, true)) {
-                continue;
-            }
-
-            if ($value === true || $value === 1 || $value === '1') {
-                $normalized[$module] = $defaultLevel;
-                continue;
-            }
-
-            if ($value === false || $value === 0 || $value === '0' || $value === null || $value === '') {
-                $normalized[$module] = false;
-                continue;
-            }
-
-            $normalized[$module] = User::normalizeStaffModuleAccessLevel($value) ?? false;
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function rolePresetModules(string $presetKey): array
-    {
-        return app(SellerEntitlementService::class)->getRolePresetDefaults()[$presetKey] ?? [];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function buildStaffAccessSnapshot(User $staffUser): array
-    {
-        return [
-            'email' => $staffUser->email,
-            'workspace_access_enabled' => $staffUser->isWorkspaceAccessEnabled(),
-            'permission_level' => $staffUser->getStaffAccessPermissionLevel(),
-            'role_preset_key' => $staffUser->staff_role_preset_key ?: 'custom',
-            'modules' => User::stripStaffControlFlags((array) $staffUser->staff_module_permissions),
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $details
-     */
-    private function recordStaffAccessAudit(User $seller, User $actor, string $event, Employee $employee, ?User $staffUser, array $details = []): void
-    {
-        if (!$this->supportsStaffAccessAuditSchema()) {
-            return;
-        }
-
-        $actionText = match ($event) {
-            'login_created' => 'created seller portal access for',
-            'login_suspended' => 'suspended seller portal access for',
-            'login_restored' => 'restored seller portal access for',
-            'login_removed' => 'removed seller portal access for',
-            default => 'updated seller portal access for',
-        };
-
-        StaffAccessAudit::create([
-            'seller_owner_id' => $seller->id,
-            'actor_user_id' => $actor->id,
-            'staff_user_id' => $staffUser?->id,
-            'employee_id' => $employee->id,
-            'event' => $event,
-            'summary' => trim(($actor->name ?: 'A workspace user') . ' ' . $actionText . ' ' . ($employee->name ?: 'an employee') . '.'),
-            'details' => $details,
-        ]);
-    }
-
-    private function notifyAccountingOfPayrollRun(Payroll $payroll, User $seller, string $month): void
-    {
-        $requesterName = $this->sellerActor()->name ?: 'A staff member';
-        $message = "{$requesterName} submitted the payroll request for {$month} for Accounting approval.";
-
-        $this->accountingRecipientsForSeller($seller)->each(function (User $recipient) use ($payroll, $message) {
-            $recipient->notify(new AccountingApprovalRequestedNotification(
-                'New Payroll Request',
-                $message,
-                route('accounting.index'),
-                'payroll',
-                $payroll->id,
-            ));
-        });
-    }
-
-    private function serializePayrollRun(Payroll $payroll, User $seller): array
-    {
-        $payrollService = app(PayrollCalculationService::class);
-
-        $lineItems = $payroll->items->map(function (PayrollItem $item) use ($seller, $payrollService) {
-            if (!$item->employee) {
-                return [
-                    'id' => $item->id,
-                    'employee_name' => $item->employee_name ?? "Employee #{$item->employee_id}",
-                    'employee_role' => null,
-                    'base_salary' => (float) $item->base_salary,
-                    'days_worked' => (float) $item->days_worked,
-                    'absences_days' => (float) $item->absences_days,
-                    'paid_leave_days' => (float) $item->paid_leave_days,
-                    'absence_deduction' => 0.00,
-                    'undertime_hours' => (float) $item->undertime_hours,
-                    'undertime_deduction' => 0.00,
-                    'overtime_hours' => (float) $item->overtime_hours,
-                    'overtime_pay' => (float) $item->overtime_pay,
-                    'rest_day_ot_hours' => (float) $item->rest_day_ot_hours,
-                    'rest_day_ot_pay' => (float) $item->rest_day_ot_pay,
-                    'holiday_ot_hours' => (float) $item->holiday_ot_hours,
-                    'holiday_ot_pay' => (float) $item->holiday_ot_pay,
-                    'net_pay' => (float) $item->net_pay,
-                    'meta' => null,
-                ];
-            }
-
-            $inputs = [
-                'absences_days' => (float) $item->absences_days,
-                'paid_leave_days' => (float) $item->paid_leave_days,
-                'undertime_hours' => (float) $item->undertime_hours,
-                'overtime_hours' => (float) $item->overtime_hours,
-                'rest_day_ot_hours' => (float) $item->rest_day_ot_hours,
-                'holiday_ot_hours' => (float) $item->holiday_ot_hours,
-            ];
-
-            $calculated = $payrollService->calculateEmployeeRow($item->employee, $inputs, $seller);
-
-            return [
-                'id' => $item->id,
-                'employee_name' => $item->employee->name,
-                'employee_role' => $item->employee->role,
-                'base_salary' => (float) $item->base_salary,
-                'days_worked' => (float) $item->days_worked,
-                'absences_days' => (float) $item->absences_days,
-                'paid_leave_days' => (float) $item->paid_leave_days,
-                'absence_deduction' => $calculated['absence_deduction'],
-                'undertime_hours' => (float) $item->undertime_hours,
-                'undertime_deduction' => $calculated['undertime_deduction'],
-                'overtime_hours' => (float) $item->overtime_hours,
-                'overtime_pay' => (float) $item->overtime_pay,
-                'rest_day_ot_hours' => (float) $item->rest_day_ot_hours,
-                'rest_day_ot_pay' => (float) $item->rest_day_ot_pay,
-                'holiday_ot_hours' => (float) $item->holiday_ot_hours,
-                'holiday_ot_pay' => (float) $item->holiday_ot_pay,
-                'net_pay' => (float) $item->net_pay,
-                'meta' => $calculated['meta'],
-            ];
-        })->values();
-
-        return [
-            'id' => $payroll->id,
-            'run_number' => $payroll->run_number ?: "Payroll #{$payroll->id}",
-            'month' => $payroll->month,
-            'pay_date' => $payroll->pay_date?->toDateString(),
-            'notes' => $payroll->notes,
-            'status' => $payroll->status,
-            'total_amount' => (float) $payroll->total_amount,
-            'employee_count' => (int) $payroll->employee_count,
-            'rejection_reason' => $payroll->rejection_reason,
-            'created_at' => $payroll->created_at?->toIso8601String(),
-            'updated_at' => $payroll->updated_at?->toIso8601String(),
-            'submitted_at' => $payroll->submitted_at?->toIso8601String(),
-            'requester' => $payroll->requester ? [
-                'id' => $payroll->requester->id,
-                'name' => $payroll->requester->name,
-                'role' => $payroll->requester->role,
-            ] : null,
-            'summary' => [
-                'base_pay' => (float) $lineItems->sum('base_salary'),
-                'deductions' => (float) $lineItems->sum(fn(array $item) => $item['absence_deduction'] + $item['undertime_deduction']),
-                'overtime' => (float) $lineItems->sum(fn(array $item) => $item['overtime_pay'] + ($item['rest_day_ot_pay'] ?? 0) + ($item['holiday_ot_pay'] ?? 0)),
-                'net_pay' => (float) $lineItems->sum('net_pay'),
-            ],
-            'line_items' => $lineItems->all(),
-        ];
     }
 }

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\StaffAttendanceSession;
 use App\Models\User;
+use App\Models\Employee;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -429,5 +431,80 @@ class StaffAttendanceService
         }
 
         return "{$hours}h {$minutes}m";
+    }
+
+    public function attendanceMonthLabel(): string
+    {
+        return now(config('app.timezone'))->format('F Y');
+    }
+
+    public function transformEmployeeRecords(\Illuminate\Support\Collection $employeeRecords, array $attendanceSummaries): \Illuminate\Support\Collection
+    {
+        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $supportsMustChangePassword = Schema::hasColumn('users', 'must_change_password');
+        $supportsRolePresetKey = Schema::hasColumn('users', 'staff_role_preset_key');
+        $supportsStaffModulePermissions = Schema::hasColumn('users', 'staff_module_permissions');
+
+        return $employeeRecords->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
+            $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
+            $attendanceSummary = $attendanceSummaries[$employee->id] ?? [
+                'current_state' => 'manual',
+                'latest_action' => null,
+                'today_first_clock_in' => null,
+                'days_worked' => 0,
+                'attended_days' => 0,
+                'absences_days' => 0,
+                'undertime_hours' => 0,
+                'overtime_hours' => 0,
+                'worked_minutes' => 0,
+                'has_attendance_source' => false,
+                'open_session' => false,
+                'month_label' => $this->attendanceMonthLabel(),
+                'calendar_days' => [],
+            ];
+
+            return [
+                'id' => $employee->id,
+                'employee_id' => $employee->employee_id,
+                'name' => $employee->name,
+                'role' => $employee->role,
+                'salary' => $employee->salary,
+                'status' => $employee->status,
+                'join_date' => $employee->join_date,
+                'has_login_account' => $supportsEmployeeLoginLinks && (bool) $loginAccount,
+                'login_account' => $loginAccount ? [
+                    'id' => $loginAccount->id,
+                    'name' => $loginAccount->name,
+                    'email' => $loginAccount->email,
+                    'avatar' => $loginAccount->avatar,
+                    'updated_at' => $loginAccount->updated_at,
+                    'workspace_access_enabled' => $loginAccount->isWorkspaceAccessEnabled(),
+                    'plan_workspace_suspended' => $loginAccount->isPlanWorkspaceSuspended(),
+                    'is_verified' => (bool) $loginAccount->email_verified_at,
+                    'must_change_password' => $supportsMustChangePassword ? (bool) $loginAccount->must_change_password : false,
+                    'user_level' => $loginAccount->getStaffUserLevel(),
+                    'staff_access_permission_level' => $loginAccount->getStaffAccessPermissionLevel(),
+                    'role_preset_key' => $supportsRolePresetKey ? ($loginAccount->staff_role_preset_key ?: 'custom') : 'custom',
+                    'module_permissions' => $supportsStaffModulePermissions ? User::stripStaffControlFlags((array) $loginAccount->staff_module_permissions) : [],
+                ] : null,
+                'attendance' => [
+                    'current_state' => $attendanceSummary['current_state'],
+                    'latest_action' => $attendanceSummary['latest_action'],
+                    'today_first_clock_in' => $attendanceSummary['today_first_clock_in'],
+                    'days_worked' => $attendanceSummary['days_worked'],
+                    'worked_minutes' => $attendanceSummary['worked_minutes'],
+                    'has_attendance_source' => $attendanceSummary['has_attendance_source'],
+                    'open_session' => $attendanceSummary['open_session'],
+                    'month_label' => $attendanceSummary['month_label'],
+                    'calendar_days' => $attendanceSummary['calendar_days'],
+                ],
+                'payroll_prefill' => [
+                    'absences_days' => $attendanceSummary['absences_days'],
+                    'undertime_hours' => $attendanceSummary['undertime_hours'],
+                    'overtime_hours' => $attendanceSummary['overtime_hours'],
+                    'days_worked' => $attendanceSummary['days_worked'],
+                ],
+            ];
+        });
     }
 }
