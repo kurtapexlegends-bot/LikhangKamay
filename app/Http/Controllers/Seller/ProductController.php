@@ -3,10 +3,7 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
-
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
-use App\Http\Controllers\Concerns\HandlesThreeDModelBundles;
-use App\Http\Controllers\Concerns\ValidatesThreeDModelUploads;
 use App\Models\Message;
 use App\Models\Order;
 use App\Models\Product;
@@ -14,11 +11,14 @@ use App\Models\SellerActivityLog;
 use App\Models\Supply;
 use App\Models\User;
 use App\Support\RichTextSanitizer;
+use App\Services\Catalog\ProductMediaService;
+use App\Services\Catalog\ThreeDAssetService;
+use App\Actions\Seller\Catalog\SyncProductRecipes;
+use App\Actions\Seller\Catalog\BulkUpdateProductStatus;
+use App\Actions\Seller\Catalog\BulkActivateProducts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -26,10 +26,7 @@ use Inertia\Inertia;
 class ProductController extends Controller
 {
     use InteractsWithSellerContext;
-    use HandlesThreeDModelBundles;
-    use ValidatesThreeDModelUploads;
 
-    private const MAX_THREE_D_STORAGE_BYTES = 524288000;
     private const MIN_ACTIVE_GALLERY_IMAGES = 3;
     private const MAX_GALLERY_IMAGES = 5;
 
@@ -172,8 +169,12 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
+    public function store(
+        Request $request,
+        ProductMediaService $productMediaService,
+        ThreeDAssetService $threeDAssetService,
+        SyncProductRecipes $syncProductRecipes
+    ) {
         /** @var \App\Models\User|null $seller */
         $seller = $request->user()->getEffectiveSeller();
         
@@ -209,12 +210,12 @@ class ProductController extends Controller
             'cover_photo' => 'nullable|image|max:10240',
             'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
             'gallery.*' => 'nullable|image|max:10240',
-            'model_3d' => $this->threeDModelUploadRules(),
-            ...$this->threeDModelAssetRules(),
+            'model_3d' => $threeDAssetService->getUploadRules(),
+            ...$threeDAssetService->getAssetRules(),
         ]);
 
-        /** @var \App\Models\User $seller */
-        $seller = $this->sellerOwner();
+        /** @var \App\Models\User $sellerOwner */
+        $sellerOwner = $this->sellerOwner();
         $activationReadiness = $this->evaluateActivationReadiness(
             $request->hasFile('cover_photo'),
             count($request->file('gallery', [])),
@@ -225,40 +226,28 @@ class ProductController extends Controller
             $activationReadiness['canBeActive']
         );
 
-        if ($requestedStatus === 'Active' && !$seller->canAddMoreProducts()) {
+        if ($requestedStatus === 'Active' && !$sellerOwner->canAddMoreProducts()) {
             return back()->withErrors(['limit' => 'You have reached your active products limit. Please upgrade your plan to add more active products.']);
         }
 
         $coverPath = null;
         if ($request->hasFile('cover_photo')) {
-            $coverPath = $this->resizeAndSave($request->file('cover_photo'), 'products/covers');
+            $coverPath = $productMediaService->resizeAndSave($request->file('cover_photo'), 'products/covers');
         }
 
-        $modelPath = null;
-        if ($request->hasFile('model_3d')) {
-            $this->validateThreeDModelBundle($request);
-            $incomingModelBytes = $this->getThreeDModelUploadSizeBytes($request);
-
-            if (!$this->canStoreThreeDModel($seller->id, $incomingModelBytes)) {
-                return back()
-                    ->withErrors(['model_3d' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.'])
-                    ->withInput();
-            }
-
-            $modelPath = $this->storeThreeDModelBundle($request);
-        }
+        $modelPath = $threeDAssetService->validateAndStore($request, $sellerOwner->id);
 
         $galleryPaths = [];
         if ($request->hasFile('gallery')) {
             foreach ($request->file('gallery') as $file) {
-                $galleryPaths[] = $this->resizeAndSave($file, 'products/gallery');
+                $galleryPaths[] = $productMediaService->resizeAndSave($file, 'products/gallery');
             }
         }
 
-        $sellerId = $seller->id;
+        $sellerId = $sellerOwner->id;
 
-          $product = DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus) {
-              $product = Product::create([
+        $product = DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus, $syncProductRecipes) {
+            $product = Product::create([
                 'user_id' => $sellerId,
                 'sku' => $validated['sku'],
                 'name' => $validated['name'],
@@ -284,64 +273,43 @@ class ProductController extends Controller
                 'production_method' => $validated['production_method'] ?? 'resell',
             ]);
 
-            if (($validated['production_method'] ?? 'resell') === 'manufactured' && !empty($validated['recipes'])) {
-                foreach ($validated['recipes'] as $recipe) {
-                    $product->recipes()->create([
-                        'supply_id' => $recipe['supply_id'],
-                        'quantity_required' => $recipe['quantity_required'],
-                    ]);
-                }
-            }
+            $syncProductRecipes->execute($product, $validated, $sellerId);
 
-              Supply::create(Supply::filterSchemaCompatibleAttributes([
-                'user_id' => $sellerId,
-                'product_id' => $product->id,
-                'name' => $validated['name'],
-                'category' => 'Finished Goods',
-                'quantity' => $validated['stock'],
-                'unit' => 'pcs',
-                'min_stock' => 5,
-                'max_stock' => 500,
-                'unit_cost' => $validated['cost_price'] ?? 0,
-                'supplier' => 'Self/External',
-                'notes' => 'Auto-generated from Product: ' . $validated['sku'],
-              ]));
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $sellerId,
+                'actor_user_id' => Auth::id(),
+                'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+                'category' => 'operations',
+                'module' => 'products',
+                'event_type' => 'product_created',
+                'severity' => 'success',
+                'status' => strtolower($requestedStatus),
+                'title' => 'Product Created',
+                'summary' => "{$product->name} was added to the catalog.",
+                'subject_type' => Product::class,
+                'subject_id' => $product->id,
+                'subject_label' => $product->name,
+                'reference' => $product->sku,
+                'amount_label' => 'PHP ' . number_format((float) $product->price, 2),
+                'details' => [
+                    'after' => [
+                        'status' => $product->status,
+                        'stock' => $product->stock,
+                        'price' => (float) $product->price,
+                        'category' => $product->category,
+                    ],
+                    'lines' => array_values(array_filter([
+                        $requestedStatus === 'Draft' && $validated['status'] === 'Active'
+                            ? 'Saved as Draft because activation requirements are incomplete'
+                            : 'Saved with requested status',
+                    ])),
+                ],
+                'target_url' => route('products.index', ['highlight_product' => $product->id]),
+                'target_label' => 'Open Products',
+            ]);
 
-              SellerActivityLog::recordEvent([
-                  'seller_owner_id' => $sellerId,
-                  'actor_user_id' => Auth::id(),
-                  'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-                  'category' => 'operations',
-                  'module' => 'products',
-                  'event_type' => 'product_created',
-                  'severity' => 'success',
-                  'status' => strtolower($requestedStatus),
-                  'title' => 'Product Created',
-                  'summary' => "{$product->name} was added to the catalog.",
-                  'subject_type' => Product::class,
-                  'subject_id' => $product->id,
-                  'subject_label' => $product->name,
-                  'reference' => $product->sku,
-                  'amount_label' => 'PHP ' . number_format((float) $product->price, 2),
-                  'details' => [
-                      'after' => [
-                          'status' => $product->status,
-                          'stock' => $product->stock,
-                          'price' => (float) $product->price,
-                          'category' => $product->category,
-                      ],
-                      'lines' => array_values(array_filter([
-                          $requestedStatus === 'Draft' && $validated['status'] === 'Active'
-                              ? 'Saved as Draft because activation requirements are incomplete'
-                              : 'Saved with requested status',
-                      ])),
-                  ],
-                  'target_url' => route('products.index', ['highlight_product' => $product->id]),
-                  'target_label' => 'Open Products',
-              ]);
-
-              return $product;
-          });
+            return $product;
+        });
 
         $isPendingReview = $product && $product->status === 'pending_review';
 
@@ -352,18 +320,23 @@ class ProductController extends Controller
                 : 'Product created successfully!'));
     }
 
-      public function update(Request $request, int|string $id)
-      {
-          $sellerId = $this->sellerOwnerId();
-          /** @var \App\Models\Product $product */
-          $product = Product::where('user_id', $sellerId)->findOrFail($id);
-          $before = [
-              'name' => $product->name,
-              'status' => $product->status,
-              'stock' => $product->stock,
-              'price' => (float) $product->price,
-              'category' => $product->category,
-          ];
+    public function update(
+        Request $request,
+        int|string $id,
+        ProductMediaService $productMediaService,
+        ThreeDAssetService $threeDAssetService,
+        SyncProductRecipes $syncProductRecipes
+    ) {
+        $sellerId = $this->sellerOwnerId();
+        /** @var \App\Models\Product $product */
+        $product = Product::where('user_id', $sellerId)->findOrFail($id);
+        $before = [
+            'name' => $product->name,
+            'status' => $product->status,
+            'stock' => $product->stock,
+            'price' => (float) $product->price,
+            'category' => $product->category,
+        ];
 
         $request->merge([
             'category' => trim((string) $request->input('category')),
@@ -388,13 +361,12 @@ class ProductController extends Controller
             'width' => 'nullable|numeric|min:0',
             'weight' => 'nullable|numeric|min:0',
             'lead_time' => 'nullable|integer|min:0',
-            'model_3d' => $this->threeDModelUploadRules(),
-            ...$this->threeDModelAssetRules(),
+            'model_3d' => $threeDAssetService->getUploadRules(),
+            ...$threeDAssetService->getAssetRules(),
         ]);
 
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
-        $existingModelPath = $product->model_3d_path;
         $retainedGallery = $request->input('retained_gallery', []);
         $activationReadiness = $this->evaluateActivationReadiness(
             $request->hasFile('cover_photo') || filled($product->cover_photo_path),
@@ -410,138 +382,83 @@ class ProductController extends Controller
             return back()->withErrors(['limit' => 'You have reached your active products limit. Please upgrade your plan to activate more products.']);
         }
 
-        if ($request->hasFile('model_3d')) {
-            $this->validateThreeDModelBundle($request);
-            $incomingModelBytes = $this->getThreeDModelUploadSizeBytes($request);
-
-            if (!$this->canStoreThreeDModel($seller->id, $incomingModelBytes, $existingModelPath)) {
-                return back()
-                    ->withErrors(['model_3d' => 'Uploading this 3D model would exceed your 500MB 3D storage limit.'])
-                    ->withInput();
-            }
-        }
-
         if ($request->hasFile('cover_photo')) {
-            if ($product->cover_photo_path) {
-                Storage::disk('public')->delete($product->cover_photo_path);
-            }
-            $product->cover_photo_path = $this->resizeAndSave($request->file('cover_photo'), 'products/covers');
+            $productMediaService->deleteCoverPhoto($product->cover_photo_path);
+            $product->cover_photo_path = $productMediaService->resizeAndSave($request->file('cover_photo'), 'products/covers');
         }
 
         if ($request->hasFile('model_3d')) {
-            if ($product->model_3d_path) {
-                $this->deleteStoredThreeDModel($product->model_3d_path);
-            }
-            $product->model_3d_path = $this->storeThreeDModelBundle($request);
+            $product->model_3d_path = $threeDAssetService->validateAndStore($request, $seller->id, $product->model_3d_path);
         }
 
-        $oldGallery = $product->gallery_paths ?? [];
-        $deletedGallery = array_diff($oldGallery, $retainedGallery);
-        foreach ($deletedGallery as $deletedPath) {
-            Storage::disk('public')->delete($deletedPath);
-        }
-
-        $galleryPaths = $retainedGallery;
-        if ($request->hasFile('gallery')) {
-            foreach ($request->file('gallery') as $file) {
-                $galleryPaths[] = $this->resizeAndSave($file, 'products/gallery');
-            }
-        }
-        $product->gallery_paths = $galleryPaths;
+        $product->gallery_paths = $productMediaService->handleGallery(
+            $request->file('gallery'),
+            $retainedGallery,
+            $product->gallery_paths ?? []
+        );
 
         $existingSupplyLookupName = $product->name;
 
-        $product->update([
-            'name' => $request->name,
-            'description' => $request->description,
-            'category' => $request->category,
-            'price' => $request->price,
-            'cost_price' => $request->cost_price ?? 0,
-            'stock' => $request->stock,
-            'status' => $requestedStatus,
-            'clay_type' => $request->clay_type,
-            'glaze_type' => $request->glaze_type,
-            'firing_method' => $request->firing_method,
-            'colors' => $request->colors,
-            'food_safe' => $request->boolean('food_safe'),
-            'height' => $request->height,
-            'width' => $request->width,
-            'weight' => $request->weight,
-            'track_as_supply' => true,
-            'production_method' => $validated['production_method'] ?? $product->production_method,
-        ]);
+        DB::transaction(function () use ($product, $request, $validated, $requestedStatus, $sellerId, $existingSupplyLookupName, $syncProductRecipes, $before) {
+            $product->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'category' => $request->category,
+                'price' => $request->price,
+                'cost_price' => $request->cost_price ?? 0,
+                'stock' => $request->stock,
+                'status' => $requestedStatus,
+                'clay_type' => $request->clay_type,
+                'glaze_type' => $request->glaze_type,
+                'firing_method' => $request->firing_method,
+                'colors' => $request->colors,
+                'food_safe' => $request->boolean('food_safe'),
+                'height' => $request->height,
+                'width' => $request->width,
+                'weight' => $request->weight,
+                'track_as_supply' => true,
+                'production_method' => $validated['production_method'] ?? $product->production_method,
+            ]);
 
-        if ($request->hasFile('cover_photo') || $request->hasFile('model_3d')) {
             $product->save();
-        }
 
-        if (($validated['production_method'] ?? $product->production_method) === 'manufactured') {
-            $product->recipes()->delete();
-            if (!empty($validated['recipes'])) {
-                foreach ($validated['recipes'] as $recipe) {
-                    $product->recipes()->create([
-                        'supply_id' => $recipe['supply_id'],
-                        'quantity_required' => $recipe['quantity_required'],
-                    ]);
-                }
-            }
-        } else {
-            $product->recipes()->delete();
-        }
+            $syncProductRecipes->execute($product, $validated, $sellerId, $existingSupplyLookupName);
 
-        $supply = $this->findSupplyForProduct($product, $sellerId, $existingSupplyLookupName);
-
-        if (!$supply) {
-            $supply = new Supply($this->supplyLookupAttributes($product, $sellerId));
-        }
-
-          $supply->fill(Supply::filterSchemaCompatibleAttributes([
-            'name' => $product->name,
-            'category' => 'Finished Goods',
-            'quantity' => $product->stock,
-            'unit' => 'pcs',
-            'min_stock' => 5,
-            'max_stock' => 500,
-            'unit_cost' => $request->cost_price ?? 0,
-            'supplier' => 'Self/External',
-            'notes' => 'Auto-generated from Product: ' . $product->sku,
-          ]));
-          $supply->save();
-
-          SellerActivityLog::recordEvent([
-              'seller_owner_id' => $sellerId,
-              'actor_user_id' => Auth::id(),
-              'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-              'category' => 'operations',
-              'module' => 'products',
-              'event_type' => 'product_updated',
-              'severity' => 'info',
-              'status' => strtolower($product->status),
-              'title' => 'Product Updated',
-              'summary' => "{$product->name} details were updated.",
-              'subject_type' => Product::class,
-              'subject_id' => $product->id,
-              'subject_label' => $product->name,
-              'reference' => $product->sku,
-              'amount_label' => 'PHP ' . number_format((float) $product->price, 2),
-              'details' => [
-                  'before' => $before,
-                  'after' => [
-                      'name' => $product->name,
-                      'status' => $product->status,
-                      'stock' => $product->stock,
-                      'price' => (float) $product->price,
-                      'category' => $product->category,
-                  ],
-                  'lines' => array_values(array_filter([
-                      $request->hasFile('cover_photo') ? 'Updated cover image' : null,
-                      $request->hasFile('gallery') ? 'Updated gallery images' : null,
-                      $request->hasFile('model_3d') ? 'Updated 3D model bundle' : null,
-                  ])),
-              ],
-              'target_url' => route('products.index', ['highlight_product' => $product->id]),
-              'target_label' => 'Open Products',
-          ]);
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $sellerId,
+                'actor_user_id' => Auth::id(),
+                'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+                'category' => 'operations',
+                'module' => 'products',
+                'event_type' => 'product_updated',
+                'severity' => 'info',
+                'status' => strtolower($product->status),
+                'title' => 'Product Updated',
+                'summary' => "{$product->name} details were updated.",
+                'subject_type' => Product::class,
+                'subject_id' => $product->id,
+                'subject_label' => $product->name,
+                'reference' => $product->sku,
+                'amount_label' => 'PHP ' . number_format((float) $product->price, 2),
+                'details' => [
+                    'before' => $before,
+                    'after' => [
+                        'name' => $product->name,
+                        'status' => $product->status,
+                        'stock' => $product->stock,
+                        'price' => (float) $product->price,
+                        'category' => $product->category,
+                    ],
+                    'lines' => array_values(array_filter([
+                        $request->hasFile('cover_photo') ? 'Updated cover image' : null,
+                        $request->hasFile('gallery') ? 'Updated gallery images' : null,
+                        $request->hasFile('model_3d') ? 'Updated 3D model bundle' : null,
+                    ])),
+                ],
+                'target_url' => route('products.index', ['highlight_product' => $product->id]),
+                'target_label' => 'Open Products',
+            ]);
+        });
 
         $product->refresh();
         $isPendingReview = $product->status === 'pending_review';
@@ -554,34 +471,37 @@ class ProductController extends Controller
     }
 
     public function archive(string|int $id)
-      {
-          $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
-          $product->update(['status' => 'Archived']);
-
-          SellerActivityLog::recordEvent([
-              'seller_owner_id' => $this->sellerOwnerId(),
-              'actor_user_id' => Auth::id(),
-              'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-              'category' => 'operations',
-              'module' => 'products',
-              'event_type' => 'product_archived',
-              'severity' => 'warning',
-              'status' => 'archived',
-              'title' => 'Product Archived',
-              'summary' => "{$product->name} was archived from the active catalog.",
-              'subject_type' => Product::class,
-              'subject_id' => $product->id,
-              'subject_label' => $product->name,
-              'reference' => $product->sku,
-              'target_url' => route('products.index', ['highlight_product' => $product->id]),
-              'target_label' => 'Open Products',
-          ]);
-
-          return redirect()->back()->with('success', 'Product archived.');
-      }
-
-    public function bulkUpdateStatus(Request $request)
     {
+        $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+        $product->update(['status' => 'Archived']);
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $this->sellerOwnerId(),
+            'actor_user_id' => Auth::id(),
+            'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+            'category' => 'operations',
+            'module' => 'products',
+            'event_type' => 'product_archived',
+            'severity' => 'warning',
+            'status' => 'archived',
+            'title' => 'Product Archived',
+            'summary' => "{$product->name} was archived from the active catalog.",
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'subject_label' => $product->name,
+            'reference' => $product->sku,
+            'target_url' => route('products.index', ['highlight_product' => $product->id]),
+            'target_label' => 'Open Products',
+        ]);
+
+        return redirect()->back()->with('success', 'Product archived.');
+    }
+
+    public function bulkUpdateStatus(
+        Request $request,
+        BulkUpdateProductStatus $bulkUpdateProductStatus,
+        BulkActivateProducts $bulkActivateProducts
+    ) {
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer',
@@ -590,116 +510,27 @@ class ProductController extends Controller
 
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
-        $selectedIds = collect($validated['ids'])->map(fn ($id) => (int) $id)->unique()->values();
-
-        $products = Product::query()
-            ->where('user_id', $seller->id)
-            ->whereIn('id', $selectedIds)
-            ->get();
-
-        if ($products->isEmpty()) {
-            return back()->with('error', 'No matching products were found.');
-        }
-
         $targetStatus = $validated['status'];
 
-        return DB::transaction(function () use ($seller, $products, $targetStatus, $selectedIds) {
-            if ($targetStatus === 'Archived' || $targetStatus === 'Draft') {
-                Product::query()
-                    ->where('user_id', $seller->id)
-                    ->whereIn('id', $products->pluck('id'))
-                    ->update(['status' => $targetStatus]);
+        if ($targetStatus === 'Archived' || $targetStatus === 'Draft') {
+            $result = $bulkUpdateProductStatus->execute($seller, $validated['ids'], $targetStatus, $request->user());
+            return back()->with($result['status'], $result['message']);
+        }
 
-                SellerActivityLog::recordEvent([
-                    'seller_owner_id' => $seller->id,
-                    'actor_user_id' => Auth::id(),
-                    'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-                    'category' => 'operations',
-                    'module' => 'products',
-                    'event_type' => 'product_bulk_status',
-                    'severity' => $targetStatus === 'Archived' ? 'warning' : 'info',
-                    'status' => strtolower($targetStatus),
-                    'title' => 'Bulk Product Status Applied',
-                    'summary' => "{$products->count()} product(s) were moved to {$targetStatus}.",
-                    'subject_label' => 'Bulk product update',
-                    'details' => [
-                        'lines' => ["Updated {$products->count()} selected product(s) to {$targetStatus}."],
-                    ],
-                    'target_url' => route('products.index'),
-                    'target_label' => 'Open Products',
-                ]);
-
-                return back()->with('success', $this->bulkStatusMessage($products->count(), strtolower($targetStatus)));
-            }
-
-            // Handle Bulk Activation with Limits
-            $remainingActivationSlots = max(0, $seller->getActiveProductLimit() - $seller->products()->where('status', 'Active')->count());
-            $activated = 0;
-            $draftedForMissingMedia = 0;
-            $skippedForLimit = 0;
-
-            foreach ($selectedIds as $selectedId) {
-                /** @var \App\Models\Product|null $product */
-                $product = $products->firstWhere('id', $selectedId);
-                if (!$product || $product->status === 'Active') continue;
-
-                $activationReadiness = $this->evaluateActivationReadiness(
-                    filled($product->cover_photo_path),
-                    count($product->gallery_paths ?? []),
-                    filled($product->model_3d_path)
-                );
-
-                if (!$activationReadiness['canBeActive']) {
-                    $product->update(['status' => 'Draft']);
-                    $draftedForMissingMedia++;
-                    continue;
-                }
-
-                if ($remainingActivationSlots <= 0) {
-                    $skippedForLimit++;
-                    continue;
-                }
-
-                $product->update([
-                    'status' => 'pending_review',
-                    'rejection_reason' => null
-                ]);
-                $remainingActivationSlots--;
-                $activated++;
-            }
-
-            SellerActivityLog::recordEvent([
-                'seller_owner_id' => $seller->id,
-                'actor_user_id' => Auth::id(),
-                'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-                'category' => 'operations',
-                'module' => 'products',
-                'event_type' => 'product_bulk_status',
-                'severity' => $skippedForLimit > 0 || $draftedForMissingMedia > 0 ? 'warning' : 'info',
-                'status' => 'active',
-                'title' => 'Bulk Product Activation',
-                'summary' => "{$activated} product(s) were activated.",
-                'subject_label' => 'Bulk product update',
-                'details' => [
-                    'lines' => array_values(array_filter([
-                        "Activated {$activated} selected product(s).",
-                        $draftedForMissingMedia > 0 ? "{$draftedForMissingMedia} product(s) remained Draft due to missing media requirements." : null,
-                        $skippedForLimit > 0 ? "{$skippedForLimit} product(s) were skipped because your current plan limit is full." : null,
-                    ])),
-                ],
-                'target_url' => route('products.index'),
-                'target_label' => 'Open Products',
-            ]);
-
-            $sessionKey = ($activated === 0 && ($draftedForMissingMedia > 0 || $skippedForLimit > 0)) ? 'error' : 'success';
-            return back()->with($sessionKey, $this->bulkActivationMessage($activated, $draftedForMissingMedia, $skippedForLimit));
-        });
+        // TargetStatus is 'Active'
+        $result = $bulkActivateProducts->execute($seller, $validated['ids'], $request->user());
+        
+        $sessionKey = $result['status'];
+        return back()->with(
+            $sessionKey,
+            $this->bulkActivationMessage($result['activated'], $result['drafted'], $result['skipped'])
+        );
     }
 
     public function activate(string|int $id)
-      {
-          $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
-          /** @var \App\Models\User $seller */
+    {
+        $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+        /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $activationReadiness = $this->evaluateActivationReadiness(
             filled($product->cover_photo_path),
@@ -717,29 +548,29 @@ class ProductController extends Controller
             return back()->with('error', 'You have reached your active products limit. Please upgrade your plan.');
         }
 
-          $product->update(['status' => 'Active']);
+        $product->update(['status' => 'Active']);
 
-          SellerActivityLog::recordEvent([
-              'seller_owner_id' => $seller->id,
-              'actor_user_id' => Auth::id(),
-              'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-              'category' => 'operations',
-              'module' => 'products',
-              'event_type' => 'product_activated',
-              'severity' => 'success',
-              'status' => 'active',
-              'title' => 'Product Activated',
-              'summary' => "{$product->name} is now active in the catalog.",
-              'subject_type' => Product::class,
-              'subject_id' => $product->id,
-              'subject_label' => $product->name,
-              'reference' => $product->sku,
-              'target_url' => route('products.index', ['highlight_product' => $product->id]),
-              'target_label' => 'Open Products',
-          ]);
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => Auth::id(),
+            'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+            'category' => 'operations',
+            'module' => 'products',
+            'event_type' => 'product_activated',
+            'severity' => 'success',
+            'status' => 'active',
+            'title' => 'Product Activated',
+            'summary' => "{$product->name} is now active in the catalog.",
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'subject_label' => $product->name,
+            'reference' => $product->sku,
+            'target_url' => route('products.index', ['highlight_product' => $product->id]),
+            'target_label' => 'Open Products',
+        ]);
 
-          return redirect()->back()->with('success', 'Product activated.');
-      }
+        return redirect()->back()->with('success', 'Product activated.');
+    }
 
     public function restock(Request $request, string|int $id)
     {
@@ -761,34 +592,34 @@ class ProductController extends Controller
                 : ($activationReadiness['canBeActive'] ? 'Active' : 'Draft'),
         ]);
 
-          if ($product->track_as_supply && $product->supply) {
-              $product->supply->update(['quantity' => $product->stock]);
-          }
+        if ($product->track_as_supply && $product->supply) {
+            $product->supply->update(['quantity' => $product->stock]);
+        }
 
-          SellerActivityLog::recordEvent([
-              'seller_owner_id' => $this->sellerOwnerId(),
-              'actor_user_id' => Auth::id(),
-              'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-              'category' => 'operations',
-              'module' => 'products',
-              'event_type' => 'product_restocked',
-              'severity' => 'success',
-              'status' => strtolower($product->status),
-              'title' => 'Product Restocked',
-              'summary' => "{$product->name} stock increased by {$amount}.",
-              'subject_type' => Product::class,
-              'subject_id' => $product->id,
-              'subject_label' => $product->name,
-              'reference' => $product->sku,
-              'details' => [
-                  'lines' => ["Stock is now {$product->fresh()->stock} unit(s)."],
-              ],
-              'target_url' => route('products.index', ['highlight_product' => $product->id]),
-              'target_label' => 'Open Products',
-          ]);
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $this->sellerOwnerId(),
+            'actor_user_id' => Auth::id(),
+            'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
+            'category' => 'operations',
+            'module' => 'products',
+            'event_type' => 'product_restocked',
+            'severity' => 'success',
+            'status' => strtolower($product->status),
+            'title' => 'Product Restocked',
+            'summary' => "{$product->name} stock increased by {$amount}.",
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'subject_label' => $product->name,
+            'reference' => $product->sku,
+            'details' => [
+                'lines' => ["Stock is now {$product->fresh()->stock} unit(s)."],
+            ],
+            'target_url' => route('products.index', ['highlight_product' => $product->id]),
+            'target_label' => 'Open Products',
+        ]);
 
-          return redirect()->back()->with('success', 'Product stock updated.');
-      }
+        return redirect()->back()->with('success', 'Product stock updated.');
+    }
 
     private function normalizeStatusForActivationRequirements(string $requestedStatus, bool $canBeActive): string
     {
@@ -871,19 +702,6 @@ class ProductController extends Controller
         $lastRequirement = array_pop($requirements);
 
         return implode(', ', $requirements) . ', and ' . $lastRequirement;
-    }
-
-    private function resizeAndSave(\Illuminate\Http\UploadedFile $file, string $path)
-    {
-        try {
-            // Offload resizing to Supabase Transformations.
-            // We just store the original file to save server memory/CPU.
-            return $file->store($path, 'public');
-        } catch (\Exception $e) {
-            Log::error("Image storage failed: " . $e->getMessage());
-            // Fallback: return the path where it WOULD have been stored if it failed silently
-            return $file->store($path, 'public');
-        }
     }
 
     public function show(Product $product)
@@ -1002,20 +820,6 @@ class ProductController extends Controller
         return back()->with('success', "Stock updated. Deducted {$validated['quantity']} units for {$validated['reason']}.");
     }
 
-    private function canStoreThreeDModel(int $sellerId, int $incomingBytes, ?string $replacedPath = null): bool
-    {
-        $currentUsage = Product::where('user_id', $sellerId)
-            ->whereNotNull('model_3d_path')
-            ->get()
-            ->sum(fn (Product $product) => $this->getStoredFileSizeBytes($product->model_3d_path));
-
-        if ($replacedPath) {
-            $currentUsage -= $this->getStoredFileSizeBytes($replacedPath);
-        }
-
-        return ($currentUsage + $incomingBytes) <= self::MAX_THREE_D_STORAGE_BYTES;
-    }
-
     /**
      * @return \Illuminate\Support\Collection<int, array<string, mixed>>
      */
@@ -1086,11 +890,6 @@ class ProductController extends Controller
                 ];
             })
             ->values();
-    }
-
-    private function getStoredFileSizeBytes(?string $path): int
-    {
-        return $this->getStoredThreeDModelSizeBytes($path);
     }
 
     private function viewerCanChatSeller(?User $viewer, ?User $seller): bool
@@ -1205,7 +1004,6 @@ class ProductController extends Controller
         $data = array_map('str_getcsv', file($path));
         $header = array_shift($data);
 
-        // Map column headers dynamically to support flexible CSV formatting
         $headerMap = array_change_key_case(array_flip(array_map('trim', $header)), CASE_LOWER);
 
         $skuIdx = $headerMap['sku'] ?? null;
@@ -1233,7 +1031,6 @@ class ProductController extends Controller
         DB::beginTransaction();
         try {
             foreach ($data as $row) {
-                // Safely fetch by mapped header indices
                 $sku = $row[$skuIdx] ?? null;
                 $name = $row[$nameIdx] ?? null;
                 $category = $row[$categoryIdx] ?? null;
@@ -1245,7 +1042,6 @@ class ProductController extends Controller
 
                 if (empty($sku) || empty($name)) continue;
 
-                // Find existing product first to check original status and track_as_supply
                 $existingProduct = Product::where('user_id', $seller->id)->where('sku', $sku)->first();
                 $originalStatus = $existingProduct ? $existingProduct->status : 'Draft';
                 $trackAsSupply = $existingProduct ? (bool)$existingProduct->track_as_supply : true;
@@ -1264,7 +1060,6 @@ class ProductController extends Controller
                     ]
                 );
 
-                // Enforce quality media controls and subscription limits for Active status
                 $finalStatus = $status;
                 if ($status === 'Active') {
                     $activationReadiness = $this->evaluateActivationReadiness(
@@ -1293,7 +1088,6 @@ class ProductController extends Controller
                     $product->update(['status' => $finalStatus]);
                 }
 
-                // Sync Finished Goods supply record
                 if ($product->track_as_supply) {
                     $supply = $this->findSupplyForProduct($product, $seller->id);
                     if (!$supply) {
@@ -1316,7 +1110,6 @@ class ProductController extends Controller
                 $count++;
             }
 
-            // Record activity log for bulk import
             if ($count > 0) {
                 SellerActivityLog::recordEvent([
                     'seller_owner_id' => $seller->id,
@@ -1389,7 +1182,6 @@ class ProductController extends Controller
             return back()->with('error', 'Only rejected or flagged products can be resubmitted.');
         }
 
-        // Count resubmissions this calendar month
         $monthlyCount = DB::table('product_resubmissions')
             ->where('product_id', $product->id)
             ->whereYear('created_at', now()->year)
@@ -1405,7 +1197,6 @@ class ProductController extends Controller
         ]);
 
         DB::transaction(function () use ($product, $validated) {
-            // Log resubmission
             \App\Models\ProductResubmission::create([
                 'product_id' => $product->id,
                 'notes' => strip_tags($validated['notes'] ?? ''),
@@ -1419,14 +1210,12 @@ class ProductController extends Controller
             ]);
             Product::$bypassReview = false;
 
-            // Notify super admins
             User::query()
                 ->where('role', 'super_admin')
                 ->each(function (User $admin) use ($product) {
                     $admin->notify(new \App\Notifications\ProductPendingReviewNotification($product));
                 });
 
-            // Log seller activity
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $product->user_id,
                 'actor_user_id' => Auth::id(),
