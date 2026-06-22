@@ -7,23 +7,21 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\PlatformActivity;
 use App\Models\SponsorshipRequest;
-use App\Models\SystemAnnouncement;
 use App\Models\UserTierLog;
 use App\Models\ArtisanStatusLog;
 use App\Support\StructuredAddress;
 use App\Services\Admin\AdminMetricsService;
 use App\Services\Admin\AdminAnalyticsService;
-use App\Mail\ArtisanApproved;
-use App\Mail\ArtisanRejected;
+use App\Actions\Admin\Users\ApproveArtisan;
+use App\Actions\Admin\Users\RejectArtisan;
+use App\Actions\Admin\Users\BulkApproveArtisans;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class SuperAdminController extends Controller
@@ -260,64 +258,21 @@ class SuperAdminController extends Controller
         ]);
     }
 
-    public function approveArtisan(int|string $id)
+    public function approveArtisan(int|string $id, ApproveArtisan $approveArtisan)
     {
         Gate::authorize('admin-action');
-        $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
 
-        // REQUIREMENT: Admin must have previewed all required documents before approving
-        $requiredKeys = $this->getSubmittedArtisanDocumentKeys($artisan);
-        $viewedKeys = $this->getViewedArtisanDocumentKeys($artisan->id);
-        
-        $missingKeys = array_diff($requiredKeys, $viewedKeys);
-        
-        if (!empty($missingKeys)) {
-            return back()->withErrors([
-                'documents' => 'Preview all submitted documents before approving this application.'
-            ]);
-        }
-
-        ArtisanStatusLog::create(['user_id' => $artisan->id, 'previous_status' => $artisan->artisan_status, 'new_status' => 'approved']);
-        $artisan->update(['artisan_status' => 'approved', 'approved_at' => now(), 'approved_by' => Auth::id()]);
-
-        $this->clearViewedArtisanDocumentKeys($id);
-
-        // Log Activity
-        PlatformActivity::log(
-            'artisan_approved',
-            "Approved artisan application for: {$artisan->shop_name} ({$artisan->name})",
-            ['artisan_id' => $artisan->id, 'shop_name' => $artisan->shop_name]
-        );
-
-        try {
-            if ($artisan->email) Mail::to($artisan->email)->send(new ArtisanApproved($artisan));
-        } catch (\Exception $e) { Log::error('Email failed: ' . $e->getMessage()); }
+        $approveArtisan->execute($id, Auth::id());
 
         return back()->with('success', 'Artisan approved successfully!');
     }
 
-    public function rejectArtisan(Request $request, int|string $id)
+    public function rejectArtisan(Request $request, int|string $id, RejectArtisan $rejectArtisan)
     {
         Gate::authorize('admin-action');
         $request->validate(['reason' => 'required|string|min:10']);
-        $reason = strip_tags($request->reason);
-        $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
 
-        ArtisanStatusLog::create(['user_id' => $artisan->id, 'previous_status' => $artisan->artisan_status, 'new_status' => 'rejected']);
-        $artisan->update(['artisan_status' => 'rejected', 'artisan_rejection_reason' => $reason]);
-
-        $this->clearViewedArtisanDocumentKeys($id);
-
-        // Log Activity
-        PlatformActivity::log(
-            'artisan_rejected',
-            "Rejected artisan application for: {$artisan->name}",
-            ['artisan_id' => $artisan->id, 'reason' => $request->reason]
-        );
-
-        try {
-            if ($artisan->email) Mail::to($artisan->email)->send(new ArtisanRejected($artisan));
-        } catch (\Exception $e) { Log::error('Email failed: ' . $e->getMessage()); }
+        $rejectArtisan->execute($id, strip_tags($request->reason));
 
         return back()->with('success', 'Artisan application rejected.');
     }
@@ -329,120 +284,6 @@ class SuperAdminController extends Controller
     {
         Gate::authorize('admin-action');
         return Inertia::render('Admin/Analytics/Insights', $this->analytics->getInsightsData());
-    }
-
-    /**
-     * System Announcements
-     */
-    public function announcements()
-    {
-        Gate::authorize('admin-action');
-        return Inertia::render('Admin/Layout/Announcements', [
-            'announcements' => SystemAnnouncement::with('creator:id,name')->latest()->get(),
-        ]);
-    }
-
-    public function storeAnnouncement(Request $request)
-    {
-        Gate::authorize('admin-action');
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'message' => 'required|string',
-            'type' => 'required|in:info,warning,danger,success,custom',
-            'target_audience' => 'required|in:all,artisans,buyers',
-            'is_active' => 'boolean',
-        ]);
-        $validated['title'] = strip_tags($validated['title']);
-        $validated['message'] = strip_tags($validated['message']);
-
-        if ($request->boolean('is_active')) {
-            SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
-            $validated['starts_at'] = now();
-            $validated['broadcast_version'] = 1;
-        }
-
-        $validated['created_by'] = Auth::id();
-        SystemAnnouncement::create($validated);
-
-        if ($request->boolean('is_active')) {
-            $this->clearAnnouncementCache();
-        }
-
-        return back()->with('success', 'Announcement created.');
-    }
-
-    public function updateAnnouncement(Request $request, int|string $id)
-    {
-        Gate::authorize('admin-action');
-        $announcement = SystemAnnouncement::findOrFail($id);
-        
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'message' => 'required|string',
-            'type' => 'required|in:info,warning,danger,success,custom',
-            'target_audience' => 'required|in:all,artisans,buyers',
-            'is_active' => 'boolean',
-        ]);
-        $validated['title'] = strip_tags($validated['title']);
-        $validated['message'] = strip_tags($validated['message']);
-
-        if ($request->boolean('is_active') && !$announcement->is_active) {
-            SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
-            $validated['starts_at'] = now();
-            $validated['broadcast_version'] = ($announcement->broadcast_version ?? 0) + 1;
-        }
-
-        $announcement->update($validated);
-        $this->clearAnnouncementCache();
-
-        return back()->with('success', 'Announcement updated.');
-    }
-
-    public function broadcastAnnouncement(int|string $id)
-    {
-        Gate::authorize('admin-action');
-        $announcement = SystemAnnouncement::findOrFail($id);
-        
-        // EXCLUSIVE BROADCAST: Deactivate all currently active announcements 
-        // to prevent overlapping or clashing global states.
-        SystemAnnouncement::where('is_active', true)->update(['is_active' => false]);
-        
-        $announcement->update([
-            'is_active' => true,
-            'broadcast_version' => ($announcement->broadcast_version ?? 0) + 1,
-            'starts_at' => now(),
-        ]);
-
-        $this->clearAnnouncementCache();
-
-        return back()->with('success', 'Announcement broadcasted successfully! All other active announcements have been paused.');
-    }
-
-    public function stopAnnouncement(int|string $id)
-    {
-        Gate::authorize('admin-action');
-        $announcement = SystemAnnouncement::findOrFail($id);
-        $announcement->update(['is_active' => false]);
-        $this->clearAnnouncementCache();
-
-        return back()->with('success', 'Announcement stopped.');
-    }
-
-    public function destroyAnnouncement(int|string $id)
-    {
-        Gate::authorize('admin-action');
-        $announcement = SystemAnnouncement::findOrFail($id);
-        $announcement->delete();
-        $this->clearAnnouncementCache();
-
-        return back()->with('success', 'Announcement deleted.');
-    }
-
-    private function clearAnnouncementCache()
-    {
-        foreach (['guest', 'artisan', 'staff', 'buyer', 'super_admin'] as $role) {
-            Cache::forget('global_announcement_' . $role);
-        }
     }
 
     public function viewArtisan(int|string $id)
@@ -464,29 +305,12 @@ class SuperAdminController extends Controller
         ]);
     }
 
-    public function bulkApproveArtisans(Request $request)
+    public function bulkApproveArtisans(Request $request, BulkApproveArtisans $bulkApproveArtisans)
     {
         Gate::authorize('admin-action');
         $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:users,id']);
         
-        $count = 0;
-        foreach ($request->ids as $id) {
-            $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->find($id);
-            if (!$artisan) {
-                continue;
-            }
-            $artisan->update(['artisan_status' => 'approved', 'approved_at' => now(), 'approved_by' => Auth::id()]);
-            $count++;
-            
-            if (!$artisan->email) {
-                continue;
-            }
-            try {
-                Mail::to($artisan->email)->send(new ArtisanApproved($artisan));
-            } catch (\Exception $e) {
-                Log::error('Bulk Email failed: ' . $e->getMessage());
-            }
-        }
+        $count = $bulkApproveArtisans->execute($request->ids, Auth::id());
 
         return back()->with('success', "Successfully approved {$count} artisans.");
     }

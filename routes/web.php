@@ -33,6 +33,7 @@ use App\Http\Controllers\Seller\TeamMessageController;
 use App\Http\Controllers\Seller\AuditLogController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\SuperAdminController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\PlatformDiagnosticsController;
@@ -359,12 +360,12 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/sponsorships/{sponsorshipRequest}/reject', [CatalogController::class, 'rejectSponsorship'])->name('admin.sponsorships.reject');
 
     // System Announcements
-    Route::get('/announcements', [SuperAdminController::class, 'announcements'])->name('admin.announcements');
-    Route::post('/announcements', [SuperAdminController::class, 'storeAnnouncement'])->name('admin.announcements.store');
-    Route::patch('/announcements/{announcement}', [SuperAdminController::class, 'updateAnnouncement'])->name('admin.announcements.update');
-    Route::delete('/announcements/{announcement}', [SuperAdminController::class, 'destroyAnnouncement'])->name('admin.announcements.destroy');
-    Route::post('/announcements/{announcement}/broadcast', [SuperAdminController::class, 'broadcastAnnouncement'])->name('admin.announcements.broadcast');
-    Route::post('/announcements/{announcement}/stop', [SuperAdminController::class, 'stopAnnouncement'])->name('admin.announcements.stop');
+    Route::get('/announcements', [AnnouncementController::class, 'index'])->name('admin.announcements');
+    Route::post('/announcements', [AnnouncementController::class, 'store'])->name('admin.announcements.store');
+    Route::patch('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('admin.announcements.update');
+    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('admin.announcements.destroy');
+    Route::post('/announcements/{announcement}/broadcast', [AnnouncementController::class, 'broadcast'])->name('admin.announcements.broadcast');
+    Route::post('/announcements/{announcement}/stop', [AnnouncementController::class, 'stop'])->name('admin.announcements.stop');
 
     // Dispute Arbitration
     Route::get('/disputes', [DisputeController::class, 'adminIndex'])->name('admin.disputes.index');
