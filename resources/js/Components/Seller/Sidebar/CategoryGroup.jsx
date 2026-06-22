@@ -2,7 +2,15 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 
-export default function CategoryGroup({ title, open, onToggle, children }) {
+export default function CategoryGroup({ title, open, onToggle, children, isCollapsed }) {
+    if (isCollapsed) {
+        return (
+            <div className="space-y-0.5 pt-1.5 border-t border-clay-100/10 first:border-t-0 mt-1.5 first:mt-0">
+                {children}
+            </div>
+        );
+    }
+
     return (
         <div className="mt-3 first:mt-1">
             <motion.button

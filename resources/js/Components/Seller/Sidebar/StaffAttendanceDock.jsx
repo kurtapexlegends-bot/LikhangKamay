@@ -86,7 +86,7 @@ const AttendanceActionButton = ({ icon: Icon, label, onClick, disabled, tone = '
     </button>
 );
 
-export default function StaffAttendanceDock({ attendance }) {
+export default function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, onMouseLeave }) {
     const [open, setOpen] = useState(false);
     const [processingAction, setProcessingAction] = useState(null);
     const [showBreakConfirm, setShowBreakConfirm] = useState(false);
@@ -206,7 +206,9 @@ export default function StaffAttendanceDock({ attendance }) {
     return (
         <div ref={containerRef} className="relative">
             {open && (hasOpenSession || isPaused) && (
-                <div className="absolute inset-x-0 bottom-[calc(100%+0.6rem)] rounded-2xl border border-clay-100 bg-white p-2">
+                <div className={`absolute rounded-2xl border border-clay-100 bg-white p-2 shadow-lg z-[130] ${
+                    isCollapsed ? 'left-full bottom-0 ml-2 w-64' : 'inset-x-0 bottom-[calc(100%+0.6rem)]'
+                }`}>
                     <div className={`rounded-xl border px-3 py-2.5 ${hasOpenSession ? 'border-emerald-100 bg-emerald-50/70' : 'border-amber-100 bg-amber-50/70'}`}>
                         <p className={`text-[10px] font-bold uppercase tracking-[0.18em] ${hasOpenSession ? 'text-emerald-700' : 'text-amber-700'}`}>
                             {hasOpenSession ? 'Clocked In' : 'On Break'}
@@ -289,44 +291,70 @@ export default function StaffAttendanceDock({ attendance }) {
                 </div>
             )}
 
-            <button
-                type="button"
-                onClick={handlePrimaryClick}
-                disabled={!!processingAction}
-                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left transition-colors ${
-                    hasOpenSession
-                        ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50'
-                        : 'border-clay-200 bg-[#FCF7F2] hover:bg-clay-50'
-                } ${processingAction ? 'cursor-wait opacity-70' : ''}`}
-            >
-                <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                        hasOpenSession ? 'bg-emerald-100 text-emerald-700' : 'bg-clay-100 text-clay-700'
-                    }`}>
-                        <Clock3 size={16} strokeWidth={2.5} />
-                    </div>
-                    <span className="truncate text-sm font-bold text-stone-900">
-                        {processingAction === 'clock_in'
+            {isCollapsed ? (
+                <button
+                    type="button"
+                    onClick={handlePrimaryClick}
+                    disabled={!!processingAction}
+                    onMouseEnter={(e) => {
+                        const text = processingAction === 'clock_in'
                             ? (isPaused ? 'Resuming Work' : 'Clocking In')
                             : hasOpenSession
-                                ? 'Clocked In'
+                                ? 'Clocked In (Click to toggle controls)'
                                 : isPaused
-                                    ? 'On Break'
-                                    : 'Clock In'}
-                    </span>
-                </div>
+                                    ? 'On Break (Click to toggle controls)'
+                                    : 'Clock In';
+                        onMouseEnter?.(e, text);
+                    }}
+                    onMouseLeave={onMouseLeave}
+                    className={`group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                        hasOpenSession
+                            ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50 text-emerald-700'
+                            : 'border-clay-200 bg-[#FCF7F2] hover:bg-clay-50 text-clay-700'
+                    } ${processingAction ? 'cursor-wait opacity-70' : ''}`}
+                >
+                    <Clock3 size={16} strokeWidth={2.5} />
+                </button>
+            ) : (
+                <button
+                    type="button"
+                    onClick={handlePrimaryClick}
+                    disabled={!!processingAction}
+                    className={`flex w-full items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left transition-colors ${
+                        hasOpenSession
+                            ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50'
+                            : 'border-clay-200 bg-[#FCF7F2] hover:bg-clay-50'
+                    } ${processingAction ? 'cursor-wait opacity-70' : ''}`}
+                >
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                            hasOpenSession ? 'bg-emerald-100 text-emerald-700' : 'bg-clay-100 text-clay-700'
+                        }`}>
+                            <Clock3 size={16} strokeWidth={2.5} />
+                        </div>
+                        <span className="truncate text-sm font-bold text-stone-900">
+                            {processingAction === 'clock_in'
+                                ? (isPaused ? 'Resuming Work' : 'Clocking In')
+                                : hasOpenSession
+                                    ? 'Clocked In'
+                                    : isPaused
+                                        ? 'On Break'
+                                        : 'Clock In'}
+                        </span>
+                    </div>
 
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400">
-                    {(hasOpenSession || isPaused) ? (
-                        <ChevronUp
-                            size={14}
-                            className={`transition-transform ${open ? '' : 'rotate-180'}`}
-                        />
-                    ) : (
-                        <Clock3 size={14} strokeWidth={2.4} />
-                    )}
-                </span>
-            </button>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400">
+                        {(hasOpenSession || isPaused) ? (
+                            <ChevronUp
+                                size={14}
+                                className={`transition-transform ${open ? '' : 'rotate-180'}`}
+                            />
+                        ) : (
+                            <Clock3 size={14} strokeWidth={2.4} />
+                        )}
+                    </span>
+                </button>
+            )}
 
             <ConfirmationModal
                 isOpen={showBreakConfirm}

@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'; 
 import { router, usePage } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
-    Users, MessageCircle, Settings, X,
+    Users, MessageCircle, Settings, X, ChevronLeft,
     ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Crown, Sparkles, Zap
 } from 'lucide-react';
 import { PlanModal } from '@/Components/PlanBadge';
@@ -60,7 +61,7 @@ const getInitialExpandedGroups = (active) => {
     return defaultGroups;
 };
 
-export default function SellerSidebar({ active, user, mobileOpen = false, onClose = () => {} }) {
+export default function SellerSidebar({ active, user, mobileOpen = false, onClose = () => {}, isCollapsed = false, onToggleCollapse = () => {} }) {
     const { sellerSubscription, sellerSidebar, attendance } = usePage().props;
 
     const currentTierKey = sellerSubscription?.tierKey
@@ -113,6 +114,33 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const [showGearHint, setShowGearHint] = useState(false);
 
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups(active));
+
+    const [activeTooltip, setActiveTooltip] = useState(null);
+
+    const handleTooltipShow = (e, text, subtext = null) => {
+        if (!isCollapsed) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        setActiveTooltip({
+            text,
+            subtext,
+            y: rect.top + rect.height / 2,
+            x: rect.right + 12
+        });
+    };
+
+    const handleTooltipLeave = () => {
+        setActiveTooltip(null);
+    };
+
+    const handleNavScroll = () => {
+        if (activeTooltip) {
+            setActiveTooltip(null);
+        }
+    };
+
+    useEffect(() => {
+        setActiveTooltip(null);
+    }, [isCollapsed]);
 
     useEffect(() => {
         setModules(enabledToggles);
@@ -185,22 +213,33 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-[100] w-52 bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="relative flex shrink-0 items-center justify-between border-b border-clay-100/30 bg-transparent px-4 py-3">
+            <aside className={`fixed inset-y-0 left-0 z-[100] ${isCollapsed ? 'w-16' : 'w-52'} bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-all duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                {/* Desktop Collapse Toggle Button */}
+                <button
+                    onClick={() => onToggleCollapse(!isCollapsed)}
+                    className="hidden lg:flex absolute -right-3 top-6 z-[110] w-6 h-6 bg-white border border-clay-100/80 rounded-full items-center justify-center text-gray-400 hover:text-clay-600 shadow-sm hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                    aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                    <ChevronLeft size={12} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+                </button>
+
+                <div className={`relative flex shrink-0 items-center ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'} border-b border-clay-100/30 bg-transparent py-3`}>
                     <div className="flex min-w-0 items-center gap-2">
                         <img 
                             src="/images/logo.png" 
                             alt="LikhangKamay" 
                             className="w-6 h-6 object-contain shrink-0"
                         />
-                        <span className="font-serif text-base font-bold text-gray-900 tracking-tight truncate">LikhangKamay</span>
+                        {!isCollapsed && (
+                            <span className="font-serif text-base font-bold text-gray-900 tracking-tight truncate">LikhangKamay</span>
+                        )}
                     </div>
 
                     <button onClick={onClose} aria-label="Close sidebar" className="lg:hidden rounded-lg p-1 text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30">
                         <X size={20} />
                     </button>
 
-                    {showGear && (
+                    {!isCollapsed && showGear && (
                         <div className="hidden lg:block ml-auto relative">
                             <button 
                                 onClick={() => {
@@ -235,7 +274,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     )}
                 </div>
 
-                {showGear && showModulePanel && (
+                {!isCollapsed && showGear && showModulePanel && (
                     <>
                         <div 
                             className="fixed inset-0 z-[60]" 
@@ -297,51 +336,75 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
                 {showPlanPanel && (
                     <>
-                        <div className="border-b border-clay-100/30 bg-stone-50/10 px-5 py-3 flex-shrink-0">
-                            <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
-                                <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
+                        <div className={`border-b border-clay-100/30 bg-stone-50/10 ${isCollapsed ? 'px-2 py-3 flex justify-center' : 'px-5 py-3'} flex-shrink-0`}>
+                            {isCollapsed ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPlanModalOpen(true)}
+                                    onMouseEnter={(e) => handleTooltipShow(e, `${entitlement.tierLabel} Plan`, sellerSubscription ? `Products: ${sellerSubscription.activeCount} / ${sellerSubscription.limit}` : null)}
+                                    onMouseLeave={handleTooltipLeave}
+                                    className={`group relative flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
+                                        isElite 
+                                            ? 'bg-violet-50 border-violet-200 text-violet-800 hover:bg-violet-100 shadow-[0_2px_8px_rgba(109,40,217,0.08)]' 
+                                            : isPremium 
+                                                ? 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 shadow-[0_2px_8px_rgba(217,119,6,0.08)]' 
+                                                : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
+                                    }`}
+                                >
                                     {isElite ? (
-                                        <Sparkles size={13} className="text-violet-500 fill-violet-200" />
+                                        <Sparkles size={16} className="text-violet-500 fill-violet-200" />
                                     ) : isPremium ? (
-                                        <Crown size={13} className="text-amber-500 fill-amber-200" />
+                                        <Crown size={16} className="text-amber-500 fill-amber-200" />
                                     ) : (
-                                        <Zap size={13} className="text-stone-400 fill-stone-200" />
+                                        <Zap size={16} className="text-stone-400 fill-stone-200" />
                                     )}
-                                    <span className="tracking-wide">{entitlement.tierLabel} Plan</span>
-                                </div>
-                                
-                                {sellerSubscription && (
-                                    <div className="flex flex-col gap-1.5 mt-2.5">
-                                        <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium group-hover:text-stone-700 transition-colors">
-                                            <span>Active Products</span>
-                                            <span>
-                                                <strong className="text-stone-900">{sellerSubscription.activeCount}</strong> / {sellerSubscription.limit}
-                                            </span>
-                                        </div>
-                                        <div className="w-full h-1.5 bg-stone-200/80 rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full rounded-full transition-[width] duration-500 ${
-                                                    sellerSubscription.activeCount >= sellerSubscription.limit 
-                                                        ? 'bg-red-500' 
-                                                        : isElite 
-                                                            ? 'bg-violet-500' 
-                                                            : isPremium 
-                                                                ? 'bg-amber-500' 
-                                                                : 'bg-stone-500'
-                                                }`}
-                                                style={{ width: `${Math.min(100, (sellerSubscription.activeCount / sellerSubscription.limit) * 100)}%` }}
-                                            />
-                                        </div>
-                                        {sellerSubscription.activeCount >= sellerSubscription.limit && !isElite && (
-                                            <span className="text-[9px] text-red-500 font-medium leading-tight mt-0.5">
-                                                {canManagePlan
-                                                    ? 'Product limit reached. Upgrade to add more.'
-                                                    : 'Product limit reached. Only the shop owner can upgrade.'}
-                                            </span>
+                                </button>
+                            ) : (
+                                <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
+                                    <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
+                                        {isElite ? (
+                                            <Sparkles size={13} className="text-violet-500 fill-violet-200" />
+                                        ) : isPremium ? (
+                                            <Crown size={13} className="text-amber-500 fill-amber-200" />
+                                        ) : (
+                                            <Zap size={13} className="text-stone-400 fill-stone-200" />
                                         )}
+                                        <span className="tracking-wide">{entitlement.tierLabel} Plan</span>
                                     </div>
-                                )}
-                            </button>
+                                    
+                                    {sellerSubscription && (
+                                        <div className="flex flex-col gap-1.5 mt-2.5">
+                                            <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium group-hover:text-stone-700 transition-colors">
+                                                <span>Active Products</span>
+                                                <span>
+                                                    <strong className="text-stone-900">{sellerSubscription.activeCount}</strong> / {sellerSubscription.limit}
+                                                </span>
+                                            </div>
+                                            <div className="w-full h-1.5 bg-stone-200/80 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-[width] duration-500 ${
+                                                        sellerSubscription.activeCount >= sellerSubscription.limit 
+                                                            ? 'bg-red-500' 
+                                                            : isElite 
+                                                                ? 'bg-violet-500' 
+                                                                : isPremium 
+                                                                    ? 'bg-amber-500' 
+                                                                    : 'bg-stone-500'
+                                                    }`}
+                                                    style={{ width: `${Math.min(100, (sellerSubscription.activeCount / sellerSubscription.limit) * 100)}%` }}
+                                                />
+                                            </div>
+                                            {sellerSubscription.activeCount >= sellerSubscription.limit && !isElite && (
+                                                <span className="text-[9px] text-red-500 font-medium leading-tight mt-0.5">
+                                                    {canManagePlan
+                                                        ? 'Product limit reached. Upgrade to add more.'
+                                                        : 'Product limit reached. Only the shop owner can upgrade.'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </button>
+                            )}
                         </div>
 
                         <PlanModal 
@@ -353,14 +416,15 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     </>
                 )}
 
-                <nav scroll-region="true" className="flex-1 overflow-y-auto px-3 py-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                <nav scroll-region="true" onScroll={handleNavScroll} className={`flex-1 overflow-y-auto ${isCollapsed ? 'no-scrollbar px-1.5' : 'px-3'} py-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent`}>
                     {isStaffActor && (
                         <CategoryGroup
                             title="Workspace"
                             open={expandedGroups.workspace}
                             onToggle={() => toggleGroup('workspace')}
+                            isCollapsed={isCollapsed}
                         >
-                            <NavItem href={route('staff.dashboard')} icon={LayoutDashboard} active={active === 'staff-dashboard'} onClick={onClose}>Staff Hub</NavItem>
+                            <NavItem href={route('staff.dashboard')} icon={LayoutDashboard} active={active === 'staff-dashboard'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Staff Hub')} onMouseLeave={handleTooltipLeave}>Staff Hub</NavItem>
                         </CategoryGroup>
                     )}
 
@@ -370,18 +434,19 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 title="Core Operations"
                                 open={expandedGroups.core}
                                 onToggle={() => toggleGroup('core')}
+                                isCollapsed={isCollapsed}
                             >
                                 {!isStaffActor && visibleModulesSet.has('overview') && (
-                                    <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose}>Overview</NavItem>
+                                    <NavItem href={route('dashboard')} icon={LayoutDashboard} active={active === 'overview'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Overview')} onMouseLeave={handleTooltipLeave}>Overview</NavItem>
                                 )}
                                 {visibleModulesSet.has('products') && (
-                                    <NavItem href={route('products.index')} icon={Package} active={active === 'products'} onClick={onClose}>Products</NavItem>
+                                    <NavItem href={route('products.index')} icon={Package} active={active === 'products'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Products')} onMouseLeave={handleTooltipLeave}>Products</NavItem>
                                 )}
                                 {visibleModulesSet.has('analytics') && (
-                                    <NavItem href={route('analytics.index')} icon={BarChart3} active={active === 'analytics'} onClick={onClose}>Analytics</NavItem>
+                                    <NavItem href={route('analytics.index')} icon={BarChart3} active={active === 'analytics'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Analytics')} onMouseLeave={handleTooltipLeave}>Analytics</NavItem>
                                 )}
                                 {visibleModulesSet.has('3d') && (
-                                    <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose}>3D Manager</NavItem>
+                                    <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, '3D Manager')} onMouseLeave={handleTooltipLeave}>3D Manager</NavItem>
                                 )}
                             </CategoryGroup>
                         </div>
@@ -393,18 +458,19 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 title="Sales & Support"
                                 open={expandedGroups.crm}
                                 onToggle={() => toggleGroup('crm')}
+                                isCollapsed={isCollapsed}
                             >
                                 {visibleModulesSet.has('orders') && (
-                                    <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders'} onClick={onClose}>Orders</NavItem>
+                                    <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Orders')} onMouseLeave={handleTooltipLeave}>Orders</NavItem>
                                 )}
                                 {visibleModulesSet.has('messages') && (
-                                    <NavItem href={route('chat.index')} icon={MessageCircle} active={active === 'chat'} onClick={onClose}>Messages</NavItem>
+                                    <NavItem href={route('chat.index')} icon={MessageCircle} active={active === 'chat'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Messages')} onMouseLeave={handleTooltipLeave}>Messages</NavItem>
                                 )}
                                 {visibleModulesSet.has('team_messages') && (
-                                    <NavItem href={route('team-messages.index')} icon={Users} active={active === 'team-messages'} onClick={onClose}>Team Inbox</NavItem>
+                                    <NavItem href={route('team-messages.index')} icon={Users} active={active === 'team-messages'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Team Inbox')} onMouseLeave={handleTooltipLeave}>Team Inbox</NavItem>
                                 )}
                                 {visibleModulesSet.has('reviews') && (
-                                    <NavItem href={route('reviews.index')} icon={Star} active={active === 'reviews'} onClick={onClose}>Reviews</NavItem>
+                                    <NavItem href={route('reviews.index')} icon={Star} active={active === 'reviews'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Reviews')} onMouseLeave={handleTooltipLeave}>Reviews</NavItem>
                                 )}
                             </CategoryGroup>
                         </div>
@@ -416,9 +482,10 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 title="Shop Appearance"
                                 open={expandedGroups.appearance}
                                 onToggle={() => toggleGroup('appearance')}
+                                isCollapsed={isCollapsed}
                             >
                                 {visibleModulesSet.has('shop_settings') && (
-                                    <NavItem href={route('shop.settings')} icon={Sliders} active={active === 'settings'} onClick={onClose}>Shop Settings</NavItem>
+                                    <NavItem href={route('shop.settings')} icon={Sliders} active={active === 'settings'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Shop Settings')} onMouseLeave={handleTooltipLeave}>Shop Settings</NavItem>
                                 )}
                             </CategoryGroup>
                         </div>
@@ -430,8 +497,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 title="Marketing"
                                 open={expandedGroups.marketing}
                                 onToggle={() => toggleGroup('marketing')}
+                                isCollapsed={isCollapsed}
                             >
-                                <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose}>Sponsorships</NavItem>
+                                <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Sponsorships')} onMouseLeave={handleTooltipLeave}>Sponsorships</NavItem>
                             </CategoryGroup>
                         </div>
                     )}
@@ -442,27 +510,30 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 title="Business Capabilities"
                                 open={expandedGroups.advanced}
                                 onToggle={() => toggleGroup('advanced')}
+                                isCollapsed={isCollapsed}
                             >
                                 {visibleModulesSet.has('hr') && (
-                                    <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose}>People & Payroll</NavItem>
+                                    <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'People & Payroll')} onMouseLeave={handleTooltipLeave}>People & Payroll</NavItem>
                                 )}
                                 {visibleModulesSet.has('accounting') && (
-                                    <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose}>Finance</NavItem>
+                                    <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Finance')} onMouseLeave={handleTooltipLeave}>Finance</NavItem>
                                 )}
                                 {canViewAuditLog && (
-                                    <NavItem href={route('audit-log.index')} icon={ClipboardList} active={active === 'audit-log'} onClick={onClose}>Audit Log</NavItem>
+                                    <NavItem href={route('audit-log.index')} icon={ClipboardList} active={active === 'audit-log'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Audit Log')} onMouseLeave={handleTooltipLeave}>Audit Log</NavItem>
                                 )}
                                 {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                     <div className="space-y-0.5">
-                                        <p className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                            <ClipboardList size={11} /> Inventory   
-                                        </p>
-                                        <div className="pl-2 space-y-0.5">
+                                        {!isCollapsed && (
+                                            <p className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                                                <ClipboardList size={11} /> Inventory   
+                                            </p>
+                                        )}
+                                        <div className={isCollapsed ? 'space-y-0.5' : 'pl-2 space-y-0.5'}>
                                             {visibleModulesSet.has('procurement') && (
-                                                <NavItem href={route('procurement.index')} icon={Warehouse} active={active === 'procurement'} compact onClick={onClose}>Inventory</NavItem>
+                                                <NavItem href={route('procurement.index')} icon={Warehouse} active={active === 'procurement'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Inventory')} onMouseLeave={handleTooltipLeave}>Inventory</NavItem>
                                             )}
                                             {visibleModulesSet.has('stock_requests') && (
-                                                <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose}>Restock Requests</NavItem>
+                                                <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Restock Requests')} onMouseLeave={handleTooltipLeave}>Restock Requests</NavItem>
                                             )}
                                         </div>
                                     </div>
@@ -473,11 +544,49 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 </nav>
 
                 {isStaffActor && (
-                    <div className="border-t border-gray-100 px-3 py-3">
-                        <StaffAttendanceDock attendance={attendance} />
+                    <div className={`border-t border-gray-100 ${isCollapsed ? 'px-2 py-3 flex justify-center' : 'px-3 py-3'}`}>
+                        <StaffAttendanceDock 
+                            attendance={attendance} 
+                            isCollapsed={isCollapsed} 
+                            onMouseEnter={handleTooltipShow}
+                            onMouseLeave={handleTooltipLeave}
+                        />
                     </div>
                 )}
             </aside>
+
+            {/* Self-contained CSS Keyframes for smooth tooltip fade-in/slide-in */}
+            <style>{`
+                @keyframes tooltipFadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-50%) scale(0.95) translateX(-8px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(-50%) scale(1) translateX(0);
+                    }
+                }
+            `}</style>
+
+            {isCollapsed && activeTooltip && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: `${activeTooltip.y}px`,
+                        left: `${activeTooltip.x}px`,
+                        animation: 'tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    }}
+                    className="pointer-events-none z-[9999] bg-[#1c1917] text-white text-xs rounded-xl px-3.5 py-2.5 shadow-xl border border-stone-800/80 whitespace-nowrap text-center"
+                >
+                    <p className="font-bold text-white text-xs leading-none">{activeTooltip.text}</p>
+                    {activeTooltip.subtext && (
+                        <p className="text-[10px] text-stone-400 font-medium mt-1.5 leading-none">
+                            {activeTooltip.subtext}
+                        </p>
+                    )}
+                </div>
+            )}
         </>
     );
 }

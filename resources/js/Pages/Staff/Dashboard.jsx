@@ -1,9 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SellerSidebar from '@/Layouts/SellerSidebar';
 import SellerHeader from '@/Layouts/SellerHeader';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import {
     ArrowRight,
     PlayCircle,
@@ -17,7 +16,7 @@ import ShiftConsolePanel from '@/Components/Staff/Dashboard/ShiftConsolePanel';
 import MobileShiftSheet from '@/Components/Staff/Dashboard/MobileShiftSheet';
 
 export default function StaffDashboard({ auth, hub }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [activeTab, setActiveTab] = useState('tools'); // 'tools' or 'checklist'
     const [isShiftSheetOpen, setIsShiftSheetOpen] = useState(false);
     const { sellerSidebar, attendance } = usePage().props;
@@ -119,25 +118,16 @@ export default function StaffDashboard({ auth, hub }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-850">
-            <ImpersonationBanner />
+        <>
             <Head title={hub.title} />
 
-            <SellerSidebar
-                active="staff-dashboard"
-                user={auth.user}
-                mobileOpen={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
+            <SellerHeader
+                title={hub.title}
+                subtitle={`Focused workspace for ${emphasis}.`}
+                auth={auth}
+                onMenuClick={openSidebar}
+                badge={{ label: hub.focus, iconColor: 'text-white' }}
             />
-
-            <div className="flex min-h-screen flex-col lg:ml-52">
-                <SellerHeader
-                    title={hub.title}
-                    subtitle={`Focused workspace for ${emphasis}.`}
-                    auth={auth}
-                    onMenuClick={() => setSidebarOpen(true)}
-                    badge={{ label: hub.focus, iconColor: 'text-white' }}
-                />
                 <main className="flex-1 px-4 pt-3 pb-24 sm:py-6 lg:pt-6 lg:px-8">
                     <div className="grid gap-6 xl:grid-cols-[1.75fr,0.85fr] items-start">
                         
@@ -356,7 +346,6 @@ export default function StaffDashboard({ auth, hub }) {
 
                     </div>
                 </main>
-            </div>
 
             {/* Checklist Floating Action Button (FAB) */}
             {hasActiveSession && activeTab === 'checklist' && (
@@ -414,6 +403,10 @@ export default function StaffDashboard({ auth, hub }) {
                     {hasActiveSession ? 'Manage Shift' : 'Clock In Now'}
                 </button>
             </div>
-        </div>
+        </>
     );
 }
+
+StaffDashboard.layout = (page) => (
+    <SellerWorkspaceLayout active="staff-dashboard">{page}</SellerWorkspaceLayout>
+);

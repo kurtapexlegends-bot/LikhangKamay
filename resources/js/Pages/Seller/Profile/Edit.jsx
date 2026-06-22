@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Layouts/SellerSidebar';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import AdminLayout from '@/Layouts/AdminLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { User, Shield, MapPin, AlertTriangle } from 'lucide-react';
@@ -15,7 +15,7 @@ import useFlashToast from '@/hooks/useFlashToast';
 export default function Edit({ mustVerifyEmail, status, addresses, profileMode = 'owner', workspaceShell = 'seller' }) {
     const { auth, flash } = usePage().props;
     const { addToast } = useToast();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const isPersonalOnly = profileMode === 'personal';
     const isAdminShell = workspaceShell === 'admin';
     useFlashToast(flash, addToast);
@@ -102,24 +102,28 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
     }
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-stone-800">
+        <>
             <Head title="My Profile" />
-            <SellerSidebar active="" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <SellerHeader
+                title="Profile Settings"
+                subtitle="Update account settings, password, and security preferences."
+                auth={auth}
+                onMenuClick={openSidebar}
+            />
 
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-300">
-                <SellerHeader
-                    title="Profile Settings"
-                    subtitle="Update account settings, password, and security preferences."
-                    auth={auth}
-                    onMenuClick={() => setSidebarOpen(true)}
-                />
-
-                <main className="flex-1 overflow-y-auto">
-                    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-                        {profileContent}
-                    </div>
-                </main>
-            </div>
-        </div>
+            <main className="flex-1 overflow-y-auto">
+                <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+                    {profileContent}
+                </div>
+            </main>
+        </>
     );
 }
+
+Edit.layout = (page) => {
+    const { workspaceShell } = page.props;
+    if (workspaceShell === 'admin') {
+        return <>{page}</>;
+    }
+    return <SellerWorkspaceLayout active="">{page}</SellerWorkspaceLayout>;
+};

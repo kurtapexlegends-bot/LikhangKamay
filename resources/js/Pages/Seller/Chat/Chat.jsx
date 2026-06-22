@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { MessageCircle } from 'lucide-react';
-import SellerSidebar from '@/Layouts/SellerSidebar';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
@@ -19,7 +18,7 @@ import QuickTemplateSelector from '@/Components/Seller/Chat/QuickTemplateSelecto
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
 export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, chatTemplates = [] }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
@@ -267,31 +266,27 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     }, {}), [activeMessages, timeNow]);
 
     return (
-        <div className="h-screen overflow-hidden bg-stone-50 flex font-sans text-stone-800 relative">
-            <ImpersonationBanner />
+        <>
             <Head title="Chat" />
-            <SellerSidebar active="chat" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 h-screen overflow-hidden transition-all duration-300">
-                <SellerHeader
-                    title={
-                        <div className="flex items-center gap-3">
-                            <span>Messages</span>
-                            <div className="flex items-center gap-1.5 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full hidden sm:flex">
-                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                                Live
-                            </div>
-                            {conversations.length > 0 && (
-                                <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                                    {conversations.length}
-                                </span>
-                            )}
+            <SellerHeader
+                title={
+                    <div className="flex items-center gap-3">
+                        <span>Messages</span>
+                        <div className="flex items-center gap-1.5 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full hidden sm:flex">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                            Live
                         </div>
-                    }
-                    subtitle="Chat directly with customers and buyers."
-                    auth={auth}
-                    onMenuClick={() => setSidebarOpen(true)}
-                />
+                        {conversations.length > 0 && (
+                            <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                                {conversations.length}
+                            </span>
+                        )}
+                    </div>
+                }
+                subtitle="Chat directly with customers and buyers."
+                auth={auth}
+                onMenuClick={openSidebar}
+            />
 
                 <div className="flex-1 flex overflow-hidden">
                     <ChatSidebar
@@ -400,7 +395,8 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                     setDeletingTemplateId={setDeletingTemplateId}
                     confirmDeleteTemplate={confirmDeleteTemplate}
                 />
-            </div>
-        </div>
+        </>
     );
 }
+
+Chat.layout = page => <SellerWorkspaceLayout active="chat">{page}</SellerWorkspaceLayout>;

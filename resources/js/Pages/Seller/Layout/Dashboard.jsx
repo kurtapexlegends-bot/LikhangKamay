@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Layouts/SellerSidebar';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 
 // Subcomponents
 import DashboardKPIs from '@/Components/Seller/Dashboard/DashboardKPIs';
@@ -14,7 +13,7 @@ import WelcomeModal from '@/Components/Seller/Dashboard/WelcomeModal';
 
 export default function Dashboard({ auth }) {
     const { metrics, chartData, categoryData, recentOrders, filters } = usePage().props;
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { openSidebar } = useSellerWorkspaceShell();
     const [chartFilter, setChartFilter] = useState('Monthly');
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || 'All');
@@ -86,67 +85,66 @@ export default function Dashboard({ auth }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
-            <ImpersonationBanner />
+        <>
             <Head title="Dashboard" />
-            <SellerSidebar active="overview" user={auth.user} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-300">
-                <SellerHeader
-                    title={(() => {
-                        const hour = new Date().getHours();
-                        if (hour < 12) return `Good morning, ${auth.user.name.split(' ')[0]}`;
-                        if (hour < 18) return `Good afternoon, ${auth.user.name.split(' ')[0]}`;
-                        return `Good evening, ${auth.user.name.split(' ')[0]}`;
-                    })()}
-                    subtitle="Monitor daily sales, active orders, and shop performance."
-                    auth={auth}
-                    onMenuClick={() => setSidebarOpen(true)}
+            <SellerHeader
+                title={(() => {
+                    const hour = new Date().getHours();
+                    if (hour < 12) return `Good morning, ${auth.user.name.split(' ')[0]}`;
+                    if (hour < 18) return `Good afternoon, ${auth.user.name.split(' ')[0]}`;
+                    return `Good evening, ${auth.user.name.split(' ')[0]}`;
+                })()}
+                subtitle="Monitor daily sales, active orders, and shop performance."
+                auth={auth}
+                onMenuClick={openSidebar}
+            />
+            <main className="flex-1 p-6 overflow-y-auto space-y-6">
+                {/* Key Metrics Overview Grid */}
+                <DashboardKPIs 
+                    metrics={metrics} 
+                    isLoading={isLoading} 
+                    shouldAnimateKPI={shouldAnimateKPI} 
                 />
-                <main className="flex-1 p-6 overflow-y-auto space-y-6">
-                    {/* Key Metrics Overview Grid */}
-                    <DashboardKPIs 
-                        metrics={metrics} 
+
+                {/* Shop Operational Health Strip */}
+                <ShopHealthStrip metrics={metrics} />
+
+                {/* Charts Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <RevenueAnalyticsChart 
+                        chartFilter={chartFilter} 
+                        setChartFilter={setChartFilter} 
+                        currentChartData={currentChartData} 
                         isLoading={isLoading} 
-                        shouldAnimateKPI={shouldAnimateKPI} 
                     />
+                    <SalesByCategoryChart 
+                        categoryData={categoryData} 
+                        isLoading={isLoading} 
+                />
+                </div>
 
-                    {/* Shop Operational Health Strip */}
-                    <ShopHealthStrip metrics={metrics} />
-
-                    {/* Charts Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <RevenueAnalyticsChart 
-                            chartFilter={chartFilter} 
-                            setChartFilter={setChartFilter} 
-                            currentChartData={currentChartData} 
-                            isLoading={isLoading} 
-                        />
-                        <SalesByCategoryChart 
-                            categoryData={categoryData} 
-                            isLoading={isLoading} 
-                        />
-                    </div>
-
-                    {/* Recent Orders Preview Card Grid/Table */}
-                    <RecentOrdersPreview 
-                        recentOrders={recentOrders}
-                        search={search}
-                        handleSearchChange={handleSearchChange}
-                        status={status}
-                        handleStatusChange={handleStatusChange}
-                        date={date}
-                        handleDateChange={handleDateChange}
-                        isLoading={isLoading}
-                    />
-                </main>
-            </div>
+                {/* Recent Orders Preview Card Grid/Table */}
+                <RecentOrdersPreview 
+                    recentOrders={recentOrders}
+                    search={search}
+                    handleSearchChange={handleSearchChange}
+                    status={status}
+                    handleStatusChange={handleStatusChange}
+                    date={date}
+                    handleDateChange={handleDateChange}
+                    isLoading={isLoading}
+                />
+            </main>
 
             {/* Welcome Flow Modal / SlideOverDrawer */}
             <WelcomeModal 
                 show={showWelcome} 
                 onClose={closeWelcomeModal} 
             />
-        </div>
+        </>
     );
 }
+
+Dashboard.layout = (page) => (
+    <SellerWorkspaceLayout active="overview">{page}</SellerWorkspaceLayout>
+);

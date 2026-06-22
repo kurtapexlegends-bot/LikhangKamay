@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import SellerSidebar from '@/Layouts/SellerSidebar';
 import CompactPagination from '@/Components/CompactPagination';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import { ShieldAlert, AlertTriangle, MessageSquare, X, Search } from 'lucide-react';
@@ -8,9 +7,8 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import SellerHeader from '@/Layouts/SellerHeader';
-import { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 // Subcomponents & Helpers
 import ReviewsMetrics from '@/Components/Seller/Chat/ReviewsMetrics';
@@ -23,7 +21,6 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     const { canEdit: canEditReviews, isReadOnly: isReviewsReadOnly } = useSellerModuleAccess('reviews');
     const { filters = {} } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [filter, setFilter] = useState('All');
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [replyingTo, setReplyingTo] = useState(null);
@@ -211,24 +208,15 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     };
 
     return (
-        <div className="min-h-screen bg-stone-50 flex font-sans text-stone-800">
-            <ImpersonationBanner />
+        <>
             <Head title="Shop Reviews" />
 
-            <SellerSidebar
-                active="reviews"
-                user={auth.user}
-                mobileOpen={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
+            <SellerHeader 
+                title="Customer Ratings"
+                subtitle="Manage customer reviews and feedback."
+                auth={auth}
+                onMenuClick={openSidebar}
             />
-
-            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:ml-52">
-                <SellerHeader 
-                    title="Customer Ratings"
-                    subtitle="Manage customer reviews and feedback."
-                    auth={auth}
-                    onMenuClick={openSidebar}
-                />
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                     {isReviewsReadOnly && (
@@ -324,7 +312,6 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                         )}
                     </div>
                 </main>
-            </div>
 
             {/* Request Review Moderation Modal */}
             <ReviewDisputeModal
@@ -375,6 +362,8 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 confirmColor="bg-rose-600 hover:bg-rose-700"
                 processing={false}
             />
-        </div>
+        </>
     );
 }
+
+Reviews.layout = page => <SellerWorkspaceLayout active="reviews">{page}</SellerWorkspaceLayout>;

@@ -12,6 +12,17 @@ const SellerWorkspaceShellContext = createContext({
 export default function SellerWorkspaceLayout({ active, children, sidebarUser = null }) {
     const { auth } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.localStorage.getItem('seller_sidebar_collapsed_v1') === 'true';
+    });
+
+    const handleToggleCollapse = (value) => {
+        setIsCollapsed(value);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('seller_sidebar_collapsed_v1', value ? 'true' : 'false');
+        }
+    };
 
     // Gesture-based sidebar reveal (Swipe from left edge)
     React.useEffect(() => {
@@ -60,9 +71,16 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     user={sidebarUser ?? auth?.user}
                     mobileOpen={sidebarOpen}
                     onClose={() => setSidebarOpen(false)}
+                    isCollapsed={isCollapsed}
+                    onToggleCollapse={handleToggleCollapse}
                 />
 
-                <div scroll-region="true" className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:ml-52">
+                <div 
+                    scroll-region="true" 
+                    className={`flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain transition-all duration-300 ${
+                        isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
+                    }`}
+                >
                     <div className="max-w-[90rem] mx-auto w-full flex-1 flex flex-col min-w-0">
                         {children}
                     </div>
