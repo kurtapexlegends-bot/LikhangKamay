@@ -276,7 +276,7 @@ export default function NotificationDropdown() {
                 <div className="relative inline-flex">
                     <Bell size={20} className="group-hover:scale-110 transition-transform" />
                     {localUnreadNotificationCount > 0 && (
-                        <span className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
+                        <span aria-hidden="true" className="absolute -top-1 -right-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[8px] font-bold leading-none text-white shadow-sm">
                             {localUnreadNotificationCount > 9 ? '9+' : localUnreadNotificationCount}
                         </span>
                     )}

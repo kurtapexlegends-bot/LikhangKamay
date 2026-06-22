@@ -229,6 +229,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             src="/images/logo.png" 
                             alt="LikhangKamay" 
                             className="w-6 h-6 object-contain shrink-0"
+                            loading="lazy"
                         />
                         {!isCollapsed && (
                             <span className="font-serif text-base font-bold text-gray-900 tracking-tight truncate">LikhangKamay</span>
@@ -252,7 +253,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             >
                                 <Settings size={14} />
                                 {activeModuleCount > 0 && !showModulePanel && (
-                                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-clay-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                                    <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-clay-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                                         {activeModuleCount}
                                     </span>
                                 )}
@@ -524,7 +525,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                     <div className="space-y-0.5">
                                         {!isCollapsed && (
-                                            <p className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                                            <p className="px-3 py-1.5 text-[10px] font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1">
                                                 <ClipboardList size={11} /> Inventory   
                                             </p>
                                         )}

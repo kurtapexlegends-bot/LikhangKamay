@@ -52,6 +52,7 @@ export default function RecentOrdersPreview({
                             src={order.customer_avatar.startsWith('http') || order.customer_avatar.startsWith('/storage') ? order.customer_avatar : `/storage/${order.customer_avatar}`} 
                             alt={order.customer} 
                             className="w-full h-full object-cover"
+                            loading="lazy"
                             onError={(e) => { e.target.style.display = 'none'; }}
                         />
                     ) : (
@@ -92,6 +93,7 @@ export default function RecentOrdersPreview({
                             placeholder="Order ID or Name..." 
                             value={search}
                             onChange={handleSearchChange}
+                            aria-label="Search orders by ID or customer name"
                             className="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-gray-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-clay-500/20" 
                         />
                     </div>
@@ -102,6 +104,7 @@ export default function RecentOrdersPreview({
                         <select 
                             value={status}
                             onChange={handleStatusChange}
+                            aria-label="Filter orders by status"
                             className="w-full pl-9 pr-8 py-2.5 min-h-[44px] bg-gray-50 border-none rounded-xl text-xs appearance-none focus:ring-2 focus:ring-clay-500/20 cursor-pointer"
                         >
                             <option value="All">All Status</option>
@@ -123,6 +126,7 @@ export default function RecentOrdersPreview({
                             type="date" 
                             value={date}
                             onChange={handleDateChange}
+                            aria-label="Filter orders by date"
                             className="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-gray-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-clay-500/20 cursor-pointer" 
                         />
                     </div>
@@ -197,6 +201,7 @@ export default function RecentOrdersPreview({
                                                         src={order.customer_avatar.startsWith('http') || order.customer_avatar.startsWith('/storage') ? order.customer_avatar : `/storage/${order.customer_avatar}`} 
                                                         alt={order.customer} 
                                                         className="w-full h-full object-cover"
+                                                        loading="lazy"
                                                         onError={(e) => { e.target.style.display = 'none'; }}
                                                     />
                                                 ) : (

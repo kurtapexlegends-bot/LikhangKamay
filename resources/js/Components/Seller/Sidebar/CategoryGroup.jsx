@@ -17,7 +17,7 @@ export default function CategoryGroup({ title, open, onToggle, children, isColla
                 type="button"
                 onClick={onToggle}
                 whileTap={{ scale: 0.98, x: 1 }}
-                className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-all hover:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-600 transition-all hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
             >
                 <span>{title}</span>
                 <ChevronRight

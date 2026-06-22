@@ -47,7 +47,7 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text, animateValue =
         >
             <div>
                 <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
+                <p className="text-2xl font-bold text-stone-900 tracking-tight">
                     {animateValue && (typeof value === 'number' || (typeof value === 'string' && value.includes('₱'))) ? (
                         typeof value === 'number' ? (
                             <AnimatedCounter value={value} />
@@ -57,7 +57,7 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text, animateValue =
                     ) : (
                         value
                     )}
-                </h3>
+                </p>
                 
                 {growth !== undefined && (
                     <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>

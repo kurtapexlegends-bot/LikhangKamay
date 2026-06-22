@@ -40,6 +40,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
                         src={avatarSrc}
                         alt={user.shop_name || user.name} 
                         className="w-full h-full object-cover"
+                        loading="lazy"
                     />
                 ) : (
                     (user.shop_name || user.name || 'A').charAt(0)
