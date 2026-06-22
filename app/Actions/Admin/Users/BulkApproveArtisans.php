@@ -7,6 +7,7 @@ use App\Mail\ArtisanApproved;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Gate;
 
 class BulkApproveArtisans
 {
@@ -19,6 +20,8 @@ class BulkApproveArtisans
      */
     public function execute(array $ids, int $adminId): int
     {
+        Gate::authorize('admin-action');
+
         $count = 0;
 
         foreach ($ids as $id) {

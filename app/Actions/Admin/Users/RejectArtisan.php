@@ -9,6 +9,7 @@ use App\Mail\ArtisanRejected;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Gate;
 
 class RejectArtisan
 {
@@ -21,6 +22,8 @@ class RejectArtisan
      */
     public function execute(int|string $id, string $reason): void
     {
+        Gate::authorize('admin-action');
+
         $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
 
         DB::transaction(function () use ($artisan, $reason) {

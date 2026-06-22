@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Gate;
 
 class ApproveArtisan
 {
@@ -23,6 +24,8 @@ class ApproveArtisan
      */
     public function execute(int|string $id, int $adminId): void
     {
+        Gate::authorize('admin-action');
+
         $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
 
         // REQUIREMENT: Admin must have previewed all required documents before approving
