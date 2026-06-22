@@ -3,36 +3,23 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\SubscriptionTransaction;
-use App\Models\UserTierLog;
 use App\Services\PayMongoService;
+use App\Services\SubscriptionService;
+use App\Actions\Seller\Subscription\InitiateSubscriptionUpgrade;
+use App\Actions\Seller\Subscription\DowngradeSubscription;
+use App\Actions\Seller\Subscription\VerifySubscriptionPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class SubscriptionController extends Controller
 {
-    private const PLAN_LEVELS = [
-        'free' => 1,
-        'artisan' => 1,
-        'premium' => 2,
-        'super_premium' => 3,
-    ];
-
-    private const PLAN_PRICES = [
-        'premium' => 199.00,
-        'super_premium' => 399.00,
-    ];
-
     public function __construct(
         private readonly PayMongoService $payMongoService,
-        private readonly \App\Services\SubscriptionService $subscriptionService,
+        private readonly SubscriptionService $subscriptionService,
+        private readonly VerifySubscriptionPayment $verifyPaymentAction
     ) {
     }
 
@@ -40,7 +27,7 @@ class SubscriptionController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $this->reconcilePendingUpgradesForUser($user);
+        $this->verifyPaymentAction->reconcilePendingUpgradesForUser($user, $this->payMongoService, $this->subscriptionService);
 
         $user->refresh();
         $activeProductsCount = $user->products()->where('status', 'Active')->count();
@@ -75,21 +62,11 @@ class SubscriptionController extends Controller
                 'referenceNumber' => $pendingUpgrade->reference_number,
                 'createdAt' => $pendingUpgrade->created_at?->toIso8601String(),
             ] : null,
-            // Only send active products in case they need to manage downgrades
             'activeProducts' => $user->products()->where('status', 'Active')->select('id', 'name', 'sku', 'cover_photo_path', 'price')->get(),
         ]);
     }
 
-    public function getPlanPrice(string $plan): float
-    {
-        return match ($plan) {
-            'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 199.00),
-            'super_premium' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00),
-            default => 0.00,
-        };
-    }
-
-    public function upgrade(Request $request)
+    public function upgrade(Request $request, InitiateSubscriptionUpgrade $action)
     {
         $validated = $request->validate([
             'plan' => 'required|in:premium,super_premium'
@@ -98,83 +75,21 @@ class SubscriptionController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        $currentPlan = $this->normalizeTier($user->premium_tier);
-        $currentLevel = $this->getTierLevel($currentPlan);
-        $targetLevel = $this->getTierLevel($validated['plan']);
-
-        if ($targetLevel < $currentLevel) {
-            return redirect()->route('seller.subscription')->with('warning', 'Please use the downgrade flow to switch to a lower plan.');
-        }
-
-        if ($targetLevel === $currentLevel) {
-            return back()->with('error', 'You are already on this plan.');
-        }
-
-        $amount = $this->getPlanPrice($validated['plan']);
-
-        $transaction = SubscriptionTransaction::create($this->buildSubscriptionTransactionPayload(
-            $user,
-            $currentPlan,
-            $validated['plan'],
-            $amount,
-            [
-                'status' => SubscriptionTransaction::STATUS_PENDING,
-                'reference_number' => 'SUB-' . strtoupper(Str::random(10)),
-                'metadata' => [
-                    'seller_name' => $user->shop_name ?: $user->name,
-                ],
-            ],
-        ));
-
-        $planName = $this->formatPlanName($validated['plan']);
-        $checkoutData = [
-            'line_items' => [[
-                'currency' => 'PHP',
-                'amount' => (int) round($amount * 100),
-                'description' => "{$planName} seller subscription upgrade",
-                'name' => "{$planName} Subscription",
-                'quantity' => 1,
-            ]],
-            'payment_method_types' => ['gcash', 'grab_pay', 'paymaya', 'card'],
-            'success_url' => URL::signedRoute('seller.subscription.payment.success', ['subscription' => $transaction->reference_number]),
-            'cancel_url' => URL::signedRoute('seller.subscription.payment.cancel', ['subscription' => $transaction->reference_number]),
-            'description' => 'Subscription upgrade for ' . ($user->shop_name ?: $user->name),
-            'reference_number' => $transaction->reference_number,
-            'send_email_receipt' => true,
-        ];
-
         try {
-            $session = $this->payMongoService->createCheckoutSession($checkoutData);
-
-            $transaction->update([
-                'paymongo_session_id' => $session['id'],
-                'metadata' => [
-                    ...($transaction->metadata ?? []),
-                    'checkout_url' => $session['attributes']['checkout_url'] ?? null,
-                ],
-            ]);
-
-            return Inertia::location($session['attributes']['checkout_url']);
+            $checkoutUrl = $action->execute($user, $validated['plan'], $this->payMongoService);
+            return Inertia::location($checkoutUrl);
         } catch (\Throwable $e) {
-            Log::error('PayMongo subscription checkout error: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'subscription_transaction_id' => $transaction->id,
-                'target_plan' => $validated['plan'],
-            ]);
-
-            $transaction->update([
-                'status' => SubscriptionTransaction::STATUS_FAILED,
-                'metadata' => [
-                    ...($transaction->metadata ?? []),
-                    'error' => $e->getMessage(),
-                ],
-            ]);
-
+            if ($e->getMessage() === 'downgrade_flow') {
+                return redirect()->route('seller.subscription')->with('warning', 'Please use the downgrade flow to switch to a lower plan.');
+            }
+            if ($e->getMessage() === 'already_on_plan') {
+                return back()->with('error', 'You are already on this plan.');
+            }
             return back()->with('error', 'Subscription checkout could not be started right now. Please try again.');
         }
     }
 
-    public function downgrade(Request $request)
+    public function downgrade(Request $request, DowngradeSubscription $action)
     {
         $validated = $request->validate([
             'plan' => 'required|in:free,premium',
@@ -187,82 +102,20 @@ class SubscriptionController extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $newTier = $validated['plan'];
         $previousUrl = url()->previous();
-        $previousTier = $user->premium_tier;
-        $shouldSuspendStaffForPlan = $previousTier === 'super_premium' && $newTier === 'free';
 
-        // Determine new limit from User model
-        $user->premium_tier = $newTier;
-        $newLimit = $user->getActiveProductLimit();
-        $user->premium_tier = $previousTier;
-
-        $activeIds = $user->products()
-            ->where('status', 'Active')
-            ->pluck('id')
-            ->toArray();
-
-        $keepIds = count($activeIds) > $newLimit
-            ? $this->getTopSellingActiveProductIds($user, $newLimit)
-            : ($validated['keep_active_ids'] ?? $activeIds);
-        
-        if (count($keepIds) > $newLimit) {
-             return back()->withErrors(['limit' => 'You selected too many products to keep active. The limit for this tier is ' . $newLimit]);
-        }
-
-        DB::transaction(function () use ($user, $previousTier, $newTier, $keepIds, $shouldSuspendStaffForPlan) {
-            // Verify that the requested IDs belong to the user
-            $validKeepIds = $user->products()->whereIn('id', $keepIds)->where('status', 'Active')->pluck('id')->toArray();
-
-            // Draft all active products NOT in the keep list
-            $user->products()
-                ->where('status', 'Active')
-                ->whereNotIn('id', $validKeepIds)
-                ->update(['status' => 'Draft']);
-
-            UserTierLog::create([
-                'user_id' => $user->id,
-                'previous_tier' => $previousTier,
-                'new_tier' => $newTier,
-            ]);
-
-            $user->update(['premium_tier' => $newTier]);
-
-            if ($shouldSuspendStaffForPlan) {
-                $this->suspendStaffForStandardDowngrade($user);
+        try {
+            $result = $action->execute($user, $validated['plan'], $validated['keep_active_ids'] ?? null, $previousUrl);
+            return redirect()
+                ->to($result['redirectTo'])
+                ->with('success', $result['successMessage']);
+        } catch (\Throwable $e) {
+            if (str_starts_with($e->getMessage(), 'limit_exceeded:')) {
+                $limit = substr($e->getMessage(), 15);
+                return back()->withErrors(['limit' => 'You selected too many products to keep active. The limit for this tier is ' . $limit]);
             }
-        });
-
-        $redirectTo = $this->getSafePostDowngradeRedirect($user, $previousUrl);
-        $successMessage = $shouldSuspendStaffForPlan
-            ? 'Plan downgraded successfully. Excess products set to Draft. Elite-only features were suspended, and linked employee workspace accounts were suspended until you upgrade again.'
-            : 'Plan downgraded successfully. Excess products set to Draft.';
-
-        return redirect()
-            ->to($redirectTo)
-            ->with('success', $successMessage);
-    }
-
-    /**
-     * Keep the highest-selling active products when a downgrade exceeds the new plan limit.
-     * Sales ties fall back to the oldest active listing first, then the lowest ID for stability.
-     *
-     * @return array<int>
-     */
-    private function getTopSellingActiveProductIds(\App\Models\User $user, int $limit): array
-    {
-        if ($limit <= 0) {
-            return [];
+            return back()->with('error', 'Downgrade failed. Please try again.');
         }
-
-        return $user->products()
-            ->where('status', 'Active')
-            ->orderByDesc('sold')
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->limit($limit)
-            ->pluck('id')
-            ->toArray();
     }
 
     public function success(Request $request)
@@ -280,45 +133,8 @@ class SubscriptionController extends Controller
             );
         }
 
-        if (!$transaction->paymongo_session_id) {
-            return $this->redirectAfterPaymentResolution(
-                $transaction,
-                'error',
-                'Subscription verification could not be completed.',
-                'Subscription verification could not be completed. Sign in and try again.'
-            );
-        }
-
         try {
-            $session = $this->payMongoService->retrieveCheckoutSession($transaction->paymongo_session_id);
-            $attributes = $session['attributes'] ?? [];
-            $referenceNumber = $attributes['reference_number'] ?? null;
-
-            if ($referenceNumber && $referenceNumber !== $transaction->reference_number) {
-                Log::warning('Subscription PayMongo reference mismatch', [
-                    'subscription_transaction_id' => $transaction->id,
-                    'expected_reference' => $transaction->reference_number,
-                    'actual_reference' => $referenceNumber,
-                ]);
-
-                return $this->redirectAfterPaymentResolution(
-                    $transaction,
-                    'error',
-                    'Subscription verification failed. Please contact support.',
-                    'Subscription verification failed. Sign in and contact support if you were charged.'
-                );
-            }
-
-            if (!$this->sessionHasSuccessfulPayment($session)) {
-                return $this->redirectAfterPaymentResolution(
-                    $transaction,
-                    'error',
-                    'Subscription payment is not yet confirmed.',
-                    'Subscription payment is not yet confirmed. Sign in later to check your plan.'
-                );
-            }
-
-            $resolution = $this->applySuccessfulSubscriptionPayment($transaction, $session);
+            $resolution = $this->verifyPaymentAction->verifySuccess($transaction, $this->payMongoService, $this->subscriptionService);
 
             return match ($resolution) {
                 'already_active', 'already_paid' => $this->redirectAfterPaymentResolution(
@@ -341,9 +157,22 @@ class SubscriptionController extends Controller
                 ),
             };
         } catch (\Throwable $e) {
-            Log::error('Subscription verification error: ' . $e->getMessage(), [
-                'subscription_transaction_id' => $transaction->id,
-            ]);
+            if ($e->getMessage() === 'missing_session_id') {
+                return $this->redirectAfterPaymentResolution(
+                    $transaction,
+                    'error',
+                    'Subscription verification could not be completed.',
+                    'Subscription verification could not be completed. Sign in and try again.'
+                );
+            }
+            if ($e->getMessage() === 'not_paid') {
+                return $this->redirectAfterPaymentResolution(
+                    $transaction,
+                    'error',
+                    'Subscription payment is not yet confirmed.',
+                    'Subscription payment is not yet confirmed. Sign in later to check your plan.'
+                );
+            }
 
             return $this->redirectAfterPaymentResolution(
                 $transaction,
@@ -360,12 +189,7 @@ class SubscriptionController extends Controller
             ->where('reference_number', $request->query('subscription'))
             ->firstOrFail();
 
-        if ($transaction->status === SubscriptionTransaction::STATUS_PENDING) {
-            $transaction->update([
-                'status' => SubscriptionTransaction::STATUS_CANCELLED,
-                'cancelled_at' => now(),
-            ]);
-        }
+        $this->verifyPaymentAction->verifyCancel($transaction);
 
         return $this->redirectAfterPaymentResolution(
             $transaction,
@@ -375,78 +199,13 @@ class SubscriptionController extends Controller
         );
     }
 
-    private function getSafePostDowngradeRedirect(\App\Models\User $user, string $previousUrl): string
+    private function formatPlanName(?string $plan): string
     {
-        $path = parse_url($previousUrl, PHP_URL_PATH) ?? '';
-
-        $pathModuleMap = [
-            '/orders' => 'orders',
-            '/analytics' => 'analytics',
-            '/products' => 'products',
-            '/3d-manager' => '3d',
-            '/shop-settings' => 'shop_settings',
-            '/sponsorships' => 'sponsorships',
-            '/chat' => 'messages',
-            '/reviews' => 'reviews',
-            '/hr' => 'hr',
-            '/accounting' => 'accounting',
-            '/procurement/stock-requests' => 'stock_requests',
-            '/procurement' => 'procurement',
-        ];
-
-        foreach ($pathModuleMap as $pathPrefix => $module) {
-            if (str_starts_with($path, $pathPrefix) && !$user->canAccessSellerModule($module)) {
-                return route('dashboard');
-            }
-        }
-
-        // Keep the current page when still allowed (fixes forced /subscription redirects).
-        // Use path-only redirect to avoid external redirect targets.
-        return $path ?: route('dashboard');
-    }
-
-    private function suspendStaffForStandardDowngrade(\App\Models\User $seller): void
-    {
-        $seller->staffMembers()
-            ->whereNull('staff_plan_suspended_at')
-            ->update([
-                'staff_plan_suspended_at' => now(config('app.timezone')),
-            ]);
-    }
-
-    private function clearPlanBasedStaffSuspension(\App\Models\User $seller): void
-    {
-        $seller->staffMembers()
-            ->whereNotNull('staff_plan_suspended_at')
-            ->update([
-                'staff_plan_suspended_at' => null,
-            ]);
-    }
-
-    private function sessionHasSuccessfulPayment(array $session): bool
-    {
-        $attributes = $session['attributes'] ?? [];
-
-        if (($attributes['payment_status'] ?? 'unpaid') === 'paid') {
-            return true;
-        }
-
-        foreach (($session['included'] ?? []) as $included) {
-            if (($included['type'] ?? null) === 'payment' && (($included['attributes']['status'] ?? null) === 'paid')) {
-                return true;
-            }
-        }
-
-        if (!empty($attributes['payments']) && is_array($attributes['payments'])) {
-            foreach ($attributes['payments'] as $payment) {
-                $paymentStatus = $payment['status'] ?? ($payment['attributes']['status'] ?? null);
-                if ($paymentStatus === 'paid') {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return match ($plan) {
+            'premium' => 'Premium',
+            'super_premium' => 'Elite',
+            default => 'Standard',
+        };
     }
 
     private function redirectAfterPaymentResolution(SubscriptionTransaction $transaction, string $flashKey, string $ownerMessage, string $guestMessage)
@@ -460,119 +219,6 @@ class SubscriptionController extends Controller
         }
 
         return redirect('/')->with($flashKey, $guestMessage);
-    }
-
-    private function reconcilePendingUpgradesForUser(\App\Models\User $user): void
-    {
-        $pendingTransactions = SubscriptionTransaction::query()
-            ->where('user_id', $user->id)
-            ->where('status', SubscriptionTransaction::STATUS_PENDING)
-            ->whereNotNull('paymongo_session_id')
-            ->orderBy('id')
-            ->get();
-
-        /** @var SubscriptionTransaction $transaction */
-        foreach ($pendingTransactions as $transaction) {
-            try {
-                $session = $this->payMongoService->retrieveCheckoutSession($transaction->paymongo_session_id);
-            } catch (\Throwable $e) {
-                Log::warning('Subscription pending-payment reconciliation failed.', [
-                    'subscription_transaction_id' => $transaction->id,
-                    'paymongo_session_id' => $transaction->paymongo_session_id,
-                    'error' => $e->getMessage(),
-                ]);
-
-                continue;
-            }
-
-            $this->reconcileTransactionFromSession($transaction, $session);
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $session
-     */
-    private function reconcileTransactionFromSession(SubscriptionTransaction $transaction, array $session): void
-    {
-        $attributes = $session['attributes'] ?? [];
-        $referenceNumber = $attributes['reference_number'] ?? null;
-
-        if ($referenceNumber && $referenceNumber !== $transaction->reference_number) {
-            Log::warning('Subscription PayMongo reference mismatch during reconciliation', [
-                'subscription_transaction_id' => $transaction->id,
-                'expected_reference' => $transaction->reference_number,
-                'actual_reference' => $referenceNumber,
-            ]);
-
-            return;
-        }
-
-        $sessionStatus = $attributes['status'] ?? null;
-        $paymentStatus = $attributes['payment_status'] ?? null;
-
-        if ($this->sessionHasSuccessfulPayment($session)) {
-            $this->applySuccessfulSubscriptionPayment($transaction, $session);
-
-            return;
-        }
-
-        if (in_array($sessionStatus, ['expired', 'failed'], true) || in_array($paymentStatus, ['failed'], true)) {
-            $transaction->update([
-                'status' => SubscriptionTransaction::STATUS_FAILED,
-                'metadata' => array_filter([
-                    ...($transaction->metadata ?? []),
-                    'payment_status' => $paymentStatus,
-                    'session_status' => $sessionStatus,
-                    'plan_change_result' => 'failed_reconciliation',
-                ], fn ($value) => $value !== null),
-            ]);
-
-            return;
-        }
-
-        if ($sessionStatus === 'cancelled') {
-            $transaction->update([
-                'status' => SubscriptionTransaction::STATUS_CANCELLED,
-                'cancelled_at' => $transaction->cancelled_at ?? now(),
-                'metadata' => array_filter([
-                    ...($transaction->metadata ?? []),
-                    'payment_status' => $paymentStatus,
-                    'session_status' => $sessionStatus,
-                    'plan_change_result' => 'cancelled_reconciliation',
-                ], fn ($value) => $value !== null),
-            ]);
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $session
-     */
-    private function applySuccessfulSubscriptionPayment(SubscriptionTransaction $transaction, array $session): string
-    {
-        return $this->subscriptionService->activateSubscription($transaction, $session);
-    }
-
-    private function normalizeTier(?string $tier): string
-    {
-        return match ($tier) {
-            'premium' => 'premium',
-            'super_premium' => 'super_premium',
-            default => 'free',
-        };
-    }
-
-    private function getTierLevel(string $tier): int
-    {
-        return self::PLAN_LEVELS[$tier] ?? 1;
-    }
-
-    private function formatPlanName(?string $plan): string
-    {
-        return match ($plan) {
-            'premium' => 'Premium',
-            'super_premium' => 'Elite',
-            default => 'Standard',
-        };
     }
 
     private function serializeSubscriptionTransactionSummary(SubscriptionTransaction $transaction): array
@@ -599,37 +245,5 @@ class SubscriptionController extends Controller
             'cancelledAt' => $transaction->cancelled_at?->toIso8601String(),
             'updatedAt' => $transaction->updated_at?->toIso8601String(),
         ];
-    }
-
-    /**
-     * Keep legacy subscription columns populated when they still exist locally.
-     *
-     * @param  array<string, mixed>  $overrides
-     * @return array<string, mixed>
-     */
-    private function buildSubscriptionTransactionPayload(\App\Models\User $user, string $fromPlan, string $toPlan, float $amount, array $overrides = []): array
-    {
-        $payload = [
-            'user_id' => $user->id,
-            'from_plan' => $fromPlan,
-            'to_plan' => $toPlan,
-            'amount' => $amount,
-            'currency' => 'PHP',
-            ...$overrides,
-        ];
-
-        if (Schema::hasColumn('subscription_transactions', 'artisan_id')) {
-            $payload['artisan_id'] = $user->id;
-        }
-
-        if (Schema::hasColumn('subscription_transactions', 'tier_purchased')) {
-            $payload['tier_purchased'] = $toPlan;
-        }
-
-        if (Schema::hasColumn('subscription_transactions', 'amount_paid')) {
-            $payload['amount_paid'] = $amount;
-        }
-
-        return $payload;
     }
 }
