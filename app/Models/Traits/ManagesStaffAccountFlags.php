@@ -124,7 +124,7 @@ trait ManagesStaffAccountFlags
      * @param  array<string, mixed>|null  $permissions
      * @return array<string, mixed>
      */
-    public static function withStaffAccessPermissionLevelFlag(?array $permissions, ?string $level): array
+    public static function withStaffAccessPermissionLevelFlag(?array $permissions, mixed $level): array
     {
         $normalized = static::stripStaffAccessPermissionLevelFlag($permissions);
         $normalized[self::STAFF_ACCESS_PERMISSION_LEVEL_FLAG] = static::normalizeStaffAccessPermissionLevel($level);

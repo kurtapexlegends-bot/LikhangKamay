@@ -4,7 +4,7 @@ namespace Tests\Feature\Seller;
 
 use App\Models\Employee;
 use App\Models\User;
-use App\Services\PayrollCalculationService;
+use App\Services\HR\PayrollCalculatorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,12 +12,12 @@ class PayrollComplianceServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected PayrollCalculationService $payrollService;
+    protected PayrollCalculatorService $payrollService;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->payrollService = new PayrollCalculationService();
+        $this->payrollService = new PayrollCalculatorService();
     }
 
     public function test_calculate_employee_row_with_multiplier(): void

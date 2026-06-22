@@ -545,12 +545,17 @@ class HRController extends Controller
         abort_unless((int) $payroll->user_id === (int) $seller->id, 404);
 
         return Inertia::render('Seller/HR/PayrollRunShow', [
-            'payroll' => HRWorkflowHelper::serializePayrollRun($payroll->loadMissing(['items.employee', 'requester']), $seller),
+            'payroll' => HRWorkflowHelper::serializePayrollRun($payroll->loadMissing([
+                'items.employee' => fn($query) => $query->withTrashed(),
+                'requester'
+            ]), $seller),
         ]);
     }
 
     public function submitPayrollRun(Payroll $payroll)
     {
+        abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
+
         $seller = $this->sellerOwner();
         abort_unless((int) $payroll->user_id === (int) $seller->id, 404);
 
