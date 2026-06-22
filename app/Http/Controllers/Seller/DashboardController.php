@@ -12,12 +12,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
+use App\Services\Analytics\ShopAnalyticsMetricsService;
 
 class DashboardController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(Request $request)
+    public function index(Request $request, ShopAnalyticsMetricsService $metricsService)
     {
         try {
             /** @var \App\Models\User $user */
@@ -52,7 +53,7 @@ class DashboardController extends Controller
             $seller = $user->getEffectiveSeller() ?? $user;
             $userId = $seller->id;
 
-            $cachedMetrics = $this->getSellerDashboardMetrics($userId);
+            $cachedMetrics = $metricsService->getSellerDashboardMetrics($userId);
 
             // Extract cached variables
             extract($cachedMetrics);
@@ -161,169 +162,4 @@ class DashboardController extends Controller
         }
     }
 
-    private function monthNumberExpression(string $column): string
-    {
-        return match (DB::connection()->getDriverName()) {
-            'sqlite' => "CAST(strftime('%m', {$column}) AS INTEGER)",
-            'pgsql' => "EXTRACT(MONTH FROM {$column})",
-            default => "MONTH({$column})",
-        };
-    }
-
-    private function yearNumberExpression(string $column): string
-    {
-        return match (DB::connection()->getDriverName()) {
-            'sqlite' => "CAST(strftime('%Y', {$column}) AS INTEGER)",
-            'pgsql' => "EXTRACT(YEAR FROM {$column})",
-            default => "YEAR({$column})",
-        };
-    }
-
-    private function getSellerDashboardMetrics(int|string $userId): array
-    {
-        $cacheKey = "seller_dashboard_metrics_{$userId}";
-        return Cache::remember($cacheKey, 300, function () use ($userId) {
-            $getMetricWithGrowth = function ($column, $aggregate = 'count') use ($userId) {
-                $now = Carbon::now();
-                $startThisMonth = $now->copy()->startOfMonth();
-                $startLastMonth = $now->copy()->subMonth()->startOfMonth();
-                $endLastMonth = $now->copy()->subMonth()->endOfMonth();
-
-                $q = Order::where('artisan_id', $userId)
-                    ->where('status', 'Completed');
-
-                $currentVal = (clone $q)->where('created_at', '>=', $startThisMonth);
-                $current = $aggregate === 'sum'
-                    ? $currentVal->sum($column)
-                    : ($aggregate === 'distinct' ? $currentVal->distinct($column)->count($column) : $currentVal->count());
-
-                $prevVal = (clone $q)->whereBetween('created_at', [$startLastMonth, $endLastMonth]);
-                $previous = $aggregate === 'sum'
-                    ? $prevVal->sum($column)
-                    : ($aggregate === 'distinct' ? $prevVal->distinct($column)->count($column) : $prevVal->count());
-
-                $growth = 0;
-                if ($previous > 0) {
-                    $growth = (($current - $previous) / $previous) * 100;
-                } elseif ($current > 0) {
-                    $growth = 100;
-                }
-
-                return ['value' => $current, 'growth' => round($growth, 1)];
-            };
-
-            $revenueData = $getMetricWithGrowth('seller_net_amount', 'sum');
-            $ordersData = $getMetricWithGrowth('id', 'count');
-            $customersData = $getMetricWithGrowth('user_id', 'distinct');
-            $avgValue = $ordersData['value'] > 0 ? $revenueData['value'] / $ordersData['value'] : 0;
-
-            $prevRev = Order::where('artisan_id', $userId)
-                ->where('status', 'Completed')
-                ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
-                ->sum('seller_net_amount');
-            $prevOrd = Order::where('artisan_id', $userId)
-                ->where('status', 'Completed')
-                ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
-                ->count();
-            $prevAvg = $prevOrd > 0 ? $prevRev / $prevOrd : 0;
-
-            $avgGrowth = 0;
-            if ($prevAvg > 0) {
-                $avgGrowth = round((($avgValue - $prevAvg) / $prevAvg) * 100, 1);
-            } elseif ($avgValue > 0) {
-                $avgGrowth = 100;
-            }
-
-            $monthExpr = $this->monthNumberExpression('created_at');
-            $monthlyRaw = Order::where('artisan_id', $userId)
-                ->where('status', 'Completed')
-                ->where('created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-                ->selectRaw("{$monthExpr} as month_num, SUM(seller_net_amount) as value")
-                ->groupByRaw($monthExpr)
-                ->orderByRaw($monthExpr)
-                ->get()
-                ->keyBy(fn ($row) => (int) $row->month_num);
-
-            $monthlyData = [];
-            for ($i = 5; $i >= 0; $i--) {
-                $monthNum = (int) Carbon::now()->subMonths($i)->format('n');
-                $monthName = Carbon::now()->subMonths($i)->format('M');
-                $monthlyData[] = [
-                    'name' => $monthName,
-                    'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0,
-                ];
-            }
-
-            $yearExpr = $this->yearNumberExpression('created_at');
-            $yearlyRaw = Order::where('artisan_id', $userId)
-                ->where('status', 'Completed')
-                ->selectRaw("{$yearExpr} as year_num, SUM(seller_net_amount) as value")
-                ->groupByRaw($yearExpr)
-                ->orderByRaw($yearExpr)
-                ->get()
-                ->keyBy(fn ($row) => (int) $row->year_num);
-
-            $currentYear = (int) Carbon::now()->format('Y');
-            $oldestYear = $yearlyRaw->keys()->min() ?: $currentYear;
-            $startYear = min($oldestYear, $currentYear - 2);
-
-            $yearlyData = [];
-            for ($year = $startYear; $year <= $currentYear; $year++) {
-                $yearlyData[] = [
-                    'name' => (string) $year,
-                    'value' => $yearlyRaw->has($year) ? (float) $yearlyRaw[$year]->value : 0.0,
-                ];
-            }
-
-            $categoryData = OrderItem::whereHas('order', function ($q) use ($userId) {
-                    $q->where('artisan_id', $userId)->where('status', 'Completed');
-                })
-                ->join('products', 'order_items.product_id', '=', 'products.id')
-                ->select([
-                    DB::raw("COALESCE(products.category, 'Uncategorized') as name"),
-                    DB::raw('SUM(order_items.quantity) as value')
-                ])
-                ->groupBy('products.category')
-                ->get()
-                ->map(function ($item) {
-                    return ['name' => $item->name, 'value' => (int) $item->value];
-                })
-                ->filter(fn ($item) => $item['value'] > 0)
-                ->values();
-
-            $pendingRequests = \App\Models\StockRequest::where('user_id', $userId)
-                ->where('status', 'pending')
-                ->count();
-
-            $totalDeductions = \App\Models\StockRequest::where('user_id', $userId)
-                ->whereIn('status', [
-                    'accounting_approved',
-                    'ordered',
-                    'partially_received',
-                    'received',
-                    'completed',
-                ])
-                ->sum('total_cost');
-
-            $pendingOrders = Order::where('artisan_id', $userId)
-                ->where('status', 'Pending')
-                ->count();
-
-            $stalledOrders = Order::where('artisan_id', $userId)
-                ->whereNotIn('status', ['Completed', 'Cancelled', 'Refunded', 'Replaced'])
-                ->where('created_at', '<=', Carbon::now()->subDays(3))
-                ->count();
-
-            $lowStockProducts = \App\Models\Product::where('user_id', $userId)
-                ->whereIn('status', ['Active', 'pending_review', 'flagged', 'rejected'])
-                ->where('stock', '<', 10)
-                ->count();
-
-            return compact(
-                'revenueData', 'ordersData', 'customersData', 'avgValue', 'avgGrowth', 
-                'monthlyData', 'yearlyData', 'categoryData', 'pendingRequests', 
-                'totalDeductions', 'pendingOrders', 'stalledOrders', 'lowStockProducts'
-            );
-        });
-    }
 }
