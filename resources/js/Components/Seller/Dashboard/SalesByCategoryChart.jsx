@@ -14,7 +14,7 @@ export default function SalesByCategoryChart({ categoryData, isLoading }) {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
             <div className="flex justify-between items-center mb-4">
                 <div>
-                    <h3 className="text-lg font-bold text-gray-900">Sales by Category</h3>
+                    <h2 className="text-lg font-bold text-gray-900">Sales by Category</h2>
                     <p className="text-sm text-gray-500">Total items sold</p>
                 </div>
             </div>

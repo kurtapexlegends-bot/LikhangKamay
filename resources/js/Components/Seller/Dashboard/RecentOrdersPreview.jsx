@@ -83,7 +83,7 @@ export default function RecentOrdersPreview({
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h3 className="text-lg font-bold text-gray-900">Recent Orders</h3>
+                <h2 className="text-lg font-bold text-gray-900">Recent Orders</h2>
                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     {/* Search input */}
                     <div className="relative flex-1 sm:flex-none sm:min-w-[200px]">
