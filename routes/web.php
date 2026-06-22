@@ -173,6 +173,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::delete('/3d-manager/{product:id}', [ThreeDManagerController::class, 'destroy'])->middleware('seller.module:3d')->name('3d.destroy');
 
         Route::get('/audit-log', [AuditLogController::class, 'index'])->middleware('artisan')->name('audit-log.index');
+        Route::get('/audit-log/export', [AuditLogController::class, 'export'])->middleware('artisan')->name('audit-log.export');
 
         // SHOP SETTINGS
         Route::get('/shop-settings', [ShopController::class, 'settings'])->middleware('seller.module:shop_settings')->name('shop.settings');

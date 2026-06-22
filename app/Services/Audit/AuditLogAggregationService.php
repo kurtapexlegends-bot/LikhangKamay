@@ -19,24 +19,25 @@ class AuditLogAggregationService
      * Retrieve all audit sources structured for the seller.
      *
      * @param User $seller
+     * @param int|null $limit
      * @return array
      */
-    public function getAuditSources(User $seller): array
+    public function getAuditSources(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
         return [
-            'operations' => $this->operationsPayload($seller),
-            'staff' => $this->staffAccessPayload($seller),
-            'payroll' => $this->payrollPayload($seller),
-            'procurement' => $this->procurementPayload($seller),
-            'billing' => $this->subscriptionPayload($seller),
-            'capital' => $this->capitalPayload($seller),
+            'operations' => $this->operationsPayload($seller, $limit),
+            'staff' => $this->staffAccessPayload($seller, $limit),
+            'payroll' => $this->payrollPayload($seller, $limit),
+            'procurement' => $this->procurementPayload($seller, $limit),
+            'billing' => $this->subscriptionPayload($seller, $limit),
+            'capital' => $this->capitalPayload($seller, $limit),
         ];
     }
 
     /**
      * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
      */
-    private function operationsPayload(User $seller): array
+    private function operationsPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
         $available = $this->tableExists('seller_activity_logs');
 
@@ -44,12 +45,16 @@ class AuditLogAggregationService
             return $this->emptyPayload('Operational Activity');
         }
 
-        $entries = SellerActivityLog::query()
+        $query = SellerActivityLog::query()
             ->with('actor:id,name,role,seller_owner_id')
             ->where('seller_owner_id', $seller->id)
-            ->latest('occurred_at')
-            ->limit(self::MAX_SOURCE_ENTRIES)
-            ->get()
+            ->latest('occurred_at');
+
+        if ($limit) {
+            $query->limit($limit);
+        }
+
+        $entries = $query->get()
             ->map(function (SellerActivityLog $entry): array {
                 $details = (array) $entry->details;
                 $detailLines = collect($details['lines'] ?? [])
@@ -93,7 +98,7 @@ class AuditLogAggregationService
     /**
      * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
      */
-    private function staffAccessPayload(User $seller): array
+    private function staffAccessPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
         $available = $this->tableExists('staff_access_audits');
 
@@ -101,16 +106,20 @@ class AuditLogAggregationService
             return $this->emptyPayload('Staff Access');
         }
 
-        $entries = StaffAccessAudit::query()
+        $query = StaffAccessAudit::query()
             ->with([
                 'actor:id,name,role,seller_owner_id',
                 'staffUser:id,name,email',
                 'employee:id,name,role',
             ])
             ->where('seller_owner_id', $seller->id)
-            ->latest()
-            ->limit(self::MAX_SOURCE_ENTRIES)
-            ->get()
+            ->latest();
+
+        if ($limit) {
+            $query->limit($limit);
+        }
+
+        $entries = $query->get()
             ->map(function (StaffAccessAudit $audit): array {
                 $details = (array) $audit->details;
                 $changes = collect((array) data_get($details, 'changes'))
@@ -153,7 +162,7 @@ class AuditLogAggregationService
     /**
      * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
      */
-    private function payrollPayload(User $seller): array
+    private function payrollPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
         $available = $this->tableExists('payrolls');
 
@@ -161,12 +170,16 @@ class AuditLogAggregationService
             return $this->emptyPayload('Payroll Reviews');
         }
 
-        $entries = Payroll::query()
+        $query = Payroll::query()
             ->with(['requester:id,name,role,seller_owner_id'])
             ->where('user_id', $seller->id)
-            ->latest()
-            ->limit(self::MAX_SOURCE_ENTRIES)
-            ->get()
+            ->latest();
+
+        if ($limit) {
+            $query->limit($limit);
+        }
+
+        $entries = $query->get()
             ->map(function (Payroll $payroll) use ($seller): array {
                 $status = strtolower((string) $payroll->status);
 
@@ -222,7 +235,7 @@ class AuditLogAggregationService
     /**
      * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
      */
-    private function procurementPayload(User $seller): array
+    private function procurementPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
         $available = $this->tableExists('stock_requests');
 
@@ -230,12 +243,16 @@ class AuditLogAggregationService
             return $this->emptyPayload('Procurement Reviews');
         }
 
-        $entries = StockRequest::query()
+        $query = StockRequest::query()
             ->with(['supply:id,name', 'requester:id,name,role,seller_owner_id'])
             ->where('user_id', $seller->id)
-            ->latest()
-            ->limit(self::MAX_SOURCE_ENTRIES)
-            ->get()
+            ->latest();
+
+        if ($limit) {
+            $query->limit($limit);
+        }
+
+        $entries = $query->get()
             ->map(function (StockRequest $request) use ($seller): array {
                 $status = strtolower((string) $request->status);
                 $supplyName = $request->supply?->name ?? "Supply #{$request->supply_id}";
@@ -298,7 +315,7 @@ class AuditLogAggregationService
     /**
      * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
      */
-    private function subscriptionPayload(User $seller): array
+    private function subscriptionPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
         $available = $this->tableExists('subscription_transactions');
 
@@ -306,14 +323,18 @@ class AuditLogAggregationService
             return $this->emptyPayload('Billing Activity');
         }
 
-        $entries = SubscriptionTransaction::query()
+        $query = SubscriptionTransaction::query()
             ->where(function ($query) use ($seller) {
                 $query->where('user_id', $seller->id)
                     ->orWhere('artisan_id', $seller->id);
             })
-            ->latest()
-            ->limit(self::MAX_SOURCE_ENTRIES)
-            ->get()
+            ->latest();
+
+        if ($limit) {
+            $query->limit($limit);
+        }
+
+        $entries = $query->get()
             ->map(function (SubscriptionTransaction $transaction) use ($seller): array {
                 $status = strtolower((string) $transaction->status);
 
@@ -332,7 +353,7 @@ class AuditLogAggregationService
                         '%s to %s plan.',
                         $this->planLabel($transaction->from_plan ?: 'free'),
                         $this->planLabel($transaction->to_plan ?: $transaction->tier_purchased ?: 'free')
-                    )),
+                     )),
                     status: $status,
                     severity: match ($status) {
                         SubscriptionTransaction::STATUS_FAILED => 'danger',
@@ -375,7 +396,7 @@ class AuditLogAggregationService
     /**
      * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
      */
-    private function capitalPayload(User $seller): array
+    private function capitalPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
         $available = $this->tableExists('capital_adjustments');
 
@@ -383,12 +404,16 @@ class AuditLogAggregationService
             return $this->emptyPayload('Capital Adjustments');
         }
 
-        $entries = \App\Models\CapitalAdjustment::query()
+        $query = \App\Models\CapitalAdjustment::query()
             ->with(['adjustedBy:id,name,role'])
             ->where('user_id', $seller->id)
-            ->latest()
-            ->limit(self::MAX_SOURCE_ENTRIES)
-            ->get()
+            ->latest();
+
+        if ($limit) {
+            $query->limit($limit);
+        }
+
+        $entries = $query->get()
             ->map(function (\App\Models\CapitalAdjustment $adjustment): array {
                 return $this->entry(
                     id: "capital-{$adjustment->id}",

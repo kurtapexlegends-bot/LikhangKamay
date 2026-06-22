@@ -184,4 +184,64 @@ class AuditLogCenterTest extends TestCase
             ->get(route('audit-log.index'))
             ->assertForbidden();
     }
+
+    public function test_seller_owner_can_export_audit_log_csv(): void
+    {
+        $seller = User::factory()->artisanApproved()->create([
+            'shop_name' => 'Clay Ledger',
+        ]);
+
+        SellerActivityLog::create([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => $seller->id,
+            'actor_type' => 'owner',
+            'category' => 'operations',
+            'module' => 'products',
+            'event_type' => 'product_created',
+            'severity' => 'success',
+            'status' => 'active',
+            'title' => 'Product Created',
+            'summary' => 'Sand Vase was added to the catalog.',
+            'subject_type' => \App\Models\Product::class,
+            'subject_id' => 99,
+            'subject_label' => 'Sand Vase',
+            'reference' => 'SKU-TEST-001',
+            'amount_label' => 'PHP 499.00',
+            'details' => [],
+            'occurred_at' => now(),
+        ]);
+
+        $response = $this->actingAs($seller)
+            ->get(route('audit-log.export', [
+                'category' => 'operations',
+            ]))
+            ->assertOk();
+
+        $this->assertStringContainsString('attachment; filename="audit_log_', $response->headers->get('Content-Disposition'));
+        
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('"Occurred At",Category,Module,"Event Type",Severity,Status,Title,Summary,Actor,"Actor Type",Subject,Reference,Amount,Details', $content);
+        $this->assertStringContainsString('Product Created', $content);
+        $this->assertStringContainsString('Sand Vase', $content);
+    }
+
+    public function test_staff_cannot_export_audit_log_csv(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $staff = User::factory()->staff($seller)->create([
+            'email_verified_at' => now(),
+        ]);
+        StaffAttendanceSession::create([
+            'staff_user_id' => $staff->id,
+            'seller_owner_id' => $seller->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('audit-log.export'))
+            ->assertForbidden();
+    }
 }

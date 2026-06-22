@@ -211,7 +211,19 @@ export default function AuditLog({ auth, auditLog }) {
                         <ExportButton onClick={() => window.print()} icon={Printer}>
                             Print
                         </ExportButton>
-                        <ExportButton onClick={exportCsv} variant="primary">
+                        <ExportButton
+                            href={route('audit-log.export', {
+                                category: selectedCategory,
+                                module: selectedModule,
+                                status: selectedStatus,
+                                severity: selectedSeverity,
+                                actor_type: selectedActor,
+                                start_date: startDate,
+                                end_date: endDate,
+                                search: searchTerm,
+                            })}
+                            variant="primary"
+                        >
                             Export CSV
                         </ExportButton>
                     </>
