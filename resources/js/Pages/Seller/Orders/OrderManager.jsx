@@ -338,14 +338,19 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     const handleBulkPrintPackingSlips = () => {
         if (selectedOrderIds.length === 0) return;
         setIsPrintingSlips(true);
+        addToast("Generating packing slips. Please wait...", "info");
         axios.post(route("orders.bulk-packing-slips"), { order_ids: selectedOrderIds }, { responseType: 'blob' })
             .then(res => {
                 const url = window.URL.createObjectURL(new Blob([res.data]));
                 const link = document.createElement('a');
                 link.href = url; link.setAttribute('download', 'Packing_Slips.pdf');
                 document.body.appendChild(link); link.click(); link.remove();
+                addToast("Packing slips downloaded successfully.", "success");
             })
-            .catch(err => { console.error("Print Error", err); alert("Failed to generate packing slips."); })
+            .catch(err => {
+                console.error("Print Error", err);
+                addToast("Failed to generate packing slips.", "error");
+            })
             .finally(() => setIsPrintingSlips(false));
     };
 

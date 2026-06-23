@@ -53,6 +53,8 @@ export default function OrderCard({
                 onClick={() => toggleOrderSelection(order.id)}
                 className="absolute left-1 top-3.5 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-all sm:left-4 sm:top-6 sm:h-9 sm:w-9 focus-visible:outline-none"
                 aria-label={`Select order ${order.id}`}
+                role="checkbox"
+                aria-checked={isSelected}
             >
                 <div
                     className={`flex h-6 w-6 items-center justify-center rounded-lg border transition-all ${

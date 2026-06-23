@@ -260,6 +260,8 @@ export default function OrderFilterPanel({
                                         : "border-stone-300 bg-white hover:border-stone-400 hover:bg-stone-50/30"
                                 }`}
                                 aria-label={selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 ? "Deselect all page" : "Select all page"}
+                                role="checkbox"
+                                aria-checked={selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0}
                             >
                                 {selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 && (
                                     <Check size={14} strokeWidth={4} />
