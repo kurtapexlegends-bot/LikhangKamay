@@ -235,4 +235,97 @@ class Product extends Model
                 });
             });
     }
+
+    public function evaluateActivationReadiness(): array
+    {
+        $missing = [];
+
+        if (!$this->cover_photo_path) {
+            $missing[] = 'a cover image';
+        }
+
+        $galleryCount = count($this->gallery_paths ?? []);
+        if ($galleryCount < 3 || $galleryCount > 5) {
+            $missing[] = '3 to 5 gallery images';
+        }
+
+        if (!$this->model_3d_path) {
+            $missing[] = 'a 3D model';
+        }
+
+        return [
+            'canBeActive' => empty($missing),
+            'missing' => $missing,
+        ];
+    }
+
+    public function getRelatedProducts(): \Illuminate\Support\Collection
+    {
+        $preferredMatches = self::query()
+            ->where('status', 'Active')
+            ->where('id', '!=', $this->id)
+            ->where('category', $this->category)
+            ->with('user')
+            ->orderByRaw("
+                CASE
+                    WHEN user_id = ? THEN 1
+                    WHEN clay_type IS NOT NULL AND clay_type = ? THEN 2
+                    WHEN glaze_type IS NOT NULL AND glaze_type = ? THEN 3
+                    WHEN firing_method IS NOT NULL AND firing_method = ? THEN 4
+                    ELSE 5
+                END
+            ", [
+                $this->user_id,
+                $this->clay_type,
+                $this->glaze_type,
+                $this->firing_method,
+            ])
+            ->orderByDesc('sold')
+            ->orderByDesc('rating')
+            ->orderByDesc('reviews_count')
+            ->latest()
+            ->take(4)
+            ->get();
+
+        $fallbackProducts = collect();
+
+        if ($preferredMatches->count() < 4) {
+            $fallbackProducts = self::query()
+                ->where('status', 'Active')
+                ->where('id', '!=', $this->id)
+                ->whereNotIn('id', $preferredMatches->pluck('id'))
+                ->with('user')
+                ->orderByRaw("
+                    CASE
+                        WHEN category = ? THEN 1
+                        WHEN user_id = ? THEN 2
+                        ELSE 3
+                    END
+                ", [$this->category, $this->user_id])
+                ->orderByDesc('sold')
+                ->orderByDesc('rating')
+                ->orderByDesc('reviews_count')
+                ->latest()
+                ->take(4 - $preferredMatches->count())
+                ->get();
+        }
+
+        return $preferredMatches
+            ->concat($fallbackProducts)
+            ->take(4)
+            ->map(function (Product $relatedProduct) {
+                return [
+                    'id' => $relatedProduct->id,
+                    'name' => $relatedProduct->name,
+                    'slug' => $relatedProduct->slug,
+                    'price' => $relatedProduct->price,
+                    'image' => $relatedProduct->img,
+                    'rating' => (float) ($relatedProduct->rating ?? 0),
+                    'sold' => $relatedProduct->sold,
+                    'location' => $relatedProduct->user->city ?? 'PH',
+                ];
+            })
+            ->values();
+    }
 }
+
