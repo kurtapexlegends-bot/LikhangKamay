@@ -13,7 +13,8 @@ use App\Http\Controllers\Consumer\CartController; // <--- Make sure this is impo
 // use App\Http\Controllers\FinanceController; // Removed
 
 use App\Http\Controllers\Seller\ShopController;
-use App\Http\Controllers\Seller\OrderController;
+use App\Http\Controllers\Consumer\BuyerOrderController;
+use App\Http\Controllers\Seller\SellerOrderController;
 use App\Http\Controllers\Core\ProfileController;
 use App\Http\Controllers\Seller\ProductController;
 use App\Http\Controllers\Consumer\ReviewController;
@@ -141,15 +142,15 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // SELLER ROUTES
     Route::middleware(['seller.workspace', 'staff.attendance', 'seller.compliance'])->group(function () {
-        Route::get('/orders', [OrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
-        Route::get('/orders/export', [OrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
-        Route::get('/orders/{id}/receipt', [OrderController::class, 'sellerDownloadReceipt'])->middleware('seller.module:orders')->name('orders.receipt');
-        Route::post('/orders/{id}/update', [OrderController::class, 'update'])->middleware('seller.module:orders')->name('orders.update');
-        Route::post('/orders/{id}/approve-return', [OrderController::class, 'approveReturn'])->middleware('seller.module:orders')->name('orders.approve-return');
-        Route::post('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus'])->middleware('seller.module:orders')->name('orders.payment-status');
+        Route::get('/orders', [SellerOrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
+        Route::get('/orders/export', [SellerOrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
+        Route::get('/orders/{id}/receipt', [SellerOrderController::class, 'sellerDownloadReceipt'])->middleware('seller.module:orders')->name('orders.receipt');
+        Route::post('/orders/{id}/update', [SellerOrderController::class, 'update'])->middleware('seller.module:orders')->name('orders.update');
+        Route::post('/orders/{id}/approve-return', [SellerOrderController::class, 'approveReturn'])->middleware('seller.module:orders')->name('orders.approve-return');
+        Route::post('/orders/{id}/payment-status', [SellerOrderController::class, 'updatePaymentStatus'])->middleware('seller.module:orders')->name('orders.payment-status');
         Route::post('/orders/{id}/lalamove', [LalamoveDeliveryController::class, 'store'])->middleware('seller.module:orders')->name('orders.lalamove.store');
         Route::post('/orders/bulk-lalamove', [LalamoveDeliveryController::class, 'bulkStore'])->middleware('seller.module:orders')->name('orders.bulk-lalamove');
-        Route::get('/orders/bulk-labels', [OrderController::class, 'bulkLabels'])->middleware('seller.module:orders')->name('orders.bulk-labels');
+        Route::get('/orders/bulk-labels', [SellerOrderController::class, 'bulkLabels'])->middleware('seller.module:orders')->name('orders.bulk-labels');
         Route::post('/orders/bulk-packing-slips', [\App\Http\Controllers\Seller\OrderPrintController::class, 'bulkPackingSlips'])->middleware('seller.module:orders')->name('orders.bulk-packing-slips');
         Route::post('/disputes/{id}/respond', [DisputeController::class, 'sellerRespond'])->middleware('seller.module:orders')->name('disputes.respond');
         
@@ -262,9 +263,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     });
     
     // BUYER: SHOPPING & ORDERS
-    Route::get('/checkout', [OrderController::class, 'create'])->name('checkout.create');
-    Route::post('/checkout/shipping-quote', [OrderController::class, 'quoteShipping'])->name('checkout.shipping-quote');
-    Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout', [BuyerOrderController::class, 'create'])->name('checkout.create');
+    Route::post('/checkout/shipping-quote', [BuyerOrderController::class, 'quoteShipping'])->name('checkout.shipping-quote');
+    Route::post('/checkout', [BuyerOrderController::class, 'store'])->name('checkout.store');
     Route::get('/saved', function () {
         return Inertia::render('Consumer/Buyer/Saved');
     })->name('saved.index');
@@ -272,12 +273,12 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     // PAYMENT ROUTES
     Route::get('/payment/{orderId}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
     
-    Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders.index');
-    Route::post('/my-orders/{id}/receive', [OrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');
-    Route::post('/my-orders/{id}/return', [OrderController::class, 'buyerRequestReturn'])->name('my-orders.return');
-    Route::post('/my-orders/{id}/cancel', [OrderController::class, 'buyerCancelOrder'])->name('my-orders.cancel');
-    Route::post('/my-orders/{id}/cancel-return', [OrderController::class, 'buyerCancelReturn'])->name('my-orders.cancel-return');
-    Route::get('/my-orders/{id}/receipt', [OrderController::class, 'downloadReceipt'])->name('my-orders.receipt');
+    Route::get('/my-orders', [BuyerOrderController::class, 'myOrders'])->name('my-orders.index');
+    Route::post('/my-orders/{id}/receive', [BuyerOrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');
+    Route::post('/my-orders/{id}/return', [BuyerOrderController::class, 'buyerRequestReturn'])->name('my-orders.return');
+    Route::post('/my-orders/{id}/cancel', [BuyerOrderController::class, 'buyerCancelOrder'])->name('my-orders.cancel');
+    Route::post('/my-orders/{id}/cancel-return', [BuyerOrderController::class, 'buyerCancelReturn'])->name('my-orders.cancel-return');
+    Route::get('/my-orders/{id}/receipt', [BuyerOrderController::class, 'downloadReceipt'])->name('my-orders.receipt');
 
     // Disputes
     Route::post('/my-orders/{id}/dispute', [DisputeController::class, 'buyerInitiateDispute'])->name('my-orders.dispute');
