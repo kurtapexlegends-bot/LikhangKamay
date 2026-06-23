@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\TeamMessage;
 use App\Models\User;
+use App\Services\Chat\TeamMessageQueryService;
 use App\Notifications\NewTeamMessageNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,13 @@ class TeamMessageController extends Controller
 {
     use InteractsWithSellerContext;
 
+    protected TeamMessageQueryService $queryService;
+
+    public function __construct(TeamMessageQueryService $queryService)
+    {
+        $this->queryService = $queryService;
+    }
+
     public function index(Request $request): Response
     {
         $actor = $this->authorizeTeamActor($request->user());
@@ -28,30 +36,8 @@ class TeamMessageController extends Controller
         $contacts = $this->eligibleContacts($actor, $sellerOwner->id);
         $contactIds = $contacts->pluck('id');
 
-        $subquery = TeamMessage::query()
-            ->selectRaw('MAX(id) as max_id')
-            ->where('seller_owner_id', $sellerOwner->id)
-            ->where(function ($query) use ($actor, $contactIds) {
-                $query->where(function ($b) use ($actor, $contactIds) {
-                    $b->where('sender_id', $actor->id)->whereIn('receiver_id', $contactIds);
-                })->orWhere(function ($b) use ($actor, $contactIds) {
-                    $b->whereIn('sender_id', $contactIds)->where('receiver_id', $actor->id);
-                });
-            })
-            ->groupBy(\Illuminate\Support\Facades\DB::raw('CASE WHEN sender_id = ' . $actor->id . ' THEN receiver_id ELSE sender_id END'));
-
-        $latestMessages = TeamMessage::query()
-            ->whereIn('id', $subquery)
-            ->get();
-
-        $unreadCounts = TeamMessage::query()
-            ->where('seller_owner_id', $sellerOwner->id)
-            ->whereIn('sender_id', $contactIds)
-            ->where('receiver_id', $actor->id)
-            ->where('is_read', false)
-            ->selectRaw('sender_id, count(*) as count')
-            ->groupBy('sender_id')
-            ->pluck('count', 'sender_id');
+        $latestMessages = $this->queryService->getLatestMessagesPerContact($actor, $sellerOwner, $contacts);
+        $unreadCounts = $this->queryService->getUnreadCounts($actor, $sellerOwner, $contacts);
 
         $conversations = $contacts->map(function (User $contact) use ($latestMessages, $unreadCounts, $actor) {
             $lastMessage = $latestMessages->first(function (TeamMessage $message) use ($contact, $actor) {

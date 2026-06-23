@@ -12,6 +12,8 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
 const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
 export default function OperationsControl({ metrics, insights, topProducts = [], salesHeatmap = [] }) {
+    const [hoveredCell, setHoveredCell] = React.useState(null);
+    const heatmapCardRef = React.useRef(null);
     const lowStockProducts = insights?.low_stock_products || [];
     const slowMovers = insights?.slow_movers || [];
     const salesVelocity = insights?.sales_velocity || [];
@@ -80,7 +82,7 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                     </div>
 
                     {/* Peak Activity Heatmap */}
-                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px]">
+                    <div ref={heatmapCardRef} className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px] relative">
                         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
                             <div>
                                 <h3 className="text-base font-bold text-stone-900 leading-none">Peak Activity Heatmap</h3>
@@ -119,7 +121,21 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                                                <div 
                                                    key={hour} 
                                                    className={`h-7 rounded-md ${opacity} transition-all hover:scale-105 cursor-help flex items-center justify-center`}
-                                                   title={`${count} orders at ${hour}:00 on ${day}`}
+                                                   onMouseEnter={(e) => {
+                                                       const rect = e.currentTarget.getBoundingClientRect();
+                                                       if (heatmapCardRef.current) {
+                                                           const containerRect = heatmapCardRef.current.getBoundingClientRect();
+                                                           setHoveredCell({
+                                                               day,
+                                                               hour,
+                                                               count,
+                                                               hourLabel: hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour === 23 ? '11 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
+                                                               x: rect.left - containerRect.left + rect.width / 2,
+                                                               y: rect.top - containerRect.top - 6,
+                                                           });
+                                                       }
+                                                   }}
+                                                   onMouseLeave={() => setHoveredCell(null)}
                                                >
                                                    {count > 0 && <span className={`text-[9px] font-bold ${count > 4 ? 'text-white' : 'text-clay-800'}`}>{count}</span>}
                                                </div>
@@ -130,6 +146,23 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                            </div>
                         </div>
                         <p className="mt-3 text-[9px] text-stone-400 italic">Recommendation: Schedule product updates or campaigns matching dark heatmap blocks.</p>
+
+                        {/* Custom Floating Tooltip */}
+                        {hoveredCell && (
+                            <div 
+                                className="absolute z-30 pointer-events-none drop-shadow-md flex flex-col items-center transition-all duration-75"
+                                style={{
+                                    left: `${hoveredCell.x}px`,
+                                    top: `${hoveredCell.y}px`,
+                                    transform: 'translate(-50%, -100%)',
+                                }}
+                            >
+                                <div className="bg-stone-900/95 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl whitespace-nowrap leading-none border border-stone-800">
+                                    {hoveredCell.count} {hoveredCell.count === 1 ? 'order' : 'orders'} on {hoveredCell.day} ({hoveredCell.hourLabel})
+                                </div>
+                                <div className="w-1.5 h-1.5 bg-stone-900 rotate-45 -mt-1 border-r border-b border-stone-800" />
+                            </div>
+                        )}
                     </div>
                 </div>
 

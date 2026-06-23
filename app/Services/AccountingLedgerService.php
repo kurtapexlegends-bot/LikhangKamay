@@ -406,4 +406,50 @@ class AccountingLedgerService
             'last_reviewed_at' => $isResolved ? $updatedAt : null,
         ];
     }
+
+    public function getExportData(User $seller): array
+    {
+        $financials = $this->buildFinancialSnapshot($seller);
+
+        $pendingRelease = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->where('status', StockRequest::STATUS_PENDING)
+            ->latest()
+            ->get();
+
+        $releasedHistory = StockRequest::with(['supply', 'requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->whereIn('status', [
+                StockRequest::STATUS_ACCOUNTING_APPROVED,
+                StockRequest::STATUS_ORDERED,
+                StockRequest::STATUS_PARTIALLY_RECEIVED,
+                StockRequest::STATUS_RECEIVED,
+                StockRequest::STATUS_COMPLETED,
+                StockRequest::STATUS_REJECTED,
+            ])
+            ->latest()
+            ->take(50)
+            ->get();
+
+        $pendingPayrolls = Payroll::with(['requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->where('status', 'Pending')
+            ->latest()
+            ->get();
+
+        $payrollHistory = Payroll::with(['requester:id,name,role', 'user:id,name,role'])
+            ->where('user_id', $seller->id)
+            ->whereIn('status', ['Paid', 'Rejected'])
+            ->latest()
+            ->take(50)
+            ->get();
+
+        return [
+            'financials' => $financials,
+            'pendingRelease' => $pendingRelease,
+            'releasedHistory' => $releasedHistory,
+            'pendingPayrolls' => $pendingPayrolls,
+            'payrollHistory' => $payrollHistory,
+        ];
+    }
 }

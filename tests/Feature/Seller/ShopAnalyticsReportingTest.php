@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\ShopAnalyticsService;
+use App\Services\Analytics\ShopAnalyticsMetricsService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -293,5 +294,57 @@ class ShopAnalyticsReportingTest extends TestCase
         $order->save();
 
         return $order;
+    }
+
+    public function test_analytics_snapshots_generation_and_financial_metrics(): void
+    {
+        // 1. Create order
+        $order = $this->createOrder([
+            'status' => 'Completed',
+            'created_at' => Carbon::now(),
+        ]);
+
+        // 2. Create order item
+        $product = $this->createProduct([
+            'price' => 150.00,
+            'cost_price' => 50.00,
+        ]);
+
+        $orderItem = new \App\Models\OrderItem();
+        $orderItem->forceFill([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 2,
+            'price' => 150.00,
+            'cost' => 50.00,
+            'created_at' => Carbon::now(),
+        ]);
+        $orderItem->save();
+
+        // 3. Run the console command to generate snapshots
+        $this->artisan('app:generate-analytics-snapshots', ['--backfill' => true])
+            ->assertSuccessful();
+
+        // 4. Assert snapshot exists in database
+        $this->assertDatabaseHas('seller_analytics_snapshots', [
+            'seller_id' => $this->owner->id,
+            'revenue' => 300.00, // 150.00 * 2
+            'cost' => 100.00,    // 50.00 * 2
+            'orders_count' => 1,
+        ]);
+
+
+
+        // 5. Query metrics service and assert values
+        $metricsService = new ShopAnalyticsMetricsService();
+        $metrics = $metricsService->getFinancialMetrics($this->owner->id);
+
+        $this->assertEquals(300.00, $metrics['current']['revenue']);
+        $this->assertEquals(100.00, $metrics['current']['cost']);
+        $this->assertEquals(200.00, $metrics['current']['profit']); // 300 - 100
+        $this->assertEquals(1, $metrics['current']['orders']);
+        $this->assertEquals(300.00, $metrics['current']['avg']); // 300 / 1
+        $this->assertEquals(66.7, round($metrics['current']['margin'], 1)); // (200 / 300) * 100 = 66.666...
     }
 }

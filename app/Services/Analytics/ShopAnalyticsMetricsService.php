@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use App\Models\SellerAnalyticsSnapshot;
 use App\Models\StockRequest;
 
 class ShopAnalyticsMetricsService
@@ -22,17 +23,18 @@ class ShopAnalyticsMetricsService
         $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
 
         $getMetrics = function ($start, $end) use ($sellerId) {
-            $data = OrderItem::whereHas('order', function ($query) use ($sellerId, $start, $end) {
-                $query->where('artisan_id', $sellerId)
-                    ->where('status', 'Completed')
-                    ->whereBetween('created_at', [$start, $end]);
-            })
-                ->selectRaw('SUM(price * quantity) as revenue, SUM(cost * quantity) as cost, COUNT(DISTINCT order_id) as orders_count')
+            $data = SellerAnalyticsSnapshot::query()
+                ->where('seller_id', $sellerId)
+                ->whereBetween('snapshot_date', [
+                    $start->copy()->startOfDay(),
+                    $end->copy()->endOfDay(),
+                ])
+                ->selectRaw('SUM(revenue) as revenue, SUM(cost) as cost, SUM(orders_count) as orders_count')
                 ->first();
 
-            $revenue = $data->revenue ?? 0;
-            $cost = $data->cost ?? 0;
-            $ordersCount = $data->orders_count ?? 0;
+            $revenue = (float) ($data->revenue ?? 0);
+            $cost = (float) ($data->cost ?? 0);
+            $ordersCount = (int) ($data->orders_count ?? 0);
             $profit = $revenue - $cost;
 
             return [
