@@ -47,11 +47,7 @@ class BulkActivateProducts
                 $product = $products->firstWhere('id', $selectedId);
                 if (!$product || $product->status === 'Active') continue;
 
-                $activationReadiness = $this->evaluateActivationReadiness(
-                    filled($product->cover_photo_path),
-                    count($product->gallery_paths ?? []),
-                    filled($product->model_3d_path)
-                );
+                $activationReadiness = $product->evaluateActivationReadiness();
 
                 if (!$activationReadiness['canBeActive']) {
                     $product->update(['status' => 'Draft']);
@@ -104,27 +100,5 @@ class BulkActivateProducts
         });
 
         return $result;
-    }
-
-    private function evaluateActivationReadiness(bool $hasCoverPhoto, int $galleryImageCount, bool $hasThreeDModel): array
-    {
-        $missing = [];
-
-        if (!$hasCoverPhoto) {
-            $missing[] = 'a cover image';
-        }
-
-        if ($galleryImageCount < 3 || $galleryImageCount > 5) {
-            $missing[] = '3 to 5 gallery images';
-        }
-
-        if (!$hasThreeDModel) {
-            $missing[] = 'a 3D model';
-        }
-
-        return [
-            'canBeActive' => empty($missing),
-            'missing' => $missing,
-        ];
     }
 }

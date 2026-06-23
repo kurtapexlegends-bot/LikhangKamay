@@ -61,11 +61,7 @@ class ImportProductsCsv
 
                 $finalStatus = $status;
                 if ($status === 'Active') {
-                    $activationReadiness = $this->evaluateActivationReadiness(
-                        filled($product->cover_photo_path),
-                        count($product->gallery_paths ?? []),
-                        filled($product->model_3d_path)
-                    );
+                    $activationReadiness = $product->evaluateActivationReadiness();
 
                     if (!$activationReadiness['canBeActive']) {
                         $finalStatus = 'Draft';
@@ -139,31 +135,6 @@ class ImportProductsCsv
             'draftedForMissingMedia' => $draftedForMissingMedia,
             'skippedForLimit' => $skippedForLimit,
             'productLimit' => $productLimit,
-        ];
-    }
-
-    private function evaluateActivationReadiness(bool $hasCoverPhoto, int $galleryImageCount, bool $hasThreeDModel): array
-    {
-        $missing = [];
-
-        if (!$hasCoverPhoto) {
-            $missing[] = 'a cover image';
-        }
-
-        if (
-            $galleryImageCount < 3
-            || $galleryImageCount > 5
-        ) {
-            $missing[] = '3 to 5 gallery images';
-        }
-
-        if (!$hasThreeDModel) {
-            $missing[] = 'a 3D model';
-        }
-
-        return [
-            'canBeActive' => empty($missing),
-            'missing' => $missing,
         ];
     }
 

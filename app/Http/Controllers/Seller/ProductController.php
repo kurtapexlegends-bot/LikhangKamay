@@ -4,18 +4,19 @@ namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
-use App\Models\Message;
-use App\Models\Order;
+use App\Http\Controllers\Seller\Concerns\ProductControllerHelpers;
 use App\Models\Product;
-use App\Models\SellerActivityLog;
 use App\Models\Supply;
-use App\Models\User;
 use App\Support\RichTextSanitizer;
 use App\Services\Catalog\ThreeDAssetService;
-use App\Actions\Seller\Catalog\BulkUpdateProductStatus;
-use App\Actions\Seller\Catalog\BulkActivateProducts;
 use App\Actions\Seller\Catalog\CreateProduct;
 use App\Actions\Seller\Catalog\UpdateProduct;
+use App\Actions\Seller\Catalog\ArchiveProduct;
+use App\Actions\Seller\Catalog\ActivateProduct;
+use App\Actions\Seller\Catalog\RestockProduct;
+use App\Actions\Seller\Catalog\ManualDeductProduct;
+use App\Actions\Seller\Catalog\BulkUpdateProductStatus;
+use App\Actions\Seller\Catalog\BulkActivateProducts;
 use App\Actions\Seller\Catalog\ImportProductsCsv;
 use App\Actions\Seller\Catalog\ResubmitProduct;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ use Inertia\Inertia;
 class ProductController extends Controller
 {
     use InteractsWithSellerContext;
+    use ProductControllerHelpers;
 
     private const MAX_GALLERY_IMAGES = 5;
 
@@ -238,29 +240,10 @@ class ProductController extends Controller
                 : 'Product updated successfully!'));
     }
 
-    public function archive(string|int $id)
+    public function archive(string|int $id, ArchiveProduct $archiveProduct)
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
-        $product->update(['status' => 'Archived']);
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $this->sellerOwnerId(),
-            'actor_user_id' => Auth::id(),
-            'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'products',
-            'event_type' => 'product_archived',
-            'severity' => 'warning',
-            'status' => 'archived',
-            'title' => 'Product Archived',
-            'summary' => "{$product->name} was archived from the active catalog.",
-            'subject_type' => Product::class,
-            'subject_id' => $product->id,
-            'subject_label' => $product->name,
-            'reference' => $product->sku,
-            'target_url' => route('products.index', ['highlight_product' => $product->id]),
-            'target_label' => 'Open Products',
-        ]);
+        $archiveProduct->execute($product, $this->sellerOwnerId());
 
         return redirect()->back()->with('success', 'Product archived.');
     }
@@ -293,93 +276,34 @@ class ProductController extends Controller
         );
     }
 
-    public function activate(string|int $id)
+    public function activate(string|int $id, ActivateProduct $activateProduct)
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
-        /** @var \App\Models\User $seller */
-        $seller = $this->sellerOwner();
-        $activationReadiness = $product->evaluateActivationReadiness();
+        $result = $activateProduct->execute($product, $this->sellerOwner());
 
-        if (!$activationReadiness['canBeActive']) {
-            $product->update(['status' => 'Draft']);
-
-            return back()->with('error', $this->activationBlockedMessage($activationReadiness['missing']));
+        if (!$result['success']) {
+            if ($result['reason'] === 'missing_media') {
+                return back()->with('error', $this->activationBlockedMessage($result['missing']));
+            }
+            return back()->with('error', $result['message']);
         }
 
-        if (!$seller->canAddMoreProducts()) {
-            return back()->with('error', 'You have reached your active products limit. Please upgrade your plan.');
-        }
-
-        $product->update(['status' => 'Active']);
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $seller->id,
-            'actor_user_id' => Auth::id(),
-            'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'products',
-            'event_type' => 'product_activated',
-            'severity' => 'success',
-            'status' => 'active',
-            'title' => 'Product Activated',
-            'summary' => "{$product->name} is now active in the catalog.",
-            'subject_type' => Product::class,
-            'subject_id' => $product->id,
-            'subject_label' => $product->name,
-            'reference' => $product->sku,
-            'target_url' => route('products.index', ['highlight_product' => $product->id]),
-            'target_label' => 'Open Products',
-        ]);
-
-        return redirect()->back()->with('success', 'Product activated.');
+        return redirect()->back()->with('success', $result['message']);
     }
 
-    public function restock(Request $request, string|int $id)
+    public function restock(Request $request, string|int $id, RestockProduct $restockProduct)
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
         $validated = $request->validate([
             'amount' => 'required|integer|min:1',
         ]);
 
-        $amount = $validated['amount'];
-        $product->increment('stock', $amount);
-        $activationReadiness = $product->evaluateActivationReadiness();
-        $product->update([
-            'status' => $product->status === 'Archived'
-                ? 'Archived'
-                : ($activationReadiness['canBeActive'] ? 'Active' : 'Draft'),
-        ]);
-
-        if ($product->track_as_supply && $product->supply) {
-            $product->supply->update(['quantity' => $product->stock]);
-        }
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $this->sellerOwnerId(),
-            'actor_user_id' => Auth::id(),
-            'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'products',
-            'event_type' => 'product_restocked',
-            'severity' => 'success',
-            'status' => strtolower($product->status),
-            'title' => 'Product Restocked',
-            'summary' => "{$product->name} stock increased by {$amount}.",
-            'subject_type' => Product::class,
-            'subject_id' => $product->id,
-            'subject_label' => $product->name,
-            'reference' => $product->sku,
-            'details' => [
-                'lines' => ["Stock is now {$product->fresh()->stock} unit(s)."],
-            ],
-            'target_url' => route('products.index', ['highlight_product' => $product->id]),
-            'target_label' => 'Open Products',
-        ]);
+        $restockProduct->execute($product, $validated['amount'], $this->sellerOwnerId());
 
         return redirect()->back()->with('success', 'Product stock updated.');
     }
 
-    public function manualDeduct(Request $request, int|string $id)
+    public function manualDeduct(Request $request, int|string $id, ManualDeductProduct $manualDeductProduct)
     {
         $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
 
@@ -388,49 +312,13 @@ class ProductController extends Controller
             'reason' => 'required|string|max:255',
         ]);
 
-        if ($validated['quantity'] > $product->stock) {
-            return back()->with('error', 'Insufficient stock.');
+        $result = $manualDeductProduct->execute($product, $validated['quantity'], $validated['reason'], $this->sellerOwnerId());
+
+        if (!$result['success']) {
+            return back()->with('error', $result['message']);
         }
 
-        $product->decrement('stock', $validated['quantity']);
-        $product->increment('sold', $validated['quantity']);
-
-        $supply = $this->findSupplyForProduct($product, $this->sellerOwnerId());
-
-        if ($supply) {
-            $newQuantity = max(0, $supply->quantity - $validated['quantity']);
-            $supply->update(['quantity' => $newQuantity]);
-        }
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $this->sellerOwnerId(),
-            'actor_user_id' => Auth::id(),
-            'actor_type' => SellerActivityLog::resolveActorType(Auth::user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'products',
-            'event_type' => 'product_manual_deduction',
-            'severity' => 'warning',
-            'status' => strtolower((string) $product->fresh()->status),
-            'title' => 'Product Stock Deducted',
-            'summary' => "{$validated['quantity']} unit(s) of {$product->name} were deducted from stock.",
-            'subject_type' => Product::class,
-            'subject_id' => $product->id,
-            'subject_label' => $product->name,
-            'reference' => $product->sku,
-            'details' => [
-                'before' => [
-                    'stock' => $product->stock + $validated['quantity'],
-                ],
-                'after' => [
-                    'stock' => $product->fresh()->stock,
-                ],
-                'lines' => ["Reason: {$validated['reason']}"],
-            ],
-            'target_url' => route('products.index', ['highlight_product' => $product->id]),
-            'target_label' => 'Open Products',
-        ]);
-
-        return back()->with('success', "Stock updated. Deducted {$validated['quantity']} units for {$validated['reason']}.");
+        return back()->with('success', $result['message']);
     }
 
     public function exportCsv()
@@ -565,7 +453,7 @@ class ProductController extends Controller
         }));
         
         $product->viewer_can_review = $viewer
-            ? Order::query()
+            ? \App\Models\Order::query()
                 ->where('user_id', $viewer->id)
                 ->where('status', 'Completed')
                 ->whereHas('items', function ($query) use ($product) {
@@ -598,127 +486,5 @@ class ProductController extends Controller
                 'user' => Auth::user(),
             ],
         ]);
-    }
-
-    private function draftActivationRequirementMessage(array $missingRequirements): string
-    {
-        return 'Product saved as Draft. Add ' . $this->humanizeRequirementList($missingRequirements) . ' before listing it as Active.';
-    }
-
-    private function activationBlockedMessage(array $missingRequirements): string
-    {
-        return 'This product needs ' . $this->humanizeRequirementList($missingRequirements) . ' before it can be listed as Active. It remains in Draft.';
-    }
-
-    private function humanizeRequirementList(array $requirements): string
-    {
-        $requirements = array_values(array_unique($requirements));
-        $count = count($requirements);
-
-        if ($count === 0) {
-            return 'the required media';
-        }
-
-        if ($count === 1) {
-            return $requirements[0];
-        }
-
-        if ($count === 2) {
-            return $requirements[0] . ' and ' . $requirements[1];
-        }
-
-        $lastRequirement = array_pop($requirements);
-
-        return implode(', ', $requirements) . ', and ' . $lastRequirement;
-    }
-
-    private function bulkActivationMessage(int $activated, int $drafted, int $skipped): string
-    {
-        if ($activated === 0 && $skipped > 0 && $drafted === 0) {
-            return "No selected products were activated. Your active product limit has already been reached.";
-        }
-
-        $message = "{$activated} product(s) were activated.";
-        if ($activated === 1) {
-            $message = "1 product was activated.";
-        } elseif ($activated > 1) {
-            $message = "{$activated} products were activated.";
-        }
-
-        if ($drafted > 0) {
-            $productWord = $drafted === 1 ? 'product' : 'products';
-            $message .= " {$drafted} {$productWord} was kept in Draft because required media is incomplete.";
-            if ($drafted > 1) {
-                $message = str_replace('was kept in Draft', 'were kept in Draft', $message);
-            }
-        }
-
-        if ($skipped > 0) {
-            $productWord = $skipped === 1 ? 'product' : 'products';
-            $message .= " {$skipped} {$productWord} were skipped due to plan limits.";
-        }
-
-        return trim($message);
-    }
-
-    private function viewerCanChatSeller(?User $viewer, ?User $seller): bool
-    {
-        if (
-            !$viewer
-            || !$seller
-            || $viewer->id === $seller->id
-            || !$viewer->isBuyer()
-            || !$seller->isArtisan()
-        ) {
-            return false;
-        }
-
-        return Order::query()
-            ->where('artisan_id', $seller->id)
-            ->where('user_id', $viewer->id)
-            ->exists()
-            || Message::query()
-                ->where(function ($query) use ($viewer, $seller) {
-                    $query->where('sender_id', $viewer->id)
-                        ->where('receiver_id', $seller->id);
-                })
-                ->orWhere(function ($query) use ($viewer, $seller) {
-                    $query->where('sender_id', $seller->id)
-                        ->where('receiver_id', $viewer->id);
-                })
-                ->exists();
-    }
-
-    private function supplyLookupAttributes(Product $product, int $sellerId): array
-    {
-        return Supply::filterSchemaCompatibleAttributes([
-            'user_id' => $sellerId,
-            'product_id' => $product->id,
-            'name' => $product->name,
-            'category' => 'Finished Goods',
-        ]);
-    }
-
-    private function findSupplyForProduct(Product $product, int $sellerId, ?string $fallbackName = null): ?Supply
-    {
-        $query = Supply::where('user_id', $sellerId);
-
-        if (Supply::supportsProductIdColumn()) {
-            return $query->where('product_id', $product->id)->first();
-        }
-
-        $names = collect([$product->name, $fallbackName])
-            ->filter()
-            ->unique()
-            ->values();
-
-        if ($names->isEmpty()) {
-            return null;
-        }
-
-        return $query
-            ->where('category', 'Finished Goods')
-            ->whereIn('name', $names->all())
-            ->first();
     }
 }
