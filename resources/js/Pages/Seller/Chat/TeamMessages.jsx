@@ -40,6 +40,8 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         if (!currentChatUser) return undefined;
 
         const interval = setInterval(() => {
+            if (typeof document !== 'undefined' && document.hidden) return;
+
             router.reload({
                 only: ['conversations', 'activeMessages', 'currentChatUser'],
                 preserveScroll: true,

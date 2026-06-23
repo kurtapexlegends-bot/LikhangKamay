@@ -206,6 +206,8 @@ export default function MessageInput({ currentChatUser, form }) {
                             onClick={() => setShowEmojiPicker((value) => !value)}
                             className={`mx-1 shrink-0 rounded-xl p-2 transition-all ${showEmojiPicker ? 'bg-white text-clay-600 shadow-sm' : 'text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm'}`}
                             title="Add emoji"
+                            aria-expanded={showEmojiPicker}
+                            aria-label="Toggle emoji picker"
                         >
                             <Smile size={20} />
                         </button>
