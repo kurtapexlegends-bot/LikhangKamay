@@ -146,6 +146,16 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     }, [enabledToggles]);
 
     useEffect(() => {
+        const activeGroup = resolveActiveGroup(active);
+        if (activeGroup) {
+            setExpandedGroups(prev => {
+                if (prev[activeGroup]) return prev;
+                return { ...prev, [activeGroup]: true };
+            });
+        }
+    }, [active]);
+
+    useEffect(() => {
         if (typeof window === 'undefined') return;
         window.localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(expandedGroups));
     }, [expandedGroups]);

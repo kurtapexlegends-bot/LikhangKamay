@@ -32,26 +32,11 @@ class HRController extends Controller
         SellerEntitlementService $entitlementService,
         StaffAttendanceService $attendanceService
     ): Response {
-        /** @var User $seller */
         $seller = $this->sellerOwner();
-        /** @var User $actor */
         $actor = $this->sellerActor();
-        
-        $monthQuery = $request->query('month');
-        $parsedMonth = null;
-        if ($monthQuery) {
-            try {
-                $parsedMonth = \Carbon\Carbon::parse($monthQuery);
-            } catch (\Exception $e) {
-                // ignore and fall back to null
-            }
-        }
 
-        $activePeriod = $parsedMonth ?: now(config('app.timezone'));
-
-        $employeeRecords = HRWorkflowHelper::getEmployeeRecordsWithLogin($seller);
-        $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller, $parsedMonth);
-        $employees = $attendanceService->transformEmployeeRecords($employeeRecords, $attendanceSummaries);
+        $activePeriod = HRWorkflowHelper::resolveActivePeriod($request);
+        $employees = HRWorkflowHelper::getEmployeesWithAttendance($seller, $attendanceService, $activePeriod);
 
         $payrolls = Payroll::with('requester:id,name')
             ->where('user_id', $seller->id)
@@ -66,27 +51,13 @@ class HRController extends Controller
             'staff' => $employees,
             'payrolls' => $payrolls,
             'staffAccessAudits' => $recentAccessAudits,
-            'sellerSettings' => [
-                'overtime_rate' => $seller->overtime_rate ?? 50.00,
-                'overtime_multiplier' => $seller->overtime_multiplier ?? 1.25,
-                'payroll_factor_method' => $seller->payroll_factor_method ?? 'custom',
-                'rest_day_ot_multiplier' => $seller->rest_day_ot_multiplier ?? 1.69,
-                'holiday_ot_multiplier' => $seller->holiday_ot_multiplier ?? 2.60,
-                'payroll_working_days' => $seller->payroll_working_days ?? 22,
-                'attendance_month_label' => $activePeriod->format('F Y'),
-                'attendance_month_value' => $activePeriod->format('Y-m'),
-                'created_at' => $seller->created_at ? $seller->created_at->toIso8601String() : now(config('app.timezone'))->toIso8601String(),
-            ],
-            'staffProvisioning' => [
-                'canEditHrRecords' => $canEditHrRecords,
-                'canManageStaffAccounts' => $actor->canUpdateStaffAccounts() && $supportsProvisioning,
-                'canCreateStaffAccounts' => $actor->canCreateStaffAccounts() && $supportsProvisioning,
-                'canDeleteStaffAccounts' => $actor->canDeleteStaffAccounts() && $supportsProvisioning,
-                'rolePresets' => HRWorkflowHelper::rolePresetOptions($entitlementService),
-                'userLevels' => HRWorkflowHelper::userLevelOptions(),
-                'availableModules' => HRWorkflowHelper::moduleOptions($entitlementService),
-                'requiresStaffSchemaUpdate' => !$supportsProvisioning,
-            ],
+            'sellerSettings' => HRWorkflowHelper::buildSellerSettings($seller, $activePeriod),
+            'staffProvisioning' => HRWorkflowHelper::buildStaffProvisioningData(
+                $actor,
+                $entitlementService,
+                $supportsProvisioning,
+                $canEditHrRecords
+            ),
         ]);
     }
 
@@ -100,48 +71,7 @@ class HRController extends Controller
 
         abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
 
-        $request->merge([
-            'name' => trim((string) $request->input('name')),
-            'role' => trim((string) $request->input('role')),
-        ]);
-
-        if ($request->filled('email')) {
-            $request->merge([
-                'email' => strtolower(trim((string) $request->input('email'))),
-            ]);
-        }
-
-        if ($request->filled('staff_user_level')) {
-            $request->merge([
-                'staff_user_level' => User::normalizeStaffUserLevel($request->input('staff_user_level')),
-            ]);
-        }
-
-        if ($request->filled('staff_access_permission_level')) {
-            $request->merge([
-                'staff_access_permission_level' => User::normalizeStaffAccessPermissionLevel($request->input('staff_access_permission_level')),
-            ]);
-        } elseif ($request->boolean('create_login_account')) {
-            $request->merge([
-                'staff_access_permission_level' => HRWorkflowHelper::resolveRequestedStaffAccessPermissionLevel($request),
-            ]);
-        }
-
-        $sellerId = $this->sellerOwnerId();
-
-        $rules = [
-            'employee_id' => [
-                'nullable',
-                'string',
-                'max:12',
-                'regex:/^[A-Za-z0-9-]+$/',
-                Rule::unique('employees', 'employee_id')->where('user_id', $sellerId)
-            ],
-            'name' => ['required', 'string', 'max:255'],
-            'role' => ['required', 'string', 'max:255'],
-            'salary' => ['required', 'numeric', 'min:0'],
-            'create_login_account' => ['nullable', 'boolean'],
-        ];
+        HRWorkflowHelper::sanitizeAndPrepareProvisionRequest($request);
 
         if ($request->boolean('create_login_account')) {
             if (!HRWorkflowHelper::supportsStaffProvisioningSchema()) {
@@ -153,17 +83,9 @@ class HRController extends Controller
             }
 
             abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
-
-            $rules = array_merge($rules, [
-                'email' => ['required', 'string', 'email', 'max:255', 'regex:/^[A-Z0-9._%+-]+@gmail\.com$/i', 'unique:users,email'],
-                'default_password' => ['required', 'string', Password::defaults()],
-                'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
-                'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
-                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevelValidationValues())],
-                'module_overrides' => ['nullable', 'array'],
-                'module_overrides.*' => ['nullable'],
-            ]);
         }
+
+        $rules = HRWorkflowHelper::getProvisionValidationRules($seller, $entitlementService, null, null, $request->boolean('create_login_account'));
 
         $validated = $request->validate($rules, [
             'email.regex' => 'Staff login accounts must use a Gmail address.',
@@ -280,67 +202,9 @@ class HRController extends Controller
             ? $canManageLoginSettings
             : ($wantsLoginAccount && $canCreateLoginSettings);
 
-        $request->merge([
-            'name' => trim((string) $request->input('name')),
-            'role' => trim((string) $request->input('role')),
-        ]);
+        HRWorkflowHelper::sanitizeAndPrepareProvisionRequest($request);
 
-        if ($request->filled('email')) {
-            $request->merge([
-                'email' => strtolower(trim((string) $request->input('email'))),
-            ]);
-        }
-
-        if ($request->filled('staff_user_level')) {
-            $request->merge([
-                'staff_user_level' => User::normalizeStaffUserLevel($request->input('staff_user_level')),
-            ]);
-        }
-
-        if ($request->filled('staff_access_permission_level')) {
-            $request->merge([
-                'staff_access_permission_level' => User::normalizeStaffAccessPermissionLevel($request->input('staff_access_permission_level')),
-            ]);
-        } elseif ($request->boolean('create_login_account') || $linkedLogin) {
-            $request->merge([
-                'staff_access_permission_level' => HRWorkflowHelper::resolveRequestedStaffAccessPermissionLevel($request),
-            ]);
-        }
-
-        $sellerId = $this->sellerOwnerId();
-
-        $rules = [
-            'employee_id' => [
-                'nullable',
-                'string',
-                'max:12',
-                'regex:/^[A-Za-z0-9-]+$/',
-                Rule::unique('employees', 'employee_id')->where('user_id', $sellerId)->ignore($employee->id)
-            ],
-            'name' => ['required', 'string', 'max:255'],
-            'role' => ['required', 'string', 'max:255'],
-            'salary' => ['required', 'numeric', 'min:0'],
-            'create_login_account' => ['nullable', 'boolean'],
-        ];
-
-        if ($shouldManageLoginSettings) {
-            $rules = array_merge($rules, [
-                'email' => [
-                    'required',
-                    'string',
-                    'email',
-                    'max:255',
-                    'regex:/^[A-Z0-9._%+-]+@gmail\.com$/i',
-                    Rule::unique('users', 'email')->ignore($linkedLogin?->id),
-                ],
-                'default_password' => [$linkedLogin ? 'nullable' : 'required', 'string', Password::defaults()],
-                'staff_role_preset_key' => ['required', 'string', Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
-                'staff_access_permission_level' => ['nullable', 'string', Rule::in(User::staffAccessPermissionLevels())],
-                'staff_user_level' => ['nullable', 'string', Rule::in(User::staffUserLevelValidationValues())],
-                'module_overrides' => ['nullable', 'array'],
-                'module_overrides.*' => ['nullable'],
-            ]);
-        }
+        $rules = HRWorkflowHelper::getProvisionValidationRules($seller, $entitlementService, $employee, $linkedLogin, $shouldManageLoginSettings);
 
         $validated = $request->validate($rules, [
             'email.regex' => 'Staff login accounts must use a Gmail address.',
@@ -365,60 +229,10 @@ class HRController extends Controller
 
         $employee = $result['employee'];
         $linkedLogin = $result['linkedLogin'];
-        $sendVerification = $result['sendVerification'];
-        $createdLogin = $result['createdLogin'];
-        $emailChanged = $result['emailChanged'];
-        $passwordReset = $result['passwordReset'];
-        $workspaceSuspended = $result['workspaceSuspended'];
-        $workspaceRestored = $result['workspaceRestored'];
-        $auditAfter = $result['auditAfter'];
 
-        $auditChanges = [];
-        if ($createdLogin) {
-            $auditChanges[] = 'Created seller portal login';
-        }
-        if ($workspaceSuspended) {
-            $auditChanges[] = 'Suspended workspace access';
-        }
-        if ($workspaceRestored) {
-            $auditChanges[] = 'Restored workspace access';
-        }
-        if ($emailChanged) {
-            $auditChanges[] = 'Updated login email';
-        }
-        if ($passwordReset) {
-            $auditChanges[] = 'Reset login password';
-        }
-        if ($auditBefore !== null && $auditAfter !== null) {
-            if (($auditBefore['permission_level'] ?? null) !== ($auditAfter['permission_level'] ?? null)) {
-                $auditChanges[] = 'Changed People & Payroll access to ' . HRWorkflowHelper::permissionLevelLabel($auditAfter['permission_level'] ?? null);
-            }
-            if (($auditBefore['role_preset_key'] ?? null) !== ($auditAfter['role_preset_key'] ?? null)) {
-                $auditChanges[] = 'Changed capability template';
-            }
-            if (($auditBefore['modules'] ?? []) !== ($auditAfter['modules'] ?? [])) {
-                $auditChanges[] = 'Updated capability access';
-            }
-        }
-        if ($createdLogin && $auditAfter !== null) {
-            $auditChanges[] = 'Assigned capability-specific access levels';
-        }
+        HRWorkflowHelper::handleUpdateAuditLog($seller, $actor, $employee, $linkedLogin, $auditBefore, $result);
 
-        if ($createdLogin || $workspaceSuspended || $workspaceRestored || !empty($auditChanges)) {
-            $event = $createdLogin
-                ? 'login_created'
-                : ($workspaceSuspended
-                    ? 'login_suspended'
-                    : ($workspaceRestored ? 'login_restored' : 'login_updated'));
-
-            HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, $event, $employee, $linkedLogin, [
-                'changes' => array_values(array_unique($auditChanges)),
-                'before' => $auditBefore,
-                'after' => $auditAfter,
-            ]);
-        }
-
-        if ($sendVerification && $linkedLogin?->exists) {
+        if ($result['sendVerification'] && $linkedLogin?->exists) {
             try {
                 $linkedLogin->sendEmailVerificationNotification();
             } catch (Throwable $exception) {
@@ -433,11 +247,11 @@ class HRController extends Controller
         }
 
         return redirect()->back()->with('success', HRWorkflowHelper::buildEmployeeUpdateSuccessMessage(
-            $createdLogin,
-            $workspaceSuspended,
-            $workspaceRestored,
-            $emailChanged,
-            $passwordReset
+            $result['createdLogin'],
+            $result['workspaceSuspended'],
+            $result['workspaceRestored'],
+            $result['emailChanged'],
+            $result['passwordReset']
         ));
     }
 
@@ -488,32 +302,7 @@ class HRController extends Controller
             'items.*.isSelected' => 'nullable|boolean',
         ]);
 
-        $selectedEmployeeIds = collect($validated['selected_employee_ids'] ?? [])
-            ->map(fn($id) => (int) $id)
-            ->unique()
-            ->values();
-
-        $selectedItems = collect($validated['items'])
-            ->filter(function (array $item) use ($selectedEmployeeIds) {
-                if ($selectedEmployeeIds->isNotEmpty()) {
-                    return $selectedEmployeeIds->contains((int) $item['employee_id']);
-                }
-
-                return !array_key_exists('isSelected', $item) || filter_var($item['isSelected'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== false;
-            })
-            ->map(function (array $item) {
-                return [
-                    'employee_id' => $item['employee_id'],
-                    'absences_days' => (float) ($item['absences_days'] ?? 0),
-                    'paid_leave_days' => (float) ($item['paid_leave_days'] ?? 0),
-                    'undertime_hours' => (float) ($item['undertime_hours'] ?? 0),
-                    'overtime_hours' => (float) ($item['overtime_hours'] ?? 0),
-                    'rest_day_ot_hours' => (float) ($item['rest_day_ot_hours'] ?? 0),
-                    'holiday_ot_hours' => (float) ($item['holiday_ot_hours'] ?? 0),
-                ];
-            })
-            ->values()
-            ->all();
+        $selectedItems = HRWorkflowHelper::parseSelectedPayrollItems($validated);
 
         if (empty($selectedItems)) {
             return redirect()->back()->withErrors([

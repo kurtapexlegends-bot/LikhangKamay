@@ -10,9 +10,13 @@ use App\Models\User;
 use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Services\HR\PayrollCalculatorService;
 use App\Services\SellerEntitlementService;
+use App\Services\StaffAttendanceService;
+use Illuminate\Support\Collection;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
+
 
 class HRWorkflowHelper
 {
@@ -91,21 +95,25 @@ class HRWorkflowHelper
 
     public static function supportsStaffProvisioningSchema(): bool
     {
-        return Schema::hasColumn('users', 'seller_owner_id')
-            && Schema::hasColumn('users', 'staff_role_preset_key')
-            && Schema::hasColumn('users', 'staff_module_permissions')
-            && Schema::hasColumn('users', 'must_change_password')
-            && Schema::hasColumn('users', 'created_by_user_id')
-            && Schema::hasColumn('users', 'employee_id');
+        return \Illuminate\Support\Facades\Cache::remember('schema_users_supports_provisioning', 86400, function () {
+            return Schema::hasColumn('users', 'seller_owner_id')
+                && Schema::hasColumn('users', 'staff_role_preset_key')
+                && Schema::hasColumn('users', 'staff_module_permissions')
+                && Schema::hasColumn('users', 'must_change_password')
+                && Schema::hasColumn('users', 'created_by_user_id')
+                && Schema::hasColumn('users', 'employee_id');
+        });
     }
 
     public static function supportsStaffAccessAuditSchema(): bool
     {
-        try {
-            return Schema::hasTable('staff_access_audits');
-        } catch (Throwable) {
-            return false;
-        }
+        return \Illuminate\Support\Facades\Cache::remember('schema_has_table_staff_access_audits', 86400, function () {
+            try {
+                return Schema::hasTable('staff_access_audits');
+            } catch (Throwable) {
+                return false;
+            }
+        });
     }
 
     /**
@@ -429,7 +437,7 @@ class HRWorkflowHelper
 
     public static function getEmployeeRecordsWithLogin(User $seller): \Illuminate\Support\Collection
     {
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $supportsEmployeeLoginLinks = \Illuminate\Support\Facades\Cache::remember('schema_users_has_employee_id', 86400, fn() => Schema::hasColumn('users', 'employee_id'));
         $employeeQuery = Employee::query()
             ->where('user_id', $seller->id)
             ->orderBy('created_at', 'desc');
@@ -445,9 +453,9 @@ class HRWorkflowHelper
                 'email_verified_at',
                 'employee_id',
                 'staff_plan_suspended_at',
-                Schema::hasColumn('users', 'must_change_password') ? 'must_change_password' : null,
-                Schema::hasColumn('users', 'staff_role_preset_key') ? 'staff_role_preset_key' : null,
-                Schema::hasColumn('users', 'staff_module_permissions') ? 'staff_module_permissions' : null,
+                \Illuminate\Support\Facades\Cache::remember('schema_users_has_must_change_password', 86400, fn() => Schema::hasColumn('users', 'must_change_password')) ? 'must_change_password' : null,
+                \Illuminate\Support\Facades\Cache::remember('schema_users_has_staff_role_preset_key', 86400, fn() => Schema::hasColumn('users', 'staff_role_preset_key')) ? 'staff_role_preset_key' : null,
+                \Illuminate\Support\Facades\Cache::remember('schema_users_has_staff_module_permissions', 86400, fn() => Schema::hasColumn('users', 'staff_module_permissions')) ? 'staff_module_permissions' : null,
             ]));
 
             $employeeQuery->with([
@@ -500,4 +508,231 @@ class HRWorkflowHelper
             ->values()
             ->all();
     }
+
+    public static function resolveActivePeriod(Request $request): Carbon
+    {
+        $monthQuery = $request->query('month');
+        $parsedMonth = null;
+        if ($monthQuery) {
+            try {
+                $parsedMonth = Carbon::parse($monthQuery);
+            } catch (\Exception $e) {
+                // ignore and fall back to null
+            }
+        }
+
+        return $parsedMonth ?: now(config('app.timezone'));
+    }
+
+    public static function getEmployeesWithAttendance(
+        User $seller,
+        StaffAttendanceService $attendanceService,
+        ?Carbon $parsedMonth = null
+    ): Collection {
+        $employeeRecords = self::getEmployeeRecordsWithLogin($seller);
+        $attendanceSummaries = $attendanceService->buildEmployeeMonthlySummaries($employeeRecords, $seller, $parsedMonth);
+        return $attendanceService->transformEmployeeRecords($employeeRecords, $attendanceSummaries);
+    }
+
+    public static function buildSellerSettings(User $seller, Carbon $activePeriod): array
+    {
+        return [
+            'overtime_rate' => $seller->overtime_rate ?? 50.00,
+            'overtime_multiplier' => $seller->overtime_multiplier ?? 1.25,
+            'payroll_factor_method' => $seller->payroll_factor_method ?? 'custom',
+            'rest_day_ot_multiplier' => $seller->rest_day_ot_multiplier ?? 1.69,
+            'holiday_ot_multiplier' => $seller->holiday_ot_multiplier ?? 2.60,
+            'payroll_working_days' => $seller->payroll_working_days ?? 22,
+            'attendance_month_label' => $activePeriod->format('F Y'),
+            'attendance_month_value' => $activePeriod->format('Y-m'),
+            'created_at' => $seller->created_at ? $seller->created_at->toIso8601String() : now(config('app.timezone'))->toIso8601String(),
+        ];
+    }
+
+    public static function buildStaffProvisioningData(
+        User $actor,
+        SellerEntitlementService $entitlementService,
+        bool $supportsProvisioning,
+        bool $canEditHrRecords
+    ): array {
+        return [
+            'canEditHrRecords' => $canEditHrRecords,
+            'canManageStaffAccounts' => $actor->canUpdateStaffAccounts() && $supportsProvisioning,
+            'canCreateStaffAccounts' => $actor->canCreateStaffAccounts() && $supportsProvisioning,
+            'canDeleteStaffAccounts' => $actor->canDeleteStaffAccounts() && $supportsProvisioning,
+            'rolePresets' => self::rolePresetOptions($entitlementService),
+            'userLevels' => self::userLevelOptions(),
+            'availableModules' => self::moduleOptions($entitlementService),
+            'requiresStaffSchemaUpdate' => !$supportsProvisioning,
+        ];
+    }
+
+    public static function sanitizeAndPrepareProvisionRequest(Request $request): void
+    {
+        $request->merge([
+            'name' => trim((string) $request->input('name')),
+            'role' => trim((string) $request->input('role')),
+        ]);
+
+        if ($request->filled('email')) {
+            $request->merge([
+                'email' => strtolower(trim((string) $request->input('email'))),
+            ]);
+        }
+
+        if ($request->filled('staff_user_level')) {
+            $request->merge([
+                'staff_user_level' => User::normalizeStaffUserLevel($request->input('staff_user_level')),
+            ]);
+        }
+
+        if ($request->filled('staff_access_permission_level')) {
+            $request->merge([
+                'staff_access_permission_level' => User::normalizeStaffAccessPermissionLevel($request->input('staff_access_permission_level')),
+            ]);
+        } elseif ($request->boolean('create_login_account')) {
+            $request->merge([
+                'staff_access_permission_level' => self::resolveRequestedStaffAccessPermissionLevel($request),
+            ]);
+        }
+    }
+
+    public static function getProvisionValidationRules(
+        User $seller,
+        SellerEntitlementService $entitlementService,
+        ?Employee $employee = null,
+        ?User $linkedLogin = null,
+        bool $shouldManageLoginSettings = false
+    ): array {
+        $rules = [
+            'employee_id' => [
+                'nullable',
+                'string',
+                'max:12',
+                'regex:/^[A-Za-z0-9-]+$/',
+                $employee
+                    ? \Illuminate\Validation\Rule::unique('employees', 'employee_id')->where('user_id', $seller->id)->ignore($employee->id)
+                    : \Illuminate\Validation\Rule::unique('employees', 'employee_id')->where('user_id', $seller->id)
+            ],
+            'name' => ['required', 'string', 'max:255'],
+            'role' => ['required', 'string', 'max:255'],
+            'salary' => ['required', 'numeric', 'min:0'],
+            'create_login_account' => ['nullable', 'boolean'],
+        ];
+
+        if ($shouldManageLoginSettings) {
+            $rules = array_merge($rules, [
+                'email' => [
+                    'required',
+                    'string',
+                    'email',
+                    'max:255',
+                    'regex:/^[A-Z0-9._%+-]+@gmail\.com$/i',
+                    $linkedLogin
+                        ? \Illuminate\Validation\Rule::unique('users', 'email')->ignore($linkedLogin->id)
+                        : \Illuminate\Validation\Rule::unique('users', 'email'),
+                ],
+                'default_password' => [$linkedLogin ? 'nullable' : 'required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
+                'staff_role_preset_key' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
+                'staff_access_permission_level' => ['nullable', 'string', \Illuminate\Validation\Rule::in(User::staffAccessPermissionLevels())],
+                'staff_user_level' => ['nullable', 'string', \Illuminate\Validation\Rule::in(User::staffUserLevelValidationValues())],
+                'module_overrides' => ['nullable', 'array'],
+                'module_overrides.*' => ['nullable'],
+            ]);
+        }
+
+        return $rules;
+    }
+
+    public static function handleUpdateAuditLog(
+        User $seller,
+        User $actor,
+        Employee $employee,
+        ?User $linkedLogin,
+        ?array $auditBefore,
+        array $result
+    ): void {
+        $createdLogin = $result['createdLogin'] ?? false;
+        $workspaceSuspended = $result['workspaceSuspended'] ?? false;
+        $workspaceRestored = $result['workspaceRestored'] ?? false;
+        $emailChanged = $result['emailChanged'] ?? false;
+        $passwordReset = $result['passwordReset'] ?? false;
+        $auditAfter = $result['auditAfter'] ?? null;
+
+        $auditChanges = [];
+        if ($createdLogin) {
+            $auditChanges[] = 'Created seller portal login';
+        }
+        if ($workspaceSuspended) {
+            $auditChanges[] = 'Suspended workspace access';
+        }
+        if ($workspaceRestored) {
+            $auditChanges[] = 'Restored workspace access';
+        }
+        if ($emailChanged) {
+            $auditChanges[] = 'Updated login email';
+        }
+        if ($passwordReset) {
+            $auditChanges[] = 'Reset login password';
+        }
+        if ($auditBefore !== null && $auditAfter !== null) {
+            if (($auditBefore['permission_level'] ?? null) !== ($auditAfter['permission_level'] ?? null)) {
+                $auditChanges[] = 'Changed People & Payroll access to ' . self::permissionLevelLabel($auditAfter['permission_level'] ?? null);
+            }
+            if (($auditBefore['role_preset_key'] ?? null) !== ($auditAfter['role_preset_key'] ?? null)) {
+                $auditChanges[] = 'Changed capability template';
+            }
+            if (($auditBefore['modules'] ?? []) !== ($auditAfter['modules'] ?? [])) {
+                $auditChanges[] = 'Updated capability access';
+            }
+        }
+        if ($createdLogin && $auditAfter !== null) {
+            $auditChanges[] = 'Assigned capability-specific access levels';
+        }
+
+        if ($createdLogin || $workspaceSuspended || $workspaceRestored || !empty($auditChanges)) {
+            $event = $createdLogin
+                ? 'login_created'
+                : ($workspaceSuspended
+                    ? 'login_suspended'
+                    : ($workspaceRestored ? 'login_restored' : 'login_updated'));
+
+            self::recordStaffAccessAudit($seller, $actor, $event, $employee, $linkedLogin, [
+                'changes' => array_values(array_unique($auditChanges)),
+                'before' => $auditBefore,
+                'after' => $auditAfter,
+            ]);
+        }
+    }
+
+    public static function parseSelectedPayrollItems(array $validated): array
+    {
+        $selectedEmployeeIds = collect($validated['selected_employee_ids'] ?? [])
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        return collect($validated['items'])
+            ->filter(function (array $item) use ($selectedEmployeeIds) {
+                if ($selectedEmployeeIds->isNotEmpty()) {
+                    return $selectedEmployeeIds->contains((int) $item['employee_id']);
+                }
+
+                return !array_key_exists('isSelected', $item) || filter_var($item['isSelected'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== false;
+            })
+            ->map(function (array $item) {
+                return [
+                    'employee_id' => $item['employee_id'],
+                    'absences_days' => (float) ($item['absences_days'] ?? 0),
+                    'paid_leave_days' => (float) ($item['paid_leave_days'] ?? 0),
+                    'undertime_hours' => (float) ($item['undertime_hours'] ?? 0),
+                    'overtime_hours' => (float) ($item['overtime_hours'] ?? 0),
+                    'rest_day_ot_hours' => (float) ($item['rest_day_ot_hours'] ?? 0),
+                    'holiday_ot_hours' => (float) ($item['holiday_ot_hours'] ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
 }
+

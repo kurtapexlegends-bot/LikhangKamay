@@ -27,19 +27,32 @@ class AnalyticsController extends Controller
         $filter = $request->input('filter', 'monthly');
         $categoryFilter = $request->input('category', 'All Categories');
 
-        $rollup = $shopAnalyticsService->getAnalyticsRollup($sellerId);
+        $cacheKey = "seller_analytics_data_{$sellerId}_" . md5($categoryFilter);
+        $analyticsData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($metricsService, $sellerId, $categoryFilter, $shopAnalyticsService) {
+            return [
+                'rollup' => $shopAnalyticsService->getAnalyticsRollup($sellerId),
+                'financials' => $metricsService->getFinancialMetrics($sellerId),
+                'customerInsights' => $metricsService->getCustomerInsights($sellerId),
+                'chartData' => $metricsService->getSalesChartData($sellerId, $categoryFilter),
+                'categoryPerformance' => $metricsService->getCategoryPerformance($sellerId),
+                'topProducts' => $metricsService->getTopProducts($sellerId),
+                'reviewStats' => $metricsService->getReviewStats($sellerId),
+                'intelligence' => $metricsService->getSalesIntelligence($sellerId),
+            ];
+        });
 
-        $financials = $metricsService->getFinancialMetrics($sellerId);
-        $customerInsights = $metricsService->getCustomerInsights($sellerId);
-        $chartData = $metricsService->getSalesChartData($sellerId, $categoryFilter);
-        $categoryPerformance = $metricsService->getCategoryPerformance($sellerId);
-        $topProducts = $metricsService->getTopProducts($sellerId);
-        $reviewStats = $metricsService->getReviewStats($sellerId);
-        $intelligence = $metricsService->getSalesIntelligence($sellerId);
+        $rollup = $analyticsData['rollup'];
+        $financials = $analyticsData['financials'];
+        $customerInsights = $analyticsData['customerInsights'];
+        $chartData = $analyticsData['chartData'];
+        $categoryPerformance = $analyticsData['categoryPerformance'];
+        $topProducts = $analyticsData['topProducts'];
+        $reviewStats = $analyticsData['reviewStats'];
+        $intelligence = $analyticsData['intelligence'];
 
         $canViewSponsorshipAnalytics = $seller->isEliteTier();
         $sponsorshipAnalytics = $canViewSponsorshipAnalytics
-            ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
+            ? \Illuminate\Support\Facades\Cache::remember("seller_sponsorship_analytics_{$sellerId}", 300, fn() => $sponsorshipAnalyticsService->getSellerAnalytics($sellerId))
             : null;
 
         $canViewRevenue = $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE);

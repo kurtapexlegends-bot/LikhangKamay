@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -10,8 +10,9 @@ import {
     Package, AlertTriangle
 } from 'lucide-react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import ThreeDCanvasViewer from '@/Components/Seller/Catalog/ThreeDCanvasViewer';
-import ThreeDUploadModal from '@/Components/Seller/Catalog/ThreeDUploadModal';
+
+const ThreeDCanvasViewer = lazy(() => import('@/Components/Seller/Catalog/ThreeDCanvasViewer'));
+const ThreeDUploadModal = lazy(() => import('@/Components/Seller/Catalog/ThreeDUploadModal'));
 
 export default function ThreeDManager({ auth, models = [], products = [], storage = { percent: 0, used: '0MB', max: '500MB' } }) {
     const [selectedModelId, setSelectedModelId] = useState(models[0]?.id ?? null);
@@ -116,7 +117,9 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         )}
 
                         <div className="flex-1 w-full h-full cursor-grab active:cursor-grabbing">
-                            <ThreeDCanvasViewer modelUrl={selectedModel?.url} />
+                            <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-stone-400">Loading 3D Canvas...</div>}>
+                                <ThreeDCanvasViewer modelUrl={selectedModel?.url} />
+                            </Suspense>
                         </div>
 
                         <div className="absolute bottom-3 left-0 right-0 text-center pointer-events-none">
@@ -206,12 +209,16 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                 </div>
             </main>
 
-            <ThreeDUploadModal
-                show={showUploadModal}
-                onClose={() => setShowUploadModal(false)}
-                products={products}
-                canEditThreeD={canEditThreeD}
-            />
+            {showUploadModal && (
+                <Suspense fallback={null}>
+                    <ThreeDUploadModal
+                        show={showUploadModal}
+                        onClose={() => setShowUploadModal(false)}
+                        products={products}
+                        canEditThreeD={canEditThreeD}
+                    />
+                </Suspense>
+            )}
 
             <Modal show={deleteCandidate !== null} onClose={() => setDeleteCandidate(null)} maxWidth="sm">
                 <div className="p-6 text-center">

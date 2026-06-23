@@ -40,8 +40,4 @@ function CategoryGroup({ title, open, onToggle, children, isCollapsed }) {
     );
 }
 
-export default memo(CategoryGroup, (prevProps, nextProps) => {
-    return prevProps.title === nextProps.title &&
-           prevProps.open === nextProps.open &&
-           prevProps.isCollapsed === nextProps.isCollapsed;
-});
+export default CategoryGroup;

@@ -28,18 +28,20 @@ class TeamMessageController extends Controller
         $contacts = $this->eligibleContacts($actor, $sellerOwner->id);
         $contactIds = $contacts->pluck('id');
 
-        $latestMessages = TeamMessage::query()
+        $subquery = TeamMessage::query()
+            ->selectRaw('MAX(id) as max_id')
             ->where('seller_owner_id', $sellerOwner->id)
             ->where(function ($query) use ($actor, $contactIds) {
-                $query->where(function ($branch) use ($actor, $contactIds) {
-                    $branch->where('sender_id', $actor->id)
-                        ->whereIn('receiver_id', $contactIds);
-                })->orWhere(function ($branch) use ($actor, $contactIds) {
-                    $branch->whereIn('sender_id', $contactIds)
-                        ->where('receiver_id', $actor->id);
+                $query->where(function ($b) use ($actor, $contactIds) {
+                    $b->where('sender_id', $actor->id)->whereIn('receiver_id', $contactIds);
+                })->orWhere(function ($b) use ($actor, $contactIds) {
+                    $b->whereIn('sender_id', $contactIds)->where('receiver_id', $actor->id);
                 });
             })
-            ->latest()
+            ->groupBy(\Illuminate\Support\Facades\DB::raw('CASE WHEN sender_id = ' . $actor->id . ' THEN receiver_id ELSE sender_id END'));
+
+        $latestMessages = TeamMessage::query()
+            ->whereIn('id', $subquery)
             ->get();
 
         $unreadCounts = TeamMessage::query()

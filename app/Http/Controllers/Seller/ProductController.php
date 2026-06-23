@@ -45,7 +45,11 @@ class ProductController extends Controller
                 'lead_time', 'sold', 'cover_photo_path', 'gallery_paths', 'model_3d_path',
                 'track_as_supply', 'production_method', 'rejection_reason', 'created_at', 'updated_at',
             ])
-            ->with(['recipes.supply']);
+            ->with(['recipes.supply'])
+            ->withCount(['resubmissions as monthly_resubmission_count' => function ($q) {
+                $q->whereYear('created_at', now()->year)
+                  ->whereMonth('created_at', now()->month);
+            }]);
 
         if ($request->filled('search')) {
             $query->search($request->search, ['name', 'sku', 'category', 'description']);
@@ -104,11 +108,7 @@ class ProductController extends Controller
                 'track_as_supply' => (bool) $product->track_as_supply,
                 'production_method' => $product->production_method ?? 'resell',
                 'rejection_reason' => $product->rejection_reason,
-                'monthly_resubmission_count' => DB::table('product_resubmissions')
-                    ->where('product_id', $product->id)
-                    ->whereYear('created_at', now()->year)
-                    ->whereMonth('created_at', now()->month)
-                    ->count(),
+                'monthly_resubmission_count' => (int) $product->monthly_resubmission_count,
                 'recipes' => $product->recipes->map(fn($r) => [
                     'id' => $r->id,
                     'supply_id' => $r->supply_id,

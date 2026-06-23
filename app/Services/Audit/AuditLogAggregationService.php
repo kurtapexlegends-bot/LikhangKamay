@@ -2,11 +2,8 @@
 
 namespace App\Services\Audit;
 
-use App\Models\Payroll;
 use App\Models\SellerActivityLog;
 use App\Models\StaffAccessAudit;
-use App\Models\StockRequest;
-use App\Models\SubscriptionTransaction;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
@@ -14,6 +11,13 @@ use Illuminate\Support\Collection;
 class AuditLogAggregationService
 {
     private const MAX_SOURCE_ENTRIES = 24;
+
+    private FinanceBillingAuditLogger $financeLogger;
+
+    public function __construct(FinanceBillingAuditLogger $financeLogger)
+    {
+        $this->financeLogger = $financeLogger;
+    }
 
     /**
      * Retrieve all audit sources structured for the seller.
@@ -27,10 +31,10 @@ class AuditLogAggregationService
         return [
             'operations' => $this->operationsPayload($seller, $limit),
             'staff' => $this->staffAccessPayload($seller, $limit),
-            'payroll' => $this->payrollPayload($seller, $limit),
-            'procurement' => $this->procurementPayload($seller, $limit),
-            'billing' => $this->subscriptionPayload($seller, $limit),
-            'capital' => $this->capitalPayload($seller, $limit),
+            'payroll' => $this->financeLogger->payrollPayload($seller, $limit),
+            'procurement' => $this->financeLogger->procurementPayload($seller, $limit),
+            'billing' => $this->financeLogger->subscriptionPayload($seller, $limit),
+            'capital' => $this->financeLogger->capitalPayload($seller, $limit),
         ];
     }
 
@@ -39,10 +43,10 @@ class AuditLogAggregationService
      */
     private function operationsPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
-        $available = $this->tableExists('seller_activity_logs');
+        $available = self::tableExists('seller_activity_logs');
 
         if (!$available) {
-            return $this->emptyPayload('Operational Activity');
+            return self::emptyPayload('Operational Activity');
         }
 
         $query = SellerActivityLog::query()
@@ -62,7 +66,7 @@ class AuditLogAggregationService
                     ->values()
                     ->all();
 
-                return $this->entry(
+                return self::entry(
                     id: "operations-{$entry->id}",
                     category: 'operations',
                     module: $entry->module,
@@ -73,13 +77,13 @@ class AuditLogAggregationService
                     severity: $entry->severity ?: 'info',
                     occurredAt: optional($entry->occurred_at)->toIso8601String(),
                     actorName: $entry->actor?->name,
-                    actorType: $entry->actor_type ?: $this->resolveActorType($entry->actor),
+                    actorType: $entry->actor_type ?: self::resolveActorType($entry->actor),
                     subject: $entry->subject_label,
                     amountLabel: $entry->amount_label,
                     reference: $entry->reference,
                     detailLines: $detailLines,
-                    before: $this->normalizeDiffBlock($details['before'] ?? null),
-                    after: $this->normalizeDiffBlock($details['after'] ?? null),
+                    before: self::normalizeDiffBlock($details['before'] ?? null),
+                    after: self::normalizeDiffBlock($details['after'] ?? null),
                     targetUrl: $entry->target_url,
                     targetLabel: $entry->target_label ?: 'Open Record',
                 );
@@ -100,10 +104,10 @@ class AuditLogAggregationService
      */
     private function staffAccessPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
     {
-        $available = $this->tableExists('staff_access_audits');
+        $available = self::tableExists('staff_access_audits');
 
         if (!$available) {
-            return $this->emptyPayload('Staff Access');
+            return self::emptyPayload('Staff Access');
         }
 
         $query = StaffAccessAudit::query()
@@ -127,7 +131,7 @@ class AuditLogAggregationService
                     ->values()
                     ->all();
 
-                return $this->entry(
+                return self::entry(
                     id: "staff-access-{$audit->id}",
                     category: 'staff',
                     module: 'hr',
@@ -138,12 +142,12 @@ class AuditLogAggregationService
                     severity: str_contains($audit->event, 'removed') || str_contains($audit->event, 'suspended') ? 'warning' : 'info',
                     occurredAt: optional($audit->created_at)->toIso8601String(),
                     actorName: $audit->actor?->name,
-                    actorType: $this->resolveActorType($audit->actor),
+                    actorType: self::resolveActorType($audit->actor),
                     subject: $audit->employee?->name ?? $audit->staffUser?->name,
                     reference: $audit->staffUser?->email,
                     detailLines: $changes,
-                    before: $this->normalizeDiffBlock($details['before'] ?? null),
-                    after: $this->normalizeDiffBlock($details['after'] ?? null),
+                    before: self::normalizeDiffBlock($details['before'] ?? null),
+                    after: self::normalizeDiffBlock($details['after'] ?? null),
                     targetUrl: route('hr.index', ['highlight_staff' => $audit->staff_user_id]),
                     targetLabel: 'Open HR',
                 );
@@ -160,308 +164,12 @@ class AuditLogAggregationService
     }
 
     /**
-     * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
-     */
-    private function payrollPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
-    {
-        $available = $this->tableExists('payrolls');
-
-        if (!$available) {
-            return $this->emptyPayload('Payroll Reviews');
-        }
-
-        $query = Payroll::query()
-            ->with(['requester:id,name,role,seller_owner_id'])
-            ->where('user_id', $seller->id)
-            ->latest();
-
-        if ($limit) {
-            $query->limit($limit);
-        }
-
-        $entries = $query->get()
-            ->map(function (Payroll $payroll) use ($seller): array {
-                $status = strtolower((string) $payroll->status);
-
-                return $this->entry(
-                    id: "payroll-{$payroll->id}",
-                    category: 'finance',
-                    module: 'accounting',
-                    eventType: 'payroll_' . ($status ?: 'updated'),
-                    title: match ($status) {
-                        'paid' => 'Payroll Approved',
-                        'rejected' => 'Payroll Rejected',
-                        default => 'Payroll Submitted for Review',
-                    },
-                    summary: match ($status) {
-                        'paid' => "Payroll for {$payroll->month} was approved and released.",
-                        'rejected' => "Payroll for {$payroll->month} was rejected during accounting review.",
-                        default => "Payroll for {$payroll->month} is waiting for accounting approval.",
-                    },
-                    status: $status,
-                    severity: match ($status) {
-                        'rejected' => 'danger',
-                        'pending' => 'warning',
-                        default => 'success',
-                    },
-                    occurredAt: optional($status === 'pending' ? $payroll->created_at : $payroll->updated_at)->toIso8601String(),
-                    actorName: $payroll->requester?->name ?? $seller->name,
-                    actorType: $this->resolveActorType($payroll->requester, 'owner'),
-                    subject: $payroll->month,
-                    amountLabel: $this->formatPeso((float) $payroll->total_amount),
-                    reference: $payroll->employee_count ? "{$payroll->employee_count} employee(s)" : null,
-                    detailLines: array_values(array_filter([
-                        $payroll->rejection_reason ? "Reason: {$payroll->rejection_reason}" : null,
-                    ])),
-                    before: null,
-                    after: [
-                        'status' => ucfirst($status),
-                    ],
-                    targetUrl: route('hr.payroll.show', ['payroll' => $payroll->id]),
-                    targetLabel: 'Open Payroll Run',
-                );
-            });
-
-        return [
-            'label' => 'Payroll Reviews',
-            'available' => true,
-            'count' => Payroll::query()
-                ->where('user_id', $seller->id)
-                ->count(),
-            'entries' => $entries,
-        ];
-    }
-
-    /**
-     * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
-     */
-    private function procurementPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
-    {
-        $available = $this->tableExists('stock_requests');
-
-        if (!$available) {
-            return $this->emptyPayload('Procurement Reviews');
-        }
-
-        $query = StockRequest::query()
-            ->with(['supply:id,name', 'requester:id,name,role,seller_owner_id'])
-            ->where('user_id', $seller->id)
-            ->latest();
-
-        if ($limit) {
-            $query->limit($limit);
-        }
-
-        $entries = $query->get()
-            ->map(function (StockRequest $request) use ($seller): array {
-                $status = strtolower((string) $request->status);
-                $supplyName = $request->supply?->name ?? "Supply #{$request->supply_id}";
-
-                return $this->entry(
-                    id: "procurement-{$request->id}",
-                    category: 'finance',
-                    module: 'stock_requests',
-                    eventType: 'procurement_' . ($status ?: 'updated'),
-                    title: match ($status) {
-                        StockRequest::STATUS_REJECTED => 'Procurement Request Rejected',
-                        StockRequest::STATUS_PENDING => 'Procurement Request Submitted',
-                        StockRequest::STATUS_ACCOUNTING_APPROVED => 'Procurement Funds Released',
-                        StockRequest::STATUS_ORDERED => 'Procurement Marked Ordered',
-                        StockRequest::STATUS_RECEIVED, StockRequest::STATUS_COMPLETED => 'Procurement Received',
-                        default => 'Procurement Request Updated',
-                    },
-                    summary: match ($status) {
-                        StockRequest::STATUS_REJECTED => "{$supplyName} request was rejected.",
-                        StockRequest::STATUS_PENDING => "{$supplyName} request is waiting for accounting review.",
-                        StockRequest::STATUS_ACCOUNTING_APPROVED => "{$supplyName} request was approved for procurement.",
-                        StockRequest::STATUS_ORDERED => "{$supplyName} request was marked as ordered.",
-                        StockRequest::STATUS_RECEIVED, StockRequest::STATUS_COMPLETED => "{$supplyName} request was received and processed.",
-                        default => "{$supplyName} request moved to {$status}.",
-                    },
-                    status: $status,
-                    severity: match ($status) {
-                        StockRequest::STATUS_REJECTED => 'danger',
-                        StockRequest::STATUS_PENDING => 'warning',
-                        default => 'success',
-                    },
-                    occurredAt: optional($status === StockRequest::STATUS_PENDING ? $request->created_at : $request->updated_at)->toIso8601String(),
-                    actorName: $request->requester?->name ?? $seller->name,
-                    actorType: $this->resolveActorType($request->requester, 'owner'),
-                    subject: $supplyName,
-                    amountLabel: $this->formatPeso((float) $request->total_cost),
-                    reference: $request->quantity ? "{$request->quantity} unit(s)" : null,
-                    detailLines: array_values(array_filter([
-                        $request->rejection_reason ? "Reason: {$request->rejection_reason}" : null,
-                    ])),
-                    before: null,
-                    after: [
-                        'status' => str_replace('_', ' ', ucfirst($status)),
-                    ],
-                    targetUrl: route('stock-requests.index', ['highlight_request' => $request->id]),
-                    targetLabel: 'Open Restock Requests',
-                );
-            });
-
-        return [
-            'label' => 'Procurement Reviews',
-            'available' => true,
-            'count' => StockRequest::query()
-                ->where('user_id', $seller->id)
-                ->count(),
-            'entries' => $entries,
-        ];
-    }
-
-    /**
-     * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
-     */
-    private function subscriptionPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
-    {
-        $available = $this->tableExists('subscription_transactions');
-
-        if (!$available) {
-            return $this->emptyPayload('Billing Activity');
-        }
-
-        $query = SubscriptionTransaction::query()
-            ->where(function ($query) use ($seller) {
-                $query->where('user_id', $seller->id)
-                    ->orWhere('artisan_id', $seller->id);
-            })
-            ->latest();
-
-        if ($limit) {
-            $query->limit($limit);
-        }
-
-        $entries = $query->get()
-            ->map(function (SubscriptionTransaction $transaction) use ($seller): array {
-                $status = strtolower((string) $transaction->status);
-
-                return $this->entry(
-                    id: "subscription-{$transaction->id}",
-                    category: 'billing',
-                    module: 'subscription',
-                    eventType: 'subscription_' . ($status ?: 'updated'),
-                    title: match ($status) {
-                        SubscriptionTransaction::STATUS_PAID => 'Subscription Upgrade Paid',
-                        SubscriptionTransaction::STATUS_CANCELLED => 'Subscription Checkout Cancelled',
-                        SubscriptionTransaction::STATUS_FAILED => 'Subscription Checkout Failed',
-                        default => 'Subscription Checkout Started',
-                    },
-                    summary: trim(sprintf(
-                        '%s to %s plan.',
-                        $this->planLabel($transaction->from_plan ?: 'free'),
-                        $this->planLabel($transaction->to_plan ?: $transaction->tier_purchased ?: 'free')
-                     )),
-                    status: $status,
-                    severity: match ($status) {
-                        SubscriptionTransaction::STATUS_FAILED => 'danger',
-                        SubscriptionTransaction::STATUS_CANCELLED => 'warning',
-                        SubscriptionTransaction::STATUS_PENDING => 'warning',
-                        default => 'success',
-                    },
-                    occurredAt: optional($transaction->paid_at ?? $transaction->cancelled_at ?? $transaction->updated_at ?? $transaction->created_at)?->toIso8601String(),
-                    actorName: $seller->shop_name ?: $seller->name,
-                    actorType: 'owner',
-                    amountLabel: $this->formatPeso((float) ($transaction->amount_paid ?? $transaction->amount ?? 0)),
-                    reference: $transaction->reference_number,
-                    detailLines: array_values(array_filter([
-                        $transaction->currency ? "Currency: {$transaction->currency}" : null,
-                    ])),
-                    before: [
-                        'plan' => $this->planLabel($transaction->from_plan ?: 'free'),
-                    ],
-                    after: [
-                        'plan' => $this->planLabel($transaction->to_plan ?: $transaction->tier_purchased ?: 'free'),
-                    ],
-                    targetUrl: route('seller.subscription'),
-                    targetLabel: 'Open Subscription',
-                );
-            });
-
-        return [
-            'label' => 'Billing Activity',
-            'available' => true,
-            'count' => SubscriptionTransaction::query()
-                ->where(function ($query) use ($seller) {
-                    $query->where('user_id', $seller->id)
-                        ->orWhere('artisan_id', $seller->id);
-                })
-                ->count(),
-            'entries' => $entries,
-        ];
-    }
-
-    /**
-     * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
-     */
-    private function capitalPayload(User $seller, ?int $limit = self::MAX_SOURCE_ENTRIES): array
-    {
-        $available = $this->tableExists('capital_adjustments');
-
-        if (!$available) {
-            return $this->emptyPayload('Capital Adjustments');
-        }
-
-        $query = \App\Models\CapitalAdjustment::query()
-            ->with(['adjustedBy:id,name,role'])
-            ->where('user_id', $seller->id)
-            ->latest();
-
-        if ($limit) {
-            $query->limit($limit);
-        }
-
-        $entries = $query->get()
-            ->map(function (\App\Models\CapitalAdjustment $adjustment): array {
-                return $this->entry(
-                    id: "capital-{$adjustment->id}",
-                    category: 'finance',
-                    module: 'accounting',
-                    eventType: 'capital_adjusted',
-                    title: 'Starting Balance Adjusted',
-                    summary: $adjustment->memo ?? 'Starting balance manually adjusted.',
-                    status: 'completed',
-                    severity: 'info',
-                    occurredAt: optional($adjustment->created_at)->toIso8601String(),
-                    actorName: $adjustment->adjustedBy?->name,
-                    actorType: $this->resolveActorType($adjustment->adjustedBy),
-                    subject: 'Base Funds',
-                    amountLabel: $this->formatPeso((float) $adjustment->new_amount),
-                    reference: 'Prev: ' . $this->formatPeso((float) $adjustment->previous_amount),
-                    detailLines: [
-                        'Previous Starting Balance: ' . $this->formatPeso((float) $adjustment->previous_amount),
-                        'New Starting Balance: ' . $this->formatPeso((float) $adjustment->new_amount),
-                    ],
-                    before: [
-                        'base funds' => $this->formatPeso((float) $adjustment->previous_amount),
-                    ],
-                    after: [
-                        'base funds' => $this->formatPeso((float) $adjustment->new_amount),
-                    ],
-                    targetUrl: route('accounting.index'),
-                    targetLabel: 'Open Finance',
-                );
-            });
-
-        return [
-            'label' => 'Capital Adjustments',
-            'available' => true,
-            'count' => \App\Models\CapitalAdjustment::query()
-                ->where('user_id', $seller->id)
-                ->count(),
-            'entries' => $entries,
-        ];
-    }
-
-    /**
      * @param  array<int, string>  $detailLines
      * @param  array<string, mixed>|null  $before
      * @param  array<string, mixed>|null  $after
      * @return array<string, mixed>
      */
-    private function entry(
+    public static function entry(
         string $id,
         string $category,
         string $module,
@@ -509,7 +217,7 @@ class AuditLogAggregationService
     /**
      * @return array{label:string,available:bool,count:int,entries:\Illuminate\Support\Collection<int, array<string,mixed>>}
      */
-    private function emptyPayload(string $label): array
+    public static function emptyPayload(string $label): array
     {
         return [
             'label' => $label,
@@ -519,9 +227,11 @@ class AuditLogAggregationService
         ];
     }
 
-    private function tableExists(string $table): bool
+    public static function tableExists(string $table): bool
     {
-        return Schema::hasTable($table);
+        return \Illuminate\Support\Facades\Cache::remember("schema_table_exists_{$table}", 86400, function () use ($table) {
+            return Schema::hasTable($table);
+        });
     }
 
     private function staffAccessTitle(string $event): string
@@ -539,7 +249,7 @@ class AuditLogAggregationService
      * @param  mixed  $value
      * @return array<string, string>|null
      */
-    private function normalizeDiffBlock(mixed $value): ?array
+    public static function normalizeDiffBlock(mixed $value): ?array
     {
         if (!is_array($value) || $value === []) {
             return null;
@@ -554,12 +264,12 @@ class AuditLogAggregationService
             ->all();
     }
 
-    private function resolveActorType(?User $actor, string $fallback = 'system'): string
+    public static function resolveActorType(?User $actor, string $fallback = 'system'): string
     {
         return SellerActivityLog::resolveActorType($actor, $fallback);
     }
 
-    private function planLabel(string $plan): string
+    public static function planLabel(string $plan): string
     {
         return match ($plan) {
             'premium' => 'Premium',
@@ -569,7 +279,7 @@ class AuditLogAggregationService
         };
     }
 
-    private function formatPeso(float $amount): string
+    public static function formatPeso(float $amount): string
     {
         return 'PHP ' . number_format($amount, 2);
     }
