@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'; 
+import React, { useEffect, useMemo, useState, useCallback } from 'react'; 
 import { router, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
@@ -116,7 +116,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
     const [activeTooltip, setActiveTooltip] = useState(null);
 
-    const handleTooltipShow = (e, text, subtext = null) => {
+    const handleTooltipShow = useCallback((e, text, subtext = null) => {
         if (!isCollapsed) return;
         const rect = e.currentTarget.getBoundingClientRect();
         setActiveTooltip({
@@ -125,17 +125,17 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
             y: rect.top + rect.height / 2,
             x: rect.right + 12
         });
-    };
+    }, [isCollapsed]);
 
-    const handleTooltipLeave = () => {
+    const handleTooltipLeave = useCallback(() => {
         setActiveTooltip(null);
-    };
+    }, []);
 
-    const handleNavScroll = () => {
+    const handleNavScroll = useCallback(() => {
         if (activeTooltip) {
             setActiveTooltip(null);
         }
-    };
+    }, [activeTooltip]);
 
     useEffect(() => {
         setActiveTooltip(null);
@@ -159,18 +159,18 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         }
     }, [showGear, user?.id]);
 
-    const dismissGearHint = () => {
+    const dismissGearHint = useCallback(() => {
         if (typeof window !== 'undefined' && user?.id) {
             window.localStorage.setItem(`${GEAR_HINT_STORAGE_KEY}_${user.id}`, '1');
         }
         setShowGearHint(false);
-    };
+    }, [user?.id]);
 
-    const toggleGroup = (key) => {
+    const toggleGroup = useCallback((key) => {
         setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
-    };
+    }, []);
 
-    const toggleModule = (moduleName) => {
+    const toggleModule = useCallback((moduleName) => {
         if (!showGear || isElite) return;
         if (moduleName === 'procurement') return;
 
@@ -186,7 +186,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 console.error("Failed to save module settings");
             }
         });
-    };
+    }, [showGear, isElite, modules]);
 
     const hasCore = (!isStaffActor || hasActiveAttendanceSession) && (isStaffActor
         ? ['products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
@@ -212,45 +212,53 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-[100] ${isCollapsed ? 'w-16' : 'w-52'} bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-all duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 z-[100] ${isCollapsed ? 'w-16' : 'w-52'} bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-[width,transform] duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Desktop Collapse Toggle Button */}
                 <button
                     onClick={() => onToggleCollapse(!isCollapsed)}
-                    className="hidden lg:flex absolute -right-3 top-6 z-[110] w-6 h-6 bg-white border border-clay-100/80 rounded-full items-center justify-center text-gray-400 hover:text-clay-600 shadow-sm hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                    className="hidden lg:flex absolute -right-3 top-6 z-[110] w-6 h-6 bg-white border border-clay-100/80 rounded-full items-center justify-center text-gray-400 hover:text-clay-600 shadow-sm hover:shadow-md transition-[color,box-shadow,transform] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
                     aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                     <ChevronLeft size={12} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
                 </button>
 
-                <div className={`relative flex shrink-0 items-center ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'} border-b border-clay-100/30 bg-transparent py-3`}>
-                    <div className="flex min-w-0 items-center gap-2">
+                <div className={`relative flex shrink-0 items-center border-b border-clay-100/30 bg-transparent py-3 transition-[padding] duration-300 ${
+                    isCollapsed ? 'px-5 justify-center' : 'px-4 justify-between'
+                }`}>
+                    <div className="flex min-w-0 items-center">
                         <img 
                             src="/images/logo.png" 
                             alt="LikhangKamay" 
                             className="w-6 h-6 object-contain shrink-0"
                             loading="lazy"
                         />
-                        {!isCollapsed && (
-                            <span className="font-serif text-base font-bold text-gray-900 tracking-tight truncate">LikhangKamay</span>
-                        )}
+                        <span className={`font-serif text-base font-bold text-gray-900 tracking-tight truncate overflow-hidden transition-[max-width,opacity,margin-left] duration-300 ${
+                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[120px] opacity-100 ml-2'
+                        }`}>
+                            LikhangKamay
+                        </span>
                     </div>
 
                     <button onClick={onClose} aria-label="Close sidebar" className="lg:hidden rounded-lg p-1 text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30">
                         <X size={20} />
                     </button>
 
-                    {!isCollapsed && showGear && (
-                        <SidebarSettingsPopover
-                            showGear={showGear}
-                            showModulePanel={showModulePanel}
-                            setShowModulePanel={setShowModulePanel}
-                            showGearHint={showGearHint}
-                            dismissGearHint={dismissGearHint}
-                            activeModuleCount={activeModuleCount}
-                            isElite={isElite}
-                            modules={modules}
-                            toggleModule={toggleModule}
-                        />
+                    {showGear && (
+                        <div className={`transition-[max-width,opacity,margin-left] duration-300 ${
+                            isCollapsed ? 'opacity-0 pointer-events-none max-w-0 overflow-hidden' : 'opacity-100 max-w-[50px] ml-2'
+                        }`}>
+                            <SidebarSettingsPopover
+                                showGear={showGear}
+                                showModulePanel={showModulePanel}
+                                setShowModulePanel={setShowModulePanel}
+                                showGearHint={showGearHint}
+                                dismissGearHint={dismissGearHint}
+                                activeModuleCount={activeModuleCount}
+                                isElite={isElite}
+                                modules={modules}
+                                toggleModule={toggleModule}
+                            />
+                        </div>
                     )}
                 </div>
 
@@ -374,12 +382,14 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 )}
                                 {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                     <div className="space-y-0.5">
-                                        {!isCollapsed && (
+                                        <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
+                                            isCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-8 opacity-100'
+                                        }`}>
                                             <p className="px-3 py-1.5 text-[10px] font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1">
                                                 <ClipboardList size={11} /> Inventory   
                                             </p>
-                                        )}
-                                        <div className={isCollapsed ? 'space-y-0.5' : 'pl-2 space-y-0.5'}>
+                                        </div>
+                                        <div className={`transition-[padding-left] duration-300 ${isCollapsed ? 'space-y-0.5 pl-0' : 'pl-2 space-y-0.5'}`}>
                                             {visibleModulesSet.has('procurement') && (
                                                 <NavItem href={route('procurement.index')} icon={Warehouse} active={active === 'procurement'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Inventory')} onMouseLeave={handleTooltipLeave}>Inventory</NavItem>
                                             )}
@@ -395,7 +405,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 </nav>
 
                 {isStaffActor && (
-                    <div className={`border-t border-gray-100 ${isCollapsed ? 'px-2 py-3 flex justify-center' : 'px-3 py-3'}`}>
+                    <div className={`border-t border-gray-100 transition-[padding] duration-300 flex justify-center ${isCollapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
                         <StaffAttendanceDock 
                             attendance={attendance} 
                             isCollapsed={isCollapsed} 

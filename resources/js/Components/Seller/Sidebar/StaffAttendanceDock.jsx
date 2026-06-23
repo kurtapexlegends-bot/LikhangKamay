@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { Clock3, PauseCircle, LogOut, ChevronUp, PlayCircle } from 'lucide-react';
@@ -86,7 +86,7 @@ const AttendanceActionButton = ({ icon: Icon, label, onClick, disabled, tone = '
     </button>
 );
 
-export default function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, onMouseLeave }) {
+function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, onMouseLeave }) {
     const [open, setOpen] = useState(false);
     const [processingAction, setProcessingAction] = useState(null);
     const [showBreakConfirm, setShowBreakConfirm] = useState(false);
@@ -291,12 +291,12 @@ export default function StaffAttendanceDock({ attendance, isCollapsed = false, o
                 </div>
             )}
 
-            {isCollapsed ? (
-                <button
-                    type="button"
-                    onClick={handlePrimaryClick}
-                    disabled={!!processingAction}
-                    onMouseEnter={(e) => {
+            <button
+                type="button"
+                onClick={handlePrimaryClick}
+                disabled={!!processingAction}
+                onMouseEnter={(e) => {
+                    if (isCollapsed) {
                         const text = processingAction === 'clock_in'
                             ? (isPaused ? 'Resuming Work' : 'Clocking In')
                             : hasOpenSession
@@ -305,56 +305,59 @@ export default function StaffAttendanceDock({ attendance, isCollapsed = false, o
                                     ? 'On Break (Click to toggle controls)'
                                     : 'Clock In';
                         onMouseEnter?.(e, text);
-                    }}
-                    onMouseLeave={onMouseLeave}
-                    className={`group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-                        hasOpenSession
-                            ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50 text-emerald-700'
-                            : 'border-clay-200 bg-[#FCF7F2] hover:bg-clay-50 text-clay-700'
-                    } ${processingAction ? 'cursor-wait opacity-70' : ''}`}
-                >
-                    <Clock3 size={16} strokeWidth={2.5} />
-                </button>
-            ) : (
-                <button
-                    type="button"
-                    onClick={handlePrimaryClick}
-                    disabled={!!processingAction}
-                    className={`flex w-full items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left transition-colors ${
-                        hasOpenSession
-                            ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50'
-                            : 'border-clay-200 bg-[#FCF7F2] hover:bg-clay-50'
-                    } ${processingAction ? 'cursor-wait opacity-70' : ''}`}
-                >
-                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                            hasOpenSession ? 'bg-emerald-100 text-emerald-700' : 'bg-clay-100 text-clay-700'
-                        }`}>
-                            <Clock3 size={16} strokeWidth={2.5} />
-                        </div>
-                        <span className="truncate text-sm font-bold text-stone-900">
-                            {processingAction === 'clock_in'
-                                ? (isPaused ? 'Resuming Work' : 'Clocking In')
-                                : hasOpenSession
-                                    ? 'Clocked In'
-                                    : isPaused
-                                        ? 'On Break'
-                                        : 'Clock In'}
-                        </span>
+                    }
+                }}
+                onMouseLeave={isCollapsed ? onMouseLeave : undefined}
+                className={`group relative flex items-center transition-[max-width,padding,background-color,border-color] duration-300 w-full ${
+                    isCollapsed 
+                        ? 'max-w-[36px] h-9 justify-center rounded-xl px-0 py-0' 
+                        : 'max-w-[200px] justify-between gap-2 rounded-xl px-2.5 py-2'
+                } border ${
+                    hasOpenSession
+                        ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50 text-emerald-700'
+                        : 'border-clay-200 bg-[#FCF7F2] hover:bg-clay-50 text-clay-700'
+                } ${processingAction ? 'cursor-wait opacity-70' : ''}`}
+            >
+                <div className="flex min-w-0 flex-1 items-center">
+                    {/* Icon container */}
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-[background-color,color] duration-300 ${
+                        isCollapsed 
+                            ? 'bg-transparent text-current' 
+                            : hasOpenSession 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-clay-100 text-clay-700'
+                    }`}>
+                        <Clock3 size={16} strokeWidth={2.5} />
                     </div>
 
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400">
-                        {(hasOpenSession || isPaused) ? (
-                            <ChevronUp
-                                size={14}
-                                className={`transition-transform ${open ? '' : 'rotate-180'}`}
-                            />
-                        ) : (
-                            <Clock3 size={14} strokeWidth={2.4} />
-                        )}
+                    {/* Text wrapper (collapses to 0 width) */}
+                    <span className={`truncate text-sm font-bold text-stone-900 overflow-hidden transition-[max-width,opacity,margin-left] duration-300 whitespace-nowrap text-left ${
+                        isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[120px] opacity-100 ml-2.5'
+                    }`}>
+                        {processingAction === 'clock_in'
+                            ? (isPaused ? 'Resuming Work' : 'Clocking In')
+                            : hasOpenSession
+                                ? 'Clocked In'
+                                : isPaused
+                                    ? 'On Break'
+                                    : 'Clock In'}
                     </span>
-                </button>
-            )}
+                </div>
+
+                {/* Right side status indicator icon (fades out completely when collapsed) */}
+                <div className={`shrink-0 flex items-center justify-center rounded-full border border-stone-200 bg-white text-stone-400 transition-[max-width,opacity,margin-left] duration-300 ${
+                    isCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[32px] h-8 w-8 ml-1'
+                }`}>
+                    {(hasOpenSession || isPaused) ? (
+                        <ChevronUp
+                            size={14}
+                            className={`transition-transform ${open ? '' : 'rotate-180'}`}
+                        />
+                    ) : (
+                        <Clock3 size={14} strokeWidth={2.4} />
+                    )}
+                </div>
+            </button>
 
             <ConfirmationModal
                 isOpen={showBreakConfirm}
@@ -371,3 +374,5 @@ export default function StaffAttendanceDock({ attendance, isCollapsed = false, o
         </div>
     );
 }
+
+export default memo(StaffAttendanceDock);

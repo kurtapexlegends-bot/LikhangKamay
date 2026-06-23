@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Sparkles, Crown, Zap } from 'lucide-react';
 import { PlanModal } from '@/Components/PlanBadge';
 
-export default function SidebarPlanPromo({
+function SidebarPlanPromo({
     showPlanPanel,
     isCollapsed,
     isElite,
@@ -20,44 +20,49 @@ export default function SidebarPlanPromo({
 
     return (
         <>
-            <div className={`border-b border-clay-100/30 bg-stone-50/10 ${isCollapsed ? 'px-2 py-3 flex justify-center' : 'px-5 py-3'} flex-shrink-0`}>
-                {isCollapsed ? (
-                    <button
-                        type="button"
-                        onClick={() => setIsPlanModalOpen(true)}
-                        onMouseEnter={(e) => handleTooltipShow(e, `${entitlement.tierLabel} Plan`, sellerSubscription ? `Products: ${sellerSubscription.activeCount} / ${sellerSubscription.limit}` : null)}
-                        onMouseLeave={handleTooltipLeave}
-                        className={`group relative flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
-                            isElite 
-                                ? 'bg-violet-50 border-violet-200 text-violet-800 hover:bg-violet-100 shadow-[0_2px_8px_rgba(109,40,217,0.08)]' 
-                                : isPremium 
-                                    ? 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 shadow-[0_2px_8px_rgba(217,119,6,0.08)]' 
-                                    : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
-                        }`}
+            <div className={`border-b border-clay-100/30 bg-stone-50/10 flex-shrink-0 transition-[padding] duration-300 ${
+                isCollapsed ? 'px-2 py-3 flex justify-center' : 'px-5 py-3'
+            }`}>
+                <button
+                    type="button"
+                    onClick={() => setIsPlanModalOpen(true)}
+                    onMouseEnter={(e) => isCollapsed && handleTooltipShow(e, `${entitlement.tierLabel} Plan`, sellerSubscription ? `Products: ${sellerSubscription.activeCount} / ${sellerSubscription.limit}` : null)}
+                    onMouseLeave={isCollapsed ? handleTooltipLeave : undefined}
+                    className="group relative flex flex-col items-center w-full focus-visible:outline-none"
+                >
+                    {/* Badge Container */}
+                    <div className={`flex items-center justify-center rounded-xl text-[11px] font-bold border transition-[height,width,border-color,background-color,box-shadow,gap,padding] duration-300 ${
+                        isCollapsed 
+                            ? 'h-9 w-9 border-stone-200' 
+                            : 'w-full gap-1.5 px-3 py-1.5'
+                    } ${
+                        isElite 
+                            ? 'bg-violet-50 border-violet-200 text-violet-800 hover:bg-violet-100 shadow-[0_2px_8px_rgba(109,40,217,0.08)]' 
+                            : isPremium 
+                                ? 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 shadow-[0_2px_8px_rgba(217,119,6,0.08)]' 
+                                : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
+                    }`}
                     >
                         {isElite ? (
-                            <Sparkles size={16} className="text-violet-500 fill-violet-200" />
+                            <Sparkles size={isCollapsed ? 16 : 13} className="text-violet-500 fill-violet-200 transition-[width,height] duration-300 shrink-0" />
                         ) : isPremium ? (
-                            <Crown size={16} className="text-amber-500 fill-amber-200" />
+                            <Crown size={isCollapsed ? 16 : 13} className="text-amber-500 fill-amber-200 transition-[width,height] duration-300 shrink-0" />
                         ) : (
-                            <Zap size={16} className="text-stone-400 fill-stone-200" />
+                            <Zap size={isCollapsed ? 16 : 13} className="text-stone-400 fill-stone-200 transition-[width,height] duration-300 shrink-0" />
                         )}
-                    </button>
-                ) : (
-                    <button type="button" onClick={() => setIsPlanModalOpen(true)} className="block group w-full text-left">
-                        <div className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isElite ? 'bg-violet-50 border-violet-200 text-violet-800 group-hover:bg-violet-100' : isPremium ? 'bg-amber-50 border-amber-200 text-amber-800 group-hover:bg-amber-100' : 'bg-stone-100 border-stone-200 text-stone-700 group-hover:bg-stone-200'}`}>
-                            {isElite ? (
-                                <Sparkles size={13} className="text-violet-500 fill-violet-200" />
-                            ) : isPremium ? (
-                                <Crown size={13} className="text-amber-500 fill-amber-200" />
-                            ) : (
-                                <Zap size={13} className="text-stone-400 fill-stone-200" />
-                            )}
-                            <span className="tracking-wide">{entitlement.tierLabel} Plan</span>
-                        </div>
-                        
+                        <span className={`tracking-wide overflow-hidden transition-[max-width,opacity,margin-left] duration-300 whitespace-nowrap ${
+                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-1.5'
+                        }`}>
+                            {entitlement.tierLabel} Plan
+                        </span>
+                    </div>
+                    
+                    {/* Expanded progress panel */}
+                    <div className={`w-full overflow-hidden transition-[max-height,opacity,margin-top] duration-300 ${
+                        isCollapsed ? 'max-h-0 opacity-0 mt-0 pointer-events-none' : 'max-h-24 opacity-100 mt-2.5'
+                    }`}>
                         {sellerSubscription && (
-                            <div className="flex flex-col gap-1.5 mt-2.5">
+                            <div className="flex flex-col gap-1.5 w-full text-left">
                                 <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium group-hover:text-stone-700 transition-colors">
                                     <span>Active Products</span>
                                     <span>
@@ -87,8 +92,8 @@ export default function SidebarPlanPromo({
                                 )}
                             </div>
                         )}
-                    </button>
-                )}
+                    </div>
+                </button>
             </div>
 
             <PlanModal 
@@ -100,3 +105,5 @@ export default function SidebarPlanPromo({
         </>
     );
 }
+
+export default memo(SidebarPlanPromo);
