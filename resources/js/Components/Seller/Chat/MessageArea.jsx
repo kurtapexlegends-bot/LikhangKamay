@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
-import { AlertCircle, MessageSquareText, FileIcon } from 'lucide-react';
+import { AlertCircle, MessageSquareText, FileIcon, Clock, Check, CheckCheck } from 'lucide-react';
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
@@ -123,13 +123,21 @@ export default function MessageArea({
                                         )}
 
                                         {message.text ? <p className="text-sm leading-6">{message.text}</p> : null}
-                                        <p
-                                            className={`mt-2 text-[11px] font-medium ${
-                                                message.sender === 'me' ? 'text-white/75' : 'text-stone-400'
+                                        <div
+                                            className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${
+                                                message.sender === 'me' ? 'text-white/75 justify-end' : 'text-stone-400'
                                             }`}
                                         >
-                                            {message.time}
-                                        </p>
+                                            <Clock size={10} />
+                                            <span>{message.time}</span>
+                                            {message.sender === 'me' && (
+                                                message.isRead || message.is_read ? (
+                                                    <CheckCheck size={13} className="text-clay-200 shrink-0" />
+                                                ) : (
+                                                    <Check size={13} className="text-white/60 shrink-0" />
+                                                )
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -146,6 +154,19 @@ export default function MessageArea({
                         <p className="mt-2 max-w-sm text-sm leading-6 text-stone-500">
                             Send a quick update, file, or image to {currentChatUser.name}.
                         </p>
+                    </div>
+                )}
+
+                {currentChatUser && currentChatUser.is_typing && (
+                    <div className="flex justify-start mb-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                        <div className="bg-white text-stone-500 border border-stone-200 rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm flex items-center gap-1.5">
+                            <div className="flex gap-1 shrink-0">
+                                <span className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce"></span>
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Typing</span>
+                        </div>
                     </div>
                 )}
 

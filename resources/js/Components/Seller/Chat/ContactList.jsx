@@ -45,6 +45,9 @@ export default function ContactList({
                             >
                                 <div className="relative shrink-0">
                                     <UserAvatar user={contact} className="h-10 w-10 shadow-sm" />
+                                    {contact.is_online && (
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white z-10" />
+                                    )}
                                     {contact.unread > 0 && (
                                         <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
                                             {contact.unread}

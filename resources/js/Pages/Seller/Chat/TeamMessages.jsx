@@ -3,18 +3,20 @@ import { Head, router, useForm } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import { ArrowLeft, MessageSquareText } from 'lucide-react';
+import { ArrowLeft, MessageSquareText, Info } from 'lucide-react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 // Subcomponents
 import ContactList from '@/Components/Seller/Chat/ContactList';
 import MessageArea from '@/Components/Seller/Chat/MessageArea';
 import MessageInput from '@/Components/Seller/Chat/MessageInput';
+import TeammateInfoSidebar from '@/Components/Seller/Chat/TeammateInfoSidebar';
 
 export default function TeamMessages({ auth, conversations = [], activeMessages = [], currentChatUser = null }) {
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
     const [searchTerm, setSearchTerm] = useState('');
     const [syncNotice, setSyncNotice] = useState(null);
+    const [showInfoPanel, setShowInfoPanel] = useState(false);
     const { openSidebar } = useSellerWorkspaceShell();
 
     const form = useForm({
@@ -100,17 +102,40 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                                             >
                                                 <ArrowLeft size={18} />
                                             </button>
-                                            <UserAvatar user={currentChatUser} className="h-10 w-10 shadow-sm" />
+                                            <div className="relative shrink-0 w-10 h-10">
+                                                <UserAvatar user={currentChatUser} className="h-10 w-10 shadow-sm" />
+                                                {currentChatUser.is_online && (
+                                                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white z-10" />
+                                                )}
+                                            </div>
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-bold text-stone-900">{currentChatUser.name}</p>
-                                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">
-                                                    {currentChatUser.roleLabel}
+                                                <p className={`text-[10px] font-medium flex items-center gap-1.5 ${
+                                                    currentChatUser.is_online ? 'text-green-600 font-bold' : 'text-stone-400'
+                                                }`}>
+                                                    {currentChatUser.is_online
+                                                        ? 'Online now'
+                                                        : `Last seen ${currentChatUser.last_seen || 'recently'}`}
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <div className="hidden rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700 sm:inline-flex">
-                                            Internal
+                                        <div className="flex items-center gap-2">
+                                            <div className="hidden rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700 sm:inline-flex">
+                                                Internal
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowInfoPanel(prev => !prev)}
+                                                className={`p-2 rounded-xl transition ${
+                                                    showInfoPanel 
+                                                        ? 'bg-clay-100 text-clay-700' 
+                                                        : 'text-stone-400 hover:bg-stone-100 hover:text-stone-600'
+                                                }`}
+                                                title="Teammate Info"
+                                            >
+                                                <Info size={18} />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -138,6 +163,14 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                             </div>
                         )}
                     </section>
+
+                    {showInfoPanel && currentChatUser && (
+                        <TeammateInfoSidebar
+                            currentChatUser={currentChatUser}
+                            setShowInfoPanel={setShowInfoPanel}
+                            activeMessages={activeMessages}
+                        />
+                    )}
                 </div>
             </div>
         </div>

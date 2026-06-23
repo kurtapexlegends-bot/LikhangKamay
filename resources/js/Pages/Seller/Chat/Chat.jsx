@@ -364,6 +364,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                             currentChatUser={currentChatUser}
                             setShowInfoPanel={setShowInfoPanel}
                             currentChatUserAddress={currentChatUserAddress}
+                            activeMessages={activeMessages}
                         />
                     )}
                 </div>

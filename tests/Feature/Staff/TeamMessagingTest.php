@@ -243,6 +243,27 @@ class TeamMessagingTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_staff_can_signal_typing_and_indicates_correctly(): void
+    {
+        $owner = $this->createPremiumOwner();
+        $staff = $this->createStaff($owner, 'hr');
+
+        $this->actingAs($owner)
+            ->post(route('team-messages.signal-typing'), [
+                'receiver_id' => $staff->id,
+            ])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->actingAs($staff)
+            ->get(route('team-messages.index', ['user_id' => $owner->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Seller/Chat/TeamMessages')
+                ->where('currentChatUser.is_typing', true)
+            );
+    }
+
     private function createPremiumOwner(): User
     {
         $owner = User::factory()->artisanApproved()->create([

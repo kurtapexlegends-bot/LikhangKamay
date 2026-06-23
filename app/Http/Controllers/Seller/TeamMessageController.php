@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,6 +54,9 @@ class TeamMessageController extends Controller
                 'lastMessage' => $this->summarizeLastMessage($lastMessage),
                 'time' => $lastMessage?->created_at?->shortAbsoluteDiffForHumans() ?: '',
                 'unread' => (int) ($unreadCounts[$contact->id] ?? 0),
+                'is_online' => Cache::has('user-is-online-' . $contact->id),
+                'last_seen_at_iso' => $contact->last_seen_at?->toIso8601String(),
+                'last_seen' => $contact->last_seen_at ? $contact->last_seen_at->diffForHumans() : 'Offline',
             ];
         })->values();
 
@@ -104,6 +108,12 @@ class TeamMessageController extends Controller
                 'name' => $activeContact->name,
                 'avatar' => $activeContact->avatar,
                 'roleLabel' => $this->teamRoleLabel($activeContact, $actor->getEffectiveSellerId()),
+                'email' => $activeContact->email,
+                'phone_number' => $activeContact->phone_number,
+                'is_online' => Cache::has('user-is-online-' . $activeContact->id),
+                'last_seen_at_iso' => $activeContact->last_seen_at?->toIso8601String(),
+                'last_seen' => $activeContact->last_seen_at ? $activeContact->last_seen_at->diffForHumans() : 'Offline',
+                'is_typing' => Cache::has("team-typing-{$activeContact->id}-to-{$actor->id}"),
             ] : null,
         ]);
     }
@@ -168,6 +178,23 @@ class TeamMessageController extends Controller
             ->where('sender_id', $sender->id)
             ->where('receiver_id', $actor->id)
             ->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function signalTyping(Request $request): JsonResponse
+    {
+        $actor = $this->authorizeTeamActor($request->user());
+        $sellerOwner = $this->sellerOwner();
+
+        $validated = $request->validate([
+            'receiver_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $receiver = User::findOrFail($validated['receiver_id']);
+        $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
+
+        Cache::put("team-typing-{$actor->id}-to-{$receiver->id}", true, 4);
 
         return response()->json(['success' => true]);
     }

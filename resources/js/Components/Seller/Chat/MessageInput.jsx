@@ -21,6 +21,18 @@ export default function MessageInput({ currentChatUser, form }) {
     const fileInputRef = useRef(null);
     const imageInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
+    const lastTypingSignal = useRef(0);
+
+    const signalTyping = () => {
+        if (!currentChatUser) return;
+        const now = Date.now();
+        if (now - lastTypingSignal.current > 2000) {
+            lastTypingSignal.current = now;
+            if (window.axios) {
+                window.axios.post(route('team-messages.signal-typing'), { receiver_id: currentChatUser.id }).catch(() => {});
+            }
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -190,6 +202,7 @@ export default function MessageInput({ currentChatUser, form }) {
                                 setData('message', event.target.value);
                                 event.target.style.height = 'auto';
                                 event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
+                                signalTyping();
                             }}
                             placeholder="Message your team..."
                             className="custom-scrollbar max-h-[120px] min-h-[42px] w-full flex-1 resize-none border-none bg-transparent px-3 py-2.5 text-sm font-medium leading-relaxed text-gray-700 placeholder-gray-400 focus:ring-0"
@@ -197,6 +210,8 @@ export default function MessageInput({ currentChatUser, form }) {
                                 if (event.key === 'Enter' && !event.shiftKey) {
                                     event.preventDefault();
                                     handleSubmit(event);
+                                } else {
+                                    signalTyping();
                                 }
                             }}
                         />

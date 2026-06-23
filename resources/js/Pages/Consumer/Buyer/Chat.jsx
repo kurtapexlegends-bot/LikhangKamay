@@ -170,6 +170,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                         showInfoPanel={showInfoPanel}
                         setShowInfoPanel={setShowInfoPanel}
                         isDesktop={true}
+                        activeMessages={activeMessages}
                     />
                 </div>
             </main>
@@ -182,6 +183,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                 showInfoPanel={showInfoPanel && !isDesktop}
                 setShowInfoPanel={setShowInfoPanel}
                 isDesktop={false}
+                activeMessages={activeMessages}
             />
 
             {/* Media Viewer Lightbox */}
