@@ -112,8 +112,10 @@ class TeamMessageController extends Controller
 
         if ($activeContact) {
             $messages = TeamMessage::query()
+                ->withCount('replies')
                 ->where('seller_owner_id', $sellerOwner->id)
                 ->whereNull('team_channel_id')
+                ->whereNull('parent_id')
                 ->where(function ($query) use ($actor, $activeContact) {
                     $query->where(function ($branch) use ($actor, $activeContact) {
                         $branch->where('sender_id', $actor->id)
@@ -136,13 +138,16 @@ class TeamMessageController extends Controller
                         ? 'Today'
                         : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
                     'isRead' => (bool) $message->is_read,
+                    'replies_count' => (int) $message->replies_count,
                 ])
                 ->values()
                 ->all();
         } elseif ($activeChannel) {
             $messages = TeamMessage::query()
-                ->with('sender')
+                ->with(['sender'])
+                ->withCount('replies')
                 ->where('team_channel_id', $activeChannel->id)
+                ->whereNull('parent_id')
                 ->orderBy('created_at')
                 ->get()
                 ->map(fn (TeamMessage $message) => [
@@ -158,6 +163,7 @@ class TeamMessageController extends Controller
                         ? 'Today'
                         : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
                     'isRead' => true,
+                    'replies_count' => (int) $message->replies_count,
                 ])
                 ->values()
                 ->all();
@@ -210,14 +216,51 @@ class TeamMessageController extends Controller
         $sellerOwner = $this->sellerOwner();
 
         $validated = $request->validate([
-            'receiver_id' => ['required_without:team_channel_id', 'nullable', 'integer', 'exists:users,id'],
-            'team_channel_id' => ['required_without:receiver_id', 'nullable', 'integer', 'exists:team_channels,id'],
+            'receiver_id' => ['nullable', 'integer', 'exists:users,id'],
+            'team_channel_id' => ['nullable', 'integer', 'exists:team_channels,id'],
+            'parent_id' => ['nullable', 'integer', 'exists:team_messages,id'],
             'message' => ['nullable', 'string', 'max:5000'],
             'attachment' => ['nullable', 'file', 'max:10240'],
         ]);
 
         if (!$request->filled('message') && !$request->hasFile('attachment')) {
             return back()->withErrors(['message' => 'Message or attachment is required.']);
+        }
+
+        if (!$request->filled('receiver_id') && !$request->filled('team_channel_id') && !$request->filled('parent_id')) {
+            return back()->withErrors(['message' => 'Recipient, channel, or parent thread is required.']);
+        }
+
+        $parentId = $request->filled('parent_id') ? (int) $validated['parent_id'] : null;
+        $parentMessage = null;
+
+        if ($parentId) {
+            $parentMessage = TeamMessage::findOrFail($parentId);
+            
+            // Check authorization to access this parent message
+            if ($parentMessage->team_channel_id) {
+                abort_unless(
+                    \App\Models\TeamChannelMember::where('team_channel_id', $parentMessage->team_channel_id)
+                        ->where('user_id', $actor->id)
+                        ->exists(),
+                    403,
+                    'Unauthorized channel thread messaging.'
+                );
+                
+                $validated['team_channel_id'] = $parentMessage->team_channel_id;
+                $validated['receiver_id'] = null;
+            } else {
+                abort_unless(
+                    $parentMessage->sender_id === $actor->id || $parentMessage->receiver_id === $actor->id,
+                    403,
+                    'Unauthorized direct thread messaging.'
+                );
+                
+                $validated['team_channel_id'] = null;
+                $validated['receiver_id'] = $parentMessage->sender_id === $actor->id 
+                    ? $parentMessage->receiver_id 
+                    : $parentMessage->sender_id;
+            }
         }
 
         $attachmentPath = null;
@@ -230,21 +273,24 @@ class TeamMessageController extends Controller
             $attachmentType = Str::startsWith($mimeType, 'image/') ? 'image' : 'document';
         }
 
-        if ($request->filled('team_channel_id')) {
+        if ($validated['team_channel_id'] ?? null) {
             $channel = \App\Models\TeamChannel::findOrFail($validated['team_channel_id']);
             
-            // Check channel membership
-            abort_unless(
-                \App\Models\TeamChannelMember::where('team_channel_id', $channel->id)->where('user_id', $actor->id)->exists(),
-                403,
-                'Unauthorized channel messaging.'
-            );
+            // Check channel membership if parent was not validated
+            if (!$parentId) {
+                abort_unless(
+                    \App\Models\TeamChannelMember::where('team_channel_id', $channel->id)->where('user_id', $actor->id)->exists(),
+                    403,
+                    'Unauthorized channel messaging.'
+                );
+            }
 
             $message = TeamMessage::create([
                 'seller_owner_id' => $sellerOwner->id,
                 'sender_id' => $actor->id,
                 'receiver_id' => null,
                 'team_channel_id' => $channel->id,
+                'parent_id' => $parentId,
                 'message' => trim((string) ($validated['message'] ?? '')),
                 'attachment_path' => $attachmentPath,
                 'attachment_type' => $attachmentType,
@@ -254,7 +300,6 @@ class TeamMessageController extends Controller
             // Notify other members
             $members = $channel->members()->where('users.id', '!=', $actor->id)->get();
             foreach ($members as $member) {
-                // Delete previous notifications from the same channel to avoid spam
                 $member->unreadNotifications()
                     ->where('type', \App\Notifications\NewTeamChannelMessageNotification::class)
                     ->where('data->team_channel_id', $channel->id)
@@ -273,20 +318,22 @@ class TeamMessageController extends Controller
         }
 
         $receiver = User::findOrFail($validated['receiver_id']);
-        $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
+        if (!$parentId) {
+            $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
+        }
 
         $message = TeamMessage::create([
             'seller_owner_id' => $sellerOwner->id,
             'sender_id' => $actor->id,
             'receiver_id' => $receiver->id,
             'team_channel_id' => null,
+            'parent_id' => $parentId,
             'message' => trim((string) ($validated['message'] ?? '')),
             'attachment_path' => $attachmentPath,
             'attachment_type' => $attachmentType,
             'is_read' => false,
         ]);
 
-        // Remove older unread internal team message notifications from same sender to prevent spam
         $receiver->unreadNotifications()
             ->where('type', \App\Notifications\NewTeamMessageNotification::class)
             ->where('data->sender_id', $actor->id)
@@ -301,6 +348,70 @@ class TeamMessageController extends Controller
         }
 
         return redirect()->route('team-messages.index', ['user_id' => $receiver->id]);
+    }
+
+    public function showThread(Request $request, TeamMessage $message): JsonResponse
+    {
+        $actor = $this->authorizeTeamActor($request->user());
+        $sellerOwner = $this->sellerOwner();
+
+        // Check authorization to access this parent message
+        if ($message->team_channel_id) {
+            abort_unless(
+                \App\Models\TeamChannelMember::where('team_channel_id', $message->team_channel_id)
+                    ->where('user_id', $actor->id)
+                    ->exists(),
+                403,
+                'Unauthorized channel thread access.'
+            );
+        } else {
+            abort_unless(
+                $message->sender_id === $actor->id || $message->receiver_id === $actor->id,
+                403,
+                'Unauthorized direct thread access.'
+            );
+        }
+
+        // Fetch replies with sender details
+        $replies = TeamMessage::query()
+            ->with(['sender'])
+            ->where('parent_id', $message->id)
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn (TeamMessage $reply) => [
+                'id' => $reply->id,
+                'text' => $reply->message,
+                'attachment_path' => $reply->attachment_path,
+                'attachment_type' => $reply->attachment_type,
+                'sender' => $reply->sender_id === $actor->id ? 'me' : 'other',
+                'sender_name' => $reply->sender?->name ?: 'Unknown',
+                'sender_avatar' => $reply->sender?->avatar,
+                'time' => $reply->created_at->format('g:i A'),
+                'dateLabel' => $reply->created_at->isToday()
+                    ? 'Today'
+                    : ($reply->created_at->isYesterday() ? 'Yesterday' : $reply->created_at->format('M d, Y')),
+                'isRead' => (bool) $reply->is_read,
+            ]);
+
+        $parentData = [
+            'id' => $message->id,
+            'text' => $message->message,
+            'attachment_path' => $message->attachment_path,
+            'attachment_type' => $message->attachment_type,
+            'sender' => $message->sender_id === $actor->id ? 'me' : 'other',
+            'sender_name' => $message->sender?->name ?: 'Unknown',
+            'sender_avatar' => $message->sender?->avatar,
+            'time' => $message->created_at->format('g:i A'),
+            'dateLabel' => $message->created_at->isToday()
+                ? 'Today'
+                : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'parent' => $parentData,
+            'replies' => $replies,
+        ]);
     }
 
     public function createChannel(Request $request): RedirectResponse

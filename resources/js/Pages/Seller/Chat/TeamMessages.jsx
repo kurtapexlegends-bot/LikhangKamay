@@ -12,6 +12,7 @@ import MessageArea from '@/Components/Seller/Chat/MessageArea';
 import MessageInput from '@/Components/Seller/Chat/MessageInput';
 import TeammateInfoSidebar from '@/Components/Seller/Chat/TeammateInfoSidebar';
 import ChannelInfoSidebar from '@/Components/Seller/Chat/ChannelInfoSidebar';
+import ThreadSidebar from '@/Components/Seller/Chat/ThreadSidebar';
 
 export default function TeamMessages({ 
     auth, 
@@ -26,6 +27,9 @@ export default function TeamMessages({
     const [searchTerm, setSearchTerm] = useState('');
     const [syncNotice, setSyncNotice] = useState(null);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
+    const [activeThreadParent, setActiveThreadParent] = useState(null);
+    const [activeThreadReplies, setActiveThreadReplies] = useState([]);
+    const [loadingThread, setLoadingThread] = useState(false);
     const { openSidebar } = useSellerWorkspaceShell();
 
     const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
@@ -55,6 +59,7 @@ export default function TeamMessages({
             attachment: null,
         });
         setPendingMessages([]);
+        setActiveThreadParent(null); // Close active thread on recipient/channel swap
 
         if (currentChatUser) {
             setShowMobileList(false);
@@ -72,6 +77,25 @@ export default function TeamMessages({
             }
         }
     }, [currentChatUser?.id, currentChannel?.id]);
+
+    useEffect(() => {
+        if (!activeThreadParent) {
+            setActiveThreadReplies([]);
+            return;
+        }
+
+        setLoadingThread(true);
+        if (window.axios) {
+            window.axios.get(route('team-messages.threads.show', activeThreadParent.id))
+                .then(res => {
+                    if (res.data?.success) {
+                        setActiveThreadReplies(res.data.replies);
+                    }
+                })
+                .catch(err => console.error(err))
+                .finally(() => setLoadingThread(false));
+        }
+    }, [activeThreadParent?.id]);
 
     useEffect(() => {
         setIsCounterpartTyping(!!currentChatUser?.is_typing);
@@ -103,6 +127,40 @@ export default function TeamMessages({
         chatChannel.listen('.team.message.sent', (e) => {
             const senderId = Number(e.message.sender_id);
             const myId = Number(auth.user.id);
+
+            // Check if this is a threaded reply
+            const parentId = e.message.parent_id ? Number(e.message.parent_id) : null;
+            if (parentId) {
+                if (activeThreadParent && Number(activeThreadParent.id) === parentId) {
+                    const isMe = senderId === myId;
+                    const newReply = {
+                        id: e.message.id,
+                        text: e.message.message,
+                        attachment_path: e.message.attachment_path,
+                        attachment_type: e.message.attachment_type,
+                        sender: isMe ? 'me' : 'other',
+                        sender_name: e.message.sender_name || (isMe ? auth.user.name : 'Teammate'),
+                        sender_avatar: e.message.sender_avatar || (isMe ? auth.user.avatar : null),
+                        time: new Date(e.message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        dateLabel: 'Today',
+                        isRead: true,
+                    };
+                    setActiveThreadReplies(prev => {
+                        if (prev.some(r => r.id === newReply.id)) return prev;
+                        return [...prev, newReply];
+                    });
+                }
+
+                // Reload main messages list to sync replies count
+                router.reload({
+                    only: ['activeMessages', 'conversations'],
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => setSyncNotice(null)
+                });
+                return;
+            }
+
             if (senderId === myId) return;
 
             // Direct message check
@@ -160,6 +218,38 @@ export default function TeamMessages({
             teamChannelInstance.listen('.team.message.sent', (e) => {
                 const senderId = Number(e.message.sender_id);
                 const myId = Number(auth.user.id);
+
+                const parentId = e.message.parent_id ? Number(e.message.parent_id) : null;
+                if (parentId) {
+                    if (activeThreadParent && Number(activeThreadParent.id) === parentId) {
+                        const isMe = senderId === myId;
+                        const newReply = {
+                            id: e.message.id,
+                            text: e.message.message,
+                            attachment_path: e.message.attachment_path,
+                            attachment_type: e.message.attachment_type,
+                            sender: isMe ? 'me' : 'other',
+                            sender_name: e.message.sender_name || (isMe ? auth.user.name : 'Teammate'),
+                            sender_avatar: e.message.sender_avatar || (isMe ? auth.user.avatar : null),
+                            time: new Date(e.message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            dateLabel: 'Today',
+                            isRead: true,
+                        };
+                        setActiveThreadReplies(prev => {
+                            if (prev.some(r => r.id === newReply.id)) return prev;
+                            return [...prev, newReply];
+                        });
+                    }
+
+                    router.reload({
+                        only: ['activeMessages', 'conversations', 'currentChannel'],
+                        preserveScroll: true,
+                        preserveState: true,
+                        onSuccess: () => setSyncNotice(null)
+                    });
+                    return;
+                }
+
                 if (senderId === myId) return;
 
                 router.reload({
@@ -184,7 +274,7 @@ export default function TeamMessages({
                 teamChannelInstance.stopListening('.team.message.sent');
             }
         };
-    }, [auth.user.id, currentChatUser?.id, currentChannel?.id]);
+    }, [auth.user.id, currentChatUser?.id, currentChannel?.id, activeThreadParent?.id]);
 
     const displayedMessages = useMemo(() => {
         return [...activeMessages, ...pendingMessages];
@@ -270,7 +360,10 @@ export default function TeamMessages({
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => setShowInfoPanel(prev => !prev)}
+                                            onClick={() => {
+                                                setShowInfoPanel(prev => !prev);
+                                                setActiveThreadParent(null); // Close thread sidebar
+                                            }}
                                             className={`p-2 rounded-xl transition ${
                                                 showInfoPanel 
                                                     ? 'bg-clay-100 text-clay-700' 
@@ -283,7 +376,7 @@ export default function TeamMessages({
                                     </div>
                                 </div>
                             </div>
-
+ 
                             <MessageArea
                                 activeMessages={displayedMessages}
                                 currentChatUser={{
@@ -291,6 +384,10 @@ export default function TeamMessages({
                                     is_typing: isCounterpartTyping
                                 }}
                                 syncNotice={syncNotice}
+                                onReplyInThread={(msg) => {
+                                    setShowInfoPanel(false);
+                                    setActiveThreadParent(msg);
+                                }}
                             />
 
                             <MessageInput
@@ -336,7 +433,10 @@ export default function TeamMessages({
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => setShowInfoPanel(prev => !prev)}
+                                            onClick={() => {
+                                                setShowInfoPanel(prev => !prev);
+                                                setActiveThreadParent(null); // Close thread sidebar
+                                            }}
                                             className={`p-2 rounded-xl transition ${
                                                 showInfoPanel 
                                                     ? 'bg-clay-100 text-clay-700' 
@@ -349,12 +449,16 @@ export default function TeamMessages({
                                     </div>
                                 </div>
                             </div>
-
+ 
                             <MessageArea
                                 activeMessages={displayedMessages}
                                 currentChatUser={null}
                                 currentChannel={currentChannel}
                                 syncNotice={syncNotice}
+                                onReplyInThread={(msg) => {
+                                    setShowInfoPanel(false);
+                                    setActiveThreadParent(msg);
+                                }}
                             />
 
                             <MessageInput
@@ -397,6 +501,26 @@ export default function TeamMessages({
                         currentChannel={currentChannel}
                         setShowInfoPanel={setShowInfoPanel}
                         activeMessages={displayedMessages}
+                    />
+                )}
+
+                {activeThreadParent && (
+                    <ThreadSidebar
+                        auth={auth}
+                        parent={activeThreadParent}
+                        replies={activeThreadReplies}
+                        loading={loadingThread}
+                        onClose={() => setActiveThreadParent(null)}
+                        onReplySuccess={() => {
+                            if (window.axios) {
+                                window.axios.get(route('team-messages.threads.show', activeThreadParent.id))
+                                    .then(res => {
+                                        if (res.data?.success) {
+                                            setActiveThreadReplies(res.data.replies);
+                                        }
+                                    });
+                            }
+                        }}
                     />
                 )}
             </div>

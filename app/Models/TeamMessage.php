@@ -14,6 +14,7 @@ class TeamMessage extends Model
         'sender_id',
         'receiver_id',
         'team_channel_id',
+        'parent_id',
         'message',
         'attachment_path',
         'attachment_type',
@@ -45,5 +46,15 @@ class TeamMessage extends Model
     public function teamChannel()
     {
         return $this->belongsTo(TeamChannel::class, 'team_channel_id');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(TeamMessage::class, 'parent_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(TeamMessage::class, 'parent_id');
     }
 }

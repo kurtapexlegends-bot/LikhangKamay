@@ -26,6 +26,7 @@ export default function MessageArea({
     currentChatUser,
     currentChannel,
     syncNotice,
+    onReplyInThread,
 }) {
     const [activeMedia, setActiveMedia] = useState(null);
     const [brokenMessageImages, setBrokenMessageImages] = useState({});
@@ -68,7 +69,7 @@ export default function MessageArea({
                             {groupedMessages[dateLabel].map((message) => (
                                 <div
                                     key={message.id}
-                                    className={`flex items-end gap-2.5 ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                                    className={`flex items-end gap-2.5 group ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                                 >
                                     {message.sender !== 'me' && (currentChannel || message.sender_name) && (
                                         <div className="shrink-0 mb-1">
@@ -78,6 +79,20 @@ export default function MessageArea({
                                             />
                                         </div>
                                     )}
+
+                                    {message.sender === 'me' && onReplyInThread && (
+                                        <div className="flex items-center self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                type="button"
+                                                onClick={() => onReplyInThread(message)}
+                                                className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition"
+                                                title="Reply in thread"
+                                            >
+                                                <MessageSquareText size={14} />
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <div className="flex flex-col max-w-[78%]">
                                         {message.sender !== 'me' && message.sender_name && currentChannel && (
                                             <span className="text-[10px] font-bold text-stone-400 mb-0.5 ml-1 leading-none">
@@ -169,7 +184,35 @@ export default function MessageArea({
                                                 )}
                                             </div>
                                         </div>
+
+                                        {message.replies_count > 0 && onReplyInThread && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onReplyInThread(message)}
+                                                className={`mt-1.5 text-[10px] font-bold text-clay-700 hover:underline flex items-center gap-1 leading-none ${
+                                                    message.sender === 'me' ? 'self-end mr-1' : 'self-start ml-1'
+                                                }`}
+                                            >
+                                                <MessageSquareText size={11} />
+                                                <span>
+                                                    {message.replies_count} {message.replies_count === 1 ? 'reply' : 'replies'}
+                                                </span>
+                                            </button>
+                                        )}
                                     </div>
+
+                                    {message.sender !== 'me' && onReplyInThread && (
+                                        <div className="flex items-center self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                type="button"
+                                                onClick={() => onReplyInThread(message)}
+                                                className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition"
+                                                title="Reply in thread"
+                                            >
+                                                <MessageSquareText size={14} />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
