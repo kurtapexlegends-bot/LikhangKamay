@@ -211,6 +211,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/team-messages/channels', [TeamMessageController::class, 'createChannel'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.channels.store');
     Route::post('/team-messages/channels/seen', [TeamMessageController::class, 'markChannelAsSeen'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.channels.seen');
     Route::get('/team-messages/threads/{message}', [TeamMessageController::class, 'showThread'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.threads.show');
+    Route::post('/team-messages/react', [TeamMessageController::class, 'toggleReaction'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.react');
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
     Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.index');

@@ -170,6 +170,77 @@ class TeamGroupChannelsTest extends TestCase
         );
     }
 
+    public function test_can_get_thread_replies_and_reply_to_channel_thread(): void
+    {
+        $owner = $this->createPremiumOwner();
+        $staff = $this->createStaff($owner, 'hr');
+
+        $channel = TeamChannel::create([
+            'seller_owner_id' => $owner->id,
+            'name' => 'discussion',
+            'created_by_id' => $owner->id,
+        ]);
+        $channel->members()->attach([$owner->id, $staff->id]);
+
+        $message = TeamMessage::create([
+            'seller_owner_id' => $owner->id,
+            'sender_id' => $owner->id,
+            'team_channel_id' => $channel->id,
+            'message' => 'Parent thread message',
+        ]);
+
+        // Fetch thread replies via JSON route
+        $this->actingAs($staff)
+            ->get(route('team-messages.threads.show', $message->id))
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'parent' => ['text' => 'Parent thread message'],
+                'replies' => [],
+            ]);
+
+        // Submit thread reply
+        $this->actingAs($staff)
+            ->post(route('team-messages.store'), [
+                'parent_id' => $message->id,
+                'message' => 'This is a threaded reply.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('team_messages', [
+            'seller_owner_id' => $owner->id,
+            'sender_id' => $staff->id,
+            'team_channel_id' => $channel->id,
+            'parent_id' => $message->id,
+            'message' => 'This is a threaded reply.',
+        ]);
+    }
+
+    public function test_cannot_get_unauthorized_thread(): void
+    {
+        $owner1 = $this->createPremiumOwner();
+        $owner2 = $this->createPremiumOwner();
+        $staffOfOwner2 = $this->createStaff($owner2, 'hr');
+
+        $channel = TeamChannel::create([
+            'seller_owner_id' => $owner1->id,
+            'name' => 'secret-discussion',
+            'created_by_id' => $owner1->id,
+        ]);
+        $channel->members()->attach([$owner1->id]);
+
+        $message = TeamMessage::create([
+            'seller_owner_id' => $owner1->id,
+            'sender_id' => $owner1->id,
+            'team_channel_id' => $channel->id,
+            'message' => 'Classified information',
+        ]);
+
+        $this->actingAs($staffOfOwner2)
+            ->get(route('team-messages.threads.show', $message->id))
+            ->assertForbidden();
+    }
+
     private function createPremiumOwner(): User
     {
         $owner = User::factory()->artisanApproved()->create([

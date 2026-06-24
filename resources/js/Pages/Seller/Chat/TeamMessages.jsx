@@ -210,6 +210,31 @@ export default function TeamMessages({
             }
         });
 
+        chatChannel.listen('.team.message.reaction.updated', (e) => {
+            const messageId = Number(e.messageId);
+            const freshReactions = e.reactions;
+
+            setActiveThreadParent(prev => {
+                if (prev && Number(prev.id) === messageId) {
+                    return { ...prev, reactions: freshReactions };
+                }
+                return prev;
+            });
+
+            setActiveThreadReplies(prev => prev.map(reply => {
+                if (Number(reply.id) === messageId) {
+                    return { ...reply, reactions: freshReactions };
+                }
+                return reply;
+            }));
+
+            router.reload({
+                only: ['activeMessages'],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        });
+
         // Channel specific listener
         let teamChannelInstance = null;
         if (currentChannel) {
@@ -270,6 +295,7 @@ export default function TeamMessages({
             chatChannel.stopListening('.team.message.sent');
             chatChannel.stopListening('.team.message.seen');
             chatChannel.stopListening('.team.user.typing');
+            chatChannel.stopListening('.team.message.reaction.updated');
             if (teamChannelInstance && currentChannel) {
                 teamChannelInstance.stopListening('.team.message.sent');
             }
@@ -297,6 +323,43 @@ export default function TeamMessages({
                 setShowCreateChannelModal(false);
                 newChannelForm.reset();
             }
+        });
+    };
+
+    const handleToggleReaction = (messageId, emoji) => {
+        if (!window.axios) return;
+
+        window.axios.post(route('team-messages.react'), {
+            team_message_id: messageId,
+            emoji: emoji
+        })
+        .then(res => {
+            if (res.data?.success) {
+                const freshReactions = res.data.reactions;
+                
+                setActiveThreadParent(prev => {
+                    if (prev && Number(prev.id) === Number(messageId)) {
+                        return { ...prev, reactions: freshReactions };
+                    }
+                    return prev;
+                });
+
+                setActiveThreadReplies(prev => prev.map(reply => {
+                    if (Number(reply.id) === Number(messageId)) {
+                        return { ...reply, reactions: freshReactions };
+                    }
+                    return reply;
+                }));
+
+                router.reload({
+                    only: ['activeMessages'],
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Failed to toggle reaction', err);
         });
     };
 
@@ -388,7 +451,8 @@ export default function TeamMessages({
                                     setShowInfoPanel(false);
                                     setActiveThreadParent(msg);
                                 }}
-                            />
+                                onToggleReaction={handleToggleReaction}
+                             />
 
                             <MessageInput
                                 currentChatUser={currentChatUser}
@@ -459,7 +523,8 @@ export default function TeamMessages({
                                     setShowInfoPanel(false);
                                     setActiveThreadParent(msg);
                                 }}
-                            />
+                                onToggleReaction={handleToggleReaction}
+                             />
 
                             <MessageInput
                                 currentChatUser={null}
@@ -511,6 +576,7 @@ export default function TeamMessages({
                         replies={activeThreadReplies}
                         loading={loadingThread}
                         onClose={() => setActiveThreadParent(null)}
+                        onToggleReaction={handleToggleReaction}
                         onReplySuccess={() => {
                             if (window.axios) {
                                 window.axios.get(route('team-messages.threads.show', activeThreadParent.id))

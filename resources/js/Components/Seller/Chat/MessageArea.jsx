@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
-import { AlertCircle, MessageSquareText, FileIcon, Clock, Check, CheckCheck } from 'lucide-react';
+import { AlertCircle, MessageSquareText, FileIcon, Clock, Check, CheckCheck, Smile } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
@@ -27,9 +27,11 @@ export default function MessageArea({
     currentChannel,
     syncNotice,
     onReplyInThread,
+    onToggleReaction,
 }) {
     const [activeMedia, setActiveMedia] = useState(null);
     const [brokenMessageImages, setBrokenMessageImages] = useState({});
+    const [activePickerId, setActivePickerId] = useState(null);
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -80,16 +82,38 @@ export default function MessageArea({
                                         </div>
                                     )}
 
-                                    {message.sender === 'me' && onReplyInThread && (
-                                        <div className="flex items-center self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {message.sender === 'me' && (
+                                        <div className="flex items-center self-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative">
                                             <button
                                                 type="button"
-                                                onClick={() => onReplyInThread(message)}
-                                                className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition"
-                                                title="Reply in thread"
+                                                onClick={() => setActivePickerId(activePickerId === message.id ? null : message.id)}
+                                                className={`p-1.5 rounded-lg transition relative ${activePickerId === message.id ? 'bg-stone-100 text-stone-650' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-600'}`}
+                                                title="Add reaction"
                                             >
-                                                <MessageSquareText size={14} />
+                                                <Smile size={14} />
                                             </button>
+                                            
+                                            {activePickerId === message.id && (
+                                                <ReactionPicker
+                                                    onSelect={(emoji) => {
+                                                        onToggleReaction && onToggleReaction(message.id, emoji);
+                                                        setActivePickerId(null);
+                                                    }}
+                                                    onClose={() => setActivePickerId(null)}
+                                                    className="absolute bottom-full mb-1 right-0 z-20"
+                                                />
+                                            )}
+
+                                            {onReplyInThread && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onReplyInThread(message)}
+                                                    className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition"
+                                                    title="Reply in thread"
+                                                >
+                                                    <MessageSquareText size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                     )}
 
@@ -185,6 +209,27 @@ export default function MessageArea({
                                             </div>
                                         </div>
 
+                                        {message.reactions && message.reactions.length > 0 && (
+                                            <div className={`flex flex-wrap gap-1 mt-1.5 ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                                                {message.reactions.map((react) => (
+                                                    <button
+                                                        key={react.emoji}
+                                                        type="button"
+                                                        onClick={() => onToggleReaction && onToggleReaction(message.id, react.emoji)}
+                                                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-2xs transition select-none ${
+                                                            react.reacted_by_me
+                                                                ? 'bg-clay-50 border-clay-300 text-clay-700 hover:bg-clay-100'
+                                                                : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+                                                        }`}
+                                                        title={react.users_list ? react.users_list.join(', ') : ''}
+                                                    >
+                                                        <span>{react.emoji}</span>
+                                                        <span className="text-[10px]">{react.count}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
                                         {message.replies_count > 0 && onReplyInThread && (
                                             <button
                                                 type="button"
@@ -201,16 +246,38 @@ export default function MessageArea({
                                         )}
                                     </div>
 
-                                    {message.sender !== 'me' && onReplyInThread && (
-                                        <div className="flex items-center self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {message.sender !== 'me' && (
+                                        <div className="flex items-center self-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative">
+                                            {onReplyInThread && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onReplyInThread(message)}
+                                                    className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition"
+                                                    title="Reply in thread"
+                                                >
+                                                    <MessageSquareText size={14} />
+                                                </button>
+                                            )}
+
                                             <button
                                                 type="button"
-                                                onClick={() => onReplyInThread(message)}
-                                                className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition"
-                                                title="Reply in thread"
+                                                onClick={() => setActivePickerId(activePickerId === message.id ? null : message.id)}
+                                                className={`p-1.5 rounded-lg transition relative ${activePickerId === message.id ? 'bg-stone-100 text-stone-650' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-600'}`}
+                                                title="Add reaction"
                                             >
-                                                <MessageSquareText size={14} />
+                                                <Smile size={14} />
                                             </button>
+
+                                            {activePickerId === message.id && (
+                                                <ReactionPicker
+                                                    onSelect={(emoji) => {
+                                                        onToggleReaction && onToggleReaction(message.id, emoji);
+                                                        setActivePickerId(null);
+                                                    }}
+                                                    onClose={() => setActivePickerId(null)}
+                                                    className="absolute bottom-full mb-1 left-0 z-20"
+                                                />
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -255,6 +322,40 @@ export default function MessageArea({
                     onClose={() => setActiveMedia(null)}
                 />
             </Suspense>
+        </div>
+    );
+}
+
+function ReactionPicker({ onSelect, onClose, className = '' }) {
+    const pickerRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+                onClose();
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [onClose]);
+
+    const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+    return (
+        <div
+            ref={pickerRef}
+            className={`flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-2.5 py-1.5 shadow-md animate-in fade-in zoom-in-95 duration-100 ${className}`}
+        >
+            {emojis.map((emoji) => (
+                <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => onSelect(emoji)}
+                    className="hover:scale-125 active:scale-95 transition text-base p-1"
+                >
+                    {emoji}
+                </button>
+            ))}
         </div>
     );
 }

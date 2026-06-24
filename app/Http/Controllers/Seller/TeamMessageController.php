@@ -112,6 +112,7 @@ class TeamMessageController extends Controller
 
         if ($activeContact) {
             $messages = TeamMessage::query()
+                ->with(['reactions.user'])
                 ->withCount('replies')
                 ->where('seller_owner_id', $sellerOwner->id)
                 ->whereNull('team_channel_id')
@@ -139,12 +140,13 @@ class TeamMessageController extends Controller
                         : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
                     'isRead' => (bool) $message->is_read,
                     'replies_count' => (int) $message->replies_count,
+                    'reactions' => $this->formatReactions($message, $actor),
                 ])
                 ->values()
                 ->all();
         } elseif ($activeChannel) {
             $messages = TeamMessage::query()
-                ->with(['sender'])
+                ->with(['sender', 'reactions.user'])
                 ->withCount('replies')
                 ->where('team_channel_id', $activeChannel->id)
                 ->whereNull('parent_id')
@@ -164,6 +166,7 @@ class TeamMessageController extends Controller
                         : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
                     'isRead' => true,
                     'replies_count' => (int) $message->replies_count,
+                    'reactions' => $this->formatReactions($message, $actor),
                 ])
                 ->values()
                 ->all();
@@ -335,7 +338,7 @@ class TeamMessageController extends Controller
         ]);
 
         $receiver->unreadNotifications()
-            ->where('type', \App\Notifications\NewTeamMessageNotification::class)
+            ->where('type', NewTeamMessageNotification::class)
             ->where('data->sender_id', $actor->id)
             ->delete();
 
@@ -374,24 +377,29 @@ class TeamMessageController extends Controller
 
         // Fetch replies with sender details
         $replies = TeamMessage::query()
-            ->with(['sender'])
+            ->with(['sender', 'reactions.user'])
             ->where('parent_id', $message->id)
             ->orderBy('created_at')
             ->get()
-            ->map(fn (TeamMessage $reply) => [
-                'id' => $reply->id,
-                'text' => $reply->message,
-                'attachment_path' => $reply->attachment_path,
-                'attachment_type' => $reply->attachment_type,
-                'sender' => $reply->sender_id === $actor->id ? 'me' : 'other',
-                'sender_name' => $reply->sender?->name ?: 'Unknown',
-                'sender_avatar' => $reply->sender?->avatar,
-                'time' => $reply->created_at->format('g:i A'),
-                'dateLabel' => $reply->created_at->isToday()
-                    ? 'Today'
-                    : ($reply->created_at->isYesterday() ? 'Yesterday' : $reply->created_at->format('M d, Y')),
-                'isRead' => (bool) $reply->is_read,
-            ]);
+            ->map(function (TeamMessage $reply) use ($actor) {
+                return [
+                    'id' => $reply->id,
+                    'text' => $reply->message,
+                    'attachment_path' => $reply->attachment_path,
+                    'attachment_type' => $reply->attachment_type,
+                    'sender' => $reply->sender_id === $actor->id ? 'me' : 'other',
+                    'sender_name' => $reply->sender?->name ?: 'Unknown',
+                    'sender_avatar' => $reply->sender?->avatar,
+                    'time' => $reply->created_at->format('g:i A'),
+                    'dateLabel' => $reply->created_at->isToday()
+                        ? 'Today'
+                        : ($reply->created_at->isYesterday() ? 'Yesterday' : $reply->created_at->format('M d, Y')),
+                    'isRead' => (bool) $reply->is_read,
+                    'reactions' => $this->formatReactions($reply, $actor),
+                ];
+            });
+
+        $message->load(['reactions.user']);
 
         $parentData = [
             'id' => $message->id,
@@ -405,6 +413,7 @@ class TeamMessageController extends Controller
             'dateLabel' => $message->created_at->isToday()
                 ? 'Today'
                 : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
+            'reactions' => $this->formatReactions($message, $actor),
         ];
 
         return response()->json([
@@ -524,7 +533,7 @@ class TeamMessageController extends Controller
 
     private function authorizeTeamActor(?User $actor): User
     {
-        abort_unless($actor, 403, 'Authentication required.');
+        abort_unless($actor instanceof User, 403, 'Authentication required.');
         abort_unless(
             $actor->canAccessSellerWorkspace() && $actor->canAccessSellerModule('team_messages'),
             403,
@@ -544,7 +553,7 @@ class TeamMessageController extends Controller
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, \App\Models\User>
+     * @return Collection<int, User>
      */
     private function eligibleContacts(User $actor, int $sellerOwnerId): Collection
     {
@@ -594,5 +603,81 @@ class TeamMessageController extends Controller
         return $message->attachment_type === 'image'
             ? 'Sent an image'
             : 'Sent an attachment';
+    }
+
+    public function toggleReaction(Request $request): JsonResponse
+    {
+        $actor = $this->authorizeTeamActor($request->user());
+        
+        $validated = $request->validate([
+            'team_message_id' => ['required', 'integer', 'exists:team_messages,id'],
+            'emoji' => ['required', 'string', 'max:50'],
+        ]);
+
+        $message = TeamMessage::findOrFail($validated['team_message_id']);
+
+        // Check authorization to access this message's conversation context
+        if ($message->team_channel_id) {
+            abort_unless(
+                \App\Models\TeamChannelMember::where('team_channel_id', $message->team_channel_id)
+                    ->where('user_id', $actor->id)
+                    ->exists(),
+                403,
+                'Unauthorized channel message reaction.'
+            );
+        } else {
+            abort_unless(
+                $message->sender_id === $actor->id || $message->receiver_id === $actor->id,
+                403,
+                'Unauthorized direct message reaction.'
+            );
+        }
+
+        // Toggle logic
+        $reaction = \App\Models\TeamMessageReaction::where('team_message_id', $message->id)
+            ->where('user_id', $actor->id)
+            ->where('emoji', $validated['emoji'])
+            ->first();
+
+        if ($reaction) {
+            $reaction->delete();
+        } else {
+            \App\Models\TeamMessageReaction::create([
+                'team_message_id' => $message->id,
+                'user_id' => $actor->id,
+                'emoji' => $validated['emoji'],
+            ]);
+        }
+
+        // Query fresh formatted reactions
+        $freshReactions = $this->formatReactions($message->fresh(['reactions.user']), $actor);
+
+        // Broadcast the update in real-time
+        try {
+            broadcast(new \App\Events\TeamMessageReactionUpdated($message, $freshReactions))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return response()->json([
+            'success' => true,
+            'reactions' => $freshReactions,
+        ]);
+    }
+
+    private function formatReactions(TeamMessage $message, User $actor): array
+    {
+        return $message->reactions
+            ->groupBy('emoji')
+            ->map(function ($group, $emoji) use ($actor) {
+                return [
+                    'emoji' => $emoji,
+                    'count' => $group->count(),
+                    'reacted_by_me' => $group->contains('user_id', $actor->id),
+                    'users_list' => $group->pluck('user.name')->filter()->values()->all(),
+                ];
+            })
+            ->values()
+            ->all();
     }
 }

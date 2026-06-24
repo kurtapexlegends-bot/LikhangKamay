@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Paperclip, FileIcon, ImageIcon, AlertCircle } from 'lucide-react';
+import { X, Send, Paperclip, FileIcon, ImageIcon, AlertCircle, Smile } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { useForm } from '@inertiajs/react';
 
@@ -9,7 +9,8 @@ export default function ThreadSidebar({
     replies = [],
     onClose,
     loading = false,
-    onReplySuccess
+    onReplySuccess,
+    onToggleReaction,
 }) {
     const repliesEndRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -23,6 +24,8 @@ export default function ThreadSidebar({
         message: '',
         attachment: null,
     });
+
+    const [activePickerId, setActivePickerId] = useState(null);
 
     useEffect(() => {
         if (parent) {
@@ -104,7 +107,7 @@ export default function ThreadSidebar({
                 </header>
 
                 {/* Parent Message Card */}
-                <div className="p-4 bg-stone-50 border-b border-stone-100 shrink-0">
+                <div className="p-4 bg-stone-50 border-b border-stone-100 shrink-0 group relative">
                     <div className="flex items-start gap-2.5">
                         <UserAvatar
                             user={{ name: parent.sender_name, avatar: parent.sender_avatar }}
@@ -115,7 +118,7 @@ export default function ThreadSidebar({
                                 <span className="text-[11px] font-bold text-stone-800 truncate">
                                     {parent.sender_name || 'Teammate'}
                                 </span>
-                                <span className="text-[9px] text-stone-400 font-medium">
+                                <span className="text-[9px] text-stone-400 font-medium mr-5">
                                     {parent.time}
                                 </span>
                             </div>
@@ -138,6 +141,50 @@ export default function ThreadSidebar({
                             )}
 
                             <p className="text-xs text-stone-600 leading-relaxed break-words">{parent.text}</p>
+
+                            {/* Reactions display for parent */}
+                            {parent.reactions && parent.reactions.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {parent.reactions.map((react) => (
+                                        <button
+                                            key={react.emoji}
+                                            type="button"
+                                            onClick={() => onToggleReaction && onToggleReaction(parent.id, react.emoji)}
+                                            className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold shadow-3xs transition select-none ${
+                                                react.reacted_by_me
+                                                    ? 'bg-clay-50 border-clay-300 text-clay-700 hover:bg-clay-100'
+                                                    : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+                                            }`}
+                                            title={react.users_list ? react.users_list.join(', ') : ''}
+                                        >
+                                            <span>{react.emoji}</span>
+                                            <span>{react.count}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Add reaction trigger button for parent message in sidebar */}
+                        <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                                type="button"
+                                onClick={() => setActivePickerId(activePickerId === parent.id ? null : parent.id)}
+                                className={`p-1 rounded text-stone-400 hover:bg-stone-200 hover:text-stone-600 transition relative ${activePickerId === parent.id ? 'bg-stone-205 text-stone-600' : ''}`}
+                                title="Add reaction"
+                            >
+                                <Smile size={12} />
+                            </button>
+                            {activePickerId === parent.id && (
+                                <ReactionPicker
+                                    onSelect={(emoji) => {
+                                        onToggleReaction && onToggleReaction(parent.id, emoji);
+                                        setActivePickerId(null);
+                                    }}
+                                    onClose={() => setActivePickerId(null)}
+                                    className="absolute right-0 top-full mt-1 z-20"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -158,8 +205,31 @@ export default function ThreadSidebar({
                         replies.map((reply) => (
                             <div
                                 key={reply.id}
-                                className={`flex items-start gap-2.5 ${reply.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                                className={`flex items-start gap-2.5 group relative ${reply.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                             >
+                                {reply.sender === 'me' && (
+                                    <div className="flex items-center self-center opacity-0 group-hover:opacity-100 transition-opacity relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setActivePickerId(activePickerId === reply.id ? null : reply.id)}
+                                            className={`p-1 rounded text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition relative ${activePickerId === reply.id ? 'bg-stone-150 text-stone-600' : ''}`}
+                                            title="Add reaction"
+                                        >
+                                            <Smile size={12} />
+                                        </button>
+                                        {activePickerId === reply.id && (
+                                            <ReactionPicker
+                                                onSelect={(emoji) => {
+                                                    onToggleReaction && onToggleReaction(reply.id, emoji);
+                                                    setActivePickerId(null);
+                                                }}
+                                                onClose={() => setActivePickerId(null)}
+                                                className="absolute bottom-full mb-1 right-0 z-20"
+                                            />
+                                        )}
+                                    </div>
+                                )}
+
                                 {reply.sender !== 'me' && (
                                     <UserAvatar
                                         user={{ name: reply.sender_name, avatar: reply.sender_avatar }}
@@ -214,7 +284,52 @@ export default function ThreadSidebar({
                                             {reply.time}
                                         </span>
                                     </div>
+
+                                    {/* Reactions display for reply */}
+                                    {reply.reactions && reply.reactions.length > 0 && (
+                                        <div className={`flex flex-wrap gap-1 mt-1 ${reply.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                                            {reply.reactions.map((react) => (
+                                                <button
+                                                    key={react.emoji}
+                                                    type="button"
+                                                    onClick={() => onToggleReaction && onToggleReaction(reply.id, react.emoji)}
+                                                    className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold shadow-3xs transition select-none ${
+                                                        react.reacted_by_me
+                                                            ? 'bg-clay-50 border-clay-300 text-clay-700 hover:bg-clay-100'
+                                                            : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+                                                    }`}
+                                                    title={react.users_list ? react.users_list.join(', ') : ''}
+                                                >
+                                                    <span>{react.emoji}</span>
+                                                    <span>{react.count}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
+
+                                {reply.sender !== 'me' && (
+                                    <div className="flex items-center self-center opacity-0 group-hover:opacity-100 transition-opacity relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setActivePickerId(activePickerId === reply.id ? null : reply.id)}
+                                            className={`p-1 rounded text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition relative ${activePickerId === reply.id ? 'bg-stone-150 text-stone-600' : ''}`}
+                                            title="Add reaction"
+                                        >
+                                            <Smile size={12} />
+                                        </button>
+                                        {activePickerId === reply.id && (
+                                            <ReactionPicker
+                                                onSelect={(emoji) => {
+                                                    onToggleReaction && onToggleReaction(reply.id, emoji);
+                                                    setActivePickerId(null);
+                                                }}
+                                                onClose={() => setActivePickerId(null)}
+                                                className="absolute bottom-full mb-1 left-0 z-20"
+                                            />
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         ))
                     )}
@@ -317,5 +432,39 @@ export default function ThreadSidebar({
                 </div>
             </div>
         </>
+    );
+}
+
+function ReactionPicker({ onSelect, onClose, className = '' }) {
+    const pickerRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+                onClose();
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [onClose]);
+
+    const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+    return (
+        <div
+            ref={pickerRef}
+            className={`flex items-center gap-1 border border-stone-200 bg-white px-2 py-1 shadow-md rounded-full animate-in fade-in zoom-in-95 duration-100 ${className}`}
+        >
+            {emojis.map((emoji) => (
+                <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => onSelect(emoji)}
+                    className="hover:scale-125 active:scale-95 transition text-[13px] p-0.5"
+                >
+                    {emoji}
+                </button>
+            ))}
+        </div>
     );
 }
