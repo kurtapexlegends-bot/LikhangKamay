@@ -136,8 +136,11 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         const channel = window.Echo.private(`chat.${auth.user.id}`);
 
         channel.listen('.message.sent', (e) => {
-            if (e.message.sender_id === auth.user.id) return;
-            if (currentChatUser && e.message.sender_id === currentChatUser.id) {
+            const senderId = Number(e.message.sender_id);
+            const myId = Number(auth.effectiveSellerId || auth.user.id);
+            if (senderId === myId) return;
+
+            if (currentChatUser && senderId === Number(currentChatUser.id)) {
                 router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
             } else {
                 router.reload({ only: ['conversations'] });
@@ -145,13 +148,13 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         });
 
         channel.listen('.message.seen', (e) => {
-            if (currentChatUser && e.senderId === currentChatUser.id) {
+            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
                 router.reload({ only: ['activeMessages'] });
             }
         });
 
         channel.listen('.user.typing', (e) => {
-            if (currentChatUser && e.senderId === currentChatUser.id) {
+            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
                 setIsCounterpartTyping(true);
                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                 typingTimeoutRef.current = setTimeout(() => {

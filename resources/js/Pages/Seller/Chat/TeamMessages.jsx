@@ -73,8 +73,11 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         const channel = window.Echo.private(`team-chat.${auth.user.id}`);
 
         channel.listen('.team.message.sent', (e) => {
-            if (e.message.sender_id === auth.user.id) return;
-            if (currentChatUser && e.message.sender_id === currentChatUser.id) {
+            const senderId = Number(e.message.sender_id);
+            const myId = Number(auth.user.id);
+            if (senderId === myId) return;
+
+            if (currentChatUser && senderId === Number(currentChatUser.id)) {
                 router.reload({ 
                     only: ['activeMessages', 'conversations', 'currentChatUser'],
                     preserveScroll: true,
@@ -87,7 +90,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         });
 
         channel.listen('.team.message.seen', (e) => {
-            if (currentChatUser && e.senderId === currentChatUser.id) {
+            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
                 router.reload({ 
                     only: ['activeMessages'],
                     preserveScroll: true,
@@ -97,7 +100,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         });
 
         channel.listen('.team.user.typing', (e) => {
-            if (currentChatUser && e.senderId === currentChatUser.id) {
+            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
                 setIsCounterpartTyping(true);
                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                 typingTimeoutRef.current = setTimeout(() => {
