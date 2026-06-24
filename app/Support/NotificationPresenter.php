@@ -19,6 +19,7 @@ class NotificationPresenter
             'type' => $data['type'] ?? 'general',
             'title' => $data['title'] ?? 'Notification',
             'message' => $data['message'] ?? '',
+            'sender_id' => $data['sender_id'] ?? null,
             'reason' => $data['reason'] ?? null,
             'request_type' => $data['request_type'] ?? null,
             'request_id' => $data['request_id'] ?? null,

@@ -9,7 +9,7 @@ import { useToast } from '@/Components/ToastContext';
  * Falls back to active Inertia polling if Supabase is unavailable in local environment.
  */
 export const useRealtime = () => {
-    const { auth, notifications } = usePage().props;
+    const { auth, notifications, currentChatUser } = usePage().props;
     const { addToast } = useToast();
     const user = auth?.user;
     const prevNotificationsRef = useRef(undefined);
@@ -43,6 +43,11 @@ export const useRealtime = () => {
         
         if (newUnread.length > 0) {
             newUnread.forEach(n => {
+                if (n.type === 'new_message' || n.type === 'team_message') {
+                    if (currentChatUser && Number(n.sender_id) === Number(currentChatUser.id)) {
+                        return; // Skip toast for active conversation counterpart
+                    }
+                }
                 addToast(
                     n.message ? `${n.title}: ${n.message}` : n.title,
                     'info',
@@ -51,7 +56,7 @@ export const useRealtime = () => {
             });
         }
         prevNotificationsRef.current = notifications;
-    }, [notifications, user, addToast]);
+    }, [notifications, user, addToast, currentChatUser]);
 
     useEffect(() => {
         if (!user) return;

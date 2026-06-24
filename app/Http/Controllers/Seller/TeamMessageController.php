@@ -156,6 +156,12 @@ class TeamMessageController extends Controller
             'is_read' => false,
         ]);
 
+        // Remove older unread internal team message notifications from same sender to prevent spam
+        $receiver->unreadNotifications()
+            ->where('type', \App\Notifications\NewTeamMessageNotification::class)
+            ->where('data->sender_id', $actor->id)
+            ->delete();
+
         $receiver->notify(new NewTeamMessageNotification($message, $actor->name));
 
         try {

@@ -70,9 +70,15 @@ class ChatController extends Controller
             'attachment_type' => $attachmentType,
         ]);
 
-        // Notify Receiver
         $senderIdentity = $sellerPerspective ? $this->sellerOwner() : $actor;
         $senderName = $senderIdentity->shop_name ?: $senderIdentity->name;
+
+        // Notify Receiver (Remove older unread notifications from same sender to prevent spam)
+        $receiver->unreadNotifications()
+            ->where('type', \App\Notifications\NewMessageNotification::class)
+            ->where('data->sender_id', $senderId)
+            ->delete();
+
         $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
 
         try {
