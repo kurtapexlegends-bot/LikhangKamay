@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from '@inertiajs/react';
 import { 
     ArrowLeft, ShoppingBag, Info, Clock, 
-    CheckCheck, Check, FileIcon, MessageCircle 
+    CheckCheck, Check, FileIcon, MessageCircle, AlertCircle 
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import OrderContextCard from '@/Components/Chat/OrderContextCard';
@@ -106,7 +106,7 @@ export default function MessageWindow({
                                                 {msg.attachment_path && msg.attachment_type === 'image' && (
                                                     <div className="mb-2 rounded-xl overflow-hidden bg-white/10 group-hover:shadow-md transition-shadow">
                                                         <img 
-                                                            src={`/storage/${msg.attachment_path}`} 
+                                                            src={msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`} 
                                                             alt="Attachment" 
                                                             className="max-h-48 md:max-h-64 object-contain w-full cursor-zoom-in hover:scale-105 transition-transform duration-300"
                                                             onClick={() => {
@@ -123,7 +123,7 @@ export default function MessageWindow({
                                                 )}
                                                 {msg.attachment_path && msg.attachment_type === 'document' && (
                                                     <a 
-                                                        href={`/storage/${msg.attachment_path}`} 
+                                                        href={msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`} 
                                                         target="_blank" 
                                                         rel="noreferrer"
                                                         className={`flex items-center gap-2 p-2.5 md:p-3 rounded-xl mb-2 transition-colors min-h-[44px] ${
@@ -148,14 +148,28 @@ export default function MessageWindow({
                                             <div className={`flex items-center gap-1.5 mt-1.5 text-[10px] ${
                                                 msg.sender === 'me' ? 'justify-end text-gray-400' : 'text-gray-400'
                                             }`}>
-                                                <Clock size={10} />
-                                                <span>{formatChatClock(msg.created_at) || msg.time}</span>
-                                                {msg.sender === 'me' && (
-                                                    msg.is_read ? (
-                                                        <CheckCheck size={14} className="text-clay-500" />
-                                                    ) : (
-                                                        <Check size={14} className="text-gray-400" />
-                                                    )
+                                                {msg.status === 'sending' ? (
+                                                    <>
+                                                        <Clock size={10} className="animate-pulse" />
+                                                        <span className="animate-pulse font-medium">Sending...</span>
+                                                    </>
+                                                ) : msg.status === 'failed' ? (
+                                                    <>
+                                                        <AlertCircle size={11} className="text-red-500 shrink-0" />
+                                                        <span className="text-red-500 font-bold">Failed to send</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Clock size={10} />
+                                                        <span>{formatChatClock(msg.created_at) || msg.time}</span>
+                                                        {msg.sender === 'me' && (
+                                                            msg.is_read ? (
+                                                                <CheckCheck size={14} className="text-clay-500 shrink-0" />
+                                                            ) : (
+                                                                <Check size={14} className="text-gray-400 shrink-0" />
+                                                            )
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </div>

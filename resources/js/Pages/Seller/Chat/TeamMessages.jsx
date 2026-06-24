@@ -22,6 +22,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
     const { openSidebar } = useSellerWorkspaceShell();
 
     const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+    const [pendingMessages, setPendingMessages] = useState([]);
     const typingTimeoutRef = useRef(null);
 
     const form = useForm({
@@ -32,6 +33,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
 
     useEffect(() => {
         form.setData('receiver_id', currentChatUser?.id || '');
+        setPendingMessages([]);
 
         if (currentChatUser) {
             setShowMobileList(false);
@@ -49,7 +51,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
 
     // Fallback polling when Echo is disconnected or offline
     useEffect(() => {
-        if (isEchoConnected || !currentChatUser) return undefined;
+        if (isEchoConnected || !currentChatUser || form.processing) return undefined;
 
         const interval = setInterval(() => {
             if (document.hidden) return;
@@ -62,11 +64,11 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         }, 4000);
 
         return () => clearInterval(interval);
-    }, [isEchoConnected, currentChatUser?.id]);
+    }, [isEchoConnected, currentChatUser?.id, form.processing]);
 
     // Real-time WebSockets via Echo
     useEffect(() => {
-        if (!auth?.user?.id) return undefined;
+        if (!auth?.user?.id || !window.Echo) return undefined;
 
         const channel = window.Echo.private(`team-chat.${auth.user.id}`);
 
@@ -109,6 +111,10 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
             channel.stopListening('.team.user.typing');
         };
     }, [auth.user.id, currentChatUser?.id]);
+
+    const displayedMessages = useMemo(() => {
+        return [...activeMessages, ...pendingMessages];
+    }, [activeMessages, pendingMessages]);
 
     const filteredContacts = useMemo(() => {
         const query = searchTerm.trim().toLowerCase();
@@ -194,7 +200,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                             </div>
 
                             <MessageArea
-                                activeMessages={activeMessages}
+                                activeMessages={displayedMessages}
                                 currentChatUser={{
                                     ...currentChatUser,
                                     is_typing: isCounterpartTyping
@@ -205,6 +211,14 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                             <MessageInput
                                 currentChatUser={currentChatUser}
                                 form={form}
+                                onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
+                                onSendFinished={(tempId, success) => {
+                                    if (success) {
+                                        setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                                    } else {
+                                        setPendingMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
+                                    }
+                                }}
                             />
                         </>
                     ) : (
@@ -224,7 +238,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
                     <TeammateInfoSidebar
                         currentChatUser={currentChatUser}
                         setShowInfoPanel={setShowInfoPanel}
-                        activeMessages={activeMessages}
+                        activeMessages={displayedMessages}
                     />
                 )}
             </div>

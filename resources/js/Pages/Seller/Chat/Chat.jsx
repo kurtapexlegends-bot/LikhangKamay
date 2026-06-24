@@ -32,6 +32,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const [attachmentPreview, setAttachmentPreview] = useState(null);
     const [timeNow, setTimeNow] = useState(Date.now());
     const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+    const [pendingMessages, setPendingMessages] = useState([]);
     const typingTimeoutRef = useRef(null);
 
     const messagesEndRef = useRef(null);
@@ -114,7 +115,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
     // Fallback polling when Echo is disconnected or offline
     useEffect(() => {
-        if (isEchoConnected || !currentChatUser) return undefined;
+        if (isEchoConnected || !currentChatUser || processing) return undefined;
 
         const interval = setInterval(() => {
             if (document.hidden) return;
@@ -126,11 +127,11 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         }, 4000);
 
         return () => clearInterval(interval);
-    }, [isEchoConnected, currentChatUser?.id]);
+    }, [isEchoConnected, currentChatUser?.id, processing]);
 
     // Real-time WebSockets via Echo
     useEffect(() => {
-        if (!auth?.user?.id) return undefined;
+        if (!auth?.user?.id || !window.Echo) return undefined;
 
         const channel = window.Echo.private(`chat.${auth.user.id}`);
 
@@ -177,6 +178,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
     useEffect(() => {
         setData('receiver_id', currentChatUser?.id || '');
+        setPendingMessages([]);
         if (currentChatUser) {
             setShowMobileList(false);
             if (activeMessages.length === 0 || currentChatUser.id !== data.receiver_id) {
@@ -300,22 +302,26 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         deleteTemplate(route('chat.templates.delete', id));
     };
 
+    const displayedMessages = useMemo(() => {
+        return [...activeMessages, ...pendingMessages];
+    }, [activeMessages, pendingMessages]);
+
     // Extract images for gallery
-    const galleryImages = useMemo(() => activeMessages
+    const galleryImages = useMemo(() => displayedMessages
         .filter(msg => msg.attachment_path && msg.attachment_type === 'image')
         .map(msg => ({
-            url: `/storage/${msg.attachment_path}`,
+            url: msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`,
             type: 'image',
             id: msg.id
-        })), [activeMessages]);
+        })), [displayedMessages]);
 
     // Group messages by day
-    const groupedMessages = useMemo(() => activeMessages.reduce((groups, msg) => {
+    const groupedMessages = useMemo(() => displayedMessages.reduce((groups, msg) => {
         const date = formatChatDateLabel(msg.created_at, timeNow);
         if (!groups[date]) groups[date] = [];
         groups[date].push(msg);
         return groups;
-    }, {}), [activeMessages, timeNow]);
+    }, {}), [displayedMessages, timeNow]);
 
     return (
         <>
@@ -399,6 +405,14 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                     signalTyping={signalTyping}
                                     onEmojiClick={onEmojiClick}
                                     injectTemplate={injectTemplate}
+                                    onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
+                                    onSendFinished={(tempId, success) => {
+                                        if (success) {
+                                            setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                                        } else {
+                                            setPendingMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
+                                        }
+                                    }}
                                 />
                             </>
                         ) : (

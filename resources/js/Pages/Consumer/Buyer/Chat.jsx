@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
@@ -23,8 +23,15 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     const [activeMedia, setActiveMedia] = useState(null);
     const [isDesktop, setIsDesktop] = useState(false);
     const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+    const [pendingMessages, setPendingMessages] = useState([]);
     const typingTimeoutRef = useRef(null);
     const messagesEndRef = useRef(null);
+
+    const form = useForm({
+        receiver_id: currentChatUser?.id || '',
+        message: '',
+        attachment: null
+    });
 
     // Auto-scroll on new messages
     useEffect(() => {
@@ -65,7 +72,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
 
     // Fallback polling when Echo is disconnected or offline
     useEffect(() => {
-        if (isEchoConnected || !currentChatUser) return undefined;
+        if (isEchoConnected || !currentChatUser || form.processing) return undefined;
 
         const interval = setInterval(() => {
             if (document.hidden) return;
@@ -77,11 +84,11 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
         }, 4000);
 
         return () => clearInterval(interval);
-    }, [isEchoConnected, currentChatUser?.id]);
+    }, [isEchoConnected, currentChatUser?.id, form.processing]);
 
     // Real-time WebSockets via Echo
     useEffect(() => {
-        if (!auth?.user?.id) return undefined;
+        if (!auth?.user?.id || !window.Echo) return undefined;
 
         const channel = window.Echo.private(`chat.${auth.user.id}`);
 
@@ -123,6 +130,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     };
 
     useEffect(() => {
+        setPendingMessages([]);
         if (currentChatUser) {
             setShowMobileList(false);
             if (document.hasFocus()) {
@@ -152,22 +160,26 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
         };
     }, [currentChatUser, showMobileList]);
 
+    const displayedMessages = useMemo(() => {
+        return [...activeMessages, ...pendingMessages];
+    }, [activeMessages, pendingMessages]);
+
     // Memoized messages grouped by date label
-    const groupedMessages = useMemo(() => activeMessages.reduce((groups, msg) => {
+    const groupedMessages = useMemo(() => displayedMessages.reduce((groups, msg) => {
         const date = formatChatDateLabel(msg.created_at, timeNow);
         if (!groups[date]) groups[date] = [];
         groups[date].push(msg);
         return groups;
-    }, {}), [activeMessages, timeNow]);
+    }, {}), [displayedMessages, timeNow]);
 
     // Extract all image attachments for the media gallery viewer
-    const galleryImages = useMemo(() => activeMessages
+    const galleryImages = useMemo(() => displayedMessages
         .filter(msg => msg.attachment_path && msg.attachment_type === 'image')
         .map(msg => ({
-            url: `/storage/${msg.attachment_path}`,
+            url: msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`,
             type: 'image',
             id: msg.id
-        })), [activeMessages]);
+        })), [displayedMessages]);
 
     return (
         <div className="h-screen overflow-hidden bg-[#FDFBF9] font-sans text-gray-800 flex flex-col" style={{ scrollbarGutter: 'stable' }}>
@@ -200,7 +212,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                                 ...currentChatUser,
                                 is_typing: isCounterpartTyping
                             }}
-                            activeMessages={activeMessages}
+                            activeMessages={displayedMessages}
                             currentOrderContext={currentOrderContext}
                             groupedMessages={groupedMessages}
                             galleryImages={galleryImages}
@@ -213,7 +225,18 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                         />
 
                         {currentChatUser && (
-                            <BuyerMessageInput currentChatUser={currentChatUser} />
+                            <BuyerMessageInput 
+                                currentChatUser={currentChatUser} 
+                                form={form}
+                                onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
+                                onSendFinished={(tempId, success) => {
+                                    if (success) {
+                                        setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                                    } else {
+                                        setPendingMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
+                                    }
+                                }}
+                            />
                         )}
                     </div>
 

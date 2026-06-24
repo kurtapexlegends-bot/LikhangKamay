@@ -46,7 +46,11 @@ export default function MessageInput({
     injectTemplate,
     templateSelectorRef,
     currentOrderContext,
-    handleOrderDecision
+    handleOrderDecision,
+
+    // Optimistic UI update callbacks
+    onSendStart,
+    onSendFinished
 }) {
     // 1. Resolve form hooks or individual props
     const data = form ? form.data : propData;
@@ -114,13 +118,34 @@ export default function MessageInput({
         if (!data.message.trim() && !data.attachment) return;
 
         const messageText = data.message;
+        const tempId = `temp-${Date.now()}`;
+
+        const optimisticMsg = {
+            id: tempId,
+            text: messageText,
+            attachment_path: attachmentPreview ? attachmentPreview.url : null,
+            attachment_type: attachmentPreview ? attachmentPreview.type : null,
+            sender: 'me',
+            created_at: new Date().toISOString(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            is_read: false,
+            status: 'sending'
+        };
+
+        if (onSendStart) {
+            onSendStart(optimisticMsg);
+        }
+
+        setData('message', '');
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto';
+        }
 
         if (form) {
             // Team Messages submission
             post(route('team-messages.store'), {
                 preserveScroll: true,
                 forceFormData: true,
-                only: ['activeMessages', 'conversations'],
                 onSuccess: () => {
                     if (attachmentPreview?.url) {
                         URL.revokeObjectURL(attachmentPreview.url);
@@ -131,9 +156,11 @@ export default function MessageInput({
                     if (inputRef.current) {
                         inputRef.current.focus();
                     }
+                    if (onSendFinished) onSendFinished(tempId, true);
                 },
                 onError: () => {
                     setData('message', messageText);
+                    if (onSendFinished) onSendFinished(tempId, false);
                 }
             });
         } else {
@@ -141,7 +168,6 @@ export default function MessageInput({
             post(route('chat.store'), {
                 preserveScroll: true,
                 forceFormData: true,
-                only: ['activeMessages', 'conversations'],
                 onSuccess: () => {
                     reset('attachment');
                     if (propRemoveAttachment) propRemoveAttachment();
@@ -149,16 +175,13 @@ export default function MessageInput({
                     if (inputRef.current) {
                         inputRef.current.focus();
                     }
+                    if (onSendFinished) onSendFinished(tempId, true);
                 },
                 onError: () => {
                     setData('message', messageText);
+                    if (onSendFinished) onSendFinished(tempId, false);
                 }
             });
-        }
-
-        setData('message', '');
-        if (inputRef.current) {
-            inputRef.current.style.height = 'auto';
         }
     };
 

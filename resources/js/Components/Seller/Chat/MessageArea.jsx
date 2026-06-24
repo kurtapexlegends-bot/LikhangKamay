@@ -89,7 +89,7 @@ export default function MessageArea({
                                                     </div>
                                                 ) : (
                                                     <img
-                                                        src={`/storage/${message.attachment_path}`}
+                                                        src={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
                                                         alt="Team attachment"
                                                         className="max-h-56 w-full cursor-zoom-in object-contain transition hover:scale-[1.02]"
                                                         onClick={() => {
@@ -108,7 +108,7 @@ export default function MessageArea({
 
                                         {message.attachment_path && message.attachment_type === 'document' && (
                                             <a
-                                                href={`/storage/${message.attachment_path}`}
+                                                href={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className={`mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
@@ -128,14 +128,28 @@ export default function MessageArea({
                                                 message.sender === 'me' ? 'text-white/75 justify-end' : 'text-stone-400'
                                             }`}
                                         >
-                                            <Clock size={10} />
-                                            <span>{message.time}</span>
-                                            {message.sender === 'me' && (
-                                                message.isRead || message.is_read ? (
-                                                    <CheckCheck size={13} className="text-clay-200 shrink-0" />
-                                                ) : (
-                                                    <Check size={13} className="text-white/60 shrink-0" />
-                                                )
+                                            {message.status === 'sending' ? (
+                                                <>
+                                                    <Clock size={10} className="animate-pulse" />
+                                                    <span className="animate-pulse">Sending...</span>
+                                                </>
+                                            ) : message.status === 'failed' ? (
+                                                <>
+                                                    <AlertCircle size={11} className={`${message.sender === 'me' ? 'text-red-200' : 'text-red-500'} shrink-0`} />
+                                                    <span className={`${message.sender === 'me' ? 'text-red-200 font-bold' : 'text-red-500 font-bold'}`}>Failed to send</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Clock size={10} />
+                                                    <span>{message.time}</span>
+                                                    {message.sender === 'me' && (
+                                                        message.isRead || message.is_read ? (
+                                                            <CheckCheck size={13} className="text-clay-200 shrink-0" />
+                                                        ) : (
+                                                            <Check size={13} className="text-white/60 shrink-0" />
+                                                        )
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </div>

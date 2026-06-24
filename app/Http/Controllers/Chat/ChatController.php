@@ -81,7 +81,11 @@ class ChatController extends Controller
             report($e);
         }
 
-        return redirect()->back();
+        if ($sellerPerspective) {
+            return redirect()->route('chat.index', ['user_id' => $request->receiver_id]);
+        } else {
+            return redirect()->route('buyer.chat', ['user_id' => $request->receiver_id]);
+        }
     }
 
     public function markAsSeen(Request $request) 

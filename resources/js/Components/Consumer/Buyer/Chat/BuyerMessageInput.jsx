@@ -10,7 +10,7 @@ const BUYER_QUICK_REPLIES = [
     'Thank you so much!'
 ];
 
-export default function BuyerMessageInput({ currentChatUser }) {
+export default function BuyerMessageInput({ currentChatUser, form, onSendStart, onSendFinished }) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
@@ -21,11 +21,7 @@ export default function BuyerMessageInput({ currentChatUser }) {
     const emojiPickerRef = useRef(null);
     const lastTypingSignal = useRef(0);
 
-    const { data, setData, post, reset, processing } = useForm({
-        receiver_id: currentChatUser?.id || '',
-        message: '',
-        attachment: null
-    });
+    const { data, setData, post, reset, processing } = form;
 
     // Sync receiver_id and focus on chat user change
     useEffect(() => {
@@ -59,26 +55,44 @@ export default function BuyerMessageInput({ currentChatUser }) {
         if (!data.message.trim() && !data.attachment) return;
 
         const messageText = data.message;
+        const tempId = `temp-${Date.now()}`;
+
+        const optimisticMsg = {
+            id: tempId,
+            text: messageText,
+            attachment_path: attachmentPreview ? attachmentPreview.url : null,
+            attachment_type: attachmentPreview ? attachmentPreview.type : null,
+            sender: 'me',
+            created_at: new Date().toISOString(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            is_read: false,
+            status: 'sending'
+        };
+
+        if (onSendStart) {
+            onSendStart(optimisticMsg);
+        }
+
+        setData('message', '');
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto';
+        }
 
         post(route('chat.store'), {
-            only: ['activeMessages', 'conversations'],
             onSuccess: () => {
                 reset('attachment');
                 revokeAttachmentPreview();
                 setAttachment(null);
                 setAttachmentPreview(null);
                 setShowEmojiPicker(false);
+                if (onSendFinished) onSendFinished(tempId, true);
             },
             onError: () => {
                 setData('message', messageText);
+                if (onSendFinished) onSendFinished(tempId, false);
             },
             preserveScroll: true
         });
-
-        setData('message', '');
-        if (inputRef.current) {
-            inputRef.current.style.height = 'auto';
-        }
     };
 
     const handleFileChange = (e) => {

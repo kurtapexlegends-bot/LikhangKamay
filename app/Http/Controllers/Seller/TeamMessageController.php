@@ -164,7 +164,7 @@ class TeamMessageController extends Controller
             report($e);
         }
 
-        return back();
+        return redirect()->route('team-messages.index', ['user_id' => $receiver->id]);
     }
 
     public function markAsSeen(Request $request): JsonResponse
