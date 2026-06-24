@@ -183,7 +183,7 @@ class ChatController extends Controller
             // Also pre-fetch unread counts
             $unreadCounts = Message::whereIn('sender_id', $contactIds)
                 ->where('receiver_id', $userId)
-                ->where('is_read', false)
+                ->whereRaw('is_read = false')
                 ->selectRaw('sender_id, count(*) as count')
                 ->groupBy('sender_id')
                 ->pluck('count', 'sender_id');

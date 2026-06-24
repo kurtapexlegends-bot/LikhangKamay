@@ -50,7 +50,7 @@ class HandleInertiaRequests extends Middleware
             // LAZY LOADED: Notifications and Admin counts (reduces TTFB on every route)
             'notifications' => Inertia::lazy(fn () => $user ? $user->getNotificationsQuery()->latest()->take(10)->get()->map(fn ($n) => NotificationPresenter::present($n, $user)) : []),
             'unreadNotificationCount' => Inertia::lazy(fn () => $user ? $user->getUnreadNotificationsQuery()->count() : 0),
-            'unreadMessageCount' => Inertia::lazy(fn () => $user ? \App\Models\Message::where('receiver_id', $user->id)->where('is_read', false)->count() : 0),
+            'unreadMessageCount' => Inertia::lazy(fn () => $user ? \App\Models\Message::where('receiver_id', $user->id)->whereRaw('is_read = false')->count() : 0),
             'pendingArtisanCount' => Inertia::lazy(fn () => $user && $user->role === 'super_admin' 
                 ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
                 : 0),

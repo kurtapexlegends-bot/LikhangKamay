@@ -64,7 +64,7 @@ class TeamMessageQueryService
             ->where('seller_owner_id', $sellerOwner->id)
             ->whereIn('sender_id', $contactIds)
             ->where('receiver_id', $actor->id)
-            ->where('is_read', false)
+            ->whereRaw('is_read = false')
             ->selectRaw('sender_id, count(*) as count')
             ->groupBy('sender_id')
             ->pluck('count', 'sender_id');

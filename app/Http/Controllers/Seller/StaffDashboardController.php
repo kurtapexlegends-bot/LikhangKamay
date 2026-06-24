@@ -42,7 +42,7 @@ class StaffDashboardController extends Controller
         $unreadTeamMessages = TeamMessage::query()
             ->where('seller_owner_id', $seller->id)
             ->where('receiver_id', $user->id)
-            ->where('is_read', false)
+            ->whereRaw('is_read = false')
             ->count();
 
         return Inertia::render('Staff/Dashboard', [
