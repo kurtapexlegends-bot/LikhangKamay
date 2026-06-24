@@ -101,9 +101,9 @@ class TeamMessageController extends Controller
         }
 
         return Inertia::render('Seller/Chat/TeamMessages', [
-            'conversations' => $conversations,
-            'activeMessages' => $messages,
-            'currentChatUser' => $activeContact ? [
+            'conversations' => fn () => $conversations,
+            'activeMessages' => fn () => $messages,
+            'currentChatUser' => fn () => $activeContact ? [
                 'id' => $activeContact->id,
                 'name' => $activeContact->name,
                 'avatar' => $activeContact->avatar,
@@ -158,6 +158,12 @@ class TeamMessageController extends Controller
 
         $receiver->notify(new NewTeamMessageNotification($message, $actor->name));
 
+        try {
+            broadcast(new \App\Events\TeamMessageSent($message))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return back();
     }
 
@@ -179,6 +185,12 @@ class TeamMessageController extends Controller
             ->where('receiver_id', $actor->id)
             ->update(['is_read' => true]);
 
+        try {
+            broadcast(new \App\Events\TeamMessageSeen($sender->id, $actor->id))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return response()->json(['success' => true]);
     }
 
@@ -195,6 +207,12 @@ class TeamMessageController extends Controller
         $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
 
         Cache::put("team-typing-{$actor->id}-to-{$receiver->id}", true, 4);
+
+        try {
+            broadcast(new \App\Events\TeamUserTyping($receiver->id, $actor->id))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json(['success' => true]);
     }

@@ -75,6 +75,12 @@ class ChatController extends Controller
         $senderName = $senderIdentity->shop_name ?: $senderIdentity->name;
         $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
 
+        try {
+            broadcast(new \App\Events\MessageSent($msg))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return redirect()->back();
     }
 
@@ -96,6 +102,12 @@ class ChatController extends Controller
         Message::where('sender_id', $request->sender_id)
             ->where('receiver_id', $conversationUserId)
             ->update(['is_read' => true]);
+
+        try {
+            broadcast(new \App\Events\MessageSeen($request->sender_id, $conversationUserId))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json(['success' => true]);
     }
@@ -119,6 +131,12 @@ class ChatController extends Controller
 
         // Store typing status in cache for 4 seconds
         Cache::put("typing-{$userId}-to-{$receiverId}", true, 4);
+
+        try {
+            broadcast(new \App\Events\UserTyping($receiverId, $userId))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json(['success' => true]);
     }
@@ -150,12 +168,17 @@ class ChatController extends Controller
             $latestMessagesQuery = collect();
             $unreadCounts = collect();
         } else {
-            // Pre-fetch latest messages for all contacts
-            $latestMessagesQuery = Message::where(function($q) use ($userId, $contactIds) {
-                $q->where('sender_id', $userId)->whereIn('receiver_id', $contactIds);
-            })->orWhere(function($q) use ($userId, $contactIds) {
-                $q->whereIn('sender_id', $contactIds)->where('receiver_id', $userId);
-            })->latest()->get();
+            // Pre-fetch only the latest message for each contact to avoid loading the entire message history
+            $latestMessagesSubquery = Message::query()
+                ->selectRaw('MAX(id) as max_id')
+                ->where(function($q) use ($userId, $contactIds) {
+                    $q->where('sender_id', $userId)->whereIn('receiver_id', $contactIds);
+                })->orWhere(function($q) use ($userId, $contactIds) {
+                    $q->whereIn('sender_id', $contactIds)->where('receiver_id', $userId);
+                })
+                ->groupBy(\Illuminate\Support\Facades\DB::raw('CASE WHEN sender_id = ' . (int)$userId . ' THEN receiver_id ELSE sender_id END'));
+
+            $latestMessagesQuery = Message::whereIn('id', $latestMessagesSubquery)->get();
 
             // Also pre-fetch unread counts
             $unreadCounts = Message::whereIn('sender_id', $contactIds)
@@ -239,11 +262,11 @@ class ChatController extends Controller
         }
 
         return Inertia::render($viewName, [
-            'conversations' => $conversations,
-            'activeMessages' => $messages,
-            'currentChatUser' => $activeUser,
-            'currentOrderContext' => $currentOrderContext,
-            'chatTemplates' => $sellerPerspective ? \App\Models\ChatMessageTemplate::where('user_id', $this->sellerOwnerId())->get() : [],
+            'conversations' => fn () => $conversations,
+            'activeMessages' => fn () => $messages,
+            'currentChatUser' => fn () => $activeUser,
+            'currentOrderContext' => fn () => $currentOrderContext,
+            'chatTemplates' => $sellerPerspective ? fn () => \App\Models\ChatMessageTemplate::where('user_id', $this->sellerOwnerId())->get() : [],
         ]);
     }
 

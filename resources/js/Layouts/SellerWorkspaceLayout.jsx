@@ -9,7 +9,7 @@ const SellerWorkspaceShellContext = createContext({
     closeSidebar: () => {},
 });
 
-export default function SellerWorkspaceLayout({ active, children, sidebarUser = null }) {
+export default function SellerWorkspaceLayout({ active, children, sidebarUser = null, overflowHidden = false }) {
     const { auth } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -77,11 +77,15 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
 
                 <div 
                     scroll-region="true" 
-                    className={`flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain transition-all duration-300 ${
+                    className={`flex min-w-0 flex-1 flex-col overscroll-contain transition-all duration-300 ${
+                        overflowHidden ? 'overflow-hidden' : 'overflow-y-auto'
+                    } ${
                         isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
                     }`}
                 >
-                    <div className="max-w-[90rem] mx-auto w-full flex-1 flex flex-col min-w-0">
+                    <div className={`max-w-[90rem] mx-auto w-full flex-1 flex flex-col min-w-0 ${
+                        overflowHidden ? 'min-h-0 overflow-hidden' : ''
+                    }`}>
                         {children}
                     </div>
                 </div>

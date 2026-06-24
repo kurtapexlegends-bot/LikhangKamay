@@ -4,6 +4,7 @@ import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatDateLabel } from '@/lib/chatTime';
+import useEchoConnection from '@/hooks/useEchoConnection';
 
 // Extracted Modular Subcomponents
 import BuyerChatContacts from '@/Components/Consumer/Buyer/Chat/BuyerChatContacts';
@@ -14,12 +15,15 @@ import BuyerSellerInfoPanel from '@/Components/Consumer/Buyer/Chat/BuyerSellerIn
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
 export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
+    const isEchoConnected = useEchoConnection();
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
     const [timeNow, setTimeNow] = useState(Date.now());
     const [activeMedia, setActiveMedia] = useState(null);
     const [isDesktop, setIsDesktop] = useState(false);
+    const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+    const typingTimeoutRef = useRef(null);
     const messagesEndRef = useRef(null);
 
     // Auto-scroll on new messages
@@ -55,14 +59,62 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
         return () => clearInterval(interval);
     }, []);
 
-    // Polling active messages and conversations state
     useEffect(() => {
-        if (!currentChatUser) return undefined;
+        setIsCounterpartTyping(!!currentChatUser?.is_typing);
+    }, [currentChatUser?.id, currentChatUser?.is_typing]);
+
+    // Fallback polling when Echo is disconnected or offline
+    useEffect(() => {
+        if (isEchoConnected || !currentChatUser) return undefined;
+
         const interval = setInterval(() => {
-            router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
-        }, 3000);
+            if (document.hidden) return;
+            router.reload({
+                only: ['activeMessages', 'conversations', 'currentOrderContext'],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        }, 4000);
+
         return () => clearInterval(interval);
-    }, [currentChatUser]);
+    }, [isEchoConnected, currentChatUser?.id]);
+
+    // Real-time WebSockets via Echo
+    useEffect(() => {
+        if (!auth?.user?.id) return undefined;
+
+        const channel = window.Echo.private(`chat.${auth.user.id}`);
+
+        channel.listen('.message.sent', (e) => {
+            if (currentChatUser && e.message.sender_id === currentChatUser.id) {
+                router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
+            } else {
+                router.reload({ only: ['conversations'] });
+            }
+        });
+
+        channel.listen('.message.seen', (e) => {
+            if (currentChatUser && e.senderId === currentChatUser.id) {
+                router.reload({ only: ['activeMessages'] });
+            }
+        });
+
+        channel.listen('.user.typing', (e) => {
+            if (currentChatUser && e.senderId === currentChatUser.id) {
+                setIsCounterpartTyping(true);
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                    setIsCounterpartTyping(false);
+                }, 4000);
+            }
+        });
+
+        return () => {
+            channel.stopListening('.message.sent');
+            channel.stopListening('.message.seen');
+            channel.stopListening('.user.typing');
+        };
+    }, [auth.user.id, currentChatUser?.id]);
 
     // Mark messages as seen/read
     const markAsRead = (senderId) => {
@@ -144,7 +196,10 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                     {/* Messages convo window pane */}
                     <div className={`flex-1 flex flex-col min-h-0 overflow-hidden bg-white ${!showMobileList ? 'flex' : 'hidden sm:flex'}`}>
                         <BuyerMessageWindow
-                            currentChatUser={currentChatUser}
+                            currentChatUser={{
+                                ...currentChatUser,
+                                is_typing: isCounterpartTyping
+                            }}
                             activeMessages={activeMessages}
                             currentOrderContext={currentOrderContext}
                             groupedMessages={groupedMessages}

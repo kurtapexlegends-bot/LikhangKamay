@@ -57,16 +57,28 @@ export default function BuyerMessageInput({ currentChatUser }) {
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (!data.message.trim() && !data.attachment) return;
+
+        const messageText = data.message;
+
         post(route('chat.store'), {
+            only: ['activeMessages', 'conversations'],
             onSuccess: () => {
-                reset('message', 'attachment');
+                reset('attachment');
                 revokeAttachmentPreview();
                 setAttachment(null);
                 setAttachmentPreview(null);
                 setShowEmojiPicker(false);
             },
+            onError: () => {
+                setData('message', messageText);
+            },
             preserveScroll: true
         });
+
+        setData('message', '');
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto';
+        }
     };
 
     const handleFileChange = (e) => {
@@ -236,7 +248,7 @@ export default function BuyerMessageInput({ currentChatUser }) {
                             disabled={processing || (!data.message.trim() && !data.attachment)}
                             className="h-12 w-12 rounded-2xl flex items-center justify-center transition-all shrink-0 disabled:opacity-50 disabled:hover:shadow-none disabled:cursor-not-allowed bg-clay-600 text-white hover:bg-clay-700 hover:shadow-lg"
                         >
-                            <Send size={20} className="ml-1" />
+                            <Send size={20} />
                         </button>
                     </div>
                 </form>

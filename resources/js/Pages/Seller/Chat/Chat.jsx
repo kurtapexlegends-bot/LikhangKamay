@@ -5,6 +5,7 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import SellerHeader from '@/Layouts/SellerHeader';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+import useEchoConnection from '@/hooks/useEchoConnection';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
 
@@ -19,6 +20,7 @@ const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
 export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, chatTemplates = [] }) {
     const { openSidebar } = useSellerWorkspaceShell();
+    const isEchoConnected = useEchoConnection();
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
@@ -29,6 +31,8 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
     const [timeNow, setTimeNow] = useState(Date.now());
+    const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+    const typingTimeoutRef = useRef(null);
 
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
@@ -104,14 +108,62 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         return () => clearInterval(interval);
     }, []);
 
-    // Real-time polling
     useEffect(() => {
-        if (!currentChatUser) return;
+        setIsCounterpartTyping(!!currentChatUser?.is_typing);
+    }, [currentChatUser?.id, currentChatUser?.is_typing]);
+
+    // Fallback polling when Echo is disconnected or offline
+    useEffect(() => {
+        if (isEchoConnected || !currentChatUser) return undefined;
+
         const interval = setInterval(() => {
-            router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
-        }, 3000);
+            if (document.hidden) return;
+            router.reload({
+                only: ['activeMessages', 'conversations', 'currentOrderContext'],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        }, 4000);
+
         return () => clearInterval(interval);
-    }, [currentChatUser]);
+    }, [isEchoConnected, currentChatUser?.id]);
+
+    // Real-time WebSockets via Echo
+    useEffect(() => {
+        if (!auth?.user?.id) return undefined;
+
+        const channel = window.Echo.private(`chat.${auth.user.id}`);
+
+        channel.listen('.message.sent', (e) => {
+            if (currentChatUser && e.message.sender_id === currentChatUser.id) {
+                router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
+            } else {
+                router.reload({ only: ['conversations'] });
+            }
+        });
+
+        channel.listen('.message.seen', (e) => {
+            if (currentChatUser && e.senderId === currentChatUser.id) {
+                router.reload({ only: ['activeMessages'] });
+            }
+        });
+
+        channel.listen('.user.typing', (e) => {
+            if (currentChatUser && e.senderId === currentChatUser.id) {
+                setIsCounterpartTyping(true);
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                    setIsCounterpartTyping(false);
+                }, 4000);
+            }
+        });
+
+        return () => {
+            channel.stopListening('.message.sent');
+            channel.stopListening('.message.seen');
+            channel.stopListening('.user.typing');
+        };
+    }, [auth.user.id, currentChatUser?.id]);
 
     // Auto-scroll on new messages
     useEffect(() => {
@@ -304,7 +356,10 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                         {currentChatUser ? (
                             <>
                                 <MessageWindow
-                                    currentChatUser={currentChatUser}
+                                    currentChatUser={{
+                                        ...currentChatUser,
+                                        is_typing: isCounterpartTyping
+                                    }}
                                     currentOrderContext={currentOrderContext}
                                     groupedMessages={groupedMessages}
                                     galleryImages={galleryImages}
@@ -400,4 +455,4 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     );
 }
 
-Chat.layout = page => <SellerWorkspaceLayout active="chat">{page}</SellerWorkspaceLayout>;
+Chat.layout = page => <SellerWorkspaceLayout active="chat" overflowHidden={true}>{page}</SellerWorkspaceLayout>;

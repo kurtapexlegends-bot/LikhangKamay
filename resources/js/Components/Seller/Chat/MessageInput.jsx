@@ -113,39 +113,52 @@ export default function MessageInput({
 
         if (!data.message.trim() && !data.attachment) return;
 
+        const messageText = data.message;
+
         if (form) {
             // Team Messages submission
             post(route('team-messages.store'), {
                 preserveScroll: true,
                 forceFormData: true,
+                only: ['activeMessages', 'conversations'],
                 onSuccess: () => {
                     if (attachmentPreview?.url) {
                         URL.revokeObjectURL(attachmentPreview.url);
                     }
-                    reset('message', 'attachment');
+                    reset('attachment');
                     if (setAttachmentPreview) setAttachmentPreview(null);
                     setShowEmojiPicker(false);
                     if (inputRef.current) {
-                        inputRef.current.style.height = 'auto';
                         inputRef.current.focus();
                     }
                 },
+                onError: () => {
+                    setData('message', messageText);
+                }
             });
         } else {
             // Seller-Buyer Chat submission
             post(route('chat.store'), {
                 preserveScroll: true,
                 forceFormData: true,
+                only: ['activeMessages', 'conversations'],
                 onSuccess: () => {
-                    reset('message', 'attachment');
+                    reset('attachment');
                     if (propRemoveAttachment) propRemoveAttachment();
                     setShowEmojiPicker(false);
                     if (inputRef.current) {
-                        inputRef.current.style.height = 'auto';
                         inputRef.current.focus();
                     }
                 },
+                onError: () => {
+                    setData('message', messageText);
+                }
             });
+        }
+
+        setData('message', '');
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto';
         }
     };
 
@@ -382,7 +395,7 @@ export default function MessageInput({
                         disabled={processing || isMessagesReadOnly || (!data.message.trim() && !data.attachment)}
                         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-clay-600 text-white transition-all hover:bg-clay-700 hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-none disabled:cursor-not-allowed"
                     >
-                        <Send size={20} className="ml-1" />
+                        <Send size={20} />
                     </button>
                 </form>
 
