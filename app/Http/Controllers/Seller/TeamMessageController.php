@@ -9,6 +9,7 @@ use App\Models\TeamMessage;
 use App\Models\User;
 use App\Services\Chat\TeamMessageQueryService;
 use App\Notifications\NewTeamMessageNotification;
+use App\Notifications\TeamMessageMentionedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -317,6 +318,8 @@ class TeamMessageController extends Controller
                 report($e);
             }
 
+            $this->parseMentionsAndNotify($message, $actor);
+
             return redirect()->route('team-messages.index', ['channel_id' => $channel->id]);
         }
 
@@ -349,6 +352,8 @@ class TeamMessageController extends Controller
         } catch (\Throwable $e) {
             report($e);
         }
+
+        $this->parseMentionsAndNotify($message, $actor);
 
         return redirect()->route('team-messages.index', ['user_id' => $receiver->id]);
     }
@@ -669,15 +674,51 @@ class TeamMessageController extends Controller
     {
         return $message->reactions
             ->groupBy('emoji')
-            ->map(function ($group, $emoji) use ($actor) {
-                return [
-                    'emoji' => $emoji,
-                    'count' => $group->count(),
-                    'reacted_by_me' => $group->contains('user_id', $actor->id),
-                    'users_list' => $group->pluck('user.name')->filter()->values()->all(),
-                ];
-            })
+            ->map(fn ($group, $emoji) => [
+                'emoji' => $emoji,
+                'count' => $group->count(),
+                'reacted_by_me' => $group->contains('user_id', $actor->id),
+                'users_list' => $group->pluck('user.name')->filter()->values()->all(),
+            ])
             ->values()
             ->all();
+    }
+
+    private function parseMentionsAndNotify(TeamMessage $message, User $actor): void
+    {
+        if (blank($message->message)) {
+            return;
+        }
+
+        preg_match_all('/@\[([^\]]+)\]/', $message->message, $matches);
+        $names = array_unique($matches[1] ?? []);
+
+        if (empty($names)) {
+            return;
+        }
+
+        $eligibleContacts = $this->eligibleContacts($actor, $message->seller_owner_id);
+
+        if ($actor->isStaff()) {
+            $sellerOwner = User::find($message->seller_owner_id);
+            if ($sellerOwner) {
+                $eligibleContacts->push($sellerOwner);
+            }
+        }
+
+        foreach ($names as $name) {
+            $targetUser = $eligibleContacts->first(function ($user) use ($name) {
+                return strcasecmp($user->name, $name) === 0;
+            });
+
+            if ($targetUser && $targetUser->id !== $actor->id) {
+                $targetUser->unreadNotifications()
+                    ->where('type', TeamMessageMentionedNotification::class)
+                    ->where('data->team_message_id', $message->id)
+                    ->delete();
+
+                $targetUser->notify(new TeamMessageMentionedNotification($message, $actor->name));
+            }
+        }
     }
 }

@@ -458,6 +458,7 @@ export default function TeamMessages({
                                 currentChatUser={currentChatUser}
                                 currentChannel={null}
                                 form={form}
+                                eligibleContacts={eligibleContacts}
                                 onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
                                 onSendFinished={(tempId, success) => {
                                     if (success) {
@@ -530,6 +531,7 @@ export default function TeamMessages({
                                 currentChatUser={null}
                                 currentChannel={currentChannel}
                                 form={form}
+                                eligibleContacts={eligibleContacts}
                                 onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
                                 onSendFinished={(tempId, success) => {
                                     if (success) {
@@ -577,6 +579,7 @@ export default function TeamMessages({
                         loading={loadingThread}
                         onClose={() => setActiveThreadParent(null)}
                         onToggleReaction={handleToggleReaction}
+                        eligibleContacts={eligibleContacts}
                         onReplySuccess={() => {
                             if (window.axios) {
                                 window.axios.get(route('team-messages.threads.show', activeThreadParent.id))

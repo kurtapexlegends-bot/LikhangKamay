@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { AlertCircle, MessageSquareText, FileIcon, Clock, Check, CheckCheck, Smile } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import { usePage } from '@inertiajs/react';
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
@@ -29,6 +30,8 @@ export default function MessageArea({
     onReplyInThread,
     onToggleReaction,
 }) {
+    const { auth } = usePage().props;
+    const authUser = auth?.user;
     const [activeMedia, setActiveMedia] = useState(null);
     const [brokenMessageImages, setBrokenMessageImages] = useState({});
     const [activePickerId, setActivePickerId] = useState(null);
@@ -177,7 +180,7 @@ export default function MessageArea({
                                                 </a>
                                             )}
 
-                                            {message.text ? <p className="text-sm leading-6">{message.text}</p> : null}
+                                            {message.text ? <p className="text-sm leading-6 whitespace-pre-wrap">{renderMessageTextWithMentions(message.text, authUser)}</p> : null}
                                             <div
                                                 className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${
                                                     message.sender === 'me' ? 'text-white/75 justify-end' : 'text-stone-400'
@@ -285,7 +288,6 @@ export default function MessageArea({
                         </div>
                     </div>
                 ))}
-
                 {Object.keys(groupedMessages).length === 0 && (
                     <div className="flex min-h-[50vh] flex-col items-center justify-center px-6 text-center">
                         <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-stone-100 text-stone-300 shadow-sm">
@@ -358,4 +360,45 @@ function ReactionPicker({ onSelect, onClose, className = '' }) {
             ))}
         </div>
     );
+}
+
+function renderMessageTextWithMentions(text, authUser) {
+    if (!text) return null;
+    
+    const regex = /@\[([^\]]+)\]/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = regex.exec(text)) !== null) {
+        const matchIndex = match.index;
+        const name = match[1];
+        
+        if (matchIndex > lastIndex) {
+            parts.push(text.slice(lastIndex, matchIndex));
+        }
+        
+        const isMe = authUser && authUser.name && authUser.name.toLowerCase() === name.toLowerCase();
+        
+        parts.push(
+            <span
+                key={matchIndex}
+                className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold font-sans ${
+                    isMe 
+                        ? 'bg-clay-100 text-clay-850 border border-clay-200' 
+                        : 'bg-stone-100 text-stone-700 border border-stone-200/60'
+                }`}
+            >
+                @{name}
+            </span>
+        );
+        
+        lastIndex = regex.lastIndex;
+    }
+    
+    if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+    }
+    
+    return parts.length > 0 ? parts : text;
 }
