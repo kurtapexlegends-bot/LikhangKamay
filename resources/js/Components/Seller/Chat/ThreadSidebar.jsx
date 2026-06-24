@@ -163,7 +163,7 @@ export default function ThreadSidebar({
                                 {reply.sender !== 'me' && (
                                     <UserAvatar
                                         user={{ name: reply.sender_name, avatar: reply.sender_avatar }}
-                                        className="w-6.5 h-6.5 text-[9px] shrink-0 shadow-sm"
+                                        className="w-7 h-7 text-[9px] shrink-0 shadow-sm"
                                     />
                                 )}
                                 <div className="flex flex-col max-w-[82%]">
