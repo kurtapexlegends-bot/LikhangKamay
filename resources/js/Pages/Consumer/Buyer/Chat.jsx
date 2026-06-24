@@ -212,10 +212,10 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                     {/* Messages convo window pane */}
                     <div className={`flex-1 flex flex-col min-h-0 overflow-hidden bg-white ${!showMobileList ? 'flex' : 'hidden sm:flex'}`}>
                         <BuyerMessageWindow
-                            currentChatUser={{
+                            currentChatUser={currentChatUser ? {
                                 ...currentChatUser,
                                 is_typing: isCounterpartTyping
-                            }}
+                            } : null}
                             activeMessages={displayedMessages}
                             currentOrderContext={currentOrderContext}
                             groupedMessages={groupedMessages}
