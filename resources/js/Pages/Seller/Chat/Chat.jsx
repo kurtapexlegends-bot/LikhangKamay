@@ -136,6 +136,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         const channel = window.Echo.private(`chat.${auth.user.id}`);
 
         channel.listen('.message.sent', (e) => {
+            if (e.message.sender_id === auth.user.id) return;
             if (currentChatUser && e.message.sender_id === currentChatUser.id) {
                 router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
             } else {

@@ -73,6 +73,7 @@ export default function TeamMessages({ auth, conversations = [], activeMessages 
         const channel = window.Echo.private(`team-chat.${auth.user.id}`);
 
         channel.listen('.team.message.sent', (e) => {
+            if (e.message.sender_id === auth.user.id) return;
             if (currentChatUser && e.message.sender_id === currentChatUser.id) {
                 router.reload({ 
                     only: ['activeMessages', 'conversations', 'currentChatUser'],
