@@ -13,6 +13,7 @@ import {
 
 export default function MessageInput({ 
     currentChatUser, 
+    currentChannel,
     form,
 
     // Props passed by Chat.jsx (Seller-Buyer Chat)
@@ -105,12 +106,12 @@ export default function MessageInput({
         }
     };
 
-    // When chat user changes, focus input
+    // When chat user or channel changes, focus input
     useEffect(() => {
-        if (currentChatUser) {
+        if (currentChatUser || currentChannel) {
             inputRef.current?.focus();
         }
-    }, [currentChatUser]);
+    }, [currentChatUser?.id, currentChannel?.id]);
 
     const handleSubmit = (event) => {
         event.preventDefault();

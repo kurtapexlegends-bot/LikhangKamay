@@ -34,13 +34,24 @@ class TeamMessageController extends Controller
         $actor = $this->authorizeTeamActor($request->user());
         $sellerOwner = $this->sellerOwner();
         $contactId = $request->integer('user_id');
+        $channelId = $request->integer('channel_id');
         $contacts = $this->eligibleContacts($actor, $sellerOwner->id);
-        $contactIds = $contacts->pluck('id');
+
+        // Fetch channels actor is a member of
+        $channels = \App\Models\TeamChannel::where('seller_owner_id', $sellerOwner->id)
+            ->whereHas('members', function ($q) use ($actor) {
+                $q->where('user_id', $actor->id);
+            })
+            ->with(['members'])
+            ->get();
 
         $latestMessages = $this->queryService->getLatestMessagesPerContact($actor, $sellerOwner, $contacts);
         $unreadCounts = $this->queryService->getUnreadCounts($actor, $sellerOwner, $contacts);
 
-        $conversations = $contacts->map(function (User $contact) use ($latestMessages, $unreadCounts, $actor) {
+        $latestChannelMessages = $this->queryService->getLatestMessagesPerChannel($channels);
+        $channelUnreadCounts = $this->queryService->getChannelUnreadCounts($actor, $channels);
+
+        $directConversations = $contacts->map(function (User $contact) use ($latestMessages, $unreadCounts, $actor) {
             $lastMessage = $latestMessages->first(function (TeamMessage $message) use ($contact, $actor) {
                 return ($message->sender_id === $actor->id && $message->receiver_id === $contact->id)
                     || ($message->sender_id === $contact->id && $message->receiver_id === $actor->id);
@@ -57,8 +68,29 @@ class TeamMessageController extends Controller
                 'is_online' => Cache::has('user-is-online-' . $contact->id),
                 'last_seen_at_iso' => $contact->last_seen_at?->toIso8601String(),
                 'last_seen' => $contact->last_seen_at ? $contact->last_seen_at->diffForHumans() : 'Offline',
+                'type' => 'direct',
             ];
-        })->values();
+        });
+
+        $channelConversations = $channels->map(function ($channel) use ($latestChannelMessages, $channelUnreadCounts) {
+            $lastMessage = $latestChannelMessages->firstWhere('team_channel_id', $channel->id);
+
+            return [
+                'id' => $channel->id,
+                'name' => $channel->name,
+                'avatar' => null,
+                'roleLabel' => 'Channel',
+                'lastMessage' => $lastMessage ? $lastMessage->sender->name . ': ' . $this->summarizeLastMessage($lastMessage) : 'Start an internal conversation',
+                'time' => $lastMessage?->created_at?->shortAbsoluteDiffForHumans() ?: '',
+                'unread' => (int) ($channelUnreadCounts[$channel->id] ?? 0),
+                'is_online' => false,
+                'last_seen' => '',
+                'type' => 'channel',
+                'description' => $channel->description,
+            ];
+        });
+
+        $conversations = $directConversations->concat($channelConversations)->values();
 
         $activeContact = $contactId
             ? $contacts->firstWhere('id', $contactId)
@@ -68,11 +100,20 @@ class TeamMessageController extends Controller
             abort(403, 'Unauthorized team conversation.');
         }
 
+        $activeChannel = $channelId
+            ? $channels->firstWhere('id', $channelId)
+            : null;
+
+        if ($channelId && !$activeChannel) {
+            abort(403, 'Unauthorized team channel conversation.');
+        }
+
         $messages = [];
 
         if ($activeContact) {
             $messages = TeamMessage::query()
                 ->where('seller_owner_id', $sellerOwner->id)
+                ->whereNull('team_channel_id')
                 ->where(function ($query) use ($actor, $activeContact) {
                     $query->where(function ($branch) use ($actor, $activeContact) {
                         $branch->where('sender_id', $actor->id)
@@ -98,6 +139,33 @@ class TeamMessageController extends Controller
                 ])
                 ->values()
                 ->all();
+        } elseif ($activeChannel) {
+            $messages = TeamMessage::query()
+                ->with('sender')
+                ->where('team_channel_id', $activeChannel->id)
+                ->orderBy('created_at')
+                ->get()
+                ->map(fn (TeamMessage $message) => [
+                    'id' => $message->id,
+                    'text' => $message->message,
+                    'attachment_path' => $message->attachment_path,
+                    'attachment_type' => $message->attachment_type,
+                    'sender' => $message->sender_id === $actor->id ? 'me' : 'other',
+                    'sender_name' => $message->sender?->name ?: 'Unknown',
+                    'sender_avatar' => $message->sender?->avatar,
+                    'time' => $message->created_at->format('g:i A'),
+                    'dateLabel' => $message->created_at->isToday()
+                        ? 'Today'
+                        : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
+                    'isRead' => true,
+                ])
+                ->values()
+                ->all();
+
+            // Mark the channel as seen by updating last_read_at
+            \App\Models\TeamChannelMember::where('team_channel_id', $activeChannel->id)
+                ->where('user_id', $actor->id)
+                ->update(['last_read_at' => now()]);
         }
 
         return Inertia::render('Seller/Chat/TeamMessages', [
@@ -115,6 +183,24 @@ class TeamMessageController extends Controller
                 'last_seen' => $activeContact->last_seen_at ? $activeContact->last_seen_at->diffForHumans() : 'Offline',
                 'is_typing' => Cache::has("team-typing-{$activeContact->id}-to-{$actor->id}"),
             ] : null,
+            'currentChannel' => fn () => $activeChannel ? [
+                'id' => $activeChannel->id,
+                'name' => $activeChannel->name,
+                'description' => $activeChannel->description,
+                'members_count' => $activeChannel->members()->count(),
+                'members' => $activeChannel->members->map(fn ($member) => [
+                    'id' => $member->id,
+                    'name' => $member->name,
+                    'avatar' => $member->avatar,
+                    'roleLabel' => $this->teamRoleLabel($member, $actor->getEffectiveSellerId()),
+                ]),
+            ] : null,
+            'eligibleContacts' => fn () => $contacts->map(fn ($contact) => [
+                'id' => $contact->id,
+                'name' => $contact->name,
+                'avatar' => $contact->avatar,
+                'roleLabel' => $this->teamRoleLabel($contact, $actor->getEffectiveSellerId()),
+            ])->values()->all(),
         ]);
     }
 
@@ -124,7 +210,8 @@ class TeamMessageController extends Controller
         $sellerOwner = $this->sellerOwner();
 
         $validated = $request->validate([
-            'receiver_id' => ['required', 'integer', 'exists:users,id'],
+            'receiver_id' => ['required_without:team_channel_id', 'nullable', 'integer', 'exists:users,id'],
+            'team_channel_id' => ['required_without:receiver_id', 'nullable', 'integer', 'exists:team_channels,id'],
             'message' => ['nullable', 'string', 'max:5000'],
             'attachment' => ['nullable', 'file', 'max:10240'],
         ]);
@@ -132,9 +219,6 @@ class TeamMessageController extends Controller
         if (!$request->filled('message') && !$request->hasFile('attachment')) {
             return back()->withErrors(['message' => 'Message or attachment is required.']);
         }
-
-        $receiver = User::findOrFail($validated['receiver_id']);
-        $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
 
         $attachmentPath = null;
         $attachmentType = null;
@@ -146,10 +230,56 @@ class TeamMessageController extends Controller
             $attachmentType = Str::startsWith($mimeType, 'image/') ? 'image' : 'document';
         }
 
+        if ($request->filled('team_channel_id')) {
+            $channel = \App\Models\TeamChannel::findOrFail($validated['team_channel_id']);
+            
+            // Check channel membership
+            abort_unless(
+                \App\Models\TeamChannelMember::where('team_channel_id', $channel->id)->where('user_id', $actor->id)->exists(),
+                403,
+                'Unauthorized channel messaging.'
+            );
+
+            $message = TeamMessage::create([
+                'seller_owner_id' => $sellerOwner->id,
+                'sender_id' => $actor->id,
+                'receiver_id' => null,
+                'team_channel_id' => $channel->id,
+                'message' => trim((string) ($validated['message'] ?? '')),
+                'attachment_path' => $attachmentPath,
+                'attachment_type' => $attachmentType,
+                'is_read' => true,
+            ]);
+
+            // Notify other members
+            $members = $channel->members()->where('users.id', '!=', $actor->id)->get();
+            foreach ($members as $member) {
+                // Delete previous notifications from the same channel to avoid spam
+                $member->unreadNotifications()
+                    ->where('type', \App\Notifications\NewTeamChannelMessageNotification::class)
+                    ->where('data->team_channel_id', $channel->id)
+                    ->delete();
+
+                $member->notify(new \App\Notifications\NewTeamChannelMessageNotification($message, $actor->name, $channel->name));
+            }
+
+            try {
+                broadcast(new \App\Events\TeamMessageSent($message))->toOthers();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            return redirect()->route('team-messages.index', ['channel_id' => $channel->id]);
+        }
+
+        $receiver = User::findOrFail($validated['receiver_id']);
+        $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
+
         $message = TeamMessage::create([
             'seller_owner_id' => $sellerOwner->id,
             'sender_id' => $actor->id,
             'receiver_id' => $receiver->id,
+            'team_channel_id' => null,
             'message' => trim((string) ($validated['message'] ?? '')),
             'attachment_path' => $attachmentPath,
             'attachment_type' => $attachmentType,
@@ -171,6 +301,64 @@ class TeamMessageController extends Controller
         }
 
         return redirect()->route('team-messages.index', ['user_id' => $receiver->id]);
+    }
+
+    public function createChannel(Request $request): RedirectResponse
+    {
+        $actor = $this->authorizeTeamActor($request->user());
+        $sellerOwner = $this->sellerOwner();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9-_]+$/'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'member_ids' => ['nullable', 'array'],
+            'member_ids.*' => ['integer', 'exists:users,id'],
+        ], [
+            'name.regex' => 'The channel name can only contain letters, numbers, hyphens, and underscores.',
+        ]);
+
+        $memberIds = collect($validated['member_ids'] ?? [])
+            ->push($actor->id)
+            ->unique();
+
+        $contacts = $this->eligibleContacts($actor, $sellerOwner->id);
+        $allowedIds = $contacts->pluck('id')->push($actor->id);
+
+        foreach ($memberIds as $memberId) {
+            if (!$allowedIds->contains($memberId)) {
+                abort(403, 'Unauthorized channel member selection.');
+            }
+        }
+
+        $channel = \App\Models\TeamChannel::create([
+            'seller_owner_id' => $sellerOwner->id,
+            'name' => strtolower($validated['name']),
+            'description' => $validated['description'] ?? null,
+            'created_by_id' => $actor->id,
+        ]);
+
+        $channel->members()->attach(
+            $memberIds->mapWithKeys(fn ($id) => [$id => ['last_read_at' => now()]])->all()
+        );
+
+        return redirect()->route('team-messages.index', ['channel_id' => $channel->id]);
+    }
+
+    public function markChannelAsSeen(Request $request): JsonResponse
+    {
+        $actor = $this->authorizeTeamActor($request->user());
+        
+        $validated = $request->validate([
+            'team_channel_id' => ['required', 'integer', 'exists:team_channels,id'],
+        ]);
+
+        $membership = \App\Models\TeamChannelMember::where('team_channel_id', $validated['team_channel_id'])
+            ->where('user_id', $actor->id)
+            ->firstOrFail();
+
+        $membership->update(['last_read_at' => now()]);
+
+        return response()->json(['success' => true]);
     }
 
     public function markAsSeen(Request $request): JsonResponse

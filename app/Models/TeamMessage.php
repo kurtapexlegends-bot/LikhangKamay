@@ -13,6 +13,7 @@ class TeamMessage extends Model
         'seller_owner_id',
         'sender_id',
         'receiver_id',
+        'team_channel_id',
         'message',
         'attachment_path',
         'attachment_type',
@@ -39,5 +40,10 @@ class TeamMessage extends Model
     public function receiver()
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function teamChannel()
+    {
+        return $this->belongsTo(TeamChannel::class, 'team_channel_id');
     }
 }

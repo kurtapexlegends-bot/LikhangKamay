@@ -23,6 +23,29 @@ class TeamMessageSent implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
+        $channelId = $this->message instanceof TeamMessage 
+            ? $this->message->team_channel_id 
+            : ($this->message['team_channel_id'] ?? null);
+
+        if ($channelId) {
+            $senderId = $this->message instanceof TeamMessage 
+                ? $this->message->sender_id 
+                : ($this->message['sender_id'] ?? null);
+
+            $channels = [new PrivateChannel('team-channel.' . $channelId)];
+
+            // Also notify other channel members via their private chat channels
+            $memberIds = \App\Models\TeamChannelMember::where('team_channel_id', $channelId)
+                ->where('user_id', '!=', $senderId)
+                ->pluck('user_id');
+
+            foreach ($memberIds as $memberId) {
+                $channels[] = new PrivateChannel('team-chat.' . $memberId);
+            }
+
+            return $channels;
+        }
+
         $receiverId = $this->message instanceof TeamMessage 
             ? $this->message->receiver_id 
             : ($this->message['receiver_id'] ?? null);

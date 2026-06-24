@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { AlertCircle, MessageSquareText, FileIcon, Clock, Check, CheckCheck } from 'lucide-react';
+import UserAvatar from '@/Components/UserAvatar';
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
@@ -23,6 +24,7 @@ const attachmentLabel = (message) => {
 export default function MessageArea({
     activeMessages,
     currentChatUser,
+    currentChannel,
     syncNotice,
 }) {
     const [activeMedia, setActiveMedia] = useState(null);
@@ -45,7 +47,7 @@ export default function MessageArea({
 
     return (
         <div className="min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 font-sans">
                 {syncNotice && (
                     <div className="inline-flex items-center gap-2 self-start rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700">
                         <AlertCircle size={13} />
@@ -66,91 +68,106 @@ export default function MessageArea({
                             {groupedMessages[dateLabel].map((message) => (
                                 <div
                                     key={message.id}
-                                    className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                                    className={`flex items-end gap-2.5 ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div
-                                        className={`max-w-[78%] rounded-[1.35rem] px-3.5 py-3 shadow-sm ${
-                                            message.sender === 'me'
-                                                ? 'rounded-br-md bg-clay-600 text-white'
-                                                : 'rounded-bl-md border border-stone-200 bg-white text-stone-700'
-                                        }`}
-                                    >
-                                        {message.attachment_path && message.attachment_type === 'image' && (
-                                            <div className="mb-2 overflow-hidden rounded-xl bg-white/10">
-                                                {brokenMessageImages[message.id] ? (
-                                                    <div
-                                                        className={`flex min-h-[140px] items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center text-xs font-medium ${
-                                                            message.sender === 'me'
-                                                                ? 'border-white/20 text-white/80'
-                                                                : 'border-stone-200 bg-stone-50 text-stone-500'
-                                                        }`}
-                                                    >
-                                                        Image unavailable. The rest of this conversation is still safe to continue.
-                                                    </div>
-                                                ) : (
-                                                    <img
-                                                        src={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
-                                                        alt="Team attachment"
-                                                        className="max-h-56 w-full cursor-zoom-in object-contain transition hover:scale-[1.02]"
-                                                        onClick={() => {
-                                                            const index = galleryImages.findIndex((image) => image.id === message.id);
-                                                            setActiveMedia({
-                                                                index: index >= 0 ? index : 0,
-                                                            });
-                                                        }}
-                                                        onError={() =>
-                                                            setBrokenMessageImages((current) => ({ ...current, [message.id]: true }))
-                                                        }
-                                                    />
-                                                )}
-                                            </div>
+                                    {message.sender !== 'me' && (currentChannel || message.sender_name) && (
+                                        <div className="shrink-0 mb-1">
+                                            <UserAvatar 
+                                                user={{ name: message.sender_name, avatar: message.sender_avatar }} 
+                                                className="w-7 h-7 text-[10px] shadow-sm" 
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col max-w-[78%]">
+                                        {message.sender !== 'me' && message.sender_name && currentChannel && (
+                                            <span className="text-[10px] font-bold text-stone-400 mb-0.5 ml-1 leading-none">
+                                                {message.sender_name}
+                                            </span>
                                         )}
-
-                                        {message.attachment_path && message.attachment_type === 'document' && (
-                                            <a
-                                                href={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className={`mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-                                                    message.sender === 'me'
-                                                        ? 'border-white/15 bg-white/10 text-white hover:bg-white/15'
-                                                        : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
-                                                }`}
-                                            >
-                                                <FileIcon size={16} />
-                                                <span>{attachmentLabel(message)}</span>
-                                            </a>
-                                        )}
-
-                                        {message.text ? <p className="text-sm leading-6">{message.text}</p> : null}
                                         <div
-                                            className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${
-                                                message.sender === 'me' ? 'text-white/75 justify-end' : 'text-stone-400'
+                                            className={`rounded-[1.35rem] px-3.5 py-3 shadow-sm ${
+                                                message.sender === 'me'
+                                                    ? 'rounded-br-md bg-clay-600 text-white'
+                                                    : 'rounded-bl-md border border-stone-200 bg-white text-stone-700'
                                             }`}
                                         >
-                                            {message.status === 'sending' ? (
-                                                <>
-                                                    <Clock size={10} className="animate-pulse" />
-                                                    <span className="animate-pulse">Sending...</span>
-                                                </>
-                                            ) : message.status === 'failed' ? (
-                                                <>
-                                                    <AlertCircle size={11} className={`${message.sender === 'me' ? 'text-red-200' : 'text-red-500'} shrink-0`} />
-                                                    <span className={`${message.sender === 'me' ? 'text-red-200 font-bold' : 'text-red-500 font-bold'}`}>Failed to send</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Clock size={10} />
-                                                    <span>{message.time}</span>
-                                                    {message.sender === 'me' && (
-                                                        message.isRead || message.is_read ? (
-                                                            <CheckCheck size={13} className="text-clay-200 shrink-0" />
-                                                        ) : (
-                                                            <Check size={13} className="text-white/60 shrink-0" />
-                                                        )
+                                            {message.attachment_path && message.attachment_type === 'image' && (
+                                                <div className="mb-2 overflow-hidden rounded-xl bg-white/10">
+                                                    {brokenMessageImages[message.id] ? (
+                                                        <div
+                                                            className={`flex min-h-[140px] items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center text-xs font-medium ${
+                                                                message.sender === 'me'
+                                                                    ? 'border-white/20 text-white/80'
+                                                                    : 'border-stone-200 bg-stone-50 text-stone-500'
+                                                            }`}
+                                                        >
+                                                            Image unavailable.
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            src={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
+                                                            alt="Team attachment"
+                                                            className="max-h-56 w-full cursor-zoom-in object-contain transition hover:scale-[1.02]"
+                                                            onClick={() => {
+                                                                const index = galleryImages.findIndex((image) => image.id === message.id);
+                                                                setActiveMedia({
+                                                                    index: index >= 0 ? index : 0,
+                                                                });
+                                                            }}
+                                                            onError={() =>
+                                                                setBrokenMessageImages((current) => ({ ...current, [message.id]: true }))
+                                                            }
+                                                        />
                                                     )}
-                                                </>
+                                                </div>
                                             )}
+
+                                            {message.attachment_path && message.attachment_type === 'document' && (
+                                                <a
+                                                    href={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className={`mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                                                        message.sender === 'me'
+                                                            ? 'border-white/15 bg-white/10 text-white hover:bg-white/15'
+                                                            : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
+                                                    }`}
+                                                >
+                                                    <FileIcon size={16} />
+                                                    <span>{attachmentLabel(message)}</span>
+                                                </a>
+                                            )}
+
+                                            {message.text ? <p className="text-sm leading-6">{message.text}</p> : null}
+                                            <div
+                                                className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${
+                                                    message.sender === 'me' ? 'text-white/75 justify-end' : 'text-stone-400'
+                                                }`}
+                                            >
+                                                {message.status === 'sending' ? (
+                                                    <>
+                                                        <Clock size={10} className="animate-pulse" />
+                                                        <span className="animate-pulse">Sending...</span>
+                                                    </>
+                                                ) : message.status === 'failed' ? (
+                                                    <>
+                                                        <AlertCircle size={11} className={`${message.sender === 'me' ? 'text-red-200' : 'text-red-500'} shrink-0`} />
+                                                        <span className={`${message.sender === 'me' ? 'text-red-200 font-bold' : 'text-red-500 font-bold'}`}>Failed to send</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Clock size={10} />
+                                                        <span>{message.time}</span>
+                                                        {message.sender === 'me' && (
+                                                            message.isRead || message.is_read ? (
+                                                                <CheckCheck size={13} className="text-clay-200 shrink-0" />
+                                                            ) : (
+                                                                <Check size={13} className="text-white/60 shrink-0" />
+                                                            )
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -166,7 +183,7 @@ export default function MessageArea({
                         </div>
                         <h2 className="mt-5 text-xl font-bold text-stone-900">Start the conversation</h2>
                         <p className="mt-2 max-w-sm text-sm leading-6 text-stone-500">
-                            Send a quick update, file, or image to {currentChatUser.name}.
+                            Send a quick update, file, or image to {currentChatUser ? currentChatUser.name : `#${currentChannel?.name}`}.
                         </p>
                     </div>
                 )}
