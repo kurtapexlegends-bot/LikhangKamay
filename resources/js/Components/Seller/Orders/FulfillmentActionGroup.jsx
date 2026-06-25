@@ -356,7 +356,7 @@ export default function FulfillmentActionGroup({
                         <div className="min-w-0">
                             <p className="text-[11px] font-bold text-green-700">Order Completed</p>
                             <p className="text-[9px] text-green-600 font-medium">
-                                Funds released to your wallet.
+                                Order completed successfully.
                             </p>
                         </div>
                     </div>

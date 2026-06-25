@@ -5,7 +5,6 @@ use App\Http\Controllers\Chat\ChatController;
 use App\Http\Controllers\Consumer\PaymentController; // Added
 use App\Http\Controllers\Seller\LalamoveDeliveryController;
 use App\Http\Controllers\Webhooks\LalamoveWebhookController;
-use App\Http\Controllers\Consumer\HomeController;
 use App\Http\Controllers\Consumer\CatalogController as ConsumerCatalogController;
 use App\Http\Controllers\Consumer\CartController; // <--- Make sure this is imported
 
