@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
                 'isStaff' => $user?->isStaff() ?? false,
                 'effectiveSellerId' => $user?->getEffectiveSellerId(),
                 'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,
+                'hasAcceptedCompliance' => $user ? ($user->isArtisan() ? $user->hasAcceptedComplianceTerms('seller_terms') : true) : true,
             ],
             
             // Lazy load subscription and sidebar to reduce DB overhead

@@ -186,4 +186,23 @@ class SellerOnboardingComplianceTest extends TestCase
         $this->assertNotContains('Pending Vase', $productNames);
         $this->assertNotContains('Non-Compliant Pot', $productNames);
     }
+
+    public function test_approved_artisan_can_accept_compliance_terms_via_endpoint(): void
+    {
+        /** @var User $seller */
+        $seller = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'setup_completed_at' => now(),
+        ]);
+        $seller->complianceAgreements()->delete();
+
+        $this->assertFalse($seller->hasAcceptedComplianceTerms('seller_terms'));
+
+        $response = $this->actingAs($seller)
+            ->post(route('artisan.accept-terms'));
+
+        $response->assertRedirect();
+        $this->assertTrue($seller->fresh()->hasAcceptedComplianceTerms('seller_terms'));
+    }
 }

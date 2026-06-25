@@ -130,7 +130,7 @@ export default function BuyerMessageInput({ currentChatUser, form, onSendStart, 
         // Throttle typing signals to once every 2 seconds
         if (now - lastTypingSignal.current > 2000) {
             lastTypingSignal.current = now;
-            window.axios.post(route('chat.typing'), { receiver_id: currentChatUser.id });
+            window.axios.post(route('chat.signal-typing'), { receiver_id: currentChatUser.id });
         }
     };
 

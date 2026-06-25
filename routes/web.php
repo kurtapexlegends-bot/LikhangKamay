@@ -129,6 +129,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::get('/artisan/setup', [ArtisanSetupController::class, 'create'])->name('artisan.setup');
     Route::post('/artisan/setup', [ArtisanSetupController::class, 'store'])->name('artisan.setup.store');
     Route::post('/artisan/welcome-dismiss', [ArtisanSetupController::class, 'dismissWelcome'])->name('artisan.welcome.dismiss');
+    Route::post('/artisan/accept-terms', [ArtisanSetupController::class, 'acceptTerms'])->name('artisan.accept-terms');
     
     // ARTISAN PENDING APPROVAL
     Route::get('/artisan/pending', function () {

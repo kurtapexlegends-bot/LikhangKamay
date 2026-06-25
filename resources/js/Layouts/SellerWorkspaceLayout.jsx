@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import SellerSidebar from '@/Layouts/SellerSidebar';
 import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
+import SellerTermsModal from '@/Components/SellerTermsModal';
 
 const SellerWorkspaceShellContext = createContext({
     openSidebar: () => {},
@@ -56,6 +57,17 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
         closeSidebar: () => setSidebarOpen(false),
     }), []);
 
+    const handleAcceptTerms = () => {
+        router.post(route('artisan.accept-terms'), {}, {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
+
+    const handleRejectTerms = () => {
+        router.visit('/');
+    };
+
     return (
         <SellerWorkspaceShellContext.Provider value={shell}>
             <ImpersonationBanner />
@@ -90,6 +102,14 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     </div>
                 </div>
             </div>
+
+            {!auth?.hasAcceptedCompliance && (
+                <SellerTermsModal
+                    show={true}
+                    onClose={handleRejectTerms}
+                    onAccept={handleAcceptTerms}
+                />
+            )}
         </SellerWorkspaceShellContext.Provider>
     );
 }

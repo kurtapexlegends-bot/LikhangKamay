@@ -255,4 +255,23 @@ class ArtisanSetupController extends Controller
 
         return 'success';
     }
+
+    public function acceptTerms(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        if ($user && $user->isArtisan()) {
+            $user->complianceAgreements()->updateOrCreate(
+                ['document_type' => 'seller_terms'],
+                [
+                    'accepted_at' => now(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]
+            );
+        }
+
+        return back()->with('success', 'Terms accepted successfully.');
+    }
 }

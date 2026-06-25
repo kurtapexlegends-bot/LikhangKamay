@@ -20,7 +20,7 @@ class EnsureSellerCompliance
         // Only enforce for sellers/artisans
         if ($user && $user->isArtisan()) {
             if (!$user->hasAcceptedComplianceTerms('seller_terms')) {
-                if ($request->expectsJson() || $request->inertia()) {
+                if ($request->expectsJson() && !$request->inertia()) {
                     abort(403, 'Compliance agreement required. You must accept the Seller Agreement terms.');
                 }
                 return redirect()->route('artisan.setup')->with('error', 'Please accept the Seller Agreement terms to proceed.');

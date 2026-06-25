@@ -179,8 +179,12 @@ class FinanceBillingAuditLogger
 
         $query = SubscriptionTransaction::query()
             ->where(function ($query) use ($seller) {
-                $query->where('user_id', $seller->id)
-                    ->orWhere('artisan_id', $seller->id);
+                $query->where('user_id', $seller->id);
+                
+                $hasArtisanId = \Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => \Illuminate\Support\Facades\Schema::hasColumn('subscription_transactions', 'artisan_id'));
+                if ($hasArtisanId) {
+                    $query->orWhere('artisan_id', $seller->id);
+                }
             })
             ->latest();
 
@@ -239,8 +243,12 @@ class FinanceBillingAuditLogger
             'available' => true,
             'count' => SubscriptionTransaction::query()
                 ->where(function ($query) use ($seller) {
-                    $query->where('user_id', $seller->id)
-                        ->orWhere('artisan_id', $seller->id);
+                    $query->where('user_id', $seller->id);
+                    
+                    $hasArtisanId = \Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => \Illuminate\Support\Facades\Schema::hasColumn('subscription_transactions', 'artisan_id'));
+                    if ($hasArtisanId) {
+                        $query->orWhere('artisan_id', $seller->id);
+                    }
                 })
                 ->count(),
             'entries' => $entries,

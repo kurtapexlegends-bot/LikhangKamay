@@ -5,6 +5,9 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use App\Http\Middleware\HandleInertiaRequests;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -44,6 +47,20 @@ return Application::configure(basePath: dirname(__DIR__))
         
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+            if ($request->header('X-Inertia')) {
+                if ($response->getStatusCode() === 401 || ($response->getStatusCode() === 302 && str_contains($response->headers->get('Location', ''), '/login'))) {
+                    return Inertia::location(route('login'));
+                }
+                if ($response->getStatusCode() === 419) {
+                    return Inertia::location(route('login'));
+                }
+            }
+            return $response;
+        });
+
+
+
         $exceptions->report(function (Throwable $e) {
             error_log("DETAILED_CRASH_INFO: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
             if ($e->getPrevious()) {

@@ -209,7 +209,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         const now = Date.now();
         if (now - lastTypingSignal.current > 2000) {
             lastTypingSignal.current = now;
-            window.axios.post(route('chat.typing'), { receiver_id: currentChatUser.id });
+            window.axios.post(route('chat.signal-typing'), { receiver_id: currentChatUser.id });
         }
     };
 
@@ -303,7 +303,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const confirmDeleteTemplate = () => {
         const id = deletingTemplateId;
         setDeletingTemplateId(null);
-        deleteTemplate(route('chat.templates.delete', id));
+        deleteTemplate(route('chat.templates.destroy', id));
     };
 
     const displayedMessages = useMemo(() => {
