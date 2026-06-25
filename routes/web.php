@@ -339,7 +339,6 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/insights', [SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/users-manager', [SuperAdminController::class, 'userManager'])->name('admin.users.manager');
     Route::get('/users', fn() => redirect()->route('admin.users.manager', ['tab' => 'directory']))->name('admin.users');
-    Route::get('/sla', fn() => redirect()->route('admin.operations', ['tab' => 'sla']))->name('admin.sla');
     Route::get('/compliance', [ModerationController::class, 'compliance'])->name('admin.compliance');
     Route::get('/review-moderation', fn() => redirect()->route('admin.compliance', ['tab' => 'disputes']))->name('admin.review-moderation');
     Route::patch('/review-moderation/{reviewDispute}', [ModerationController::class, 'updateReview'])->name('admin.review-moderation.update');
@@ -377,8 +376,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
 
     // Platform Operations Control Center
     Route::get('/operations', [PlatformDiagnosticsController::class, 'operations'])->name('admin.operations');
-    Route::get('/diagnostics', fn() => redirect()->route('admin.operations', ['tab' => 'health']))->name('admin.diagnostics');
-    Route::get('/activity-log', fn() => redirect()->route('admin.operations', ['tab' => 'logs']))->name('admin.activity.index');
+    Route::get('/activity-log', fn() => redirect()->route('admin.operations', request()->query()))->name('admin.activity.index');
     Route::post('/diagnostics/cache/purge', [PlatformDiagnosticsController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
 
     // Restoration Center (Trash)

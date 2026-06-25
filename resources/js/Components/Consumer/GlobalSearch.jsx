@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, User, Package, ShoppingCart, Loader2, Command, Box, ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, TrendingUp, BarChart2, Activity, ShieldAlert, Bell, RotateCcw } from 'lucide-react';
+import { Search, X, User, Package, ShoppingCart, Loader2, Command, Box, ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, TrendingUp, BarChart2, ShieldAlert, Bell, RotateCcw, Shield } from 'lucide-react';
 import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
@@ -77,7 +77,7 @@ export default function GlobalSearch() {
         { label: 'Go to Catalog Manager', cmd: '> taxonomy', url: route('admin.taxonomy.index'), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
         { label: 'Go to Platform Revenue', cmd: '> revenue', url: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
         { label: 'Go to Insights', cmd: '> insights', url: route('admin.insights'), icon: BarChart2, color: 'text-purple-500 bg-purple-50' },
-        { label: 'Go to Diagnostics Center', cmd: '> diagnostics', url: route('admin.diagnostics'), icon: Activity, color: 'text-clay-500 bg-clay-50' },
+        { label: 'Go to Audit Logs', cmd: '> audit', url: route('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
         { label: 'Go to Content Safety', cmd: '> moderation', url: route('admin.moderation'), icon: ShieldAlert, color: 'text-red-500 bg-red-50' },
         { label: 'Go to Escalated Disputes', cmd: '> disputes', url: route('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-500 bg-rose-50' },
     ] : [

@@ -21,6 +21,7 @@ import {
     TrendingUp,
     BarChart2,
     ShieldAlert,
+    Shield,
     Activity,
     FolderTree,
     Clock3,
@@ -37,7 +38,7 @@ const MotionLink = motion(Link);
 const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 
 const resolveActiveGroup = (path) => {
-    if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics') || path.includes('operations')) return 'Platform Pulse';
+    if (path.includes('dashboard') || path.includes('insights') || path.includes('operations')) return 'Platform Pulse';
     if (path.includes('users') || path.includes('pending') || path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Marketplace';
     if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('monetization') || path.includes('settings') || path.includes('disputes')) return 'Governance';
     return null;
@@ -106,7 +107,7 @@ export default function AdminLayout({ title, children }) {
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
-                { name: 'Platform Operations', href: route('admin.operations'), icon: Activity, current: route().current('admin.operations') },
+                { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: route().current('admin.operations') },
             ]
         },
         {

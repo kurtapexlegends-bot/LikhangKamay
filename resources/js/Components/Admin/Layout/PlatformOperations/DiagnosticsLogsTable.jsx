@@ -14,7 +14,7 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
         const timeoutId = setTimeout(() => {
             router.get(
                 route('admin.operations'),
-                { tab: 'logs', search: query, action_type: type },
+                { search: query, action_type: type },
                 { preserveState: true, preserveScroll: true, replace: true }
             );
         }, 300);
@@ -33,7 +33,7 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
     const clearFilters = () => {
         setSearch('');
         setActionType('');
-        router.get(route('admin.operations'), { tab: 'logs' }, { preserveState: true, preserveScroll: true });
+        router.get(route('admin.operations'), {}, { preserveState: true, preserveScroll: true });
     };
 
     return (

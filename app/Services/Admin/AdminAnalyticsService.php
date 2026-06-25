@@ -3,47 +3,10 @@
 namespace App\Services\Admin;
 
 use App\Models\User;
-use App\Models\ReviewDispute;
-use App\Models\SponsorshipRequest;
 use Illuminate\Support\Facades\Cache;
 
 class AdminAnalyticsService
 {
-    public function getSLAMetrics(): array
-    {
-        return Cache::remember('admin_sla_metrics', 300, function () {
-            $window = now()->subDays(30);
-
-            // 1. Artisan Approval SLA (Goal: 24h)
-            $avgApprovalTime = User::where('role', 'artisan')
-                ->where('approved_at', '>=', $window)
-                ->whereNotNull('setup_completed_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, setup_completed_at, approved_at)) as avg_hours')
-                ->value('avg_hours') ?? 0;
-
-            // 2. Dispute Resolution SLA (Goal: 48h)
-            $avgDisputeTime = ReviewDispute::where('status', 'resolved')
-                ->where('resolved_at', '>=', $window)
-                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hours')
-                ->value('avg_hours') ?? 0;
-
-            // 3. Sponsorship SLA (Goal: 24h)
-            $avgSponsorshipTime = SponsorshipRequest::where('status', 'approved')
-                ->where('approved_at', '>=', $window)
-                ->whereNotNull('requested_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, requested_at, approved_at)) as avg_hours')
-                ->value('avg_hours') ?? 0;
-
-            return [
-                'avgArtisanApprovalHours' => round($avgApprovalTime, 1),
-                'avgDisputeResolutionHours' => round($avgDisputeTime, 1),
-                'avgSponsorshipApprovalHours' => round($avgSponsorshipTime, 1),
-                'artisanSLACompliance' => $avgApprovalTime == 0 ? 100 : ($avgApprovalTime <= 24 ? 100 : max(0, round(100 - (($avgApprovalTime - 24) * 2), 1))),
-                'disputeSLACompliance' => $avgDisputeTime == 0 ? 100 : ($avgDisputeTime <= 48 ? 100 : max(0, round(100 - (($avgDisputeTime - 48) * 1.5), 1))),
-                'sponsorshipSLACompliance' => $avgSponsorshipTime == 0 ? 100 : ($avgSponsorshipTime <= 24 ? 100 : max(0, round(100 - (($avgSponsorshipTime - 24) * 2), 1))),
-            ];
-        });
-    }
 
     public function getInsightsData(): array
     {
