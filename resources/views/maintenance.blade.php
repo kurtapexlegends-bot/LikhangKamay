@@ -9,29 +9,43 @@
     <style>
         body { font-family: 'Figtree', sans-serif; }
         .serif { font-family: 'Playfair Display', serif; }
-        :root {
-            --primary: {{ \App\Facades\Settings::get('primary_color', '#8B4513') }};
-        }
+        .text-clay { color: #8B4513; }
+        .bg-clay-light { background-color: rgba(139, 69, 19, 0.04); }
+        .border-clay-light { border-color: rgba(139, 69, 19, 0.15); }
     </style>
 </head>
-<body class="bg-[#FDFBF9] min-h-screen flex items-center justify-center p-6">
-    <div class="max-w-xl w-full bg-white rounded-[40px] border border-stone-100 p-12 text-center shadow-xl space-y-8">
-        <div class="space-y-4">
-            <h1 class="serif text-3xl font-bold text-stone-900">{{ \App\Facades\Settings::get('platform_name', 'Likhang Kamay') }}</h1>
-            <div class="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-500 mx-auto border border-amber-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m12 8 4 4"/><path d="m16 8-4 4"/><path d="M12 16h.01"/></svg>
+<body class="bg-[#FAF9F5] min-h-screen flex flex-col items-center justify-center p-6 text-stone-800">
+    <div class="max-w-md w-full bg-white rounded-3xl border border-stone-200/60 p-8 md:p-12 shadow-sm text-center space-y-8 relative">
+        <div class="flex flex-col items-center gap-8">
+            <!-- Branding -->
+            <div class="flex flex-col items-center gap-2">
+                <h1 class="serif text-2xl font-bold text-stone-900">{{ \App\Facades\Settings::get('platform_name', 'Likhang Kamay') }}</h1>
             </div>
-            <h2 class="text-2xl font-black text-gray-900">Maintenance in Progress</h2>
-            <p class="text-stone-500 font-medium leading-relaxed">
-                We're refining the platform to better serve our artisan community. 
-                Please check back with us soon.
-            </p>
+
+            <!-- Content -->
+            <div class="space-y-4">
+                <div class="w-16 h-16 bg-clay-light text-clay rounded-full flex items-center justify-center border border-clay-light mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="space-y-2">
+                    <h2 class="text-xl font-bold text-stone-900 tracking-tight">System Refinement in Progress</h2>
+                    <p class="text-stone-500 text-xs font-medium leading-relaxed max-w-xs mx-auto">
+                        We are currently performing scheduled maintenance to refine the artisan experience. 
+                        We will be back shortly with a better, more robust platform.
+                    </p>
+                </div>
+            </div>
         </div>
         
-        <div class="pt-8 border-t border-stone-50 flex flex-col items-center gap-2">
-            <p class="text-[10px] font-black text-stone-400 uppercase tracking-widest">Administrator?</p>
-            <a href="/login" class="text-xs font-bold text-stone-900 underline underline-offset-4">Sign in to manage</a>
+        <!-- Administrator Link -->
+        <div class="pt-4 border-t border-stone-100">
+            <a href="/login" class="text-[9px] font-bold text-stone-400 uppercase tracking-widest hover:text-clay transition-colors duration-250">Administrator Access</a>
         </div>
     </div>
+
+    <!-- SEO Footnote -->
+    <p class="mt-8 text-[10px] text-stone-400 font-medium tracking-wide">
+        Thank you for your patience and for supporting local Filipino artisans.
+    </p>
 </body>
 </html>
