@@ -7,6 +7,13 @@ use App\Models\User;
 class SellerEntitlementService
 {
     /**
+     * Request-level cache for computed entitlements.
+     *
+     * @var array<int, array<string, mixed>|null>
+     */
+    protected array $entitlementsCache = [];
+
+    /**
      * Workspace capabilities that should always stay available once the actor can
      * enter the seller workspace.
      *
@@ -74,10 +81,14 @@ class SellerEntitlementService
             return null;
         }
 
+        if (isset($this->entitlementsCache[$user->id])) {
+            return $this->entitlementsCache[$user->id];
+        }
+
         $seller = $user->getEffectiveSeller();
 
         if (!$seller || !$seller->canAccessSellerOwnerRoutes()) {
-            return null;
+            return $this->entitlementsCache[$user->id] = null;
         }
 
         $ownerEntitlements = $this->buildOwnerEntitlements($seller);
@@ -85,7 +96,7 @@ class SellerEntitlementService
 
         if ($user->isStaff()) {
             if (!$user->isWorkspaceAccessEnabled()) {
-                return null;
+                return $this->entitlementsCache[$user->id] = null;
             }
 
             $grantedModules = $this->getGrantedStaffModules($user);
@@ -109,7 +120,7 @@ class SellerEntitlementService
             ->mapWithKeys(fn (string $module) => [$module => $user->isSellerOwner() || $user->canEditSellerModule($module)])
             ->all();
 
-        return [
+        $result = [
             'sellerOwnerId' => $seller->id,
             'sellerOwnerName' => $seller->shop_name ?: $seller->name,
             'tierKey' => $this->normalizeTierKey($seller->premium_tier),
@@ -132,6 +143,8 @@ class SellerEntitlementService
             'actorType' => $user->isStaff() ? 'staff' : 'owner',
             'defaultRouteName' => $defaultRouteName,
         ];
+
+        return $this->entitlementsCache[$user->id] = $result;
     }
 
     public function canAccessWorkspace(User $user): bool
