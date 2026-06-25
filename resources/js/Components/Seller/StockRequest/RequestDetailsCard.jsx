@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatPeso } from '@/lib/stockRequestHelpers';
+import { formatPeso } from '@/utils/stockRequestHelpers';
 
 export default function RequestDetailsCard({ request, isMobile = false }) {
     const receivedPercent = request.quantity > 0 ? ((request.received_quantity || 0) / request.quantity * 100) : 0;

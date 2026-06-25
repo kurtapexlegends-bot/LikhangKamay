@@ -9,7 +9,7 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 
 // Subcomponents & Helpers
-import { STATUS_TABS } from '@/lib/stockRequestHelpers';
+import { STATUS_TABS } from '@/utils/stockRequestHelpers';
 import StockRequestMetrics from '@/Components/Seller/StockRequest/StockRequestMetrics';
 import StockRequestsTable from '@/Components/Seller/StockRequest/StockRequestsTable';
 import ReceiveRequestModal from '@/Components/Seller/StockRequest/ReceiveRequestModal';

@@ -12,7 +12,6 @@ use App\Models\Payroll;
 use App\Models\SponsorshipRequest;
 use App\Models\PlatformActivity;
 use App\Models\SystemAnnouncement;
-use App\Models\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -58,6 +57,14 @@ class GlobalSearchTest extends TestCase
             'description' => 'Updated the global taxes config',
         ]);
 
+        $flagged = \App\Models\FlaggedContent::create([
+            'reporter_id' => $buyer->id,
+            'reportable_type' => \App\Models\User::class,
+            'reportable_id' => $artisan->id,
+            'reason' => 'Inappropriate shop banner',
+            'status' => 'pending',
+        ]);
+
         $this->actingAs($admin)
             ->get(route('api.global-search', ['query' => 'Global']))
             ->assertOk()
@@ -77,6 +84,13 @@ class GlobalSearchTest extends TestCase
             ->assertOk()
             ->assertJsonFragment([
                 'title' => 'System Maintenance Alert',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(route('api.global-search', ['query' => 'Inappropriate']))
+            ->assertOk()
+            ->assertJsonFragment([
+                'title' => 'Report #' . $flagged->id . ': Inappropriate shop banner...',
             ]);
     }
 

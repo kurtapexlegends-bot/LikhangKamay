@@ -15,7 +15,7 @@ use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\Category;
 use App\Models\SystemAnnouncement;
-use App\Models\Report;
+use App\Models\FlaggedContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -126,7 +126,7 @@ class GlobalSearchController extends Controller
             });
 
         // Moderation Reports (Admin)
-        $adminReports = Report::where('reason', $like, "%{$query}%")
+        $adminReports = FlaggedContent::where('reason', $like, "%{$query}%")
             ->orWhere('status', $like, "%{$query}%")
             ->limit(3)
             ->get()

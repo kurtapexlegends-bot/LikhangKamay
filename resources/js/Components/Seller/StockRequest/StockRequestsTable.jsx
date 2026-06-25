@@ -3,7 +3,7 @@ import { AlertTriangle, Truck, Package, ArrowRight, Inbox } from 'lucide-react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import StatusBadge from './StatusBadge';
 import RequestDetailsCard from './RequestDetailsCard';
-import { formatPeso } from '@/lib/stockRequestHelpers';
+import { formatPeso } from '@/utils/stockRequestHelpers';
 
 export default function StockRequestsTable({
     filteredRequests,
