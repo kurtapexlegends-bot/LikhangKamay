@@ -96,6 +96,11 @@ export default function MessageInput({
     const [mentionStart, setMentionStart] = useState(-1);
 
     const checkMentions = (text, cursorPosition) => {
+        if (!currentChannel) {
+            setShowMentions(false);
+            return;
+        }
+
         const textBeforeCursor = text.slice(0, cursorPosition);
         const lastAtIndex = textBeforeCursor.lastIndexOf('@');
         
@@ -169,8 +174,12 @@ export default function MessageInput({
         }
     };
 
-    // When chat user or channel changes, focus input
+    // When chat user or channel changes, focus input and reset autocomplete state
     useEffect(() => {
+        setShowMentions(false);
+        setMentionSearch('');
+        setMentionIndex(0);
+        setMentionStart(-1);
         if (currentChatUser || currentChannel) {
             inputRef.current?.focus();
         }
@@ -210,6 +219,7 @@ export default function MessageInput({
             post(route('team-messages.store'), {
                 preserveScroll: true,
                 forceFormData: true,
+                showProgress: false,
                 onSuccess: () => {
                     if (attachmentPreview?.url) {
                         URL.revokeObjectURL(attachmentPreview.url);

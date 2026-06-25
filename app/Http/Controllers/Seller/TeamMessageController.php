@@ -142,6 +142,7 @@ class TeamMessageController extends Controller
                     'isRead' => (bool) $message->is_read,
                     'replies_count' => (int) $message->replies_count,
                     'reactions' => $this->formatReactions($message, $actor),
+                    'team_channel_id' => null,
                 ])
                 ->values()
                 ->all();
@@ -168,6 +169,7 @@ class TeamMessageController extends Controller
                     'isRead' => true,
                     'replies_count' => (int) $message->replies_count,
                     'reactions' => $this->formatReactions($message, $actor),
+                    'team_channel_id' => $message->team_channel_id,
                 ])
                 ->values()
                 ->all();
@@ -301,15 +303,19 @@ class TeamMessageController extends Controller
                 'is_read' => true,
             ]);
 
-            // Notify other members
+            // Notify other members in bulk
             $members = $channel->members()->where('users.id', '!=', $actor->id)->get();
-            foreach ($members as $member) {
-                $member->unreadNotifications()
+            if ($members->isNotEmpty()) {
+                $memberIds = $members->pluck('id')->all();
+
+                \Illuminate\Support\Facades\DB::table('notifications')
+                    ->whereIn('notifiable_id', $memberIds)
+                    ->where('notifiable_type', User::class)
                     ->where('type', \App\Notifications\NewTeamChannelMessageNotification::class)
                     ->where('data->team_channel_id', $channel->id)
                     ->delete();
 
-                $member->notify(new \App\Notifications\NewTeamChannelMessageNotification($message, $actor->name, $channel->name));
+                \Illuminate\Support\Facades\Notification::send($members, new \App\Notifications\NewTeamChannelMessageNotification($message, $actor->name, $channel->name));
             }
 
             try {
@@ -401,6 +407,7 @@ class TeamMessageController extends Controller
                         : ($reply->created_at->isYesterday() ? 'Yesterday' : $reply->created_at->format('M d, Y')),
                     'isRead' => (bool) $reply->is_read,
                     'reactions' => $this->formatReactions($reply, $actor),
+                    'team_channel_id' => $reply->team_channel_id,
                 ];
             });
 
@@ -419,6 +426,7 @@ class TeamMessageController extends Controller
                 ? 'Today'
                 : ($message->created_at->isYesterday() ? 'Yesterday' : $message->created_at->format('M d, Y')),
             'reactions' => $this->formatReactions($message, $actor),
+            'team_channel_id' => $message->team_channel_id,
         ];
 
         return response()->json([
@@ -562,24 +570,28 @@ class TeamMessageController extends Controller
      */
     private function eligibleContacts(User $actor, int $sellerOwnerId): Collection
     {
-        $sellerOwner = $actor->isSellerOwner()
-            ? $actor
-            : User::findOrFail($sellerOwnerId);
+        $cacheKey = "eligible_contacts_actor_{$actor->id}_seller_{$sellerOwnerId}";
 
-        $staffMembers = $sellerOwner->staffMembers()
-            ->get()
-            ->filter(fn (User $staff) => $staff->isWorkspaceAccessEnabled())
-            ->values();
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addSeconds(15), function () use ($actor, $sellerOwnerId) {
+            $sellerOwner = $actor->isSellerOwner()
+                ? $actor
+                : User::findOrFail($sellerOwnerId);
 
-        $contacts = $staffMembers;
+            $staffMembers = $sellerOwner->staffMembers()
+                ->get()
+                ->filter(fn (User $staff) => $staff->isWorkspaceAccessEnabled())
+                ->values();
 
-        if ($actor->isStaff()) {
-            $contacts = $contacts->push($sellerOwner);
-        }
+            $contacts = $staffMembers;
 
-        return $contacts
-            ->filter(fn (User $contact) => $contact->id !== $actor->id)
-            ->values();
+            if ($actor->isStaff()) {
+                $contacts = $contacts->push($sellerOwner);
+            }
+
+            return $contacts
+                ->filter(fn (User $contact) => $contact->id !== $actor->id)
+                ->values();
+        });
     }
 
     private function teamRoleLabel(User $user, ?int $sellerOwnerId): string
@@ -683,9 +695,12 @@ class TeamMessageController extends Controller
             ->values()
             ->all();
     }
-
     private function parseMentionsAndNotify(TeamMessage $message, User $actor): void
     {
+        if (is_null($message->team_channel_id)) {
+            return;
+        }
+
         if (blank($message->message)) {
             return;
         }
@@ -706,19 +721,28 @@ class TeamMessageController extends Controller
             }
         }
 
+        $targetUsers = collect();
         foreach ($names as $name) {
             $targetUser = $eligibleContacts->first(function ($user) use ($name) {
                 return strcasecmp($user->name, $name) === 0;
             });
 
             if ($targetUser && $targetUser->id !== $actor->id) {
-                $targetUser->unreadNotifications()
-                    ->where('type', TeamMessageMentionedNotification::class)
-                    ->where('data->team_message_id', $message->id)
-                    ->delete();
-
-                $targetUser->notify(new TeamMessageMentionedNotification($message, $actor->name));
+                $targetUsers->push($targetUser);
             }
+        }
+
+        if ($targetUsers->isNotEmpty()) {
+            $targetUserIds = $targetUsers->pluck('id')->all();
+
+            \Illuminate\Support\Facades\DB::table('notifications')
+                ->whereIn('notifiable_id', $targetUserIds)
+                ->where('notifiable_type', User::class)
+                ->where('type', TeamMessageMentionedNotification::class)
+                ->where('data->team_message_id', $message->id)
+                ->delete();
+
+            \Illuminate\Support\Facades\Notification::send($targetUsers, new TeamMessageMentionedNotification($message, $actor->name));
         }
     }
 }

@@ -111,20 +111,25 @@ class TeamMessageQueryService
         }
 
         $counts = collect();
+        $channelIds = $channels->pluck('id');
 
-        foreach ($channels as $channel) {
-            $membership = TeamChannelMember::where('team_channel_id', $channel->id)
-                ->where('user_id', $actor->id)
-                ->first();
+        $unreadCounts = TeamMessage::query()
+            ->join('team_channel_members', function ($join) use ($actor) {
+                $join->on('team_messages.team_channel_id', '=', 'team_channel_members.team_channel_id')
+                    ->where('team_channel_members.user_id', '=', $actor->id);
+            })
+            ->whereIn('team_messages.team_channel_id', $channelIds)
+            ->where('team_messages.sender_id', '!=', $actor->id)
+            ->where(function ($query) {
+                $query->whereNull('team_channel_members.last_read_at')
+                    ->orWhereColumn('team_messages.created_at', '>', 'team_channel_members.last_read_at');
+            })
+            ->selectRaw('team_messages.team_channel_id, COUNT(*) as count')
+            ->groupBy('team_messages.team_channel_id')
+            ->pluck('count', 'team_channel_id');
 
-            $query = TeamMessage::where('team_channel_id', $channel->id)
-                ->where('sender_id', '!=', $actor->id);
-
-            if ($membership && $membership->last_read_at) {
-                $query->where('created_at', '>', $membership->last_read_at);
-            }
-
-            $counts->put($channel->id, $query->count());
+        foreach ($channelIds as $channelId) {
+            $counts->put($channelId, (int) ($unreadCounts[$channelId] ?? 0));
         }
 
         return $counts;

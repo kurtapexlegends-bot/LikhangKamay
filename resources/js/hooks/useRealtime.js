@@ -9,7 +9,7 @@ import { useToast } from '@/Components/ToastContext';
  * Falls back to active Inertia polling if Supabase is unavailable in local environment.
  */
 export const useRealtime = () => {
-    const { auth, notifications, currentChatUser } = usePage().props;
+    const { auth, notifications, currentChatUser, currentChannel } = usePage().props;
     const { addToast } = useToast();
     const user = auth?.user;
     const prevNotificationsRef = useRef(undefined);
@@ -56,7 +56,7 @@ export const useRealtime = () => {
             });
         }
         prevNotificationsRef.current = notifications;
-    }, [notifications, user, addToast, currentChatUser]);
+    }, [notifications, user, addToast, currentChatUser, currentChannel]);
 
     useEffect(() => {
         if (!user) return;
@@ -93,6 +93,28 @@ export const useRealtime = () => {
                     },
                     (payload) => {
                         console.log('New notification received via Supabase:', payload);
+
+                        const notifData = typeof payload.new.data === 'string' 
+                            ? JSON.parse(payload.new.data) 
+                            : payload.new.data;
+
+                        const notifType = notifData?.type;
+                        const notifChannelId = notifData?.team_channel_id;
+                        const notifSenderId = notifData?.sender_id;
+
+                        // If it's a team chat/channel message and we are actively viewing that chat,
+                        // ignore the database notification reload to avoid race conditions with Echo broadcast.
+                        if (
+                            window.location.pathname.includes('/team-messages') &&
+                            (notifType === 'team_channel_message' || notifType === 'team_mention' || notifType === 'team_message')
+                        ) {
+                            if (notifChannelId && currentChannel && Number(notifChannelId) === Number(currentChannel.id)) {
+                                return;
+                            }
+                            if (!notifChannelId && currentChatUser && Number(notifSenderId) === Number(currentChatUser.id)) {
+                                return;
+                            }
+                        }
                         
                         const reloadKeys = ['notifications', 'unreadNotificationCount'];
                         if (window.location.pathname.includes('/products')) {
@@ -131,6 +153,28 @@ export const useRealtime = () => {
                         },
                         (payload) => {
                             console.log('New shop notification received via Supabase:', payload);
+
+                            const notifData = typeof payload.new.data === 'string' 
+                                ? JSON.parse(payload.new.data) 
+                                : payload.new.data;
+
+                            const notifType = notifData?.type;
+                            const notifChannelId = notifData?.team_channel_id;
+                            const notifSenderId = notifData?.sender_id;
+
+                            // If it's a team chat/channel message and we are actively viewing that chat,
+                            // ignore the database notification reload to avoid race conditions with Echo broadcast.
+                            if (
+                                window.location.pathname.includes('/team-messages') &&
+                                (notifType === 'team_channel_message' || notifType === 'team_mention' || notifType === 'team_message')
+                            ) {
+                                if (notifChannelId && currentChannel && Number(notifChannelId) === Number(currentChannel.id)) {
+                                    return;
+                                }
+                                if (!notifChannelId && currentChatUser && Number(notifSenderId) === Number(currentChatUser.id)) {
+                                    return;
+                                }
+                            }
                             
                             const reloadKeys = ['notifications', 'unreadNotificationCount'];
                             if (window.location.pathname.includes('/products')) {

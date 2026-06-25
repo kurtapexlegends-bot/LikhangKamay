@@ -180,7 +180,7 @@ export default function MessageArea({
                                                 </a>
                                             )}
 
-                                            {message.text ? <p className="text-sm leading-6 whitespace-pre-wrap">{renderMessageTextWithMentions(message.text, authUser)}</p> : null}
+                                            {message.text ? <p className="text-sm leading-6 whitespace-pre-wrap">{renderMessageTextWithMentions(message.text, authUser, !!currentChannel)}</p> : null}
                                             <div
                                                 className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${
                                                     message.sender === 'me' ? 'text-white/75 justify-end' : 'text-stone-400'
@@ -200,7 +200,7 @@ export default function MessageArea({
                                                     <>
                                                         <Clock size={10} />
                                                         <span>{message.time}</span>
-                                                        {message.sender === 'me' && (
+                                                        {message.sender === 'me' && !message.team_channel_id && (
                                                             message.isRead || message.is_read ? (
                                                                 <CheckCheck size={13} className="text-clay-200 shrink-0" />
                                                             ) : (
@@ -362,8 +362,9 @@ function ReactionPicker({ onSelect, onClose, className = '' }) {
     );
 }
 
-function renderMessageTextWithMentions(text, authUser) {
+function renderMessageTextWithMentions(text, authUser, isChannel = true) {
     if (!text) return null;
+    if (!isChannel) return text;
     
     const regex = /@\[([^\]]+)\]/g;
     const parts = [];

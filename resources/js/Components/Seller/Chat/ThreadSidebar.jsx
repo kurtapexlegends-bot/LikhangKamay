@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Send, Paperclip, FileIcon, ImageIcon, AlertCircle, Smile } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { useForm } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 
 export default function ThreadSidebar({
     auth,
@@ -34,7 +35,23 @@ export default function ThreadSidebar({
     
     const inputRef = useRef(null);
 
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        const checkResponsive = () => {
+            setIsDesktop(window.innerWidth >= 1280);
+        };
+        checkResponsive();
+        window.addEventListener('resize', checkResponsive);
+        return () => window.removeEventListener('resize', checkResponsive);
+    }, []);
+
     const checkMentions = (text, cursorPosition) => {
+        if (!parent || !parent.team_channel_id) {
+            setShowMentions(false);
+            return;
+        }
+
         const textBeforeCursor = text.slice(0, cursorPosition);
         const lastAtIndex = textBeforeCursor.lastIndexOf('@');
         
@@ -133,6 +150,7 @@ export default function ThreadSidebar({
             preserveScroll: true,
             preserveState: true,
             forceFormData: true,
+            showProgress: false,
             onSuccess: () => {
                 form.reset('message', 'attachment');
                 if (attachmentPreview?.url) {
@@ -148,15 +166,40 @@ export default function ThreadSidebar({
 
     if (!parent) return null;
 
+    const sidebarVariants = {
+        initial: isDesktop 
+            ? { x: '100%', width: 0, opacity: 0 }
+            : { x: '100%', opacity: 1 },
+        animate: { 
+            x: 0, 
+            width: isDesktop ? 320 : 'auto', 
+            opacity: 1 
+        },
+        exit: isDesktop
+            ? { x: '100%', width: 0, opacity: 0 }
+            : { x: '100%', opacity: 0 }
+    };
+
     return (
         <>
             {/* Backdrop for mobile */}
-            <div
-                className="fixed inset-0 bg-stone-900/35 backdrop-blur-[1px] z-50 xl:hidden animate-in fade-in duration-200"
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-stone-900/35 backdrop-blur-[1px] z-50 xl:hidden"
                 onClick={onClose}
             />
 
-            <div className="fixed inset-y-0 right-0 z-50 xl:z-auto w-80 max-w-[85vw] xl:max-w-none xl:w-80 bg-white border-l border-stone-200 flex flex-col shrink-0 h-full shadow-2xl xl:shadow-none xl:relative animate-in slide-in-from-right duration-300 font-sans text-stone-850">
+            <motion.div
+                variants={sidebarVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+                className="fixed inset-y-0 right-0 z-50 xl:z-auto w-80 max-w-[85vw] xl:max-w-none bg-white border-l border-stone-200 flex flex-col shrink-0 h-full shadow-2xl xl:shadow-none xl:relative font-sans text-stone-850 overflow-hidden"
+            >
                 {/* Header */}
                 <header className="px-5 py-4 border-b border-stone-100 flex items-center justify-between shrink-0">
                     <h3 className="font-bold text-stone-900 text-sm tracking-wide uppercase">Thread</h3>
@@ -203,7 +246,7 @@ export default function ThreadSidebar({
                                 </div>
                             )}
 
-                            <p className="text-xs text-stone-600 leading-relaxed break-words whitespace-pre-wrap">{renderMessageTextWithMentions(parent.text, auth?.user)}</p>
+                            <p className="text-xs text-stone-600 leading-relaxed break-words whitespace-pre-wrap">{renderMessageTextWithMentions(parent.text, auth?.user, !!parent.team_channel_id)}</p>
 
                             {/* Reactions display for parent */}
                             {parent.reactions && parent.reactions.length > 0 && (
@@ -338,7 +381,7 @@ export default function ThreadSidebar({
                                             </a>
                                         )}
 
-                                        <p className="leading-relaxed break-words whitespace-pre-wrap">{renderMessageTextWithMentions(reply.text, auth?.user)}</p>
+                                        <p className="leading-relaxed break-words whitespace-pre-wrap">{renderMessageTextWithMentions(reply.text, auth?.user, !!parent.team_channel_id)}</p>
                                         <span
                                             className={`block text-[9px] mt-1.5 text-right font-medium ${
                                                 reply.sender === 'me' ? 'text-white/75' : 'text-stone-400'
@@ -555,7 +598,7 @@ export default function ThreadSidebar({
                         className="hidden"
                     />
                 </div>
-            </div>
+            </motion.div>
         </>
     );
 }
@@ -594,8 +637,9 @@ function ReactionPicker({ onSelect, onClose, className = '' }) {
     );
 }
 
-function renderMessageTextWithMentions(text, authUser) {
+function renderMessageTextWithMentions(text, authUser, isChannel = true) {
     if (!text) return null;
+    if (!isChannel) return text;
     
     const regex = /@\[([^\]]+)\]/g;
     const parts = [];

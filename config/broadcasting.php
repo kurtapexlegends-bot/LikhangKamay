@@ -42,8 +42,11 @@ return [
                 'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
             ],
             'client_options' => [
-                'connect_timeout' => 0.5,
-                'timeout' => 0.8,
+                'connect_timeout' => 5.0,
+                'timeout' => 5.0,
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
             ],
         ],
 
@@ -61,8 +64,11 @@ return [
                 'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
             ],
             'client_options' => [
-                'connect_timeout' => 0.5,
-                'timeout' => 0.8,
+                'connect_timeout' => 5.0,
+                'timeout' => 5.0,
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
             ],
         ],
 

@@ -5,6 +5,8 @@ import UserAvatar from '@/Components/UserAvatar';
 import { ArrowLeft, MessageSquareText, Info, Hash, Plus, X } from 'lucide-react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useEchoConnection from '@/hooks/useEchoConnection';
+import { AnimatePresence } from 'framer-motion';
+
 
 // Subcomponents
 import ContactList from '@/Components/Seller/Chat/ContactList';
@@ -64,16 +66,24 @@ export default function TeamMessages({
         if (currentChatUser) {
             setShowMobileList(false);
             if (window.axios) {
-                window.axios.post(route('team-messages.seen'), { sender_id: currentChatUser.id }).catch(() => {
-                    setSyncNotice('Team inbox is temporarily stale. It will sync again shortly.');
-                });
+                window.axios.post(route('team-messages.seen'), { sender_id: currentChatUser.id })
+                    .then(() => {
+                        router.reload({ only: ['conversations'], preserveScroll: true, preserveState: true, showProgress: false });
+                    })
+                    .catch(() => {
+                        setSyncNotice('Team inbox is temporarily stale. It will sync again shortly.');
+                    });
             }
         } else if (currentChannel) {
             setShowMobileList(false);
             if (window.axios) {
-                window.axios.post(route('team-messages.channels.seen'), { team_channel_id: currentChannel.id }).catch(() => {
-                    setSyncNotice('Team inbox is temporarily stale. It will sync again shortly.');
-                });
+                window.axios.post(route('team-messages.channels.seen'), { team_channel_id: currentChannel.id })
+                    .then(() => {
+                        router.reload({ only: ['conversations'], preserveScroll: true, preserveState: true, showProgress: false });
+                    })
+                    .catch(() => {
+                        setSyncNotice('Team inbox is temporarily stale. It will sync again shortly.');
+                    });
             }
         }
     }, [currentChatUser?.id, currentChannel?.id]);
@@ -111,6 +121,7 @@ export default function TeamMessages({
                 only: ['activeMessages', 'conversations', 'currentChatUser', 'currentChannel'],
                 preserveScroll: true,
                 preserveState: true,
+                showProgress: false,
                 onSuccess: () => setSyncNotice(null)
             });
         }, 4000);
@@ -125,6 +136,11 @@ export default function TeamMessages({
         const chatChannel = window.Echo.private(`team-chat.${auth.user.id}`);
 
         chatChannel.listen('.team.message.sent', (e) => {
+            // Ignore messages belonging to the active channel to let teamChannelInstance handle them
+            if (currentChannel && e.message.team_channel_id && Number(e.message.team_channel_id) === Number(currentChannel.id)) {
+                return;
+            }
+
             const senderId = Number(e.message.sender_id);
             const myId = Number(auth.user.id);
 
@@ -156,6 +172,7 @@ export default function TeamMessages({
                     only: ['activeMessages', 'conversations'],
                     preserveScroll: true,
                     preserveState: true,
+                    showProgress: false,
                     onSuccess: () => setSyncNotice(null)
                 });
                 return;
@@ -165,28 +182,69 @@ export default function TeamMessages({
 
             // Direct message check
             if (currentChatUser && senderId === Number(currentChatUser.id) && !e.message.team_channel_id) {
-                router.reload({ 
-                    only: ['activeMessages', 'conversations', 'currentChatUser'],
-                    preserveScroll: true,
-                    preserveState: true,
-                    onSuccess: () => setSyncNotice(null)
-                });
+                if (window.axios) {
+                    window.axios.post(route('team-messages.seen'), { sender_id: currentChatUser.id })
+                        .then(() => {
+                            router.reload({ 
+                                only: ['activeMessages', 'conversations', 'currentChatUser'],
+                                preserveScroll: true,
+                                preserveState: true,
+                                showProgress: false,
+                                onSuccess: () => setSyncNotice(null)
+                            });
+                        })
+                        .catch(() => {
+                            router.reload({ 
+                                only: ['activeMessages', 'conversations', 'currentChatUser'],
+                                preserveScroll: true,
+                                preserveState: true,
+                                showProgress: false,
+                                onSuccess: () => setSyncNotice(null)
+                            });
+                        });
+                } else {
+                    router.reload({ 
+                        only: ['activeMessages', 'conversations', 'currentChatUser'],
+                        preserveScroll: true,
+                        preserveState: true,
+                        showProgress: false,
+                        onSuccess: () => setSyncNotice(null)
+                    });
+                }
             } 
             // Channel message check
             else if (currentChannel && Number(e.message.team_channel_id) === Number(currentChannel.id)) {
-                router.reload({
-                    only: ['activeMessages', 'conversations', 'currentChannel'],
-                    preserveScroll: true,
-                    preserveState: true,
-                    onSuccess: () => {
-                        setSyncNotice(null);
-                        if (window.axios) {
-                            window.axios.post(route('team-messages.channels.seen'), { team_channel_id: currentChannel.id }).catch(() => {});
-                        }
-                    }
-                });
+                if (window.axios) {
+                    window.axios.post(route('team-messages.channels.seen'), { team_channel_id: currentChannel.id })
+                        .then(() => {
+                            router.reload({
+                                only: ['activeMessages', 'conversations', 'currentChannel'],
+                                preserveScroll: true,
+                                preserveState: true,
+                                showProgress: false,
+                                onSuccess: () => setSyncNotice(null)
+                            });
+                        })
+                        .catch(() => {
+                            router.reload({
+                                only: ['activeMessages', 'conversations', 'currentChannel'],
+                                preserveScroll: true,
+                                preserveState: true,
+                                showProgress: false,
+                                onSuccess: () => setSyncNotice(null)
+                            });
+                        });
+                } else {
+                    router.reload({
+                        only: ['activeMessages', 'conversations', 'currentChannel'],
+                        preserveScroll: true,
+                        preserveState: true,
+                        showProgress: false,
+                        onSuccess: () => setSyncNotice(null)
+                    });
+                }
             } else {
-                router.reload({ only: ['conversations'] });
+                router.reload({ only: ['conversations'], showProgress: false });
             }
         });
 
@@ -195,7 +253,8 @@ export default function TeamMessages({
                 router.reload({ 
                     only: ['activeMessages'],
                     preserveScroll: true,
-                    preserveState: true 
+                    preserveState: true,
+                    showProgress: false
                 });
             }
         });
@@ -232,6 +291,7 @@ export default function TeamMessages({
                 only: ['activeMessages'],
                 preserveScroll: true,
                 preserveState: true,
+                showProgress: false,
             });
         });
 
@@ -270,6 +330,7 @@ export default function TeamMessages({
                         only: ['activeMessages', 'conversations', 'currentChannel'],
                         preserveScroll: true,
                         preserveState: true,
+                        showProgress: false,
                         onSuccess: () => setSyncNotice(null)
                     });
                     return;
@@ -277,17 +338,35 @@ export default function TeamMessages({
 
                 if (senderId === myId) return;
 
-                router.reload({
-                    only: ['activeMessages', 'conversations', 'currentChannel'],
-                    preserveScroll: true,
-                    preserveState: true,
-                    onSuccess: () => {
-                        setSyncNotice(null);
-                        if (window.axios) {
-                            window.axios.post(route('team-messages.channels.seen'), { team_channel_id: currentChannel.id }).catch(() => {});
-                        }
-                    }
-                });
+                if (window.axios) {
+                    window.axios.post(route('team-messages.channels.seen'), { team_channel_id: currentChannel.id })
+                        .then(() => {
+                            router.reload({
+                                only: ['activeMessages', 'conversations', 'currentChannel'],
+                                preserveScroll: true,
+                                preserveState: true,
+                                showProgress: false,
+                                onSuccess: () => setSyncNotice(null)
+                            });
+                        })
+                        .catch(() => {
+                            router.reload({
+                                only: ['activeMessages', 'conversations', 'currentChannel'],
+                                preserveScroll: true,
+                                preserveState: true,
+                                showProgress: false,
+                                onSuccess: () => setSyncNotice(null)
+                            });
+                        });
+                } else {
+                    router.reload({
+                        only: ['activeMessages', 'conversations', 'currentChannel'],
+                        preserveScroll: true,
+                        preserveState: true,
+                        showProgress: false,
+                        onSuccess: () => setSyncNotice(null)
+                    });
+                }
             });
         }
 
@@ -355,6 +434,7 @@ export default function TeamMessages({
                     only: ['activeMessages'],
                     preserveScroll: true,
                     preserveState: true,
+                    showProgress: false,
                 });
             }
         })
@@ -571,27 +651,29 @@ export default function TeamMessages({
                     />
                 )}
 
-                {activeThreadParent && (
-                    <ThreadSidebar
-                        auth={auth}
-                        parent={activeThreadParent}
-                        replies={activeThreadReplies}
-                        loading={loadingThread}
-                        onClose={() => setActiveThreadParent(null)}
-                        onToggleReaction={handleToggleReaction}
-                        eligibleContacts={eligibleContacts}
-                        onReplySuccess={() => {
-                            if (window.axios) {
-                                window.axios.get(route('team-messages.threads.show', activeThreadParent.id))
-                                    .then(res => {
-                                        if (res.data?.success) {
-                                            setActiveThreadReplies(res.data.replies);
-                                        }
-                                    });
-                            }
-                        }}
-                    />
-                )}
+                <AnimatePresence>
+                    {activeThreadParent && (
+                        <ThreadSidebar
+                            auth={auth}
+                            parent={activeThreadParent}
+                            replies={activeThreadReplies}
+                            loading={loadingThread}
+                            onClose={() => setActiveThreadParent(null)}
+                            onToggleReaction={handleToggleReaction}
+                            eligibleContacts={eligibleContacts}
+                            onReplySuccess={() => {
+                                if (window.axios) {
+                                    window.axios.get(route('team-messages.threads.show', activeThreadParent.id))
+                                        .then(res => {
+                                            if (res.data?.success) {
+                                                setActiveThreadReplies(res.data.replies);
+                                            }
+                                        });
+                                }
+                            }}
+                        />
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Create Channel Modal */}

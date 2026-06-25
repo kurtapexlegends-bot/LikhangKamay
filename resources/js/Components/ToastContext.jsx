@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Check, X, Info, AlertTriangle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ToastContext = createContext();
 
@@ -26,9 +26,11 @@ export function ToastProvider({ children }) {
         <ToastContext.Provider value={{ addToast }}>
             {children}
             <div className="pointer-events-none fixed bottom-6 right-6 z-[200] flex max-w-[calc(100vw-3rem)] flex-col gap-3">
-                {toasts.map(toast => (
-                    <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
-                ))}
+                <AnimatePresence>
+                    {toasts.map(toast => (
+                        <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
+                    ))}
+                </AnimatePresence>
             </div>
         </ToastContext.Provider>
     );
@@ -54,71 +56,70 @@ function ToastItem({ toast, onRemove }) {
         onRemove(toast.id);
     };
 
-    const icons = {
-        success: (
-            <motion.div
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", bounce: 0.5, duration: 0.5 }}
-                className="relative flex items-center justify-center w-5 h-5"
-            >
-                <motion.svg className="absolute inset-0 w-full h-full text-white" viewBox="0 0 50 50">
-                    <motion.circle
-                        cx="25" cy="25" r="20"
-                        fill="none" stroke="currentColor" strokeWidth="4"
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: 1 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                    />
-                </motion.svg>
-                <motion.div
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.3 }}
-                >
-                    <Check size={14} className="text-white relative z-10" strokeWidth={3} />
-                </motion.div>
-            </motion.div>
-        ),
-        error: <X size={18} className="text-white" />,
-        info: <Info size={18} className="text-white" />,
-        warning: <AlertTriangle size={18} className="text-white" />,
+    const statusConfig = {
+        success: {
+            iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100/50',
+            icon: <Check size={12} strokeWidth={3} />,
+            progressBg: 'bg-emerald-500',
+        },
+        error: {
+            iconBg: 'bg-rose-50 text-rose-600 border border-rose-100/50',
+            icon: <X size={12} strokeWidth={3} />,
+            progressBg: 'bg-rose-500',
+        },
+        info: {
+            iconBg: 'bg-blue-50 text-blue-600 border border-blue-100/50',
+            icon: <Info size={12} strokeWidth={3} />,
+            progressBg: 'bg-blue-500',
+        },
+        warning: {
+            iconBg: 'bg-amber-50 text-amber-600 border border-amber-100/50',
+            icon: <AlertTriangle size={12} strokeWidth={3} />,
+            progressBg: 'bg-amber-500',
+        },
     };
 
-    const bgColors = {
-        success: 'bg-emerald-600/95 backdrop-blur-md',
-        error: 'bg-rose-600/95 backdrop-blur-md',
-        info: 'bg-blue-600/95 backdrop-blur-md',
-        warning: 'bg-amber-500/95 backdrop-blur-md',
-    };
+    const config = statusConfig[toast.type] || statusConfig.info;
 
     return (
-        <div className={`pointer-events-auto relative flex items-center gap-4 rounded-2xl px-5 py-4 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 transform transition-all duration-500 animate-in slide-in-from-right-10 fade-in overflow-hidden ${bgColors[toast.type] || 'bg-gray-800'}`}>
-            <div className="shrink-0 p-1.5 rounded-xl bg-white/20 shadow-inner">
-                {icons[toast.type]}
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.15 } }}
+            transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+            className="pointer-events-auto relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 bg-white/95 border border-stone-200/80 text-stone-850 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-md overflow-hidden"
+        >
+            <div className={`shrink-0 p-1 rounded-lg flex items-center justify-center ${config.iconBg}`}>
+                {config.icon}
             </div>
             
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold tracking-tight pr-2">{toast.message}</p>
+            <div className="flex-1 min-w-0 pr-2">
+                <p className="text-xs font-semibold tracking-tight text-stone-800 leading-tight">{toast.message}</p>
             </div>
 
             {toast.onAction && (
                 <button 
                     onClick={handleAction} 
-                    className="shrink-0 px-3 py-1.5 bg-white text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 active:scale-95 transition-all shadow-sm"
+                    className="shrink-0 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold hover:bg-emerald-100 active:scale-95 transition-all shadow-sm mr-1"
                 >
                     {toast.actionLabel}
                 </button>
             )}
 
-            <button onClick={() => onRemove(toast.id)} className="shrink-0 text-white/50 hover:text-white transition-colors p-1">
-                <X size={16} />
+            <button 
+                onClick={() => onRemove(toast.id)} 
+                className="shrink-0 text-stone-400 hover:text-stone-600 transition-colors p-0.5 rounded"
+            >
+                <X size={14} />
             </button>
             
-            <div 
-                className="absolute bottom-0 left-0 h-1 bg-white/30 animate-toast-shrink origin-left" 
-                style={{ animationDuration: `${toast.duration}ms` }} 
-            />
-        </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-stone-50">
+                <div 
+                    className={`h-full ${config.progressBg} animate-toast-shrink origin-left`} 
+                    style={{ animationDuration: `${toast.duration}ms` }} 
+                />
+            </div>
+        </motion.div>
     );
 }

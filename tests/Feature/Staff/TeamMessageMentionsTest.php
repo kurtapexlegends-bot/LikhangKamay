@@ -23,10 +23,17 @@ class TeamMessageMentionsTest extends TestCase
         $staff1 = $this->createStaff($owner, 'hr');
         $staff2 = $this->createStaff($owner, 'accounting');
 
-        // Staff1 sends direct message mentioning Staff2
+        $channel = TeamChannel::create([
+            'seller_owner_id' => $owner->id,
+            'name' => 'general',
+            'created_by_id' => $owner->id,
+        ]);
+        $channel->members()->attach([$owner->id, $staff1->id, $staff2->id]);
+
+        // Staff1 sends message in channel mentioning Staff2
         $this->actingAs($staff1)
             ->post(route('team-messages.store'), [
-                'receiver_id' => $staff2->id,
+                'team_channel_id' => $channel->id,
                 'message' => "Hey @[{$staff2->name}], can you check the payroll?",
             ])
             ->assertRedirect();
@@ -47,10 +54,17 @@ class TeamMessageMentionsTest extends TestCase
         $owner = $this->createPremiumOwner();
         $staff = $this->createStaff($owner, 'hr');
 
-        // Staff sends message mentioning themselves
+        $channel = TeamChannel::create([
+            'seller_owner_id' => $owner->id,
+            'name' => 'general',
+            'created_by_id' => $owner->id,
+        ]);
+        $channel->members()->attach([$owner->id, $staff->id]);
+
+        // Staff sends message in channel mentioning themselves
         $this->actingAs($staff)
             ->post(route('team-messages.store'), [
-                'receiver_id' => $owner->id,
+                'team_channel_id' => $channel->id,
                 'message' => "Working on this myself @[{$staff->name}]",
             ])
             ->assertRedirect();
@@ -66,15 +80,41 @@ class TeamMessageMentionsTest extends TestCase
         $owner2 = $this->createPremiumOwner();
         $staffOfOwner2 = $this->createStaff($owner2, 'hr');
 
-        // Staff of Owner2 mentions Owner1 (different shop organization)
+        $channel = TeamChannel::create([
+            'seller_owner_id' => $owner2->id,
+            'name' => 'general',
+            'created_by_id' => $owner2->id,
+        ]);
+        $channel->members()->attach([$owner2->id, $staffOfOwner2->id]);
+
+        // Staff of Owner2 mentions Owner1 (different shop organization) inside Owner2's channel
         $this->actingAs($staffOfOwner2)
             ->post(route('team-messages.store'), [
-                'receiver_id' => $owner2->id,
+                'team_channel_id' => $channel->id,
                 'message' => "Hey @[{$owner1->name}]!",
             ])
             ->assertRedirect();
 
         Notification::assertNotSentTo($owner1, TeamMessageMentionedNotification::class);
+    }
+
+    public function test_sending_direct_message_with_mention_does_not_notify_user(): void
+    {
+        Notification::fake();
+
+        $owner = $this->createPremiumOwner();
+        $staff1 = $this->createStaff($owner, 'hr');
+        $staff2 = $this->createStaff($owner, 'accounting');
+
+        // Staff1 sends direct message mentioning Staff2
+        $this->actingAs($staff1)
+            ->post(route('team-messages.store'), [
+                'receiver_id' => $staff2->id,
+                'message' => "Hey @[{$staff2->name}], can you check the payroll?",
+            ])
+            ->assertRedirect();
+
+        Notification::assertNotSentTo($staff2, TeamMessageMentionedNotification::class);
     }
 
     private function createPremiumOwner(): User
