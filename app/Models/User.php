@@ -195,23 +195,6 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function sendEmailVerificationNotification(): void
     {
-        // If we are already in a QStash background process, send it directly.
-        if (request()->is('webhooks/qstash-handler')) {
-            [$code, $expiresAt] = app(EmailVerificationCodeService::class)->issue($this);
-            $this->notifyNow(new \App\Notifications\VerifyEmailNotification($code, $expiresAt));
-            return;
-        }
-
-        // Otherwise, dispatch to QStash if available.
-        if (app()->environment('production')) {
-            $dispatched = app(\App\Services\QStashService::class)->dispatch('send_verification_email', [
-                'user_id' => $this->id
-            ]);
-
-            if ($dispatched) return;
-        }
-
-        // Fallback for local or if QStash fails
         [$code, $expiresAt] = app(EmailVerificationCodeService::class)->issue($this);
         $this->notifyNow(new \App\Notifications\VerifyEmailNotification($code, $expiresAt));
     }
@@ -221,23 +204,6 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function sendPasswordResetNotification($token): void
     {
-        // If we are already in a QStash background process, send it directly.
-        if (request()->is('webhooks/qstash-handler')) {
-            $this->notifyNow(new \App\Notifications\ResetPasswordNotification($token));
-            return;
-        }
-
-        // Otherwise, dispatch to QStash if available.
-        if (app()->environment('production')) {
-            $dispatched = app(\App\Services\QStashService::class)->dispatch('send_password_reset', [
-                'user_id' => $this->id,
-                'token' => $token
-            ]);
-
-            if ($dispatched) return;
-        }
-
-        // Fallback
         $this->notifyNow(new \App\Notifications\ResetPasswordNotification($token));
     }
 

@@ -33,7 +33,6 @@ use App\Http\Controllers\Seller\TeamMessageController;
 use App\Http\Controllers\Seller\AuditLogController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\SuperAdminController;
-use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\PlatformDiagnosticsController;
@@ -65,7 +64,6 @@ Route::get('/artisan/register', function () {
 
 // Legal Pages
 // Webhooks (Exempt from CSRF in bootstrap/app.php)
-Route::post('/webhooks/qstash-handler', [\App\Http\Controllers\Webhooks\QStashWebhookController::class, 'handle']);
 
 Route::get('/terms', function () {
     return Inertia::render('Consumer/Legal/TermsOfService');
@@ -365,14 +363,6 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/sponsorships', fn() => redirect()->route('admin.catalog.index', ['tab' => 'sponsorships']))->name('admin.sponsorships');
     Route::post('/sponsorships/{sponsorshipRequest}/approve', [CatalogController::class, 'approveSponsorship'])->name('admin.sponsorships.approve');
     Route::post('/sponsorships/{sponsorshipRequest}/reject', [CatalogController::class, 'rejectSponsorship'])->name('admin.sponsorships.reject');
-
-    // System Announcements
-    Route::get('/announcements', [AnnouncementController::class, 'index'])->name('admin.announcements');
-    Route::post('/announcements', [AnnouncementController::class, 'store'])->name('admin.announcements.store');
-    Route::patch('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('admin.announcements.update');
-    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('admin.announcements.destroy');
-    Route::post('/announcements/{announcement}/broadcast', [AnnouncementController::class, 'broadcast'])->name('admin.announcements.broadcast');
-    Route::post('/announcements/{announcement}/stop', [AnnouncementController::class, 'stop'])->name('admin.announcements.stop');
 
     // Dispute Arbitration
     Route::get('/disputes', [DisputeController::class, 'adminIndex'])->name('admin.disputes.index');

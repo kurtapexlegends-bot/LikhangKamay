@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import SellerSidebar from '@/Layouts/SellerSidebar';
-import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 

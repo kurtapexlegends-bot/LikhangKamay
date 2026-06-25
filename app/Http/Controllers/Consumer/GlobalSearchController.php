@@ -14,7 +14,6 @@ use App\Models\SponsorshipRequest;
 use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\Category;
-use App\Models\SystemAnnouncement;
 use App\Models\FlaggedContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -110,20 +109,6 @@ class GlobalSearchController extends Controller
                 ];
             });
 
-        // System Announcements (Admin)
-        $adminAnnouncements = SystemAnnouncement::where('title', $like, "%{$query}%")
-            ->limit(3)
-            ->get()
-            ->map(function ($a) {
-                return [
-                    'id' => "admin-ann-{$a->id}",
-                    'title' => $a->title,
-                    'subtitle' => "Status: " . ($a->is_active ? 'Live' : 'Draft'),
-                    'type' => 'Announcement',
-                    'url' => route('admin.announcements', ['search' => $a->title]),
-                    'icon' => 'megaphone',
-                ];
-            });
 
         // Moderation Reports (Admin)
         $adminReports = FlaggedContent::where('reason', $like, "%{$query}%")
@@ -189,7 +174,6 @@ class GlobalSearchController extends Controller
             $users->toArray(), 
             $sponsorships->toArray(),
             $adminCategories->toArray(),
-            $adminAnnouncements->toArray(),
             $adminReports->toArray(),
             $adminProducts->toArray(),
             $adminDisputes->toArray()

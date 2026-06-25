@@ -11,7 +11,6 @@ use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\SponsorshipRequest;
 use App\Models\PlatformActivity;
-use App\Models\SystemAnnouncement;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -45,11 +44,6 @@ class GlobalSearchTest extends TestCase
         $buyer = User::factory()->create(['name' => 'Alice Buyer', 'role' => 'buyer']);
         $artisan = User::factory()->artisanApproved()->create(['name' => 'Bob Artisan', 'shop_name' => 'Bob Shop']);
         
-        $announcement = SystemAnnouncement::create([
-            'title' => 'System Maintenance Alert',
-            'message' => 'System will be down tomorrow',
-            'is_active' => true,
-        ]);
 
         $activity = PlatformActivity::create([
             'user_id' => $admin->id,
@@ -79,12 +73,6 @@ class GlobalSearchTest extends TestCase
                 'title' => 'Alice Buyer',
             ]);
 
-        $this->actingAs($admin)
-            ->get(route('api.global-search', ['query' => 'Alert']))
-            ->assertOk()
-            ->assertJsonFragment([
-                'title' => 'System Maintenance Alert',
-            ]);
 
         $this->actingAs($admin)
             ->get(route('api.global-search', ['query' => 'Inappropriate']))

@@ -75,7 +75,6 @@ export default function GlobalSearch() {
         { label: 'Go to User Manager', cmd: '> users', url: route('admin.users.manager'), icon: Users, color: 'text-indigo-500 bg-indigo-50' },
         { label: 'Go to Artisan Applications', cmd: '> applications', url: route('admin.pending'), icon: Award, color: 'text-amber-500 bg-amber-50' },
         { label: 'Go to Catalog Manager', cmd: '> taxonomy', url: route('admin.taxonomy.index'), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
-        { label: 'Go to Global Alerts', cmd: '> alerts', url: route('admin.announcements'), icon: Bell, color: 'text-blue-500 bg-blue-50' },
         { label: 'Go to Platform Revenue', cmd: '> revenue', url: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
         { label: 'Go to Insights', cmd: '> insights', url: route('admin.insights'), icon: BarChart2, color: 'text-purple-500 bg-purple-50' },
         { label: 'Go to Diagnostics Center', cmd: '> diagnostics', url: route('admin.diagnostics'), icon: Activity, color: 'text-clay-500 bg-clay-50' },
@@ -148,7 +147,6 @@ export default function GlobalSearch() {
             case 'stock request': return <ClipboardList size={16} />;
             case 'review': return <Star size={16} />;
             case 'sponsorship': return <Award size={16} />;
-            case 'announcement': return <Bell size={16} />;
             case 'moderation': return <ShieldAlert size={16} />;
             case 'dispute': return <RotateCcw size={16} />;
             default: return <Search size={16} />;

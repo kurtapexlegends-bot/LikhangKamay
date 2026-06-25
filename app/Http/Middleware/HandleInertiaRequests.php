@@ -56,9 +56,6 @@ class HandleInertiaRequests extends Middleware
             // Cart count from session - lightweight but still good to keep accessible
             'cartCount' => fn () => (int) array_sum(array_column(Session::get('cart', []), 'qty')),
             
-            // Global Announcement with Cache
-            'globalAnnouncement' => Inertia::lazy(fn () => $this->getGlobalAnnouncement($user)),
-            
             'isImpersonating' => fn () => Session::has('impersonator_id'),
             
             // LAZY LOADED: Notifications and Admin counts (reduces TTFB on every route)
@@ -97,45 +94,5 @@ class HandleInertiaRequests extends Middleware
                 ]),
             ],
         ];
-    }
-
-    /**
-     * Helper to resolve global announcement with caching
-     */
-    private function getGlobalAnnouncement(?\App\Models\User $user)
-    {
-        try {
-            return Cache::remember('global_announcement_' . ($user?->role ?? 'guest'), 600, function () use ($user) {
-                $announcementQuery = \App\Models\SystemAnnouncement::where('is_active', true)
-                    ->where(function ($query) {
-                        $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-                    })
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                    });
-
-                $userRole = $user?->role;
-                if ($userRole) {
-                    $announcementQuery->where(function ($query) use ($userRole) {
-                        $query->where('target_audience', 'all');
-                        if (in_array($userRole, ['artisan', 'staff'])) {
-                            $query->orWhere('target_audience', 'artisans');
-                        } elseif ($userRole === 'buyer') {
-                            $query->orWhere('target_audience', 'buyers');
-                        } elseif ($userRole === 'super_admin') {
-                            $query->orWhere('target_audience', 'artisans')
-                                  ->orWhere('target_audience', 'buyers');
-                        }
-                    });
-                } else {
-                    $announcementQuery->where('target_audience', 'all');
-                }
-
-                return $announcementQuery->latest()->first();
-            });
-        } catch (\Exception $e) {
-            report($e);
-            return null;
-        }
     }
 }

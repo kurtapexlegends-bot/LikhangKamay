@@ -1,8 +1,7 @@
 import React from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
-import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
 import Footer from '@/Layouts/Footer';
 import { Award, ArrowRight, Star, MapPin, Package } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
@@ -17,7 +16,6 @@ import SponsoredProductsCarousel from '@/Components/Consumer/Welcome/SponsoredPr
 import TopArtisansGrid from '@/Components/Consumer/Welcome/TopArtisansGrid';
 
 export default function Welcome({ featuredProducts = [], sponsoredProducts = [], topSellers = [], categories = [] }) {
-    const { globalAnnouncement } = usePage().props;
     const sponsoredPlacement = 'home_sponsored';
 
     useSponsoredImpressionTracking(sponsoredProducts, sponsoredPlacement);
@@ -25,8 +23,6 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
             <Head title="LikhangKamay - Artisan Marketplace" />
-
-            <AnnouncementBanner announcement={globalAnnouncement} />
 
             <ImpersonationBanner />
             <BuyerNavbar />

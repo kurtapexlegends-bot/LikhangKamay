@@ -5,7 +5,6 @@ import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import NotificationDropdown from '@/Components/NotificationDropdown';
-import AnnouncementBanner from '@/Layouts/AnnouncementBanner';
 import { useRealtime } from '@/hooks/useRealtime';
 import {
     LayoutDashboard,
@@ -40,7 +39,7 @@ const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 const resolveActiveGroup = (path) => {
     if (path.includes('dashboard') || path.includes('insights') || path.includes('sla') || path.includes('diagnostics') || path.includes('operations')) return 'Platform Pulse';
     if (path.includes('users') || path.includes('pending') || path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Marketplace';
-    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('announcements') || path.includes('monetization') || path.includes('settings') || path.includes('disputes')) return 'Governance';
+    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('monetization') || path.includes('settings') || path.includes('disputes')) return 'Governance';
     return null;
 };
 
@@ -78,7 +77,7 @@ export default function AdminLayout({ title, children }) {
     // Enable Real-time synchronization
     useRealtime();
 
-    const { pendingArtisanCount, auth, globalAnnouncement } = usePage().props;
+    const { pendingArtisanCount, auth } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
     const [isImpersonating, setIsImpersonating] = useState(false);
@@ -128,7 +127,6 @@ export default function AdminLayout({ title, children }) {
             items: [
                 { name: 'Content Safety', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance') },
                 { name: 'Escalated Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: route().current('admin.disputes.index') },
-                { name: 'Global Alerts', href: route('admin.announcements'), icon: Bell, current: route().current('admin.announcements*') },
                 { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
             ]
         }
@@ -137,7 +135,6 @@ export default function AdminLayout({ title, children }) {
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-stone-800">
             <ImpersonationBanner />
-            <AnnouncementBanner announcement={globalAnnouncement} />
             <div className="flex-1 flex">
                 <Head title={title ? `${title} - Admin` : 'Admin Panel'} />
 
@@ -222,7 +219,6 @@ export default function AdminLayout({ title, children }) {
                                  title === 'Global Taxonomy Engine' || title === 'Taxonomy Engine' ? 'Taxonomy Engine' :
                                  title === 'Sponsorship Requests' ? 'Sponsorships' :
                                  title === 'Catalog Manager' ? 'Catalog Manager' :
-                                 title === 'System Announcements' ? 'Global Alerts' :
                                  title === 'Monetization' ? 'Platform Revenue' :
                                  title === 'Escalated Disputes' || title === 'Dispute Arbitration' ? 'Escalated Disputes' :
                                  title === 'System Config' || title === 'System Settings' ? 'System Config' :
@@ -245,8 +241,6 @@ export default function AdminLayout({ title, children }) {
                                     'Artisan Applications': "Approve or reject artisan registration applications.",
                                     'Sponsorship Requests': "Manage sponsored product campaigns.",
                                     'Sponsorships': "Manage sponsored product campaigns.",
-                                    'System Announcements': "Publish system-wide announcements and alerts.",
-                                    'Global Alerts': "Publish system-wide announcements and alerts.",
                                     'Moderation Queue': "Review flagged products and user-reported content.",
                                     'Diagnostics Command Center': "Monitor system health, cache, and server diagnostics.",
                                     'Diagnostics': "Monitor system health, cache, and server diagnostics.",

@@ -81,9 +81,4 @@ return [
         'convenience_fee_rate' => env('PLATFORM_CONVENIENCE_FEE_RATE', 0.03),
     ],
 
-    'qstash' => [
-        'token' => env('QSTASH_TOKEN'),
-        'secret' => env('QSTASH_SECRET'),
-    ],
-
 ];
