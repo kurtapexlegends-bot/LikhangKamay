@@ -112,7 +112,7 @@ export default function CampaignIntelligence({
                                             {/* Screen Chart */}
                                             <div className="print:hidden h-full w-full">
                                                 <ResponsiveContainer width="100%" height="100%">
-                                                    <AreaChart data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                    <AreaChart data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
                                                         <defs>
                                                             <linearGradient id="colorImp" x1="0" y1="0" x2="0" y2="1">
                                                                 <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
@@ -140,7 +140,7 @@ export default function CampaignIntelligence({
                                             </div>
                                             {/* Print Chart (Fixed width to bypass ResponsiveContainer collapse) */}
                                             <div className="hidden print:flex print:justify-center w-full h-[190px]">
-                                                <AreaChart width={445} height={180} data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                <AreaChart width={445} height={180} data={currentSponsorshipChartData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
                                                     <defs>
                                                         <linearGradient id="colorImpPrint" x1="0" y1="0" x2="0" y2="1">
                                                             <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
