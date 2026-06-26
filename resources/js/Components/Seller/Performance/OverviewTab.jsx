@@ -177,7 +177,7 @@ export default function OverviewTab({
                             {currentChartData.length > 0 ? (
                                 <div className="h-full w-full">
                                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                        <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                                        <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: -20, bottom: 15 }}>
                                             <defs>
                                                 <linearGradient id="colorRevenueScreen" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
@@ -185,8 +185,8 @@ export default function OverviewTab({
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={15} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
+                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
+                                            <YAxis width={40} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
                                             <RechartsTooltip
                                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                                 formatter={(value) => formatPeso(value)}
@@ -218,8 +218,8 @@ export default function OverviewTab({
                         <p className="text-sm text-stone-500 mb-4">Total items sold</p>
                     </div>
 
-                    <div className="h-[180px] w-full flex items-center justify-center relative">
-                        {categoryData.length > 0 ? (
+                    {categoryData.length > 0 ? (
+                        <div className="h-[180px] w-full flex items-center justify-center relative">
                             <PieChart width={160} height={160}>
                                 <Pie
                                     data={categoryData}
@@ -243,19 +243,17 @@ export default function OverviewTab({
                                     formatter={(value, name) => [`${value} items`, name]}
                                 />
                             </PieChart>
-                        ) : (
-                            <div className="absolute inset-0">
-                                <WorkspaceEmptyState
-                                    compact
-                                    icon={Package}
-                                    title="No category sales yet"
-                                    description="Category performance becomes available after your first completed orders."
-                                    actionLabel="Manage Products"
-                                    actionHref={route('products.index')}
-                                />
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    ) : (
+                        <WorkspaceEmptyState
+                            compact
+                            icon={Package}
+                            title="No category sales yet"
+                            description="Category performance becomes available after your first completed orders."
+                            actionLabel="Manage Products"
+                            actionHref={route('products.index')}
+                        />
+                    )}
 
                     {categoryData.length > 0 && (
                         <div className="mt-4 space-y-2 pt-3 border-t border-stone-100 max-h-[140px] overflow-y-auto pr-1">

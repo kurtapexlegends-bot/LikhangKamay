@@ -183,7 +183,7 @@ export default function Insights({
                         </div>
                         <div className="p-2 sm:p-6 flex-grow flex items-center">
                             <ResponsiveContainer width="100%" height={240}>
-                                <AreaChart data={filteredHistory} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}>
+                                <AreaChart data={filteredHistory} margin={{ top: 10, right: 10, bottom: 15, left: -20 }}>
                                     <defs>
                                         <linearGradient id="adminMrrFill" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#c07251" stopOpacity={0.16} />
@@ -192,7 +192,7 @@ export default function Insights({
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} tickFormatter={v => `P${v}`} />
+                                    <YAxis width={40} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} tickFormatter={v => `P${v}`} />
                                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#f5f5f4', strokeWidth: 2 }} />
                                     <Area type="monotone" dataKey="mrr" name="MRR" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminMrrFill)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#c07251' }} animationDuration={1000} />
                                 </AreaChart>
