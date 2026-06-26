@@ -126,6 +126,7 @@ class HREmployeeLoader
             'rest_day_ot_multiplier' => $seller->rest_day_ot_multiplier ?? 1.69,
             'holiday_ot_multiplier' => $seller->holiday_ot_multiplier ?? 2.60,
             'payroll_working_days' => $seller->payroll_working_days ?? 22,
+            'standard_workday_hours' => $seller->standard_workday_hours ?? 8.00,
             'attendance_month_label' => $activePeriod->format('F Y'),
             'attendance_month_value' => $activePeriod->format('Y-m'),
             'created_at' => $seller->created_at ? $seller->created_at->toIso8601String() : now(config('app.timezone'))->toIso8601String(),

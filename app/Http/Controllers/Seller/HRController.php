@@ -266,6 +266,7 @@ class HRController extends Controller
             'rest_day_ot_multiplier' => 'nullable|numeric|min:0.01|max:10',
             'holiday_ot_multiplier' => 'nullable|numeric|min:0.01|max:10',
             'payroll_working_days' => 'required|integer|min:1|max:31',
+            'standard_workday_hours' => 'required|numeric|min:4|max:12',
         ]);
 
         User::where('id', $this->sellerOwnerId())->update([
@@ -275,6 +276,7 @@ class HRController extends Controller
             'rest_day_ot_multiplier' => $request->rest_day_ot_multiplier ?? 1.69,
             'holiday_ot_multiplier' => $request->holiday_ot_multiplier ?? 2.60,
             'payroll_working_days' => $request->payroll_working_days,
+            'standard_workday_hours' => $request->standard_workday_hours ?? 8.00,
         ]);
 
         return redirect()->back()->with('success', 'Payroll settings updated successfully.');

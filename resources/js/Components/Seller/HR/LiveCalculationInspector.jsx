@@ -37,7 +37,7 @@ export default function LiveCalculationInspector({ item, breakdown, settings }) 
                         </div>
                         <div className="flex justify-between">
                             <span className="text-stone-500">Hourly Rate Divisor:</span>
-                            <span className="text-stone-850">Daily Rate / 8 hrs</span>
+                            <span className="text-stone-850">Daily Rate / {settings.standard_workday_hours || 8} hrs</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-stone-500">Resolved Hourly Rate:</span>

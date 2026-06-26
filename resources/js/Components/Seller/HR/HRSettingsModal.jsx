@@ -56,6 +56,7 @@ export default function HRSettingsModal({
         rest_day_ot_multiplier: sellerSettings.rest_day_ot_multiplier || 1.69,
         holiday_ot_multiplier: sellerSettings.holiday_ot_multiplier || 2.60,
         payroll_working_days: sellerSettings.payroll_working_days || 22,
+        standard_workday_hours: sellerSettings.standard_workday_hours || 8.0,
     });
 
     React.useEffect(() => {
@@ -67,6 +68,7 @@ export default function HRSettingsModal({
                 rest_day_ot_multiplier: sellerSettings.rest_day_ot_multiplier || 1.69,
                 holiday_ot_multiplier: sellerSettings.holiday_ot_multiplier || 2.60,
                 payroll_working_days: sellerSettings.payroll_working_days || 22,
+                standard_workday_hours: sellerSettings.standard_workday_hours || 8.0,
             });
         }
     }, [isOpen, sellerSettings]);
@@ -158,23 +160,43 @@ export default function HRSettingsModal({
                         </div>
                     </div>
 
-                    {/* Custom days input (Conditionally rendered) */}
-                    {data.payroll_factor_method === 'custom' && (
-                        <div className="rounded-2xl border border-stone-250/60 bg-white p-4 max-w-sm transition-all duration-300">
-                            <InputLabel value="Standard Fixed Working Days / Month" />
+                    {/* Divisors settings grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {data.payroll_factor_method === 'custom' ? (
+                            <div className="rounded-2xl border border-stone-250/60 bg-white p-4 transition-all duration-300">
+                                <InputLabel value="Standard Fixed Working Days / Month" />
+                                <input 
+                                    type="number" 
+                                    className="w-full rounded-xl border border-stone-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500 min-h-[44px] mt-1.5 text-sm" 
+                                    value={data.payroll_working_days ?? ''} 
+                                    onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
+                                    onChange={e => setData('payroll_working_days', e.target.value.replace(/[-.]/g, ""))} 
+                                    required 
+                                    min="1" 
+                                    max="31"
+                                />
+                                <p className="mt-1 text-[10px] text-stone-500">Typical values are 22 days (5-day week) or 26 days (6-day week).</p>
+                            </div>
+                        ) : (
+                            <div className="hidden md:block" />
+                        )}
+
+                        <div className="rounded-2xl border border-stone-250/60 bg-white p-4 transition-all duration-300">
+                            <InputLabel value="Standard Workday Length (Hours)" />
                             <input 
                                 type="number" 
                                 className="w-full rounded-xl border border-stone-300 shadow-none transition focus:border-clay-500 focus:ring-clay-500 min-h-[44px] mt-1.5 text-sm" 
-                                value={data.payroll_working_days ?? ''} 
-                                onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
-                                onChange={e => setData('payroll_working_days', e.target.value.replace(/[-.]/g, ""))} 
+                                value={data.standard_workday_hours ?? ''} 
+                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                                onChange={e => setData('standard_workday_hours', e.target.value.replace(/-/g, ""))} 
                                 required 
-                                min="1" 
-                                max="31"
+                                min="4" 
+                                max="12"
+                                step="0.5"
                             />
-                            <p className="mt-1 text-[10px] text-stone-500">Typical values are 22 days (5-day week) or 26 days (6-day week).</p>
+                            <p className="mt-1 text-[10px] text-stone-500">Defines daily overtime threshold. Standard DOLE workday is 8 hours.</p>
                         </div>
-                    )}
+                    </div>
 
                     {/* Step 2 Section: Overtime multipliers */}
                     <div className="border-t border-stone-150 pt-5 space-y-3">

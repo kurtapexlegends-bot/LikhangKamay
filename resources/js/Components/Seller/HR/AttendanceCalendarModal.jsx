@@ -19,6 +19,9 @@ export default function AttendanceCalendarModal({
 }) {
     if (!employee) return null;
 
+    const standardWorkdayHours = Number(sellerSettings.standard_workday_hours) || 8.0;
+    const standardWorkdayMinutes = standardWorkdayHours * 60;
+
     const calendarDays = employee?.attendance?.calendar_days || [];
     const calendarWeeks = buildAttendanceCalendarWeeks(calendarDays);
     const selectedDay = calendarDays.find((day) => day.date === selectedDate) 
@@ -200,7 +203,7 @@ export default function AttendanceCalendarModal({
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Worked
                             </span>
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 border border-amber-100">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span> Overtime
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span> Overtime ({`> ${standardWorkdayHours}h`})
                             </span>
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCF7F2] text-clay-700 px-2 py-0.5 border border-[#E7D8C9]">
                                 <span className="h-1.5 w-1.5 rounded-full bg-clay-500"></span> Selected
@@ -227,7 +230,7 @@ export default function AttendanceCalendarModal({
                                                 selectedDay?.date === day.date
                                                     ? 'border-clay-300 bg-[#FCF7F2] ring-2 ring-clay-200 ring-offset-1'
                                                     : day.has_hours
-                                                        ? day.worked_minutes > 480
+                                                        ? day.worked_minutes > standardWorkdayMinutes
                                                             ? 'border-amber-200 bg-amber-50/50 hover:bg-amber-50 hover:border-amber-300'
                                                             : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-300'
                                                         : 'border-stone-100 bg-stone-50/50 hover:bg-stone-100'
@@ -239,7 +242,7 @@ export default function AttendanceCalendarModal({
                                                         selectedDay?.date === day.date
                                                             ? 'text-clay-900'
                                                             : day.has_hours
-                                                                ? day.worked_minutes > 480
+                                                                ? day.worked_minutes > standardWorkdayMinutes
                                                                     ? 'text-amber-900'
                                                                     : 'text-emerald-900'
                                                                 : 'text-stone-700'
@@ -255,11 +258,11 @@ export default function AttendanceCalendarModal({
                                                         {/* Desktop detail */}
                                                         <div className="hidden sm:flex items-center justify-between gap-1 mt-1">
                                                             <span className={`text-[10px] font-bold leading-tight ${
-                                                                day.worked_minutes > 480 ? 'text-amber-700' : 'text-emerald-700'
+                                                                day.worked_minutes > standardWorkdayMinutes ? 'text-amber-700' : 'text-emerald-700'
                                                             }`}>
                                                                 {day.worked_hours_label}
                                                             </span>
-                                                            {day.worked_minutes > 480 && (
+                                                            {day.worked_minutes > standardWorkdayMinutes && (
                                                                 <span className="inline-flex rounded bg-amber-100 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-800 scale-90 origin-right">
                                                                     OT
                                                                 </span>
@@ -268,7 +271,7 @@ export default function AttendanceCalendarModal({
                                                         {/* Mobile dot badge */}
                                                         <div className="sm:hidden flex justify-center mt-1">
                                                             <span className={`h-1.5 w-1.5 rounded-full ${
-                                                                day.worked_minutes > 480 ? 'bg-amber-500' : 'bg-emerald-500'
+                                                                day.worked_minutes > standardWorkdayMinutes ? 'bg-amber-500' : 'bg-emerald-500'
                                                             }`} />
                                                         </div>
                                                     </>

@@ -9,7 +9,6 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import {
     FALLBACK_ROLE_PRESETS,
     FALLBACK_MODULES,
-    getHrAccessSummary,
 } from '@/utils/hrHelpers';
 
 import HRMetrics from '@/Components/Seller/HR/HRMetrics';
@@ -80,10 +79,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         return list.filter((p) => p.status === 'Pending').length;
     }, [payrolls]);
     
-    const hrAccessSummary = useMemo(() => 
-        getHrAccessSummary(canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts), 
-        [canEditHrRecords, canProvisionStaffAccounts, canUpdateStaffAccounts]
-    );
+
 
     const openEditModal = (employee) => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
@@ -159,10 +155,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 <HRMetrics
                     staff={staff}
                     pendingPayrollCount={pendingPayrollCount}
-                    hrAccessSummary={hrAccessSummary}
-                    requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
-                    canDeleteStaffAccounts={canDeleteStaffAccounts}
-                    canEditHrRecords={canEditHrRecords}
                     animate={shouldAnimateKPI}
                 />
 

@@ -378,7 +378,8 @@ export const calculateNetPay = (item, sellerSettings = {}) => {
         dailyRate = item.salary / workingDays;
     }
 
-    const hourlyRate = dailyRate / 8;
+    const standardWorkdayHours = Number(sellerSettings.standard_workday_hours) || 8.0;
+    const hourlyRate = dailyRate / standardWorkdayHours;
     
     const regularOtPay = (Number(item.overtime_hours) || 0) * (hourlyRate * otMultiplier);
     const restDayOtPay = (Number(item.rest_day_ot_hours) || 0) * (hourlyRate * restDayOtMultiplier);
@@ -414,7 +415,8 @@ export const calculatePayrollBreakdown = (item, sellerSettings = {}) => {
         formulaText = `₱${item.salary.toLocaleString()} / ${workingDays}`;
     }
 
-    const hourlyRate = dailyRate / 8;
+    const standardWorkdayHours = Number(sellerSettings.standard_workday_hours) || 8.0;
+    const hourlyRate = dailyRate / standardWorkdayHours;
     
     const regularOtRate = hourlyRate * otMultiplier;
     const restDayOtRate = hourlyRate * restDayOtMultiplier;

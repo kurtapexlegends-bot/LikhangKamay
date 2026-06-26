@@ -258,4 +258,51 @@ class StaffAttendancePayrollTest extends TestCase
             'worked_minutes' => $clockIn->diffInMinutes($clockOut),
         ]);
     }
+
+    public function test_customizable_standard_workday_hours_affects_prefill_and_payroll(): void
+    {
+        [$owner, $employee] = $this->createOwnerWithHrAccessAndEmployee();
+        
+        // 1. Update settings to use 6.0 standard workday hours
+        $response = $this->actingAs($owner)->post(route('hr.settings'), [
+            'overtime_rate' => 75,
+            'overtime_multiplier' => 1.25,
+            'payroll_factor_method' => 'custom',
+            'rest_day_ot_multiplier' => 1.69,
+            'holiday_ot_multiplier' => 2.60,
+            'payroll_working_days' => 20,
+            'standard_workday_hours' => 6.0,
+        ]);
+        $response->assertRedirect();
+        
+        $owner->refresh();
+        $this->assertEquals(6.0, (float) $owner->standard_workday_hours);
+
+        // 2. Create sessions for a linked employee
+        $staffLogin = User::factory()->staff($owner)->create([
+            'name' => $employee->name,
+            'email_verified_at' => now(config('app.timezone')),
+            'must_change_password' => false,
+            'employee_id' => $employee->id,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['hr' => true], true),
+        ]);
+
+        $monthStart = now(config('app.timezone'))->copy()->startOfMonth()->setTime(8, 0);
+
+        // A 8-hour session. With standard workday of 6 hours, this is 2 hours Overtime (OT).
+        $this->createClosedSession($staffLogin, $owner, $employee, $monthStart->copy(), $monthStart->copy()->addHours(8), 'clocked_out');
+        
+        // A 5-hour session. With standard workday of 6 hours, this is 1 hour Undertime.
+        $this->createClosedSession($staffLogin, $owner, $employee, $monthStart->copy()->addDay(), $monthStart->copy()->addDay()->addHours(5), 'paused');
+
+        $response = $this->actingAs($owner)->get(route('hr.index'));
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/HR/HR')
+            ->where('sellerSettings.standard_workday_hours', 6)
+            ->where('staff.0.payroll_prefill.undertime_hours', 1)
+            ->where('staff.0.payroll_prefill.overtime_hours', 2)
+        );
+    }
 }

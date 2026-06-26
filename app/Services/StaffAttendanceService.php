@@ -223,14 +223,15 @@ class StaffAttendanceService
 
         $sessionsByEmployee = $sessions->groupBy("employee_id");
 
-        return $employees->mapWithKeys(function ($employee) use ($sessionsByEmployee, $today, $workingDays, $period) {
+        return $employees->mapWithKeys(function ($employee) use ($sessionsByEmployee, $today, $workingDays, $period, $seller) {
             return [
                 $employee->id => $this->buildEmployeeSummary(
                     $employee,
                     $sessionsByEmployee->get($employee->id, collect()),
                     $today,
                     $workingDays,
-                    $period
+                    $period,
+                    $seller
                 )
             ];
         })->all();
@@ -241,7 +242,7 @@ class StaffAttendanceService
      * @param Collection<int, StaffAttendanceSession> $employeeSessions
      * @return array<string, mixed>
      */
-    private function buildEmployeeSummary($employee, Collection $employeeSessions, string $today, int $workingDays, CarbonInterface $period): array
+    private function buildEmployeeSummary($employee, Collection $employeeSessions, string $today, int $workingDays, CarbonInterface $period, User $seller): array
     {
         $latestSession = $employeeSessions->last();
         $todaySessions = $employeeSessions->filter(function (StaffAttendanceSession $session) use ($today) {
@@ -261,13 +262,15 @@ class StaffAttendanceService
             });
 
         $daysWorked = $dailyMinutes->filter(fn ($minutes) => $minutes > 0)->count();
+        $standardWorkdayMinutes = (int) ((float) ($seller->standard_workday_hours ?? 8.0) * 60);
+
         $undertimeMinutes = $dailyMinutes
             ->filter(fn ($minutes) => $minutes > 0)
-            ->map(fn ($minutes) => max(0, self::STANDARD_WORKDAY_MINUTES - $minutes))
+            ->map(fn ($minutes) => max(0, $standardWorkdayMinutes - $minutes))
             ->sum();
         $overtimeMinutes = $dailyMinutes
             ->filter(fn ($minutes) => $minutes > 0)
-            ->map(fn ($minutes) => max(0, $minutes - self::STANDARD_WORKDAY_MINUTES))
+            ->map(fn ($minutes) => max(0, $minutes - $standardWorkdayMinutes))
             ->sum();
         
         $calendarDays = [];
