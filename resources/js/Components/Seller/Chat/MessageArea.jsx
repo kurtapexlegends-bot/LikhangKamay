@@ -98,6 +98,7 @@ export default function MessageArea({
                                             
                                             {activePickerId === message.id && (
                                                 <ReactionPicker
+                                                    activeEmoji={message.reactions?.find(r => r.reacted_by_me)?.emoji}
                                                     onSelect={(emoji) => {
                                                         onToggleReaction && onToggleReaction(message.id, emoji);
                                                         setActivePickerId(null);
@@ -226,7 +227,7 @@ export default function MessageArea({
                                                         }`}
                                                         title={react.users_list ? react.users_list.join(', ') : ''}
                                                     >
-                                                        <span>{react.emoji}</span>
+                                                        <Twemoji emoji={react.emoji} className="w-3.5 h-3.5" />
                                                         <span className="text-[10px]">{react.count}</span>
                                                     </button>
                                                 ))}
@@ -273,6 +274,7 @@ export default function MessageArea({
 
                                             {activePickerId === message.id && (
                                                 <ReactionPicker
+                                                    activeEmoji={message.reactions?.find(r => r.reacted_by_me)?.emoji}
                                                     onSelect={(emoji) => {
                                                         onToggleReaction && onToggleReaction(message.id, emoji);
                                                         setActivePickerId(null);
@@ -328,7 +330,28 @@ export default function MessageArea({
     );
 }
 
-function ReactionPicker({ onSelect, onClose, className = '' }) {
+const emojiMap = {
+    '👍': '1f44d',
+    '❤️': '2764',
+    '😂': '1f602',
+    '😮': '1f62e',
+    '😢': '1f622',
+    '🙏': '1f64f'
+};
+
+export function Twemoji({ emoji, className = "w-4 h-4" }) {
+    const code = emojiMap[emoji];
+    if (!code) return <span className={className}>{emoji}</span>;
+    return (
+        <img 
+            src={`https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${code}.svg`} 
+            alt={emoji} 
+            className={`${className} object-contain inline-block shrink-0`} 
+        />
+    );
+}
+
+function ReactionPicker({ onSelect, onClose, activeEmoji, className = '' }) {
     const pickerRef = useRef(null);
 
     useEffect(() => {
@@ -348,16 +371,23 @@ function ReactionPicker({ onSelect, onClose, className = '' }) {
             ref={pickerRef}
             className={`flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-2.5 py-1.5 shadow-md animate-in fade-in zoom-in-95 duration-100 ${className}`}
         >
-            {emojis.map((emoji) => (
-                <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => onSelect(emoji)}
-                    className="hover:scale-125 active:scale-95 transition text-base p-1"
-                >
-                    {emoji}
-                </button>
-            ))}
+            {emojis.map((emoji) => {
+                const isActive = emoji === activeEmoji;
+                return (
+                    <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => onSelect(emoji)}
+                        className={`hover:scale-125 active:scale-95 transition p-1 rounded-lg flex items-center justify-center ${
+                            isActive 
+                                ? 'bg-clay-50 border border-clay-200 shadow-xs scale-110' 
+                                : 'hover:bg-stone-50'
+                        }`}
+                    >
+                        <Twemoji emoji={emoji} className="w-5 h-5" />
+                    </button>
+                );
+            })}
         </div>
     );
 }
