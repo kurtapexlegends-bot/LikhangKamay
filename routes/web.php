@@ -324,6 +324,16 @@ Route::get('/subscription/payment/success', [SubscriptionController::class, 'suc
 Route::get('/subscription/payment/cancel', [SubscriptionController::class, 'cancel'])->middleware('signed')->name('seller.subscription.payment.cancel');
 Route::post('/webhooks/lalamove', LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
 Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhooks\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
+Route::get('/webhooks/cron', function () {
+    if (request()->header('X-Vercel-Cron-Secret') !== env('CRON_SECRET')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    \Illuminate\Support\Facades\Artisan::call('schedule:run');
+    return response()->json([
+        'status' => 'success',
+        'output' => \Illuminate\Support\Facades\Artisan::output()
+    ]);
+})->name('webhooks.cron');
 
 Route::get('/img/proxy', [\App\Http\Controllers\Core\ImageProxyController::class, 'proxy'])->name('img.proxy');
 

@@ -29,6 +29,13 @@
         }
     ],
 
+    "crons": [
+        {
+            "path": "/webhooks/cron",
+            "schedule": "* * * * *"
+        }
+    ],
+
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "true",
