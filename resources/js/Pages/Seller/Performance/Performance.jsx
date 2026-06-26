@@ -15,7 +15,6 @@ import ExportButton from '@/Components/ExportButton';
 
 // Modular UI Components
 import OperationsControl from '@/Components/Seller/Performance/OperationsControl';
-import SatisfactionBreakdown from '@/Components/Seller/Performance/SatisfactionBreakdown';
 import CampaignIntelligence from '@/Components/Seller/Performance/CampaignIntelligence';
 import OverviewTab from '@/Components/Seller/Performance/OverviewTab';
 import PrintReportView from '@/Components/Seller/Performance/PrintReportView';
@@ -46,7 +45,6 @@ export default function Analytics({
     const tabs = [
         { id: 'overview', label: 'Overview', icon: LayoutGrid },
         { id: 'operations', label: 'Operations', icon: Activity },
-        { id: 'customers', label: 'Customers', icon: Users },
         { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
     ];
 
@@ -169,13 +167,8 @@ export default function Analytics({
                             insights={insights} 
                             topProducts={topProducts} 
                             salesHeatmap={salesHeatmap} 
+                            stats={stats}
                         />
-                    )}
-
-                    {activeTab === 'customers' && (
-                        <div className="max-w-4xl mx-auto w-full">
-                            <SatisfactionBreakdown stats={stats} />
-                        </div>
                     )}
 
                     {activeTab === 'campaigns' && (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import { Activity, Package, ArrowUpRight, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
+import SatisfactionBreakdown from './SatisfactionBreakdown';
 
 const pesoFormatter = new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -11,7 +12,7 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
 
 const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
-export default function OperationsControl({ metrics, insights, topProducts = [], salesHeatmap = [] }) {
+export default function OperationsControl({ metrics, insights, topProducts = [], salesHeatmap = [], stats }) {
     const [hoveredCell, setHoveredCell] = React.useState(null);
     const heatmapCardRef = React.useRef(null);
     const lowStockProducts = insights?.low_stock_products || [];
@@ -21,11 +22,10 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
     return (
         <>
             <div className="space-y-6 print:hidden">
-                {/* Row 1: Peak Sales Heatmap */}
-                <div className="grid grid-cols-1 gap-6">
-
+                {/* Row 1: Peak Sales Heatmap (2/3) & Customer Ratings (1/3) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Peak Activity Heatmap */}
-                    <div ref={heatmapCardRef} className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px] relative">
+                    <div ref={heatmapCardRef} className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px] relative">
                         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
                             <div>
                                 <h3 className="text-base font-bold text-stone-900 leading-none">Peak Activity Heatmap</h3>
@@ -37,7 +37,7 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                                     <div className="w-2.5 h-2.5 rounded-sm bg-stone-50 border border-stone-100" />
                                     <div className="w-2.5 h-2.5 rounded-sm bg-clay-100" />
                                     <div className="w-2.5 h-2.5 rounded-sm bg-clay-300" />
-                                    <div className="w-2.5 h-2.5 rounded-sm bg-clay-500" />
+                                    <div className="w-2.5 h-2.5 rounded-sm bg-clay-600" />
                                 </div>
                                 <span>Peak</span>
                             </div>
@@ -45,50 +45,56 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
 
                         <div className="flex-1 overflow-x-auto pb-2 flex items-center">
                             <div className="min-w-[500px] w-full">
-                               <div className="grid grid-cols-8 gap-1">
-                                   <div className="col-span-1" />
-                                   {['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM', '11 PM'].map((h, i) => (
-                                       <div key={i} className="text-[9px] font-bold text-stone-400 text-center uppercase">{h}</div>
-                                   ))}
-                               </div>
-                               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                                   <div key={day} className="grid grid-cols-8 gap-1 mt-1">
-                                       <div className="text-[10px] font-bold text-stone-600 flex items-center pr-2">{day}</div>
-                                       {[0, 4, 8, 12, 16, 20, 23].map((hour) => {
-                                           const match = salesHeatmap.find(h => h.day === day && h.hour === hour);
-                                           const count = match ? match.count : 0;
-                                           const opacity = count === 0 ? 'bg-stone-50' : 
-                                                           count < 2 ? 'bg-clay-100' :
-                                                           count < 5 ? 'bg-clay-300' : 'bg-clay-600 shadow-sm';
-                                           return (
-                                               <div 
-                                                   key={hour} 
-                                                   className={`h-7 rounded-md ${opacity} transition-all hover:scale-105 cursor-help flex items-center justify-center`}
-                                                   onMouseEnter={(e) => {
-                                                       const rect = e.currentTarget.getBoundingClientRect();
-                                                       if (heatmapCardRef.current) {
-                                                           const containerRect = heatmapCardRef.current.getBoundingClientRect();
-                                                           setHoveredCell({
-                                                               day,
-                                                               hour,
-                                                               count,
-                                                               hourLabel: hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour === 23 ? '11 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
-                                                               x: rect.left - containerRect.left + rect.width / 2,
-                                                               y: rect.top - containerRect.top - 6,
-                                                           });
-                                                       }
-                                                   }}
-                                                   onMouseLeave={() => setHoveredCell(null)}
-                                               >
-                                                   {count > 0 && <span className={`text-[9px] font-bold ${count > 4 ? 'text-white' : 'text-clay-800'}`}>{count}</span>}
-                                               </div>
-                                           );
-                                       })}
-                                   </div>
-                               ))}
-                           </div>
+                                <div className="grid grid-cols-8 gap-1">
+                                    <div className="col-span-1" />
+                                    {['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM', '11 PM'].map((h, i) => (
+                                        <div key={i} className="text-[9px] font-bold text-stone-400 text-center uppercase">{h}</div>
+                                    ))}
+                                </div>
+                                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                                    <div key={day} className="grid grid-cols-8 gap-1 mt-1">
+                                        <div className="text-[10px] font-bold text-stone-600 flex items-center pr-2">{day}</div>
+                                        {[0, 4, 8, 12, 16, 20, 23].map((hour) => {
+                                            const match = salesHeatmap.find(h => h.day === day && h.hour === hour);
+                                            const count = match ? match.count : 0;
+                                            const colorClass = count === 0 ? 'bg-stone-50 border border-stone-100/30' : 
+                                                               count < 2 ? 'bg-clay-100' :
+                                                               count < 5 ? 'bg-clay-300' : 'bg-clay-600 shadow-sm';
+                                            return (
+                                                <div 
+                                                    key={hour} 
+                                                    className={`h-7 rounded-md ${colorClass} transition-all hover:scale-105 cursor-help flex items-center justify-center`}
+                                                    onMouseEnter={(e) => {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        if (heatmapCardRef.current) {
+                                                            const containerRect = heatmapCardRef.current.getBoundingClientRect();
+                                                            setHoveredCell({
+                                                                day,
+                                                                hour,
+                                                                count,
+                                                                hourLabel: hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour === 23 ? '11 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
+                                                                x: rect.left - containerRect.left + rect.width / 2,
+                                                                y: rect.top - containerRect.top - 6,
+                                                            });
+                                                        }
+                                                    }}
+                                                    onMouseLeave={() => setHoveredCell(null)}
+                                                >
+                                                    {count > 0 && <span className={`text-[9px] font-bold ${count > 4 ? 'text-white' : 'text-clay-800'}`}>{count}</span>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <p className="mt-3 text-[9px] text-stone-400 italic">Recommendation: Schedule product updates or campaigns matching dark heatmap blocks.</p>
+
+                        <div className="mt-4 flex items-start gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                            <Sparkles className="text-amber-600 shrink-0 mt-0.5" size={13} />
+                            <p className="text-[10px] text-amber-800 leading-normal font-medium">
+                                <strong>Logistics Recommendation:</strong> Schedule products updates, flash inventory drops, or sponsored campaign placements matching the darker peak blocks.
+                            </p>
+                        </div>
 
                         {/* Custom Floating Tooltip */}
                         {hoveredCell && (
@@ -107,13 +113,17 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                             </div>
                         )}
                     </div>
+
+                    {/* Customer Ratings */}
+                    <div className="lg:col-span-1">
+                        <SatisfactionBreakdown stats={stats} compact={true} />
+                    </div>
                 </div>
 
-                {/* Row 2: Inventory Alert Hub (2/3) & Product Performance (1/3) */}
+                {/* Row 2: Inventory Alert Hub (2/3) & Velocity & Top Volume (1/3) */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
                     {/* Inventory Alert Hub */}
-                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between">
+                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px]">
                         <div className="pb-3 border-b border-stone-100 mb-4">
                             <h3 className="text-base font-bold text-stone-900 leading-none">Inventory Alert Hub</h3>
                             <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Critical stock items and slow moving catalog</p>
@@ -121,60 +131,64 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
                             {/* Low Stock Alerts */}
-                            <div className="bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50 flex flex-col">
-                                <p className="text-[10px] text-rose-700 mb-3 font-bold uppercase tracking-wider flex justify-between items-center shrink-0">
-                                    <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Critical Low Stock</span>
-                                    {lowStockProducts.length > 0 && <span className="bg-rose-600 text-white rounded-full px-2 py-0.5 text-[9px] font-black">{lowStockProducts.length}</span>}
-                                </p>
-                                <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
-                                    {lowStockProducts.length > 0 ? lowStockProducts.map((p, i) => (
-                                        <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100 hover:shadow-sm transition-shadow">
-                                            <div className="min-w-0">
-                                                <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
-                                                <p className="text-[9px] text-stone-400 font-medium">SKU: {p.sku || 'N/A'}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-right">
-                                                    <p className="font-black text-rose-600">{p.stock} left</p>
+                            <div className="bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50 flex flex-col justify-between">
+                                <div>
+                                    <p className="text-[10px] text-rose-700 mb-3 font-bold uppercase tracking-wider flex justify-between items-center shrink-0">
+                                        <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Critical Low Stock</span>
+                                        {lowStockProducts.length > 0 && <span className="bg-rose-600 text-white rounded-full px-2 py-0.5 text-[9px] font-black">{lowStockProducts.length}</span>}
+                                    </p>
+                                    <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
+                                        {lowStockProducts.length > 0 ? lowStockProducts.map((p, i) => (
+                                            <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100/70 hover:shadow-sm transition-shadow">
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
+                                                    <p className="text-[9px] text-stone-400 font-medium">SKU: {p.sku || 'N/A'}</p>
                                                 </div>
-                                                <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
-                                                    <ArrowUpRight size={11} />
-                                                </Link>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-rose-100/60 text-rose-700">
+                                                        {p.stock} left
+                                                    </span>
+                                                    <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
+                                                        <ArrowUpRight size={11} />
+                                                    </Link>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All items have healthy stock.</p>}
+                                        )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All items have healthy stock.</p>}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Slow Movers */}
-                            <div className="bg-stone-50/50 p-4 rounded-2xl border border-stone-100 flex flex-col">
-                                <p className="text-[10px] text-stone-600 mb-3 font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                                    <Package size={12} /> Slow Movers (0 sales in 30 days)
-                                </p>
-                                <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
-                                    {slowMovers.length > 0 ? slowMovers.map((p, i) => (
-                                        <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100 hover:shadow-sm transition-shadow">
-                                            <div className="min-w-0">
-                                                <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
-                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(2)} days</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-right">
-                                                    <p className="font-black text-stone-700">{p.stock} units</p>
+                            <div className="bg-stone-50/50 p-4 rounded-2xl border border-stone-100/70 flex flex-col justify-between">
+                                <div>
+                                    <p className="text-[10px] text-stone-600 mb-3 font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+                                        <Package size={12} /> Slow Movers (0 sales in 30 days)
+                                    </p>
+                                    <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
+                                        {slowMovers.length > 0 ? slowMovers.map((p, i) => (
+                                            <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100/70 hover:shadow-sm transition-shadow">
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
+                                                    <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(0)} days</p>
                                                 </div>
-                                                <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
-                                                    <ArrowUpRight size={11} />
-                                                </Link>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200/40">
+                                                        {p.stock} units
+                                                    </span>
+                                                    <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
+                                                        <ArrowUpRight size={11} />
+                                                    </Link>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All products are moving healthy!</p>}
+                                        )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All products are moving healthy!</p>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Product Performance & Velocity */}
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[300px]">
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px]">
                         <div className="pb-3 border-b border-stone-50 mb-3">
                             <h3 className="text-base font-bold text-stone-900 leading-none">Velocity & Top Volume</h3>
                             <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Delivery velocity & top items</p>
@@ -216,7 +230,7 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                                         topProducts.slice(0, 2).map((item, index) => {
                                             const imageUrl = item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : null;
                                             return (
-                                                <div key={index} className="flex items-center gap-2.5 bg-stone-50/50 p-2 rounded-xl border border-stone-100 hover:bg-white hover:shadow-sm transition-all duration-300">
+                                                <div key={index} className="flex items-center gap-2.5 bg-stone-50/50 p-2 rounded-xl border border-stone-100/70 hover:bg-white hover:shadow-sm hover:border-stone-200 transition-all duration-300">
                                                     <div className="w-8 h-8 rounded-lg overflow-hidden bg-stone-200 border border-white shrink-0">
                                                         {imageUrl ? (
                                                             <img 
@@ -285,7 +299,7 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                                         <div key={i} className="flex items-center justify-between text-xs gap-2 mt-1">
                                             <div className="min-w-0 flex-1">
                                                 <p className="font-bold text-stone-900 truncate">{p.name}</p>
-                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(2)} days</p>
+                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(0)} days</p>
                                             </div>
                                             <span className="font-bold text-stone-500 shrink-0">{p.stock} units</span>
                                         </div>
