@@ -76,7 +76,6 @@ class ShopAnalyticsReportingTest extends TestCase
                     'date',
                     'daily' => ['sales', 'orders_count', 'completed_orders_count'],
                     'all_time' => ['total_sales', 'orders_count', 'aov', 'orders_by_status'],
-                    'fulfillment_latency',
                     'low_stock_alerts',
                     'generated_at',
                 ],
@@ -95,47 +94,6 @@ class ShopAnalyticsReportingTest extends TestCase
         $this->assertEquals(1, $statusBreakdown['Processing']);
         $this->assertEquals(1, $statusBreakdown['Cancelled']);
         $this->assertEquals(0, $statusBreakdown['Pending']);
-    }
-
-    public function test_analytics_correctly_calculates_fulfillment_latency(): void
-    {
-        $now = Carbon::now();
-
-        // Order 1:
-        // Acceptance latency: 2 hours (20 to 18 hours ago)
-        // Fulfillment latency: 3 hours (18 to 15 hours ago)
-        // Delivery latency: 4 hours (15 to 11 hours ago)
-        $this->createOrder([
-            'status' => 'Completed',
-            'created_at' => $now->copy()->subHours(20),
-            'accepted_at' => $now->copy()->subHours(18),
-            'shipped_at' => $now->copy()->subHours(15),
-            'delivered_at' => $now->copy()->subHours(11),
-        ]);
-
-        // Order 2:
-        // Acceptance latency: 4 hours (40 to 36 hours ago)
-        // Fulfillment latency: 5 hours (36 to 31 hours ago)
-        // Delivery latency: 6 hours (31 to 25 hours ago)
-        $this->createOrder([
-            'status' => 'Completed',
-            'created_at' => $now->copy()->subHours(40),
-            'accepted_at' => $now->copy()->subHours(36),
-            'shipped_at' => $now->copy()->subHours(31),
-            'delivered_at' => $now->copy()->subHours(25),
-        ]);
-
-        $rollup = $this->service->getAnalyticsRollup($this->owner->id);
-        $latency = $rollup['fulfillment_latency'];
-
-        // Average Acceptance = (2 + 4) / 2 = 3.0
-        $this->assertEquals(3.0, $latency['avg_acceptance_hours']);
-
-        // Average Fulfillment = (3 + 5) / 2 = 4.0
-        $this->assertEquals(4.0, $latency['avg_fulfillment_hours']);
-
-        // Average Delivery = (4 + 6) / 2 = 5.0
-        $this->assertEquals(5.0, $latency['avg_delivery_hours']);
     }
 
     public function test_analytics_correctly_detects_low_stock_products(): void
@@ -218,7 +176,7 @@ class ShopAnalyticsReportingTest extends TestCase
             'name' => 'Visual Low Stock Alert Product',
         ]);
 
-        // 2. Create an order with some latency (2 hours ago, accepted now is 2 hours latency)
+        // 2. Create an order (5 hours ago, accepted 2 hours ago)
         $now = Carbon::now();
         $this->createOrder([
             'status' => 'Completed',
@@ -235,10 +193,6 @@ class ShopAnalyticsReportingTest extends TestCase
 
         // Retrieve Inertia props passed to the view
         $inertiaData = $response->original->getData()['page']['props'];
-
-        // Assert fulfillment latency metrics are injected
-        $this->assertArrayHasKey('fulfillment_latency', $inertiaData['metrics']);
-        $this->assertEquals(3.0, $inertiaData['metrics']['fulfillment_latency']['avg_acceptance_hours']);
 
         // Assert low stock products are injected
         $this->assertArrayHasKey('low_stock_products', $inertiaData['insights']);

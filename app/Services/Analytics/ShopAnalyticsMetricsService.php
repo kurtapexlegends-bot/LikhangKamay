@@ -62,45 +62,6 @@ class ShopAnalyticsMetricsService
         ];
     }
 
-    public function getCustomerInsights(int $sellerId): array
-    {
-        $customerStatsRaw = Order::query()
-            ->join('users', 'orders.user_id', '=', 'users.id')
-            ->where('orders.artisan_id', $sellerId)
-            ->where('orders.status', 'Completed')
-            ->selectRaw('
-                orders.user_id, 
-                users.name, 
-                users.email, 
-                users.avatar, 
-                COUNT(*) as orders_count, 
-                SUM(orders.seller_net_amount) as clv,
-                MIN(orders.created_at) as first_purchase_at,
-                MAX(orders.created_at) as last_purchase_at
-            ')
-            ->groupBy('orders.user_id', 'users.name', 'users.email', 'users.avatar')
-            ->get();
-
-        $vipCustomers = $customerStatsRaw->sortByDesc('clv')->take(10)->map(fn ($buyer) => [
-            'id' => (int) $buyer->user_id,
-            'name' => $buyer->name,
-            'email' => $buyer->email,
-            'avatar' => $buyer->avatar,
-            'orders_count' => (int) $buyer->orders_count,
-            'clv' => (float) $buyer->clv,
-            'last_active' => Carbon::parse($buyer->last_purchase_at)->diffForHumans(),
-        ])->values();
-
-        return [
-            'vip_customers' => $vipCustomers,
-            'loyalty_stats' => [
-                'new' => $customerStatsRaw->filter(fn($c) => $c->orders_count === 1)->count(),
-                'returning' => $customerStatsRaw->filter(fn($c) => $c->orders_count > 1)->count(),
-                'total_unique' => $customerStatsRaw->count(),
-            ]
-        ];
-    }
-
     public function getSalesChartData(int $sellerId, string $categoryFilter): array
     {
         $chartBaseQuery = function () use ($sellerId, $categoryFilter) {

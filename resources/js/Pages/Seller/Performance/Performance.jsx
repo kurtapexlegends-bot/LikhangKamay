@@ -15,7 +15,6 @@ import ExportButton from '@/Components/ExportButton';
 
 // Modular UI Components
 import OperationsControl from '@/Components/Seller/Performance/OperationsControl';
-import CustomerLoyalty from '@/Components/Seller/Performance/CustomerLoyalty';
 import SatisfactionBreakdown from '@/Components/Seller/Performance/SatisfactionBreakdown';
 import CampaignIntelligence from '@/Components/Seller/Performance/CampaignIntelligence';
 import OverviewTab from '@/Components/Seller/Performance/OverviewTab';
@@ -58,8 +57,6 @@ export default function Analytics({
 
     const currentChartData = chartData[chartFilter.toLowerCase()] || [];
     const stats = metrics.review_stats;
-    const vipCustomers = insights?.vip_customers || [];
-    const loyaltyStats = insights?.loyalty_stats || { new: 0, returning: 0, total_unique: 0 };
     const salesHeatmap = insights?.sales_heatmap || [];
 
     const revenueTrend = useMemo(() => {
@@ -176,8 +173,7 @@ export default function Analytics({
                     )}
 
                     {activeTab === 'customers' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <CustomerLoyalty vipCustomers={vipCustomers} loyaltyStats={loyaltyStats} />
+                        <div className="max-w-4xl mx-auto w-full">
                             <SatisfactionBreakdown stats={stats} />
                         </div>
                     )}

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import OperationsControl from '@/Components/Seller/Performance/OperationsControl';
-import CustomerLoyalty from '@/Components/Seller/Performance/CustomerLoyalty';
 import SatisfactionBreakdown from '@/Components/Seller/Performance/SatisfactionBreakdown';
 import CampaignIntelligence from '@/Components/Seller/Performance/CampaignIntelligence';
 import { Package } from 'lucide-react';
@@ -36,8 +35,6 @@ export default function PrintReportView({
 }) {
     const currentChartData = chartData[chartFilter.toLowerCase()] || [];
     const stats = metrics.review_stats;
-    const vipCustomers = insights?.vip_customers || [];
-    const loyaltyStats = insights?.loyalty_stats || { new: 0, returning: 0, total_unique: 0 };
     const salesHeatmap = insights?.sales_heatmap || [];
 
     const revenueTrend = useMemo(() => {
@@ -154,7 +151,7 @@ export default function PrintReportView({
                     /* Operations print layout grid */
                     .operations-print-grid {
                         display: grid !important;
-                        grid-template-columns: repeat(3, 1fr) !important;
+                        grid-template-columns: repeat(2, 1fr) !important;
                         gap: 16px !important;
                         width: 100% !important;
                     }
@@ -174,10 +171,10 @@ export default function PrintReportView({
                         width: 100% !important;
                     }
 
-                    /* 5. Loyalty, Ratings, and Top Products Row */
+                    /* 5. Ratings and Top Products Row */
                     .performance-loyalty-ratings-container {
                         display: grid !important;
-                        grid-template-columns: repeat(3, 1fr) !important;
+                        grid-template-columns: repeat(2, 1fr) !important;
                         gap: 20px !important;
                         width: 100% !important;
                     }
@@ -268,12 +265,8 @@ export default function PrintReportView({
                 animate={shouldAnimateKPI}
             />
 
-            {/* Level 5: Customer Retention, VIP Patrons, Customer Ratings & Top Products */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-loyalty-ratings-container">
-                <div className="lg:col-span-1">
-                    <CustomerLoyalty vipCustomers={vipCustomers} loyaltyStats={loyaltyStats} />
-                </div>
-
+            {/* Level 5: Customer Ratings & Top Products */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 performance-loyalty-ratings-container">
                 <div className="lg:col-span-1">
                     <SatisfactionBreakdown stats={stats} />
                 </div>

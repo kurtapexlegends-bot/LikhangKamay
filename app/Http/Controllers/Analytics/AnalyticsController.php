@@ -32,7 +32,6 @@ class AnalyticsController extends Controller
             return [
                 'rollup' => $shopAnalyticsService->getAnalyticsRollup($sellerId),
                 'financials' => $metricsService->getFinancialMetrics($sellerId),
-                'customerInsights' => $metricsService->getCustomerInsights($sellerId),
                 'chartData' => $metricsService->getSalesChartData($sellerId, $categoryFilter),
                 'categoryPerformance' => $metricsService->getCategoryPerformance($sellerId),
                 'topProducts' => $metricsService->getTopProducts($sellerId),
@@ -43,7 +42,6 @@ class AnalyticsController extends Controller
 
         $rollup = $analyticsData['rollup'];
         $financials = $analyticsData['financials'];
-        $customerInsights = $analyticsData['customerInsights'];
         $chartData = $analyticsData['chartData'];
         $categoryPerformance = $analyticsData['categoryPerformance'];
         $topProducts = $analyticsData['topProducts'];
@@ -74,16 +72,9 @@ class AnalyticsController extends Controller
                 ),
                 'average_rating' => $reviewStats['average'],
                 'review_stats' => $reviewStats,
-                'fulfillment_latency' => $rollup['fulfillment_latency'] ?? [
-                    'avg_acceptance_hours' => 0.0,
-                    'avg_fulfillment_hours' => 0.0,
-                    'avg_delivery_hours' => 0.0,
-                ],
             ],
             'financials_masked' => !$canViewRevenue,
             'insights' => [
-                'vip_customers' => $customerInsights['vip_customers'],
-                'loyalty_stats' => $customerInsights['loyalty_stats'],
                 'sales_heatmap' => $intelligence['sales_heatmap'],
                 'sales_velocity' => $intelligence['sales_velocity'],
                 'slow_movers' => $intelligence['slow_movers'],

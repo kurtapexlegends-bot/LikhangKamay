@@ -33,7 +33,6 @@ class ShopAnalyticsService
                 'date' => $targetDate,
                 'daily' => $this->calculateDailySnapshot($sellerId, $targetDate),
                 'all_time' => $this->calculateAllTimeSummary($sellerId),
-                'fulfillment_latency' => $this->calculateFulfillmentLatency($sellerId),
                 'low_stock_alerts' => $this->calculateLowStockAlerts($sellerId, $stockThreshold),
                 'generated_at' => Carbon::now(config('app.timezone'))->toIso8601String(),
             ];
@@ -119,61 +118,6 @@ class ShopAnalyticsService
             'orders_count' => $completedCount,
             'aov' => round($aov, 2),
             'orders_by_status' => $statusBreakdown,
-        ];
-    }
-
-    /**
-     * Calculate average fulfillment latency metrics in hours in a database-agnostic manner.
-     *
-     * @param int $sellerId
-     * @return array<string, float>
-     */
-    private function calculateFulfillmentLatency(int $sellerId): array
-    {
-        $orders = Order::query()
-            ->where('artisan_id', $sellerId)
-            ->select(['created_at', 'accepted_at', 'shipped_at', 'delivered_at'])
-            ->get();
-
-        $acceptanceSum = 0;
-        $acceptanceCount = 0;
-        $fulfillmentSum = 0;
-        $fulfillmentCount = 0;
-        $deliverySum = 0;
-        $deliveryCount = 0;
-
-        foreach ($orders as $order) {
-            $createdRaw = $order->getRawOriginal('created_at') ?: $order->created_at;
-            $acceptedRaw = $order->getRawOriginal('accepted_at') ?: $order->accepted_at;
-            $shippedRaw = $order->getRawOriginal('shipped_at') ?: $order->shipped_at;
-            $deliveredRaw = $order->getRawOriginal('delivered_at') ?: $order->delivered_at;
-
-            if ($createdRaw && $acceptedRaw) {
-                $created = Carbon::parse($createdRaw);
-                $accepted = Carbon::parse($acceptedRaw);
-                $acceptanceSum += $created->diffInMinutes($accepted) / 60.0;
-                $acceptanceCount++;
-            }
-
-            if ($acceptedRaw && $shippedRaw) {
-                $accepted = Carbon::parse($acceptedRaw);
-                $shipped = Carbon::parse($shippedRaw);
-                $fulfillmentSum += $accepted->diffInMinutes($shipped) / 60.0;
-                $fulfillmentCount++;
-            }
-
-            if ($shippedRaw && $deliveredRaw) {
-                $shipped = Carbon::parse($shippedRaw);
-                $delivered = Carbon::parse($deliveredRaw);
-                $deliverySum += $shipped->diffInMinutes($delivered) / 60.0;
-                $deliveryCount++;
-            }
-        }
-
-        return [
-            'avg_acceptance_hours' => $acceptanceCount > 0 ? round($acceptanceSum / $acceptanceCount, 1) : 0.0,
-            'avg_fulfillment_hours' => $fulfillmentCount > 0 ? round($fulfillmentSum / $fulfillmentCount, 1) : 0.0,
-            'avg_delivery_hours' => $deliveryCount > 0 ? round($deliverySum / $deliveryCount, 1) : 0.0,
         ];
     }
 
