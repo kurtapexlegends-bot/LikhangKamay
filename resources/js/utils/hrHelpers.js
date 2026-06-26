@@ -346,12 +346,7 @@ export const getEmployeeDirectoryStatus = (employee, attendanceStatus) => {
         return {
             label: attendanceStatus.label,
             className: attendanceStatus.className,
-            dotClassName:
-                attendanceStatus.label === 'Clocked In'
-                    ? 'bg-emerald-500 animate-pulse'
-                    : attendanceStatus.label === 'Paused'
-                        ? 'bg-amber-50'
-                        : 'bg-stone-400',
+            dotClassName: attendanceStatus.dotClassName || 'bg-stone-400',
         };
     }
 
