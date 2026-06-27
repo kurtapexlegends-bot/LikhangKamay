@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 import {
     AlertCircle,
@@ -10,7 +10,8 @@ import {
     X,
     MessageCircle,
 } from 'lucide-react';
-import UserAvatar from '@/Components/UserAvatar';
+import MentionsList, { useMentions } from './MentionsList';
+import TemplateDropdown from './TemplateDropdown';
 
 export default function MessageInput({ 
     currentChatUser, 
@@ -86,75 +87,31 @@ export default function MessageInput({
 
     const localEmojiPickerRef = useRef(null);
     const emojiPickerRef = form ? localEmojiPickerRef : propEmojiPickerRef;
+    
+    const mentionsDropdownRef = useRef(null);
 
     // 4. Typing trigger
     const lastTypingSignal = useRef(0);
-    
-    const [mentionSearch, setMentionSearch] = useState('');
-    const [mentionIndex, setMentionIndex] = useState(0);
-    const [showMentions, setShowMentions] = useState(false);
-    const [mentionStart, setMentionStart] = useState(-1);
 
-    const checkMentions = (text, cursorPosition) => {
-        if (!currentChannel) {
-            setShowMentions(false);
-            return;
-        }
+    // 5. Mentions Custom Hook Integration
+    const {
+        isDropdownVisible,
+        filteredMentions,
+        mentionIndex,
+        selectMention,
+        checkMentions,
+        handleKeyDown: handleMentionsKeyDown,
+        setShowMentions
+    } = useMentions({
+        message: data.message,
+        setMessage: (val) => {
+            setData('message', val);
+        },
+        inputRef,
+        eligibleContacts,
+        currentChannel
+    });
 
-        const textBeforeCursor = text.slice(0, cursorPosition);
-        const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-        
-        if (lastAtIndex !== -1) {
-            const charBeforeAt = textBeforeCursor[lastAtIndex - 1];
-            const isValidTrigger = lastAtIndex === 0 || /\s/.test(charBeforeAt);
-            
-            if (isValidTrigger) {
-                const query = textBeforeCursor.slice(lastAtIndex + 1);
-                if (!query.includes('\n') && query.length < 25) {
-                    setMentionStart(lastAtIndex);
-                    setMentionSearch(query);
-                    setShowMentions(true);
-                    setMentionIndex(0);
-                    return;
-                }
-            }
-        }
-        setShowMentions(false);
-    };
-
-    const filteredMentions = useMemo(() => {
-        if (!showMentions) return [];
-        const search = mentionSearch.toLowerCase();
-        return (eligibleContacts || []).filter(contact => 
-            contact.name.toLowerCase().includes(search)
-        );
-    }, [eligibleContacts, showMentions, mentionSearch]);
-
-    const isDropdownVisible = showMentions && filteredMentions.length > 0;
-
-    const selectMention = (contact) => {
-        if (mentionStart === -1) return;
-        
-        const messageText = data.message;
-        const beforeAt = messageText.slice(0, mentionStart);
-        
-        const cursorPosition = inputRef.current ? inputRef.current.selectionStart : messageText.length;
-        const afterMention = messageText.slice(cursorPosition);
-        
-        const replacement = `@[${contact.name}] `;
-        const newText = beforeAt + replacement + afterMention;
-        
-        setData('message', newText);
-        setShowMentions(false);
-        
-        setTimeout(() => {
-            if (inputRef.current) {
-                inputRef.current.focus();
-                const newCursorPos = beforeAt.length + replacement.length;
-                inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
-            }
-        }, 10);
-    };
     const signalTyping = () => {
         if (!currentChatUser) return;
         if (form) {
@@ -174,16 +131,43 @@ export default function MessageInput({
         }
     };
 
-    // When chat user or channel changes, focus input and reset autocomplete state
+    // When chat user changes, focus input and reset typing
     useEffect(() => {
-        setShowMentions(false);
-        setMentionSearch('');
-        setMentionIndex(0);
-        setMentionStart(-1);
         if (currentChatUser || currentChannel) {
             inputRef.current?.focus();
         }
     }, [currentChatUser?.id, currentChannel?.id]);
+
+    // Click outside handler for dropdowns
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // Click outside emoji picker
+            if (showEmojiPicker && emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+                const toggleBtn = event.target.closest('[title="Add emoji"]');
+                if (!toggleBtn) {
+                    setShowEmojiPicker(false);
+                }
+            }
+
+            // Click outside templates dropdown
+            if (showTemplateSelector && templateSelectorRef.current && !templateSelectorRef.current.contains(event.target)) {
+                const toggleBtn = event.target.closest('[title="Quick Templates"]');
+                if (!toggleBtn) {
+                    setShowTemplateSelector(false);
+                }
+            }
+
+            // Click outside mentions dropdown
+            if (isDropdownVisible && mentionsDropdownRef.current && !mentionsDropdownRef.current.contains(event.target)) {
+                setShowMentions(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showEmojiPicker, showTemplateSelector, isDropdownVisible, setShowMentions, emojiPickerRef, templateSelectorRef]);
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -302,8 +286,17 @@ export default function MessageInput({
 
     const onEmojiClick = (emojiObject) => {
         if (form) {
-            setData('message', data.message + emojiObject.emoji);
-            inputRef.current?.focus();
+            const newMsg = data.message + emojiObject.emoji;
+            setData('message', newMsg);
+            
+            // Adjust input height after adding emoji
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                    inputRef.current.style.height = 'auto';
+                    inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
+                }
+            }, 10);
         } else {
             if (propOnEmojiClick) {
                 propOnEmojiClick(emojiObject);
@@ -314,36 +307,14 @@ export default function MessageInput({
     return (
         <div className="relative z-10 w-full shrink-0 border-t border-gray-100 bg-white/90 p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] backdrop-blur-md sm:p-4">
             <div className="relative mx-auto flex w-full max-w-4xl flex-col">
-                {isDropdownVisible && (
-                    <div className="absolute bottom-full left-3 sm:left-4 mb-2 z-50 bg-white border border-stone-200 shadow-xl rounded-xl w-60 overflow-hidden font-sans text-xs">
-                        <div className="px-3 py-2 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between text-stone-400 font-bold uppercase tracking-wider text-[9px]">
-                            <span>Mention Teammate</span>
-                            <span>{filteredMentions.length} matches</span>
-                        </div>
-                        <div className="max-h-48 overflow-y-auto p-1 divide-y divide-stone-50 custom-scrollbar">
-                            {filteredMentions.map((contact, idx) => (
-                                <button
-                                    key={contact.id}
-                                    type="button"
-                                    onClick={() => selectMention(contact)}
-                                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2.5 ${
-                                        idx === mentionIndex 
-                                            ? 'bg-clay-50 text-clay-800 font-bold' 
-                                            : 'hover:bg-stone-50 text-stone-700'
-                                    }`}
-                                >
-                                    <UserAvatar user={contact} className="w-5 h-5 text-[8px] shrink-0" />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate leading-none text-xs text-stone-900">{contact.name}</p>
-                                        <span className="text-[8px] text-stone-400 font-bold uppercase tracking-wider">
-                                            {contact.roleLabel}
-                                        </span>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <MentionsList
+                    ref={mentionsDropdownRef}
+                    isVisible={isDropdownVisible}
+                    filteredMentions={filteredMentions}
+                    mentionIndex={mentionIndex}
+                    onSelect={selectMention}
+                />
+                
                 {showEmojiPicker && (
                     <div ref={emojiPickerRef} className="absolute bottom-full right-3 z-50 mb-2 overflow-hidden rounded-2xl border border-gray-100 shadow-2xl sm:right-4">
                         <EmojiPicker
@@ -356,46 +327,17 @@ export default function MessageInput({
                 )}
 
                 {/* Quick Templates Panel (Seller-Buyer Chat Only) */}
-                {!form && showTemplateSelector && (
-                    <div ref={templateSelectorRef} className="absolute bottom-full left-3 sm:left-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 bg-white border border-gray-100 shadow-2xl rounded-2xl w-72 overflow-hidden">
-                        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Quick Templates</span>
-                            <button 
-                                onClick={() => setShowTemplateManager(true)}
-                                className="text-[10px] font-bold text-clay-600 hover:text-clay-700 uppercase tracking-wider"
-                                type="button"
-                            >
-                                Manage
-                            </button>
-                        </div>
-                        <div className="max-h-60 overflow-y-auto p-1 divide-y divide-gray-50 custom-scrollbar">
-                            {chatTemplates.length > 0 ? (
-                                chatTemplates.map((tpl) => (
-                                    <button
-                                        key={tpl.id}
-                                        onClick={() => injectTemplate(tpl.content)}
-                                        className="w-full text-left px-3 py-2.5 hover:bg-stone-50 transition rounded-lg text-xs font-semibold text-gray-700 flex flex-col gap-0.5"
-                                        type="button"
-                                    >
-                                        <span className="font-bold text-gray-900 truncate block w-full">{tpl.title}</span>
-                                        <span className="text-gray-500 line-clamp-2 leading-relaxed">{tpl.content}</span>
-                                    </button>
-                                ))
-                            ) : (
-                                <div className="p-6 text-center">
-                                    <p className="text-[11px] text-gray-400 font-medium">No templates found.</p>
-                                    <button 
-                                        onClick={() => { setShowTemplateSelector(false); setShowTemplateManager(true); }}
-                                        className="mt-2 text-[11px] font-bold text-clay-600 hover:text-clay-700"
-                                        type="button"
-                                    >
-                                        Create your first template
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
+                <TemplateDropdown
+                    isVisible={!form && showTemplateSelector}
+                    dropdownRef={templateSelectorRef}
+                    chatTemplates={chatTemplates}
+                    onSelect={(content) => {
+                        injectTemplate(content);
+                        // Focus is returned and height is calculated within injectTemplate (defined in Chat.jsx)
+                    }}
+                    onManage={() => setShowTemplateManager(true)}
+                    onCreateFirst={() => { setShowTemplateSelector(false); setShowTemplateManager(true); }}
+                />
 
                 {attachmentPreview && (
                     <div className="group mb-3 mt-3 flex items-start justify-between rounded-xl border border-gray-200 bg-gray-50 p-3 animate-in fade-in slide-in-from-bottom-2">
@@ -500,27 +442,8 @@ export default function MessageInput({
                             placeholder={isMessagesReadOnly ? "Chat is read-only..." : (form ? "Message your team..." : "Type your message here...")}
                             className="custom-scrollbar max-h-[120px] min-h-[42px] w-full flex-1 resize-none border-none bg-transparent px-3 py-2.5 text-sm font-medium leading-relaxed text-gray-700 placeholder-gray-400 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
                             onKeyDown={(event) => {
-                                if (isDropdownVisible) {
-                                    if (event.key === 'ArrowDown') {
-                                        event.preventDefault();
-                                        setMentionIndex((prev) => (prev + 1) % filteredMentions.length);
-                                        return;
-                                    }
-                                    if (event.key === 'ArrowUp') {
-                                        event.preventDefault();
-                                        setMentionIndex((prev) => (prev - 1 + filteredMentions.length) % filteredMentions.length);
-                                        return;
-                                    }
-                                    if (event.key === 'Enter') {
-                                        event.preventDefault();
-                                        selectMention(filteredMentions[mentionIndex]);
-                                        return;
-                                    }
-                                    if (event.key === 'Escape') {
-                                        event.preventDefault();
-                                        setShowMentions(false);
-                                        return;
-                                    }
+                                if (handleMentionsKeyDown(event)) {
+                                    return;
                                 }
 
                                 if (event.key === 'Enter' && !event.shiftKey) {
