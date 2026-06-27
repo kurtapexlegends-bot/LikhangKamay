@@ -28,6 +28,8 @@ class StoreTeamMessage
             $parentMessage = TeamMessage::findOrFail($parentId);
 
             // Check authorization to access this parent message
+            abort_unless($parentMessage->seller_owner_id === $sellerOwner->id, 403, 'Unauthorized thread parent access.');
+
             if ($parentMessage->team_channel_id) {
                 abort_unless(
                     \App\Models\TeamChannelMember::where('team_channel_id', $parentMessage->team_channel_id)
@@ -64,6 +66,8 @@ class StoreTeamMessage
 
         if (! empty($data['team_channel_id'])) {
             $channel = \App\Models\TeamChannel::findOrFail($data['team_channel_id']);
+
+            abort_unless($channel->seller_owner_id === $sellerOwner->id, 403, 'Unauthorized channel messaging.');
 
             // Check channel membership if parent was not validated
             if (! $parentId) {
@@ -112,10 +116,12 @@ class StoreTeamMessage
             return $message;
         }
 
-        $receiver = User::findOrFail($data['receiver_id']);
-        if (! $parentId) {
-            $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
+        $receiverId = $data['receiver_id'] ?? null;
+        if (! $receiverId) {
+            abort(400, 'Recipient is required.');
         }
+        $receiver = User::findOrFail($receiverId);
+        $this->authorizeCounterpart($actor, $receiver, $sellerOwner->id);
 
         $message = TeamMessage::create([
             'seller_owner_id' => $sellerOwner->id,
@@ -203,13 +209,6 @@ class StoreTeamMessage
         }
 
         $eligibleContacts = $this->eligibleContacts($actor, $message->seller_owner_id);
-
-        if ($actor->isStaff()) {
-            $sellerOwner = User::find($message->seller_owner_id);
-            if ($sellerOwner) {
-                $eligibleContacts->push($sellerOwner);
-            }
-        }
 
         $targetUsers = collect();
         foreach ($names as $name) {

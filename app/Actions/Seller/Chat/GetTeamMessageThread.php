@@ -12,6 +12,8 @@ class GetTeamMessageThread
      */
     public function execute(User $actor, TeamMessage $message): array
     {
+        abort_unless($message->seller_owner_id === $actor->getEffectiveSellerId(), 403, 'Unauthorized thread access.');
+
         // Check authorization to access this parent message
         if ($message->team_channel_id) {
             abort_unless(

@@ -14,6 +14,8 @@ class ToggleTeamMessageReaction
      */
     public function execute(User $actor, TeamMessage $message, string $emoji): array
     {
+        abort_unless($message->seller_owner_id === $actor->getEffectiveSellerId(), 403, 'Unauthorized message reaction.');
+
         // Check authorization to access this message's conversation context
         if ($message->team_channel_id) {
             abort_unless(
