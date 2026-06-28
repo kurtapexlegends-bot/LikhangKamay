@@ -339,7 +339,7 @@ class ProductController extends Controller
     {
         Gate::authorize('create', Product::class);
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt|max:2048',
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:4096'],
         ]);
 
         $file = $request->file('file');

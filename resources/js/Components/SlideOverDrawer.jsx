@@ -49,10 +49,10 @@ export default function SlideOverDrawer({
                         }`}>
                             <TransitionChild
                                 as={Fragment}
-                                enter="transform transition ease-in-out duration-400 sm:duration-500"
+                                enter="transform transition-transform duration-300 ease-in-out"
                                 enterFrom={isRight ? 'translate-x-full' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'}
                                 enterTo={isRight ? 'translate-x-0' : 'translate-y-0 lg:translate-x-0'}
-                                leave="transform transition ease-in-out duration-400 sm:duration-500"
+                                leave="transform transition-transform duration-300 ease-in-out"
                                 leaveFrom={isRight ? 'translate-x-0' : 'translate-y-0 lg:translate-x-0'}
                                 leaveTo={isRight ? 'translate-x-full' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'}
                             >

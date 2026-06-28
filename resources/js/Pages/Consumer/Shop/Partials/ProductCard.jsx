@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { Star, Award } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent } from '@/utils/sponsorshipTracking';
+import { formatPrice } from '@/utils/money';
 
 export default function ProductCard({ product, sponsoredPlacement }) {
     return (
@@ -58,7 +59,7 @@ export default function ProductCard({ product, sponsoredPlacement }) {
                     </div>
                     <div className="flex items-center justify-between">
                         <span className={`text-sm font-black ${product.is_sponsored ? 'text-amber-700' : 'text-clay-600'}`}>
-                            &#8369;{Number(product.price).toLocaleString('en-PH')}
+                            &#8369;{formatPrice(product.price)}
                         </span>
                         {hasRating(product.rating) && (
                             <div className="flex items-center gap-0.5 text-[10px] font-bold text-gray-600">

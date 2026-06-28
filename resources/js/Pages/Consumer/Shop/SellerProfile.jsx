@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import Footer from '@/Layouts/Footer';
@@ -13,12 +14,11 @@ import { useToast } from '@/Components/ToastContext';
 import { isShopFollowed, toggleFollowedShop } from '@/utils/buyerSignals';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import { parsePrice, formatPrice } from '@/utils/money';
 
 export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     const { addToast } = useToast();
-    // Format price helper
-    const parsePrice = (price) => Number(String(price ?? 0).replace(/,/g, ''));
-    const formatPrice = (price) => parsePrice(price).toLocaleString('en-PH');
+    const { auth } = usePage().props;
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('featured');
     const [categoryFilter, setCategoryFilter] = useState('all');
@@ -81,6 +81,10 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
     useEffect(() => setPage(1), [searchTerm, categoryFilter, sortBy]);
 
     const handleChatSeller = () => {
+        if (!auth?.user) {
+            router.visit(route('login', { redirect: window.location.pathname }));
+            return;
+        }
         router.visit(route('buyer.chat', { user_id: seller.id }));
     };
 
@@ -150,9 +154,10 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     <span className="text-[10px] uppercase font-bold tracking-widest bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full">
                                         Verified Artisan
                                     </span>
-                                    <button
+                                    <motion.button
                                         type="button"
                                         onClick={toggleFollow}
+                                        whileTap={{ scale: 0.96 }}
                                         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold transition ${
                                             isFollowed
                                                 ? 'border-rose-200 bg-rose-50 text-rose-600'
@@ -161,7 +166,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     >
                                         <Heart size={12} className={isFollowed ? 'fill-current' : ''} />
                                         {isFollowed ? 'Following Shop' : 'Follow Shop'}
-                                    </button>
+                                    </motion.button>
                                 </div>
                                 
                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 text-[13px] text-stone-500 font-medium">
@@ -418,10 +423,11 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                    <button
+                    <motion.button
                         type="button"
                         onClick={toggleFollow}
-                        className={`inline-flex items-center justify-center rounded-xl px-3 py-2 text-[10px] font-bold border transition-all active:scale-95 min-h-[36px] ${
+                        whileTap={{ scale: 0.96 }}
+                        className={`inline-flex items-center justify-center rounded-xl px-3 py-2 text-[10px] font-bold border transition-all min-h-[36px] ${
                             isFollowed
                                 ? 'border-rose-100 bg-rose-50 text-rose-600'
                                 : 'border-stone-200 bg-white text-stone-600'
@@ -429,7 +435,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                     >
                         <Heart size={11} className={`mr-1 ${isFollowed ? 'fill-rose-500 text-rose-500' : ''}`} />
                         {isFollowed ? 'Following' : 'Follow'}
-                    </button>
+                    </motion.button>
                     <button
                         type="button"
                         onClick={handleChatSeller}

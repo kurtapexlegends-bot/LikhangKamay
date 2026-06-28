@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import {
@@ -394,15 +395,16 @@ export default function Catalog(props) {
                             <CatalogSkeleton />
                         ) : products.length > 0 ? (
                             <div>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                                <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                                     {products.map((product) => (
-                                        <ProductCard
-                                            key={product.id}
-                                            product={product}
-                                            sponsoredPlacement={sponsoredGridPlacement}
-                                        />
+                                        <motion.div layout key={product.id}>
+                                            <ProductCard
+                                                product={product}
+                                                sponsoredPlacement={sponsoredGridPlacement}
+                                            />
+                                        </motion.div>
                                     ))}
-                                </div>
+                                </motion.div>
                                 {isLoadingMore && (
                                     <div className="mt-3">
                                         <CatalogSkeleton />
