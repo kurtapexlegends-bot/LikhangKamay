@@ -4,13 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Schema;
 
 class Supply extends Model
 {
-    protected static ?bool $supportsMaxStockColumn = null;
-    protected static ?bool $supportsProductIdColumn = null;
-
     public const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other'];
     public const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
 
@@ -55,13 +51,7 @@ class Supply extends Model
 
     public function product(): BelongsTo
     {
-        $relation = $this->belongsTo(\App\Models\Product::class, static::supportsProductIdColumn() ? 'product_id' : 'name', static::supportsProductIdColumn() ? 'id' : 'name');
-
-        if (!static::supportsProductIdColumn()) {
-            $relation->where('user_id', $this->user_id);
-        }
-
-        return $relation;
+        return $this->belongsTo(\App\Models\Product::class, 'product_id');
     }
 
     // Scope: Get supplies for a specific user
@@ -93,40 +83,24 @@ class Supply extends Model
         return $value ?? 500;
     }
 
-    public static function supportsMaxStockColumn(): bool
-    {
-        if (static::$supportsMaxStockColumn === null) {
-            static::$supportsMaxStockColumn = Schema::hasColumn((new static())->getTable(), 'max_stock');
-        }
-
-        return static::$supportsMaxStockColumn;
-    }
-
-    public static function supportsProductIdColumn(): bool
-    {
-        if (static::$supportsProductIdColumn === null) {
-            static::$supportsProductIdColumn = Schema::hasColumn((new static())->getTable(), 'product_id');
-        }
-
-        return static::$supportsProductIdColumn;
-    }
-
-    public static function filterSchemaCompatibleAttributes(array $attributes): array
-    {
-        if (!static::supportsMaxStockColumn()) {
-            unset($attributes['max_stock']);
-        }
-
-        if (!static::supportsProductIdColumn()) {
-            unset($attributes['product_id']);
-        }
-
-        return $attributes;
-    }
-
     // Phase 1: Capacity Check
     public function getAvailableCapacity(): int
     {
         return max(0, $this->max_stock - $this->quantity);
+    }
+
+    public static function filterSchemaCompatibleAttributes(array $attributes): array
+    {
+        return $attributes;
+    }
+
+    public static function supportsProductIdColumn(): bool
+    {
+        return true;
+    }
+
+    public static function supportsMaxStockColumn(): bool
+    {
+        return true;
     }
 }
