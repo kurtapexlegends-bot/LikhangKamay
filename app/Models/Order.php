@@ -5,16 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Schema\Builder as SchemaBuilder;
-use Illuminate\Support\Facades\Schema;
 
 class Order extends Model
 {
     use HasFactory, SoftDeletes;
-
-    protected static ?bool $supportsShippingFeeAmountColumn = null;
-    protected static ?bool $supportsPlatformCommissionAmountColumn = null;
-    protected static ?bool $supportsSellerNetAmountColumn = null;
 
     protected $fillable = [
         'artisan_id', 'user_id', 'order_number', 'customer_name', 
@@ -76,20 +70,6 @@ class Order extends Model
     {
         parent::boot();
 
-        static::saving(function (self $order) {
-            if (!static::supportsShippingFeeAmountColumn()) {
-                unset($order->attributes['shipping_fee_amount']);
-            }
-
-            if (!static::supportsPlatformCommissionAmountColumn()) {
-                unset($order->attributes['platform_commission_amount']);
-            }
-
-            if (!static::supportsSellerNetAmountColumn()) {
-                unset($order->attributes['seller_net_amount']);
-            }
-        });
-
         static::saved(function (self $order) {
             \Illuminate\Support\Facades\Cache::forget("seller_{$order->artisan_id}_analytics_daily_rollup_" . \Carbon\Carbon::now(config('app.timezone'))->toDateString());
         });
@@ -105,98 +85,36 @@ class Order extends Model
      */
     public static function filterSchemaCompatibleAttributes(array $attributes): array
     {
-        if (!static::supportsShippingFeeAmountColumn()) {
-            unset($attributes['shipping_fee_amount']);
-        }
-
-        if (!static::supportsPlatformCommissionAmountColumn()) {
-            unset($attributes['platform_commission_amount']);
-        }
-
-        if (!static::supportsSellerNetAmountColumn()) {
-            unset($attributes['seller_net_amount']);
-        }
-
         return $attributes;
     }
 
     public static function supportsShippingFeeAmountColumn(): bool
     {
-        if (static::$supportsShippingFeeAmountColumn !== null) {
-            return static::$supportsShippingFeeAmountColumn;
-        }
-
-        try {
-            /** @var SchemaBuilder $schema */
-            $schema = Schema::connection((new static())->getConnectionName());
-            static::$supportsShippingFeeAmountColumn = $schema->hasColumn((new static())->getTable(), 'shipping_fee_amount');
-        } catch (\Throwable) {
-            static::$supportsShippingFeeAmountColumn = false;
-        }
-
-        return static::$supportsShippingFeeAmountColumn;
+        return true;
     }
 
     public static function supportsPlatformCommissionAmountColumn(): bool
     {
-        if (static::$supportsPlatformCommissionAmountColumn !== null) {
-            return static::$supportsPlatformCommissionAmountColumn;
-        }
-
-        try {
-            /** @var SchemaBuilder $schema */
-            $schema = Schema::connection((new static())->getConnectionName());
-            static::$supportsPlatformCommissionAmountColumn = $schema->hasColumn((new static())->getTable(), 'platform_commission_amount');
-        } catch (\Throwable) {
-            static::$supportsPlatformCommissionAmountColumn = false;
-        }
-
-        return static::$supportsPlatformCommissionAmountColumn;
+        return true;
     }
 
     public static function supportsSellerNetAmountColumn(): bool
     {
-        if (static::$supportsSellerNetAmountColumn !== null) {
-            return static::$supportsSellerNetAmountColumn;
-        }
-
-        try {
-            /** @var SchemaBuilder $schema */
-            $schema = Schema::connection((new static())->getConnectionName());
-            static::$supportsSellerNetAmountColumn = $schema->hasColumn((new static())->getTable(), 'seller_net_amount');
-        } catch (\Throwable) {
-            static::$supportsSellerNetAmountColumn = false;
-        }
-
-        return static::$supportsSellerNetAmountColumn;
+        return true;
     }
 
     public function getResolvedShippingFeeAmount(): float
     {
-        if (static::supportsShippingFeeAmountColumn()) {
-            return round((float) ($this->getAttribute('shipping_fee_amount') ?? 0), 2);
-        }
-
-        $fallback = (float) $this->total_amount - (float) $this->merchandise_subtotal - (float) $this->convenience_fee_amount;
-
-        return round(max(0, $fallback), 2);
+        return round((float) ($this->getAttribute('shipping_fee_amount') ?? 0), 2);
     }
 
     public function getResolvedPlatformCommissionAmount(): float
     {
-        if (static::supportsPlatformCommissionAmountColumn()) {
-            return round((float) ($this->getAttribute('platform_commission_amount') ?? 0), 2);
-        }
-
-        return round((float) $this->merchandise_subtotal * \App\Services\OrderFinanceService::getPlatformCommissionRate(), 2);
+        return round((float) ($this->getAttribute('platform_commission_amount') ?? 0), 2);
     }
 
     public function getResolvedSellerNetAmount(): float
     {
-        if (static::supportsSellerNetAmountColumn()) {
-            return round((float) ($this->getAttribute('seller_net_amount') ?? 0), 2);
-        }
-
-        return round((float) $this->merchandise_subtotal - $this->getResolvedPlatformCommissionAmount(), 2);
+        return round((float) ($this->getAttribute('seller_net_amount') ?? 0), 2);
     }
 }

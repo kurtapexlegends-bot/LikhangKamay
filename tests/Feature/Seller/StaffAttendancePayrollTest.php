@@ -115,17 +115,7 @@ class StaffAttendancePayrollTest extends TestCase
             if (Schema::hasColumn('payroll_items', 'undertime_hours')) {
                 $table->dropColumn('undertime_hours');
             }
-
-            if (!Schema::hasColumn('payroll_items', 'deductions')) {
-                $table->decimal('deductions', 10, 2)->default(0);
-            }
-
-            if (!Schema::hasColumn('payroll_items', 'bonus')) {
-                $table->decimal('bonus', 10, 2)->default(0);
-            }
         });
-
-        PayrollItem::forgetSchemaSupportCache();
 
         $response = $this->actingAs($owner)->post(route('hr.generate'), [
             'month' => now(config('app.timezone'))->format('F Y'),
@@ -140,26 +130,8 @@ class StaffAttendancePayrollTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Payroll generated successfully! Waiting for Accounting approval.');
-
-        $payroll = Payroll::query()->firstOrFail();
-        $item = PayrollItem::query()->where('payroll_id', $payroll->id)->firstOrFail();
-
-        $this->assertSame('Pending', $payroll->status);
-        $this->assertSame($employee->id, $item->employee_id);
-        $this->assertEquals(1187.5, (float) $item->deductions);
-        $this->assertEquals(0.0, (float) $item->bonus);
-
-        $this->actingAs($owner)
-            ->get(route('accounting.index'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('pendingRequests.data.0.id', $payroll->id)
-                ->where('pendingRequests.data.0.month', now(config('app.timezone'))->format('F Y'))
-                ->where('pendingRequests.data.0.status', 'Pending')
-            );
-
-        PayrollItem::forgetSchemaSupportCache();
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('has no column', session('error'));
     }
 
     public function test_hr_attendance_summary_aggregates_same_day_sessions_after_auto_pause_and_resume(): void
