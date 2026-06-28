@@ -14,13 +14,17 @@ import {
     Percent, 
     CreditCard,
     ChevronDown,
-    AlertCircle
+    AlertCircle,
+    Globe,
+    Server
 } from 'lucide-react';
 
 import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSocialsForm';
 import PlatformOpsForm from '@/Components/Admin/Layout/SystemConfig/PlatformOpsForm';
 import MonetizationDashboard from '@/Components/Admin/Layout/SystemConfig/MonetizationDashboard';
 import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/SubscriptionTiers';
+import BrandingForm from '@/Components/Admin/Layout/SystemConfig/BrandingForm';
+import SMTPForm from '@/Components/Admin/Layout/SystemConfig/SMTPForm';
 
 export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships }) {
     const { flash } = usePage().props;
@@ -34,7 +38,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         return 'branding';
     });
 
-    const [activeSubTab, setActiveSubTab] = useState('branding_contact');
+    const [activeSubTab, setActiveSubTab] = useState('branding_details');
     const [showMobileNotes, setShowMobileNotes] = useState(false);
 
     const handleTabChange = (tabId) => {
@@ -173,8 +177,10 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     ];
 
     const subTabs = [
+        { id: 'branding_details', name: 'Platform Branding', icon: Globe },
         { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
         { id: 'branding_ops', name: 'Platform Ops', icon: Settings },
+        { id: 'branding_smtp', name: 'SMTP Settings', icon: Server },
     ];
 
     return (
@@ -240,6 +246,15 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                                 {/* Left Column: Inputs */}
                                 <div className="lg:col-span-2 space-y-6">
+                                    {activeSubTab === 'branding_details' && (
+                                        <BrandingForm
+                                            data={data}
+                                            setData={setData}
+                                            updateNested={updateNested}
+                                            errors={errors}
+                                        />
+                                    )}
+
                                     {activeSubTab === 'branding_contact' && (
                                         <ContactSocialsForm 
                                             data={data} 
@@ -251,6 +266,14 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                         <PlatformOpsForm 
                                             data={data} 
                                             setData={setData} 
+                                        />
+                                    )}
+
+                                    {activeSubTab === 'branding_smtp' && (
+                                        <SMTPForm
+                                            data={data}
+                                            setData={setData}
+                                            errors={errors}
                                         />
                                     )}
                                 </div>
