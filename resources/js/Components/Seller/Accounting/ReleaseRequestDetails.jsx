@@ -218,15 +218,7 @@ export default function ReleaseRequestDetails({
                 />
             </div>
             <div className="flex items-center justify-end gap-2 shrink-0 w-full">
-                {inline && onClose && (
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 min-h-[44px]"
-                    >
-                        Clear
-                    </button>
-                )}
+
                 <button
                     type="button"
                     onClick={onReject}
@@ -262,15 +254,7 @@ export default function ReleaseRequestDetails({
                     <Download size={14} strokeWidth={2.5} /> Download PDF
                 </button>
             )}
-            {inline && onClose && (
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-stone-500 shadow-sm transition hover:bg-stone-100 min-h-[44px]"
-                >
-                    Clear Details
-                </button>
-            )}
+
         </div>
     );
 

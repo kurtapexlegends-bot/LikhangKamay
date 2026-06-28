@@ -4,7 +4,7 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
-import { AlertCircle, History, Search, X, LoaderCircle } from 'lucide-react';
+import { AlertCircle, History, Search, X, LoaderCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import ExportButton from '@/Components/ExportButton';
@@ -14,7 +14,6 @@ import FundMetrics from '@/Components/Seller/Accounting/FundMetrics';
 import BaseFundsModal from '@/Components/Seller/Accounting/BaseFundsModal';
 import PendingApprovalsList from '@/Components/Seller/Accounting/PendingApprovalsList';
 import TransactionLedgerTable from '@/Components/Seller/Accounting/TransactionLedgerTable';
-import ReleaseRequestModal from '@/Components/Seller/Accounting/ReleaseRequestModal';
 import ReleaseRequestDetails from '@/Components/Seller/Accounting/ReleaseRequestDetails';
 
 export default function FundRelease({ auth, pendingRequests, history, finances }) {
@@ -157,20 +156,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     useFlashToast(flash, addToast);
 
     const closeReviewModal = () => {
-        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
-        if (isDesktop) {
-            setReviewModal({ open: false, item: null, source: 'pending' });
-        } else {
-            setReviewModal((curr) => ({ ...curr, open: false }));
-            setTimeout(() => {
-                setReviewModal((curr) => {
-                    if (!curr.open) {
-                        return { open: false, item: null, source: 'pending' };
-                    }
-                    return curr;
-                });
-            }, 500);
-        }
+        setReviewModal({ open: false, item: null, source: 'pending' });
     };
 
     const resetReviewModal = () => {
@@ -179,8 +165,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     };
 
     const openReviewModal = (item, source = 'pending') => {
-        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
-        setReviewModal({ open: !isDesktop, item, source });
+        setReviewModal({ open: true, item, source });
         setRejectReason(item?.rejection_reason || '');
     };
 
@@ -223,177 +208,186 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
 
     return (
         <>
-            <Head title="Finance & Approvals" />
+            <Head title={reviewModal.item ? `Review: ${reviewModal.item.order_number || ('Request #' + reviewModal.item.id)}` : "Finance & Approvals"} />
             <SellerHeader
-                title="Finance"
-                subtitle="Track shop payouts, release requests, and billing."
+                title={reviewModal.item ? (reviewModal.item.type === 'payroll' ? 'Payroll Review' : reviewModal.item.type === 'sale' ? 'Settlement Details' : 'Stock Request Details') : "Finance"}
+                subtitle={reviewModal.item ? `Detailed breakdown for ${reviewModal.item.order_number || ('Request #' + reviewModal.item.id)}` : "Track shop payouts, release requests, and billing."}
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
-                actions={(
-                    <ExportButton href={route('accounting.export')} variant="primary">
-                        Export Ledger
-                    </ExportButton>
-                )}
+                actions={
+                    reviewModal.item ? (
+                        <button
+                            type="button"
+                            onClick={closeReviewModal}
+                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-stone-600 transition hover:border-stone-300 hover:bg-stone-50 active:scale-95 transition-all"
+                        >
+                            <ArrowLeft size={16} />
+                            Back to Finance
+                        </button>
+                    ) : (
+                        <ExportButton href={route('accounting.export')} variant="primary">
+                            Export Ledger
+                        </ExportButton>
+                    )
+                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6 pb-28 sm:pb-20">
-                {isAccountingReadOnly && (
-                    <ReadOnlyCapabilityNotice label="Finance review is read only for your account. Approval and fund actions are disabled." />
-                )}
-
-                {/* Metrics Cards */}
-                <FundMetrics
-                    finances={finances}
-                    canEditAccounting={canEditAccounting}
-                    onEditBaseFunds={() => setShowBaseFundsModal(true)}
-                />
-
-                {/* Tabs */}
-                <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto">
-                    <button
-                        type="button"
-                        onClick={() => handleTabChange('pending')}
-                        className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition min-h-[44px] ${
-                            activeTab === 'pending'
-                                ? 'border-gray-900 text-gray-900'
-                                : 'border-transparent text-gray-400 hover:text-gray-700'
-                        }`}
-                    >
-                        <AlertCircle size={16} /> Pending Approvals
-                        {pendingRequests?.total > 0 && (
-                            <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-650">
-                                {pendingRequests.total}
-                            </span>
-                        )}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleTabChange('history')}
-                        className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition min-h-[44px] ${
-                            activeTab === 'history'
-                                ? 'border-gray-900 text-gray-900'
-                                : 'border-transparent text-gray-400 hover:text-gray-700'
-                        }`}
-                    >
-                        <History size={16} /> Transaction Ledger
-                    </button>
-                </div>
-
-                {/* Search & Filter Controls */}
-                <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="relative w-full sm:max-w-sm">
-                        {isSearchLoading ? (
-                            <LoaderCircle size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-clay-600 animate-spin" />
-                        ) : (
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        )}
-                        <input
-                            id="accounting-search"
-                            type="text"
-                            value={searchTerm}
-                            onChange={(event) => setSearchTerm(event.target.value)}
-                            placeholder={
-                                activeTab === 'pending'
-                                    ? 'Search requester, supply, payroll month...'
-                                    : 'Search ledger entries, requester...'
-                            }
-                            className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
+                {reviewModal.item ? (
+                    <div className="max-w-5xl mx-auto">
+                        <ReleaseRequestDetails
+                            item={reviewModal.item}
+                            source={reviewModal.source}
+                            canEditAccounting={canEditAccounting}
+                            rejectReason={rejectReason}
+                            setRejectReason={setRejectReason}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            reviewProcessing={reviewProcessing}
+                            onClose={closeReviewModal}
+                            inline={true}
                         />
-                        {searchTerm && (
+                    </div>
+                ) : (
+                    <>
+                        {isAccountingReadOnly && (
+                            <ReadOnlyCapabilityNotice label="Finance review is read only for your account. Approval and fund actions are disabled." />
+                        )}
+
+                        {/* Metrics Cards */}
+                        <FundMetrics
+                            finances={finances}
+                            canEditAccounting={canEditAccounting}
+                            onEditBaseFunds={() => setShowBaseFundsModal(true)}
+                        />
+
+                        {/* Tabs */}
+                        <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto">
                             <button
                                 type="button"
-                                onClick={() => setSearchTerm('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition min-h-[30px] min-w-[30px] flex items-center justify-center"
-                                title="Clear search"
+                                onClick={() => handleTabChange('pending')}
+                                className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition min-h-[44px] ${
+                                    activeTab === 'pending'
+                                        ? 'border-gray-900 text-gray-900'
+                                        : 'border-transparent text-gray-400 hover:text-gray-700'
+                                }`}
                             >
-                                <X size={12} />
+                                <AlertCircle size={16} /> Pending Approvals
+                                {pendingRequests?.total > 0 && (
+                                    <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-650">
+                                        {pendingRequests.total}
+                                    </span>
+                                )}
                             </button>
-                        )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        {[
-                            ['all', 'All entries'],
-                            ['sale', 'Sales Settlements'],
-                            ['payroll', 'People & Payroll'],
-                            ['stock_request', 'Inventory'],
-                        ].map(([value, label]) => (
                             <button
-                                key={value}
                                 type="button"
-                                onClick={() => handleTypeChange(value)}
-                                className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors min-h-[36px] sm:min-h-0 ${
-                                    entryTypeFilter === value
-                                        ? 'border-clay-200 bg-clay-50 text-clay-700'
-                                        : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                    }`}
+                                onClick={() => handleTabChange('history')}
+                                className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition min-h-[44px] ${
+                                    activeTab === 'history'
+                                        ? 'border-gray-900 text-gray-900'
+                                        : 'border-transparent text-gray-400 hover:text-gray-700'
+                                }`}
                             >
-                                {label}
+                                <History size={16} /> Transaction Ledger
                             </button>
-                        ))}
-                        <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-semibold text-stone-600 min-h-[36px] sm:min-h-0">
-                            {(activeTab === 'pending' ? (pendingRequests?.total || 0) : (history?.total || 0))} visible
-                        </span>
-                    </div>
-                </div>
-
-                {/* Responsive Split-Pane Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* Left Column: List (Takes 7 columns on desktop if item is selected, 12 otherwise) */}
-                    <div className={reviewModal.item ? "lg:col-span-7 space-y-6" : "lg:col-span-12 space-y-6"}>
-                        {activeTab === 'pending' && (
-                            <PendingApprovalsList
-                                paginatedPending={pendingRequests?.data || []}
-                                totalPendingPages={pendingRequests?.last_page || 1}
-                                currentPage={pendingRequests?.current_page || 1}
-                                onPageChange={handlePageChange}
-                                onReview={openReviewModal}
-                                filteredCount={pendingRequests?.total || 0}
-                                searchTerm={searchTerm}
-                                entryTypeFilter={entryTypeFilter}
-                                selectedId={reviewModal.item?.id}
-                                selectedType={reviewModal.item?.type}
-                                isLoading={isTableShimmering}
-                                isSearching={isSearchLoading}
-                            />
-                        )}
-
-                        {activeTab === 'history' && (
-                            <TransactionLedgerTable
-                                paginatedHistory={history?.data || []}
-                                totalHistoryPages={history?.last_page || 1}
-                                currentPage={history?.current_page || 1}
-                                onPageChange={handlePageChange}
-                                onView={openReviewModal}
-                                filteredCount={history?.total || 0}
-                                searchTerm={searchTerm}
-                                entryTypeFilter={entryTypeFilter}
-                                selectedId={reviewModal.item?.id}
-                                selectedType={reviewModal.item?.type}
-                                isLoading={isTableShimmering}
-                                isSearching={isSearchLoading}
-                            />
-                        )}
-                    </div>
-
-                    {/* Right Column: Sticky Inspector on Desktop */}
-                    {reviewModal.item && (
-                        <div className="hidden lg:block lg:col-span-5 lg:sticky lg:top-6">
-                            <ReleaseRequestDetails
-                                item={reviewModal.item}
-                                source={reviewModal.source}
-                                canEditAccounting={canEditAccounting}
-                                rejectReason={rejectReason}
-                                setRejectReason={setRejectReason}
-                                onApprove={handleApprove}
-                                onReject={handleReject}
-                                reviewProcessing={reviewProcessing}
-                                onClose={closeReviewModal}
-                                inline={true}
-                            />
                         </div>
-                    )}
-                </div>
+
+                        {/* Search & Filter Controls */}
+                        <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="relative w-full sm:max-w-sm">
+                                {isSearchLoading ? (
+                                    <LoaderCircle size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-clay-600 animate-spin" />
+                                ) : (
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                )}
+                                <input
+                                    id="accounting-search"
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(event) => setSearchTerm(event.target.value)}
+                                    placeholder={
+                                        activeTab === 'pending'
+                                            ? 'Search requester, supply, payroll month...'
+                                            : 'Search ledger entries, requester...'
+                                    }
+                                    className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
+                                />
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition min-h-[30px] min-w-[30px] flex items-center justify-center"
+                                        title="Clear search"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {[
+                                    ['all', 'All entries'],
+                                    ['sale', 'Sales Settlements'],
+                                    ['payroll', 'People & Payroll'],
+                                    ['stock_request', 'Inventory'],
+                                ].map(([value, label]) => (
+                                    <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() => handleTypeChange(value)}
+                                        className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors min-h-[36px] sm:min-h-0 ${
+                                            entryTypeFilter === value
+                                                ? 'border-clay-200 bg-clay-50 text-clay-700'
+                                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                                <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-semibold text-stone-600 min-h-[36px] sm:min-h-0">
+                                    {(activeTab === 'pending' ? (pendingRequests?.total || 0) : (history?.total || 0))} visible
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* List */}
+                        <div className="space-y-6">
+                            {activeTab === 'pending' && (
+                                <PendingApprovalsList
+                                    paginatedPending={pendingRequests?.data || []}
+                                    totalPendingPages={pendingRequests?.last_page || 1}
+                                    currentPage={pendingRequests?.current_page || 1}
+                                    onPageChange={handlePageChange}
+                                    onReview={openReviewModal}
+                                    filteredCount={pendingRequests?.total || 0}
+                                    searchTerm={searchTerm}
+                                    entryTypeFilter={entryTypeFilter}
+                                    selectedId={reviewModal.item?.id}
+                                    selectedType={reviewModal.item?.type}
+                                    isLoading={isTableShimmering}
+                                    isSearching={isSearchLoading}
+                                />
+                            )}
+
+                            {activeTab === 'history' && (
+                                <TransactionLedgerTable
+                                    paginatedHistory={history?.data || []}
+                                    totalHistoryPages={history?.last_page || 1}
+                                    currentPage={history?.current_page || 1}
+                                    onPageChange={handlePageChange}
+                                    onView={openReviewModal}
+                                    filteredCount={history?.total || 0}
+                                    searchTerm={searchTerm}
+                                    entryTypeFilter={entryTypeFilter}
+                                    selectedId={reviewModal.item?.id}
+                                    selectedType={reviewModal.item?.type}
+                                    isLoading={isTableShimmering}
+                                    isSearching={isSearchLoading}
+                                />
+                            )}
+                        </div>
+                    </>
+                )}
             </main>
 
             {/* Base Funds Update Modal */}
@@ -405,22 +399,6 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                 onSubmit={handleUpdateBaseFunds}
                 processing={baseFundsProcessing}
             />
-
-            {/* Release Request details modal drawer - Mobile/Tablet only */}
-            <div className="lg:hidden">
-                <ReleaseRequestModal
-                    isOpen={reviewModal.open}
-                    onClose={closeReviewModal}
-                    item={reviewModal.item}
-                    source={reviewModal.source}
-                    canEditAccounting={canEditAccounting}
-                    rejectReason={rejectReason}
-                    setRejectReason={setRejectReason}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
-                    reviewProcessing={reviewProcessing}
-                />
-            </div>
         </>
     );
 }
