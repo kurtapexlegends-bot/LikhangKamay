@@ -1,28 +1,11 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import {
-    UploadCloud,
-    CheckCircle2,
-    FileText,
-    ShieldCheck,
-    MapPin,
-    ArrowLeft,
-    FileCheck,
-    Store,
-    Phone,
-    Clock,
-    Sparkles,
-    ArrowRight,
-    LogOut,
-    AlertTriangle,
-    ChevronDown,
-    Banknote,
-} from 'lucide-react';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
-import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
+import { Clock, Sparkles, LogOut, AlertTriangle, ChevronDown } from 'lucide-react';
 import { CAVITE_REGION, normalizeCaviteAddressText } from '@/lib/caviteAddresses';
+import StepPill from '@/Pages/Auth/Partials/StepPill';
+import ShopDetailsStep from '@/Pages/Auth/Partials/ShopDetailsStep';
+import DocumentsStep from '@/Pages/Auth/Partials/DocumentsStep';
+import PaymentStep from '@/Pages/Auth/Partials/PaymentStep';
 
 export default function ArtisanSetup({ auth }) {
     const [step, setStep] = React.useState(1);
@@ -190,233 +173,38 @@ export default function ArtisanSetup({ auth }) {
                             </div>
                         )}
                         {step === 1 && (
-                            <form onSubmit={submit} className="p-6 sm:p-10">
-                                <div className="mb-8">
-                                    <div className="mb-1 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-clay-100">
-                                            <MapPin size={20} className="text-clay-600" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-bold text-gray-900">Business Details</h2>
-                                            <p className="text-sm text-gray-500">Tell us about your artisan shop</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <InputLabel htmlFor="shop_name" value="Shop Name *" />
-                                        <div className="relative mt-1">
-                                            <Store size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                            <TextInput
-                                                id="shop_name"
-                                                value={data.shop_name}
-                                                onChange={(event) => setData('shop_name', event.target.value)}
-                                                className="w-full rounded-xl py-3 pl-12"
-                                                placeholder="e.g. Silang Pottery Works"
-                                            />
-                                         </div>
-                                         {shopNameValidation.isValid !== null && (
-                                             <div className={`mt-2 flex items-center gap-1.5 text-xs font-medium px-1 animate-in fade-in slide-in-from-top-1 duration-300 ${shopNameValidation.isValid ? 'text-emerald-600' : 'text-rose-500'}`}>
-                                                 {shopNameValidation.isValid ? (
-                                                     <CheckCircle2 size={14} className="shrink-0" />
-                                                 ) : (
-                                                     <AlertTriangle size={14} className="shrink-0" />
-                                                 )}
-                                                 <span>{shopNameValidation.message}</span>
-                                             </div>
-                                         )}
-                                         <InputError message={errors.shop_name} className="mt-2" />
-                                     </div>
-
-                                    <div>
-                                        <InputLabel htmlFor="phone_number" value="Contact Number *" />
-                                        <div className="relative mt-1">
-                                            <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                            <TextInput
-                                                id="phone_number"
-                                                value={data.phone_number}
-                                                onChange={(event) => setData('phone_number', event.target.value)}
-                                                className="w-full rounded-xl py-3 pl-12"
-                                                placeholder="09XX XXX XXXX"
-                                            />
-                                        </div>
-                                        <InputError message={errors.phone_number} className="mt-2" />
-                                    </div>
-
-                                    <StructuredAddressFields
-                                        key="artisan-setup-address"
-                                        data={data}
-                                        setData={setData}
-                                        errors={errors}
-                                        fieldNames={{ postal_code: 'zip_code' }}
-                                        required
-                                        helperText="This becomes your default pickup address."
-                                        previewLabel="Shop Address"
-                                    />
-                                </div>
-
-                                <div className="mt-8 flex justify-end">
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-clay-600 to-clay-700 px-8 py-3.5 font-bold text-white shadow-lg shadow-clay-200 transition hover:from-clay-700 hover:to-clay-800 disabled:opacity-50"
-                                    >
-                                        Continue to Documents <ArrowRight size={18} />
-                                    </button>
-                                </div>
-                            </form>
+                            <ShopDetailsStep
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                                submit={submit}
+                                processing={processing}
+                                shopNameValidation={shopNameValidation}
+                            />
                         )}
 
                         {step === 2 && (
-                            <form onSubmit={submit} className="p-6 sm:p-10">
-                                <div className="mb-8">
-                                    <div className="mb-1 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
-                                            <FileText size={20} className="text-amber-600" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-bold text-gray-900">Legal Verification</h2>
-                                            <p className="text-sm text-gray-500">Upload clear photos or scans of your documents</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                    <p className="text-sm text-amber-800">
-                                        <strong>Why do we need these?</strong> To protect buyers and ensure authenticity of all artisan sellers on our platform.
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <FileUploadField
-                                        label="Business Permit (Mayor's Permit)"
-                                        id="business_permit"
-                                        file={data.business_permit}
-                                        existingFile={!!auth.user.business_permit}
-                                        onFileSelect={(file) => handleFileChange(file, 'business_permit')}
-                                        error={errors.business_permit}
-                                    />
-                                    <FileUploadField
-                                        label="DTI Registration"
-                                        id="dti_registration"
-                                        file={data.dti_registration}
-                                        existingFile={!!auth.user.dti_registration}
-                                        onFileSelect={(file) => handleFileChange(file, 'dti_registration')}
-                                        error={errors.dti_registration}
-                                    />
-                                    <FileUploadField
-                                        label="Valid Government ID (Front)"
-                                        id="valid_id"
-                                        file={data.valid_id}
-                                        existingFile={!!auth.user.valid_id}
-                                        onFileSelect={(file) => handleFileChange(file, 'valid_id')}
-                                        error={errors.valid_id}
-                                    />
-                                    <FileUploadField
-                                        label="TIN ID / Registration"
-                                        id="tin_id"
-                                        file={data.tin_id}
-                                        existingFile={!!auth.user.tin_id}
-                                        onFileSelect={(file) => handleFileChange(file, 'tin_id')}
-                                        error={errors.tin_id}
-                                    />
-                                </div>
-
-                                <div className="mt-8 flex items-center justify-between">
-                                    <button
-                                        type="button"
-                                        onClick={() => setStep(1)}
-                                        className="flex items-center gap-2 font-medium text-gray-500 transition hover:text-gray-700"
-                                    >
-                                        <ArrowLeft size={16} /> Back
-                                    </button>
-
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-clay-600 to-clay-700 px-8 py-3.5 font-bold text-white shadow-lg shadow-clay-200 transition hover:from-clay-700 hover:to-clay-800 disabled:opacity-50"
-                                    >
-                                        {processing ? 'Uploading...' : 'Continue to Payments'} <ArrowRight size={18} />
-                                    </button>
-                                </div>
-                            </form>
+                            <DocumentsStep
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                                submit={submit}
+                                processing={processing}
+                                setStep={setStep}
+                                auth={auth}
+                                handleFileChange={handleFileChange}
+                            />
                         )}
 
                         {step === 3 && (
-                            <form onSubmit={submit} className="p-6 sm:p-10">
-                                <div className="mb-8">
-                                    <div className="mb-1 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
-                                            <Banknote size={20} className="text-emerald-600" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-bold text-gray-900">Payment Details</h2>
-                                            <p className="text-sm text-gray-500">How would you like to receive your earnings?</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <InputLabel htmlFor="payout_method" value="Preferred Payout Method *" />
-                                        <select
-                                            id="payout_method"
-                                            value={data.payout_method}
-                                            onChange={(e) => setData('payout_method', e.target.value)}
-                                            className="mt-1 block w-full rounded-xl border-gray-300 py-3 text-sm focus:border-clay-500 focus:ring-clay-500"
-                                        >
-                                            <option value="GCash">GCash</option>
-                                            <option value="Maya">Maya</option>
-                                            <option value="Bank Transfer">Bank Transfer (BDO, BPI, etc.)</option>
-                                            <option value="Palawan Express">Palawan Express</option>
-                                        </select>
-                                        <InputError message={errors.payout_method} className="mt-2" />
-                                    </div>
-
-                                    <div>
-                                        <InputLabel htmlFor="payout_account_name" value="Account Name *" />
-                                        <TextInput
-                                            id="payout_account_name"
-                                            value={data.payout_account_name}
-                                            onChange={(e) => setData('payout_account_name', e.target.value)}
-                                            className="mt-1 block w-full rounded-xl py-3"
-                                            placeholder="Full name as shown in account"
-                                        />
-                                        <InputError message={errors.payout_account_name} className="mt-2" />
-                                    </div>
-
-                                    <div>
-                                        <InputLabel htmlFor="payout_account_number" value="Account/Phone Number *" />
-                                        <TextInput
-                                            id="payout_account_number"
-                                            value={data.payout_account_number}
-                                            onChange={(e) => setData('payout_account_number', e.target.value)}
-                                            className="mt-1 block w-full rounded-xl py-3"
-                                            placeholder="e.g. 0917 XXX XXXX or Bank Account No."
-                                        />
-                                        <InputError message={errors.payout_account_number} className="mt-2" />
-                                    </div>
-                                </div>
-
-                                <div className="mt-8 flex items-center justify-between">
-                                    <button
-                                        type="button"
-                                        onClick={() => setStep(2)}
-                                        className="flex items-center gap-2 font-medium text-gray-500 transition hover:text-gray-700"
-                                    >
-                                        <ArrowLeft size={16} /> Back
-                                    </button>
-
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-8 py-3.5 font-bold text-white shadow-lg shadow-green-200 transition hover:from-green-700 hover:to-green-800 disabled:opacity-50"
-                                    >
-                                        {processing ? 'Submitting...' : 'Complete Application'} <CheckCircle2 size={18} />
-                                    </button>
-                                </div>
-                            </form>
+                            <PaymentStep
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                                submit={submit}
+                                processing={processing}
+                                setStep={setStep}
+                            />
                         )}
                     </div>
 
@@ -439,63 +227,4 @@ export default function ArtisanSetup({ auth }) {
     );
 }
 
-function StepPill({ number, icon, label, active, current }) {
-    return (
-        <div className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300 ${
-            current ? 'bg-clay-600 text-white shadow-md shadow-clay-200 scale-105' : active ? 'bg-clay-100 text-clay-700' : 'text-gray-400'
-        }`}>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                current ? 'bg-white text-clay-600 animate-pulse' : active ? 'bg-clay-200 text-clay-700' : 'bg-gray-100'
-            }`}>
-                {icon || number}
-            </div>
-            <span className="hidden text-sm font-medium sm:block">{label}</span>
-        </div>
-    );
-}
 
-const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, existingFile }) => {
-    const inputRef = useRef(null);
-
-    return (
-        <div>
-            <InputLabel htmlFor={id} value={label} />
-            <div
-                onClick={() => inputRef.current?.click()}
-                className={`mt-1 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 hover:shadow-md ${
-                    file ? 'border-clay-400 bg-clay-50/50' : existingFile ? 'border-clay-300 bg-clay-50/30' : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
-                }`}
-            >
-                {file ? (
-                    <>
-                        <FileCheck size={32} className="mb-2 text-clay-600" />
-                        <p className="max-w-full truncate text-sm font-medium text-clay-800">{file.name}</p>
-                        <p className="text-xs text-clay-600">Click to change</p>
-                    </>
-                ) : existingFile ? (
-                    <>
-                        <CheckCircle2 size={32} className="mb-2 text-clay-600" />
-                        <p className="text-sm font-bold text-clay-800">Document on File</p>
-                        <p className="text-xs text-clay-600">Click to replace</p>
-                    </>
-                ) : (
-                    <>
-                        <UploadCloud size={32} className="mb-2 text-gray-400" />
-                        <p className="text-sm font-medium text-gray-600">Click to upload</p>
-                        <p className="text-xs text-gray-400">PNG, JPG, PDF up to 5MB</p>
-                    </>
-                )}
-                <input
-                    ref={inputRef}
-                    id={id}
-                    name={id}
-                    type="file"
-                    className="hidden"
-                    onChange={(event) => event.target.files?.[0] && onFileSelect(event.target.files[0])}
-                    accept="image/*,.pdf"
-                />
-            </div>
-            <InputError message={error} className="mt-2" />
-        </div>
-    );
-});
