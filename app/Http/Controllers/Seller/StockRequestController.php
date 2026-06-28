@@ -9,6 +9,7 @@ use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Models\StockRequest;
 use App\Models\Supply;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class StockRequestController extends Controller
@@ -20,6 +21,7 @@ class StockRequestController extends Controller
      */
     public function index()
     {
+        Gate::authorize('viewAny', StockRequest::class);
         $userId = $this->sellerOwnerId();
 
         // Fetch requests with associated supply details
@@ -49,6 +51,7 @@ class StockRequestController extends Controller
         
         // Phase 1: Authentication block
         $this->authorizeSellerOwnership($supply->user_id);
+        Gate::authorize('create', StockRequest::class);
 
         // Phase 2: The Stopper (Max Stock Validation)
         $capacity = $supply->getAvailableCapacity();
@@ -88,7 +91,7 @@ class StockRequestController extends Controller
      */
     public function markAsOrdered(Request $request, StockRequest $stockRequest)
     {
-        $this->authorizeSellerOwnership($stockRequest->user_id);
+        Gate::authorize('manage', $stockRequest);
         
         if ($stockRequest->status !== StockRequest::STATUS_ACCOUNTING_APPROVED) {
             return back()->with('error', 'Funds must be released first.');
@@ -103,7 +106,7 @@ class StockRequestController extends Controller
      */
     public function receive(Request $request, StockRequest $stockRequest)
     {
-        $this->authorizeSellerOwnership($stockRequest->user_id);
+        Gate::authorize('manage', $stockRequest);
 
         $validated = $request->validate(['quantity' => 'required|integer|min:1']);
         
@@ -132,7 +135,7 @@ class StockRequestController extends Controller
      */
     public function transfer(Request $request, StockRequest $stockRequest)
     {
-        $this->authorizeSellerOwnership($stockRequest->user_id);
+        Gate::authorize('manage', $stockRequest);
 
         $validated = $request->validate(['quantity' => 'required|integer|min:1']);
         

@@ -22,9 +22,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Illuminate\Support\Facades\Gate::define('admin-action', function ($user) {
-            return $user && $user->role === 'super_admin';
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            if ($user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
+                return true;
+            }
         });
+
+        \Illuminate\Support\Facades\Gate::define('admin-action', [\App\Policies\AdminPolicy::class, 'adminAction']);
+
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\Payroll::class, \App\Policies\PayrollPolicy::class);
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\StockRequest::class, \App\Policies\StockRequestPolicy::class);
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\Product::class, \App\Policies\ProductPolicy::class);
 
         // Dynamically override SMTP config and app name from database settings
         try {

@@ -21,6 +21,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Gate;
 use Throwable;
 
 class HRController extends Controller
@@ -284,7 +285,7 @@ class HRController extends Controller
 
     public function generatePayroll(Request $request, PayrollCalculatorService $payrollService)
     {
-        abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
+        Gate::authorize('create', Payroll::class);
 
         $validated = $request->validate([
             'action' => ['nullable', 'string', Rule::in(['draft', 'submit', 'dry_run'])],
@@ -332,8 +333,8 @@ class HRController extends Controller
 
     public function showPayroll(Payroll $payroll): Response
     {
+        Gate::authorize('view', $payroll);
         $seller = $this->sellerOwner();
-        abort_unless((int) $payroll->user_id === (int) $seller->id, 404);
 
         return Inertia::render('Seller/HR/PayrollRunShow', [
             'payroll' => HRWorkflowHelper::serializePayrollRun($payroll->loadMissing([
@@ -345,10 +346,9 @@ class HRController extends Controller
 
     public function submitPayrollRun(Payroll $payroll)
     {
-        abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
+        Gate::authorize('manage', $payroll);
 
         $seller = $this->sellerOwner();
-        abort_unless((int) $payroll->user_id === (int) $seller->id, 404);
 
         if ($payroll->status !== 'Draft') {
             return back()->with('error', 'Only draft payroll runs can be submitted.');
@@ -368,12 +368,8 @@ class HRController extends Controller
 
     public function destroyPayroll(int $id)
     {
-        abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
-
-        $payroll = Payroll::query()
-            ->where('user_id', $this->sellerOwnerId())
-            ->where('id', $id)
-            ->firstOrFail();
+        $payroll = Payroll::findOrFail($id);
+        Gate::authorize('manage', $payroll);
 
         if (!in_array($payroll->status, ['Draft', 'Pending', 'Rejected'], true)) {
             return redirect()->back()->with('error', 'Only draft, pending, or rejected payroll runs can be deleted.');

@@ -21,6 +21,7 @@ use App\Actions\Seller\Catalog\ImportProductsCsv;
 use App\Actions\Seller\Catalog\ResubmitProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -34,6 +35,7 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
+        Gate::authorize('viewAny', Product::class);
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
 
@@ -148,6 +150,7 @@ class ProductController extends Controller
 
     public function store(Request $request, CreateProduct $createProduct, ThreeDAssetService $threeDAssetService)
     {
+        Gate::authorize('create', Product::class);
         /** @var \App\Models\User|null $seller */
         $seller = $request->user()->getEffectiveSeller();
         
@@ -199,9 +202,8 @@ class ProductController extends Controller
 
     public function update(Request $request, int|string $id, UpdateProduct $updateProduct, ThreeDAssetService $threeDAssetService)
     {
-        $sellerOwner = $this->sellerOwner();
-        /** @var \App\Models\Product $product */
-        $product = Product::where('user_id', $sellerOwner->id)->findOrFail($id);
+        $product = Product::findOrFail($id);
+        Gate::authorize('update', $product);
 
         $request->merge([
             'category' => trim((string) $request->input('category')),
@@ -230,7 +232,7 @@ class ProductController extends Controller
             ...$threeDAssetService->getAssetRules(),
         ]);
 
-        $result = $updateProduct->execute($product, $validated, $request, $sellerOwner);
+        $result = $updateProduct->execute($product, $validated, $request, $this->sellerOwner());
         $isPendingReview = $result['product']->status === 'pending_review';
 
         return redirect()->back()->with('success', $isPendingReview
@@ -242,7 +244,8 @@ class ProductController extends Controller
 
     public function archive(string|int $id, ArchiveProduct $archiveProduct)
     {
-        $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+        $product = Product::findOrFail($id);
+        Gate::authorize('update', $product);
         $archiveProduct->execute($product, $this->sellerOwnerId());
 
         return redirect()->back()->with('success', 'Product archived.');
@@ -258,6 +261,11 @@ class ProductController extends Controller
             'ids.*' => 'integer',
             'status' => ['required', Rule::in(['Active', 'Draft', 'Archived'])],
         ]);
+
+        foreach ($validated['ids'] as $id) {
+            $product = Product::findOrFail($id);
+            Gate::authorize('update', $product);
+        }
 
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
@@ -278,7 +286,8 @@ class ProductController extends Controller
 
     public function activate(string|int $id, ActivateProduct $activateProduct)
     {
-        $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+        $product = Product::findOrFail($id);
+        Gate::authorize('update', $product);
         $result = $activateProduct->execute($product, $this->sellerOwner());
 
         if (!$result['success']) {
@@ -293,7 +302,8 @@ class ProductController extends Controller
 
     public function restock(Request $request, string|int $id, RestockProduct $restockProduct)
     {
-        $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+        $product = Product::findOrFail($id);
+        Gate::authorize('update', $product);
         $validated = $request->validate([
             'amount' => 'required|integer|min:1',
         ]);
@@ -305,7 +315,8 @@ class ProductController extends Controller
 
     public function manualDeduct(Request $request, int|string $id, ManualDeductProduct $manualDeductProduct)
     {
-        $product = Product::where('user_id', $this->sellerOwnerId())->findOrFail($id);
+        $product = Product::findOrFail($id);
+        Gate::authorize('update', $product);
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -323,6 +334,7 @@ class ProductController extends Controller
 
     public function exportCsv()
     {
+        Gate::authorize('viewAny', Product::class);
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
         $products = Product::where('user_id', $seller->id)->get();
@@ -363,6 +375,7 @@ class ProductController extends Controller
 
     public function importCsv(Request $request, ImportProductsCsv $importProductsCsv)
     {
+        Gate::authorize('create', Product::class);
         $request->validate([
             'file' => 'required|file|mimes:csv,txt|max:2048',
         ]);
@@ -399,9 +412,8 @@ class ProductController extends Controller
 
     public function resubmit(Request $request, int|string $id, ResubmitProduct $resubmitProduct)
     {
-        $sellerOwner = $this->sellerOwner();
-        /** @var \App\Models\Product $product */
-        $product = Product::where('user_id', $sellerOwner->id)->findOrFail($id);
+        $product = Product::findOrFail($id);
+        Gate::authorize('update', $product);
 
         if ($product->status !== 'rejected' && $product->status !== 'flagged') {
             return back()->with('error', 'Only rejected or flagged products can be resubmitted.');
@@ -430,9 +442,7 @@ class ProductController extends Controller
     {
         $viewer = Auth::user();
         if ($product->status !== 'Active') {
-            $isOwner = $viewer && $viewer->id === $product->user_id;
-            $isAdmin = $viewer && $viewer->role === 'super_admin';
-            if (!$isOwner && !$isAdmin) {
+            if (!$viewer || Gate::denies('view', $product)) {
                 abort(404);
             }
         }

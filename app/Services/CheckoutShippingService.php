@@ -47,8 +47,7 @@ class CheckoutShippingService
             ]);
 
             $dropoffCandidates = array_values(array_filter([
-                $structuredDropoffAddress,
-                trim((string) ($destination['shipping_address'] ?? '')),
+                $structuredDropoffAddress !== '' ? $structuredDropoffAddress : trim((string) ($destination['shipping_address'] ?? '')),
             ]));
 
             if (empty($pickupCandidates) || empty($dropoffCandidates)) {

@@ -13,6 +13,7 @@ use App\Models\Payroll;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -25,6 +26,7 @@ class ProcurementController extends Controller
      */
     public function index()
     {
+        Gate::authorize('viewAny', StockRequest::class);
         $actor = $this->sellerActor();
         $sellerId = $this->sellerOwnerId();
 
@@ -239,6 +241,7 @@ class ProcurementController extends Controller
     public function requestRestock(Request $request, Supply $supply)
     {
         $this->authorizeSellerOwnership($supply->user_id);
+        Gate::authorize('create', StockRequest::class);
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -282,7 +285,7 @@ class ProcurementController extends Controller
      */
     public function receiveOrder(Request $request, StockRequest $stockRequest)
     {
-        $this->authorizeSellerOwnership($stockRequest->user_id);
+        Gate::authorize('manage', $stockRequest);
 
         if ($stockRequest->status !== StockRequest::STATUS_ACCOUNTING_APPROVED) {
             return back()->with('error', 'Funds must be released by Accounting before receiving order.');

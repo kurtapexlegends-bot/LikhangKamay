@@ -297,7 +297,8 @@ class GlobalSearchController extends Controller
         // Sponsorship Search (Seller)
         $sellerSponsorships = [];
         if ($user->isSellerOwner() && $user->canAccessSellerModule('sponsorships')) {
-            $sellerSponsorships = SponsorshipRequest::where('user_id', $sellerId)
+            $sellerSponsorships = SponsorshipRequest::with(['product:id,name'])
+                ->where('user_id', $sellerId)
                 ->whereHas('product', function($q) use ($query, $like) {
                     $q->where('name', $like, "%{$query}%");
                 })

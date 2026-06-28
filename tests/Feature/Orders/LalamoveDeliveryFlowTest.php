@@ -61,7 +61,8 @@ class LalamoveDeliveryFlowTest extends TestCase
             ->once()
             ->with(Mockery::on(function ($value) use ($order) {
                 return is_array($value)
-                    && in_array($order->shipping_address, $value, true);
+                    ? in_array($order->shipping_address, $value, true)
+                    : $value === $order->shipping_address;
             }), 'buyer drop-off')
             ->andReturn([
                 'lat' => '14.3330',
@@ -155,7 +156,8 @@ class LalamoveDeliveryFlowTest extends TestCase
             ->once()
             ->with(Mockery::on(function ($value) use ($order) {
                 return is_array($value)
-                    && in_array($order->shipping_address, $value, true);
+                    ? in_array($order->shipping_address, $value, true)
+                    : $value === $order->shipping_address;
             }), 'buyer drop-off')
             ->andReturn([
                 'lat' => '14.3330',
@@ -260,7 +262,8 @@ class LalamoveDeliveryFlowTest extends TestCase
             ->once()
             ->with(Mockery::on(function ($value) use ($order) {
                 return is_array($value)
-                    && in_array($order->shipping_address, $value, true);
+                    ? in_array($order->shipping_address, $value, true)
+                    : $value === $order->shipping_address;
             }), 'buyer drop-off')
             ->andReturn([
                 'lat' => '14.3330',
@@ -348,7 +351,8 @@ class LalamoveDeliveryFlowTest extends TestCase
             ->once()
             ->with(Mockery::on(function ($value) use ($order) {
                 return is_array($value)
-                    && in_array($order->shipping_address, $value, true);
+                    ? in_array($order->shipping_address, $value, true)
+                    : $value === $order->shipping_address;
             }), 'buyer drop-off')
             ->andReturn([
                 'lat' => '14.3330',

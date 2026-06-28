@@ -13,6 +13,7 @@ use App\Notifications\AccountingRejectedNotification;
 use App\Services\AccountingLedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class AccountingController extends Controller
@@ -137,7 +138,7 @@ class AccountingController extends Controller
 
     public function approveRelease(StockRequest $stockRequest)
     {
-        $this->authorizeSellerOwnership($stockRequest->user_id);
+        Gate::authorize('approve', $stockRequest);
 
         if ($stockRequest->status !== StockRequest::STATUS_PENDING) {
             return back()->with('error', 'Request is not pending.');
@@ -175,7 +176,7 @@ class AccountingController extends Controller
 
     public function rejectRelease(Request $request, StockRequest $stockRequest)
     {
-        $this->authorizeSellerOwnership($stockRequest->user_id);
+        Gate::authorize('reject', $stockRequest);
 
         if ($stockRequest->status !== StockRequest::STATUS_PENDING) {
             return back()->with('error', 'Only pending stock requests can be rejected.');
@@ -210,7 +211,7 @@ class AccountingController extends Controller
 
     public function approvePayroll(Payroll $payroll)
     {
-        $this->authorizeSellerOwnership($payroll->user_id);
+        Gate::authorize('approve', $payroll);
 
         if ($payroll->status !== 'Pending') {
             return back()->with('error', 'Payroll is not pending.');
@@ -248,7 +249,7 @@ class AccountingController extends Controller
 
     public function rejectPayroll(Request $request, Payroll $payroll)
     {
-        $this->authorizeSellerOwnership($payroll->user_id);
+        Gate::authorize('reject', $payroll);
 
         if ($payroll->status !== 'Pending') {
             return back()->with('error', 'Only pending payroll requests can be rejected.');
@@ -292,7 +293,8 @@ class AccountingController extends Controller
 
         if ($oldFunds !== $newFunds) {
             DB::transaction(function () use ($seller, $actor, $oldFunds, $newFunds) {
-                User::where('id', $seller->id)->update(['base_funds' => $newFunds]);
+                $lockedUser = User::where('id', $seller->id)->lockForUpdate()->firstOrFail();
+                $lockedUser->update(['base_funds' => $newFunds]);
 
                 CapitalAdjustment::create([
                     'user_id' => $seller->id,

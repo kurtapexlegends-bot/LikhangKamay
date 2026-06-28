@@ -235,8 +235,11 @@ class CartController extends Controller
         $addedCount = 0;
         $outOfStockCount = 0;
 
+        $productIds = $order->items->pluck('product_id')->filter()->unique()->values();
+        $products = Product::with('user')->whereIn('id', $productIds)->get()->keyBy('id');
+
         foreach ($order->items as $item) {
-            $product = Product::with('user')->find($item->product_id);
+            $product = $products->get($item->product_id);
             
             if (!$product || $product->stock < 1) {
                 $outOfStockCount++;

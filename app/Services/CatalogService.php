@@ -115,6 +115,7 @@ class CatalogService
             $storeIds = $topStores->pluck('user_id')->all();
             $sellers = User::with(['products' => function ($q) {
                     $q->approved()
+                      ->with('user')
                       ->orderByDesc('sold')
                       ->orderByDesc('rating')
                       ->orderByDesc('created_at')

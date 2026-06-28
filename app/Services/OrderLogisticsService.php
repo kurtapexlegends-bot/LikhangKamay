@@ -60,8 +60,7 @@ class OrderLogisticsService
             'postal_code' => $order->shipping_postal_code,
         ]);
         $dropoffAddressCandidates = array_values(array_filter([
-            $structuredDropoffAddress,
-            trim((string) $order->shipping_address),
+            $structuredDropoffAddress !== '' ? $structuredDropoffAddress : trim((string) $order->shipping_address),
         ]));
         $preferredDropoffAddress = trim((string) ($structuredDropoffAddress !== '' ? $structuredDropoffAddress : ($dropoffAddressCandidates[0] ?? '')));
         $dropoffGeocodeQuery = count($dropoffAddressCandidates) === 1

@@ -202,7 +202,7 @@ class CatalogController extends Controller
             return back()->withErrors(['feedback' => 'Feedback/reason is required when rejecting or flagging products.']);
         }
 
-        $products = Product::whereIn('id', $validated['ids'])->get();
+        $products = Product::with('user')->whereIn('id', $validated['ids'])->get();
 
         DB::transaction(function () use ($products, $action, $feedback) {
             Product::$bypassReview = true;
