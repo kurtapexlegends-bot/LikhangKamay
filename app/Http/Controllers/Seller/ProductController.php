@@ -19,6 +19,8 @@ use App\Actions\Seller\Catalog\BulkUpdateProductStatus;
 use App\Actions\Seller\Catalog\BulkActivateProducts;
 use App\Actions\Seller\Catalog\ImportProductsCsv;
 use App\Actions\Seller\Catalog\ResubmitProduct;
+use App\Http\Resources\Seller\SellerProductResource;
+use App\Http\Resources\Consumer\ProductDetailResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -83,47 +85,7 @@ class ProductController extends Controller
 
         $paginator = $query->paginate(20)->withQueryString();
 
-        $paginator->through(function (Product $product) {
-            return [
-                'id' => $product->id,
-                'sku' => $product->sku,
-                'name' => $product->name,
-                'description' => $product->description,
-                'category' => $product->category,
-                'status' => $product->status,
-                'clay_type' => $product->clay_type,
-                'glaze_type' => $product->glaze_type,
-                'firing_method' => $product->firing_method,
-                'food_safe' => (bool) $product->food_safe,
-                'colors' => $product->colors ?? [],
-                'height' => $product->height,
-                'width' => $product->width,
-                'weight' => $product->weight,
-                'price' => $product->price,
-                'cost_price' => $product->cost_price,
-                'stock' => $product->stock,
-                'lead_time' => $product->lead_time,
-                'sold' => $product->sold,
-                'cover_photo_path' => $product->cover_photo_path,
-                'gallery_paths' => $product->gallery_paths ?? [],
-                'model_3d_path' => $product->model_3d_path,
-                'track_as_supply' => (bool) $product->track_as_supply,
-                'production_method' => $product->production_method ?? 'resell',
-                'rejection_reason' => $product->rejection_reason,
-                'monthly_resubmission_count' => (int) $product->monthly_resubmission_count,
-                'recipes' => $product->recipes->map(fn($r) => [
-                    'id' => $r->id,
-                    'supply_id' => $r->supply_id,
-                    'supply_name' => $r->supply->name ?? 'Unknown Supply',
-                    'quantity_required' => $r->quantity_required,
-                    'unit' => $r->supply->unit ?? '',
-                ]),
-                'img' => $product->cover_photo_path
-                    ? '/storage/' . $product->cover_photo_path
-                    : '/images/placeholder.svg',
-                'has3D' => filled($product->model_3d_path),
-            ];
-        });
+        $paginator->through(fn (Product $product) => new SellerProductResource($product));
 
         return Inertia::render('Seller/Catalog/ProductManager', [
             'products' => $paginator,
@@ -452,45 +414,10 @@ class ProductController extends Controller
             'reviews' => fn ($query) => $query->visibleToMarketplace()->with('user'),
         ]);
 
-        $product->model_url = $product->model_3d_path
-            ? asset('storage/' . $product->model_3d_path)
-            : null;
-
-        $product->image = $product->img;
-        $product->setRelation('reviews', $product->reviews->map(function ($review) {
-            $review->seller_reply = RichTextSanitizer::sanitize($review->seller_reply);
-            return $review;
-        }));
-        
-        $product->viewer_can_review = $viewer
-            ? \App\Models\Order::query()
-                ->where('user_id', $viewer->id)
-                ->where('status', 'Completed')
-                ->whereHas('items', function ($query) use ($product) {
-                    $query->where('product_id', $product->id);
-                })
-                ->exists()
-            : false;
-        $product->viewer_can_chat_seller = $this->viewerCanChatSeller($viewer, $product->user);
-
-        $sellerLocation = $product->user->city
-            ? $product->user->city . ', PH'
-            : 'Philippines';
-
-        $product->seller = [
-            'id' => $product->user->id,
-            'name' => $product->user->name ?? 'Artisan',
-            'shop_name' => $product->user->shop_name ?? null,
-            'slug' => $product->user->shop_slug,
-            'avatar' => $product->user->avatar,
-            'location' => $sellerLocation,
-            'premium_tier' => $product->user->premium_tier,
-        ];
-
         $relatedProducts = $product->getRelatedProducts();
 
         return Inertia::render('Consumer/Shop/ProductShow', [
-            'product' => $product,
+            'product' => new ProductDetailResource($product),
             'relatedProducts' => $relatedProducts,
             'auth' => [
                 'user' => Auth::user(),
