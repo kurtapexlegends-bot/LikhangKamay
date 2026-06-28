@@ -59,10 +59,13 @@ class CreateProduct
         $sellerId = $sellerOwner->id;
 
         $product = DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus) {
+            $sku = trim(strip_tags($validated['sku']));
+            $name = trim(strip_tags($validated['name']));
+
             $product = Product::create([
                 'user_id' => $sellerId,
-                'sku' => $validated['sku'],
-                'name' => $validated['name'],
+                'sku' => $sku,
+                'name' => $name,
                 'description' => $validated['description'] ?? '',
                 'category' => $validated['category'],
                 'price' => $validated['price'],

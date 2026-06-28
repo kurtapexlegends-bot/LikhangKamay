@@ -105,7 +105,7 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                                         </td>
                                         <td className="px-3 py-2.5 text-right whitespace-nowrap">{formatMoney(line.base_salary)}</td>
                                         <td className="px-3 py-2.5 text-right text-rose-600 font-semibold whitespace-nowrap">
-                                            -{formatMoney(Number(line.absence_deduction) + Number(line.undertime_deduction))}
+                                            -{formatMoney(line.deductions)}
                                         </td>
                                         <td className="px-3 py-2.5 text-right text-emerald-600 font-semibold whitespace-nowrap">
                                             +{formatMoney(line.overtime_pay)}

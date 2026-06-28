@@ -70,8 +70,10 @@ class UpdateProduct
         $sellerId = $seller->id;
 
         DB::transaction(function () use ($product, $request, $validated, $requestedStatus, $sellerId, $existingSupplyLookupName, $before) {
+            $name = trim(strip_tags($request->name));
+
             $product->update([
-                'name' => $request->name,
+                'name' => $name,
                 'description' => $request->description,
                 'category' => $request->category,
                 'price' => $request->price,

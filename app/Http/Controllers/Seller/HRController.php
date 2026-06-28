@@ -285,6 +285,13 @@ class HRController extends Controller
 
     public function generatePayroll(Request $request, PayrollCalculatorService $payrollService)
     {
+        $key = 'generate-payroll:' . auth()->id();
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+            return redirect()->back()->with('error', "Too many payroll generation requests. Please try again in {$seconds} seconds.");
+        }
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 60);
+
         Gate::authorize('create', Payroll::class);
 
         $validated = $request->validate([
