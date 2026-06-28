@@ -23,18 +23,32 @@ class ShopAnalyticsMetricsService
         $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
 
         $getMetrics = function ($start, $end) use ($sellerId) {
-            $data = SellerAnalyticsSnapshot::query()
-                ->where('seller_id', $sellerId)
-                ->whereBetween('snapshot_date', [
+            $ordersCount = (int) Order::where('artisan_id', $sellerId)
+                ->where('status', 'Completed')
+                ->whereBetween('created_at', [
                     $start->copy()->startOfDay(),
                     $end->copy()->endOfDay(),
                 ])
-                ->selectRaw('SUM(revenue) as revenue, SUM(cost) as cost, SUM(orders_count) as orders_count')
-                ->first();
+                ->count();
 
-            $revenue = (float) ($data->revenue ?? 0);
-            $cost = (float) ($data->cost ?? 0);
-            $ordersCount = (int) ($data->orders_count ?? 0);
+            $revenue = (float) OrderItem::whereHas('order', function ($q) use ($sellerId, $start, $end) {
+                $q->where('artisan_id', $sellerId)
+                    ->where('status', 'Completed')
+                    ->whereBetween('created_at', [
+                        $start->copy()->startOfDay(),
+                        $end->copy()->endOfDay(),
+                    ]);
+            })->sum(DB::raw('price * quantity'));
+
+            $cost = (float) OrderItem::whereHas('order', function ($q) use ($sellerId, $start, $end) {
+                $q->where('artisan_id', $sellerId)
+                    ->where('status', 'Completed')
+                    ->whereBetween('created_at', [
+                        $start->copy()->startOfDay(),
+                        $end->copy()->endOfDay(),
+                    ]);
+            })->sum(DB::raw('cost * quantity'));
+
             $profit = $revenue - $cost;
 
             return [
