@@ -2,8 +2,13 @@ import React from 'react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import { Globe, Image, Palette, Search } from 'lucide-react';
+import FormSkeleton from './Partials/FormSkeleton';
 
-export default function BrandingForm({ data, setData, updateNested, errors }) {
+export default function BrandingForm({ data, setData, updateNested, errors, processing }) {
+    if (processing) {
+        return <FormSkeleton />;
+    }
+
     const handleFileChange = (e, field) => {
         const file = e.target.files[0];
         if (file) {

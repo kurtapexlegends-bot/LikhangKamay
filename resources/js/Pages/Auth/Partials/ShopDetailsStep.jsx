@@ -13,6 +13,20 @@ export default function ShopDetailsStep({
     processing,
     shopNameValidation,
 }) {
+    React.useEffect(() => {
+        const errorKeys = Object.keys(errors);
+        if (errorKeys.length > 0) {
+            for (const key of errorKeys) {
+                const element = document.getElementById(key) || document.getElementsByName(key)[0];
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.focus();
+                    break;
+                }
+            }
+        }
+    }, [errors]);
+
     return (
         <form onSubmit={submit} className="p-6 sm:p-10">
             <div className="mb-8">

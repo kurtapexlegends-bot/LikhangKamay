@@ -2,8 +2,13 @@ import React from 'react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import { Mail, ShieldCheck, Key, User } from 'lucide-react';
+import FormSkeleton from './Partials/FormSkeleton';
 
-export default function SMTPForm({ data, setData, errors }) {
+export default function SMTPForm({ data, setData, errors, processing }) {
+    if (processing) {
+        return <FormSkeleton />;
+    }
+
     return (
         <div className="bg-white rounded-2xl border border-clay-100 p-6 space-y-6 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
             {/* SMTP Server Configuration */}

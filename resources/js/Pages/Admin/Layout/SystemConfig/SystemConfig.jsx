@@ -252,6 +252,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                             setData={setData}
                                             updateNested={updateNested}
                                             errors={errors}
+                                            processing={processing}
                                         />
                                     )}
 
@@ -274,6 +275,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                             data={data}
                                             setData={setData}
                                             errors={errors}
+                                            processing={processing}
                                         />
                                     )}
                                 </div>
