@@ -16,7 +16,8 @@ use App\Http\Controllers\Consumer\BuyerOrderController;
 use App\Http\Controllers\Seller\SellerOrderController;
 use App\Http\Controllers\Core\ProfileController;
 use App\Http\Controllers\Seller\ProductController;
-use App\Http\Controllers\Consumer\ReviewController;
+use App\Http\Controllers\Consumer\ReviewController as ConsumerReviewController;
+use App\Http\Controllers\Seller\ReviewController as SellerReviewController;
 use App\Http\Controllers\Seller\DashboardController;
 use App\Http\Controllers\Analytics\AnalyticsController;
 use App\Http\Controllers\Seller\ThreeDManagerController;
@@ -212,13 +213,13 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/team-messages/react', [TeamMessageController::class, 'toggleReaction'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.react');
     Route::get('/buyer/chat', [ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
-    Route::get('/reviews', [ReviewController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.index');
-    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.reply');
-    Route::delete('/reviews/{id}/reply', [ReviewController::class, 'destroyReply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.destroy-reply');
-    Route::post('/reviews/{id}/dispute', [ReviewController::class, 'dispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.dispute');
-    Route::patch('/review-disputes/{reviewDispute}', [ReviewController::class, 'updateDispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('review-disputes.update');
-    Route::delete('/review-disputes/{reviewDispute}', [ReviewController::class, 'destroyDispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('review-disputes.destroy');
-    Route::post('/reviews/{id}/toggle-pin', [ReviewController::class, 'togglePin'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.toggle-pin');
+    Route::get('/reviews', [SellerReviewController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.index');
+    Route::post('/reviews/{id}/reply', [SellerReviewController::class, 'reply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.reply');
+    Route::delete('/reviews/{id}/reply', [SellerReviewController::class, 'destroyReply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.destroy-reply');
+    Route::post('/reviews/{id}/dispute', [SellerReviewController::class, 'dispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.dispute');
+    Route::patch('/review-disputes/{reviewDispute}', [SellerReviewController::class, 'updateDispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('review-disputes.update');
+    Route::delete('/review-disputes/{reviewDispute}', [SellerReviewController::class, 'destroyDispute'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('review-disputes.destroy');
+    Route::post('/reviews/{id}/toggle-pin', [SellerReviewController::class, 'togglePin'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.toggle-pin');
 
     // ERP MODULES
     Route::middleware(['seller.workspace', 'staff.attendance'])->group(function () {
@@ -304,10 +305,10 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy'); // New
 
     // REVIEWS
-    Route::get('/my-reviews', [ReviewController::class, 'buyerIndex'])->name('buyer.reviews');
-    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-    Route::patch('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update');
-    Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::get('/my-reviews', [ConsumerReviewController::class, 'buyerIndex'])->name('buyer.reviews');
+    Route::post('/reviews', [ConsumerReviewController::class, 'store'])->name('reviews.store');
+    Route::patch('/reviews/{id}', [ConsumerReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{id}', [ConsumerReviewController::class, 'destroy'])->name('reviews.destroy');
 
     // GLOBAL SEARCH
     Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
