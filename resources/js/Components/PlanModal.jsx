@@ -1,101 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { router, usePage } from '@inertiajs/react';
-import { Crown, Sparkles, Zap, Check, X, ArrowRight, Star, Shield, Rocket, ChevronRight, AlertCircle, Users } from 'lucide-react';
+import { Crown, X, ChevronRight } from 'lucide-react';
+import { PLANS, PLAN_CONFIG } from '@/utils/planConfig';
+import PlanPricingCard from '@/Components/Seller/Subscriptions/Partials/PlanPricingCard';
+import DowngradeWarningOverlay from '@/Components/Seller/Subscriptions/Partials/DowngradeWarningOverlay';
 
-export const PLAN_CONFIG = {
-    free: {
-        label: 'Standard',
-        icon: Zap,
-        bg: 'bg-stone-100',
-        border: 'border-stone-200',
-        text: 'text-stone-600',
-        iconColor: 'text-stone-400',
-        hoverBg: 'hover:bg-stone-200/80',
-    },
-    premium: {
-        label: 'Premium',
-        icon: Crown,
-        bg: 'bg-gradient-to-r from-amber-50 to-orange-50',
-        border: 'border-amber-200/60',
-        text: 'text-amber-800',
-        iconColor: 'text-amber-500',
-        hoverBg: 'hover:from-amber-100/80 hover:to-orange-100/80',
-    },
-    super_premium: {
-        label: 'Elite',
-        icon: Sparkles,
-        bg: 'bg-gradient-to-r from-violet-50 to-indigo-50',
-        border: 'border-violet-200/60',
-        text: 'text-violet-800',
-        iconColor: 'text-violet-500',
-        hoverBg: 'hover:from-violet-100/80 hover:to-indigo-100/80',
-    },
-};
-
-export const PLANS = [
-    {
-        id: 'free',
-        name: 'Standard',
-        price: 'Free',
-        period: '',
-        description: 'Start selling your craft to the world.',
-        icon: Zap,
-        limit: 3,
-        color: 'stone',
-        gradient: 'from-stone-500 to-stone-600',
-        lightBg: 'bg-stone-50',
-        lightBorder: 'border-stone-200',
-        lightText: 'text-stone-700',
-        features: [
-            'Up to 3 Active Products',
-            'Core Seller Workspace',
-            'Basic Analytics Dashboard',
-        ],
-    },
-    {
-        id: 'premium',
-        name: 'Premium',
-        price: '₱199',
-        period: '/ mo',
-        description: 'Grow your artisan business with stronger operational tools.',
-        icon: Crown,
-        limit: 10,
-        color: 'amber',
-        gradient: 'from-amber-500 to-orange-500',
-        lightBg: 'bg-amber-50',
-        lightBorder: 'border-amber-200',
-        lightText: 'text-amber-700',
-        recommended: true,
-        features: [
-            'Up to 10 Active Products',
-            'Premium Badge (Crown Icon)',
-            'Analytics Report Export',
-            'Module Customization',
-        ],
-    },
-    {
-        id: 'super_premium',
-        name: 'Elite',
-        price: '₱399',
-        period: '/ mo',
-        description: 'Unlock the full seller suite and sponsored placements.',
-        icon: Sparkles,
-        limit: 50,
-        color: 'violet',
-        gradient: 'from-violet-500 to-indigo-500',
-        lightBg: 'bg-violet-50',
-        lightBorder: 'border-violet-200',
-        lightText: 'text-violet-700',
-        features: [
-            'Up to 50 Active Products',
-            'Elite Badge',
-            '5 Sponsorship Credits Every 30 Days',
-            'All Seller Modules Unlocked',
-            'Sponsored Homepage and Catalog Placement',
-        ],
-    },
-];
+export { PLANS, PLAN_CONFIG };
 
 export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }) {
     const { sellerSubscription } = usePage().props;
@@ -264,7 +175,6 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 const isCurrent = plan.id === currentTier;
                                 const isUpgrade = index > currentIndex;
                                 const isDowngrade = index < currentIndex;
-                                const PlanIcon = plan.icon;
 
                                 const limits = sellerSubscription?.tierLimits || { free: 3, premium: 10, super_premium: 50 };
                                 const prices = sellerSubscription?.tierPrices || { free: 0, premium: 199, super_premium: 399 };
@@ -274,120 +184,22 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 const planPrice = plan.id === 'free' ? 'Free' : `₱${rawPrice}`;
 
                                 return (
-                                    <div
+                                    <PlanPricingCard
                                         key={plan.id}
-                                        className={`relative flex h-full flex-col rounded-[1.25rem] border-2 bg-white p-4 transition-all duration-300 ease-out group cursor-pointer w-[85%] lg:w-full shrink-0 snap-center lg:min-h-[22.5rem] ${
-                                            isCurrent
-                                                ? `${plan.lightBorder} ${plan.lightBg} ring-1 ring-offset-1 ring-offset-white ${plan.lightBorder} shadow-md`
-                                                : hoveredPlan === plan.id
-                                                    ? 'border-stone-300 shadow-xl -translate-y-1'
-                                                    : 'border-stone-100 shadow-sm hover:border-stone-200'
-                                        }`}
-                                        onMouseEnter={() => setHoveredPlan(plan.id)}
-                                        onMouseLeave={() => setHoveredPlan(null)}
-                                        style={{
-                                            transitionDelay: isAnimating ? `${index * 80}ms` : '0ms',
-                                            opacity: isAnimating ? 1 : 0,
-                                            transform: isAnimating && hoveredPlan !== plan.id
-                                                ? 'translateY(0px)'
-                                                : hoveredPlan === plan.id ? 'translateY(-4px)' : 'translateY(20px)',
-                                            transitionProperty: 'all',
-                                            transitionDuration: '0.5s',
-                                            transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                                        }}
-                                    >
-                                        <div className="mb-2.5 mt-0.5 flex items-start gap-2">
-                                            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110' : ''}`}>
-                                                <PlanIcon size={15} className="text-white" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                    <h3 className="text-[1.05rem] font-extrabold leading-none text-stone-900">{plan.name}</h3>
-                                                    {isCurrent && (
-                                                        <span className="rounded-full bg-stone-100 border border-stone-200 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-[0.1em] text-stone-600 whitespace-nowrap">
-                                                            Current
-                                                        </span>
-                                                    )}
-                                                    {plan.recommended && !isCurrent && (
-                                                        <span className="flex items-center gap-0.5 rounded-full bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-[0.1em] text-amber-700 whitespace-nowrap">
-                                                            <Star size={7} fill="currentColor" />
-                                                            Popular
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="mt-1 text-[10px] font-medium leading-4 text-stone-500">{plan.description}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-3">
-                                            <div className="flex items-baseline gap-1">
-                                                <span className="text-[2rem] font-black tracking-tight text-stone-900">{planPrice}</span>
-                                                {plan.period && (
-                                                    <span className="text-xs font-semibold text-stone-400">{plan.period}</span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <ul className="mb-4 flex-1 space-y-2">
-                                            {plan.features.map((feature, featureIndex) => {
-                                                let renderedFeature = feature;
-                                                if (feature.startsWith('Up to ') && feature.includes('Active Product')) {
-                                                    renderedFeature = `Up to ${planLimit} Active Products`;
-                                                }
-                                                return (
-                                                    <li key={featureIndex} className="flex items-start gap-2 text-[10.5px] font-medium leading-4 text-stone-600">
-                                                        <Check
-                                                            size={12}
-                                                            className={`mt-0.5 shrink-0 ${isCurrent ? plan.lightText : 'text-green-500'}`}
-                                                            strokeWidth={3}
-                                                        />
-                                                        <span>{renderedFeature}</span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-
-                                        <div className="mt-auto">
-                                            {isCurrent ? (
-                                                <button
-                                                    disabled
-                                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-400 cursor-not-allowed"
-                                                >
-                                                    <Shield size={14} />
-                                                    Active Plan
-                                                </button>
-                                            ) : !canManagePlan ? (
-                                                <button
-                                                    disabled
-                                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-400 cursor-not-allowed"
-                                                >
-                                                    View Only
-                                                </button>
-                                            ) : isUpgrade ? (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleUpgrade(plan.id);
-                                                    }}
-                                                    className={`flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r ${plan.gradient} px-4 py-2 text-[11px] font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]`}
-                                                >
-                                                    <Rocket size={14} />
-                                                    Upgrade
-                                                    <ArrowRight size={13} className="ml-0.5" />
-                                                </button>
-                                            ) : isDowngrade ? (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDowngrade(plan.id, planLimit);
-                                                    }}
-                                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-stone-200 bg-white px-4 py-2 text-[11px] font-bold text-stone-600 transition-all duration-200 hover:border-stone-300 hover:text-stone-900"
-                                                >
-                                                    Downgrade
-                                                </button>
-                                            ) : null}
-                                        </div>
-                                    </div>
+                                        plan={plan}
+                                        isCurrent={isCurrent}
+                                        isUpgrade={isUpgrade}
+                                        isDowngrade={isDowngrade}
+                                        planLimit={planLimit}
+                                        planPrice={planPrice}
+                                        hoveredPlan={hoveredPlan}
+                                        setHoveredPlan={setHoveredPlan}
+                                        isAnimating={isAnimating}
+                                        index={index}
+                                        canManagePlan={canManagePlan}
+                                        handleUpgrade={handleUpgrade}
+                                        handleDowngrade={handleDowngrade}
+                                    />
                                 );
                             })}
                         </div>
@@ -428,76 +240,15 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                     </div>
 
                     {pendingDowngrade && (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/65 p-4 backdrop-blur-[2px]">
-                            <div className="w-full max-w-md rounded-[1.35rem] border border-stone-200 bg-white p-5 shadow-2xl">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
-                                            <AlertCircle size={18} />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-base font-extrabold text-stone-900">
-                                                Final downgrade warning
-                                            </h3>
-                                            <p className="mt-1 text-sm leading-6 text-stone-600">
-                                                You are about to move from {PLANS.find((plan) => plan.id === currentTier)?.name ?? currentTier} to {pendingDowngrade.name}.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setPendingDowngrade(null)}
-                                        className="rounded-lg bg-stone-100 p-1.5 text-stone-400 transition-colors hover:bg-stone-200 hover:text-stone-600"
-                                    >
-                                        <X size={15} />
-                                    </button>
-                                </div>
-
-                                <div className="mt-4 space-y-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                                    <div className="flex items-start gap-3">
-                                        <ChevronRight size={15} className="mt-1 shrink-0 text-orange-600" />
-                                        <p className="text-sm leading-6 text-stone-700">
-                                            Your lower plan benefits and product limit will apply immediately after confirmation.
-                                        </p>
-                                    </div>
-
-                                    {draftCount > 0 && (
-                                        <div className="flex items-start gap-3">
-                                            <ChevronRight size={15} className="mt-1 shrink-0 text-orange-600" />
-                                            <p className="text-sm leading-6 text-stone-700">
-                                                <strong>{draftCount}</strong> active product{draftCount === 1 ? '' : 's'} may need to be set to Draft. You can review those on the Subscription page.
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {showsEliteStandardWarning && (
-                                        <div className="flex items-start gap-3">
-                                            <Users size={15} className="mt-1 shrink-0 text-orange-600" />
-                                            <p className="text-sm leading-6 text-stone-700">
-                                                Downgrading from Elite to Standard will suspend Elite-only features and linked employee workspace accounts until you upgrade again.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mt-5 flex flex-col-reverse sm:flex-row justify-end gap-2.5">
-                                    <button
-                                        onClick={() => setPendingDowngrade(null)}
-                                        className="w-full sm:w-auto rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-600 transition-colors hover:bg-stone-50"
-                                    >
-                                        Go back
-                                    </button>
-                                    <button
-                                        onClick={confirmDowngrade}
-                                        disabled={isDowngrading}
-                                        className={`w-full sm:w-auto rounded-xl px-4 py-2 text-sm font-bold text-white transition-colors ${
-                                            isDowngrading ? 'cursor-not-allowed bg-stone-300' : 'bg-orange-600 hover:bg-orange-700'
-                                        }`}
-                                    >
-                                        {isDowngrading ? 'Processing...' : 'Yes, downgrade now'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <DowngradeWarningOverlay
+                            pendingDowngrade={pendingDowngrade}
+                            setPendingDowngrade={setPendingDowngrade}
+                            confirmDowngrade={confirmDowngrade}
+                            isDowngrading={isDowngrading}
+                            currentTier={currentTier}
+                            draftCount={draftCount}
+                            showsEliteStandardWarning={showsEliteStandardWarning}
+                        />
                     )}
                 </div>
             </div>
