@@ -52,6 +52,7 @@ class ApproveOrderReplacement
                 }
                 
                 $product->decrement('stock', $item->quantity);
+                $product->refresh();
                 if ($product->track_as_supply && $product->supply) {
                     $product->supply->update(['quantity' => $product->stock]);
                 }

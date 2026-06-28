@@ -20,8 +20,10 @@ class ManualDeductProduct
         }
 
         DB::transaction(function () use ($product, $quantity, $reason, $sellerId) {
+            $product = Product::lockForUpdate()->findOrFail($product->id);
             $product->decrement('stock', $quantity);
             $product->increment('sold', $quantity);
+            $product->refresh();
 
             $supply = $this->findSupplyForProduct($product, $sellerId);
 
