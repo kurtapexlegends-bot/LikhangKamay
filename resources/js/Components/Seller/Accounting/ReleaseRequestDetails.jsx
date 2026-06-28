@@ -12,22 +12,22 @@ import PayrollReviewDetails from '@/Components/Seller/Accounting/PayrollReviewDe
 
 function DetailTile({ label, value }) {
     return (
-        <div className="rounded-[1.25rem] border border-stone-200 bg-white shadow-sm px-4 py-3">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-sm px-3.5 py-2">
             <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">{label}</p>
-            <p className="mt-1 text-[13px] font-bold text-stone-900">{value ?? 'N/A'}</p>
+            <p className="mt-0.5 text-[13px] font-bold text-stone-900">{value ?? 'N/A'}</p>
         </div>
     );
 }
 
 function AuditSheet({ title, rows }) {
     return (
-        <div className="px-4 py-3.5">
+        <div className="px-3.5 py-2.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">{title}</p>
-            <div className="mt-3 divide-y divide-stone-100">
+            <div className="mt-2 divide-y divide-stone-100">
                 {rows.map(({ label, value }) => (
-                    <div key={label} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mt-0.5">{label}</span>
-                        <span className="max-w-[70%] text-right text-[13px] font-medium text-stone-900 whitespace-nowrap">{value ?? 'N/A'}</span>
+                    <div key={label} className="flex items-start justify-between gap-3 py-1.5 first:pt-0 last:pb-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mt-0.5">{label}</span>
+                        <span className="max-w-[70%] text-right text-[12px] font-medium text-stone-900 whitespace-nowrap">{value ?? 'N/A'}</span>
                     </div>
                 ))}
             </div>
@@ -259,24 +259,12 @@ export default function ReleaseRequestDetails({
     );
 
     const bodyContent = (
-        <div className="space-y-4 mt-4">
+        <div className="space-y-3 mt-3">
             {/* Mobile Requested Amount Callout */}
             {isPayroll && (
-                <div className="rounded-[1.25rem] border border-[#E7D8C9] bg-[#FCF7F2] p-4 text-center sm:hidden">
+                <div className="rounded-xl border border-[#E7D8C9] bg-[#FCF7F2] p-3 text-center sm:hidden">
                     <p className="text-[9px] font-bold uppercase tracking-widest text-clay-500">Requested Amount</p>
-                    <p className="mt-0.5 text-2xl font-bold tracking-tight text-clay-900 whitespace-nowrap">{formatMoney(item.amount)}</p>
-                </div>
-            )}
-
-            {/* Info flow guide */}
-            {!isSale && (
-                <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 px-4 py-3 text-[11px] font-medium leading-relaxed text-stone-600">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Review flow</p>
-                    <p className="mt-1">
-                        {isPendingReview
-                            ? 'Approve to release it into the finance ledger, or reject it with a reason that the requester can review later.'
-                            : 'This record is already part of the stored finance trail, including the final review result.'}
-                    </p>
+                    <p className="mt-0.5 text-xl font-bold tracking-tight text-clay-900 whitespace-nowrap">{formatMoney(item.amount)}</p>
                 </div>
             )}
 
@@ -349,7 +337,7 @@ export default function ReleaseRequestDetails({
     );
 
     return (
-        <div className={inline ? "rounded-3xl border border-stone-200 bg-white p-6 shadow-sm h-full flex flex-col justify-between" : "flex flex-col h-full justify-between p-1"}>
+        <div className={inline ? "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm h-full flex flex-col justify-between" : "flex flex-col h-full justify-between p-1"}>
             <div>
                 {headerContent}
                 {bodyContent}
