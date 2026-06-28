@@ -20,13 +20,16 @@ export default function ImpersonationBanner() {
 
     return (
         <div className="fixed bottom-28 sm:bottom-6 right-6 z-[300] flex items-end justify-end group">
+            {/* Subtle color pulse underlay */}
+            <div className={`absolute inset-0 bg-amber-500/10 rounded-2xl animate-pulse pointer-events-none ${isCollapsed ? 'rounded-full' : ''}`} />
+
             {/* Main Container */}
             <div 
                 className={`
-                    bg-stone-900 border border-stone-800 shadow-2xl shadow-stone-900/40 rounded-2xl 
+                    bg-stone-900 border border-amber-500/30 shadow-2xl shadow-stone-900/40 rounded-2xl 
                     transition-all duration-500 ease-in-out overflow-hidden flex items-center
                     ${isCollapsed ? 'w-12 h-12 rounded-full' : 'w-auto h-14 px-1.5'}
-                    backdrop-blur-xl ring-1 ring-white/10
+                    backdrop-blur-xl ring-1 ring-amber-500/20 relative z-10
                 `}
             >
                 {/* Toggle Button */}

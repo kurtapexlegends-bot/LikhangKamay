@@ -6,7 +6,7 @@ import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import Footer from '@/Layouts/Footer';
 import {
     MapPin, Calendar, Star, Package, Trophy, Crown, Flame, Sparkles,
-    ShoppingCart, Check, Loader2, ArrowLeft, Filter, Heart, Search, ArrowUpDown 
+    ShoppingCart, Check, Loader2, ArrowLeft, Filter, Heart, Search, ArrowUpDown, X
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { hasRating, formatRating } from '@/utils/rating';
@@ -296,8 +296,18 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     value={searchTerm}
                                     onChange={(event) => setSearchTerm(event.target.value)}
                                     placeholder="Search products..."
-                                    className="w-full rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-10 pr-3 text-xs font-semibold text-stone-600 transition-colors focus:bg-white focus:border-clay-500 focus:ring-clay-500/10 focus:ring-4 min-h-[44px]"
+                                    className="w-full rounded-xl border-stone-200 bg-stone-50/80 py-2.5 pl-10 pr-10 text-xs font-semibold text-stone-600 transition-colors focus:bg-white focus:border-clay-500 focus:ring-clay-500/10 focus:ring-4 min-h-[44px]"
                                 />
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1 min-h-[28px] min-w-[28px] flex items-center justify-center rounded-full hover:bg-stone-200/50 transition-colors"
+                                        title="Clear search"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
                             </div>
                             
                             <select

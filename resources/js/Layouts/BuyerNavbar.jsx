@@ -156,13 +156,26 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                             <input 
                                 type="text" 
                                 placeholder="Search pottery, vases, artisans..." 
-                                className={`w-full bg-gray-50 border border-gray-200 rounded-full text-sm focus:bg-white focus:border-clay-300 focus:ring-4 focus:ring-clay-100/50 transition-all duration-300 shadow-sm placeholder-gray-400 text-gray-800 ${isScrolled ? 'pl-10 pr-20 py-2 md:pl-10 md:pr-24 md:py-2 text-xs' : 'pl-10 pr-24 py-2.5 md:pl-12 md:pr-32 md:py-3'}`}
+                                className={`w-full bg-gray-50 border border-gray-200 rounded-full text-sm focus:bg-white focus:border-clay-300 focus:ring-4 focus:ring-clay-100/50 transition-all duration-300 shadow-sm placeholder-gray-400 text-gray-800 ${isScrolled ? 'pl-10 pr-24 py-2 md:pl-10 md:pr-28 md:py-2 text-xs' : 'pl-10 pr-32 py-2.5 md:pl-12 md:pr-36 md:py-3'}`}
                                 value={term}
                                 onChange={(e) => setTerm(e.target.value)}
                                 onFocus={() => setShowSuggestions(true)}
                                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                             />
                             <Search className={`absolute transition-all duration-300 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-clay-600 ${isScrolled ? 'left-3.5 md:left-3.5 w-4 h-4' : 'left-3.5 md:left-4 w-5 h-5'}`} />
+                            {term && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTerm('');
+                                        router.get(route('shop.index'), { search: '' }, { preserveState: true });
+                                    }}
+                                    className={`absolute text-gray-400 hover:text-gray-600 p-1 flex items-center justify-center rounded-full hover:bg-gray-200/50 transition-colors ${isScrolled ? 'right-16 md:right-20 top-1/2 -translate-y-1/2 w-6 h-6' : 'right-20 md:right-24 top-1/2 -translate-y-1/2 w-7 h-7'}`}
+                                    title="Clear search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
                             <button type="submit" className={`absolute right-1.5 top-1/2 -translate-y-1/2 bg-clay-600 text-white rounded-full font-bold hover:bg-clay-700 hover:shadow-md transition-all duration-300 active:scale-95 ${isScrolled ? 'px-3 md:px-4 py-1 text-[10px]' : 'px-4 md:px-6 py-2 text-xs'}`}>
                                 Search
                             </button>
