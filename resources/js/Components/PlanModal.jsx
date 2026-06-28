@@ -5,6 +5,7 @@ import { Crown, X, ChevronRight } from 'lucide-react';
 import { PLANS, PLAN_CONFIG } from '@/utils/planConfig';
 import PlanPricingCard from '@/Components/Seller/Subscriptions/Partials/PlanPricingCard';
 import DowngradeWarningOverlay from '@/Components/Seller/Subscriptions/Partials/DowngradeWarningOverlay';
+import { AnimatePresence } from 'framer-motion';
 
 export { PLANS, PLAN_CONFIG };
 
@@ -239,17 +240,19 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         )}
                     </div>
 
-                    {pendingDowngrade && (
-                        <DowngradeWarningOverlay
-                            pendingDowngrade={pendingDowngrade}
-                            setPendingDowngrade={setPendingDowngrade}
-                            confirmDowngrade={confirmDowngrade}
-                            isDowngrading={isDowngrading}
-                            currentTier={currentTier}
-                            draftCount={draftCount}
-                            showsEliteStandardWarning={showsEliteStandardWarning}
-                        />
-                    )}
+                    <AnimatePresence>
+                        {pendingDowngrade && (
+                            <DowngradeWarningOverlay
+                                pendingDowngrade={pendingDowngrade}
+                                setPendingDowngrade={setPendingDowngrade}
+                                confirmDowngrade={confirmDowngrade}
+                                isDowngrading={isDowngrading}
+                                currentTier={currentTier}
+                                draftCount={draftCount}
+                                showsEliteStandardWarning={showsEliteStandardWarning}
+                            />
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </div>

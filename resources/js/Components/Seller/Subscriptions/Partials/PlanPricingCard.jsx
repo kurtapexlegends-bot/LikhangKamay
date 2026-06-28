@@ -20,7 +20,7 @@ export default function PlanPricingCard({
 
     return (
         <div
-            className={`relative flex h-full flex-col rounded-[1.25rem] border-2 bg-white p-4 transition-all duration-300 ease-out group cursor-pointer w-[85%] lg:w-full shrink-0 snap-center lg:min-h-[22.5rem] ${
+            className={`relative flex h-full flex-col rounded-[1.25rem] border-2 bg-white p-4 transition-all duration-300 ease-out group cursor-pointer w-[85%] lg:w-full shrink-0 snap-center lg:min-h-[22.5rem] hover:scale-[1.02] hover:shadow-lg ${
                 isCurrent
                     ? `${plan.lightBorder} ${plan.lightBg} ring-1 ring-offset-1 ring-offset-white ${plan.lightBorder} shadow-md`
                     : hoveredPlan === plan.id

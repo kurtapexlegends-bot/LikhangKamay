@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, X, ChevronRight, Users } from 'lucide-react';
 import { PLANS } from '@/utils/planConfig';
+import { motion } from 'framer-motion';
 
 export default function DowngradeWarningOverlay({
     pendingDowngrade,
@@ -14,8 +15,19 @@ export default function DowngradeWarningOverlay({
     const currentPlanName = PLANS.find((plan) => plan.id === currentTier)?.name ?? currentTier;
 
     return (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/65 p-4 backdrop-blur-[2px]">
-            <div className="w-full max-w-md rounded-[1.35rem] border border-stone-200 bg-white p-5 shadow-2xl">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-10 flex items-center justify-center bg-stone-900/40 p-4 backdrop-blur-[2px]"
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: 'spring', duration: 0.35, bounce: 0.15 }}
+                className="w-full max-w-md rounded-[1.35rem] border border-stone-200 bg-white p-5 shadow-2xl"
+            >
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
                         <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
@@ -82,7 +94,7 @@ export default function DowngradeWarningOverlay({
                         {isDowngrading ? 'Processing...' : 'Yes, downgrade now'}
                     </button>
                 </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

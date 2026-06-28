@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Sparkles, LogOut, AlertTriangle, ChevronDown } from 'lucide-react';
 import { CAVITE_REGION, normalizeCaviteAddressText } from '@/lib/caviteAddresses';
 import StepPill from '@/Pages/Auth/Partials/StepPill';
@@ -172,40 +173,50 @@ export default function ArtisanSetup({ auth }) {
                                 )}
                             </div>
                         )}
-                        {step === 1 && (
-                            <ShopDetailsStep
-                                data={data}
-                                setData={setData}
-                                errors={errors}
-                                submit={submit}
-                                processing={processing}
-                                shopNameValidation={shopNameValidation}
-                            />
-                        )}
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={step}
+                                initial={{ opacity: 0, x: 15 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -15 }}
+                                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            >
+                                {step === 1 && (
+                                    <ShopDetailsStep
+                                        data={data}
+                                        setData={setData}
+                                        errors={errors}
+                                        submit={submit}
+                                        processing={processing}
+                                        shopNameValidation={shopNameValidation}
+                                    />
+                                )}
 
-                        {step === 2 && (
-                            <DocumentsStep
-                                data={data}
-                                setData={setData}
-                                errors={errors}
-                                submit={submit}
-                                processing={processing}
-                                setStep={setStep}
-                                auth={auth}
-                                handleFileChange={handleFileChange}
-                            />
-                        )}
+                                {step === 2 && (
+                                    <DocumentsStep
+                                        data={data}
+                                        setData={setData}
+                                        errors={errors}
+                                        submit={submit}
+                                        processing={processing}
+                                        setStep={setStep}
+                                        auth={auth}
+                                        handleFileChange={handleFileChange}
+                                    />
+                                )}
 
-                        {step === 3 && (
-                            <PaymentStep
-                                data={data}
-                                setData={setData}
-                                errors={errors}
-                                submit={submit}
-                                processing={processing}
-                                setStep={setStep}
-                            />
-                        )}
+                                {step === 3 && (
+                                    <PaymentStep
+                                        data={data}
+                                        setData={setData}
+                                        errors={errors}
+                                        submit={submit}
+                                        processing={processing}
+                                        setStep={setStep}
+                                    />
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
 
                     <div className="mt-8 text-center text-sm text-gray-500">
