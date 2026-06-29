@@ -7,8 +7,6 @@ import {
     DollarSign,
     Download,
     Printer,
-    LayoutGrid,
-    Megaphone,
     Users
 } from 'lucide-react';
 import ExportButton from '@/Components/ExportButton';
@@ -40,13 +38,7 @@ export default function Analytics({
     const [catFilter, setCatFilter] = useState(filters.category);
     const [isLoading, setIsLoading] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview');
 
-    const tabs = [
-        { id: 'overview', label: 'Overview', icon: LayoutGrid },
-        { id: 'operations', label: 'Operations', icon: Activity },
-        { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
-    ];
 
     useEffect(() => {
         const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
@@ -118,68 +110,41 @@ export default function Analytics({
 
             <main className="flex-1 w-full px-4 pt-0 pb-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-8 lg:pt-0 lg:pb-8 overflow-y-auto space-y-6">
                 
-                {/* Tab Switcher */}
-                <div className="print:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 justify-start">
-                    <div className="inline-flex bg-stone-100/60 p-1 rounded-2xl border border-stone-200/30">
-                        {tabs.map((tab) => {
-                            const Icon = tab.icon;
-                            const isActive = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    type="button"
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95 ${
-                                        isActive
-                                            ? 'bg-white text-clay-800 shadow-sm'
-                                            : 'text-stone-600 hover:text-stone-900'
-                                    }`}
-                                >
-                                    <Icon size={16} className={isActive ? 'text-clay-600' : 'text-stone-500'} />
-                                    <span>{tab.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+                {/* Single Page Layout */}
+                <div className="space-y-8 print:space-y-6">
+                    <OverviewTab 
+                        isLoading={isLoading}
+                        metrics={metrics}
+                        revenueTrend={revenueTrend}
+                        revenueBreakdown={revenueBreakdown}
+                        profitTrend={profitTrend}
+                        shouldAnimateKPI={shouldAnimateKPI}
+                        chartFilter={chartFilter}
+                        setChartFilter={setChartFilter}
+                        currentChartData={currentChartData}
+                        categoryData={categoryData}
+                        updateCategoryFilter={updateCategoryFilter}
+                    />
 
-                {/* Screen-Only Tabbed Layout */}
-                <div className="print:hidden space-y-6">
-                    {activeTab === 'overview' && (
-                        <OverviewTab 
-                            isLoading={isLoading}
-                            metrics={metrics}
-                            revenueTrend={revenueTrend}
-                            revenueBreakdown={revenueBreakdown}
-                            profitTrend={profitTrend}
-                            shouldAnimateKPI={shouldAnimateKPI}
-                            chartFilter={chartFilter}
-                            setChartFilter={setChartFilter}
-                            currentChartData={currentChartData}
-                            categoryData={categoryData}
-                            updateCategoryFilter={updateCategoryFilter}
-                        />
-                    )}
+                    <hr className="border-stone-200/60 print:hidden" />
 
-                    {activeTab === 'operations' && (
-                        <OperationsControl 
-                            metrics={metrics} 
-                            insights={insights} 
-                            topProducts={topProducts} 
-                            salesHeatmap={salesHeatmap} 
-                            stats={stats}
-                        />
-                    )}
+                    <OperationsControl 
+                        metrics={metrics} 
+                        insights={insights} 
+                        topProducts={topProducts} 
+                        salesHeatmap={salesHeatmap} 
+                        stats={stats}
+                    />
 
-                    {activeTab === 'campaigns' && (
-                        <CampaignIntelligence 
-                            sellerSubscription={sellerSubscription} 
-                            sponsorshipMetrics={sponsorshipMetrics} 
-                            sponsorshipChartData={sponsorshipChartData} 
-                            sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability} 
-                            animate={shouldAnimateKPI}
-                        />
-                    )}
+                    <hr className="border-stone-200/60 print:hidden" />
+
+                    <CampaignIntelligence 
+                        sellerSubscription={sellerSubscription} 
+                        sponsorshipMetrics={sponsorshipMetrics} 
+                        sponsorshipChartData={sponsorshipChartData} 
+                        sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability} 
+                        animate={shouldAnimateKPI}
+                    />
                 </div>
 
                 {/* Print-Only Layout (Hidden on screen, visible during print) */}
