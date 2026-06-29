@@ -15,6 +15,7 @@ export default function GlobalSearch() {
     const [activeIndex, setActiveIndex] = useState(-1);
     const inputRef = useRef(null);
     const modalRef = useRef(null);
+    const dropdownRef = useRef(null);
 
     // Keyboard shortcut to open (Ctrl+K or Cmd+K)
     useEffect(() => {
@@ -101,7 +102,7 @@ export default function GlobalSearch() {
     const handleNavigate = (url) => {
         setIsOpen(false);
         setQuery('');
-        router.get(url);
+        router.get(url, {}, { preserveScroll: true });
     };
 
     const onKeyDown = (e) => {
@@ -127,12 +128,22 @@ export default function GlobalSearch() {
         }
     };
 
-    // Auto-scroll active item into view
+    // Auto-scroll active item into view within the dropdown container
     useEffect(() => {
-        if (activeIndex >= 0) {
+        if (activeIndex >= 0 && dropdownRef.current) {
             const activeEl = document.getElementById(`search-result-${activeIndex}`);
             if (activeEl) {
-                activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                const container = dropdownRef.current;
+                const elTop = activeEl.offsetTop;
+                const elHeight = activeEl.offsetHeight;
+                const containerHeight = container.offsetHeight;
+                const containerScrollTop = container.scrollTop;
+
+                if (elTop < containerScrollTop) {
+                    container.scrollTop = elTop;
+                } else if (elTop + elHeight > containerScrollTop + containerHeight) {
+                    container.scrollTop = elTop + elHeight - containerHeight;
+                }
             }
         }
     }, [activeIndex]);
@@ -172,8 +183,14 @@ export default function GlobalSearch() {
                     } ${isCommandMode ? 'pl-[130px]' : ''}`}
                     value={query}
                     onChange={(e) => {
-                        setQuery(e.target.value);
+                        const val = e.target.value;
+                        setQuery(val);
                         setActiveIndex(-1);
+                        if (val.length >= 2) {
+                            setIsLoading(true);
+                        } else {
+                            setIsLoading(false);
+                        }
                     }}
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={onKeyDown}
@@ -211,7 +228,7 @@ export default function GlobalSearch() {
             {/* Dropdown Menu */}
             {isOpen && (
                 <div className="absolute top-full left-0 right-0 mt-2 z-[60] overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/[0.05] animate-in slide-in-from-top-2 fade-in duration-200">
-                    <div className="max-h-[60vh] overflow-y-auto p-2">
+                    <div ref={dropdownRef} className="max-h-[60vh] overflow-y-auto p-2">
                         {isLoading ? (
                             <div className="p-2 space-y-2">
                                 <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">Searching platform...</p>
