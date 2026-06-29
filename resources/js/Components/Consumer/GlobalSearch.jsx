@@ -289,16 +289,20 @@ export default function GlobalSearch() {
                                 <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2">Quick Navigation</h3>
                                 <div className="grid grid-cols-1 gap-1">
                                     {(isAdmin ? [
-                                        { label: 'User Manager', sub: 'Manage platform users, staff profiles, and onboarding.', icon: Users, color: 'text-indigo-500 bg-indigo-50/50' },
-                                        { label: 'Catalog Manager', sub: 'Manage product categories, tags, and taxonomy.', icon: FolderTree, color: 'text-rose-500 bg-rose-50/50' },
-                                        { label: 'Content Safety', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50' },
+                                        { label: 'User Manager', sub: 'Manage platform users, staff profiles, and onboarding.', icon: Users, color: 'text-indigo-500 bg-indigo-50/50', url: route('admin.users.manager') },
+                                        { label: 'Catalog Manager', sub: 'Manage product categories, tags, and taxonomy.', icon: FolderTree, color: 'text-rose-500 bg-rose-50/50', url: route('admin.catalog.index') },
+                                        { label: 'Content Safety', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50', url: route('admin.compliance') },
                                     ] : [
-                                        { label: 'Products & Inventory', sub: 'Manage product listings, supplies, and orders.', icon: Box, color: 'text-blue-500 bg-blue-50/50', modules: ['products', 'procurement'] },
-                                        { label: 'Orders & Reviews', sub: 'Manage order fulfillment, tracking, and feedback.', icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50/50', modules: ['orders', 'reviews'] },
-                                        { label: 'Sponsorships', sub: 'Promote your products and manage active campaigns.', icon: Award, color: 'text-amber-500 bg-amber-50/50', modules: ['sponsorships'] },
-                                        { label: 'HR & Payroll', sub: 'Manage staff profiles, payroll runs, and access.', icon: Users, color: 'text-purple-500 bg-purple-50/50', modules: ['hr', 'accounting'] }
+                                        { label: 'Products & Inventory', sub: 'Manage product listings, supplies, and orders.', icon: Box, color: 'text-blue-500 bg-blue-50/50', modules: ['products', 'procurement'], url: route('products.index') },
+                                        { label: 'Orders & Reviews', sub: 'Manage order fulfillment, tracking, and feedback.', icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50/50', modules: ['orders', 'reviews'], url: route('orders.index') },
+                                        { label: 'Sponsorships', sub: 'Promote your products and manage active campaigns.', icon: Award, color: 'text-amber-500 bg-amber-50/50', modules: ['sponsorships'], url: route('seller.sponsorships') },
+                                        { label: 'HR & Payroll', sub: 'Manage staff profiles, payroll runs, and access.', icon: Users, color: 'text-purple-500 bg-purple-50/50', modules: ['hr', 'accounting'], url: route('hr.index') }
                                     ].filter(tip => !tip.modules || tip.modules.some(m => visibleModules.includes(m)))).map((tip, i) => (
-                                        <div key={i} className="group flex items-center gap-3 p-2 rounded-xl hover:bg-stone-50 transition-colors cursor-default">
+                                        <button 
+                                            key={i} 
+                                            onClick={() => handleNavigate(tip.url)}
+                                            className="group flex w-full items-center gap-3 p-2 rounded-xl hover:bg-stone-50 text-left transition-colors cursor-pointer"
+                                        >
                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tip.color}`}>
                                                 <tip.icon size={16} />
                                             </div>
@@ -306,7 +310,7 @@ export default function GlobalSearch() {
                                                 <p className="text-xs font-bold text-stone-900 leading-none mb-1">{tip.label}</p>
                                                 <p className="text-[10px] text-stone-500 leading-none">{tip.sub}</p>
                                             </div>
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             </div>
