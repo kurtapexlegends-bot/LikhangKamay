@@ -109,7 +109,7 @@ export default function Analytics({
                 }
             />
 
-            <main className="flex-1 w-full px-4 pt-0 pb-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-8 lg:pt-0 lg:pb-8 overflow-y-auto space-y-6">
+            <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 overflow-y-auto">
                 
                 {/* Single Page Layout */}
                 <motion.div 
@@ -125,7 +125,7 @@ export default function Analytics({
                             }
                         }
                     }}
-                    className="space-y-10 pb-12 print:pb-0 print:space-y-6"
+                    className="space-y-8 pb-12 print:pb-0 print:space-y-6"
                 >
                     <motion.section 
                         variants={{
@@ -156,8 +156,6 @@ export default function Analytics({
                         />
                     </motion.section>
 
-                    <hr className="border-stone-200/60 print:hidden" />
-
                     <motion.section 
                         variants={{
                             hidden: { opacity: 0, y: 15 },
@@ -180,8 +178,6 @@ export default function Analytics({
                             stats={stats}
                         />
                     </motion.section>
-
-                    <hr className="border-stone-200/60 print:hidden" />
 
                     <motion.section 
                         variants={{

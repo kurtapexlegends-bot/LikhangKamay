@@ -60,7 +60,7 @@ export default function OverviewTab({
     };
 
     return (
-        <>
+        <div className="space-y-6">
             {/* Level 1: Key Performance Indicators */}
             <div className="space-y-2">
                 <StaggerContainer 
@@ -279,6 +279,6 @@ export default function OverviewTab({
                     )}
                 </div>
             </div>
-        </>
+        </div>
     );
 }

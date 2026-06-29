@@ -164,15 +164,14 @@ const KPICard = ({
                 className="relative h-full w-full [transform-style:preserve-3d]"
             >
                 <div 
-                    className="absolute inset-0 h-full w-full rounded-3xl border border-stone-200 bg-white p-5 shadow-sm [backface-visibility:hidden]"
-                    style={{ boxShadow: 'inset 0 1px 1px 0 rgba(255,255,255,0.8), 0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}
+                    className="absolute inset-0 h-full w-full rounded-2xl border border-stone-100 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-300 [backface-visibility:hidden]"
                 >
                     {Front}
                 </div>
 
                 {breakdown && (
                     <div 
-                        className="absolute inset-0 h-full w-full rounded-3xl border border-clay-100 bg-clay-50/30 p-5 shadow-inner [backface-visibility:hidden] [transform:rotateY(180deg)] backdrop-blur-sm print:hidden"
+                        className="absolute inset-0 h-full w-full rounded-2xl border border-clay-100 bg-clay-50/30 p-5 shadow-inner [backface-visibility:hidden] [transform:rotateY(180deg)] backdrop-blur-sm print:hidden"
                     >
                         {Back}
                     </div>
