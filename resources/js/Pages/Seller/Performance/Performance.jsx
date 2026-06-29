@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Head, router, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -111,41 +112,100 @@ export default function Analytics({
             <main className="flex-1 w-full px-4 pt-0 pb-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-8 lg:pt-0 lg:pb-8 overflow-y-auto space-y-6">
                 
                 {/* Single Page Layout */}
-                <div className="space-y-8 print:space-y-6">
-                    <OverviewTab 
-                        isLoading={isLoading}
-                        metrics={metrics}
-                        revenueTrend={revenueTrend}
-                        revenueBreakdown={revenueBreakdown}
-                        profitTrend={profitTrend}
-                        shouldAnimateKPI={shouldAnimateKPI}
-                        chartFilter={chartFilter}
-                        setChartFilter={setChartFilter}
-                        currentChartData={currentChartData}
-                        categoryData={categoryData}
-                        updateCategoryFilter={updateCategoryFilter}
-                    />
+                <motion.div 
+                    initial="hidden"
+                    animate="show"
+                    variants={{
+                        hidden: { opacity: 0 },
+                        show: {
+                            opacity: 1,
+                            transition: {
+                                staggerChildren: 0.12,
+                                delayChildren: 0.05
+                            }
+                        }
+                    }}
+                    className="space-y-10 pb-12 print:pb-0 print:space-y-6"
+                >
+                    <motion.section 
+                        variants={{
+                            hidden: { opacity: 0, y: 15 },
+                            show: { 
+                                opacity: 1, 
+                                y: 0, 
+                                transition: { 
+                                    type: "spring", 
+                                    stiffness: 100, 
+                                    damping: 18 
+                                } 
+                            }
+                        }}
+                    >
+                        <OverviewTab 
+                            isLoading={isLoading}
+                            metrics={metrics}
+                            revenueTrend={revenueTrend}
+                            revenueBreakdown={revenueBreakdown}
+                            profitTrend={profitTrend}
+                            shouldAnimateKPI={shouldAnimateKPI}
+                            chartFilter={chartFilter}
+                            setChartFilter={setChartFilter}
+                            currentChartData={currentChartData}
+                            categoryData={categoryData}
+                            updateCategoryFilter={updateCategoryFilter}
+                        />
+                    </motion.section>
 
                     <hr className="border-stone-200/60 print:hidden" />
 
-                    <OperationsControl 
-                        metrics={metrics} 
-                        insights={insights} 
-                        topProducts={topProducts} 
-                        salesHeatmap={salesHeatmap} 
-                        stats={stats}
-                    />
+                    <motion.section 
+                        variants={{
+                            hidden: { opacity: 0, y: 15 },
+                            show: { 
+                                opacity: 1, 
+                                y: 0, 
+                                transition: { 
+                                    type: "spring", 
+                                    stiffness: 100, 
+                                    damping: 18 
+                                } 
+                            }
+                        }}
+                    >
+                        <OperationsControl 
+                            metrics={metrics} 
+                            insights={insights} 
+                            topProducts={topProducts} 
+                            salesHeatmap={salesHeatmap} 
+                            stats={stats}
+                        />
+                    </motion.section>
 
                     <hr className="border-stone-200/60 print:hidden" />
 
-                    <CampaignIntelligence 
-                        sellerSubscription={sellerSubscription} 
-                        sponsorshipMetrics={sponsorshipMetrics} 
-                        sponsorshipChartData={sponsorshipChartData} 
-                        sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability} 
-                        animate={shouldAnimateKPI}
-                    />
-                </div>
+                    <motion.section 
+                        variants={{
+                            hidden: { opacity: 0, y: 15 },
+                            show: { 
+                                opacity: 1, 
+                                y: 0, 
+                                transition: { 
+                                    type: "spring", 
+                                    stiffness: 100, 
+                                    damping: 18 
+                                } 
+                            }
+                        }}
+                    >
+                        <CampaignIntelligence 
+                            sellerSubscription={sellerSubscription} 
+                            sponsorshipMetrics={sponsorshipMetrics} 
+                            sponsorshipChartData={sponsorshipChartData} 
+                            sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability} 
+                            animate={shouldAnimateKPI}
+                        />
+                    </motion.section>
+                </motion.div>
 
                 {/* Print-Only Layout (Hidden on screen, visible during print) */}
                 <PrintReportView
