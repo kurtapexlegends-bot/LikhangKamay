@@ -1,12 +1,22 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from '@inertiajs/react';
 
 const MotionLink = motion(Link);
 
 function NavItem({ href, icon: Icon, active, children, compact, onClick, isCollapsed, onMouseEnter, onMouseLeave }) {
+    const itemRef = useRef(null);
+
+    useEffect(() => {
+        if (active && itemRef.current) {
+            // Smoothly scroll the sidebar to show the active item
+            itemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, [active]);
+
     return (
         <div 
+            ref={itemRef}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             className="w-full"
