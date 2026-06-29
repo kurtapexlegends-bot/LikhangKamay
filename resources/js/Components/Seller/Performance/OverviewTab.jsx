@@ -65,13 +65,13 @@ export default function OverviewTab({
             <div className="space-y-2">
                 <StaggerContainer 
                     onScroll={handleCardScroll}
-                    className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0"
+                    className="flex overflow-x-auto pb-2.5 gap-6 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0"
                 >
                     {isLoading ? (
                         <ArtisanSkeleton variant="stat" count={4} />
                     ) : (
                         <>
-                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                                 <KPICard 
                                     title="Total Revenue" 
                                     value={metrics.total_revenue} 
@@ -85,7 +85,7 @@ export default function OverviewTab({
                                     animate={shouldAnimateKPI}
                                 />
                             </div>
-                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                                 <KPICard 
                                     title="Gross Profit" 
                                     value={metrics.gross_profit} 
@@ -98,7 +98,7 @@ export default function OverviewTab({
                                     animate={shouldAnimateKPI}
                                 />
                             </div>
-                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                                 <KPICard 
                                     title="Profit Margin" 
                                     value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} 
@@ -110,7 +110,7 @@ export default function OverviewTab({
                                     animate={shouldAnimateKPI} 
                                 />
                             </div>
-                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                                 <KPICard 
                                     title="Shop Rating" 
                                     value={`${metrics.average_rating} / 5.0`} 
