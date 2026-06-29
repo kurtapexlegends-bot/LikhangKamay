@@ -8,6 +8,14 @@ export default function GlobalSearch() {
     const isAdmin = auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin';
     const visibleModules = sellerSidebar?.visibleModules || [];
 
+    const getSafeRoute = (name, params = {}) => {
+        try {
+            return route(name, params);
+        } catch (e) {
+            return '#';
+        }
+    };
+
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
@@ -73,22 +81,22 @@ export default function GlobalSearch() {
 
     // Define Role-based Commands
     const commands = isAdmin ? [
-        { label: 'Go to User Manager', cmd: '> users', url: route('admin.users.manager'), icon: Users, color: 'text-indigo-500 bg-indigo-50' },
-        { label: 'Go to Artisan Applications', cmd: '> applications', url: route('admin.pending'), icon: Award, color: 'text-amber-500 bg-amber-50' },
-        { label: 'Go to Catalog Manager', cmd: '> taxonomy', url: route('admin.taxonomy.index'), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
-        { label: 'Go to Platform Revenue', cmd: '> revenue', url: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
-        { label: 'Go to Insights', cmd: '> insights', url: route('admin.insights'), icon: BarChart2, color: 'text-purple-500 bg-purple-50' },
-        { label: 'Go to Audit Logs', cmd: '> audit', url: route('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
-        { label: 'Go to Content Safety', cmd: '> moderation', url: route('admin.moderation'), icon: ShieldAlert, color: 'text-red-500 bg-red-50' },
-        { label: 'Go to Escalated Disputes', cmd: '> disputes', url: route('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-500 bg-rose-50' },
+        { label: 'Go to User Manager', cmd: '> users', url: getSafeRoute('admin.users.manager'), icon: Users, color: 'text-indigo-500 bg-indigo-50' },
+        { label: 'Go to Artisan Applications', cmd: '> applications', url: getSafeRoute('admin.pending'), icon: Award, color: 'text-amber-500 bg-amber-50' },
+        { label: 'Go to Catalog Manager', cmd: '> taxonomy', url: getSafeRoute('admin.taxonomy.index'), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
+        { label: 'Go to Platform Revenue', cmd: '> revenue', url: getSafeRoute('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
+        { label: 'Go to Insights', cmd: '> insights', url: getSafeRoute('admin.insights'), icon: BarChart2, color: 'text-purple-500 bg-purple-50' },
+        { label: 'Go to Audit Logs', cmd: '> audit', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
+        { label: 'Go to Content Safety', cmd: '> moderation', url: getSafeRoute('admin.moderation'), icon: ShieldAlert, color: 'text-red-500 bg-red-50' },
+        { label: 'Go to Escalated Disputes', cmd: '> disputes', url: getSafeRoute('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-500 bg-rose-50' },
     ] : [
-        { label: 'Go to Inventory', cmd: '> inventory', url: route('procurement.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: 'procurement' },
-        { label: 'Go to Order Manager', cmd: '> orders', url: route('orders.index'), icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50', module: 'orders' },
-        { label: 'Go to Stock Requests', cmd: '> stock', url: route('stock-requests.index'), icon: ClipboardList, color: 'text-clay-500 bg-clay-50', module: 'stock_requests' },
-        { label: 'Go to HR & Payroll', cmd: '> hr', url: route('hr.index'), icon: Users, color: 'text-purple-500 bg-purple-50', module: 'hr' },
-        { label: 'Go to Sponsorships', cmd: '> sponsorship', url: route('seller.sponsorships'), icon: Award, color: 'text-amber-500 bg-amber-50', module: 'sponsorships' },
-        { label: 'Go to Product Manager', cmd: '> products', url: route('products.index'), icon: Package, color: 'text-indigo-500 bg-indigo-50', module: 'products' },
-        { label: 'Go to Team Messages', cmd: '> team', url: route('team-messages.index'), icon: Users, color: 'text-emerald-500 bg-emerald-50', module: 'team_messages' },
+        { label: 'Go to Inventory', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: 'procurement' },
+        { label: 'Go to Order Manager', cmd: '> orders', url: getSafeRoute('orders.index'), icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50', module: 'orders' },
+        { label: 'Go to Stock Requests', cmd: '> stock', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-500 bg-clay-50', module: 'stock_requests' },
+        { label: 'Go to HR & Payroll', cmd: '> hr', url: getSafeRoute('hr.index'), icon: Users, color: 'text-purple-500 bg-purple-50', module: 'hr' },
+        { label: 'Go to Sponsorships', cmd: '> sponsorship', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-amber-500 bg-amber-50', module: 'sponsorships' },
+        { label: 'Go to Product Manager', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-indigo-500 bg-indigo-50', module: 'products' },
+        { label: 'Go to Team Messages', cmd: '> team', url: getSafeRoute('team-messages.index'), icon: Users, color: 'text-emerald-500 bg-emerald-50', module: 'team_messages' },
     ].filter(cmd => !cmd.module || visibleModules.includes(cmd.module));
 
     const isCommandMode = query.startsWith('>');
@@ -306,14 +314,14 @@ export default function GlobalSearch() {
                                 <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2">Quick Navigation</h3>
                                 <div className="grid grid-cols-1 gap-1">
                                     {(isAdmin ? [
-                                        { label: 'User Manager', sub: 'Manage platform users, staff profiles, and onboarding.', icon: Users, color: 'text-indigo-500 bg-indigo-50/50', url: route('admin.users.manager') },
-                                        { label: 'Catalog Manager', sub: 'Manage product categories, tags, and taxonomy.', icon: FolderTree, color: 'text-rose-500 bg-rose-50/50', url: route('admin.catalog.index') },
-                                        { label: 'Content Safety', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50', url: route('admin.compliance') },
+                                        { label: 'User Manager', sub: 'Manage platform users, staff profiles, and onboarding.', icon: Users, color: 'text-indigo-500 bg-indigo-50/50', url: getSafeRoute('admin.users.manager') },
+                                        { label: 'Catalog Manager', sub: 'Manage product categories, tags, and taxonomy.', icon: FolderTree, color: 'text-rose-500 bg-rose-50/50', url: getSafeRoute('admin.catalog.index') },
+                                        { label: 'Content Safety', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50', url: getSafeRoute('admin.compliance') },
                                     ] : [
-                                        { label: 'Products & Inventory', sub: 'Manage product listings, supplies, and orders.', icon: Box, color: 'text-blue-500 bg-blue-50/50', modules: ['products', 'procurement'], url: route('products.index') },
-                                        { label: 'Orders & Reviews', sub: 'Manage order fulfillment, tracking, and feedback.', icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50/50', modules: ['orders', 'reviews'], url: route('orders.index') },
-                                        { label: 'Sponsorships', sub: 'Promote your products and manage active campaigns.', icon: Award, color: 'text-amber-500 bg-amber-50/50', modules: ['sponsorships'], url: route('seller.sponsorships') },
-                                        { label: 'HR & Payroll', sub: 'Manage staff profiles, payroll runs, and access.', icon: Users, color: 'text-purple-500 bg-purple-50/50', modules: ['hr', 'accounting'], url: route('hr.index') }
+                                        { label: 'Products & Inventory', sub: 'Manage product listings, supplies, and orders.', icon: Box, color: 'text-blue-500 bg-blue-50/50', modules: ['products', 'procurement'], url: getSafeRoute('products.index') },
+                                        { label: 'Orders & Reviews', sub: 'Manage order fulfillment, tracking, and feedback.', icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50/50', modules: ['orders', 'reviews'], url: getSafeRoute('orders.index') },
+                                        { label: 'Sponsorships', sub: 'Promote your products and manage active campaigns.', icon: Award, color: 'text-amber-500 bg-amber-50/50', modules: ['sponsorships'], url: getSafeRoute('seller.sponsorships') },
+                                        { label: 'HR & Payroll', sub: 'Manage staff profiles, payroll runs, and access.', icon: Users, color: 'text-purple-500 bg-purple-50/50', modules: ['hr', 'accounting'], url: getSafeRoute('hr.index') }
                                     ].filter(tip => !tip.modules || tip.modules.some(m => visibleModules.includes(m)))).map((tip, i) => (
                                         <button 
                                             key={i} 
