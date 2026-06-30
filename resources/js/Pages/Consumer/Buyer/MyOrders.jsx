@@ -126,6 +126,7 @@ export default function MyOrders({ auth, orders }) {
             iconBg: 'bg-red-100 text-red-600',
             confirmText: 'Yes, Cancel Order',
             confirmColor: 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200',
+            isHighRisk: true,
             action: (id) => router.post(route('my-orders.cancel', id), {}, {
                 onStart: () => setProcessing(true),
                 onFinish: () => { setProcessing(false); closeModal(); }
@@ -388,6 +389,7 @@ export default function MyOrders({ auth, orders }) {
                     confirmText={currentConfig.confirmText}
                     confirmColor={currentConfig.confirmColor}
                     processing={processing}
+                    isHighRisk={!!currentConfig.isHighRisk}
                 />
             )}
         </div>

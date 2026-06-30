@@ -14,6 +14,24 @@ export default function ModerationActionModal({
     setDisputeDeleteState,
     submitDisputeDelete
 }) {
+    const [countdown, setCountdown] = React.useState(0);
+
+    React.useEffect(() => {
+        if (disputeModalState.open && (disputeModalState.status === 'resolved' || disputeModalState.status === 'rejected')) {
+            setCountdown(5);
+        } else {
+            setCountdown(0);
+        }
+    }, [disputeModalState.open, disputeModalState.status]);
+
+    React.useEffect(() => {
+        if (countdown <= 0) return;
+        const timer = setTimeout(() => {
+            setCountdown(prev => prev - 1);
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
     // --- Inner content for dispute update decision ---
     const updateModalTitle = disputeModalState.status === 'under_review' ? 'Start Dispute Review' : 
                              disputeModalState.status === 'resolved' ? 'Approve Moderation Request' : 'Reject Moderation Request';
@@ -40,6 +58,13 @@ export default function ModerationActionModal({
                 placeholder="Provide resolution details or feedback for the seller..."
                 className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-xs text-stone-800 focus:border-clay-300 focus:ring-0 outline-none"
             />
+            {disputeModalState.open && (disputeModalState.status === 'resolved' || disputeModalState.status === 'rejected') && countdown > 0 && (
+                <div className="p-3 bg-amber-50/50 border border-amber-100 rounded-xl text-center">
+                    <p className="text-[11px] font-bold text-amber-600 animate-pulse">
+                        Security Hold: Unlocking action in {countdown}s...
+                    </p>
+                </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
                 <button
                     type="button"
@@ -52,10 +77,13 @@ export default function ModerationActionModal({
                 <button
                     type="button"
                     onClick={submitDisputeUpdate}
-                    className="rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white hover:bg-clay-700 disabled:opacity-50 min-h-[44px] min-w-[120px]"
-                    disabled={disputeProcessing}
+                    className="rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white hover:bg-clay-700 disabled:opacity-50 min-h-[44px] min-w-[120px] flex items-center justify-center"
+                    disabled={disputeProcessing || countdown > 0}
                 >
-                    {disputeProcessing ? 'Saving...' : 'Confirm Decision'}
+                    {disputeProcessing 
+                        ? 'Saving...' 
+                        : (countdown > 0 ? `Confirm Decision (${countdown}s)` : 'Confirm Decision')
+                    }
                 </button>
             </div>
         </div>

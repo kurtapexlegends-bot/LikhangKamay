@@ -16,6 +16,7 @@ export default function ProductModerationModal({
     lastType
 }) {
     const [isMobile, setIsMobile] = useState(false);
+    const [countdown, setCountdown] = useState(0);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -23,6 +24,22 @@ export default function ProductModerationModal({
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    useEffect(() => {
+        if (isOpen && (type === 'reject' || type === 'flag')) {
+            setCountdown(5);
+        } else {
+            setCountdown(0);
+        }
+    }, [isOpen, type]);
+
+    useEffect(() => {
+        if (countdown <= 0) return;
+        const timer = setTimeout(() => {
+            setCountdown(prev => prev - 1);
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [countdown]);
 
     if (!isOpen) return null;
 
@@ -79,6 +96,14 @@ export default function ProductModerationModal({
                     />
                 </div>
 
+                {countdown > 0 && (
+                    <div className="p-3 bg-amber-50/50 border border-amber-100 rounded-xl text-center">
+                        <p className="text-[11px] font-bold text-amber-600 animate-pulse">
+                            Security Hold: Unlocking action in {countdown}s...
+                        </p>
+                    </div>
+                )}
+
                 <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
                     <button
                         type="button"
@@ -89,14 +114,20 @@ export default function ProductModerationModal({
                     </button>
                     <button
                         onClick={onConfirm}
-                        disabled={processing || !feedback.trim()}
-                        className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 min-h-[44px] ${
+                        disabled={processing || !feedback.trim() || countdown > 0}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 min-h-[44px] flex items-center justify-center ${
                             isReject
                                 ? 'bg-red-600 hover:bg-red-700'
                                 : 'bg-amber-600 hover:bg-amber-700'
                         }`}
                     >
-                        {processing ? 'Processing...' : isReject ? 'Reject Listing(s)' : 'Flag Listing(s)'}
+                        {processing 
+                            ? 'Processing...' 
+                            : (countdown > 0 
+                                ? `${isReject ? 'Reject Listing(s)' : 'Flag Listing(s)'} (${countdown}s)` 
+                                : (isReject ? 'Reject Listing(s)' : 'Flag Listing(s)')
+                              )
+                        }
                     </button>
                 </div>
             </div>

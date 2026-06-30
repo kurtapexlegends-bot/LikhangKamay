@@ -252,6 +252,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                 iconBg="bg-stone-100 text-stone-600"
                 confirmText="Login As User"
                 confirmColor="bg-stone-900 hover:bg-black focus-visible:ring-stone-900/30"
+                isHighRisk={true}
             />
 
             {/* Staff Details Drawer */}

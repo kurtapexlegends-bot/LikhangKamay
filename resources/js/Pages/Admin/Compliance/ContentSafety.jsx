@@ -40,6 +40,7 @@ export default function ContentSafety({ flags, disputes = [], trashQueue = [], t
     // TAB 1: FLAGGED CONTENT (MODERATION QUEUE) STATES
     // ----------------------------------------------------
     const [selectedFlag, setSelectedFlag] = useState(null);
+    const [confirmingFlagAction, setConfirmingFlagAction] = useState({ id: null, action: null });
     const [isMobile, setIsMobile] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
 
@@ -57,10 +58,19 @@ export default function ContentSafety({ flags, disputes = [], trashQueue = [], t
     }, []);
 
     const handleFlagAction = (id, action) => {
+        if (action === 'dismiss') {
+            submitFlagAction(id, action);
+        } else {
+            setConfirmingFlagAction({ id, action });
+        }
+    };
+
+    const submitFlagAction = (id, action) => {
         router.post(route(`admin.moderation.${action}`, id), {}, { 
             preserveScroll: true,
             onSuccess: () => {
                 setSelectedFlag(null);
+                setConfirmingFlagAction({ id: null, action: null });
                 addToast('Flag status updated successfully.', 'success');
             }
         });
@@ -353,6 +363,21 @@ export default function ContentSafety({ flags, disputes = [], trashQueue = [], t
                                     iconBg="bg-rose-50 text-rose-600"
                                     confirmText="Permanently Delete"
                                     confirmColor="bg-rose-600 hover:bg-rose-700"
+                                    isVeryHighRisk={true}
+                                />
+
+                                <ConfirmationModal
+                                    isOpen={confirmingFlagAction.id !== null}
+                                    onClose={() => setConfirmingFlagAction({ id: null, action: null })}
+                                    onConfirm={() => submitFlagAction(confirmingFlagAction.id, confirmingFlagAction.action)}
+                                    title={confirmingFlagAction.action === 'suspend' ? 'Suspend User?' : 'Take Down Product?'}
+                                    message={confirmingFlagAction.action === 'suspend' 
+                                        ? 'Are you sure you want to suspend this user account? This will block their platform access and reject their seller shop.' 
+                                        : 'Are you sure you want to take down this product listing? This will hide it from the marketplace.'}
+                                    confirmText={confirmingFlagAction.action === 'suspend' ? 'Suspend User' : 'Take Down'}
+                                    confirmColor={confirmingFlagAction.action === 'suspend' ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}
+                                    isVeryHighRisk={confirmingFlagAction.action === 'suspend'}
+                                    isHighRisk={confirmingFlagAction.action === 'takedown'}
                                 />
                             </motion.div>
                         )}

@@ -3,6 +3,7 @@ import { XCircle, CheckCircle2 } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import Modal from '@/Components/Modal';
+import axios from 'axios';
 
 export default function SponsorshipDecisionModal({
     isOpen,
@@ -15,6 +16,9 @@ export default function SponsorshipDecisionModal({
     onConfirm
 }) {
     const [isMobile, setIsMobile] = useState(false);
+    const [password, setPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [verifying, setVerifying] = useState(false);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -22,6 +26,15 @@ export default function SponsorshipDecisionModal({
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    // Reset password states when modal opens/closes
+    useEffect(() => {
+        if (!isOpen) {
+            setPassword('');
+            setPasswordError('');
+            setVerifying(false);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -47,6 +60,28 @@ export default function SponsorshipDecisionModal({
     }
 
     if (type === 'reject') {
+        const handleConfirmClick = async (e) => {
+            if (e) e.preventDefault();
+            if (!password) {
+                setPasswordError('Password is required.');
+                return;
+            }
+            setVerifying(true);
+            setPasswordError('');
+            try {
+                const response = await axios.post(route('password.confirm.ajax'), { password });
+                if (response.data?.valid) {
+                    onConfirm();
+                } else {
+                    setPasswordError('Invalid password. Please try again.');
+                }
+            } catch (err) {
+                setPasswordError(err.response?.data?.message || 'Verification failed. Invalid password.');
+            } finally {
+                setVerifying(false);
+            }
+        };
+
         const renderRejectForm = () => (
             <div className="space-y-6">
                 <div className="flex items-start gap-3">
@@ -77,6 +112,26 @@ export default function SponsorshipDecisionModal({
                     />
                 </div>
 
+                <div className="mt-4">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-2">
+                        Security Verification Required
+                    </label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            setPasswordError('');
+                        }}
+                        placeholder="Enter your account password to confirm"
+                        className="w-full px-3.5 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none bg-white"
+                        disabled={verifying || processing}
+                    />
+                    {passwordError && (
+                        <p className="text-xs font-bold text-red-655 mt-2">{passwordError}</p>
+                    )}
+                </div>
+
                 <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
                     <button
                         type="button"
@@ -86,11 +141,11 @@ export default function SponsorshipDecisionModal({
                         Cancel
                     </button>
                     <button
-                        onClick={onConfirm}
-                        disabled={processing || !rejectionReason.trim()}
+                        onClick={handleConfirmClick}
+                        disabled={processing || verifying || !rejectionReason.trim() || !password}
                         className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 min-h-[44px]"
                     >
-                        {processing ? 'Rejecting...' : 'Reject Request'}
+                        {processing || verifying ? 'Verifying...' : 'Reject Request'}
                     </button>
                 </div>
             </div>

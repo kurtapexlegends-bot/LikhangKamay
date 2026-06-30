@@ -347,6 +347,7 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 confirmText="Remove Request"
                 confirmColor="bg-rose-600 hover:bg-rose-700"
                 processing={false}
+                isHighRisk={true}
             />
 
             {/* Delete reply confirmation modal */}

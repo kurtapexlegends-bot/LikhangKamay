@@ -234,6 +234,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 iconBg="bg-red-50 text-red-600"
                 confirmText={confirmModal.type === 'employee' ? 'Remove' : 'Delete'}
                 confirmColor="bg-red-600 hover:bg-red-700"
+                isVeryHighRisk={true}
             />
 
             <AttendanceCalendarModal

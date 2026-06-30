@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import SellerHeader from '@/Layouts/SellerHeader';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -220,34 +221,18 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                 </Suspense>
             )}
 
-            <Modal show={deleteCandidate !== null} onClose={() => setDeleteCandidate(null)} maxWidth="sm">
-                <div className="p-6 text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-                        <AlertTriangle size={22} />
-                    </div>
-                    <h2 className="text-lg font-bold text-stone-900">Remove 3D model?</h2>
-                    <p className="mt-2 text-sm text-stone-500 font-medium">
-                        This will remove the saved 3D model from the selected product.
-                    </p>
-                    <div className="mt-6 flex justify-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() => setDeleteCandidate(null)}
-                            className="rounded-xl border border-stone-200 px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 transition"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleDeleteConfirm}
-                            disabled={!canEditThreeD}
-                            className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700 transition disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Remove
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+            <ConfirmationModal
+                isOpen={deleteCandidate !== null}
+                onClose={() => setDeleteCandidate(null)}
+                onConfirm={handleDeleteConfirm}
+                title="Remove 3D model?"
+                message="This will remove the saved 3D model from the selected product."
+                icon={AlertTriangle}
+                iconBg="bg-rose-100 text-rose-600"
+                confirmText="Remove"
+                confirmColor="bg-rose-600 hover:bg-rose-700"
+                isHighRisk={true}
+            />
         </>
     );
 }

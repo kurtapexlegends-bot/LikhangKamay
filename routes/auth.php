@@ -84,6 +84,13 @@ Route::middleware(['auth', 'staff.security'])->group(function () {
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
+    Route::post('confirm-password-ajax', function (\Illuminate\Http\Request $request) {
+        if (! \Illuminate\Support\Facades\Hash::check($request->password, $request->user()->password)) {
+            return response()->json(['valid' => false, 'message' => __('auth.password')], 422);
+        }
+        return response()->json(['valid' => true]);
+    })->name('password.confirm.ajax');
+
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])

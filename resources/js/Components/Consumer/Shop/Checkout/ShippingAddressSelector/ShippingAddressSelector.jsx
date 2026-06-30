@@ -255,6 +255,7 @@ export default function ShippingAddressSelector({
                 iconBg="bg-red-50 text-red-600"
                 confirmText="Delete"
                 confirmColor="bg-red-600 hover:bg-red-700"
+                isHighRisk={true}
             />
         </div>
     );

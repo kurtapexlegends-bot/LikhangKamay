@@ -170,6 +170,7 @@ export default function QuickTemplateSelector({
                 iconBg="bg-rose-50 text-rose-600"
                 confirmText="Delete Template"
                 confirmColor="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600/30"
+                isHighRisk={true}
             />
         </>
     );
