@@ -83,9 +83,9 @@ export default function SponsorshipDecisionModal({
         };
 
         const renderRejectForm = () => (
-            <div className="space-y-6">
+            <form onSubmit={handleConfirmClick} className="space-y-6">
                 <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-650 flex items-center justify-center border border-red-100/50 shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-655 flex items-center justify-center border border-red-100/50 shrink-0">
                         <XCircle size={22} />
                     </div>
                     <div>
@@ -141,14 +141,14 @@ export default function SponsorshipDecisionModal({
                         Cancel
                     </button>
                     <button
-                        onClick={handleConfirmClick}
+                        type="submit"
                         disabled={processing || verifying || !rejectionReason.trim() || !password}
                         className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 min-h-[44px]"
                     >
                         {processing || verifying ? 'Verifying...' : 'Reject Request'}
                     </button>
                 </div>
-            </div>
+            </form>
         );
 
         if (isMobile) {

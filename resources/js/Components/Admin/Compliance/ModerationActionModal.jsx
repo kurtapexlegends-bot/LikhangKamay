@@ -32,6 +32,17 @@ export default function ModerationActionModal({
         return () => clearTimeout(timer);
     }, [countdown]);
 
+    const handleSubmitDisputeUpdate = (e) => {
+        if (e) e.preventDefault();
+        if (countdown > 0) return;
+        submitDisputeUpdate();
+    };
+
+    const handleSubmitDisputeDelete = (e) => {
+        if (e) e.preventDefault();
+        submitDisputeDelete();
+    };
+
     // --- Inner content for dispute update decision ---
     const updateModalTitle = disputeModalState.status === 'under_review' ? 'Start Dispute Review' : 
                              disputeModalState.status === 'resolved' ? 'Approve Moderation Request' : 'Reject Moderation Request';
@@ -41,7 +52,7 @@ export default function ModerationActionModal({
                                    'Reject this request. The review comment will remain visible on the product catalog.';
 
     const renderUpdateContent = () => (
-        <div className={`space-y-4 ${isMobile ? '' : 'p-6 bg-white'}`}>
+        <form onSubmit={handleSubmitDisputeUpdate} className={`space-y-4 ${isMobile ? '' : 'p-6 bg-white'}`}>
             {!isMobile && (
                 <div>
                     <h3 className="text-sm font-bold text-stone-900">{updateModalTitle}</h3>
@@ -75,8 +86,7 @@ export default function ModerationActionModal({
                     Cancel
                 </button>
                 <button
-                    type="button"
-                    onClick={submitDisputeUpdate}
+                    type="submit"
                     className="rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white hover:bg-clay-700 disabled:opacity-50 min-h-[44px] min-w-[120px] flex items-center justify-center"
                     disabled={disputeProcessing || countdown > 0}
                 >
@@ -86,12 +96,12 @@ export default function ModerationActionModal({
                     }
                 </button>
             </div>
-        </div>
+        </form>
     );
 
     // --- Inner content for dispute deletion confirmation ---
     const renderDeleteContent = () => (
-        <div className={`space-y-4 ${isMobile ? '' : 'p-6 bg-white'}`}>
+        <form onSubmit={handleSubmitDisputeDelete} className={`space-y-4 ${isMobile ? '' : 'p-6 bg-white'}`}>
             {!isMobile && (
                 <div>
                     <h3 className="text-sm font-bold text-stone-900">Remove Moderation Request</h3>
@@ -118,15 +128,14 @@ export default function ModerationActionModal({
                     Cancel
                 </button>
                 <button
-                    type="button"
-                    onClick={submitDisputeDelete}
+                    type="submit"
                     className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 min-h-[44px] min-w-[130px]"
                     disabled={disputeProcessing}
                 >
                     {disputeProcessing ? 'Removing...' : 'Remove Request'}
                 </button>
             </div>
-        </div>
+        </form>
     );
 
     return (

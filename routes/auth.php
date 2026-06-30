@@ -89,7 +89,7 @@ Route::middleware(['auth', 'staff.security'])->group(function () {
             return response()->json(['valid' => false, 'message' => __('auth.password')], 422);
         }
         return response()->json(['valid' => true]);
-    })->name('password.confirm.ajax');
+    })->middleware('throttle:5,1')->name('password.confirm.ajax');
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 

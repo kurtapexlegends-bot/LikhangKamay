@@ -63,8 +63,14 @@ export default function ProductModerationModal({
     if (type === 'reject' || type === 'flag') {
         const isReject = lastType === 'reject' || type === 'reject';
         
+        const handleSubmit = (e) => {
+            if (e) e.preventDefault();
+            if (countdown > 0) return;
+            onConfirm();
+        };
+
         const renderModerationForm = () => (
-            <div className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="flex items-start gap-4">
                     <div
                         className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 ${
@@ -113,7 +119,7 @@ export default function ProductModerationModal({
                         Cancel
                     </button>
                     <button
-                        onClick={onConfirm}
+                        type="submit"
                         disabled={processing || !feedback.trim() || countdown > 0}
                         className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 min-h-[44px] flex items-center justify-center ${
                             isReject
@@ -130,7 +136,7 @@ export default function ProductModerationModal({
                         }
                     </button>
                 </div>
-            </div>
+            </form>
         );
 
         if (isMobile) {
