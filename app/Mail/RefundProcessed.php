@@ -40,7 +40,7 @@ class RefundProcessed extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.orders.refunded',
+            view: 'emails.orders.refunded',
         );
     }
 

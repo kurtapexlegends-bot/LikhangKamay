@@ -23,7 +23,7 @@ class ReturnRequested extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '⚠️ Return Requested - ' . $this->order->order_number,
+            subject: 'Return Requested - ' . $this->order->order_number,
         );
     }
 

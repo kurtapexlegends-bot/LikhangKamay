@@ -40,7 +40,7 @@ class ShipmentReminder extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.sellers.shipment_reminder',
+            view: 'emails.sellers.shipment_reminder',
             with: [
                 'order' => $this->order,
                 'url' => route('orders.index'),

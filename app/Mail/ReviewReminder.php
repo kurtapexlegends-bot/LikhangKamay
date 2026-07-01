@@ -40,7 +40,7 @@ class ReviewReminder extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.reviews.reminder',
+            view: 'emails.reviews.reminder',
             with: [
                 'order' => $this->order,
                 'url' => route('my-orders.index'),

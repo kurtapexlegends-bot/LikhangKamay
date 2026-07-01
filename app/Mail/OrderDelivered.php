@@ -23,7 +23,7 @@ class OrderDelivered extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '🎁 Order Delivered - ' . $this->order->order_number,
+            subject: 'Order Delivered - ' . $this->order->order_number,
         );
     }
 

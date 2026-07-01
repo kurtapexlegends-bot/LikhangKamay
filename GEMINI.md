@@ -46,7 +46,8 @@
 - **Soft Deletes:** Default to soft deletes for critical entities for audit trails.
 
 ## 7. DevOps & Environment Strategy
-- **Containerization:** Assume containerized deployment. Keep applications stateless.
+- **Webhost:** The application is hosted on Vercel. Ensure configurations, builds, and routing structures are compatible with Vercel deployment requirements (e.g., `vercel.json` configurations).
+- **Containerization:** Assume containerized or serverless deployment. Keep applications stateless.
 - **Environment:** Validate env vars at startup. Fail fast if missing.
 
 ## 8. Strict AI Output Directives

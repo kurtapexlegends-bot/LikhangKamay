@@ -22,7 +22,7 @@ class ArtisanRejected extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '⚠️ Your LikhangKamay Seller Application Needs Attention',
+            subject: 'Your LikhangKamay Seller Application Needs Attention',
         );
     }
 

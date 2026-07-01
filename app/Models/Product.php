@@ -215,6 +215,29 @@ class Product extends Model
         return 'slug';
     }
 
+    public function getRouteKey()
+    {
+        return \App\Support\RouteObfuscator::encode($this->id);
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $decodedId = \App\Support\RouteObfuscator::decode($value);
+        if ($decodedId) {
+            return $this->where('id', $decodedId)->firstOrFail();
+        }
+
+        return $this->where($field ?? 'slug', $value)
+            ->orWhere('id', $value)
+            ->firstOrFail();
+    }
+
+    public function getSlugAttribute($value)
+    {
+        return $this->id ? \App\Support\RouteObfuscator::encode($this->id) : $value;
+    }
+
+
     /**
      * Scope a query to only include approved (Active) products.
      *

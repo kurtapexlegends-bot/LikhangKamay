@@ -2,44 +2,35 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb; }
-        .container { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
-        .logo { font-size: 28px; font-weight: bold; color: #b45309; }
-        .icon-circle { width: 80px; height: 80px; background: linear-gradient(135deg, #b45309, #92400e); border-radius: 16px; margin: 0 auto 16px; }
-        .icon-circle span { font-size: 36px; line-height: 80px; }
-        .button { display: inline-block; background: #b45309; color: white !important; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px; margin: 24px 0; }
-        .footer { text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af; }
-        .warning { background: #fef3c7; border-radius: 8px; padding: 12px; margin: 20px 0; font-size: 12px; color: #92400e; text-align: left; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your Password</title>
 </head>
-<body>
-    <div class="container">
-        <div class="icon-circle">
-            <span style="color: white; font-weight: bold;">!</span>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #FDFBF9; color: #2E2520; line-height: 1.6; -webkit-text-size-adjust: none;">
+    <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border: 1px solid #E7E1D8; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(46, 37, 32, 0.03);">
+        <div style="background-color: #F7F4F0; border-bottom: 1px solid #E7E1D8; padding: 28px; text-align: center;">
+            <a href="#" style="font-family: Georgia, Times, serif; font-size: 26px; font-weight: bold; color: #A2582F; text-decoration: none; letter-spacing: -0.5px;">LikhangKamay</a>
         </div>
-        <div class="logo">LikhangKamay</div>
-        <h1 style="font-size: 24px; color: #1f2937; margin-top: 16px;">Reset Your Password</h1>
+        <div style="padding: 40px 32px; text-align: center;">
+            <h1 style="font-family: Georgia, Times, serif; font-size: 22px; font-weight: normal; color: #2E2520; margin-top: 0; margin-bottom: 20px;">Reset Your Password</h1>
+            <p style="margin-top: 0; margin-bottom: 16px; font-size: 15px; color: #5C524A; line-height: 1.6;">
+                You requested to reset your password. Click the button below to create a new password.
+            </p>
 
-        <p style="color: #6b7280;">
-            You requested to reset your password. Click the button below to create a new password.
-        </p>
+            <a href="{{ $url }}" style="display: inline-block; background-color: #C2783F; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 8px; margin: 24px 0; text-align: center;">Reset Password</a>
 
-        <a href="{{ $url }}" class="button">Reset Password</a>
+            <div style="background-color: #F7F4F0; border-left: 3px solid #C2783F; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; font-size: 13px; color: #7C6D62; text-align: left; line-height: 1.5;">
+                This link will expire in <strong>60 minutes</strong>. If you did not request a password reset, you can safely ignore this email.
+            </div>
 
-        <div class="warning">
-            This link will expire in <strong>60 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.
+            <p style="font-size: 12px; color: #8C827A; margin-top: 24px; line-height: 1.4; word-break: break-all;">
+                If the button above does not work, copy and paste this link into your browser:<br>
+                <a href="{{ $url }}" style="color: #C2783F; text-decoration: underline;">{{ $url }}</a>
+            </p>
         </div>
-
-        <p style="font-size: 12px; color: #9ca3af;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="{{ $url }}" style="color: #b45309; word-break: break-all;">{{ $url }}</a>
-        </p>
-
-        <div class="footer">
-            <p>LikhangKamay Security Team</p>
-            <p>Supporting Filipino artisans and handcrafted goods.</p>
-            <p style="margin-top: 16px;">© {{ date('Y') }} LikhangKamay. All rights reserved.</p>
+        <div style="background-color: #F7F4F0; border-top: 1px solid #E7E1D8; padding: 28px; text-align: center; font-size: 12px; color: #8C827A; line-height: 1.5;">
+            <p style="margin: 0 0 8px; font-size: 12px; color: #8C827A;">LikhangKamay Security Team</p>
+            <p style="margin: 0 0 8px; font-size: 12px; color: #8C827A;">Supporting Filipino artisans and handcrafted goods.</p>
+            <p style="margin: 16px 0 0 0; font-size: 11px; color: #8C827A;">&copy; {{ date('Y') }} LikhangKamay. All rights reserved.</p>
         </div>
     </div>
 </body>

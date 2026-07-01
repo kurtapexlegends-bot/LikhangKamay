@@ -23,7 +23,7 @@ class OrderAccepted extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '✅ Your Order Has Been Accepted - ' . $this->order->order_number,
+            subject: 'Your Order Has Been Accepted - ' . $this->order->order_number,
         );
     }
 

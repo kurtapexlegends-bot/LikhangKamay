@@ -2,46 +2,39 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f0fdf4; }
-        .container { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid #86efac; text-align: center; }
-        .logo { font-size: 28px; font-weight: bold; color: #b45309; }
-        .icon-circle { width: 80px; height: 80px; background: linear-gradient(135deg, #22c55e, #16a34a); border-radius: 50%; margin: 0 auto 16px; }
-        .icon-circle span { font-size: 40px; line-height: 80px; color: white; }
-        .button { display: inline-block; background: #b45309; color: white !important; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px; margin: 24px 0; }
-        .footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af; }
-        .highlight { background: #f0fdf4; border-radius: 8px; padding: 16px; margin: 20px 0; text-align: left; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artisan Account Approved</title>
 </head>
-<body>
-    <div class="container">
-        <div class="icon-circle">
-            <span>✓</span>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #FDFBF9; color: #2E2520; line-height: 1.6; -webkit-text-size-adjust: none;">
+    <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border: 1px solid #E7E1D8; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(46, 37, 32, 0.03);">
+        <div style="background-color: #F7F4F0; border-bottom: 1px solid #E7E1D8; padding: 28px; text-align: center;">
+            <a href="#" style="font-family: Georgia, Times, serif; font-size: 26px; font-weight: bold; color: #A2582F; text-decoration: none; letter-spacing: -0.5px;">LikhangKamay</a>
         </div>
-        <div class="logo">LikhangKamay</div>
-        <h1 style="font-size: 24px; color: #16a34a; margin-top: 16px;">Congratulations! You're Approved!</h1>
+        <div style="padding: 40px 32px; text-align: center;">
+            <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #A2582F; margin-top: 0; margin-bottom: 20px;">Congratulations! You're Approved!</h1>
+            <p style="margin-top: 0; margin-bottom: 16px; font-size: 15px; color: #5C524A; text-align: left;">Hi <strong>{{ $artisan->name }}</strong>,</p>
+            <p style="margin-top: 0; margin-bottom: 16px; font-size: 15px; color: #5C524A; text-align: left;">Great news! Your seller account for <strong>{{ $artisan->shop_name }}</strong> has been verified and approved by our team.</p>
 
-        <p>Hi <strong>{{ $artisan->name }}</strong>,</p>
+            <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 24px; margin: 24px 0; text-align: left;">
+                <div style="font-family: Georgia, Times, serif; font-weight: bold; color: #A2582F; margin-bottom: 12px; font-size: 16px;">What's Next?</div>
+                <ul style="margin: 0; padding-left: 20px; color: #5C524A; font-size: 14px; line-height: 1.6;">
+                    <li style="margin-bottom: 8px;">Access your Seller Dashboard</li>
+                    <li style="margin-bottom: 8px;">Add your first products</li>
+                    <li style="margin-bottom: 8px;">Start receiving orders from buyers</li>
+                    <li>Manage your business with our ERP tools</li>
+                </ul>
+            </div>
 
-        <p>Great news! Your seller account for <strong>{{ $artisan->shop_name }}</strong> has been verified and approved by our team.</p>
+            <a href="{{ url('/dashboard') }}" style="display: inline-block; background-color: #C2783F; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 8px; margin: 20px 0; text-align: center;">Go to Dashboard</a>
 
-        <div class="highlight">
-            <p style="margin: 0; font-weight: bold; color: #16a34a;">What's Next?</p>
-            <ul style="margin: 12px 0 0 0; padding-left: 20px;">
-                <li>Access your Seller Dashboard</li>
-                <li>Add your first products</li>
-                <li>Start receiving orders from buyers</li>
-                <li>Manage your business with our ERP tools</li>
-            </ul>
+            <p style="font-size: 14px; color: #8C827A; margin-top: 24px;">
+                Welcome to the LikhangKamay family! We're excited to support your journey as an artisan seller.
+            </p>
         </div>
-
-        <a href="{{ url('/dashboard') }}" class="button">Go to Dashboard</a>
-
-        <p style="font-size: 14px; color: #6b7280;">Welcome to the LikhangKamay family! We're excited to have you as one of our valued artisan sellers.</p>
-
-        <div class="footer">
-            <p>Thank you for choosing LikhangKamay!</p>
-            <p>Supporting Filipino artisans and handcrafted goods.</p>
+        <div style="background-color: #F7F4F0; border-top: 1px solid #E7E1D8; padding: 28px; text-align: center; font-size: 12px; color: #8C827A; line-height: 1.5;">
+            <p style="margin: 0 0 8px; font-size: 12px; color: #8C827A;">Thank you for choosing LikhangKamay!</p>
+            <p style="margin: 0 0 8px; font-size: 12px; color: #8C827A;">Supporting Filipino artisans and handcrafted goods.</p>
+            <p style="margin: 16px 0 0 0; font-size: 11px; color: #8C827A;">&copy; {{ date('Y') }} LikhangKamay. All rights reserved.</p>
         </div>
     </div>
 </body>

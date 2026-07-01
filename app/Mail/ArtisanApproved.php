@@ -22,7 +22,7 @@ class ArtisanApproved extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '🎉 Your LikhangKamay Seller Account is Approved!',
+            subject: 'Your LikhangKamay Seller Account is Approved!',
         );
     }
 
