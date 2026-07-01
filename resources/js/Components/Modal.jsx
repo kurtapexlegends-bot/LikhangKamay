@@ -39,7 +39,7 @@ export default function Modal({
     }[maxWidth];
 
     return (
-        <Transition show={show} leave="duration-300 ease-in" afterLeave={afterLeave}>
+        <Transition show={show} leave="duration-200 ease-in" afterLeave={afterLeave}>
             <Dialog
                 as="div"
                 id="modal"
@@ -48,10 +48,10 @@ export default function Modal({
             >
                 <TransitionChild
                     as={React.Fragment}
-                    enter="ease-out duration-500"
+                    enter="ease-out duration-200"
                     enterFrom="opacity-0"
                     enterTo="opacity-100"
-                    leave="ease-in duration-300"
+                    leave="ease-in duration-150"
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
@@ -63,12 +63,12 @@ export default function Modal({
 
                 <TransitionChild
                     as={React.Fragment}
-                    enter="ease-out duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
-                    enterFrom={`opacity-0 ${effectiveBottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
+                    enter="ease-out duration-200"
+                    enterFrom={`opacity-0 ${effectiveBottomSheet ? 'translate-y-12 sm:translate-y-0 sm:scale-95' : 'translate-y-4 sm:translate-y-0 sm:scale-95'}`}
                     enterTo="opacity-100 translate-y-0 sm:scale-100"
-                    leave="ease-in duration-300 cubic-bezier(0.7, 0, 0.84, 0)"
+                    leave="ease-in duration-150"
                     leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                    leaveTo={`opacity-0 ${effectiveBottomSheet ? 'translate-y-full sm:translate-y-0 sm:scale-95' : 'translate-y-12 sm:translate-y-0 sm:scale-[0.92]'}`}
+                    leaveTo={`opacity-0 ${effectiveBottomSheet ? 'translate-y-12 sm:translate-y-0 sm:scale-95' : 'translate-y-4 sm:translate-y-0 sm:scale-95'}`}
                 >
                     <DialogPanel
                         className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'w-full mx-4 sm:mx-auto rounded-2xl'}`}
