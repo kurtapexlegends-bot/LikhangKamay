@@ -78,7 +78,7 @@ class HandleInertiaRequests extends Middleware
                 'favicon' => \App\Facades\Settings::get('favicon', '/favicon.ico'),
                 'primaryColor' => \App\Facades\Settings::get('primary_color', '#8B4513'),
                 'seo' => \App\Facades\Settings::get('seo_metadata', [
-                    'title' => 'Likhang Kamay | Artisan Marketplace',
+                    'title' => 'LikhangKamay | Artisan Marketplace',
                     'description' => 'A premium marketplace for Filipino artisans and handmade crafts.',
                     'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
                 ]),

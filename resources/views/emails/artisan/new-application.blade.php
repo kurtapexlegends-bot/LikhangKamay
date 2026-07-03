@@ -8,8 +8,18 @@
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #FDFBF9; color: #2E2520; line-height: 1.6; -webkit-text-size-adjust: none;">
     <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border: 1px solid #E7E1D8; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(46, 37, 32, 0.03);">
         <div style="background-color: #F7F4F0; border-bottom: 1px solid #E7E1D8; padding: 24px; text-align: center;">
-            <a href="#" style="text-decoration: none; display: inline-block;">
-                <img src="https://files.catbox.moe/e56ajg.png" alt="LikhangKamay" style="height: 44px; display: block; border: 0; outline: none; text-decoration: none; margin: 0 auto;">
+            <a href="#" style="text-decoration: none; display: inline-block; vertical-align: middle;">
+                <table border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto; border-collapse: collapse;">
+                    <tr>
+                        <td style="vertical-align: middle; padding-right: 12px;">
+                            <img src="https://files.catbox.moe/e56ajg.png" alt="Logo" style="height: 38px; width: 38px; display: block; border: 0; outline: none; text-decoration: none;">
+                        </td>
+                        <td style="vertical-align: middle; text-align: left;">
+                            <span style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: bold; color: #2E2520; display: block; line-height: 1; letter-spacing: -0.5px;">LikhangKamay</span>
+                            <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 9px; font-weight: bold; color: #A2582F; display: block; letter-spacing: 1px; text-transform: uppercase; margin-top: 3px;">Artisan Marketplace</span>
+                        </td>
+                    </tr>
+                </table>
             </a>
         </div>
         <div style="padding: 40px 32px; text-align: center;">

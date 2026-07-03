@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maintenance - {{ \App\Facades\Settings::get('platform_name', 'Likhang Kamay') }}</title>
+    <title>Maintenance - {{ \App\Facades\Settings::get('platform_name', 'LikhangKamay') }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -27,8 +27,8 @@
         <div class="flex flex-col items-center gap-8">
             <!-- Branding -->
             <div class="flex flex-col items-center gap-3">
-                <img src="{{ $logo }}" alt="{{ \App\Facades\Settings::get('platform_name', 'Likhang Kamay') }}" class="h-14 w-auto object-contain">
-                <h1 class="serif text-2xl font-bold text-stone-900">{{ \App\Facades\Settings::get('platform_name', 'Likhang Kamay') }}</h1>
+                <img src="{{ $logo }}" alt="{{ \App\Facades\Settings::get('platform_name', 'LikhangKamay') }}" class="h-14 w-auto object-contain">
+                <h1 class="serif text-2xl font-bold text-stone-900">{{ \App\Facades\Settings::get('platform_name', 'LikhangKamay') }}</h1>
             </div>
 
             <!-- Content -->

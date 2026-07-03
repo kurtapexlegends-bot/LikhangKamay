@@ -24,7 +24,7 @@ class SystemSettingsTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
 
         $payload = [
-            'platform_name' => 'Likhang Kamay Test',
+            'platform_name' => 'LikhangKamay Test',
             'primary_color' => '#123456',
             'seo_metadata' => [
                 'title' => 'Handcrafted Items PH',
@@ -51,7 +51,7 @@ class SystemSettingsTest extends TestCase
             'mail_username' => 'test-user',
             'mail_password' => 'test-password',
             'mail_from_address' => 'noreply-test@likhangkamay.app',
-            'mail_from_name' => 'Likhang Kamay Mailer',
+            'mail_from_name' => 'LikhangKamay Mailer',
             'tier_free_limit' => 5,
             'tier_premium_price' => 249.00,
             'tier_premium_limit' => 15,
@@ -65,7 +65,7 @@ class SystemSettingsTest extends TestCase
         $response->assertRedirect();
         
         // Assert updated values in Settings Service
-        $this->assertEquals('Likhang Kamay Test', $this->settings->get('platform_name'));
+        $this->assertEquals('LikhangKamay Test', $this->settings->get('platform_name'));
         $this->assertEquals('#123456', $this->settings->get('primary_color'));
         
         $seo = $this->settings->get('seo_metadata');
@@ -95,7 +95,7 @@ class SystemSettingsTest extends TestCase
         $this->assertEquals('test-user', $this->settings->get('mail_username'));
         $this->assertEquals('test-password', $this->settings->get('mail_password'));
         $this->assertEquals('noreply-test@likhangkamay.app', $this->settings->get('mail_from_address'));
-        $this->assertEquals('Likhang Kamay Mailer', $this->settings->get('mail_from_name'));
+        $this->assertEquals('LikhangKamay Mailer', $this->settings->get('mail_from_name'));
 
         // Assert Subscription Tier Settings
         $this->assertEquals(5, $this->settings->get('tier_free_limit'));

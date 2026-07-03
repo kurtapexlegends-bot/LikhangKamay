@@ -58,7 +58,7 @@ export default function BulkLabels({ orders = [] }) {
                         <div className="mb-6 flex items-start justify-between border-b border-dashed border-stone-200 pb-6">
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                    Likhang Kamay Dispatch
+                                    LikhangKamay Dispatch
                                 </p>
                                 <h2 className="text-3xl font-black text-gray-900 tracking-tight">
                                     #{order.id}

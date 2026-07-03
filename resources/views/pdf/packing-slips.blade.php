@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Likhang Kamay Dispatch Slip</title>
+    <title>LikhangKamay Dispatch Slip</title>
     <style>
         @page {
             margin: 20px 25px;
@@ -260,7 +260,7 @@
     <table class="header-table">
         <tr>
             <td class="brand-section">
-                <p class="brand-subtitle">Likhang Kamay Marketplace</p>
+                <p class="brand-subtitle">LikhangKamay Marketplace</p>
                 <h1 class="shop-name">{{ $artisan->name }}</h1>
             </td>
             <td class="doc-section">
@@ -424,7 +424,7 @@
     <!-- Footer -->
     <div class="footer">
         Thank you for supporting hand-crafted art and local communities!<br>
-        Likhang Kamay Platform Dispatch Service &bull; Secure & Authentic
+        LikhangKamay Platform Dispatch Service &bull; Secure & Authentic
     </div>
 
     @if(!$loop->last)

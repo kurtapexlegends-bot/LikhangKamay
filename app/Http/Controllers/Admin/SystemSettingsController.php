@@ -59,7 +59,7 @@ class SystemSettingsController extends Controller
             Log::error("SystemSettings index error: " . $e->getMessage());
             return Inertia::render('Admin/Layout/SystemConfig/SystemConfig', [
                 'settings' => [
-                    'platform_name' => 'Likhang Kamay',
+                    'platform_name' => 'LikhangKamay',
                     'platform_logo' => null,
                     'favicon' => null,
                     'primary_color' => '#8B4513',
@@ -76,7 +76,7 @@ class SystemSettingsController extends Controller
                     'mail_username' => '',
                     'mail_password' => '',
                     'mail_from_address' => 'noreply@likhangkamay.app',
-                    'mail_from_name' => 'Likhang Kamay',
+                    'mail_from_name' => 'LikhangKamay',
                 ],
                 'metrics' => [
                     'mrr' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
@@ -94,12 +94,12 @@ class SystemSettingsController extends Controller
     private function getSystemSettings(): array
     {
         return [
-            'platform_name' => $this->settings->get('platform_name', 'Likhang Kamay'),
+            'platform_name' => $this->settings->get('platform_name', 'LikhangKamay'),
             'platform_logo' => $this->settings->get('platform_logo'),
             'favicon' => $this->settings->get('favicon'),
             'primary_color' => $this->settings->get('primary_color', '#8B4513'),
             'seo_metadata' => $this->settings->get('seo_metadata', [
-                'title' => 'Likhang Kamay | Artisan Marketplace',
+                'title' => 'LikhangKamay | Artisan Marketplace',
                 'description' => 'A premium marketplace for Filipino artisans and handmade crafts.',
                 'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
             ]),
@@ -133,7 +133,7 @@ class SystemSettingsController extends Controller
             'mail_username' => $this->settings->get('mail_username', ''),
             'mail_password' => $this->settings->get('mail_password', ''),
             'mail_from_address' => $this->settings->get('mail_from_address', 'noreply@likhangkamay.app'),
-            'mail_from_name' => $this->settings->get('mail_from_name', 'Likhang Kamay'),
+            'mail_from_name' => $this->settings->get('mail_from_name', 'LikhangKamay'),
         ];
     }
 

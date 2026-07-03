@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
                     'mail.mailers.smtp.username' => $settings->get('mail_username'),
                     'mail.mailers.smtp.password' => $settings->get('mail_password'),
                     'mail.from.address' => $settings->get('mail_from_address', 'noreply@likhangkamay.app'),
-                    'mail.from.name' => $settings->get('mail_from_name', 'Likhang Kamay'),
+                    'mail.from.name' => $settings->get('mail_from_name', 'LikhangKamay'),
                 ]);
             }
         } catch (\Throwable $e) {

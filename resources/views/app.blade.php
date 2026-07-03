@@ -8,11 +8,11 @@
         {{-- SEO Metadata --}}
         @php
             $seo = \App\Facades\Settings::get('seo_metadata', []);
-            $platformName = \App\Facades\Settings::get('platform_name', config('app.name', 'Likhang Kamay'));
+            $platformName = \App\Facades\Settings::get('platform_name', config('app.name', 'LikhangKamay'));
             $primaryColor = \App\Facades\Settings::get('primary_color', '#8B4513');
         @endphp
         
-        <meta name="description" content="{{ $seo['description'] ?? 'Likhang Kamay | Artisan Marketplace' }}">
+        <meta name="description" content="{{ $seo['description'] ?? 'LikhangKamay | Artisan Marketplace' }}">
         <meta name="keywords" content="{{ $seo['keywords'] ?? 'artisan, philippines, crafts' }}">
 
         <title inertia>{{ $platformName }}</title>

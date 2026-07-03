@@ -18,14 +18,14 @@ class PlatformAuditCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Run a comprehensive system integrity audit for Likhang Kamay platform.';
+    protected $description = 'Run a comprehensive system integrity audit for LikhangKamay platform.';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->header("LIKHANG KAMAY | SYSTEM INTEGRITY AUDIT");
+        $this->header("LikhangKamay | SYSTEM INTEGRITY AUDIT");
 
         $this->auditRoutes();
         $this->auditStorage();

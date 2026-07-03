@@ -92,7 +92,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         mail_username: settings?.mail_username || '',
         mail_password: settings?.mail_password || '',
         mail_from_address: settings?.mail_from_address || 'noreply@likhangkamay.app',
-        mail_from_name: settings?.mail_from_name || 'Likhang Kamay',
+        mail_from_name: settings?.mail_from_name || 'LikhangKamay',
     });
 
     const submit = (e) => {
@@ -149,7 +149,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                 mail_username: settings.mail_username || '',
                 mail_password: settings.mail_password || '',
                 mail_from_address: settings.mail_from_address || 'noreply@likhangkamay.app',
-                mail_from_name: settings.mail_from_name || 'Likhang Kamay',
+                mail_from_name: settings.mail_from_name || 'LikhangKamay',
             });
         }
     }, [settings]);
