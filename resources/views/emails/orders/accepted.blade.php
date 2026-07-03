@@ -9,7 +9,7 @@
     <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border: 1px solid #E7E1D8; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(46, 37, 32, 0.03);">
         <div style="background-color: #F7F4F0; border-bottom: 1px solid #E7E1D8; padding: 24px; text-align: center;">
             <a href="#" style="text-decoration: none; display: inline-block;">
-                <img src="{{ asset('images/logo.png') }}" alt="LikhangKamay" style="height: 44px; display: block; border: 0; outline: none; text-decoration: none; margin: 0 auto;">
+                <img src="https://files.catbox.moe/e56ajg.png" alt="LikhangKamay" style="height: 44px; display: block; border: 0; outline: none; text-decoration: none; margin: 0 auto;">
             </a>
         </div>
         <div style="padding: 40px 32px;">
