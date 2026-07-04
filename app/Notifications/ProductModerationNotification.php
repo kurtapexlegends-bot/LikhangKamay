@@ -19,7 +19,13 @@ class ProductModerationNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable): \App\Mail\ProductModerationResult
+    {
+        return (new \App\Mail\ProductModerationResult($this->product, $this->status, $this->feedback))
+            ->to($notifiable->email);
     }
 
     public function toArray(object $notifiable): array

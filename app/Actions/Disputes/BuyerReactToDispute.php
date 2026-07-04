@@ -172,6 +172,13 @@ class BuyerReactToDispute
                 "Order #{$order->order_number} has been escalated for dispute arbitration.",
                 route('admin.disputes.index')
             ));
+            if ($admin->email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($admin->email)->send(new \App\Mail\DisputeEscalated($order, $escalationReason ?? 'No reason provided.'));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Failed to send dispute escalation mail to Admin: " . $e->getMessage());
+                }
+            }
         }
     }
 }

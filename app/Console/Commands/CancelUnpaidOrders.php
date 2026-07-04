@@ -43,8 +43,8 @@ class CancelUnpaidOrders extends Command
                     'shipping_notes' => 'Auto-cancelled due to non-payment.'
                 ]);
 
-                // 3. Notify User (Optional - good to have)
-                // Mail::to($order->user->email)->send(new OrderCancelled($order));
+                // 3. Notify User
+                \Illuminate\Support\Facades\Mail::to($order->user->email)->send(new \App\Mail\OrderCancelled($order, 'Auto-cancelled due to non-payment.'));
             });
 
             $this->info("Cancelled Order #{$order->order_number}");

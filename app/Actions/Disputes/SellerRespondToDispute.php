@@ -169,6 +169,7 @@ class SellerRespondToDispute
                         "Seller rejected the return request for Order #{$order->order_number}. You can escalate to admin support.",
                         route('my-orders.index')
                     ));
+                    $this->sendMailSilently($buyer->email, new \App\Mail\ReturnRequestRejected($order, $sellerExplanation));
                 }
             }
         });

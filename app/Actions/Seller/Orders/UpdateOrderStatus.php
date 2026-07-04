@@ -203,6 +203,13 @@ class UpdateOrderStatus
                         'order_shipped',
                         ['order_id' => $lockedOrder->id, 'order_number' => $lockedOrder->order_number]
                     );
+                } elseif ($status === 'Cancelled' || $status === 'Rejected') {
+                    $this->sendMailSilently(
+                        $buyer->email,
+                        new \App\Mail\OrderCancelled($lockedOrder),
+                        'order_cancelled',
+                        ['order_id' => $lockedOrder->id, 'order_number' => $lockedOrder->order_number]
+                    );
                 }
             }
         });

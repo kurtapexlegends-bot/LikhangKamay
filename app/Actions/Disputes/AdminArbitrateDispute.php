@@ -113,6 +113,7 @@ class AdminArbitrateDispute
                         "Platform administrator has rejected the return claim for Order #{$order->order_number}.",
                         route('my-orders.index')
                     ));
+                    $this->sendMailSilently($buyer->email, new \App\Mail\DisputeArbitratedSellerWins($order, $adminNotes));
                 }
 
                 $seller = User::find($order->artisan_id);

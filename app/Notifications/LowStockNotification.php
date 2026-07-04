@@ -27,7 +27,13 @@ class LowStockNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable): \App\Mail\LowStockAlert
+    {
+        return (new \App\Mail\LowStockAlert($this->product))
+            ->to($notifiable->email);
     }
 
     /**

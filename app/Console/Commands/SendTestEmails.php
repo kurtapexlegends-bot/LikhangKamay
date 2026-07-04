@@ -18,6 +18,13 @@ use App\Mail\ShipmentReminder;
 use App\Mail\NewArtisanApplication;
 use App\Mail\ArtisanApproved;
 use App\Mail\ArtisanRejected;
+use App\Mail\SponsorshipStatusUpdated;
+use App\Mail\ProductModerationResult;
+use App\Mail\LowStockAlert;
+use App\Mail\OrderCancelled;
+use App\Mail\ReturnRequestRejected;
+use App\Mail\DisputeArbitratedSellerWins;
+use App\Mail\DisputeEscalated;
 
 class SendTestEmails extends Command
 {
@@ -130,6 +137,20 @@ class SendTestEmails extends Command
         sleep(1);
         Mail::to($sellerEmail)->send(new ShipmentReminder($order));
         sleep(1);
+        
+        // Mock SponsorshipRequest for test mailable
+        $sponsorship = new \App\Models\SponsorshipRequest([
+            'status' => 'rejected',
+            'rejection_reason' => 'Product images do not meet the quality guidelines.'
+        ]);
+        $sponsorship->setRelation('product', $product);
+        Mail::to($sellerEmail)->send(new SponsorshipStatusUpdated($sponsorship));
+        sleep(1);
+
+        Mail::to($sellerEmail)->send(new ProductModerationResult($product, 'rejected', 'Listing contains copyrighted brand names.'));
+        sleep(1);
+        Mail::to($sellerEmail)->send(new LowStockAlert($product));
+        sleep(1);
 
         // 2. Send to Buyer (kurtstanleytalastas@gmail.com)
         $this->info("Sending to Buyer: $buyerEmail");
@@ -141,6 +162,12 @@ class SendTestEmails extends Command
         sleep(1);
         Mail::to($buyerEmail)->send(new RefundProcessed($order));
         sleep(1);
+        Mail::to($buyerEmail)->send(new OrderCancelled($order, 'Cancelled by customer.'));
+        sleep(1);
+        Mail::to($buyerEmail)->send(new ReturnRequestRejected($order, 'Product has been used and damaged by the buyer.'));
+        sleep(1);
+        Mail::to($buyerEmail)->send(new DisputeArbitratedSellerWins($order, 'Buyer failed to return the product within the 7-day window.'));
+        sleep(1);
 
         // 3. Send to Super Admin (likhangkamaybusiness@gmail.com)
         $this->info("Sending to Super Admin: $adminEmail");
@@ -149,6 +176,8 @@ class SendTestEmails extends Command
         Mail::to($sellerEmail)->send(new ArtisanApproved($seller));
         sleep(1);
         Mail::to($sellerEmail)->send(new ArtisanRejected($seller));
+        sleep(1);
+        Mail::to($adminEmail)->send(new DisputeEscalated($order, 'Seller rejected the refund claiming the product was modified.'));
 
         $this->info("All test emails sent successfully!");
         return 0;

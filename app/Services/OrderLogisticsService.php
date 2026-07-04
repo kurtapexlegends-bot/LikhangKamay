@@ -349,6 +349,14 @@ class OrderLogisticsService
                 'failure_reason' => $lockedDelivery->failure_reason ?: 'Delivery failed and was automatically cancelled after the hold window.',
             ]);
 
+            if ($order->user && $order->user->email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($order->user->email)->send(new \App\Mail\OrderCancelled($order, 'Failed delivery hold period expired.'));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Failed to send order cancellation mail: " . $e->getMessage());
+                }
+            }
+
             $buyerUrl = route('my-orders.index');
             $sellerUrl = route('orders.index');
 

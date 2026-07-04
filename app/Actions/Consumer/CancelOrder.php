@@ -46,6 +46,10 @@ class CancelOrder
                 'cancelled_at' => now(),
                 'cancellation_reason' => 'buyer_cancelled',
             ]);
+
+            if ($buyer->email) {
+                \Illuminate\Support\Facades\Mail::to($buyer->email)->send(new \App\Mail\OrderCancelled($order, 'Cancelled by customer.'));
+            }
         });
     }
 }

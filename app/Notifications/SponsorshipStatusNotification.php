@@ -17,7 +17,13 @@ class SponsorshipStatusNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable): \App\Mail\SponsorshipStatusUpdated
+    {
+        return (new \App\Mail\SponsorshipStatusUpdated($this->requestRecord))
+            ->to($notifiable->email);
     }
 
     public function toArray(object $notifiable): array
