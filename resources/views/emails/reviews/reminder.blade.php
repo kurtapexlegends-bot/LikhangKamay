@@ -16,7 +16,6 @@
                         </td>
                         <td style="vertical-align: middle; text-align: left;">
                             <span style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: bold; color: #2E2520; display: block; line-height: 1; letter-spacing: -0.5px;">LikhangKamay</span>
-                            <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 9px; font-weight: bold; color: #A2582F; display: block; letter-spacing: 1px; text-transform: uppercase; margin-top: 3px;">Artisan Marketplace</span>
                         </td>
                     </tr>
                 </table>
