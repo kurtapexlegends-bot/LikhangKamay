@@ -4,7 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { KeyRound, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { KeyRound, Mail, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function ResetPassword({ token, email }) {
