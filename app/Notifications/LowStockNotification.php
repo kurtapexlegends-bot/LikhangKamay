@@ -27,7 +27,24 @@ class LowStockNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+        if ($this->isNotifiableInactive($notifiable)) {
+            $channels[] = 'mail';
+        }
+        return $channels;
+    }
+
+    protected function isNotifiableInactive(object $notifiable): bool
+    {
+        if ($notifiable instanceof \App\Models\User) {
+            if ($notifiable->isStaff()) {
+                return !$notifiable->isWorkspaceAccessEnabled() || $notifiable->isPlanWorkspaceSuspended();
+            }
+            if ($notifiable->isArtisan()) {
+                return $notifiable->artisan_status !== 'approved';
+            }
+        }
+        return false;
     }
 
     public function toMail(object $notifiable): \App\Mail\LowStockAlert
