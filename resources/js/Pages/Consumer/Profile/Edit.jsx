@@ -1,7 +1,7 @@
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
@@ -10,9 +10,21 @@ import { User, Shield, MapPin, AlertTriangle, ChevronRight, Store } from 'lucide
 import { usePage, Link } from '@inertiajs/react';
 
 export default function Edit({ mustVerifyEmail, status, addresses }) {
-    const { auth } = usePage().props;
-    const userRole = auth.user.role;
-    const [activeTab, setActiveTab] = useState('account');
+    const { auth, url } = usePage().props;
+    const userRole = auth?.user?.role;
+    
+    const [activeTab, setActiveTab] = useState(() => {
+        const urlStr = window.location.search || '';
+        const params = new URLSearchParams(urlStr);
+        return params.get('tab') || 'account';
+    });
+
+    useEffect(() => {
+        const urlStr = window.location.search || '';
+        const params = new URLSearchParams(urlStr);
+        const currentTab = params.get('tab') || 'account';
+        setActiveTab(currentTab);
+    }, [url]);
 
     const tabs = [
         { id: 'account', label: 'Profile', icon: User },
@@ -28,7 +40,7 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
             <Head title="My Profile" />
             <BuyerNavbar />
 
-            <main className="py-4 sm:py-12">
+            <main className="pt-4 pb-28 sm:py-12">
                 <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
                     <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
                         

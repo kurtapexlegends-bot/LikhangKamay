@@ -72,7 +72,7 @@ export default function AddressSelect({
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
                     <div className="border-b border-gray-100 p-2">
                         <input
                             ref={inputRef}

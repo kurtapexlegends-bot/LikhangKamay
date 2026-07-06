@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { 
-    ShoppingBag, Search, ShoppingCart, User, Heart, Home, LogOut, Settings, Package, Clock, Edit2, Store, Shield, ShieldAlert
+    ShoppingBag, Search, ShoppingCart, User, Heart, Home, LogOut, Settings, Package, Clock, Edit2, Store, Shield, ShieldAlert, MapPin
 } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import UserAvatar from '@/Components/UserAvatar';
@@ -156,7 +156,7 @@ export default function MobileDock() {
                             <div className="space-y-0.5">
                                 <p className="px-3 mb-1.5 text-[9px] font-black uppercase tracking-widest text-stone-400">Settings</p>
                                 <MenuLink href={route('profile.edit')} icon={Settings} label="Profile Details" onClick={() => setIsAccountOpen(false)} />
-                                <MenuLink href={route('shop.index')} icon={Store} label="Addresses" onClick={() => setIsAccountOpen(false)} />
+                                <MenuLink href={route('profile.edit') + '?tab=addresses'} icon={MapPin} label="Addresses" onClick={() => setIsAccountOpen(false)} />
                             </div>
 
                             {/* Section: Admin */}
