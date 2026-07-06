@@ -39,7 +39,7 @@ export default function TermsOfService() {
         },
         {
             title: "Returns and Refunds",
-            content: "Returns are accepted for items that arrive damaged, defective, or significantly different from their description. Buyers must report issues within 7 days of delivery with photographic evidence. Refunds will be processed within 14 business days of approval. Custom or personalized items may not be eligible for returns unless defective."
+            content: "Returns are accepted for items that arrive damaged, defective, or significantly different from their description. Buyers must report issues within 1 day of delivery with photographic evidence. Refunds will be processed within 1 business day of approval. Custom or personalized items may not be eligible for returns unless defective."
         },
         {
             title: "User Conduct",

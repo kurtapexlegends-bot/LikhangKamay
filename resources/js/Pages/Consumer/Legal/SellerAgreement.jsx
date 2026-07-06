@@ -35,7 +35,7 @@ export default function SellerAgreement() {
         },
         {
             title: "Returns and Refunds",
-            content: "Accept returns for items that: arrive damaged, are significantly different from description, or are defective. Process returns within 7 days of customer request. Seller Protection Program may cover refunds for transit damage with proper packaging evidence."
+            content: "Accept returns for items that: arrive damaged, are significantly different from description, or are defective. Process returns within 1 day of customer request. Seller Protection Program may cover refunds for transit damage with proper packaging evidence."
         },
         {
             title: "Communication Standards",
