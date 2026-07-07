@@ -13,6 +13,60 @@ class PaymongoWebhookController extends Controller
 {
     public function handle(Request $request)
     {
+        $signatureHeader = $request->header('Paymongo-Signature');
+        $webhookSecret = config('services.paymongo.webhook_secret');
+
+        if (app()->environment('production') || !empty($webhookSecret)) {
+            if (!$signatureHeader) {
+                Log::warning('PayMongo Webhook: Missing signature header');
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            if (!$webhookSecret) {
+                Log::error('PayMongo Webhook: Webhook secret key is missing in config');
+                return response()->json(['message' => 'Internal Server Error'], 500);
+            }
+
+            $parts = explode(',', $signatureHeader);
+            $timestamp = null;
+            $signature = null;
+
+            foreach ($parts as $part) {
+                $subParts = explode('=', $part, 2);
+                if (count($subParts) === 2) {
+                    $key = trim($subParts[0]);
+                    $val = trim($subParts[1]);
+                    if ($key === 't') {
+                        $timestamp = $val;
+                    } elseif ($key === 'v1') {
+                        $signature = $val;
+                    }
+                }
+            }
+
+            if (!$timestamp || !$signature) {
+                Log::warning('PayMongo Webhook: Invalid signature header format', ['header' => $signatureHeader]);
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            if (abs(time() - (int) $timestamp) > 300) {
+                Log::warning('PayMongo Webhook: Timestamp difference too large', ['timestamp' => $timestamp]);
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            $payload = $request->getContent();
+            $signedPayload = $timestamp . '.' . $payload;
+            $expectedSignature = hash_hmac('sha256', $signedPayload, $webhookSecret);
+
+            if (!hash_equals($expectedSignature, $signature)) {
+                Log::warning('PayMongo Webhook: Signature mismatch', [
+                    'expected' => $expectedSignature,
+                    'received' => $signature,
+                ]);
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+        }
+
         $payload = $request->all();
 
         Log::info('PayMongo Webhook Received', ['payload' => $payload]);
