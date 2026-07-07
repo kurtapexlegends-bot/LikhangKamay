@@ -58,6 +58,9 @@ class CheckoutShippingService
                 ];
             }
 
+            $pickupCoordinates = null;
+            $dropoffCoordinates = null;
+
             try {
                 $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
                 $dropoffCoordinates = $this->geocodingService()->geocode(
@@ -107,11 +110,15 @@ class CheckoutShippingService
             }
 
             try {
-                $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
-                $dropoffCoordinates = $this->geocodingService()->geocode(
-                    count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
-                    'buyer drop-off'
-                );
+                if (!$pickupCoordinates) {
+                    $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
+                }
+                if (!$dropoffCoordinates) {
+                    $dropoffCoordinates = $this->geocodingService()->geocode(
+                        count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
+                        'buyer drop-off'
+                    );
+                }
 
                 return [
                     'amount' => $this->distanceFallbackAmount($pickupCoordinates, $dropoffCoordinates),
