@@ -76,6 +76,10 @@ export default function TermsOfService() {
         }
     };
 
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const fromSource = params ? params.get('from') : null;
+    const isFromRegister = fromSource === 'register';
+
     return (
         <div className="min-h-screen bg-stone-50/50 font-sans text-stone-800 py-12 px-4 sm:px-6 lg:px-8">
             <Head title="Terms of Service" />
@@ -84,11 +88,11 @@ export default function TermsOfService() {
                 {/* Back Button for Desktop/Mobile */}
                 <div className="mb-8 print:hidden">
                     <Link 
-                        href={route('register')} 
+                        href={isFromRegister ? route('register') : '/'} 
                         className="inline-flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm font-bold"
                     >
                         <ArrowLeft size={16} />
-                        Back to Register
+                        {isFromRegister ? 'Back to Register' : 'Back to Home'}
                     </Link>
                 </div>
 
@@ -123,18 +127,37 @@ export default function TermsOfService() {
 
                         {/* Quick Register Action Card */}
                         <div className="bg-white border border-stone-200/60 p-5 rounded-2xl shadow-sm space-y-4">
-                            <div>
-                                <h4 className="text-xs font-bold text-stone-900">Agreement Confirmation</h4>
-                                <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
-                                    By registering an account with LikhangKamay, you accept and agree to all terms outlined in this document.
-                                </p>
-                            </div>
-                            <Link 
-                                href={route('register')}
-                                className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
-                            >
-                                Accept & Continue
-                            </Link>
+                            {isFromRegister ? (
+                                <>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-stone-900">Agreement Confirmation</h4>
+                                        <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
+                                            By registering an account with LikhangKamay, you accept and agree to all terms outlined in this document.
+                                        </p>
+                                    </div>
+                                    <Link 
+                                        href={route('register')}
+                                        className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
+                                    >
+                                        Accept & Continue
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-stone-900">Join LikhangKamay</h4>
+                                        <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
+                                            Create an account to start exploring and supporting local Filipino pottery and clay artisans.
+                                        </p>
+                                    </div>
+                                    <Link 
+                                        href={route('register')}
+                                        className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
+                                    >
+                                        Register Account
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </aside>
 

@@ -82,6 +82,10 @@ export default function SellerAgreement() {
         }
     };
 
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const fromSource = params ? params.get('from') : null;
+    const isFromRegister = fromSource === 'register';
+
     return (
         <div className="min-h-screen bg-stone-50/50 font-sans text-stone-800 py-12 px-4 sm:px-6 lg:px-8">
             <Head title="Seller Agreement" />
@@ -90,11 +94,11 @@ export default function SellerAgreement() {
                 {/* Back Button */}
                 <div className="mb-8 print:hidden">
                     <Link 
-                        href="/artisan/register" 
+                        href={isFromRegister ? '/profile' : '/'} 
                         className="inline-flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm font-bold"
                     >
                         <ArrowLeft size={16} />
-                        Back to Register
+                        {isFromRegister ? 'Back to Setup' : 'Back to Home'}
                     </Link>
                 </div>
 
@@ -140,18 +144,37 @@ export default function SellerAgreement() {
 
                         {/* Action Card */}
                         <div className="bg-white border border-stone-200/60 p-5 rounded-2xl shadow-sm space-y-4">
-                            <div>
-                                <h4 className="text-xs font-bold text-stone-900">Artisan Registration</h4>
-                                <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
-                                    By proceeding, you agree to comply with all rules and standards defined in this partnership agreement.
-                                </p>
-                            </div>
-                            <Link 
-                                href="/artisan/register"
-                                className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
-                            >
-                                Agree & Register
-                            </Link>
+                            {isFromRegister ? (
+                                <>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-stone-900">Artisan Registration</h4>
+                                        <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
+                                            By proceeding, you agree to comply with all rules and standards defined in this partnership agreement.
+                                        </p>
+                                    </div>
+                                    <Link 
+                                        href="/profile"
+                                        className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
+                                    >
+                                        Agree & Register
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-stone-900">Partner with Us</h4>
+                                        <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
+                                            Showcase your pottery and grow your artisan business on our platform.
+                                        </p>
+                                    </div>
+                                    <Link 
+                                        href="/artisan/register"
+                                        className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
+                                    >
+                                        Become an Artisan
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </aside>
 

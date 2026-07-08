@@ -222,11 +222,11 @@ export default function ArtisanSetup({ auth }) {
                     <div className="mt-8 text-center text-sm text-gray-500">
                         <p>
                             By submitting, you agree to our{' '}
-                            <Link href="/seller-agreement" className="text-clay-600 underline">
+                            <Link href="/seller-agreement?from=register" className="text-clay-600 underline">
                                 Seller Agreement
                             </Link>{' '}
                             and{' '}
-                            <Link href="/seller-privacy" className="text-clay-600 underline">
+                            <Link href="/seller-privacy?from=register" className="text-clay-600 underline">
                                 Data Privacy Policy
                             </Link>
                             .
