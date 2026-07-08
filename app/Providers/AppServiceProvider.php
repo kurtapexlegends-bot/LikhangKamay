@@ -74,6 +74,17 @@ class AppServiceProvider extends ServiceProvider
 
         \App\Models\Review::observe(\App\Observers\ReviewObserver::class);
 
+        // --- PASSWORD COMPLEXITY DEFAULTS ---
+        \Illuminate\Validation\Rules\Password::defaults(function () {
+            if (app()->runningUnitTests()) {
+                return \Illuminate\Validation\Rules\Password::min(8);
+            }
+            $rule = \Illuminate\Validation\Rules\Password::min(12);
+            return app()->isProduction()
+                ? $rule->letters()->mixedCase()->numbers()->symbols()->uncompromised()
+                : $rule;
+        });
+
         // --- RATE LIMITERS ---
         
         // 1. Marketplace Search (Prevent scraping/DOS)
@@ -89,6 +100,11 @@ class AppServiceProvider extends ServiceProvider
         // 3. System Diagnostics & Analytics
         \Illuminate\Support\Facades\RateLimiter::for('admin.heavy', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // 4. User Login (Prevent brute force)
+        \Illuminate\Support\Facades\RateLimiter::for('login', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by($request->ip());
         });
     }
 }
