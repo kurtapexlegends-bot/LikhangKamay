@@ -53,3 +53,9 @@ _ide_helper_models.php
 /docs/awesome-design-md/
 /docs/design-md-usage.md
 remove_badges*
+
+# Local agent/tooling caches and scratch files
+/.antigravitycli
+/scratch/
+/agent.md
+
