@@ -11,7 +11,8 @@ import {
     toggleFollowedShop,
     clearWishlistedProducts,
     clearFollowedShops,
-    clearRecentlyViewedProducts
+    clearRecentlyViewedProducts,
+    pruneInactiveProducts
 } from '@/utils/buyerSignals';
 
 // Subcomponents
@@ -48,6 +49,24 @@ export default function Saved() {
         };
 
         syncSignals();
+
+        // Gather cached product IDs for verification
+        const wishlistIds = getWishlistedProducts().map((p) => Number(p?.id));
+        const recentlyViewedIds = getRecentlyViewedProducts().map((p) => Number(p?.id));
+        const idsToVerify = Array.from(new Set([...wishlistIds, ...recentlyViewedIds])).filter(Boolean);
+
+        if (idsToVerify.length > 0) {
+            axios.post(route('products.validate-active'), { ids: idsToVerify })
+                .then((res) => {
+                    if (Array.isArray(res.data)) {
+                        pruneInactiveProducts(res.data);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to validate active products:', err);
+                });
+        }
+
         window.addEventListener('storage', syncSignals);
         window.addEventListener('focus', syncSignals);
 

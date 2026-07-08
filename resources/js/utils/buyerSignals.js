@@ -222,3 +222,25 @@ export const rememberViewedProduct = (product) => {
 
     writeJson(RECENTLY_VIEWED_KEY, next);
 };
+
+export const pruneInactiveProducts = (activeIds) => {
+    if (!canUseStorage() || !Array.isArray(activeIds)) return;
+
+    const numericActiveIds = activeIds.map(Number);
+
+    // Prune Wishlist
+    const wishlist = getWishlistedProducts();
+    const cleanWishlist = wishlist.filter((entry) => numericActiveIds.includes(Number(entry?.id)));
+    if (cleanWishlist.length !== wishlist.length) {
+        writeJson(WISHLIST_KEY, cleanWishlist);
+    }
+
+    // Prune Recently Viewed
+    const recentlyViewed = getRecentlyViewedProducts();
+    const cleanRecentlyViewed = recentlyViewed.filter((entry) => numericActiveIds.includes(Number(entry?.id)));
+    if (cleanRecentlyViewed.length !== recentlyViewed.length) {
+        writeJson(RECENTLY_VIEWED_KEY, cleanRecentlyViewed);
+    }
+
+    window.dispatchEvent(new Event('storage'));
+};

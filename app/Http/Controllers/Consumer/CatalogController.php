@@ -129,4 +129,22 @@ class CatalogController extends Controller
             ])
         ]);
     }
+
+    /**
+     * Validate active products from a list of IDs.
+     */
+    public function validateActive(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return response()->json([]);
+        }
+
+        $activeIds = \App\Models\Product::whereIn('id', $ids)
+            ->where('status', 'Active')
+            ->pluck('id')
+            ->toArray();
+
+        return response()->json($activeIds);
+    }
 }
