@@ -163,7 +163,12 @@ export default function SubscriptionPlans({
             </div>
 
             <div className="flex flex-col gap-2.5 border-t border-stone-100 px-5 py-3 text-[12px] text-stone-500 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-                <p>Plans can be changed anytime. Downgrades may deactivate some products.</p>
+                <div>
+                    <p>Plans can be changed anytime. Downgrades will enforce listing limits and suspend staff accounts at the end of the current billing cycle.</p>
+                    <p className="mt-1 text-[11px] text-stone-400 font-semibold uppercase tracking-wider">
+                        All payments are strictly non-refundable once processed.
+                    </p>
+                </div>
                 {pendingUpgrade && pendingUpgrade.checkoutUrl ? (
                     <button
                         type="button"

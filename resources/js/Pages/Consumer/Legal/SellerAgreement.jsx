@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { 
     UserCheck, Box, Percent, Truck, Award, 
     RefreshCw, MessageSquare, Banknote, ShieldAlert, AlertTriangle, 
-    FileText, Edit3, Mail, ArrowLeft
+    FileText, Edit3, Mail, ArrowLeft, CreditCard
 } from 'lucide-react';
 
 
@@ -23,6 +23,11 @@ export default function SellerAgreement() {
             title: "Pricing and Fees",
             icon: Percent,
             content: "You are solely responsible for setting product prices. LikhangKamay charges a commission fee of 5% on each successful sale. This covers platform maintenance, payment processing, customer support, and marketing. Fees are automatically deducted before payout."
+        },
+        {
+            title: "Membership Tiers & Subscriptions",
+            icon: CreditCard,
+            content: "Artisans may subscribe to Standard (Free), Premium, or Elite membership tiers. Subscription fees are billed monthly, processed via PayMongo, and are strictly non-refundable once processed. Upgrades take effect immediately. Downgrades apply at the end of the billing period and enforce strict active product limits (3 for Standard, 10 for Premium, 50 for Elite) and suspend linked staff accounts. Pending billing transactions can be cancelled at any time."
         },
         {
             title: "Order Fulfillment",

@@ -43,6 +43,11 @@ export default function TermsOfService() {
             content: "Returns are accepted for items that arrive damaged, defective, or significantly different from their description. Buyers must report issues within 1 day of delivery with photographic evidence. Refunds will be processed within 1 business day of approval. Custom or personalized items may not be eligible for returns unless defective."
         },
         {
+            title: "Subscriptions and Billing",
+            icon: CreditCard,
+            content: "Sellers may subscribe to Premium or Elite membership plans. All subscription fees are billed in advance on a monthly basis, are processed securely via PayMongo, and are strictly non-refundable once processed. Upgrades are applied immediately upon payment confirmation. Cancellations apply to pending transactions or prevent future auto-renewals; past payments will not be refunded. Downgrades are subject to active catalog limits and will enforce standard tier caps (3 active listings for Standard, 10 for Premium, 50 for Elite) and suspend linked staff accounts at the end of the current billing cycle."
+        },
+        {
             title: "User Conduct",
             icon: AlertOctagon,
             content: "Users agree not to: post false, misleading, or fraudulent information; harass, abuse, or threaten other users; manipulate reviews, ratings, or feedback; circumvent fees by conducting transactions outside the Platform; use the Platform for any illegal purposes; or attempt to gain unauthorized access to other accounts or systems."
