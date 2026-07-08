@@ -330,17 +330,17 @@ export default function Register() {
                             <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-wider">
                                 <span className="text-stone-400">Strength</span>
                                 <span className={
-                                    data.password.length < 8 ? 'text-rose-500' : 
-                                    data.password.length < 12 ? 'text-amber-500' : 'text-emerald-500'
+                                    data.password.length < 12 ? 'text-rose-500' : 
+                                    data.password.length < 15 ? 'text-amber-500' : 'text-emerald-500'
                                 }>
-                                    {data.password.length < 8 ? 'Weak' : data.password.length < 12 ? 'Fair' : 'Strong'}
+                                    {data.password.length < 12 ? 'Weak' : data.password.length < 15 ? 'Fair' : 'Strong'}
                                 </span>
                             </div>
                             <div className="h-1 w-full bg-stone-100 rounded-full overflow-hidden flex gap-0.5">
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 4 ? (data.password.length < 8 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 8 ? (data.password.length < 12 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && data.password.length >= 8 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 6 ? (data.password.length < 12 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? (data.password.length < 15 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 15 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && /\d/.test(data.password) && data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
                             </div>
                         </motion.div>
                     )}
