@@ -1,198 +1,200 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Head, Link } from '@inertiajs/react';
-import { X, ChevronDown, ChevronUp, Store, Box, Check, AlertTriangle } from 'lucide-react';
+import { 
+    Store, UserCheck, Box, Percent, Truck, Award, 
+    RefreshCw, MessageSquare, Banknote, ShieldAlert, AlertTriangle, 
+    FileText, Edit3, Mail, Check, ArrowLeft
+} from 'lucide-react';
 
 export default function SellerAgreement() {
-    const [expandedSections, setExpandedSections] = useState({});
-
-    const toggleSection = (index) => {
-        setExpandedSections(prev => ({
-            ...prev,
-            [index]: !prev[index]
-        }));
-    };
-
     const sections = [
         {
             title: "Seller Eligibility",
+            icon: UserCheck,
             content: "To become a seller on LikhangKamay, you must: be at least 18 years old, be a legitimate artisan producing handmade pottery/ceramics, provide valid government-issued identification, have the legal right to sell the products listed, and comply with all applicable Philippine laws."
         },
         {
             title: "Product Listings",
+            icon: Box,
             content: "All products listed must be authentic, handcrafted items made by you or your artisan team. Provide accurate descriptions including dimensions, materials, care instructions, and high-quality images. Listings must not contain misleading information or prohibited items."
         },
         {
             title: "Pricing and Fees",
+            icon: Percent,
             content: "You are solely responsible for setting product prices. LikhangKamay charges a commission fee of 5% on each successful sale. This covers platform maintenance, payment processing, customer support, and marketing. Fees are automatically deducted before payout."
         },
         {
             title: "Order Fulfillment",
+            icon: Truck,
             content: "Upon receiving an order, you agree to: confirm within 24 hours, process within 3 business days, ship within 7 business days (unless custom times stated), provide tracking when available, and use appropriate packaging for fragile items."
         },
         {
             title: "Quality Standards",
+            icon: Award,
             content: "Products must meet professional quality standards. Items should be free from defects unless marketed as 'seconds' or intentionally distressed. Maintain a rating of at least 4.0 stars. Consistent quality issues may result in account review or termination."
         },
         {
             title: "Returns and Refunds",
+            icon: RefreshCw,
             content: "Accept returns for items that: arrive damaged, are significantly different from description, or are defective. Process returns within 1 day of customer request. Seller Protection Program may cover refunds for transit damage with proper packaging evidence."
         },
         {
             title: "Communication Standards",
+            icon: MessageSquare,
             content: "Respond to customer inquiries within 24 hours during business days. All communications must be professional, courteous, and helpful. Resolve disputes through our resolution center. Abusive communication will result in immediate suspension."
         },
         {
             title: "Payments and Payouts",
+            icon: Banknote,
             content: "Earnings are calculated after deducting platform commission. Payouts are processed weekly for balances exceeding ₱500. Provide valid bank account details. LikhangKamay is not responsible for delays from incorrect banking information."
         },
         {
             title: "Prohibited Activities",
+            icon: ShieldAlert,
             content: "Sellers may not: sell counterfeit or mass-produced items, manipulate reviews, create fake transactions, circumvent platform fees with off-platform deals, share customer information, or engage in fraudulent or illegal activities."
         },
         {
             title: "Account Suspension & Termination",
+            icon: AlertTriangle,
             content: "LikhangKamay may suspend or terminate accounts for: Agreement violations, ratings below 3.5 stars, failure to fulfill orders, fraudulent activities, or inactivity exceeding 6 months. Pending payouts released after resolving disputes."
         },
         {
             title: "Intellectual Property",
+            icon: FileText,
             content: "You retain ownership of your designs and content. By listing on LikhangKamay, you grant us a non-exclusive license to display and promote your products. You warrant that listings do not infringe on others' intellectual property."
         },
         {
             title: "Modifications to Agreement",
+            icon: Edit3,
             content: "LikhangKamay may update this Agreement periodically. We will notify sellers via email at least 14 days before changes take effect. Continued platform use constitutes acceptance of the modified Agreement."
         },
         {
             title: "Contact Seller Support",
+            icon: Mail,
             content: "For questions about this Agreement: Email likhangkamaybusiness@gmail.com | Seller Hotline available in Seller Dashboard | Address: Metro Manila, Philippines"
         }
     ];
 
+    const scrollToSection = (idx) => {
+        const element = document.getElementById(`section-${idx}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-stone-50/50 font-sans text-stone-800 py-12 px-4 sm:px-6 lg:px-8">
             <Head title="Seller Agreement" />
             
-            {/* Modal Container */}
-            <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up">
-                
-                {/* Header */}
-                <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-6 text-white relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-10">
-                        <svg viewBox="0 0 100 100" className="w-full h-full">
-                            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.5"/>
-                            </pattern>
-                            <rect width="100" height="100" fill="url(#grid)" />
-                        </svg>
-                    </div>
-                    <div className="relative z-10 flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-white/20 backdrop-blur rounded-xl">
-                                <Store size={28} className="text-white" />
-                            </div>
-                            <div>
-                                <h1 className="font-serif text-2xl font-bold">Seller Agreement</h1>
-                                <p className="text-amber-100 text-sm mt-1">Last updated: January 2026</p>
-                            </div>
-                        </div>
-                        <Link 
-                            href="/artisan/register" 
-                            className="p-2 hover:bg-white/20 rounded-lg transition"
-                        >
-                            <X size={24} />
-                        </Link>
-                    </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 max-h-[50vh] overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}>
-                    <p className="text-gray-600 mb-6">
-                        This Agreement governs your use of the LikhangKamay platform as a seller. By registering as an artisan, you agree to these terms.
-                    </p>
-
-                    <div className="space-y-3">
-                        {sections.map((section, index) => (
-                            <div 
-                                key={index}
-                                className="border border-gray-200 rounded-xl overflow-hidden hover:border-amber-300 transition"
-                            >
-                                <button
-                                    onClick={() => toggleSection(index)}
-                                    className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition"
-                                >
-                                    <span className="flex items-center gap-3">
-                                        <span className="w-7 h-7 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center text-sm font-bold">
-                                            {index + 1}
-                                        </span>
-                                        <span className="font-semibold text-gray-800">{section.title}</span>
-                                    </span>
-                                    {expandedSections[index] ? (
-                                        <ChevronUp size={20} className="text-gray-400" />
-                                    ) : (
-                                        <ChevronDown size={20} className="text-gray-400" />
-                                    )}
-                                </button>
-                                {expandedSections[index] && (
-                                    <div className="px-4 pb-4 pt-0 text-gray-600 text-sm leading-relaxed border-t border-gray-100 bg-gray-50/50">
-                                        <p className="pt-4">{section.content}</p>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* 3D REQUIREMENT - MANDATORY */}
-                    <div className="mt-6 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-400 rounded-2xl p-5 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                            MANDATORY
-                        </div>
-                        <div className="flex items-start gap-4">
-                            <div className="p-3 bg-amber-500 rounded-xl">
-                                <Box size={24} className="text-white" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-amber-800 text-lg mb-2">14. 3D Product Showcase Requirement</h3>
-                                <p className="text-amber-700 text-sm mb-3">
-                                    All sellers must upload <strong>3D models</strong> of their products using our 3D Manager tool for an immersive shopping experience.
-                                </p>
-                                <ul className="text-amber-700 text-sm space-y-2">
-                                    <li className="flex items-start gap-2">
-                                        <Check size={16} className="mt-0.5 flex-shrink-0" />
-                                        Each listing must include a 3D model in <strong>.glb or .gltf format</strong>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Check size={16} className="mt-0.5 flex-shrink-0" />
-                                        Products remain in <strong>Draft</strong> until a 3D model is uploaded
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-                                        Products without 3D models cannot be listed as <strong>Active</strong>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Check size={16} className="mt-0.5 flex-shrink-0" />
-                                        Free training & smartphone 3D scanning tutorials available
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Contact */}
-                    <div className="mt-6 p-4 bg-gray-50 rounded-xl text-center">
-                        <p className="text-sm text-gray-500">
-                            Questions? Contact <span className="font-semibold text-amber-600">likhangkamaybusiness@gmail.com</span>
-                        </p>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-6 bg-gray-50 border-t border-gray-100">
+            <div className="max-w-6xl mx-auto">
+                {/* Back Button */}
+                <div className="mb-8 print:hidden">
                     <Link 
-                        href="/artisan/register"
-                        className="w-full flex items-center justify-center gap-2 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-bold transition shadow-lg shadow-gray-500/20"
+                        href="/artisan/register" 
+                        className="inline-flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm font-bold"
                     >
-                        <Check size={20} />
-                        I Agree, Continue to Register
+                        <ArrowLeft size={16} />
+                        Back to Register
                     </Link>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    
+                    {/* Sidebar / Left Column */}
+                    <aside className="lg:col-span-4 lg:sticky lg:top-8 space-y-6 print:hidden">
+                        <div className="border-b border-stone-200/80 pb-5">
+                            <span className="text-[10px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner</span>
+                            <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Seller Agreement</h1>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: January 2026</p>
+                        </div>
+
+                        {/* 3D Product Showcase Alert (Highly Visible in Sidebar) */}
+                        <div className="bg-stone-100/50 border border-stone-200/80 rounded-2xl p-5 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Box size={18} className="text-clay-600 shrink-0" />
+                                <h4 className="text-xs font-bold text-stone-900">3D Model Requirement</h4>
+                            </div>
+                            <p className="text-[11px] text-stone-600 leading-relaxed">
+                                All sellers must upload 3D models (<strong>.glb / .gltf</strong>) using our 3D Manager. Listings remain in Draft until a 3D asset is supplied.
+                            </p>
+                        </div>
+
+                        {/* Navigation Table of Contents */}
+                        <div className="hidden lg:block">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-3 px-3">Table of Contents</p>
+                            <nav className="space-y-1">
+                                {sections.map((section, idx) => (
+                                    <button 
+                                        key={idx}
+                                        onClick={() => scrollToSection(idx)}
+                                        className="w-full text-left px-3 py-2 text-xs font-bold text-stone-600 hover:text-clay-600 hover:bg-stone-100/50 rounded-xl transition-all flex items-center gap-2.5"
+                                    >
+                                        <span className="w-5 h-5 bg-stone-200/60 text-stone-600 rounded-lg flex items-center justify-center text-[10px]">
+                                            {idx + 1}
+                                        </span>
+                                        <span className="truncate">{section.title}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+
+                        {/* Action Card */}
+                        <div className="bg-white border border-stone-200/60 p-5 rounded-2xl shadow-sm space-y-4">
+                            <div>
+                                <h4 className="text-xs font-bold text-stone-900">Artisan Registration</h4>
+                                <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
+                                    By proceeding, you agree to comply with all rules and standards defined in this partnership agreement.
+                                </p>
+                            </div>
+                            <Link 
+                                href="/artisan/register"
+                                className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
+                            >
+                                Agree & Register
+                            </Link>
+                        </div>
+                    </aside>
+
+                    {/* Main Legal Content Pane */}
+                    <main className="lg:col-span-8 bg-white border border-stone-200/60 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8 print:border-none print:shadow-none print:p-0">
+                        {/* Mobile Header */}
+                        <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
+                            <span className="text-[9px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner</span>
+                            <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Seller Agreement</h1>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: January 2026</p>
+                        </div>
+
+                        <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">
+                            This agreement governs your status as an artisan partner on LikhangKamay. Please read this carefully to understand your obligations regarding product quality, fulfillment, payouts, and compliance.
+                        </p>
+
+                        <div className="space-y-8">
+                            {sections.map((section, idx) => {
+                                const SectionIcon = section.icon;
+                                return (
+                                    <section 
+                                        key={idx} 
+                                        id={`section-${idx}`}
+                                        className="scroll-mt-6 border-b border-stone-50 pb-6 last:border-0 last:pb-0"
+                                    >
+                                        <h2 className="font-serif text-base sm:text-lg font-bold text-stone-900 flex items-center gap-3">
+                                            <span className="w-7 h-7 bg-clay-50 text-clay-700 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-clay-100">
+                                                {idx + 1}
+                                            </span>
+                                            <span className="flex items-center gap-2">
+                                                <SectionIcon size={16} className="text-clay-500 shrink-0" />
+                                                {section.title}
+                                            </span>
+                                        </h2>
+                                        <p className="text-stone-600 text-sm leading-relaxed mt-3 pl-0 sm:pl-10">
+                                            {section.content}
+                                        </p>
+                                    </section>
+                                );
+                            })}
+                        </div>
+                    </main>
+
                 </div>
             </div>
         </div>
