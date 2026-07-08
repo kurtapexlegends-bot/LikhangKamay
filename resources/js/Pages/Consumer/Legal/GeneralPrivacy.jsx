@@ -1,62 +1,61 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { 
     Lock, Database, Settings, Share2, Scale, 
-    Clock, AlertTriangle, Mail, ArrowLeft, BarChart3, UserCheck
+    Cookie, Clock, AlertOctagon, Edit3, Mail, ArrowLeft
 } from 'lucide-react';
 
-
-export default function SellerDataPrivacy() {
+export default function GeneralPrivacy() {
     const sections = [
         {
-            title: "Seller Data We Collect",
+            title: "Information We Collect",
             icon: Database,
-            content: "We collect: Personal info (name, ID, contact), Business info (shop name, registration, bank details, TIN), and Product data (listings, images, 3D models, sales analytics, transaction records)."
+            content: "We collect personal information (name, email, phone, addresses), payment information processed securely by partners, and automatically collected data like device info, IP address, browsing history, and purchase records on our Platform."
         },
         {
-            title: "Customer Data Access",
-            icon: UserCheck,
-            content: "To fulfill orders, you receive limited customer info: name, shipping address, contact number, and order details. This data must only be used for order fulfillment, not stored beyond the transaction, and never shared with third parties."
-        },
-        {
-            title: "How We Use Seller Data",
+            title: "How We Use Your Information",
             icon: Settings,
-            content: "Your data is used to: verify identity, process orders, calculate and transfer earnings, provide analytics, communicate about orders and policies, investigate disputes, and comply with tax/legal requirements."
+            content: "We use your data to process and fulfill orders, communicate about purchases and updates, improve the Platform, personalize recommendations, prevent fraud, ensure security, and comply with legal obligations."
         },
         {
-            title: "Data Sharing",
+            title: "Information Sharing",
             icon: Share2,
-            content: "We share seller data with: Buyers (shop name, ratings, public profile), Payment Processors (bank details for payouts), Shipping Partners (pickup addresses), Government Authorities (tax records as required), and Service Providers (platform operations). We never sell seller data."
+            content: "We share data with: Sellers (shipping info for orders), Payment Processors (for transactions), Shipping Partners (for delivery), Service Providers (platform operations), and Legal Authorities (when required by law). We never sell your personal information."
         },
         {
-            title: "Financial Data Security",
+            title: "Data Security",
             icon: Lock,
-            content: "Your banking info is protected through: encryption at rest and in transit, PCI-DSS compliant payment processors, limited access on need-to-know basis, and regular security audits. We never store complete credit card numbers."
+            content: "We implement SSL/TLS encryption, secure server infrastructure, regular security audits, and strict access controls limiting data access to authorized personnel only."
         },
         {
-            title: "Seller Analytics",
-            icon: BarChart3,
-            content: "We provide analytics including: sales trends, customer demographics (aggregated/anonymized), popular products, and conversion rates. This data helps you grow your business and is derived from your transactions."
+            title: "Your Rights Under the Data Privacy Act",
+            icon: Scale,
+            content: "Under RA 10173, you have the right to: be informed about data processing, access your personal data, correct inaccurate data, request erasure, object to processing, receive data in portable format, and file complaints with the National Privacy Commission."
+        },
+        {
+            title: "Cookies and Tracking",
+            icon: Cookie,
+            content: "We use cookies to enhance browsing experience, remember preferences, analyze traffic, and deliver personalized content. You can manage cookie settings through your browser, though disabling may affect functionality."
         },
         {
             title: "Data Retention",
             icon: Clock,
-            content: "Seller data is retained for duration of active selling plus: 5 years for financial records (BIR requirement), 3 years for dispute records, and indefinitely for aggregated analytics. Upon deletion request, we remove personal data while retaining legally required records."
+            content: "We retain data as long as your account is active or needed for services. After deletion, certain information may be kept for 5 years for legal, tax, or regulatory compliance as required by Philippine law."
         },
         {
-            title: "Your Rights as a Seller",
-            icon: Scale,
-            content: "Under RA 10173, you have the right to: access your data, correct inaccurate info, request erasure, receive data in portable format, object to processing, and withdraw consent for optional uses."
+            title: "Children's Privacy",
+            icon: AlertOctagon,
+            content: "LikhangKamay is not intended for users under 18 years of age. We do not knowingly collect personal information from minors. If discovered, we will delete such data promptly."
         },
         {
-            title: "Data Breach Response",
-            icon: AlertTriangle,
-            content: "In case of a data breach, we will: notify affected sellers within 72 hours, report to the National Privacy Commission, take immediate steps to mitigate, and provide protective guidance."
+            title: "Changes to Policy",
+            icon: Edit3,
+            content: "We may update this Privacy Policy periodically. We will notify you of material changes via email or Platform notification. Continued use constitutes acceptance of updates."
         },
         {
-            title: "Contact for Seller Privacy",
+            title: "Contact Our Data Protection Officer",
             icon: Mail,
-            content: "For seller-specific privacy inquiries: Email likhangkamaybusiness@gmail.com | Data Protection Officer available via Seller Dashboard | NPC: complaints@privacy.gov.ph"
+            content: "For privacy inquiries or to exercise your data rights, contact: likhangkamaybusiness@gmail.com | Data Protection Officer: LikhangKamay Privacy Team | Address: Metro Manila, Philippines"
         }
     ];
 
@@ -71,19 +70,23 @@ export default function SellerDataPrivacy() {
     const fromSource = params ? params.get('from') : null;
     const isFromRegister = fromSource === 'register';
 
+    useEffect(() => {
+        console.log("GeneralPrivacy component mounted successfully!");
+    }, []);
+
     return (
         <div className="min-h-screen bg-stone-50/50 font-sans text-stone-800 py-12 px-4 sm:px-6 lg:px-8">
-            <Head title="Seller Data Privacy Policy" />
+            <Head title="Privacy Policy" />
             
             <div className="max-w-6xl mx-auto">
                 {/* Back Button */}
                 <div className="mb-8 print:hidden">
                     <Link 
-                        href={isFromRegister ? '/profile' : '/'} 
+                        href={isFromRegister ? route('register') : '/'} 
                         className="inline-flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm font-bold"
                     >
                         <ArrowLeft size={16} />
-                        {isFromRegister ? 'Back to Setup' : 'Back to Home'}
+                        {isFromRegister ? 'Back to Register' : 'Back to Home'}
                     </Link>
                 </div>
 
@@ -92,8 +95,8 @@ export default function SellerDataPrivacy() {
                     {/* Sidebar / Left Column */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-8 space-y-6 print:hidden">
                         <div className="border-b border-stone-200/80 pb-5">
-                            <span className="text-[10px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner</span>
-                            <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Seller Privacy</h1>
+                            <span className="text-[10px] font-bold tracking-widest text-sage-600 uppercase">Legal Policy</span>
+                            <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Privacy Policy</h1>
                             <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: January 2026</p>
                         </div>
 
@@ -101,7 +104,7 @@ export default function SellerDataPrivacy() {
                         <div className="bg-stone-100/50 border border-stone-200/80 rounded-2xl p-4 flex items-start gap-3">
                             <Lock size={18} className="text-clay-600 mt-0.5 flex-shrink-0" />
                             <div className="text-[11px] text-stone-600 leading-relaxed">
-                                This supplements our general Privacy Policy, compliant with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>.
+                                Compliant with the <strong>Data Privacy Act of 2012 (RA 10173)</strong> of the Philippines.
                             </div>
                         </div>
 
@@ -129,31 +132,31 @@ export default function SellerDataPrivacy() {
                             {isFromRegister ? (
                                 <>
                                     <div>
-                                        <h4 className="text-xs font-bold text-stone-900">Privacy Confirmation</h4>
+                                        <h4 className="text-xs font-bold text-stone-900">Privacy Commitment</h4>
                                         <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
-                                            By registering as an artisan, you agree to these data handling terms.
+                                            Your personal information is secure with us. We do not sell your personal data to anyone.
                                         </p>
                                     </div>
                                     <Link 
-                                        href="/profile"
+                                        href={route('register')}
                                         className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
                                     >
-                                        Agree & Register
+                                        Accept & Continue
                                     </Link>
                                 </>
                             ) : (
                                 <>
                                     <div>
-                                        <h4 className="text-xs font-bold text-stone-900">Partner with Us</h4>
+                                        <h4 className="text-xs font-bold text-stone-900">Join LikhangKamay</h4>
                                         <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
-                                            Showcase your pottery and grow your artisan business on our platform.
+                                            Create an account to start exploring and supporting local Filipino pottery and clay artisans.
                                         </p>
                                     </div>
                                     <Link 
-                                        href="/artisan/register"
+                                        href={route('register')}
                                         className="w-full flex items-center justify-center py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-xs shadow-sm"
                                     >
-                                        Become an Artisan
+                                        Register Account
                                     </Link>
                                 </>
                             )}
@@ -164,13 +167,13 @@ export default function SellerDataPrivacy() {
                     <main className="lg:col-span-8 bg-white border border-stone-200/60 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8 print:border-none print:shadow-none print:p-0">
                         {/* Mobile Header */}
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
-                            <span className="text-[9px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner</span>
-                            <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Seller Data Privacy</h1>
+                            <span className="text-[9px] font-bold tracking-widest text-sage-600 uppercase">Legal Policy</span>
+                            <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Privacy Policy</h1>
                             <p className="text-[10px] text-stone-500 mt-1">Last updated: January 2026</p>
                         </div>
 
                         <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">
-                            As a partner artisan on LikhangKamay, we process your business and personal data to support your operations and remain compliant with local regulations.
+                            LikhangKamay is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information when you interact with our platform.
                         </p>
 
                         <div className="space-y-8">

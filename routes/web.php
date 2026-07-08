@@ -71,7 +71,7 @@ Route::get('/terms', function () {
 })->name('terms');
 
 Route::get('/privacy', function () {
-    return Inertia::render('Consumer/Legal/PrivacyPolicy');
+    return Inertia::render('Consumer/Legal/GeneralPrivacy');
 })->name('privacy');
 
 Route::get('/seller-agreement', function () {
@@ -79,8 +79,9 @@ Route::get('/seller-agreement', function () {
 })->name('seller.agreement');
 
 Route::get('/seller-privacy', function () {
-    return Inertia::render('Consumer/Legal/SellerDataPrivacy');
+    return Inertia::render('Consumer/Legal/SellerPrivacy');
 })->name('seller.privacy');
+
 
 // --- SOCIAL AUTH (Google/Facebook) ---
 
