@@ -1,10 +1,11 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { 
-    Store, UserCheck, Box, Percent, Truck, Award, 
+    UserCheck, Box, Percent, Truck, Award, 
     RefreshCw, MessageSquare, Banknote, ShieldAlert, AlertTriangle, 
-    FileText, Edit3, Mail, Check, ArrowLeft
+    FileText, Edit3, Mail, ArrowLeft
 } from 'lucide-react';
+
 
 export default function SellerAgreement() {
     const sections = [

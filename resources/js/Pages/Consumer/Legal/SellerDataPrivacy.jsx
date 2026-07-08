@@ -1,9 +1,10 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { 
-    Shield, Lock, Database, Settings, Share2, Scale, 
-    Clock, AlertTriangle, Mail, ArrowLeft, BarChart3, UserCheck, Check
+    Lock, Database, Settings, Share2, Scale, 
+    Clock, AlertTriangle, Mail, ArrowLeft, BarChart3, UserCheck
 } from 'lucide-react';
+
 
 export default function SellerDataPrivacy() {
     const sections = [

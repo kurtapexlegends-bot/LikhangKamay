@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { 
-    Shield, Lock, Database, Settings, Share2, Scale, 
+    Lock, Database, Settings, Share2, Scale, 
     Cookie, Clock, AlertOctagon, Edit3, Mail, ArrowLeft
 } from 'lucide-react';
+
 
 export default function PrivacyPolicy() {
     const sections = [
@@ -69,6 +70,10 @@ export default function PrivacyPolicy() {
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const fromSource = params ? params.get('from') : null;
     const isFromRegister = fromSource === 'register';
+
+    useEffect(() => {
+        console.log("PrivacyPolicy component mounted successfully!");
+    }, []);
 
     return (
         <div className="min-h-screen bg-stone-50/50 font-sans text-stone-800 py-12 px-4 sm:px-6 lg:px-8">
