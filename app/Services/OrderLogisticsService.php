@@ -298,6 +298,10 @@ class OrderLogisticsService
     public function autoCancelFailedDelivery(OrderDelivery $delivery): bool
     {
         return DB::transaction(function () use ($delivery) {
+            if ($delivery->order_id) {
+                Order::query()->lockForUpdate()->find($delivery->order_id);
+            }
+
             /** @var OrderDelivery $lockedDelivery */
             $lockedDelivery = OrderDelivery::query()
                 ->with(['order.items', 'order.user', 'order.artisan'])
