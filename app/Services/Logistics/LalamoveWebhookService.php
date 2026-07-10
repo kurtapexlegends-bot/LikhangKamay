@@ -36,11 +36,21 @@ class LalamoveWebhookService
             return null;
         }
 
-        return DB::transaction(function () use ($eventKey, $eventType, $externalOrderId, $payload, $snapshot) {
-            $delivery = OrderDelivery::query()
-                ->where('external_order_id', (string) $externalOrderId)
-                ->lockForUpdate()
-                ->first();
+        $preDelivery = OrderDelivery::query()
+            ->where('external_order_id', (string) $externalOrderId)
+            ->first();
+
+        return DB::transaction(function () use ($preDelivery, $eventKey, $eventType, $externalOrderId, $payload, $snapshot) {
+            $delivery = null;
+            if ($preDelivery) {
+                if ($preDelivery->order_id) {
+                    Order::query()->lockForUpdate()->find($preDelivery->order_id);
+                }
+                $delivery = OrderDelivery::query()
+                    ->where('id', $preDelivery->id)
+                    ->lockForUpdate()
+                    ->first();
+            }
 
             OrderDeliveryEvent::firstOrCreate([
                 'event_key' => $eventKey,
@@ -70,6 +80,10 @@ class LalamoveWebhookService
         );
 
         return DB::transaction(function () use ($delivery, $snapshot) {
+            if ($delivery->order_id) {
+                Order::query()->lockForUpdate()->find($delivery->order_id);
+            }
+
             /** @var OrderDelivery $lockedDelivery */
             $lockedDelivery = OrderDelivery::query()->with('order.user')->lockForUpdate()->findOrFail($delivery->id);
             $this->applyOrderSnapshot($lockedDelivery, $snapshot, 'POLL_SYNC');
@@ -95,7 +109,7 @@ class LalamoveWebhookService
             }
 
             try {
-                $this->syncDelivery($delivery);
+                \App\Jobs\SyncOrderDeliveryJob::dispatch($delivery);
                 $synced++;
             } catch (\Throwable $e) {
                 report($e);
