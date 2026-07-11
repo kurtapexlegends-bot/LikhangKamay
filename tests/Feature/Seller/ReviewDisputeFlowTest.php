@@ -57,6 +57,12 @@ class ReviewDisputeFlowTest extends TestCase
             'reason' => 'Misleading review',
         ]);
 
+        $this->assertDatabaseHas('seller_activity_logs', [
+            'event_type' => 'review_dispute_requested',
+            'seller_owner_id' => $seller->id,
+            'subject_id' => $review->id,
+        ]);
+
         $this->actingAs($seller)
             ->get(route('reviews.index'))
             ->assertOk()
@@ -160,6 +166,12 @@ class ReviewDisputeFlowTest extends TestCase
             'reason' => 'Abusive language',
             'details' => 'Updated details for moderation.',
         ]);
+
+        $this->assertDatabaseHas('seller_activity_logs', [
+            'event_type' => 'review_dispute_updated',
+            'seller_owner_id' => $seller->id,
+            'subject_id' => $review->id,
+        ]);
     }
 
     public function test_owner_can_remove_open_review_dispute(): void
@@ -204,6 +216,87 @@ class ReviewDisputeFlowTest extends TestCase
 
         $this->assertDatabaseMissing('review_disputes', [
             'id' => $dispute->id,
+        ]);
+
+        $this->assertDatabaseHas('seller_activity_logs', [
+            'event_type' => 'review_dispute_removed',
+            'seller_owner_id' => $seller->id,
+            'subject_id' => $review->id,
+        ]);
+    }
+
+    public function test_owner_can_reply_and_pin_reviews_with_activity_logs(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'SKU-REVIEW-005',
+            'name' => 'Clay Plate',
+            'description' => 'Handmade plate',
+            'category' => 'Plate',
+            'status' => 'Active',
+            'price' => 320,
+            'cost_price' => 120,
+            'stock' => 12,
+            'sold' => 1,
+            'lead_time' => 2,
+            'cover_photo_path' => 'products/test-plate.jpg',
+            'slug' => 'clay-plate-test',
+        ]);
+
+        $review = Review::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'rating' => 5,
+            'comment' => 'Excellent quality product!',
+        ]);
+
+        // 1. Save reply
+        $this->actingAs($seller)
+            ->post(route('reviews.reply', $review->id), [
+                'seller_reply' => 'Thank you for your response!',
+            ])
+            ->assertSessionHas('success', 'Reply posted successfully!');
+
+        $this->assertDatabaseHas('seller_activity_logs', [
+            'event_type' => 'review_reply_updated',
+            'seller_owner_id' => $seller->id,
+            'subject_id' => $review->id,
+        ]);
+
+        // 2. Delete reply
+        $this->actingAs($seller)
+            ->delete(route('reviews.destroy-reply', $review->id))
+            ->assertSessionHas('success', 'Reply deleted successfully!');
+
+        $this->assertDatabaseHas('seller_activity_logs', [
+            'event_type' => 'review_reply_removed',
+            'seller_owner_id' => $seller->id,
+            'subject_id' => $review->id,
+        ]);
+
+        // 3. Pin review
+        $this->actingAs($seller)
+            ->post(route('reviews.toggle-pin', $review->id))
+            ->assertSessionHas('success', 'Review pinned to top!');
+
+        $this->assertDatabaseHas('seller_activity_logs', [
+            'event_type' => 'review_pinned',
+            'seller_owner_id' => $seller->id,
+            'subject_id' => $review->id,
+        ]);
+
+        // 4. Unpin review
+        $this->actingAs($seller)
+            ->post(route('reviews.toggle-pin', $review->id))
+            ->assertSessionHas('success', 'Review unpinned.');
+
+        $this->assertDatabaseHas('seller_activity_logs', [
+            'event_type' => 'review_unpinned',
+            'seller_owner_id' => $seller->id,
+            'subject_id' => $review->id,
         ]);
     }
 }

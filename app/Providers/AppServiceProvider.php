@@ -73,6 +73,7 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         \App\Models\Review::observe(\App\Observers\ReviewObserver::class);
+        \App\Models\ReviewDispute::observe(\App\Observers\ReviewDisputeObserver::class);
 
         // --- PASSWORD COMPLEXITY DEFAULTS ---
         \Illuminate\Validation\Rules\Password::defaults(function () {

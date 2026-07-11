@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Review;
 use App\Models\ReviewDispute;
-use App\Models\SellerActivityLog;
 use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -82,34 +81,9 @@ class ReviewController extends Controller
 
         $review = Review::with('product')->findOrFail($id);
         $this->authorizeSellerOwnership($review->product->user_id);
-        $beforeReply = $review->seller_reply;
 
         $review->update([
             'seller_reply' => RichTextSanitizer::sanitize($request->seller_reply),
-        ]);
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $review->product->user_id,
-            'actor_user_id' => $request->user()?->id,
-            'actor_type' => SellerActivityLog::resolveActorType($request->user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'reviews',
-            'event_type' => 'review_reply_updated',
-            'severity' => 'info',
-            'status' => 'updated',
-            'title' => 'Review Reply Saved',
-            'summary' => "A seller reply was saved for {$review->product->name}.",
-            'subject_type' => Review::class,
-            'subject_id' => $review->id,
-            'subject_label' => $review->product->name,
-            'reference' => 'Review #' . $review->id,
-            'details' => [
-                'before' => ['seller_reply' => $beforeReply],
-                'after' => ['seller_reply' => $review->seller_reply],
-                'lines' => ['Updated seller response to a buyer review.'],
-            ],
-            'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
-            'target_label' => 'Open Reviews',
         ]);
 
         return back()->with('success', 'Reply posted successfully!');
@@ -119,34 +93,9 @@ class ReviewController extends Controller
     {
         $review = Review::with('product')->findOrFail($id);
         $this->authorizeSellerOwnership($review->product->user_id);
-        $beforeReply = $review->seller_reply;
 
         $review->update([
             'seller_reply' => null,
-        ]);
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $review->product->user_id,
-            'actor_user_id' => request()->user()?->id,
-            'actor_type' => SellerActivityLog::resolveActorType(request()->user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'reviews',
-            'event_type' => 'review_reply_removed',
-            'severity' => 'warning',
-            'status' => 'removed',
-            'title' => 'Review Reply Removed',
-            'summary' => "The seller reply for {$review->product->name} was removed.",
-            'subject_type' => Review::class,
-            'subject_id' => $review->id,
-            'subject_label' => $review->product->name,
-            'reference' => 'Review #' . $review->id,
-            'details' => [
-                'before' => ['seller_reply' => $beforeReply],
-                'after' => ['seller_reply' => null],
-                'lines' => ['Removed seller response from the review thread.'],
-            ],
-            'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
-            'target_label' => 'Open Reviews',
         ]);
 
         return back()->with('success', 'Reply deleted successfully!');
@@ -171,7 +120,7 @@ class ReviewController extends Controller
             return back()->with('error', 'This review already has an open moderation request.');
         }
 
-        $dispute = ReviewDispute::create($this->buildReviewDisputePayload([
+        ReviewDispute::create($this->buildReviewDisputePayload([
             'review_id' => $review->id,
             'seller_owner_id' => $review->product->user_id,
             'reported_by_user_id' => $request->user()?->id,
@@ -179,35 +128,6 @@ class ReviewController extends Controller
             'reason' => $validated['reason'],
             'details' => $validated['details'] ?? null,
         ]));
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $review->product->user_id,
-            'actor_user_id' => $request->user()?->id,
-            'actor_type' => SellerActivityLog::resolveActorType($request->user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'reviews',
-            'event_type' => 'review_dispute_requested',
-            'severity' => 'warning',
-            'status' => 'pending',
-            'title' => 'Review Moderation Requested',
-            'summary' => "A moderation request was submitted for {$review->product->name}.",
-            'subject_type' => Review::class,
-            'subject_id' => $review->id,
-            'subject_label' => $review->product->name,
-            'reference' => 'Review #' . $review->id,
-            'details' => [
-                'after' => [
-                    'dispute_status' => $dispute->status,
-                    'reason' => $dispute->reason,
-                ],
-                'lines' => array_values(array_filter([
-                    'Reason: ' . $dispute->reason,
-                    $dispute->details ? 'Details: ' . $dispute->details : null,
-                ])),
-            ],
-            'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
-            'target_label' => 'Open Reviews',
-        ]);
 
         return back()->with('success', 'Moderation request sent to the admin review queue.');
     }
@@ -228,45 +148,10 @@ class ReviewController extends Controller
             return back()->with('error', 'Only open moderation requests can be edited.');
         }
 
-        $before = [
-            'reason' => $reviewDispute->reason,
-            'details' => $reviewDispute->details,
-        ];
-
         $reviewDispute->update($this->buildReviewDisputePayload([
             'reason' => $validated['reason'],
             'details' => $validated['details'] ?? null,
         ]));
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $reviewDispute->review->product->user_id,
-            'actor_user_id' => $request->user()?->id,
-            'actor_type' => SellerActivityLog::resolveActorType($request->user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'reviews',
-            'event_type' => 'review_dispute_updated',
-            'severity' => 'info',
-            'status' => $reviewDispute->status,
-            'title' => 'Review Moderation Request Updated',
-            'summary' => "A moderation request was updated for {$reviewDispute->review->product->name}.",
-            'subject_type' => Review::class,
-            'subject_id' => $reviewDispute->review->id,
-            'subject_label' => $reviewDispute->review->product->name,
-            'reference' => 'Review #' . $reviewDispute->review->id,
-            'details' => [
-                'before' => $before,
-                'after' => [
-                    'reason' => $reviewDispute->reason,
-                    'details' => $reviewDispute->details,
-                ],
-                'lines' => array_values(array_filter([
-                    'Reason: ' . $reviewDispute->reason,
-                    $reviewDispute->details ? 'Details: ' . $reviewDispute->details : null,
-                ])),
-            ],
-            'target_url' => route('reviews.index', ['highlight_review' => $reviewDispute->review->id]),
-            'target_label' => 'Open Reviews',
-        ]);
 
         return back()->with('success', 'Moderation request updated.');
     }
@@ -282,42 +167,7 @@ class ReviewController extends Controller
             return back()->with('error', 'Only open moderation requests can be removed.');
         }
 
-        $productName = $reviewDispute->review->product->name;
-        $reviewId = $reviewDispute->review->id;
-        $sellerId = $reviewDispute->review->product->user_id;
-        $reason = $reviewDispute->reason;
-        $details = $reviewDispute->details;
-
         $reviewDispute->delete();
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $sellerId,
-            'actor_user_id' => $request->user()?->id,
-            'actor_type' => SellerActivityLog::resolveActorType($request->user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'reviews',
-            'event_type' => 'review_dispute_removed',
-            'severity' => 'warning',
-            'status' => 'removed',
-            'title' => 'Review Moderation Request Removed',
-            'summary' => "An open moderation request was removed for {$productName}.",
-            'subject_type' => Review::class,
-            'subject_id' => $reviewId,
-            'subject_label' => $productName,
-            'reference' => 'Review #' . $reviewId,
-            'details' => [
-                'before' => [
-                    'reason' => $reason,
-                    'details' => $details,
-                ],
-                'lines' => array_values(array_filter([
-                    'Removed open moderation request.',
-                    $reason ? 'Reason: ' . $reason : null,
-                ])),
-            ],
-            'target_url' => route('reviews.index', ['highlight_review' => $reviewId]),
-            'target_label' => 'Open Reviews',
-        ]);
 
         return back()->with('success', 'Moderation request removed.');
     }
@@ -354,25 +204,6 @@ class ReviewController extends Controller
         if ($review->is_pinned) {
             $review->update(['is_pinned' => false]);
 
-            SellerActivityLog::recordEvent([
-                'seller_owner_id' => $review->product->user_id,
-                'actor_user_id' => request()->user()?->id,
-                'actor_type' => SellerActivityLog::resolveActorType(request()->user(), 'owner'),
-                'category' => 'operations',
-                'module' => 'reviews',
-                'event_type' => 'review_unpinned',
-                'severity' => 'info',
-                'status' => 'updated',
-                'title' => 'Pinned Review Removed',
-                'summary' => "A pinned review was removed from {$review->product->name}.",
-                'subject_type' => Review::class,
-                'subject_id' => $review->id,
-                'subject_label' => $review->product->name,
-                'reference' => 'Review #' . $review->id,
-                'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
-                'target_label' => 'Open Reviews',
-            ]);
-
             return back()->with('success', 'Review unpinned.');
         }
 
@@ -381,25 +212,6 @@ class ReviewController extends Controller
             ->update(['is_pinned' => false]);
 
         $review->update(['is_pinned' => true]);
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $review->product->user_id,
-            'actor_user_id' => request()->user()?->id,
-            'actor_type' => SellerActivityLog::resolveActorType(request()->user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'reviews',
-            'event_type' => 'review_pinned',
-            'severity' => 'success',
-            'status' => 'updated',
-            'title' => 'Review Pinned',
-            'summary' => "A review for {$review->product->name} was pinned to the top.",
-            'subject_type' => Review::class,
-            'subject_id' => $review->id,
-            'subject_label' => $review->product->name,
-            'reference' => 'Review #' . $review->id,
-            'target_url' => route('reviews.index', ['highlight_review' => $review->id]),
-            'target_label' => 'Open Reviews',
-        ]);
 
         return back()->with('success', 'Review pinned to top!');
     }
