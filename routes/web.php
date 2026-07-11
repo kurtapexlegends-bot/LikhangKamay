@@ -50,7 +50,9 @@ Route::get('/', [ConsumerCatalogController::class, 'home'])->name('home');
 Route::get('/shop', [ConsumerCatalogController::class, 'index'])->middleware('throttle:marketplace.search')->name('shop.index');
 Route::get('/shop/{user:shop_slug}', [ShopController::class, 'seller'])->name('shop.seller');
 Route::get('/product/{product}', [ProductController::class, 'show'])->name('product.show');
-Route::post('/products/validate-active', [ConsumerCatalogController::class, 'validateActive'])->name('products.validate-active');
+Route::post('/products/validate-active', [ConsumerCatalogController::class, 'validateActive'])
+    ->middleware('throttle:60,1')
+    ->name('products.validate-active');
 Route::post('/sponsorship-events/track', [\App\Http\Controllers\Seller\SponsorshipController::class, 'track'])
     ->middleware('throttle:120,1')
     ->name('sponsorships.track');
@@ -105,7 +107,7 @@ Route::get('/auth/complete-profile', [SocialAuthController::class, 'showComplete
     ->name('auth.complete-profile');
 
 Route::post('/auth/complete-profile', [SocialAuthController::class, 'completeProfile'])
-    ->middleware('guest')
+    ->middleware(['guest', 'throttle:5,1'])
     ->name('auth.complete-profile.store');
 
 // --- PROTECTED ROUTES ---
