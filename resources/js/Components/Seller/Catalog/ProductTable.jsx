@@ -57,6 +57,13 @@ export default function ProductTable({
                         align="center"
                     />
                     <SortableHeader
+                        label="Cost"
+                        sortKey="cost_price"
+                        currentSort={sortConfig}
+                        onSort={requestSort}
+                        align="center"
+                    />
+                    <SortableHeader
                         label="Stock"
                         sortKey="stock"
                         currentSort={sortConfig}
@@ -109,6 +116,9 @@ export default function ProductTable({
                             </td>
                             <td className="px-5 py-3 font-bold text-gray-700 text-sm text-center">
                                 ₱{Number(product.price).toLocaleString()}
+                            </td>
+                            <td className="px-5 py-3 font-semibold text-gray-500 text-sm text-center">
+                                {product.cost_price ? `₱${Number(product.cost_price).toLocaleString()}` : "—"}
                             </td>
                             <td className="px-5 py-3">
                                 <div className="flex items-center justify-center gap-2">

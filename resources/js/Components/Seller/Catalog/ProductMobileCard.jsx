@@ -83,13 +83,21 @@ export default function ProductMobileCard({
                                     </div>
                                 </div>
 
-                                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                                <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
                                     <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
                                         <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">
                                             Price
                                         </p>
                                         <p className="mt-1 font-bold text-stone-900">
                                             ₱{Number(product.price).toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
+                                        <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">
+                                            Cost
+                                        </p>
+                                        <p className="mt-1 font-bold text-stone-600">
+                                            {product.cost_price ? `₱${Number(product.cost_price).toLocaleString()}` : "—"}
                                         </p>
                                     </div>
                                     <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
