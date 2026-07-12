@@ -102,3 +102,6 @@ The initialization and bootstrap configurations are run within [AppServiceProvid
     2.  `bulk.ops`: Caps heavy bulk operations (CSV exports) at 5 per minute.
     3.  `admin.heavy`: Caps analytics rendering queries at 10 per minute.
     4.  `login`: Enforces brute force defense, capping login attempts to 5 per minute per IP.
+    5.  `forgot-password` (`throttle:3,1`): Restricts reset request emails to 3 per minute per IP.
+    6.  `validate-active` (`throttle:60,1`): Limits local storage validation lookups to 60 per minute per IP.
+    7.  `complete-profile` (`throttle:5,1`): Restricts social profile finalization requests to 5 per minute per IP.

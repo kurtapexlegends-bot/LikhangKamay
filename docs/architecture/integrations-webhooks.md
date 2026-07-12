@@ -22,6 +22,13 @@ This document outlines the operational flows, validation rules, and webhook beha
 3.  **Db-Backed Status Verification**:
     Never trust raw frontend triggers or simple session identifiers. Always run a backend lookup against checkout records to verify paid states before updating order statuses to `Accepted`.
 
+### Webhook & Signature Verification
+*   **Webhook Controller**: [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php)
+*   **Endpoint Route**: POST `/webhooks/paymongo` (exempt from CSRF in `bootstrap/app.php`).
+*   **Signature Security**:
+    > [!IMPORTANT]
+    > To prevent webhook spoofing attacks, all requests are validated using the `Paymongo-Signature` header against the HMAC SHA-256 secret configured in `config('services.paymongo.webhook_secret')`. Unauthorized payloads receive a `401 Unauthorized` response.
+
 ---
 
 ## 2. Lalamove Delivery Service
@@ -47,10 +54,14 @@ sequenceDiagram
     App->>DB: Save OrderDelivery (external_order_id, status = 'assigned')
 ```
 
-### Key Validation Checks
+### Key Validation & Optimization Checks
 *   **Method Check**: Lalamove is exclusively utilized for orders where `shipping_method === 'Delivery'`. Pickup/COD-only orders bypass this flow.
 *   **State Check**: Only orders currently marked as `Accepted` (after payment confirmation) can be booked with Lalamove.
 *   **Junction Check**: The buyer and seller address coordinate checks are geocoded using [AddressGeocodingService.php](file:///c:/laragon/www/LikhangKamay/app/Services/AddressGeocodingService.php) (Nominatim API). The system fails if both coordinates resolve to the same point.
+*   **Double Geocoding Prevention**:
+    In the event of a Lalamove API quotation or driver booking failure, the fallback geocoder in [CheckoutShippingService.php](file:///c:/laragon/www/LikhangKamay/app/Services/CheckoutShippingService.php) reuses any coordinates already fetched rather than making redundant Nominatim requests. This preserves OpenStreetMap API usage thresholds.
+*   **Asynchronous Dashboard Status Sync**:
+    To avoid 504 serverless function execution timeouts during dashboard loading, active shipment polling is deferred to the background queue via [SyncOrderDeliveryJob.php](file:///c:/laragon/www/LikhangKamay/app/Jobs/SyncOrderDeliveryJob.php).
 
 ---
 
