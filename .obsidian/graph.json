@@ -1,11 +1,11 @@
 {
   "collapse-filter": false,
   "search": "path:docs  ",
-  "showTags": false,
-  "showAttachments": false,
+  "showTags": true,
+  "showAttachments": true,
   "hideUnresolved": false,
   "showOrphans": true,
-  "collapse-color-groups": true,
+  "collapse-color-groups": false,
   "colorGroups": [],
   "collapse-display": true,
   "showArrow": false,
@@ -17,6 +17,6 @@
   "repelStrength": 10,
   "linkStrength": 1,
   "linkDistance": 250,
-  "scale": 0.3283588477309788,
+  "scale": 0.32133638605035736,
   "close": true
 }

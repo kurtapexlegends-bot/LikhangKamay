@@ -1,7 +1,11 @@
 {
-  "showUnsupportedFiles": true,
+  "showUnsupportedFiles": false,
   "userIgnoreFilters": [
     "node_modules/",
-    "vendor/"
+    "vendor/",
+    "storage/",
+    "bootstrap/cache/",
+    "public/build/",
+    ".git/"
   ]
 }

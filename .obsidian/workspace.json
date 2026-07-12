@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "ce75bd731c011c2b",
+        "id": "25b353278de434cb",
         "type": "tabs",
         "children": [
           {
-            "id": "8ddb270639b1ed71",
+            "id": "68319df19b1e4a2d",
             "type": "leaf",
             "state": {
               "type": "graph",
@@ -158,7 +158,8 @@
               "title": "Outline"
             }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
@@ -173,17 +174,30 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "table-editor-obsidian:Advanced Tables Toolbar": false,
+      "omnisearch:Omnisearch": false
     }
   },
-  "active": "8ddb270639b1ed71",
+  "active": "68319df19b1e4a2d",
   "lastOpenFiles": [
-    "script.php",
+    "Untitled 1.base",
+    "Untitled.base",
+    "storage/framework/cache/data/6a/fd/6afd2dd91488a2340f7a81c5f75474d2e6d02a65",
+    "storage/framework/cache/data/6a/58/6a58b6c7e02f6d92150e84bffa4418d987f54dc9",
+    "storage/framework/cache/data/6a/fd",
+    "storage/framework/cache/data/6a/58",
+    "storage/framework/cache/data/6a",
+    "storage/framework/cache/data/6b/7d/6b7de648fa56b210414c24a0509645a1011f7dc0",
+    "storage/framework/cache/data/6b/7d",
+    "storage/framework/cache/data/6b",
+    "storage/framework/cache/data/07/7c/077c66571305e052cdb2440d8e415da7a39a4532",
+    "agent.md",
+    "Untitled.canvas",
     "docs/architecture/scheduled-jobs.md",
     "docs/awesome-design-md/design-md/airtable/DESIGN.md",
     "docs/modules/system-auditing-analytics.md",
     "docs/modules/logistics-fulfillment.md",
-    "storage/framework/sessions/RZWR1Yclkwa8fgq4wlcknNAAeKksvvCBi1fFTNik",
     "docs/awesome-design-md/design-md/expo/README.md",
     "docs/modules/moderation-disputes.md",
     "docs/modules/subscriptions-sponsorships.md",
@@ -192,23 +206,14 @@
     "docs/modules/erp-procurement.md",
     "GEMINI.md",
     "storage/framework/testing/disks/public/team_message_attachments/Ntf86jZ5OpGH9jbiKfjjwE8zaJII3IxgsXD0MynG.png",
-    "storage/framework/testing/disks/public/products/models/01KXAW18G0NYZ7TC3E22FZNGZA/manager-model.gltf",
-    "storage/framework/testing/disks/public/products/models/01KXAW18G0NYZ7TC3E22FZNGZA",
-    "storage/framework/testing/disks/public/products/models/89gs97wYGnNIiG2AZyxmv6F3FdpYWLHa1v1ErxbR.bin",
     "storage/framework/testing/disks/public/products/gallery/iaIJrGVFV9PxYrRkdfFDDXOqwIeWLEatrgo2R7nS.jpg",
     "storage/framework/testing/disks/public/products/gallery/I6SowF5I8AaaffMQ8B6tuvh1YhKf93B8o0VaAckJ.jpg",
     "storage/framework/testing/disks/public/products/gallery/agXFHVPJ8aPKjY9DUXMmWfBdrUqRJnJjd9PbiyUg.jpg",
     "storage/framework/testing/disks/public/products/covers/Y1PVc7EmpdSFtYfUwy9NK5t8jNPJTFYEwjv7MHQ5.jpg",
-    "storage/framework/testing/disks/public/products/models",
-    "storage/framework/testing/disks/public/products/gallery",
-    "storage/framework/testing/disks/public/products/covers",
-    "storage/framework/testing/disks/public/products",
     "storage/framework/testing/disks/public/disputes/WrWlyL3ZlCSyySTpsZVOZEp6G4DWCS7YWwWVquTz.jpg",
     "storage/framework/testing/disks/public/disputes/NiznBrbKFzjLbT6M4omtnUcEZ5HzN9wnpl1uHXLP.jpg",
-    "storage/framework/testing/disks/public/disputes",
     "storage/framework/testing/disks/public/returns/LzbofoxGXearJckU6P9sD8M9rCVcopomf5bhs6ZW.jpg",
     "storage/framework/testing/disks/public/returns/8Zn6rpbdNaeJpFS2r5D05wEJjWB0wr4FHLJXVYhi.jpg",
-    "storage/framework/testing/disks/public/returns",
     "storage/framework/testing/disks/public/proofs/KvhkGA7fzYVsGfNxJkQh7ks9mZhItIZyNPcfA1Qp.jpg",
     "docs/architecture/ui-design-tokens.md",
     "docs/architecture/integrations-webhooks.md",
