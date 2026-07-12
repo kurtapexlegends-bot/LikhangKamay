@@ -50,7 +50,7 @@ Expected: FAIL indicating columns do not exist.
 
 **Step 3: Write minimal implementation**
 
-Create migration to add `subscription_tier` (string, default 'standard') and `sponsorship_credits` (integer, default 0) to `users` table. Update `User.php` `$fillable` array. Note: Ensure `php artisan make:migration` uses the correct timestamp naming convention.
+Create migration to add `subscription_tier` (string, default 'standard') and `sponsorship_credits` (integer, default 0) to `users` table. Update [User.php](file:///c:/laragon/www/LikhangKamay/app/Models/User.php) `$fillable` array. Note: Ensure `php artisan make:migration` uses the correct timestamp naming convention.
 
 **Step 4: Run test to verify it passes**
 

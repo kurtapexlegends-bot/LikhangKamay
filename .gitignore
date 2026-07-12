@@ -31,6 +31,7 @@ patch_*
 
 # Local agent/tooling caches
 /.agent
+/agent_config
 /.stubs
 .phpstorm.meta.php
 _ide_helper.php

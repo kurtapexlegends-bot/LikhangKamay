@@ -1,0 +1,7 @@
+{
+  "showUnsupportedFiles": true,
+  "userIgnoreFilters": [
+    "node_modules/",
+    "vendor/"
+  ]
+}
