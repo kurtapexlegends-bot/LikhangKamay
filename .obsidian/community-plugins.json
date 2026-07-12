@@ -1,5 +1,7 @@
 [
   "obsidian-linter",
   "omnisearch",
-  "dataview"
+  "dataview",
+  "obsidian-git",
+  "obsidian-hover-editor"
 ]
