@@ -28,9 +28,7 @@ import MonetizationDashboard from '@/Components/Admin/Layout/SystemConfig/Moneti
 import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/SubscriptionTiers';
 import BrandingForm from '@/Components/Admin/Layout/SystemConfig/BrandingForm';
 import SMTPForm from '@/Components/Admin/Layout/SystemConfig/SMTPForm';
-import CategoryManagerTable from '@/Components/Admin/Catalog/CategoryManagerTable';
-import CreateCategoryModal from '@/Components/Admin/Catalog/CreateCategoryModal';
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
+import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
 
 export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships, categories = [], trashQueue = [], trashStats }) {
@@ -45,7 +43,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         return 'branding';
     });
 
-    const [isAddOpen, setIsAddOpen] = useState(false);
     const [activeSubTab, setActiveSubTab] = useState('branding_details');
     const [showMobileNotes, setShowMobileNotes] = useState(false);
 
@@ -181,7 +178,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     const mainTabs = [
         { id: 'branding', name: 'System Config', icon: Settings },
         { id: 'plans', name: 'Subscription Plans', icon: ShieldCheck },
-        { id: 'taxonomy', name: 'Taxonomy Engine', icon: FolderTree },
+        { id: 'taxonomy', name: 'Category Manager', icon: FolderTree },
         { id: 'trash', name: 'Restoration Center', icon: RotateCcw },
     ];
 
@@ -537,24 +534,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
                             transition={{ duration: 0.2 }}
-                            className="space-y-6"
                         >
-                            <div className="max-w-5xl pt-4">
-                                <FloatingModuleActions actions={(
-                                    <button
-                                        onClick={() => setIsAddOpen(true)}
-                                        className="flex items-center gap-1.5 bg-clay-600 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-700 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap min-h-[44px]"
-                                    >
-                                        <Plus size={14} strokeWidth={3} /> Add Category
-                                    </button>
-                                )} />
-
-                                {/* Categories Table */}
-                                <CategoryManagerTable categories={categories} />
-                            </div>
-
-                            {/* ADD MODAL */}
-                            <CreateCategoryModal show={isAddOpen} onClose={() => setIsAddOpen(false)} />
+                            <CategoryManager categories={categories} />
                         </motion.div>
                     )}
 

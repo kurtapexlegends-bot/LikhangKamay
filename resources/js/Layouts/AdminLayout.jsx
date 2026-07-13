@@ -52,7 +52,7 @@ const isTabActive = (routeName, tabName = null) => {
     const defaultTabMap = {
         'admin.users.manager': 'directory',
         'admin.compliance': 'flags',
-        'admin.catalog.index': 'taxonomy'
+        'admin.catalog.index': 'moderation'
     };
     const activeTab = currentTab || defaultTabMap[routeName] || '';
     return activeTab === tabName;
@@ -269,7 +269,7 @@ export default function AdminLayout({ title, children }) {
                                     'User Directory': "Manage platform users, staff profiles, and onboarding applications.",
                                     'Artisan Applications': "Approve or reject artisan registration applications.",
                                     'Product Moderation': "Review, approve, and moderate artisan product listings.",
-                                    'Taxonomy Engine': "Manage product categories, tags, and taxonomy.",
+                                    'Category Manager': "Manage product categories, tags, and taxonomy.",
                                     'Sponsorships': "Manage sponsored product campaigns.",
                                     'Moderation Queue': "Review flagged listings, reviews, and user content.",
                                     'Review Disputes': "Moderate customer review disputes.",

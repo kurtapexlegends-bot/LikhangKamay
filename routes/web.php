@@ -369,7 +369,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\Admin\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
 
     // Global Taxonomy Engine
-    Route::get('/taxonomy', fn() => redirect()->route('admin.catalog.index', ['tab' => 'taxonomy']))->name('admin.taxonomy.index');
+    Route::get('/taxonomy', fn() => redirect()->route('admin.settings.index', ['tab' => 'taxonomy']))->name('admin.taxonomy.index');
     Route::post('/taxonomy', [\App\Http\Controllers\Admin\CatalogController::class, 'storeTaxonomy'])->name('admin.taxonomy.store');
     Route::patch('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'updateTaxonomy'])->name('admin.taxonomy.update');
     Route::delete('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'destroyTaxonomy'])->name('admin.taxonomy.destroy');
