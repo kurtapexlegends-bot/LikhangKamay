@@ -251,14 +251,14 @@ export default function AdminLayout({ title, children }) {
                 <div className={`px-5 py-4 border-b border-stone-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center transition-[padding] duration-300 ${
                     isCollapsed ? 'justify-center' : 'justify-between'
                 }`}>
-                    <Link href={route('admin.dashboard')} className="flex items-center gap-2.5 group">
+                    <Link href={route('admin.dashboard')} className="flex items-center group">
                         <img
                             src={usePage().props.platform.logo}
                             alt={usePage().props.platform.name}
                             className="w-7 h-7 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 shrink-0"
                         />
                         <span className={`font-serif text-lg font-bold text-stone-900 tracking-tight truncate overflow-hidden transition-[max-width,opacity,margin-left] duration-300 ${
-                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[120px] opacity-100 ml-2.5'
+                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[120px] opacity-100 ml-2'
                         }`}>{usePage().props.platform.name}</span>
                     </Link>
 
