@@ -13,6 +13,7 @@ import {
 import { PieChart, Pie, Cell } from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
+import KPICard from '@/Components/KPICard';
 
 // Earthy & Premium Palette
 const PIE_COLORS = ['#c07251', '#d97706', '#10b981', '#78716c', '#a8a29e', '#d6d3d1'];
@@ -42,6 +43,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
+// ---- Premium Frosted Glass Category Tooltip Styling ----
 const CategoryTooltip = ({ active, payload }) => {
     if (active && payload?.length) {
         const item = payload[0]?.payload;
@@ -52,49 +54,13 @@ const CategoryTooltip = ({ active, payload }) => {
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].color }}></div>
                     <p className="text-sm font-bold text-stone-800">
-                        GMV: <span className="font-semibold text-stone-500">₱{Number(item?.gmv || 0).toLocaleString()}</span>
+                        GMV: <span className="font-semibold text-stone-550">₱{Number(item?.gmv || 0).toLocaleString()}</span>
                     </p>
                 </div>
             </div>
         );
     }
     return null;
-};
-
-// ---- Standardized Premium Stat Card ----
-const StatCard = ({ title, metric, icon: Icon, bg, text, growth, trend, subtitle }) => {
-    const derivedTrend = trend || (growth > 0 ? 'up' : growth < 0 ? 'down' : 'neutral');
-
-    return (
-        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/80 shadow-sm flex items-start justify-between hover:shadow-md hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-300 group">
-            <div>
-                <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    {title}
-                </p>
-                <h3 className="text-2xl font-black text-stone-900 tracking-tight group-hover:text-clay-600 transition-colors">
-                    {metric !== undefined && typeof metric === 'number' ? metric.toLocaleString(undefined, { maximumFractionDigits: 2 }) : metric}
-                </h3>
-                
-                {growth !== undefined && (
-                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1.5 ${
-                        derivedTrend === 'up' ? 'text-emerald-600' : 
-                        derivedTrend === 'down' ? 'text-red-650' : 'text-stone-400'
-                    }`}>
-                        {derivedTrend === 'up' && <TrendingUp size={12}/>}
-                        {derivedTrend === 'down' && <TrendingDown size={12}/>}
-                        {derivedTrend === 'neutral' && <Minus size={12}/>}
-                        <span>{derivedTrend === 'up' ? '+' : ''}{growth}% trend</span>
-                    </div>
-                )}
-                {growth === undefined && subtitle && (
-                    <p className="text-[10px] font-medium text-stone-400 mt-1.5">{subtitle}</p>
-                )}
-            </div>
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${bg} ${text}`}>
-                <Icon size={20} />
-            </div>
-        </div>
-    );
 };
 
 export default function Insights({ 
@@ -131,37 +97,35 @@ export default function Insights({
 
             {/* SECTION 1: TOP STAT CARDS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
+                <KPICard
                     title="Active Sellers"
-                    metric={churn.active}
+                    value={churn.active}
                     icon={Users}
-                    bg="bg-clay-50/50 border-clay-100"
-                    text="text-clay-600"
-                    subtitle={`${churn.atRisk} at risk of churn`}
+                    bg="bg-clay-50"
+                    color="text-clay-600"
+                    growthSuffix={` (${churn.atRisk} at risk)`}
                 />
-                <StatCard
+                <KPICard
                     title="Avg Order Value"
-                    metric={`₱${Number(health.aov).toLocaleString()}`}
+                    value={Number(health.aov)}
                     icon={ShoppingBag}
-                    bg="bg-emerald-50/50 border-emerald-100"
-                    text="text-emerald-600"
-                    subtitle="Platform average GMV"
+                    bg="bg-emerald-50"
+                    color="text-emerald-600"
+                    formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
                 />
-                <StatCard
+                <KPICard
                     title="Completion Rate"
-                    metric={`${health.completionRate}%`}
+                    value={`${health.completionRate}%`}
                     icon={ClipboardCheck}
-                    bg="bg-blue-50/50 border-blue-100"
-                    text="text-blue-600"
-                    subtitle="Delivered order volume"
+                    bg="bg-blue-50"
+                    color="text-blue-600"
                 />
-                <StatCard
+                <KPICard
                     title="Refund Rate"
-                    metric={`${health.refundRate}%`}
+                    value={`${health.refundRate}%`}
                     icon={AlertTriangle}
-                    bg={health.refundRate > 5 ? 'bg-red-50 border-red-100 animate-pulse' : 'bg-stone-50/50 border-stone-200'}
-                    text={health.refundRate > 5 ? 'text-red-600' : 'text-stone-400'}
-                    subtitle={health.refundRate > 5 ? 'Above safety threshold!' : 'Returns within safety limit'}
+                    bg={health.refundRate > 5 ? 'bg-red-50' : 'bg-stone-50'}
+                    color={health.refundRate > 5 ? 'text-red-650 animate-pulse' : 'text-stone-400'}
                 />
             </div>
 

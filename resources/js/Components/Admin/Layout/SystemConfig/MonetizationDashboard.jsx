@@ -7,47 +7,9 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import KPICard from '@/Components/KPICard';
 import { StatSkeleton, RowSkeleton } from './SystemConfigSkeletons';
 import { planTierBadgeClasses, changeDirectionBadgeClasses } from '@/utils/systemConfigHelpers';
-
-// ---- Aligned Premium Stat Card ----
-const LocalStatCard = ({ title, metric, prefix = "", icon: Icon, bg, text, growth, trend, subtitle }) => {
-    const value = typeof metric === 'object' ? metric?.value : metric;
-    const cardGrowth = growth !== undefined ? growth : (typeof metric === 'object' ? metric?.growth : undefined);
-    const cardTrend = trend !== undefined ? trend : (typeof metric === 'object' ? metric?.trend : undefined);
-    const derivedTrend = cardTrend || (cardGrowth > 0 ? 'up' : cardGrowth < 0 ? 'down' : 'neutral');
-
-    return (
-        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-sm flex items-start justify-between hover:shadow-md hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-300 group w-full">
-            <div>
-                <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    {title}
-                </p>
-                <h3 className="text-2xl font-black text-stone-900 tracking-tight group-hover:text-clay-600 transition-colors">
-                    {prefix}{value !== undefined && typeof value === 'number' ? value.toLocaleString() : (value ?? 0)}
-                </h3>
-                
-                {cardGrowth !== undefined && (
-                    <div className={`flex items-center gap-1 text-[10px] font-bold mt-1.5 ${
-                        derivedTrend === 'up' ? 'text-emerald-600' : 
-                        derivedTrend === 'down' ? 'text-red-600' : 'text-stone-400'
-                    }`}>
-                        {derivedTrend === 'up' && <TrendingUp size={12}/>}
-                        {derivedTrend === 'down' && <TrendingDown size={12}/>}
-                        {derivedTrend === 'neutral' && <Minus size={12}/>}
-                        <span>{derivedTrend === 'up' ? '+' : ''}{cardGrowth}% vs 30 days ago</span>
-                    </div>
-                )}
-                {cardGrowth === undefined && subtitle && (
-                    <p className="text-[10px] font-medium text-stone-400 mt-1.5">{subtitle}</p>
-                )}
-            </div>
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${bg} ${text}`}>
-                <Icon size={20} />
-            </div>
-        </div>
-    );
-};
 
 export default function MonetizationDashboard({ metrics, recentSubscribers, recentSponsorships }) {
     const isLoadingMetrics = !metrics;
@@ -68,47 +30,49 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                     </>
                 ) : (
                     <>
-                        <LocalStatCard
+                        <KPICard
                             title="Plan MRR"
-                            metric={metrics.mrr}
-                            prefix="₱"
+                            value={metrics.mrr?.value || 0}
+                            growth={metrics.mrr?.growth}
+                            growthSuffix=" vs 30 days ago"
                             icon={CircleDollarSign}
-                            bg="bg-emerald-50/50 border-emerald-100"
-                            text="text-emerald-600"
-                            subtitle={metrics.mrr?.basis || "Based on active tiers"}
+                            bg="bg-emerald-50"
+                            color="text-emerald-600"
+                            formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
                         />
-                        <LocalStatCard
+                        <KPICard
                             title="Transaction Fees"
-                            metric={metrics.platform_fees}
-                            prefix="₱"
+                            value={metrics.platform_fees?.value || 0}
+                            growth={metrics.platform_fees?.growth}
+                            growthSuffix=" vs 30 days ago"
                             icon={CircleDollarSign}
-                            bg="bg-clay-50/50 border-clay-100"
-                            text="text-clay-600"
-                            subtitle={metrics.platform_fees?.basis || "Commission + Convenience fees"}
+                            bg="bg-clay-50"
+                            color="text-clay-600"
+                            formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
                         />
-                        <LocalStatCard
+                        <KPICard
                             title="Paid Subs"
-                            metric={metrics.subscribers?.total_paid || 0}
+                            value={metrics.subscribers?.total_paid || 0}
                             icon={Users}
-                            bg="bg-stone-50 border-stone-200"
-                            text="text-stone-700"
-                            subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active tiers`}
+                            bg="bg-stone-50"
+                            color="text-stone-600"
+                            growthSuffix=" active tiers"
                         />
-                        <LocalStatCard
+                        <KPICard
                             title="Elite Only"
-                            metric={metrics.subscribers?.elite || 0}
+                            value={metrics.subscribers?.elite || 0}
                             icon={Star}
-                            bg="bg-stone-50 border-stone-200"
-                            text="text-stone-700"
-                            subtitle="Super Premium artisans"
+                            bg="bg-stone-50"
+                            color="text-stone-600"
                         />
-                        <LocalStatCard
+                        <KPICard
                             title="Sponsored"
-                            metric={metrics.sponsorships}
+                            value={metrics.sponsorships?.value || 0}
+                            growth={metrics.sponsorships?.growth}
+                            growthSuffix=" vs 30 days ago"
                             icon={Award}
-                            bg="bg-amber-50/50 border-amber-100"
-                            text="text-amber-600"
-                            subtitle="Featured products"
+                            bg="bg-amber-50"
+                            color="text-amber-600"
                         />
                     </>
                 )}
