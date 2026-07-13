@@ -27,7 +27,11 @@ import {
     Clock3,
     RotateCcw,
     Lock,
-    Loader2
+    Loader2,
+    ShoppingBag,
+    Star,
+    MessageSquare,
+    Trash2
 } from 'lucide-react';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 
@@ -36,6 +40,23 @@ import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 const MotionLink = motion(Link);
 
 const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
+
+const isTabActive = (routeName, tabName = null) => {
+    if (typeof window === 'undefined') {
+        return route().current(routeName);
+    }
+    const isCurrentRoute = route().current(routeName);
+    if (!isCurrentRoute) return false;
+    if (!tabName) return true;
+    const currentTab = new URLSearchParams(window.location.search).get('tab');
+    const defaultTabMap = {
+        'admin.users.manager': 'directory',
+        'admin.compliance': 'flags',
+        'admin.catalog.index': 'products'
+    };
+    const activeTab = currentTab || defaultTabMap[routeName] || '';
+    return activeTab === tabName;
+};
 
 const resolveActiveGroup = (path) => {
     if (path.includes('dashboard') || path.includes('insights') || path.includes('operations')) return 'Operations Hub';
@@ -107,35 +128,40 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'Operations Hub',
             items: [
-                { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
-                { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
-                { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: route().current('admin.operations') },
+                { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: isTabActive('admin.dashboard') },
+                { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights') },
+                { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: isTabActive('admin.operations') },
             ]
         },
         {
             title: 'Marketplace',
             items: [
+                { name: 'User Directory', href: route('admin.users.manager', { tab: 'directory' }), icon: Users, current: isTabActive('admin.users.manager', 'directory') },
                 {
-                    name: 'User Manager',
-                    href: route('admin.users.manager'),
-                    icon: Users,
-                    current: route().current('admin.users.manager') || route().current('admin.users') || route().current('admin.pending'),
+                    name: 'Artisan Applications',
+                    href: route('admin.users.manager', { tab: 'approvals' }),
+                    icon: Award,
+                    current: isTabActive('admin.users.manager', 'approvals'),
                     badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
-                { name: 'Catalog Manager', href: route('admin.catalog.index'), icon: FolderTree, current: route().current('admin.catalog.*') },
+                { name: 'Product Moderation', href: route('admin.catalog.index', { tab: 'products' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'products') },
+                { name: 'Taxonomy Engine', href: route('admin.catalog.index', { tab: 'taxonomy' }), icon: FolderTree, current: isTabActive('admin.catalog.index', 'taxonomy') },
+                { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships') },
             ]
         },
         {
             title: 'Safety & Compliance',
             items: [
-                { name: 'Safety & Moderation', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance') },
-                { name: 'Escalated Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: route().current('admin.disputes.index') },
+                { name: 'Moderation Queue', href: route('admin.compliance', { tab: 'flags' }), icon: ShieldAlert, current: isTabActive('admin.compliance', 'flags') },
+                { name: 'Review Disputes', href: route('admin.compliance', { tab: 'disputes' }), icon: MessageSquare, current: isTabActive('admin.compliance', 'disputes') },
+                { name: 'Escalated Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: isTabActive('admin.disputes.index') },
+                { name: 'Restoration Center', href: route('admin.compliance', { tab: 'trash' }), icon: Trash2, current: isTabActive('admin.compliance', 'trash') },
             ]
         },
         {
             title: 'System Settings',
             items: [
-                { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
+                { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: isTabActive('admin.settings.index') },
             ]
         }
     ];
