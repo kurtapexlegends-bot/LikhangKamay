@@ -48,7 +48,8 @@ const KPICard = ({
     trendData = [],
     breakdown = null,
     animate = true,
-    formatter
+    formatter,
+    subtitle
 }) => {
     const [isFlipped, setIsFlipped] = React.useState(false);
 
@@ -107,6 +108,11 @@ const KPICard = ({
                             <GrowthIcon size={12} />
                             <span>{growthPrefix}{growth}%{growthSuffix}</span>
                         </div>
+                    )}
+                    {growth === undefined && subtitle && (
+                        <span className="text-[10px] font-medium text-stone-400 truncate block">
+                            {subtitle}
+                        </span>
                     )}
                     {trendData.length > 0 && (
                         <Sparkline data={trendData} positive={growth >= 0} />

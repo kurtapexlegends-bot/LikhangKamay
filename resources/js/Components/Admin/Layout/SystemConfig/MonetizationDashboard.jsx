@@ -39,6 +39,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             bg="bg-emerald-50"
                             color="text-emerald-600"
                             formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
+                            subtitle={metrics.mrr?.basis || "Based on current active artisan plan tiers."}
                         />
                         <KPICard
                             title="Transaction Fees"
@@ -49,6 +50,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             bg="bg-clay-50"
                             color="text-clay-600"
                             formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
+                            subtitle="Commission + Convenience fees"
                         />
                         <KPICard
                             title="Paid Subs"
@@ -56,7 +58,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             icon={Users}
                             bg="bg-stone-50"
                             color="text-stone-600"
-                            growthSuffix=" active tiers"
+                            subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active tiers`}
                         />
                         <KPICard
                             title="Elite Only"
@@ -64,6 +66,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             icon={Star}
                             bg="bg-stone-50"
                             color="text-stone-600"
+                            subtitle="Super Premium artisans"
                         />
                         <KPICard
                             title="Sponsored"
@@ -73,6 +76,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             icon={Award}
                             bg="bg-amber-50"
                             color="text-amber-600"
+                            subtitle="Featured products"
                         />
                     </>
                 )}

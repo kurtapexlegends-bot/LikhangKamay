@@ -103,7 +103,7 @@ export default function Insights({
                     icon={Users}
                     bg="bg-clay-50"
                     color="text-clay-600"
-                    growthSuffix={` (${churn.atRisk} at risk)`}
+                    subtitle={`${churn.atRisk} at risk of churn`}
                 />
                 <KPICard
                     title="Avg Order Value"
@@ -112,6 +112,7 @@ export default function Insights({
                     bg="bg-emerald-50"
                     color="text-emerald-600"
                     formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
+                    subtitle="Platform average GMV"
                 />
                 <KPICard
                     title="Completion Rate"
@@ -119,6 +120,7 @@ export default function Insights({
                     icon={ClipboardCheck}
                     bg="bg-blue-50"
                     color="text-blue-600"
+                    subtitle="Delivered order volume"
                 />
                 <KPICard
                     title="Refund Rate"
@@ -126,6 +128,7 @@ export default function Insights({
                     icon={AlertTriangle}
                     bg={health.refundRate > 5 ? 'bg-red-50' : 'bg-stone-50'}
                     color={health.refundRate > 5 ? 'text-red-650 animate-pulse' : 'text-stone-400'}
+                    subtitle={health.refundRate > 5 ? 'Above safety threshold!' : 'Returns within safety limit'}
                 />
             </div>
 
