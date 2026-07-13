@@ -234,31 +234,35 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                 <thead>
                                     <tr className="bg-stone-50 border-b border-stone-100">
                                         <th className="py-4 px-6 w-12 text-center align-middle">
-                                            <input
-                                                type="checkbox"
-                                                onChange={handleSelectAllProducts}
-                                                checked={products?.data?.length > 0 && selectedProductIds.length === products.data.length}
-                                                className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
-                                            />
+                                            <div className="flex items-center justify-center">
+                                                <input
+                                                    type="checkbox"
+                                                    onChange={handleSelectAllProducts}
+                                                    checked={products?.data?.length > 0 && selectedProductIds.length === products.data.length}
+                                                    className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
+                                                />
+                                            </div>
                                         </th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-1/3">Product</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Artisan Seller</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Submitted</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Status</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-right">Actions</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[30%]">Product</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%]">Artisan Seller</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%]">Submitted</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%]">Status</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%] text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-stone-100">
                                     {products?.data?.length > 0 ? (
                                         products.data.map((product) => (
                                             <tr key={product.id} className="hover:bg-stone-50/30 transition duration-150 group">
-                                                <td className="py-4 px-6 text-center align-middle">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedProductIds.includes(product.id)}
-                                                        onChange={() => handleSelectProduct(product.id)}
-                                                        className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
-                                                    />
+                                                <td className="py-4 px-6 text-center align-middle w-12">
+                                                    <div className="flex items-center justify-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedProductIds.includes(product.id)}
+                                                            onChange={() => handleSelectProduct(product.id)}
+                                                            className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
+                                                        />
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 px-6 align-middle">
                                                     <div className="flex items-center gap-4">
