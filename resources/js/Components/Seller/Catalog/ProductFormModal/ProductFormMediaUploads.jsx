@@ -127,12 +127,12 @@ export default function ProductFormMediaUploads({
                                     Upload Cover
                                 </span>
                                 <span className="text-[10px] text-gray-400 mt-1">
-                                    JPG/PNG, Max 5MB
+                                    WebP/JPG/PNG, Max 5MB (WebP recommended)
                                 </span>
                                 <input
                                     type="file"
                                     className="hidden"
-                                    accept="image/*"
+                                    accept="image/webp,image/jpeg,image/png"
                                     onChange={(e) => handleFileChange(e, "cover_photo")}
                                 />
                             </label>
@@ -187,7 +187,7 @@ export default function ProductFormMediaUploads({
                                         type="file"
                                         multiple
                                         className="hidden"
-                                        accept="image/*"
+                                        accept="image/webp,image/jpeg,image/png"
                                         onChange={(e) => handleFileChange(e, "gallery")}
                                     />
                                 </label>

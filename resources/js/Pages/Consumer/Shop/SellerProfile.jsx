@@ -224,6 +224,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     >
                                         <div className={`aspect-square relative overflow-hidden flex items-center justify-center p-3 select-none ${isTop ? 'bg-amber-50/15' : 'bg-stone-50/50'}`}>
                                             <img 
+                                                loading="lazy"
                                                 src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'}
                                                 alt={product.name}
                                                 className="w-full h-full object-contain mix-blend-multiply transition duration-700 ease-out group-hover:scale-105"
@@ -349,6 +350,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     {/* Image */}
                                     <div className="aspect-[4/3] relative bg-stone-50 overflow-hidden flex items-center justify-center rounded-t-[23px] select-none">
                                         <img 
+                                            loading="lazy"
                                             src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
                                             alt={product.name} 
                                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
