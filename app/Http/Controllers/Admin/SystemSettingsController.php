@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\SponsorshipRequest;
 use App\Models\UserTierLog;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Order;
 use App\Services\SystemSettingsService;
 use App\Services\Admin\AdminMetricsService;
 use App\Services\Admin\AdminAnalyticsService;
@@ -35,6 +38,7 @@ class SystemSettingsController extends Controller
     {
         Gate::authorize('admin-action');
         try {
+            $trashData = $this->getTrashQueueAndStats();
             return Inertia::render('Admin/Layout/SystemConfig/SystemConfig', [
                 'settings' => $this->getSystemSettings(),
                 'metrics' => $this->getMonetizationMetrics(),
@@ -54,6 +58,9 @@ class SystemSettingsController extends Controller
                             ];
                         });
                 }),
+                'categories' => Category::withCount('products')->orderBy('name')->get(),
+                'trashQueue' => $trashData['queue'],
+                'trashStats' => $trashData['stats'],
             ]);
         } catch (\Throwable $e) {
             Log::error("SystemSettings index error: " . $e->getMessage());
@@ -86,6 +93,9 @@ class SystemSettingsController extends Controller
                 ],
                 'recentSubscribers' => [],
                 'recentSponsorships' => [],
+                'categories' => [],
+                'trashQueue' => [],
+                'trashStats' => ['totalItems' => 0, 'products' => 0, 'categories' => 0, 'orders' => 0],
                 'db_error' => true
             ]);
         }
@@ -426,6 +436,93 @@ class SystemSettingsController extends Controller
         }
 
         return back()->with('success', 'System settings synchronized successfully.');
+    }
+
+    /**
+     * Get deleted/trash items queue and stats
+     */
+    private function getTrashQueueAndStats()
+    {
+        $deletedProducts = $this->getDeletedProducts();
+        $deletedCategories = $this->getDeletedCategories();
+        $deletedOrders = $this->getDeletedOrders();
+
+        $queue = collect([])
+            ->concat($deletedProducts)
+            ->concat($deletedCategories)
+            ->concat($deletedOrders)
+            ->sortByDesc('deleted_at')
+            ->values();
+
+        $stats = [
+            'totalItems' => $queue->count(),
+            'products' => count($deletedProducts),
+            'categories' => count($deletedCategories),
+            'orders' => count($deletedOrders),
+        ];
+
+        return [
+            'queue' => $queue,
+            'stats' => $stats,
+        ];
+    }
+
+    /**
+     * Get deleted products
+     */
+    private function getDeletedProducts()
+    {
+        return Product::onlyTrashed()
+            ->with('user:id,name,shop_name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'type' => 'Product',
+                'context' => $p->user?->shop_name ?? $p->user?->name ?? 'Unknown Shop',
+                'deleted_at' => $p->deleted_at->toIso8601String(),
+                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    /**
+     * Get deleted categories
+     */
+    private function getDeletedCategories()
+    {
+        return Category::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->get()
+            ->map(fn($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'type' => 'Category',
+                'context' => 'Global Taxonomy',
+                'deleted_at' => $c->deleted_at->toIso8601String(),
+                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    /**
+     * Get deleted orders
+     */
+    private function getDeletedOrders()
+    {
+        return Order::onlyTrashed()
+            ->with('user:id,name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($o) => [
+                'id' => $o->id,
+                'name' => "Order #{$o->order_number}",
+                'type' => 'Order',
+                'context' => $o->user?->name ?? 'Unknown Customer',
+                'deleted_at' => $o->deleted_at->toIso8601String(),
+                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
+            ]);
     }
 }
 

@@ -58,11 +58,15 @@ const isTabActive = (routeName, tabName = null) => {
     return activeTab === tabName;
 };
 
-const resolveActiveGroup = (path) => {
+const resolveActiveGroup = (path, search = '') => {
+    const params = new URLSearchParams(search);
+    const tab = params.get('tab') || '';
+    if (tab === 'monetization') return 'Operations Hub';
+
     if (path.includes('dashboard') || path.includes('insights') || path.includes('operations')) return 'Operations Hub';
-    if (path.includes('users') || path.includes('pending') || path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Marketplace';
-    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('disputes')) return 'Safety & Compliance';
-    if (path.includes('settings') || path.includes('monetization')) return 'System Settings';
+    if (path.includes('users') || path.includes('pending') || path.includes('catalog')) return 'Marketplace';
+    if (path.includes('moderation') || path.includes('compliance') || path.includes('disputes')) return 'Safety & Compliance';
+    if (path.includes('settings')) return 'System Settings';
     return null;
 };
 
@@ -81,7 +85,7 @@ const getInitialExpandedGroups = () => {
         const parsed = raw ? JSON.parse(raw) : null;
         
         // Auto-expand group based on current URL
-        const activeGroup = resolveActiveGroup(window.location.pathname);
+        const activeGroup = resolveActiveGroup(window.location.pathname, window.location.search);
 
         if (parsed && typeof parsed === 'object') {
             return {
@@ -130,6 +134,7 @@ export default function AdminLayout({ title, children }) {
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: isTabActive('admin.dashboard') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights') },
+                { name: 'Monetization', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization') },
                 { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: isTabActive('admin.operations') },
             ]
         },
@@ -145,7 +150,6 @@ export default function AdminLayout({ title, children }) {
                     badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
                 { name: 'Product Moderation', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation') },
-                { name: 'Taxonomy Engine', href: route('admin.catalog.index', { tab: 'taxonomy' }), icon: FolderTree, current: isTabActive('admin.catalog.index', 'taxonomy') },
                 { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships') },
             ]
         },
@@ -155,13 +159,12 @@ export default function AdminLayout({ title, children }) {
                 { name: 'Moderation Queue', href: route('admin.compliance', { tab: 'flags' }), icon: ShieldAlert, current: isTabActive('admin.compliance', 'flags') },
                 { name: 'Review Disputes', href: route('admin.compliance', { tab: 'disputes' }), icon: MessageSquare, current: isTabActive('admin.compliance', 'disputes') },
                 { name: 'Escalated Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: isTabActive('admin.disputes.index') },
-                { name: 'Restoration Center', href: route('admin.compliance', { tab: 'trash' }), icon: Trash2, current: isTabActive('admin.compliance', 'trash') },
             ]
         },
         {
             title: 'System Settings',
             items: [
-                { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: isTabActive('admin.settings.index') },
+                { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: isTabActive('admin.settings.index') && !isTabActive('admin.settings.index', 'monetization') },
             ]
         }
     ];
@@ -261,6 +264,7 @@ export default function AdminLayout({ title, children }) {
                                 {{
                                     'Overview': "Monitor platform metrics and performance.",
                                     'Insights': "View revenue forecasts and platform analytics.",
+                                    'Monetization': "View platform subscriptions, sponsorships, and financial performance.",
                                     'Audit Logs': "Track background jobs, logs, and system SLAs.",
                                     'User Directory': "Manage platform users, staff profiles, and onboarding applications.",
                                     'Artisan Applications': "Approve or reject artisan registration applications.",

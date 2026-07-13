@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/Layouts/AdminLayout';
@@ -16,7 +16,10 @@ import {
     ChevronDown,
     AlertCircle,
     Globe,
-    Server
+    Server,
+    FolderTree,
+    RotateCcw,
+    Plus
 } from 'lucide-react';
 
 import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSocialsForm';
@@ -25,8 +28,12 @@ import MonetizationDashboard from '@/Components/Admin/Layout/SystemConfig/Moneti
 import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/SubscriptionTiers';
 import BrandingForm from '@/Components/Admin/Layout/SystemConfig/BrandingForm';
 import SMTPForm from '@/Components/Admin/Layout/SystemConfig/SMTPForm';
+import CategoryManagerTable from '@/Components/Admin/Catalog/CategoryManagerTable';
+import CreateCategoryModal from '@/Components/Admin/Catalog/CreateCategoryModal';
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
+import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
 
-export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships }) {
+export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships, categories = [], trashQueue = [], trashStats }) {
     const { flash } = usePage().props;
     const { addToast } = useToast();
 
@@ -38,6 +45,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         return 'branding';
     });
 
+    const [isAddOpen, setIsAddOpen] = useState(false);
     const [activeSubTab, setActiveSubTab] = useState('branding_details');
     const [showMobileNotes, setShowMobileNotes] = useState(false);
 
@@ -172,8 +180,9 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
     const mainTabs = [
         { id: 'branding', name: 'System Config', icon: Settings },
-        { id: 'monetization', name: 'Monetization Dashboard', icon: CircleDollarSign },
         { id: 'plans', name: 'Subscription Plans', icon: ShieldCheck },
+        { id: 'taxonomy', name: 'Taxonomy Engine', icon: FolderTree },
+        { id: 'trash', name: 'Restoration Center', icon: RotateCcw },
     ];
 
     const subTabs = [
@@ -182,6 +191,30 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         { id: 'branding_ops', name: 'Platform Ops', icon: Settings },
         { id: 'branding_smtp', name: 'SMTP Settings', icon: Server },
     ];
+
+    if (activeTab === 'monetization') {
+        return (
+            <>
+                <Head title="Monetization" />
+                <div className="max-w-6xl mx-auto space-y-6 pb-24 lg:pb-6">
+                    {flash?.success || flash?.error ? (
+                        <div className={`rounded-xl border px-4 py-3 text-xs font-medium ${
+                            flash?.success
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                : 'border-red-200 bg-red-50 text-red-700'
+                        }`}>
+                            {flash?.success || flash?.error}
+                        </div>
+                    ) : null}
+                    <MonetizationDashboard 
+                        metrics={metrics} 
+                        recentSubscribers={recentSubscribers} 
+                        recentSponsorships={recentSponsorships} 
+                    />
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
@@ -407,34 +440,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                         </motion.div>
                     )}
 
-                    {activeTab === 'monetization' && (
-                        <motion.div
-                            key="monetization-tab"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            transition={{ duration: 0.2 }}
-                            className="space-y-6"
-                        >
-                            {/* Flash Alert */}
-                            {(flash?.success || flash?.error) && (
-                                <div className={`rounded-xl border px-4 py-3 text-xs font-medium ${
-                                    flash?.success
-                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                        : 'border-red-200 bg-red-50 text-red-700'
-                                }`}>
-                                    {flash?.success || flash?.error}
-                                </div>
-                            )}
-
-                            <MonetizationDashboard 
-                                metrics={metrics} 
-                                recentSubscribers={recentSubscribers} 
-                                recentSponsorships={recentSponsorships} 
-                            />
-                        </motion.div>
-                    )}
-
                     {activeTab === 'plans' && (
                         <motion.div
                             key="plans-tab"
@@ -522,6 +527,50 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                     {processing ? 'Saving...' : 'Apply Config'}
                                 </PrimaryButton>
                             </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'taxonomy' && (
+                        <motion.div
+                            key="taxonomy-tab"
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-6"
+                        >
+                            <div className="max-w-5xl pt-4">
+                                <FloatingModuleActions actions={(
+                                    <button
+                                        onClick={() => setIsAddOpen(true)}
+                                        className="flex items-center gap-1.5 bg-clay-600 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-700 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap min-h-[44px]"
+                                    >
+                                        <Plus size={14} strokeWidth={3} /> Add Category
+                                    </button>
+                                )} />
+
+                                {/* Categories Table */}
+                                <CategoryManagerTable categories={categories} />
+                            </div>
+
+                            {/* ADD MODAL */}
+                            <CreateCategoryModal show={isAddOpen} onClose={() => setIsAddOpen(false)} />
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'trash' && (
+                        <motion.div
+                            key="trash-tab"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <TrashRestorationTable
+                                trashQueue={trashQueue}
+                                stats={trashStats}
+                            />
                         </motion.div>
                     )}
                 </AnimatePresence>
