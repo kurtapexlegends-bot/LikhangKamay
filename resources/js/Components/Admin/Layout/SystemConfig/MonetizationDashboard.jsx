@@ -57,9 +57,10 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
     return (
         <div className="space-y-6 animate-in fade-in duration-200">
             {/* SECTION 1: STATS CARDS */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {isLoadingMetrics ? (
                     <>
+                        <StatSkeleton />
                         <StatSkeleton />
                         <StatSkeleton />
                         <StatSkeleton />
@@ -77,11 +78,20 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             subtitle={metrics.mrr?.basis || "Based on active tiers"}
                         />
                         <LocalStatCard
+                            title="Transaction Fees"
+                            metric={metrics.platform_fees}
+                            prefix="₱"
+                            icon={CircleDollarSign}
+                            bg="bg-clay-50/50 border-clay-100"
+                            text="text-clay-600"
+                            subtitle={metrics.platform_fees?.basis || "Commission + Convenience fees"}
+                        />
+                        <LocalStatCard
                             title="Paid Subs"
                             metric={metrics.subscribers?.total_paid || 0}
                             icon={Users}
-                            bg="bg-clay-50/50 border-clay-100"
-                            text="text-clay-600"
+                            bg="bg-stone-50 border-stone-200"
+                            text="text-stone-700"
                             subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active tiers`}
                         />
                         <LocalStatCard

@@ -88,6 +88,7 @@ class SystemSettingsController extends Controller
                 'metrics' => [
                     'mrr' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
                     'sponsorships' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                    'platform_fees' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
                     'subscribers' => ['free' => 0, 'premium' => 0, 'elite' => 0, 'total_paid' => 0],
                     'pendingSponsorships' => 0,
                 ],
@@ -197,9 +198,36 @@ class SystemSettingsController extends Controller
             'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
         ];
 
+        $totalCommission = Order::where('status', '!=', 'cancelled')->sum('platform_commission_amount');
+        $totalConvenience = Order::where('status', '!=', 'cancelled')->sum('convenience_fee_amount');
+        $totalPlatformFees = (float) $totalCommission + (float) $totalConvenience;
+
+        $previousCommission = Order::where('status', '!=', 'cancelled')
+            ->where('created_at', '<', now()->subDays(30))
+            ->sum('platform_commission_amount');
+        $previousConvenience = Order::where('status', '!=', 'cancelled')
+            ->where('created_at', '<', now()->subDays(30))
+            ->sum('convenience_fee_amount');
+        $previousPlatformFees = (float) $previousCommission + (float) $previousConvenience;
+
+        $feesGrowth = 0;
+        if ($previousPlatformFees > 0) {
+            $feesGrowth = (($totalPlatformFees - $previousPlatformFees) / $previousPlatformFees) * 100;
+        } elseif ($totalPlatformFees > 0) {
+            $feesGrowth = 100;
+        }
+
+        $platformFeesMetric = [
+            'value' => $totalPlatformFees,
+            'growth' => round($feesGrowth, 1),
+            'trend' => $feesGrowth > 0 ? 'up' : ($feesGrowth < 0 ? 'down' : 'neutral'),
+            'basis' => 'Cumulative commission and convenience fees collected from successful orders.'
+        ];
+
         return [
             'mrr' => $mrrMetric,
             'sponsorships' => $sponsorshipMetric,
+            'platform_fees' => $platformFeesMetric,
             'subscribers' => [
                 'free' => $freeUsersCount,
                 'premium' => $premiumUsersCount,

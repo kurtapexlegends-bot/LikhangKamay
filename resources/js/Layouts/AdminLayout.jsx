@@ -16,6 +16,7 @@ import {
     Bell,
     Settings,
     ChevronDown,
+    ChevronLeft,
     User,
     Award,
     TrendingUp,
@@ -110,6 +111,45 @@ export default function AdminLayout({ title, children }) {
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
     const [isImpersonating, setIsImpersonating] = useState(false);
 
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.localStorage.getItem('admin_sidebar_collapsed_v1') === 'true';
+    });
+
+    const [activeTooltip, setActiveTooltip] = useState(null);
+
+    const handleToggleCollapse = (value) => {
+        setIsCollapsed(value);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('admin_sidebar_collapsed_v1', value ? 'true' : 'false');
+        }
+    };
+
+    const handleTooltipShow = (e, text, subtext = null) => {
+        if (!isCollapsed) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        setActiveTooltip({
+            text,
+            subtext,
+            y: rect.top + rect.height / 2,
+            x: rect.right + 12
+        });
+    };
+
+    const handleTooltipLeave = () => {
+        setActiveTooltip(null);
+    };
+
+    const handleNavScroll = () => {
+        if (activeTooltip) {
+            setActiveTooltip(null);
+        }
+    };
+
+    useEffect(() => {
+        setActiveTooltip(null);
+    }, [isCollapsed]);
+
     useEffect(() => {
         const handleStartImpersonation = () => setIsImpersonating(true);
         window.addEventListener('start-impersonation-loading', handleStartImpersonation);
@@ -193,19 +233,33 @@ export default function AdminLayout({ title, children }) {
 
             {/* Sidebar Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-52 bg-white border-r border-clay-100 transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)
+                fixed inset-y-0 left-0 z-50 bg-white border-r border-clay-100 transition-[width,transform] duration-300
                 lg:translate-x-0 flex flex-col
+                ${isCollapsed ? 'w-16' : 'w-52'}
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
+                {/* Desktop Collapse Toggle Button */}
+                <button
+                    onClick={() => handleToggleCollapse(!isCollapsed)}
+                    className="hidden lg:flex absolute -right-3 top-6 z-[110] w-6 h-6 bg-white border border-clay-100/80 rounded-full items-center justify-center text-stone-400 hover:text-clay-600 shadow-sm hover:shadow-md transition-[color,box-shadow,transform] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
+                    aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                    <ChevronLeft size={12} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+                </button>
+
                 {/* Brand Header */}
-                <div className="px-5 py-4 border-b border-stone-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center justify-between">
+                <div className={`px-5 py-4 border-b border-stone-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center transition-[padding] duration-300 ${
+                    isCollapsed ? 'justify-center' : 'justify-between'
+                }`}>
                     <Link href={route('admin.dashboard')} className="flex items-center gap-2.5 group">
                         <img
                             src={usePage().props.platform.logo}
                             alt={usePage().props.platform.name}
-                            className="w-7 h-7 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
+                            className="w-7 h-7 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 shrink-0"
                         />
-                        <span className="font-serif text-lg font-bold text-stone-900 tracking-tight">{usePage().props.platform.name}</span>
+                        <span className={`font-serif text-lg font-bold text-stone-900 tracking-tight truncate overflow-hidden transition-[max-width,opacity,margin-left] duration-300 ${
+                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[120px] opacity-100 ml-2.5'
+                        }`}>{usePage().props.platform.name}</span>
                     </Link>
 
                     {/* Mobile Close Button */}
@@ -218,7 +272,13 @@ export default function AdminLayout({ title, children }) {
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="flex-1 px-3 py-4 overflow-y-auto no-scrollbar">
+                <nav 
+                    scroll-region="true"
+                    onScroll={handleNavScroll}
+                    className={`flex-1 overflow-y-auto no-scrollbar py-4 transition-[padding] duration-300 ${
+                        isCollapsed ? 'px-1.5' : 'px-3'
+                    }`}
+                >
                     {navigationGroups.map((group, index) => (
                         <CategoryGroup
                             key={group.title}
@@ -226,6 +286,7 @@ export default function AdminLayout({ title, children }) {
                             open={!!expandedGroups[group.title]}
                             onToggle={() => toggleGroup(group.title)}
                             isFirst={index === 0}
+                            isCollapsed={isCollapsed}
                         >
                             {group.items.map((item) => (
                                 <NavItem
@@ -234,6 +295,9 @@ export default function AdminLayout({ title, children }) {
                                     icon={item.icon}
                                     active={item.current}
                                     badge={item.badge}
+                                    isCollapsed={isCollapsed}
+                                    onMouseEnter={(e) => handleTooltipShow(e, item.name)}
+                                    onMouseLeave={handleTooltipLeave}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
                                     {item.name}
@@ -245,7 +309,9 @@ export default function AdminLayout({ title, children }) {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 lg:ml-52 transition-all duration-500 ease-in-out">
+            <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+                isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
+            }`}>
                 {/* Header (Desktop & Mobile) */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-stone-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-all duration-300">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -342,69 +408,122 @@ export default function AdminLayout({ title, children }) {
                     </div>
                 </div>
             )}
+
+            {/* Self-contained CSS Keyframes for smooth tooltip fade-in/slide-in */}
+            <style>{`
+                @keyframes tooltipFadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-50%) scale(0.95) translateX(-8px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(-50%) scale(1) translateX(0);
+                    }
+                }
+            `}</style>
+
+            {isCollapsed && activeTooltip && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: `${activeTooltip.y}px`,
+                        left: `${activeTooltip.x}px`,
+                        animation: 'tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    }}
+                    className="pointer-events-none z-[9999] bg-[#1c1917] text-white text-xs rounded-xl px-3.5 py-2.5 shadow-xl border border-stone-800/80 whitespace-nowrap text-center animate-in"
+                >
+                    <p className="font-bold text-white text-xs leading-none">{activeTooltip.text}</p>
+                    {activeTooltip.subtext && (
+                        <p className="text-[10px] text-stone-400 font-medium mt-1.5 leading-none">
+                            {activeTooltip.subtext}
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
 
-const CategoryGroup = ({ title, open, onToggle, isFirst, children }) => (
-    <div className={isFirst ? 'mt-1.5' : 'mt-4'}>
-        <motion.button
-            type="button"
-            onClick={onToggle}
-            whileTap={{ scale: 0.98 }}
-            className="flex w-full items-center justify-between px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400 transition-all hover:text-stone-600 focus:outline-none"
+const CategoryGroup = ({ title, open, onToggle, isFirst, children, isCollapsed }) => (
+    <div className={`transition-[margin,padding] duration-300 ${
+        isCollapsed 
+            ? 'mt-1.5 pt-1.5 border-t border-clay-100/10 first:border-t-0 mt-1.5 first:mt-0' 
+            : isFirst ? 'mt-1.5' : 'mt-4'
+    }`}>
+        <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
+            isCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-10 opacity-100'
+        }`}>
+            <motion.button
+                type="button"
+                onClick={onToggle}
+                whileTap={{ scale: 0.98 }}
+                className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400 transition-all hover:text-stone-600 focus:outline-none"
+            >
+                <span>{title}</span>
+                <ChevronDown
+                    size={12}
+                    className={`transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${open ? '' : '-rotate-90'}`}
+                />
+            </motion.button>
+        </div>
+        <motion.div
+            initial={false}
+            animate={{ 
+                height: (isCollapsed || open) ? 'auto' : 0, 
+                opacity: (isCollapsed || open) ? 1 : 0 
+            }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden space-y-1 pt-1.5"
         >
-            <span>{title}</span>
-            <ChevronDown
-                size={12}
-                className={`transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${open ? '' : '-rotate-90'}`}
-            />
-        </motion.button>
-        <AnimatePresence initial={false}>
-            {open && (
-                <motion.div
-                    initial={{ height: 0, opacity: 0, y: -4 }}
-                    animate={{ height: 'auto', opacity: 1, y: 0 }}
-                    exit={{ height: 0, opacity: 0, y: -4 }}
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="overflow-hidden space-y-1 pt-1.5"
-                >
-                    {children}
-                </motion.div>
-            )}
-        </AnimatePresence>
+            {children}
+        </motion.div>
     </div>
 );
 
-const NavItem = ({ href, icon: Icon, active, badge, onClick, children }) => {
+const NavItem = ({ href, icon: Icon, active, badge, onClick, children, isCollapsed, onMouseEnter, onMouseLeave }) => {
     return (
-        <MotionLink
-            href={href}
-            prefetch="hover"
-            preserveScroll
-            onClick={onClick}
-            whileTap={{ scale: 0.98 }}
-            className={`
-                flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300
-                ${active
-                    ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
-                    : 'text-stone-500 hover:bg-clay-50 hover:text-clay-700 group'}
-            `}
+        <div 
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            className="w-full"
         >
-            <div className="flex items-center gap-3">
-                <Icon
-                    size={16}
-                    strokeWidth={2.5}
-                    className={`transition-colors duration-300 ${active ? 'text-white' : 'text-stone-400 group-hover:text-clay-600'}`}
-                />
-                {children}
-            </div>
-            {badge && (
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors duration-300 ${active ? 'bg-white/20 text-white ring-1 ring-white/30' : 'bg-clay-100 text-clay-700'
-                    }`}>
-                    {badge}
+            <MotionLink
+                href={href}
+                prefetch="hover"
+                preserveScroll
+                onClick={onClick}
+                whileTap={{ scale: 0.98 }}
+                className={`
+                    flex items-center rounded-xl text-xs font-bold transition-[background-color,color,box-shadow,padding] duration-300
+                    ${isCollapsed ? 'px-2 py-2.5 justify-center' : 'px-3.5 py-2.5 justify-start'}
+                    ${active
+                        ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
+                        : 'text-stone-500 hover:bg-clay-50 hover:text-clay-700 group'}
+                `}
+            >
+                <div className="flex items-center justify-center shrink-0 w-5 h-5">
+                    <Icon
+                        size={18}
+                        strokeWidth={2.5}
+                        className={`transition-colors duration-300 ${active ? 'text-white' : 'text-stone-400 group-hover:text-clay-600'}`}
+                    />
+                </div>
+                <span className={`overflow-hidden transition-[max-width,opacity,margin-left] duration-300 flex items-center whitespace-nowrap ${
+                    isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'
+                }`}>
+                    {children}
                 </span>
-            )}
-        </MotionLink>
+                {badge && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-[colors,opacity,max-width] duration-300 ml-auto ${
+                        active ? 'bg-white/20 text-white ring-1 ring-white/30' : 'bg-clay-100 text-clay-700'
+                    } ${
+                        isCollapsed ? 'max-w-0 opacity-0 px-0 ml-0' : 'max-w-[30px] opacity-100'
+                    }`}>
+                        {badge}
+                    </span>
+                )}
+            </MotionLink>
+        </div>
     );
 };
