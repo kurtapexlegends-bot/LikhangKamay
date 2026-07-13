@@ -373,7 +373,7 @@ export default function ShopSettings({ auth, user, stats }) {
                         <button
                             type="submit"
                             disabled={processing || !canEditShopSettings}
-                            className="ml-auto flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-orange-700 active:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-70"
+                            className="ml-auto flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-orange-700 active:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-70 min-h-[44px] sm:min-h-[40px]"
                         >
                             {processing ? (
                                 <>

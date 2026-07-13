@@ -103,8 +103,8 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
             <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-w-5xl mx-auto w-full">
                 
                 {/* SECTION 1: METRICS PANEL */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-stone-900 text-white rounded-2xl p-5 shadow-sm border border-stone-850 relative overflow-hidden flex flex-col justify-between">
+                <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-stone-900 text-white rounded-2xl p-5 shadow-sm border border-stone-850 relative overflow-hidden flex flex-col justify-between">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
@@ -119,7 +119,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                         <p className="text-[10px] text-stone-500 mt-4 leading-normal font-medium">Resets every 30 days based on billing cycle.</p>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <Sparkles className="text-emerald-500" size={16} />
@@ -130,7 +130,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                         <p className="text-[10px] text-stone-500 mt-4 leading-normal font-medium">Currently live in homepage promotions.</p>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <Clock className="text-amber-500" size={16} />
@@ -163,7 +163,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                         </p>
                                         <button 
                                             onClick={() => router.visit(route('seller.subscription'))}
-                                            className="text-[10px] font-bold bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg shadow-sm transition active:scale-95"
+                                            className="text-[10px] font-bold bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg shadow-sm transition active:scale-95 min-h-[44px] sm:min-h-[38px] flex items-center justify-center"
                                         >
                                             View Upgrade Options
                                         </button>
@@ -248,7 +248,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                     <button
                                         type="submit"
                                         disabled={processing || !data.product_id}
-                                        className="w-full bg-stone-900 text-white font-bold text-xs py-3 rounded-xl hover:bg-stone-850 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 active:scale-[0.99]"
+                                        className="w-full bg-stone-900 text-white font-bold text-xs py-3 rounded-xl hover:bg-stone-850 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 active:scale-[0.99] min-h-[44px]"
                                     >
                                         {processing ? 'Submitting Request...' : 'Use 1 Credit to Sponsor'}
                                     </button>
