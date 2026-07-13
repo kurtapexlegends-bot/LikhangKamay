@@ -33,8 +33,9 @@ This document details shipping and courier delivery mapping, Lalamove order life
 
 Webhooks from the Lalamove API dispatch events that update the `status` of `OrderDelivery` records.
 
-*   **Status Synchronizer**:
+*   **Logistics Background Jobs**:
     *   [SyncOrderDeliveryJob.php](file:///c:/laragon/www/LikhangKamay/app/Jobs/SyncOrderDeliveryJob.php): A background queue job that triggers on scheduled intervals or manual actions to pull, verify, and synchronize the active status of Lalamove order delivery tracks.
+    *   [BookLalamoveDeliveryJob.php](file:///c:/laragon/www/LikhangKamay/app/Jobs/BookLalamoveDeliveryJob.php): A background queue job dispatched during bulk order shipping approvals to handle asynchronous Lalamove courier bookings without blocking web request threads.
 
 ### Terminal Failures & Auto-Cancellation
 *   **Terminal States**: `CANCELED`, `REJECTED`, or `EXPIRED` triggers are classified under `isTerminalFailure()`.
