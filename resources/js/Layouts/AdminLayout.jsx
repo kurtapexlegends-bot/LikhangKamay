@@ -233,7 +233,7 @@ export default function AdminLayout({ title, children }) {
 
             {/* Sidebar Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-[100] bg-white border-r border-clay-100 transition-[width,transform] duration-300
+                fixed inset-y-0 left-0 z-[100] bg-white border-r border-clay-100 transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) will-change-[width]
                 lg:translate-x-0 flex flex-col
                 ${isCollapsed ? 'w-16' : 'w-52'}
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -309,7 +309,7 @@ export default function AdminLayout({ title, children }) {
             </aside>
 
             {/* Main Content Area */}
-            <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+            <div className={`flex-1 flex flex-col min-w-0 transition-[margin-left] duration-300 cubic-bezier(0.4, 0, 0.2, 1) will-change-[margin-left] ${
                 isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
             }`}>
                 {/* Header (Desktop & Mobile) */}
