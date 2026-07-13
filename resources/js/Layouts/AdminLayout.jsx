@@ -52,7 +52,7 @@ const isTabActive = (routeName, tabName = null) => {
     const defaultTabMap = {
         'admin.users.manager': 'directory',
         'admin.compliance': 'flags',
-        'admin.catalog.index': 'products'
+        'admin.catalog.index': 'taxonomy'
     };
     const activeTab = currentTab || defaultTabMap[routeName] || '';
     return activeTab === tabName;
@@ -144,7 +144,7 @@ export default function AdminLayout({ title, children }) {
                     current: isTabActive('admin.users.manager', 'approvals'),
                     badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
-                { name: 'Product Moderation', href: route('admin.catalog.index', { tab: 'products' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'products') },
+                { name: 'Product Moderation', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation') },
                 { name: 'Taxonomy Engine', href: route('admin.catalog.index', { tab: 'taxonomy' }), icon: FolderTree, current: isTabActive('admin.catalog.index', 'taxonomy') },
                 { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships') },
             ]
