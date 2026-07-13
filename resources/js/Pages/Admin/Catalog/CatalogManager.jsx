@@ -9,7 +9,7 @@ import CatalogKPIs from '@/Components/Admin/Catalog/CatalogKPIs';
 import SponsorshipRequestsTable from '@/Components/Admin/Catalog/SponsorshipRequestsTable';
 import ProductModerationTable from '@/Components/Admin/Catalog/ProductModerationTable';
 
-export default function CatalogManager({ categories, requests, products, filters }) {
+export default function CatalogManager({ categories, requests, products, filters, statusCounts }) {
     const { url } = usePage();
     const activeTab = useMemo(() => {
         if (typeof window === 'undefined') return 'moderation';
@@ -64,7 +64,7 @@ export default function CatalogManager({ categories, requests, products, filters
                             className="space-y-6"
                         >
                             {/* Product Moderation Table */}
-                            <ProductModerationTable products={products} filters={filters} />
+                            <ProductModerationTable products={products} filters={filters} statusCounts={statusCounts} />
                         </motion.div>
                     )}
                 </AnimatePresence>

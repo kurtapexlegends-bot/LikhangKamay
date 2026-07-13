@@ -34,12 +34,21 @@ class CatalogController extends Controller
             })
             ->latest();
 
+        $statusCounts = [
+            'pending_review' => Product::where('status', 'pending_review')->count(),
+            'Active' => Product::where('status', 'Active')->count(),
+            'flagged' => Product::where('status', 'flagged')->count(),
+            'rejected' => Product::where('status', 'rejected')->count(),
+            'all' => Product::count(),
+        ];
+
         return Inertia::render('Admin/Catalog/CatalogManager', [
             'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
             'requests' => SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
                 ->latest()
                 ->paginate(10, ['*'], 'requests_page'),
             'products' => $productQuery->paginate(10, ['*'], 'products_page'),
+            'statusCounts' => $statusCounts,
             'filters' => [
                 'product_status' => $statusFilter,
                 'search' => $search
