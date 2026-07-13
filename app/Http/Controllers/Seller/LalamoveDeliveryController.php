@@ -62,7 +62,22 @@ class LalamoveDeliveryController extends Controller
 
         foreach ($orders as $order) {
             try {
-                $orderLogisticsService->bookLalamoveDelivery($order, $artisan);
+                if ($order->shipping_method !== 'Delivery') {
+                    throw new \RuntimeException('Lalamove booking is available for delivery orders only.');
+                }
+                if ($order->status !== 'Accepted') {
+                    throw new \RuntimeException('Only accepted orders can be booked with Lalamove.');
+                }
+                if ($order->delivery?->external_order_id) {
+                    throw new \RuntimeException('This order already has a Lalamove delivery.');
+                }
+
+                $requirements = $orderLogisticsService->bookingRequirements($order, $artisan);
+                if (!empty($requirements)) {
+                    throw new \RuntimeException(implode(' ', $requirements));
+                }
+
+                \App\Jobs\BookLalamoveDeliveryJob::dispatch($order, $artisan);
                 $results['success']++;
             } catch (\Throwable $e) {
                 $results['failed']++;
@@ -71,9 +86,9 @@ class LalamoveDeliveryController extends Controller
         }
 
         if ($results['failed'] > 0) {
-            return back()->with('error', "Successfully booked {$results['success']} deliveries. Failed: {$results['failed']}. " . implode(' ', $results['errors']));
+            return back()->with('error', "Successfully queued {$results['success']} delivery request(s). Failed: {$results['failed']}. " . implode(' ', $results['errors']));
         }
 
-        return back()->with('success', "Successfully booked all {$results['success']} deliveries.");
+        return back()->with('success', "Successfully queued all {$results['success']} delivery requests in the background.");
     }
 }
