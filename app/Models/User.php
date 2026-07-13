@@ -388,14 +388,14 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     protected static function booted()
     {
         static::saved(function ($user) {
-            if ($user->role === 'artisan') {
+            if ($user->role === 'artisan' || $user->getOriginal('role') === 'artisan') {
                 \Illuminate\Support\Facades\Cache::forget('approved_artisans_list');
                 \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
             }
         });
 
         static::deleted(function ($user) {
-            if ($user->role === 'artisan') {
+            if ($user->role === 'artisan' || $user->getOriginal('role') === 'artisan') {
                 \Illuminate\Support\Facades\Cache::forget('approved_artisans_list');
                 \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
             }
