@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Head } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import { FolderTree, Plus, Award, Package } from 'lucide-react';
@@ -13,25 +13,14 @@ import SponsorshipRequestsTable from '@/Components/Admin/Catalog/SponsorshipRequ
 import ProductModerationTable from '@/Components/Admin/Catalog/ProductModerationTable';
 
 export default function CatalogManager({ categories, requests, products, filters }) {
-    // Tab switcher state
-    const [activeTab, setActiveTab] = useState(() => {
-        if (typeof window !== 'undefined') {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('tab') || 'taxonomy';
-        }
-        return 'taxonomy';
-    });
+    const { url } = usePage();
+    const activeTab = useMemo(() => {
+        if (typeof window === 'undefined') return 'taxonomy';
+        const params = new URL(url, window.location.origin).searchParams;
+        return params.get('tab') || 'taxonomy';
+    }, [url]);
 
     const [isAddOpen, setIsAddOpen] = useState(false);
-
-    const handleTabChange = (tabId) => {
-        setActiveTab(tabId);
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', tabId);
-            window.history.pushState({}, '', url.toString());
-        }
-    };
 
     // Calculate Sponsorship metrics
     const requestRows = requests?.data || [];
@@ -40,41 +29,9 @@ export default function CatalogManager({ categories, requests, products, filters
     const approvedRequests = useMemo(() => requestRows.filter(r => r.status === 'approved').length, [requestRows]);
     const uniqueShops = useMemo(() => new Set(requestRows.map(r => r.user?.id).filter(Boolean)).size, [requestRows]);
 
-    const mainTabs = [
-        { id: 'taxonomy', name: 'Taxonomy Engine', icon: FolderTree },
-        { id: 'sponsorships', name: 'Sponsorship Requests', icon: Award },
-        { id: 'moderation', name: 'Product Moderation', icon: Package },
-    ];
-
     return (
         <>
-            <Head title="Catalog Manager" />
-
             <div className="max-w-6xl mx-auto space-y-6">
-
-                {/* --- TABS NAVIGATION --- */}
-                <div className="border-b border-stone-200 bg-white rounded-t-2xl shadow-sm px-4 pt-4 sm:px-6">
-                    <div className="flex space-x-6 overflow-x-auto scrollbar-hide flex-nowrap no-scrollbar">
-                        {mainTabs.map((tab) => {
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    type="button"
-                                    onClick={() => handleTabChange(tab.id)}
-                                    className={`flex items-center gap-2 border-b-2 pb-4 px-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none min-h-[44px] ${
-                                        activeTab === tab.id
-                                            ? 'border-clay-600 text-clay-700'
-                                            : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200'
-                                    }`}
-                                >
-                                    <Icon size={16} />
-                                    <span>{tab.name}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
 
                 {/* Switchable Views */}
                 <AnimatePresence mode="wait">

@@ -191,44 +191,7 @@ export default function ContentSafety({ flags, disputes = [], trashQueue = [], t
 
     return (
         <>
-            <Head title="Safety & Moderation" />
-
             <div className="space-y-6">
-                {/* --- HEADER TABS NAVIGATION --- */}
-                <div className="border-b border-stone-200/80 bg-white rounded-t-2xl shadow-sm px-4 pt-4 sm:px-6">
-                    <div className="flex space-x-6 overflow-x-auto scrollbar-hide">
-                        {[
-                            { id: 'flags', label: 'Flagged Content', icon: ShieldAlert, badge: flags.total || null },
-                            { id: 'disputes', label: 'Review Disputes', icon: MessageSquare, badge: disputes.filter(d => d.status === 'pending').length || null },
-                            { id: 'trash', label: 'Restoration (Trash)', icon: RotateCcw, badge: trashStats?.totalItems || null },
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => handleTabChange(tab.id)}
-                                    className={`flex items-center gap-2 border-b-2 pb-4 px-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none ${
-                                        activeTab === tab.id
-                                            ? 'border-clay-600 text-clay-700'
-                                            : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200'
-                                    }`}
-                                >
-                                    <Icon size={16} />
-                                    <span>{tab.label}</span>
-                                    {tab.badge !== null && (
-                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                                            activeTab === tab.id ? 'bg-clay-600 text-white' : 'bg-stone-100 text-stone-600'
-                                        }`}>
-                                            {tab.badge}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* --- TAB PANEL CONTENTS --- */}
                 <div className="min-h-[50vh]">
                     <AnimatePresence mode="wait">
                         {activeTab === 'flags' && (

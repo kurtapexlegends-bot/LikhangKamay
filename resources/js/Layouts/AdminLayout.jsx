@@ -166,11 +166,19 @@ export default function AdminLayout({ title, children }) {
         }
     ];
 
+    const activeItem = useMemo(() => {
+        return navigationGroups
+            .flatMap(g => g.items)
+            .find(item => item.current);
+    }, [navigationGroups]);
+
+    const resolvedTitle = activeItem ? activeItem.name : title;
+
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-stone-800">
             <ImpersonationBanner />
             <div className="flex-1 flex">
-                <Head title={title ? `${title} - Admin` : 'Admin Panel'} />
+                <Head title={resolvedTitle ? `${resolvedTitle} - Admin` : 'Admin Panel'} />
 
                 {/* Mobile Sidebar Overlay */}
                 {isMobileMenuOpen && (
@@ -246,52 +254,25 @@ export default function AdminLayout({ title, children }) {
                         </button>
                         <div className="min-w-0">
                             <h1 className="truncate text-xl font-bold text-stone-900 tracking-tight">
-                                {title === 'Platform Insights' ? 'Insights' :
-                                 title === 'Diagnostics Command Center' ? 'Diagnostics' :
-                                 title === 'User Management' || title === 'User Manager' || title === 'User Directory & Approvals Center' ? 'User Manager' :
-                                 title === 'Pending Artisans' ? 'Artisan Applications' :
-                                 title === 'Global Taxonomy Engine' || title === 'Taxonomy Engine' ? 'Taxonomy Engine' :
-                                 title === 'Sponsorship Requests' ? 'Sponsorships' :
-                                 title === 'Catalog Manager' ? 'Catalog Manager' :
-                                 title === 'Monetization' ? 'Platform Revenue' :
-                                 title === 'Escalated Disputes' || title === 'Dispute Arbitration' ? 'Escalated Disputes' :
-                                 title === 'System Config' || title === 'System Settings' ? 'System Config' :
-                                 title === 'Content Safety' ? 'Safety & Moderation' :
-                                 title}
+                                {resolvedTitle}
                             </h1>
                             
                             <p className="text-[11px] text-stone-500 font-medium mt-0.5 hidden sm:block">
                                 {{
                                     'Overview': "Monitor platform metrics and performance.",
-                                    'Monetization': "Track payouts, transaction fees, and subscriptions.",
-                                    'Platform Revenue': "Track payouts, transaction fees, and subscriptions.",
-                                    'Platform Insights': "View revenue forecasts and platform analytics.",
                                     'Insights': "View revenue forecasts and platform analytics.",
-                                    'User Management': "Manage platform users, staff profiles, and onboarding applications.",
+                                    'Audit Logs': "Track background jobs, logs, and system SLAs.",
                                     'User Directory': "Manage platform users, staff profiles, and onboarding applications.",
-                                    'User Manager': "Manage platform users, staff profiles, and onboarding applications.",
-                                    'User Directory & Approvals Center': "Manage platform users, staff profiles, and onboarding applications.",
-                                    'Review Moderation': "Moderate customer review disputes.",
-                                    'Pending Artisans': "Approve or reject artisan registration applications.",
                                     'Artisan Applications': "Approve or reject artisan registration applications.",
-                                    'Sponsorship Requests': "Manage sponsored product campaigns.",
+                                    'Product Moderation': "Review, approve, and moderate artisan product listings.",
+                                    'Taxonomy Engine': "Manage product categories, tags, and taxonomy.",
                                     'Sponsorships': "Manage sponsored product campaigns.",
-                                    'Moderation Queue': "Review flagged products and user-reported content.",
-                                    'Diagnostics Command Center': "Monitor system health, cache, and server diagnostics.",
-                                    'Diagnostics': "Monitor system health, cache, and server diagnostics.",
-                                    'Platform Operations': "Track background jobs, logs, and system SLAs.",
-                                    'Catalog Manager': "Manage product categories, tags, and taxonomy.",
-                                    'System Config': "Configure platform settings, payment gateways, and fees.",
-                                    'System Settings': "Configure platform settings, payment gateways, and fees.",
-                                    'Restoration Center': "Restore or permanently delete removed database records.",
-                                    'Content Governance & Safety Center': "Manage flagged listings, reviews, and user content.",
-                                    'Content Governance': "Manage flagged listings, reviews, and user content.",
-                                    'Content Safety': "Manage flagged listings, reviews, and user content.",
-                                    'Safety & Moderation': "Manage flagged listings, reviews, and user content.",
-                                    'SLA Monitoring': "Monitor admin response times and system SLAs.",
+                                    'Moderation Queue': "Review flagged listings, reviews, and user content.",
+                                    'Review Disputes': "Moderate customer review disputes.",
                                     'Escalated Disputes': "Moderate and resolve escalated customer disputes.",
-                                    'Dispute Arbitration': "Moderate and resolve escalated customer disputes."
-                                }[title] || ""}
+                                    'Restoration Center': "Restore or permanently delete removed database records.",
+                                    'System Config': "Configure platform settings, payment gateways, and fees."
+                                }[resolvedTitle] || ""}
                             </p>
                         </div>
                     </div>

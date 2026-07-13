@@ -17,28 +17,13 @@ import { getAutoExpandedRows } from '@/utils/userManagerHelpers';
 
 export default function UserManager({ users, filters, unlinkedStaffGroup = null, artisans }) {
     const { addToast } = useToast();
-    const { pendingArtisanCount } = usePage().props;
-    const [activeTab, setActiveTab] = useState(filters.tab || 'directory');
+    const { pendingArtisanCount, url } = usePage().props;
 
-    // Sync tab state with URL parameters
-    useEffect(() => {
-        if (filters.tab && filters.tab !== activeTab) {
-            setActiveTab(filters.tab);
-        }
-    }, [filters.tab]);
-
-    const handleTabChange = (tabName) => {
-        setActiveTab(tabName);
-        router.get(route('admin.users.manager'), {
-            tab: tabName,
-            search: tabName === 'directory' ? (filters.search || '') : '',
-            role: tabName === 'directory' ? (filters.role || 'all') : undefined,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    };
+    const activeTab = useMemo(() => {
+        if (typeof window === 'undefined') return 'directory';
+        const params = new URL(url || window.location.href, window.location.origin).searchParams;
+        return params.get('tab') || 'directory';
+    }, [url]);
 
     // =========================================================================
     // STATE & LOGIC: USER DIRECTORY
@@ -155,38 +140,6 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     return (
         <>
             <div className="space-y-6">
-                {/* Tab selector */}
-                <div className="border-b border-stone-200 bg-white rounded-t-2xl shadow-sm px-4 pt-4 sm:px-6">
-                    <div className="flex space-x-6 overflow-x-auto scrollbar-hide flex-nowrap no-scrollbar">
-                        {[
-                            { id: 'directory', label: 'User Directory', icon: Users, count: users.total || null },
-                            { id: 'approvals', label: 'Artisan Approvals', icon: Store, count: pendingArtisanCount || artisans.length || null }
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => handleTabChange(tab.id)}
-                                    className={`flex items-center gap-2 border-b-2 pb-4 px-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none min-h-[44px] ${
-                                        activeTab === tab.id
-                                            ? 'border-clay-600 text-clay-700'
-                                            : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200'
-                                    }`}
-                                >
-                                    <Icon size={16} />
-                                    <span>{tab.label}</span>
-                                    {tab.count !== null && (
-                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                                            activeTab === tab.id ? 'bg-clay-600 text-white' : 'bg-stone-100 text-stone-600'
-                                        }`}>
-                                            {tab.count}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
 
                 <AnimatePresence mode="wait">
                     <motion.div
