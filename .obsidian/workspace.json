@@ -185,13 +185,13 @@
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
       "bases:Create new base": false,
-      "table-editor-obsidian:Advanced Tables Toolbar": false,
       "omnisearch:Omnisearch": false,
       "obsidian-git:Open Git source control": false
     }
   },
   "active": "68319df19b1e4a2d",
   "lastOpenFiles": [
+    "docs/awesome-design-md/design-md/posthog/DESIGN.md",
     "Untitled 1.base",
     "Untitled.base",
     "storage/framework/cache/data/6a/fd/6afd2dd91488a2340f7a81c5f75474d2e6d02a65",
@@ -202,7 +202,6 @@
     "storage/framework/cache/data/6b/7d/6b7de648fa56b210414c24a0509645a1011f7dc0",
     "storage/framework/cache/data/6b/7d",
     "storage/framework/cache/data/6b",
-    "storage/framework/cache/data/07/7c/077c66571305e052cdb2440d8e415da7a39a4532",
     "agent.md",
     "Untitled.canvas",
     "docs/architecture/scheduled-jobs.md",
