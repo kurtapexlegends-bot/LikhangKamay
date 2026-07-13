@@ -330,7 +330,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                         {product.status !== 'rejected' && (
                                                             <button
                                                                 onClick={() => triggerModeration(product.id, 'reject')}
-                                                                className="p-1.5 rounded-lg text-rose-650 hover:bg-rose-50 border border-transparent hover:border-rose-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+                                                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
                                                                 title="Reject Listing"
                                                             >
                                                                 <XCircle size={16} strokeWidth={2.5} />

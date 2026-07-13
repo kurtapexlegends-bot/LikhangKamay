@@ -275,7 +275,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                             >
                                 <AlertCircle size={16} /> Pending Approvals
                                 {pendingRequests?.total > 0 && (
-                                    <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-650">
+                                    <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-600">
                                         {pendingRequests.total}
                                     </span>
                                 )}

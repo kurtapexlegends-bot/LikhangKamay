@@ -303,7 +303,7 @@ export default function ReleaseRequestDetails({
                                     value: (
                                         <div className="text-right">
                                             <div className="font-bold text-stone-900 text-[13px]">{formatMoney(item.fund_snapshot?.available_balance)}</div>
-                                            <div className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${Number(item.fund_snapshot?.remaining_balance) < 0 ? 'text-rose-650' : 'text-emerald-650'}`}>
+                                            <div className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${Number(item.fund_snapshot?.remaining_balance) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                                                 New: {formatMoney(item.fund_snapshot?.remaining_balance)}
                                             </div>
                                         </div>
