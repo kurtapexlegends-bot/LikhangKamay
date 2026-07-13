@@ -68,7 +68,7 @@ sequenceDiagram
 ## 3. Lalamove Webhook Receiver
 
 *   **Webhook Controller**: [LalamoveWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/LalamoveWebhookController.php)
-*   **Endpoint Route**: Post route defined in `web.php` (exempt from CSRF verification in `bootstrap/app.php`).
+*   **Endpoint Route**: Post route defined in [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php) (exempt from CSRF verification in [app.php](file:///c:/laragon/www/LikhangKamay/bootstrap/app.php)).
 
 ### Security Validation
 *   Validates the incoming query string parameter `token` against the application's configured secret:

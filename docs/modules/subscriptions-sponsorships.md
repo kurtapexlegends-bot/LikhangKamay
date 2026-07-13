@@ -66,6 +66,7 @@ Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/a
 ### Financial Controllers
 *   [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php): Processes asynchronous payment success/failure webhooks from the PayMongo API gateway.
 *   [SponsorshipController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SponsorshipController.php): Orchestrates artisan applications to feature and sponsor their product listings.
+*   [CatalogController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/CatalogController.php): Manages admin approval queue for product listings and sponsorships.
 
 ### Subscription & Sponsorship Services
 *   [SellerEntitlementService.php](file:///c:/laragon/www/LikhangKamay/app/Services/SellerEntitlementService.php): Service validating features limits and staff creation availability based on user membership tiers.

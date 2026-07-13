@@ -47,6 +47,7 @@ Managed in [ModerationController.php](file:///c:/laragon/www/LikhangKamay/app/Ht
 *   **Administrative Actions**:
     *   **Hide from Marketplace**: The super admin can approve the review dispute, marking the review as hidden from the marketplace.
 *   **Hidden Reviews Restrictions**: Reviews marked as hidden are disabled and cannot be pinned to the top of the product page by the seller.
+*   **Consumer Review Submission**: [ReviewController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/ReviewController.php) allows buyers to publish product feedback and ratings.
 
 ### Core Business Actions
 *   [BuyerInitiateDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/BuyerInitiateDispute.php): Validates and creates a new dispute entry for a completed order.
