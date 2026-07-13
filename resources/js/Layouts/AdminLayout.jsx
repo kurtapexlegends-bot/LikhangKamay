@@ -233,7 +233,7 @@ export default function AdminLayout({ title, children }) {
 
             {/* Sidebar Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 bg-white border-r border-clay-100 transition-[width,transform] duration-300
+                fixed inset-y-0 left-0 z-[100] bg-white border-r border-clay-100 transition-[width,transform] duration-300
                 lg:translate-x-0 flex flex-col
                 ${isCollapsed ? 'w-16' : 'w-52'}
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
