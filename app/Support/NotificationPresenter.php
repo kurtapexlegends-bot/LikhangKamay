@@ -46,7 +46,7 @@ class NotificationPresenter
             'replacement_resolution' => route('my-orders.index'),
             'review_moderation_status' => route('my-orders.index'),
             'sponsorship_status' => route('seller.sponsorships') . (isset($data['request_id']) ? '#request-' . $data['request_id'] : ''),
-            'artisan_application' => route('admin.pending'),
+            'artisan_application' => route('admin.users.manager', ['tab' => 'approvals']),
             'payment_confirmed' => route('orders.index'),
             'refund_request' => route('orders.index'),
             'shipment_deadline' => route('orders.index'),

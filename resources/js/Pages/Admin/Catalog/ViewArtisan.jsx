@@ -36,7 +36,7 @@ export default function ViewArtisan({ artisan }) {
                     </div>
 
                     <Link
-                        href={route('admin.pending')}
+                        href={route('admin.users.manager', { tab: 'approvals' })}
                         className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm font-bold text-stone-600 transition hover:border-stone-300 hover:bg-white"
                     >
                         <ArrowLeft size={16} />

@@ -38,17 +38,19 @@ const MotionLink = motion(Link);
 const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 
 const resolveActiveGroup = (path) => {
-    if (path.includes('dashboard') || path.includes('insights')) return 'Platform Pulse';
+    if (path.includes('dashboard') || path.includes('insights') || path.includes('operations')) return 'Operations Hub';
     if (path.includes('users') || path.includes('pending') || path.includes('taxonomy') || path.includes('sponsorships') || path.includes('catalog')) return 'Marketplace';
-    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('monetization') || path.includes('settings') || path.includes('disputes') || path.includes('operations')) return 'Governance';
+    if (path.includes('moderation') || path.includes('trash') || path.includes('compliance') || path.includes('disputes')) return 'Safety & Compliance';
+    if (path.includes('settings') || path.includes('monetization')) return 'System Settings';
     return null;
 };
 
 const getInitialExpandedGroups = () => {
     const defaultGroups = {
-        'Platform Pulse': true,
+        'Operations Hub': true,
         'Marketplace': true,
-        'Governance': true,
+        'Safety & Compliance': true,
+        'System Settings': true,
     };
 
     if (typeof window === 'undefined') return defaultGroups;
@@ -103,10 +105,11 @@ export default function AdminLayout({ title, children }) {
 
     const navigationGroups = [
         {
-            title: 'Platform Pulse',
+            title: 'Operations Hub',
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: route().current('admin.dashboard') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: route().current('admin.insights') },
+                { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: route().current('admin.operations') },
             ]
         },
         {
@@ -123,11 +126,15 @@ export default function AdminLayout({ title, children }) {
             ]
         },
         {
-            title: 'Governance',
+            title: 'Safety & Compliance',
             items: [
-                { name: 'Content Safety', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance') },
+                { name: 'Safety & Moderation', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance') },
                 { name: 'Escalated Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: route().current('admin.disputes.index') },
-                { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: route().current('admin.operations') },
+            ]
+        },
+        {
+            title: 'System Settings',
+            items: [
                 { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: route().current('admin.settings.*') },
             ]
         }
@@ -223,6 +230,7 @@ export default function AdminLayout({ title, children }) {
                                  title === 'Monetization' ? 'Platform Revenue' :
                                  title === 'Escalated Disputes' || title === 'Dispute Arbitration' ? 'Escalated Disputes' :
                                  title === 'System Config' || title === 'System Settings' ? 'System Config' :
+                                 title === 'Content Safety' ? 'Safety & Moderation' :
                                  title}
                             </h1>
                             
@@ -253,6 +261,7 @@ export default function AdminLayout({ title, children }) {
                                     'Content Governance & Safety Center': "Manage flagged listings, reviews, and user content.",
                                     'Content Governance': "Manage flagged listings, reviews, and user content.",
                                     'Content Safety': "Manage flagged listings, reviews, and user content.",
+                                    'Safety & Moderation': "Manage flagged listings, reviews, and user content.",
                                     'SLA Monitoring': "Monitor admin response times and system SLAs.",
                                     'Escalated Disputes': "Moderate and resolve escalated customer disputes.",
                                     'Dispute Arbitration': "Moderate and resolve escalated customer disputes."

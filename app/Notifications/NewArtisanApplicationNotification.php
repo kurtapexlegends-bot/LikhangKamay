@@ -28,7 +28,7 @@ class NewArtisanApplicationNotification extends Notification
             'type' => 'artisan_application',
             'title' => 'New Artisan Application',
             'message' => "{$this->artisan->name} submitted {$shopName} for review.",
-            'url' => route('admin.pending'),
+            'url' => route('admin.users.manager', ['tab' => 'approvals']),
             'user_id' => $this->artisan->id,
             'shop_name' => $shopName,
         ];

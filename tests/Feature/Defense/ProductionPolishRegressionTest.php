@@ -37,7 +37,7 @@ class ProductionPolishRegressionTest extends TestCase
             'url' => '/admin/artisans/pending',
         ], $admin);
 
-        $this->assertSame(route('admin.pending'), $payload);
+        $this->assertSame(route('admin.users.manager', ['tab' => 'approvals']), $payload);
     }
 
     public function test_three_d_delete_route_accepts_numeric_product_id_binding(): void

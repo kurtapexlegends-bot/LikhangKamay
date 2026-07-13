@@ -182,7 +182,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                             </div>
                         </div>
                         <Link
-                            href={route("admin.pending")}
+                            href={route("admin.users.manager", { tab: 'approvals' })}
                             className="flex shrink-0 w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
                         >
                             Review Applications <ChevronRight size={14} />
@@ -334,7 +334,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                             </span>
                                             <div className="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                 <Link
-                                                    href={user.role === "artisan" && user.artisan_status === "pending" ? route("admin.pending") : route("admin.users")}
+                                                    href={user.role === "artisan" && user.artisan_status === "pending" ? route("admin.users.manager", { tab: 'approvals' }) : route("admin.users.manager", { tab: 'directory' })}
                                                     className="inline-flex items-center gap-1 rounded-lg bg-clay-50 hover:bg-clay-100 border border-[#E7D8C9] px-2.5 py-1 text-[10px] font-bold text-clay-700 transition"
                                                 >
                                                     {user.role === "artisan" && user.artisan_status === "pending" ? "Verify" : "Manage"} <ChevronRight size={10} />

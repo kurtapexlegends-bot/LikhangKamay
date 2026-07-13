@@ -68,7 +68,7 @@ class ImpersonationController extends Controller
         // Restore the admin session
         Auth::loginUsingId($adminId);
 
-        $targetRoute = route('admin.users');
+        $targetRoute = route('admin.users.manager', ['tab' => 'directory']);
 
         if ($request->header('X-Inertia')) {
             return \Inertia\Inertia::location($targetRoute);

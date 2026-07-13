@@ -191,7 +191,7 @@ export default function ContentSafety({ flags, disputes = [], trashQueue = [], t
 
     return (
         <>
-            <Head title="Content Safety" />
+            <Head title="Safety & Moderation" />
 
             <div className="space-y-6">
                 {/* --- HEADER TABS NAVIGATION --- */}

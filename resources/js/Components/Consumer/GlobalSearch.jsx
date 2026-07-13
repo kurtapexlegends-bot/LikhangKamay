@@ -82,12 +82,12 @@ export default function GlobalSearch() {
     // Define Role-based Commands
     const commands = isAdmin ? [
         { label: 'Go to User Manager', cmd: '> users', url: getSafeRoute('admin.users.manager'), icon: Users, color: 'text-indigo-500 bg-indigo-50' },
-        { label: 'Go to Artisan Applications', cmd: '> applications', url: getSafeRoute('admin.pending'), icon: Award, color: 'text-amber-500 bg-amber-50' },
-        { label: 'Go to Catalog Manager', cmd: '> taxonomy', url: getSafeRoute('admin.taxonomy.index'), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
+        { label: 'Go to Artisan Applications', cmd: '> applications', url: getSafeRoute('admin.users.manager', { tab: 'approvals' }), icon: Award, color: 'text-amber-500 bg-amber-50' },
+        { label: 'Go to Catalog Manager', cmd: '> taxonomy', url: getSafeRoute('admin.catalog.index', { tab: 'taxonomy' }), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
         { label: 'Go to Platform Revenue', cmd: '> revenue', url: getSafeRoute('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
         { label: 'Go to Insights', cmd: '> insights', url: getSafeRoute('admin.insights'), icon: BarChart2, color: 'text-purple-500 bg-purple-50' },
         { label: 'Go to Audit Logs', cmd: '> audit', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
-        { label: 'Go to Content Safety', cmd: '> moderation', url: getSafeRoute('admin.moderation'), icon: ShieldAlert, color: 'text-red-500 bg-red-50' },
+        { label: 'Go to Safety & Moderation', cmd: '> moderation', url: getSafeRoute('admin.compliance', { tab: 'flags' }), icon: ShieldAlert, color: 'text-red-500 bg-red-50' },
         { label: 'Go to Escalated Disputes', cmd: '> disputes', url: getSafeRoute('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-500 bg-rose-50' },
     ] : [
         { label: 'Go to Inventory', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: 'procurement' },
@@ -316,7 +316,7 @@ export default function GlobalSearch() {
                                     {(isAdmin ? [
                                         { label: 'User Manager', sub: 'Manage platform users, staff profiles, and onboarding.', icon: Users, color: 'text-indigo-500 bg-indigo-50/50', url: getSafeRoute('admin.users.manager') },
                                         { label: 'Catalog Manager', sub: 'Manage product categories, tags, and taxonomy.', icon: FolderTree, color: 'text-rose-500 bg-rose-50/50', url: getSafeRoute('admin.catalog.index') },
-                                        { label: 'Content Safety', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50', url: getSafeRoute('admin.compliance') },
+                                        { label: 'Safety & Moderation', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50', url: getSafeRoute('admin.compliance') },
                                     ] : [
                                         { label: 'Products & Inventory', sub: 'Manage product listings, supplies, and orders.', icon: Box, color: 'text-blue-500 bg-blue-50/50', modules: ['products', 'procurement'], url: getSafeRoute('products.index') },
                                         { label: 'Orders & Reviews', sub: 'Manage order fulfillment, tracking, and feedback.', icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50/50', modules: ['orders', 'reviews'], url: getSafeRoute('orders.index') },

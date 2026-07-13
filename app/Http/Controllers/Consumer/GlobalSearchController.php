@@ -72,7 +72,7 @@ class GlobalSearchController extends Controller
                     'title' => $u->name,
                     'subtitle' => $u->role === 'artisan' ? "Shop: {$u->shop_name}" : "Role: {$u->role}",
                     'type' => 'User',
-                    'url' => route('admin.users', ['search' => $u->email]),
+                    'url' => route('admin.users.manager', ['tab' => 'directory', 'search' => $u->email]),
                     'icon' => 'user',
                 ];
             });
@@ -89,7 +89,7 @@ class GlobalSearchController extends Controller
                     'title' => "Sponsorship: {$s->product->name}",
                     'subtitle' => "Artisan: {$s->user->name} • Status: {$s->status}",
                     'type' => 'Sponsorship',
-                    'url' => route('admin.sponsorships', ['search' => $s->product->name]),
+                    'url' => route('admin.catalog.index', ['tab' => 'sponsorships', 'search' => $s->product->name]),
                     'icon' => 'star',
                 ];
             });
@@ -104,7 +104,7 @@ class GlobalSearchController extends Controller
                     'title' => $c->name,
                     'subtitle' => "Category Management",
                     'type' => 'Category',
-                    'url' => route('admin.taxonomy.index', ['search' => $c->name]),
+                    'url' => route('admin.catalog.index', ['tab' => 'taxonomy', 'search' => $c->name]),
                     'icon' => 'folder',
                 ];
             });
@@ -121,7 +121,7 @@ class GlobalSearchController extends Controller
                     'title' => "Report #{$r->id}: " . substr($r->reason, 0, 30) . "...",
                     'subtitle' => "Status: {$r->status}",
                     'type' => 'Moderation',
-                    'url' => route('admin.moderation', ['search' => $r->id]),
+                    'url' => route('admin.compliance', ['tab' => 'flags', 'search' => $r->id]),
                     'icon' => 'shield',
                 ];
             });
