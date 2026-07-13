@@ -73,6 +73,9 @@ class CatalogController extends Controller
             'slug' => Str::slug($name)
         ]);
 
+        \Illuminate\Support\Facades\Cache::forget('home_categories');
+        \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+
         return back()->with('success', 'Category created successfully.');
     }
 
@@ -97,6 +100,9 @@ class CatalogController extends Controller
         // Mass update existing products
         Product::where('category', $oldName)->update(['category' => $newName]);
 
+        \Illuminate\Support\Facades\Cache::forget('home_categories');
+        \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+
         return back()->with('success', 'Category renamed and all associated products updated.');
     }
 
@@ -111,6 +117,9 @@ class CatalogController extends Controller
         }
 
         $category->delete();
+
+        \Illuminate\Support\Facades\Cache::forget('home_categories');
+        \Illuminate\Support\Facades\Cache::forget('catalog_categories');
 
         return back()->with('success', 'Category deleted successfully.');
     }

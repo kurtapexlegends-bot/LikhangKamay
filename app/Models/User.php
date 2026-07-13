@@ -384,4 +384,21 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
         return static::$hasSplitNameColumns;
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($user) {
+            if ($user->role === 'artisan') {
+                \Illuminate\Support\Facades\Cache::forget('approved_artisans_list');
+                \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
+            }
+        });
+
+        static::deleted(function ($user) {
+            if ($user->role === 'artisan') {
+                \Illuminate\Support\Facades\Cache::forget('approved_artisans_list');
+                \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
+            }
+        });
+    }
 }
