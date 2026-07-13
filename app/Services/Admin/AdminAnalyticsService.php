@@ -11,13 +11,13 @@ class AdminAnalyticsService
     public function getInsightsData(): array
     {
         return Cache::remember('admin_insights_data', 3600, function () {
-            $revenue = $this->getRevenueForecastData();
+            $transactions = $this->getMarketplaceVelocityData();
             $churn = $this->getChurnData();
             $categories = $this->getCategoryPerformanceData();
             $health = $this->getPlatformHealthData();
 
             return [
-                'revenue' => $revenue,
+                'transactions' => $transactions,
                 'churn' => $churn,
                 'categories' => $categories,
                 'health' => $health,
@@ -25,37 +25,94 @@ class AdminAnalyticsService
         });
     }
 
-    protected function getRevenueForecastData(): array
+    protected function getMarketplaceVelocityData(): array
     {
-        $premiumPrice = (float) \App\Facades\Settings::get('tier_premium_price', 199.00);
-        $elitePrice = (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00);
+        $startPeriod = now()->subYears(3)->startOfYear();
+        $orders = \App\Models\Order::where('created_at', '>=', $startPeriod)
+            ->select('id', 'status', 'total_amount', 'created_at')
+            ->get();
 
-        $months = collect(range(11, 0))->map(fn($i) => now()->subMonths($i)->endOfMonth());
-        $snapshots = app(\App\Services\Admin\AdminMetricsService::class)->getHistoricalTierSnapshots($months->toArray());
+        // 1. Last 7 Days (7D) -> e.g., Mon, Tue
+        $sevenDaysData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dateStr = $date->format('Y-m-d');
+            $dayLabel = $date->format('D');
 
-        $history = [];
-        foreach ($snapshots as $monthLabel => $counts) {
-            $history[] = [
-                'month' => $monthLabel,
-                'mrr' => ($counts['premium'] * $premiumPrice) + ($counts['super_premium'] * $elitePrice),
+            $dayOrders = $orders->filter(function($o) use ($dateStr) {
+                return $o->created_at->format('Y-m-d') === $dateStr;
+            });
+
+            $orderCount = $dayOrders->count();
+            $gmv = $dayOrders->where('status', '!=', 'cancelled')->sum('total_amount');
+
+            $sevenDaysData[] = [
+                'name' => $dayLabel,
+                'orders' => (int) $orderCount,
+                'gmv' => (float) $gmv,
             ];
         }
 
-        $currentMRR = end($history)['mrr'] ?? 0;
-        $previousMRR = count($history) > 1 ? $history[count($history) - 2]['mrr'] : 0;
+        // 2. Last 12 Months (Monthly) -> e.g., Jan, Feb
+        $monthlyData = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthStr = $date->format('Y-m');
+            $monthLabel = $date->format('M');
 
-        $growthRate = 0;
-        if ($previousMRR > 0) {
-            $growthRate = round((($currentMRR - $previousMRR) / $previousMRR) * 100, 1);
+            $monthOrders = $orders->filter(function($o) use ($monthStr) {
+                return $o->created_at->format('Y-m') === $monthStr;
+            });
+
+            $orderCount = $monthOrders->count();
+            $gmv = $monthOrders->where('status', '!=', 'cancelled')->sum('total_amount');
+
+            $monthlyData[] = [
+                'name' => $monthLabel,
+                'orders' => (int) $orderCount,
+                'gmv' => (float) $gmv,
+            ];
         }
 
-        $forecastedMRR = round($currentMRR * (1 + ($growthRate / 100)));
+        // 3. Last 3 Years (Yearly) -> e.g., 2024, 2025, 2026
+        $yearlyData = [];
+        for ($i = 2; $i >= 0; $i--) {
+            $date = now()->subYears($i);
+            $yearStr = $date->format('Y');
+            $yearLabel = $date->format('Y');
+
+            $yearOrders = $orders->filter(function($o) use ($yearStr) {
+                return $o->created_at->format('Y') === $yearStr;
+            });
+
+            $orderCount = $yearOrders->count();
+            $gmv = $yearOrders->where('status', '!=', 'cancelled')->sum('total_amount');
+
+            $yearlyData[] = [
+                'name' => $yearLabel,
+                'orders' => (int) $orderCount,
+                'gmv' => (float) $gmv,
+            ];
+        }
+
+        // Growth rate: last 30 days vs previous 30 days
+        $current30Orders = $orders->filter(fn($o) => $o->created_at >= now()->subDays(30));
+        $current30Gmv = $current30Orders->where('status', '!=', 'cancelled')->sum('total_amount');
+
+        $previous30Orders = $orders->filter(fn($o) => $o->created_at >= now()->subDays(60) && $o->created_at < now()->subDays(30));
+        $previous30Gmv = $previous30Orders->where('status', '!=', 'cancelled')->sum('total_amount');
+
+        $growthRate = 0;
+        if ($previous30Gmv > 0) {
+            $growthRate = round((($current30Gmv - $previous30Gmv) / $previous30Gmv) * 100, 1);
+        }
 
         return [
-            'currentMRR' => number_format($currentMRR),
-            'forecastedMRR' => number_format($forecastedMRR),
+            'currentGmv' => (float) $current30Gmv,
             'growthRate' => $growthRate,
-            'history' => $history,
+            'seven_days' => $sevenDaysData,
+            'monthly' => $monthlyData,
+            'yearly' => $yearlyData,
         ];
     }
 
