@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, User, Package, ShoppingCart, Loader2, Command, Box, ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, TrendingUp, BarChart2, ShieldAlert, Bell, RotateCcw, Shield } from 'lucide-react';
+import { Search, X, User, Package, ShoppingCart, Loader2, Command, Box, ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, TrendingUp, BarChart2, ShieldAlert, Bell, RotateCcw, Shield, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
 import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
@@ -89,6 +89,11 @@ export default function GlobalSearch() {
         { label: 'Go to Audit Logs', cmd: '> audit', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
         { label: 'Go to Safety & Moderation', cmd: '> moderation', url: getSafeRoute('admin.compliance', { tab: 'flags' }), icon: ShieldAlert, color: 'text-red-500 bg-red-50' },
         { label: 'Go to Escalated Disputes', cmd: '> disputes', url: getSafeRoute('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-500 bg-rose-50' },
+        { label: 'Go to Dashboard', cmd: '> dashboard', url: getSafeRoute('admin.dashboard'), icon: LayoutDashboard, color: 'text-stone-500 bg-stone-50' },
+        { label: 'Go to Product Moderation', cmd: '> products', url: getSafeRoute('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, color: 'text-indigo-500 bg-indigo-50' },
+        { label: 'Go to Sponsorship Manager', cmd: '> sponsorships', url: getSafeRoute('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, color: 'text-amber-500 bg-amber-50' },
+        { label: 'Go to Review Disputes', cmd: '> review-disputes', url: getSafeRoute('admin.compliance', { tab: 'disputes' }), icon: MessageSquare, color: 'text-orange-500 bg-orange-50' },
+        { label: 'Go to System Config', cmd: '> settings', url: getSafeRoute('admin.settings.index'), icon: Settings, color: 'text-stone-500 bg-stone-50' },
     ] : [
         { label: 'Go to Inventory', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: 'procurement' },
         { label: 'Go to Order Manager', cmd: '> orders', url: getSafeRoute('orders.index'), icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50', module: 'orders' },
