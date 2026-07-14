@@ -30,6 +30,7 @@ import BrandingForm from '@/Components/Admin/Layout/SystemConfig/BrandingForm';
 import SMTPForm from '@/Components/Admin/Layout/SystemConfig/SMTPForm';
 import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships, categories = [], trashQueue = [], trashStats }) {
     const { flash } = usePage().props;
@@ -45,6 +46,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
     const [activeSubTab, setActiveSubTab] = useState('branding_details');
     const [showMobileNotes, setShowMobileNotes] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
@@ -101,7 +103,12 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     });
 
     const submit = (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
+        setIsConfirmOpen(true);
+    };
+
+    const confirmSubmit = () => {
+        setIsConfirmOpen(false);
         post(route('admin.settings.update'), {
             forceFormData: true,
             preserveScroll: true,
@@ -555,6 +562,22 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <ConfirmationModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={confirmSubmit}
+                    title={activeTab === 'plans' ? "Confirm Subscription Plan Update" : "Confirm System Config Update"}
+                    message={activeTab === 'plans' 
+                        ? "Are you sure you want to update the subscription plan tier details? Lowering limits will automatically draft excess active listings on next artisan account reconciliation."
+                        : "Are you sure you want to update the system configuration? Branding and operational settings will apply immediately to all active processes."}
+                    icon={activeTab === 'plans' ? ShieldCheck : Settings}
+                    iconBg="bg-clay-50 text-clay-700"
+                    confirmText={activeTab === 'plans' ? "Apply Plan Changes" : "Apply Config Changes"}
+                    confirmColor="bg-clay-600 hover:bg-clay-700 focus-visible:ring-clay-500/30"
+                    isVeryHighRisk={true}
+                    processing={processing}
+                />
             </div>
         </>
     );
