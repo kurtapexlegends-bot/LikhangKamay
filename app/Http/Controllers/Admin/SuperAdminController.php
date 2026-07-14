@@ -481,8 +481,8 @@ class SuperAdminController extends Controller
     {
         Gate::authorize('admin-action');
 
-        if ($user->id === Auth::id()) {
-            return back()->withErrors(['error' => 'You cannot suspend or ban your own account.']);
+        if ($user->isAdmin()) {
+            return back()->withErrors(['error' => 'You cannot suspend or ban an administrator account.']);
         }
 
         $user->banned_at = $user->banned_at ? null : now();

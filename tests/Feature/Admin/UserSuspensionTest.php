@@ -39,16 +39,26 @@ class UserSuspensionTest extends TestCase
         $this->assertNull($targetUser->fresh()->banned_at);
     }
 
-    public function test_admin_cannot_suspend_themselves(): void
+    public function test_admin_cannot_suspend_admin_accounts(): void
     {
         /** @var \App\Models\User $admin */
         $admin = User::factory()->superAdmin()->create();
+        /** @var \App\Models\User $otherAdmin */
+        $otherAdmin = User::factory()->superAdmin()->create();
 
+        // Admin cannot suspend themselves
         $this->actingAs($admin)
             ->post(route('admin.users.toggle-status', $admin->id))
             ->assertSessionHasErrors(['error']);
 
         $this->assertNull($admin->fresh()->banned_at);
+
+        // Admin cannot suspend another admin
+        $this->actingAs($admin)
+            ->post(route('admin.users.toggle-status', $otherAdmin->id))
+            ->assertSessionHasErrors(['error']);
+
+        $this->assertNull($otherAdmin->fresh()->banned_at);
     }
 
     public function test_suspended_user_is_automatically_logged_out(): void
