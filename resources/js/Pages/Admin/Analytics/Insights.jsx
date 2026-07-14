@@ -306,39 +306,70 @@ export default function Insights({
                         {categories.length > 0 ? (
                             <div className="w-full">
                                 <div className="h-[180px] w-full flex items-center justify-center relative">
-                                    <PieChart width={180} height={180}>
-                                        <Pie
-                                            data={pieData}
-                                            nameKey="category"
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={45}
-                                            outerRadius={75}
-                                            paddingAngle={pieData.length > 1 ? 4 : 0}
-                                            dataKey="gmv"
-                                            stroke="none"
-                                            isAnimationActive={false}
-                                        >
-                                            {pieData.map((entry, index) => {
-                                                const originalIndex = categories.findIndex(c => c.category === entry.category);
-                                                const isHovered = hoveredCategoryIndex === originalIndex;
-                                                const sliceColor = entry.isEmpty ? '#e7e5e4' : PIE_COLORS[originalIndex % PIE_COLORS.length];
-                                                return (
-                                                    <Cell 
-                                                        key={`cell-${index}`} 
-                                                        fill={sliceColor}
-                                                        style={{
-                                                            transition: 'all 0.3s ease',
-                                                            transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-                                                            transformOrigin: '50% 50%',
-                                                            filter: isHovered ? 'drop-shadow(0px 4px 6px rgba(0,0,0,0.1))' : 'none'
-                                                        }}
-                                                    />
-                                                );
-                                            })}
-                                        </Pie>
-                                        <Tooltip content={<CategoryTooltip />} />
-                                    </PieChart>
+                                    {/* Screen Pie Chart (Animated) */}
+                                    <div className="print:hidden">
+                                        <PieChart width={180} height={180}>
+                                            <Pie
+                                                data={pieData}
+                                                nameKey="category"
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={45}
+                                                outerRadius={75}
+                                                paddingAngle={pieData.length > 1 ? 4 : 0}
+                                                dataKey="gmv"
+                                                stroke="none"
+                                            >
+                                                {pieData.map((entry, index) => {
+                                                    const originalIndex = categories.findIndex(c => c.category === entry.category);
+                                                    const isHovered = hoveredCategoryIndex === originalIndex;
+                                                    const sliceColor = entry.isEmpty ? '#e7e5e4' : PIE_COLORS[originalIndex % PIE_COLORS.length];
+                                                    return (
+                                                        <Cell 
+                                                            key={`cell-${index}`} 
+                                                            fill={sliceColor}
+                                                            style={{
+                                                                transition: 'all 0.3s ease',
+                                                                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                                                                transformOrigin: '50% 50%',
+                                                                filter: isHovered ? 'drop-shadow(0px 4px 6px rgba(0,0,0,0.1))' : 'none'
+                                                            }}
+                                                        />
+                                                    );
+                                                })}
+                                            </Pie>
+                                            <Tooltip content={<CategoryTooltip />} />
+                                        </PieChart>
+                                    </div>
+
+                                    {/* Print Pie Chart (Instant / Static) */}
+                                    <div className="hidden print:block">
+                                        <PieChart width={180} height={180}>
+                                            <Pie
+                                                data={pieData}
+                                                nameKey="category"
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={45}
+                                                outerRadius={75}
+                                                paddingAngle={pieData.length > 1 ? 4 : 0}
+                                                dataKey="gmv"
+                                                stroke="none"
+                                                isAnimationActive={false}
+                                            >
+                                                {pieData.map((entry, index) => {
+                                                    const originalIndex = categories.findIndex(c => c.category === entry.category);
+                                                    const sliceColor = entry.isEmpty ? '#e7e5e4' : PIE_COLORS[originalIndex % PIE_COLORS.length];
+                                                    return (
+                                                        <Cell 
+                                                            key={`cell-${index}`} 
+                                                            fill={sliceColor}
+                                                        />
+                                                    );
+                                                })}
+                                            </Pie>
+                                        </PieChart>
+                                    </div>
                                 </div>
 
                                 <div className="mt-2 space-y-1.5 pt-4 border-t border-stone-100">

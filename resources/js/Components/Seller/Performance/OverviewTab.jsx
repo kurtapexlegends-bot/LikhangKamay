@@ -226,34 +226,62 @@ export default function OverviewTab({
 
                     {categoryData.length > 0 ? (
                         <div className="h-[180px] w-full flex items-center justify-center relative">
-                            <PieChart width={160} height={160}>
-                                <Pie
-                                    data={pieData}
-                                    nameKey="category"
-                                    cx={80}
-                                    cy={80}
-                                    innerRadius={45}
-                                    outerRadius={70}
-                                    paddingAngle={pieData.length > 1 ? 4 : 0}
-                                    dataKey="value"
-                                    stroke="none"
-                                    onClick={(data) => updateCategoryFilter(data.category || data.name)}
-                                    className="cursor-pointer"
-                                    isAnimationActive={false}
-                                >
-                                    {pieData.map((entry, index) => {
-                                        const originalIndex = categoryData.findIndex(c => c.category === entry.category);
-                                        const sliceColor = entry.isEmpty ? '#e7e5e4' : COLORS[originalIndex % COLORS.length];
-                                        return (
-                                            <Cell key={`cell-${index}`} fill={sliceColor} />
-                                        );
-                                    })}
-                                </Pie>
-                                <RechartsTooltip
-                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}
-                                    formatter={(value, name) => [`${value} items`, name]}
-                                />
-                            </PieChart>
+                            {/* Screen Pie Chart (Animated) */}
+                            <div className="print:hidden">
+                                <PieChart width={160} height={160}>
+                                    <Pie
+                                        data={pieData}
+                                        nameKey="category"
+                                        cx={80}
+                                        cy={80}
+                                        innerRadius={45}
+                                        outerRadius={70}
+                                        paddingAngle={pieData.length > 1 ? 4 : 0}
+                                        dataKey="value"
+                                        stroke="none"
+                                        onClick={(data) => updateCategoryFilter(data.category || data.name)}
+                                        className="cursor-pointer"
+                                    >
+                                        {pieData.map((entry, index) => {
+                                            const originalIndex = categoryData.findIndex(c => c.category === entry.category);
+                                            const sliceColor = entry.isEmpty ? '#e7e5e4' : COLORS[originalIndex % COLORS.length];
+                                            return (
+                                                <Cell key={`cell-${index}`} fill={sliceColor} />
+                                            );
+                                        })}
+                                    </Pie>
+                                    <RechartsTooltip
+                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}
+                                        formatter={(value, name) => [`${value} items`, name]}
+                                    />
+                                </PieChart>
+                            </div>
+
+                            {/* Print Pie Chart (Instant / Static) */}
+                            <div className="hidden print:block">
+                                <PieChart width={160} height={160}>
+                                    <Pie
+                                        data={pieData}
+                                        nameKey="category"
+                                        cx={80}
+                                        cy={80}
+                                        innerRadius={45}
+                                        outerRadius={70}
+                                        paddingAngle={pieData.length > 1 ? 4 : 0}
+                                        dataKey="value"
+                                        stroke="none"
+                                        isAnimationActive={false}
+                                    >
+                                        {pieData.map((entry, index) => {
+                                            const originalIndex = categoryData.findIndex(c => c.category === entry.category);
+                                            const sliceColor = entry.isEmpty ? '#e7e5e4' : COLORS[originalIndex % COLORS.length];
+                                            return (
+                                                <Cell key={`cell-${index}`} fill={sliceColor} />
+                                            );
+                                        })}
+                                    </Pie>
+                                </PieChart>
+                            </div>
                         </div>
                     ) : (
                         <WorkspaceEmptyState
