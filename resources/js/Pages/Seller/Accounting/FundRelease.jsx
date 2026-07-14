@@ -227,7 +227,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                         </button>
                     ) : (
                         <ExportButton href={route('accounting.export')} variant="primary">
-                            Export Ledger
+                            EXPORT
                         </ExportButton>
                     )
                 }

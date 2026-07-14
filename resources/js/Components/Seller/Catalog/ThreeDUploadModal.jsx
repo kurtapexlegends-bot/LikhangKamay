@@ -319,7 +319,7 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                                 </>
                             ) : (
                                 <>
-                                    <Check size={16} /> Upload Model
+                                    <Check size={16} /> ADD MODEL
                                 </>
                             )}
                         </button>

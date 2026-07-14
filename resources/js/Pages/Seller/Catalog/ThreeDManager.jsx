@@ -83,7 +83,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-clay-700 shadow-sm transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <UploadCloud size={15} />
-                        Upload Model
+                        ADD 3D MODEL
                     </button>
                 )}
             />

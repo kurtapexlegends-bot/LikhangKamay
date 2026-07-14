@@ -200,6 +200,114 @@ export default function AuditLog({ auth, auditLog }) {
     return (
         <>
             <Head title="Audit Log Center" />
+            <style dangerouslySetInnerHTML={{__html: `
+                @media print {
+                    /* Hide layout sidebar, header navigation, buttons, and system controls */
+                    aside,
+                    nav,
+                    header,
+                    .no-print,
+                    .mobile-dock,
+                    #nprogress,
+                    .fixed,
+                    button,
+                    a {
+                        display: none !important;
+                    }
+
+                    /* Reset layout containers margins, paddings, and heights to prevent page cutting */
+                    html, body, #app, .h-screen, .overflow-hidden, [scroll-region="true"], main {
+                        background: white !important;
+                        color: black !important;
+                        height: auto !important;
+                        min-height: 0 !important;
+                        overflow: visible !important;
+                        position: static !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    /* Hide filters, header action buttons, and mobile swipe pills */
+                    .bg-\\[\\#FCF7F2\\]\\/30,
+                    .md\\:hidden.divide-y,
+                    .lg\\:hidden.border-b.border-stone-100.bg-\\[\\#FCF7F2\\]\\/30,
+                    [class*="AuditLogFilters"] {
+                        display: none !important;
+                    }
+
+                    /* Apply border styles to white boxes in print and avoid breaking */
+                    .bg-white {
+                        border: 1px solid #e5e7eb !important;
+                        box-shadow: none !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                        border-radius: 12px !important;
+                        background-color: white !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+
+                    @page {
+                        size: portrait;
+                        margin: 12mm 15mm 12mm 15mm !important;
+                    }
+
+                    /* Grid layouts preservation under print */
+                    .grid {
+                        display: grid !important;
+                    }
+                    
+                    /* Force KPI summary cards to display as a 3-column grid on print */
+                    .flex.overflow-x-auto.whitespace-nowrap {
+                        display: grid !important;
+                        grid-template-columns: repeat(3, 1fr) !important;
+                        gap: 16px !important;
+                        white-space: normal !important;
+                    }
+                    .w-\\[200px\\] {
+                        width: auto !important;
+                    }
+
+                    /* Fix 3D and flex layout elements inside listing articles */
+                    article {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+
+                    /* Force hidden details and diffs to show on print */
+                    .hidden.lg\\:block {
+                        display: block !important;
+                    }
+                    .hidden.lg\\:grid {
+                        display: grid !important;
+                        grid-template-columns: repeat(2, 1fr) !important;
+                        gap: 16px !important;
+                    }
+                    .hidden.sm\\:inline-flex {
+                        display: inline-flex !important;
+                    }
+                    .hidden.md\\:inline-flex {
+                        display: inline-flex !important;
+                    }
+
+                    /* Enable backgrounds on badges and labels in print */
+                    .bg-stone-50, .bg-emerald-50, .bg-clay-50, .bg-amber-50, .bg-stone-100 {
+                        background-color: #f9f9f9 !important;
+                        border: 1px solid #e5e7eb !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                }
+            `}} />
+
+            {/* Print-Only Document Header */}
+            <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
+                <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Activity Ledger</h1>
+                <p className="text-xs text-stone-500 mt-1">
+                    Generated on: {new Date().toLocaleString()}
+                </p>
+            </div>
+
             <SellerHeader
                 title="Activity Log Center"
                 subtitle="Review security actions, staff access logs, and billing history."
@@ -208,7 +316,7 @@ export default function AuditLog({ auth, auditLog }) {
                 badge={{ label: 'Workspace Oversight', iconColor: 'text-stone-400' }}
                 actions={
                     <>
-                        <ExportButton onClick={() => window.print()} icon={Printer}>
+                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer}>
                             Print
                         </ExportButton>
                         <ExportButton
@@ -224,7 +332,7 @@ export default function AuditLog({ auth, auditLog }) {
                             })}
                             variant="primary"
                         >
-                            Export CSV
+                            Export
                         </ExportButton>
                     </>
                 }

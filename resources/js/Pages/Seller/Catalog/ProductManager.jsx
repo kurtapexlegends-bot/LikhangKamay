@@ -58,7 +58,7 @@ export default function ProductManager({
                             className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[40px]"
                         >
                             <Plus size={16} />
-                            <span className="hidden sm:inline">Add Product</span>
+                            <span className="hidden sm:inline">ADD PRODUCT</span>
                             <span className="sm:hidden">Add</span>
                         </button>
                     </div>
