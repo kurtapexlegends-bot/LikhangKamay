@@ -245,12 +245,10 @@ export default function AuditLog({ auth, auditLog }) {
                         display: none !important;
                     }
 
-                    /* Apply border styles to white boxes in print and avoid breaking */
+                    /* Apply border styles to white boxes in print */
                     .bg-white {
                         border: 1px solid #e5e7eb !important;
                         box-shadow: none !important;
-                        page-break-inside: avoid !important;
-                        break-inside: avoid !important;
                         border-radius: 12px !important;
                         background-color: white !important;
                         -webkit-print-color-adjust: exact !important;
