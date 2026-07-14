@@ -169,6 +169,15 @@ class DirectMessageService
             return false;
         }
 
+        if ($counterpart->banned_at !== null) {
+            $sellerId = $counterpart->isArtisan() ? $counterpart->id : $this->resolveConversationUserId($actor, $sellerPerspective);
+            $buyerId = $counterpart->isArtisan() ? $actor->id : $counterpart->id;
+
+            if (!$this->hasActiveOrderRelationship($sellerId, $buyerId)) {
+                return false;
+            }
+        }
+
         if ($sellerPerspective) {
             if (!$this->isSellerWorkspaceChatActor($actor)) {
                 return false;
@@ -244,6 +253,15 @@ class DirectMessageService
         return Order::query()
             ->where('artisan_id', $sellerId)
             ->where('user_id', $buyerId)
+            ->exists();
+    }
+
+    public function hasActiveOrderRelationship(int $sellerId, int $buyerId): bool
+    {
+        return Order::query()
+            ->where('artisan_id', $sellerId)
+            ->where('user_id', $buyerId)
+            ->whereIn('status', ['Pending', 'Accepted', 'Shipped', 'Delivered'])
             ->exists();
     }
 }

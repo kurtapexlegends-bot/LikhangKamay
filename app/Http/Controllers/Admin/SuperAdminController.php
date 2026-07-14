@@ -488,6 +488,19 @@ class SuperAdminController extends Controller
         $user->banned_at = $user->banned_at ? null : now();
         $user->save();
 
+        if ($user->isArtisan()) {
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
+            \Illuminate\Support\Facades\Cache::forget("seller_{$user->id}_products");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$user->id}_best_sellers");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$user->id}_stats");
+            \Illuminate\Support\Facades\Cache::forget('catalog_materials');
+            \Illuminate\Support\Facades\Cache::forget('catalog_locations');
+            \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+            \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
+            \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
+            \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
+        }
+
         PlatformActivity::create([
             'user_id' => Auth::id(),
             'action' => $user->banned_at ? 'suspend_user' : 'reactivate_user',

@@ -248,10 +248,11 @@ class Product extends Model
     {
         return $query->where('status', 'Active')
             ->whereHas('user', function ($q) {
-                $q->where(function ($sub) {
-                    $sub->where('last_seen_at', '>=', now()->subDays(60))
-                        ->orWhereNull('last_seen_at');
-                });
+                $q->whereNull('banned_at')
+                    ->where(function ($sub) {
+                        $sub->where('last_seen_at', '>=', now()->subDays(60))
+                            ->orWhereNull('last_seen_at');
+                    });
             });
     }
 
