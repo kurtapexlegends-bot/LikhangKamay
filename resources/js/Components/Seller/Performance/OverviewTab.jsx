@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import KPICard from '@/Components/KPICard';
 import StaggerContainer from '@/Components/StaggerContainer';
 import ContentTransition from '@/Components/ContentTransition';
@@ -48,6 +48,12 @@ export default function OverviewTab({
     categoryData,
     updateCategoryFilter,
 }) {
+    const pieData = useMemo(() => {
+        if (!categoryData) return [];
+        const active = categoryData.filter(c => Number(c.value || 0) > 0);
+        if (active.length > 0) return active;
+        return [{ category: 'No Sales', value: 1, isEmpty: true }];
+    }, [categoryData]);
     const [activeCardIndex, setActiveCardIndex] = useState(0);
 
     const handleCardScroll = (e) => {
@@ -222,21 +228,26 @@ export default function OverviewTab({
                         <div className="h-[180px] w-full flex items-center justify-center relative">
                             <PieChart width={160} height={160}>
                                 <Pie
-                                    data={categoryData}
+                                    data={pieData}
                                     nameKey="category"
                                     cx={80}
                                     cy={80}
                                     innerRadius={45}
                                     outerRadius={70}
-                                    paddingAngle={4}
+                                    paddingAngle={pieData.length > 1 ? 4 : 0}
                                     dataKey="value"
                                     stroke="none"
                                     onClick={(data) => updateCategoryFilter(data.category || data.name)}
                                     className="cursor-pointer"
+                                    isAnimationActive={false}
                                 >
-                                    {categoryData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
+                                    {pieData.map((entry, index) => {
+                                        const originalIndex = categoryData.findIndex(c => c.category === entry.category);
+                                        const sliceColor = entry.isEmpty ? '#e7e5e4' : COLORS[originalIndex % COLORS.length];
+                                        return (
+                                            <Cell key={`cell-${index}`} fill={sliceColor} />
+                                        );
+                                    })}
                                 </Pie>
                                 <RechartsTooltip
                                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ContentTransition from '@/Components/ContentTransition';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { DollarSign, Package } from 'lucide-react';
@@ -36,6 +36,13 @@ export default function PrintReportCharts({
     // Guard clause: handle empty/invalid array
     const chartDataList = Array.isArray(currentChartData) ? currentChartData : [];
     const categoryDataList = Array.isArray(categoryData) ? categoryData : [];
+
+    const pieData = useMemo(() => {
+        if (!categoryDataList) return [];
+        const active = categoryDataList.filter(c => Number(c.value || 0) > 0);
+        if (active.length > 0) return active;
+        return [{ category: 'No Sales', value: 1, isEmpty: true }];
+    }, [categoryDataList]);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-charts-container">
@@ -99,7 +106,7 @@ export default function PrintReportCharts({
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
                                         <YAxis width={40} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
-                                        <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenuePrintPrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} />
+                                        <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenuePrintPrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} isAnimationActive={false} />
                                     </AreaChart>
                                 </div>
                             </>
@@ -129,21 +136,26 @@ export default function PrintReportCharts({
                     <div className="h-[180px] w-full flex items-center justify-center relative">
                         <PieChart width={160} height={160}>
                             <Pie
-                                data={categoryDataList}
+                                data={pieData}
                                 nameKey="category"
                                 cx={80}
                                 cy={80}
                                 innerRadius={45}
                                 outerRadius={70}
-                                paddingAngle={4}
+                                paddingAngle={pieData.length > 1 ? 4 : 0}
                                 dataKey="value"
                                 stroke="none"
                                 onClick={updateCategoryFilter ? (data) => updateCategoryFilter(data.category || data.name) : undefined}
                                 className={updateCategoryFilter ? "cursor-pointer" : ""}
+                                isAnimationActive={false}
                             >
-                                {categoryDataList.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
+                                {pieData.map((entry, index) => {
+                                    const originalIndex = categoryDataList.findIndex(c => c.category === entry.category);
+                                    const sliceColor = entry.isEmpty ? '#e7e5e4' : COLORS[originalIndex % COLORS.length];
+                                    return (
+                                        <Cell key={`cell-${index}`} fill={sliceColor} />
+                                    );
+                                })}
                             </Pie>
                             <RechartsTooltip
                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}
