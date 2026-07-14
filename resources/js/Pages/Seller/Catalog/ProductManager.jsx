@@ -6,7 +6,7 @@ import SellerWorkspaceLayout, {
     useSellerWorkspaceShell,
 } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
-import { FileDown, Upload, Plus, CheckCircle2, RotateCcw, Archive, AlertTriangle, AlertOctagon } from "lucide-react";
+import { Plus, CheckCircle2, RotateCcw, Archive, AlertTriangle, AlertOctagon } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 import Modal from "@/Components/Modal";
 
@@ -52,34 +52,6 @@ export default function ProductManager({
                 onMenuClick={openSidebar}
                 actions={
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => (window.location.href = route("products.export-csv"))}
-                            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-stone-50 min-h-[44px] sm:min-h-[40px] select-none"
-                        >
-                            <FileDown size={16} />
-                            <span className="hidden sm:inline">Export CSV</span>
-                            <span className="sm:hidden">Export</span>
-                        </button>
-                        <label className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-stone-50 cursor-pointer min-h-[44px] sm:min-h-[40px] select-none">
-                            <Upload size={16} />
-                            <span className="hidden sm:inline">Import CSV</span>
-                            <span className="sm:hidden">Import</span>
-                            <input
-                                type="file"
-                                className="hidden"
-                                accept=".csv"
-                                onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                        const formData = new FormData();
-                                        formData.append("file", file);
-                                        router.post(route("products.import-csv"), formData, {
-                                            onSuccess: () => state.addToast("Import successful", "success"),
-                                        });
-                                    }
-                                }}
-                            />
-                        </label>
                         <button
                             onClick={state.openAddModal}
                             disabled={!state.canEditProducts}
