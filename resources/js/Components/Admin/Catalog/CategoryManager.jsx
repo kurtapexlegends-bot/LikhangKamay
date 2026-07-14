@@ -358,6 +358,7 @@ export default function CategoryManager({ categories }) {
                 iconBg="bg-clay-50 text-clay-600"
                 confirmText="Rename Category"
                 confirmColor="bg-clay-600 hover:bg-clay-700 focus-visible:ring-clay-600/30"
+                isHighRisk={true}
             />
 
             {/* DELETE CONFIRMATION MODAL */}
@@ -371,6 +372,7 @@ export default function CategoryManager({ categories }) {
                 iconBg="bg-rose-50 text-rose-600"
                 confirmText="Delete Category"
                 confirmColor="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600/30"
+                isVeryHighRisk={true}
             />
         </div>
     );
