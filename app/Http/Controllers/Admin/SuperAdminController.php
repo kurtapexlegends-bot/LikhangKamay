@@ -286,6 +286,66 @@ class SuperAdminController extends Controller
         return Inertia::render('Admin/Analytics/Insights', $this->analytics->getInsightsData());
     }
 
+    public function exportInsights()
+    {
+        Gate::authorize('admin-action');
+
+        $data = $this->analytics->getInsightsData();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="insights_report.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+
+            // SECTION 1: Platform Overview Metrics
+            fputcsv($file, ['PLATFORM OVERVIEW METRICS']);
+            fputcsv($file, ['Metric', 'Value']);
+            fputcsv($file, ['Total GMV', 'PHP ' . number_format($data['transactions']['currentGmv'] ?? 0, 2)]);
+            fputcsv($file, ['GMV Growth Rate', ($data['transactions']['growthRate'] ?? 0) . '%']);
+            fputcsv($file, ['Order Completion Rate', ($data['health']['completionRate'] ?? 0) . '%']);
+            fputcsv($file, ['Average Order Value (AOV)', 'PHP ' . number_format($data['health']['aov'] ?? 0, 2)]);
+            fputcsv($file, ['Review Rate', ($data['health']['reviewRate'] ?? 0) . '%']);
+            fputcsv($file, ['Refund Rate', ($data['health']['refundRate'] ?? 0) . '%']);
+            fputcsv($file, ['Active Artisans', $data['churn']['active'] ?? 0]);
+            fputcsv($file, ['Artisans At Risk', $data['churn']['atRisk'] ?? 0]);
+            fputcsv($file, ['Churned Artisans', $data['churn']['churned'] ?? 0]);
+            fputcsv($file, []);
+
+            // SECTION 2: Transaction Velocity (Monthly Trends)
+            fputcsv($file, ['TRANSACTION VELOCITY (12-MONTH TRENDS)']);
+            fputcsv($file, ['Month', 'Orders Count', 'GMV']);
+            foreach ($data['transactions']['monthly'] ?? [] as $month) {
+                fputcsv($file, [
+                    $month['name'],
+                    $month['orders'],
+                    'PHP ' . number_format($month['gmv'], 2)
+                ]);
+            }
+            fputcsv($file, []);
+
+            // SECTION 3: Category GMV Performance
+            fputcsv($file, ['CATEGORY GMV PERFORMANCE']);
+            fputcsv($file, ['Category', 'Item Quantity Sold', 'GMV']);
+            foreach ($data['categories'] ?? [] as $cat) {
+                fputcsv($file, [
+                    $cat['category'] ?? $cat['name'] ?? 'Unknown',
+                    $cat['value'] ?? $cat['quantity'] ?? 0,
+                    'PHP ' . number_format($cat['gmv'] ?? 0, 2)
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function viewArtisan(int|string $id)
     {
         Gate::authorize('admin-action');

@@ -102,6 +102,73 @@ class SystemSettingsController extends Controller
         }
     }
 
+    public function exportMonetization()
+    {
+        Gate::authorize('admin-action');
+
+        $metrics = $this->getMonetizationMetrics();
+        $recentSubscribers = $this->getRecentSubscribers();
+        $sponsorshipRequests = SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="monetization_report.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($metrics, $recentSubscribers, $sponsorshipRequests) {
+            $file = fopen('php://output', 'w');
+
+            // SECTION 1: Monetization Overview Metrics
+            fputcsv($file, ['MONETIZATION OVERVIEW METRICS']);
+            fputcsv($file, ['Metric', 'Value']);
+            fputcsv($file, ['Plan MRR', 'PHP ' . number_format($metrics['mrr']['value'] ?? 0, 2)]);
+            fputcsv($file, ['Transaction Fees Collected', 'PHP ' . number_format($metrics['platform_fees']['value'] ?? 0, 2)]);
+            fputcsv($file, ['Total Paid Subscribers', $metrics['subscribers']['total_paid'] ?? 0]);
+            fputcsv($file, ['Premium Tier Subscribers', $metrics['subscribers']['premium'] ?? 0]);
+            fputcsv($file, ['Elite Tier Subscribers', $metrics['subscribers']['elite'] ?? 0]);
+            fputcsv($file, ['Free Tier Artisans', $metrics['subscribers']['free'] ?? 0]);
+            fputcsv($file, ['Active Sponsorships', $metrics['sponsorships']['value'] ?? 0]);
+            fputcsv($file, []);
+
+            // SECTION 2: Recent Plan Changes
+            fputcsv($file, ['RECENT PLAN CHANGES']);
+            fputcsv($file, ['Artisan', 'Shop Name', 'Previous Tier', 'New Tier', 'Direction', 'Date']);
+            foreach ($recentSubscribers as $sub) {
+                fputcsv($file, [
+                    $sub['name'] ?? '',
+                    $sub['shop_name'] ?? '',
+                    $sub['previous_tier_label'] ?? 'Free',
+                    $sub['tier'] === 'super_premium' ? 'Premium+' : ($sub['tier'] ?? ''),
+                    $sub['change_direction'] ?? '',
+                    $sub['date'] ?? ''
+                ]);
+            }
+            fputcsv($file, []);
+
+            // SECTION 3: Sponsored Campaigns
+            fputcsv($file, ['SPONSORED CAMPAIGNS']);
+            fputcsv($file, ['Artisan', 'Product', 'Status', 'Date']);
+            foreach ($sponsorshipRequests as $req) {
+                fputcsv($file, [
+                    $req->user->name ?? '',
+                    $req->product->name ?? 'Unknown Product',
+                    ucfirst($req->status),
+                    $req->created_at->format('M d, Y h:i A')
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     private function getSystemSettings(): array
     {
         return [

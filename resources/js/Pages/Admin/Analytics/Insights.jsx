@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import {
     TrendingUp, TrendingDown, Minus,
     AlertTriangle, Users, ShoppingBag, 
-    ClipboardCheck, ArrowRight
+    ClipboardCheck, ArrowRight, Printer, Download
 } from 'lucide-react';
 import {
     ResponsiveContainer,
@@ -14,6 +14,7 @@ import { PieChart, Pie, Cell } from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 import KPICard from '@/Components/KPICard';
+import ExportButton from '@/Components/ExportButton';
 
 // Earthy & Premium Palette
 const PIE_COLORS = ['#c07251', '#d97706', '#10b981', '#78716c', '#a8a29e', '#d6d3d1'];
@@ -84,11 +85,93 @@ export default function Insights({
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Head title="Platform Insights" />
 
-            {/* Navigation Bridge Link at Top Right */}
-            <div className="flex justify-end pb-1">
+            <style dangerouslySetInnerHTML={{__html: `
+                @media print {
+                    /* Hide layout sidebar, header navigation, buttons, and system controls */
+                    aside,
+                    nav,
+                    header,
+                    .no-print,
+                    .mobile-dock,
+                    #nprogress,
+                    .fixed,
+                    button,
+                    a {
+                        display: none !important;
+                    }
+
+                    /* Reset layout containers margins, paddings, and heights to prevent page cutting */
+                    html, body, #app, .h-screen, .overflow-hidden, [scroll-region="true"], main {
+                        background: white !important;
+                        color: black !important;
+                        height: auto !important;
+                        min-height: 0 !important;
+                        overflow: visible !important;
+                        position: static !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    /* Apply border styles to white boxes in print and avoid breaking */
+                    .bg-white {
+                        border: 1px solid #e5e7eb !important;
+                        box-shadow: none !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                        border-radius: 12px !important;
+                    }
+
+                    @page {
+                        size: portrait;
+                        margin: 12mm 15mm 12mm 15mm !important;
+                    }
+
+                    /* Grid layouts preservation under print */
+                    .grid {
+                        display: grid !important;
+                    }
+                    .lg\\:grid-cols-4 {
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        gap: 16px !important;
+                    }
+                    .lg\\:grid-cols-3 {
+                        grid-template-columns: 2fr 1fr !important;
+                        gap: 20px !important;
+                    }
+                    .lg\\:grid-cols-2 {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                        gap: 20px !important;
+                    }
+
+                    /* Spacing & layout overrides */
+                    .space-y-6 > * {
+                        margin-top: 16px !important;
+                        margin-bottom: 0 !important;
+                    }
+                }
+            `}} />
+
+            {/* Print-Only Document Header */}
+            <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
+                <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Platform Insights Report</h1>
+                <p className="text-xs text-stone-500 mt-1">
+                    Generated on: {new Date().toLocaleString()}
+                </p>
+            </div>
+
+            {/* Actions & Navigation Bridge Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1 print:hidden">
+                <div className="flex items-center gap-2">
+                    <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
+                        Print
+                    </ExportButton>
+                    <ExportButton href={route('admin.insights.export')} icon={Download} variant="primary">
+                        Download
+                    </ExportButton>
+                </div>
                 <Link 
                     href={route('admin.settings.index', { tab: 'monetization' })} 
-                    className="inline-flex items-center gap-1.5 bg-white hover:bg-stone-50 text-clay-600 border border-stone-200 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition shadow-sm min-h-[38px]"
+                    className="inline-flex items-center gap-1.5 bg-white hover:bg-stone-50 text-clay-600 border border-stone-200 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition shadow-sm min-h-[38px] w-fit"
                 >
                     <span>View Monetization Dashboard</span>
                     <ArrowRight size={12} />
@@ -162,10 +245,29 @@ export default function Insights({
                         </div>
                     </div>
                     <div className="p-4 sm:p-6 flex-grow flex items-center">
-                        <ResponsiveContainer width="100%" height={260}>
-                            <AreaChart data={currentChartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
+                        {/* Screen Chart */}
+                        <div className="print:hidden h-full w-full">
+                            <ResponsiveContainer width="100%" height={260}>
+                                <AreaChart data={currentChartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
+                                    <defs>
+                                        <linearGradient id="adminGmvFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#c07251" stopOpacity={0.16} />
+                                            <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} dy={10} />
+                                    <YAxis width={45} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} tickFormatter={v => `₱${v}`} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                    <Area type="monotone" dataKey="gmv" name="GMV" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminGmvFill)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#c07251' }} animationDuration={1000} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                        {/* Print Chart (Fixed width to bypass ResponsiveContainer collapse) */}
+                        <div className="hidden print:flex print:justify-center w-full h-[230px]">
+                            <AreaChart width={445} height={220} data={currentChartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
                                 <defs>
-                                    <linearGradient id="adminGmvFill" x1="0" y1="0" x2="0" y2="1">
+                                    <linearGradient id="adminGmvFillPrint" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#c07251" stopOpacity={0.16} />
                                         <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
                                     </linearGradient>
@@ -173,10 +275,9 @@ export default function Insights({
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} dy={10} />
                                 <YAxis width={45} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} tickFormatter={v => `₱${v}`} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                                <Area type="monotone" dataKey="gmv" name="GMV" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminGmvFill)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#c07251' }} animationDuration={1000} />
+                                <Area type="monotone" dataKey="gmv" name="GMV" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminGmvFillPrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} />
                             </AreaChart>
-                        </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
 

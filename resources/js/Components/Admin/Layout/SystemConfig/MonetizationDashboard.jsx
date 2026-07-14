@@ -3,8 +3,9 @@ import { Link } from '@inertiajs/react';
 import { 
     CircleDollarSign, Users, Star, Award, Clock, ChevronRight, 
     TrendingUp, TrendingDown, CheckCircle, XCircle, ArrowRight,
-    Minus
+    Minus, Printer, Download
 } from 'lucide-react';
+import ExportButton from '@/Components/ExportButton';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import KPICard from '@/Components/KPICard';
@@ -18,6 +19,85 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
 
     return (
         <div className="space-y-6 animate-in fade-in duration-200">
+            <style dangerouslySetInnerHTML={{__html: `
+                @media print {
+                    /* Hide layout sidebar, header navigation, buttons, and system controls */
+                    aside,
+                    nav,
+                    header,
+                    .no-print,
+                    .mobile-dock,
+                    #nprogress,
+                    .fixed,
+                    button,
+                    a {
+                        display: none !important;
+                    }
+
+                    /* Reset layout containers margins, paddings, and heights to prevent page cutting */
+                    html, body, #app, .h-screen, .overflow-hidden, [scroll-region="true"], main {
+                        background: white !important;
+                        color: black !important;
+                        height: auto !important;
+                        min-height: 0 !important;
+                        overflow: visible !important;
+                        position: static !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    /* Apply border styles to white boxes in print and avoid breaking */
+                    .bg-white {
+                        border: 1px solid #e5e7eb !important;
+                        box-shadow: none !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                        border-radius: 12px !important;
+                    }
+
+                    @page {
+                        size: portrait;
+                        margin: 12mm 15mm 12mm 15mm !important;
+                    }
+
+                    /* Grid layouts preservation under print */
+                    .grid {
+                        display: grid !important;
+                    }
+                    .lg\\:grid-cols-5 {
+                        grid-template-columns: repeat(5, 1fr) !important;
+                        gap: 12px !important;
+                    }
+                    .lg\\:grid-cols-2 {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                        gap: 20px !important;
+                    }
+
+                    /* Spacing & layout overrides */
+                    .space-y-6 > * {
+                        margin-top: 16px !important;
+                        margin-bottom: 0 !important;
+                    }
+                }
+            `}} />
+
+            {/* Print-Only Document Header */}
+            <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
+                <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Platform Monetization Report</h1>
+                <p className="text-xs text-stone-500 mt-1">
+                    Generated on: {new Date().toLocaleString()}
+                </p>
+            </div>
+
+            {/* Print and Download Buttons (Screen-Only) */}
+            <div className="flex items-center gap-2 pb-1 justify-end print:hidden">
+                <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
+                    Print
+                </ExportButton>
+                <ExportButton href={route('admin.settings.monetization.export')} icon={Download} variant="primary">
+                    Download
+                </ExportButton>
+            </div>
             {/* SECTION 1: STATS CARDS */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {isLoadingMetrics ? (
@@ -83,7 +163,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
             </div>
 
             {/* SECTION 2: INTEGRATED ACTIONS PANEL */}
-            <div className="bg-white rounded-2xl border border-stone-200/80 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+            <div className="bg-white rounded-2xl border border-stone-200/80 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 print:hidden">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <Link
                         href={route("admin.sponsorships")}
@@ -116,7 +196,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
 
             {/* SECTION 3: PENDING SPONSORSHIP WARNING BANNER */}
             {!isLoadingMetrics && metrics.pendingSponsorships > 0 && (
-                <div className="flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm animate-in slide-in-from-top-2 duration-300">
+                <div className="flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-5 sm:flex-row sm:items-center sm:justify-between shadow-sm animate-in slide-in-from-top-2 duration-300 print:hidden">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-100 bg-white shadow-sm shrink-0">
                             <Clock size={16} className="text-amber-500" />

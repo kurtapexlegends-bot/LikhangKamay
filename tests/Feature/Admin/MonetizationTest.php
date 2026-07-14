@@ -68,5 +68,44 @@ class MonetizationTest extends TestCase
                 ->where('recentSubscribers.0.tier', 'Premium')
             );
     }
+
+    public function test_admin_can_export_insights_csv(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.insights.export'))
+            ->assertOk();
+
+        $response->assertHeader('Content-Type', 'text/csv; charset=utf-8');
+        $response->assertHeader('Content-Disposition', 'attachment; filename="insights_report.csv"');
+        $this->assertStringContainsString('PLATFORM OVERVIEW METRICS', $response->streamedContent());
+    }
+
+    public function test_admin_can_export_monetization_csv(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.settings.monetization.export'))
+            ->assertOk();
+
+        $response->assertHeader('Content-Type', 'text/csv; charset=utf-8');
+        $response->assertHeader('Content-Disposition', 'attachment; filename="monetization_report.csv"');
+        $this->assertStringContainsString('MONETIZATION OVERVIEW METRICS', $response->streamedContent());
+    }
+
+    public function test_non_admin_cannot_export_insights_or_monetization_csv(): void
+    {
+        $buyer = User::factory()->create();
+
+        $this->actingAs($buyer)
+            ->get(route('admin.insights.export'))
+            ->assertStatus(403);
+
+        $this->actingAs($buyer)
+            ->get(route('admin.settings.monetization.export'))
+            ->assertStatus(403);
+    }
 }
 

@@ -318,6 +318,8 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
 
     Route::get('/monetization', fn() => redirect()->route('admin.settings.index', ['tab' => 'monetization']))->name('admin.monetization');
     Route::get('/insights', [\App\Http\Controllers\Admin\SuperAdminController::class, 'insights'])->name('admin.insights');
+    Route::get('/insights/export', [\App\Http\Controllers\Admin\SuperAdminController::class, 'exportInsights'])->name('admin.insights.export');
+    Route::get('/settings/monetization/export', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'exportMonetization'])->name('admin.settings.monetization.export');
     Route::get('/users-manager', [\App\Http\Controllers\Admin\SuperAdminController::class, 'userManager'])->name('admin.users.manager');
     Route::get('/users', fn() => redirect()->route('admin.users.manager', ['tab' => 'directory']))->name('admin.users');
     Route::get('/compliance', [\App\Http\Controllers\Admin\ModerationController::class, 'compliance'])->name('admin.compliance');

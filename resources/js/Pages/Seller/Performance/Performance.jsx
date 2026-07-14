@@ -90,7 +90,7 @@ export default function Analytics({
                 actions={
                     <div className="flex items-center gap-2">
                         <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
-                            Print Report
+                            Print
                         </ExportButton>
                         {financials_masked ? (
                             <ExportButton icon={Download} disabled>
@@ -98,7 +98,7 @@ export default function Analytics({
                             </ExportButton>
                         ) : sellerSubscription?.canExportAnalytics ? (
                             <ExportButton href={route('analytics.export')} icon={Download} variant="primary">
-                                Download Report
+                                Download
                             </ExportButton>
                         ) : (
                             <ExportButton icon={DollarSign} disabled>
