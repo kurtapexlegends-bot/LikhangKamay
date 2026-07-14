@@ -15,6 +15,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 import KPICard from '@/Components/KPICard';
 import ExportButton from '@/Components/ExportButton';
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
 
 // Earthy & Premium Palette
 const PIE_COLORS = ['#c07251', '#d97706', '#10b981', '#78716c', '#a8a29e', '#d6d3d1'];
@@ -159,16 +160,8 @@ export default function Insights({
                 </p>
             </div>
 
-            {/* Actions & Navigation Bridge Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1 print:hidden">
-                <div className="flex items-center gap-2">
-                    <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
-                        Print
-                    </ExportButton>
-                    <ExportButton href={route('admin.insights.export')} icon={Download} variant="primary">
-                        Download
-                    </ExportButton>
-                </div>
+            {/* Navigation Bridge Bar */}
+            <div className="flex justify-end pb-1 print:hidden">
                 <Link 
                     href={route('admin.settings.index', { tab: 'monetization' })} 
                     className="inline-flex items-center gap-1.5 bg-white hover:bg-stone-50 text-clay-600 border border-stone-200 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition shadow-sm min-h-[38px] w-fit"
@@ -177,6 +170,20 @@ export default function Insights({
                     <ArrowRight size={12} />
                 </Link>
             </div>
+
+            {/* Floating Module Actions */}
+            <FloatingModuleActions
+                actions={
+                    <div className="flex items-center gap-2">
+                        <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
+                            Print
+                        </ExportButton>
+                        <ExportButton href={route('admin.insights.export')} icon={Download} variant="primary">
+                            Download
+                        </ExportButton>
+                    </div>
+                }
+            />
 
             {/* SECTION 1: TOP STAT CARDS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

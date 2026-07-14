@@ -6,6 +6,7 @@ import {
     Minus, Printer, Download
 } from 'lucide-react';
 import ExportButton from '@/Components/ExportButton';
+import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import KPICard from '@/Components/KPICard';
@@ -89,15 +90,19 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                 </p>
             </div>
 
-            {/* Print and Download Buttons (Screen-Only) */}
-            <div className="flex items-center gap-2 pb-1 justify-end print:hidden">
-                <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
-                    Print
-                </ExportButton>
-                <ExportButton href={route('admin.settings.monetization.export')} icon={Download} variant="primary">
-                    Download
-                </ExportButton>
-            </div>
+            {/* Floating Module Actions */}
+            <FloatingModuleActions
+                actions={
+                    <div className="flex items-center gap-2">
+                        <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
+                            Print
+                        </ExportButton>
+                        <ExportButton href={route('admin.settings.monetization.export')} icon={Download} variant="primary">
+                            Download
+                        </ExportButton>
+                    </div>
+                }
+            />
             {/* SECTION 1: STATS CARDS */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {isLoadingMetrics ? (
