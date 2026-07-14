@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PlatformDiagnosticsController extends Controller
 {
@@ -29,6 +30,65 @@ class PlatformDiagnosticsController extends Controller
             'filters' => $request->only(['search', 'action_type']),
             'availableActions' => $this->getAvailableActions(),
         ]);
+    }
+
+    /**
+     * Export platform activity/audit logs to CSV streamed response.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        Gate::authorize('admin-action');
+
+        $search = $request->input('search');
+        $actionType = $request->input('action_type');
+
+        $activities = PlatformActivity::query()
+            ->with('user:id,name,role')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('description', 'like', "%{$search}%")
+                      ->orWhere('action', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($uq) use ($search) {
+                          $uq->where('name', 'like', "%{$search}%");
+                      });
+                });
+            })
+            ->when($actionType, function ($query, $actionType) {
+                $query->where('action', $actionType);
+            })
+            ->latest()
+            ->get();
+
+        $filename = 'platform_activity_log_' . date('Y-m-d_H-i-s') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($activities) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID', 'Action', 'Description', 'User', 'Role', 'Metadata', 'Timestamp']);
+
+            foreach ($activities as $a) {
+                $metadataStr = $a->metadata ? json_encode($a->metadata) : '';
+                fputcsv($file, [
+                    $a->id,
+                    $a->action,
+                    $a->description,
+                    $a->user->name ?? 'System',
+                    $a->user->role ?? 'N/A',
+                    $metadataStr,
+                    $a->created_at->toIso8601String(),
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     private function getActivityLogs(Request $request)

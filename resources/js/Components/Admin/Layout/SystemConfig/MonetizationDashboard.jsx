@@ -54,6 +54,9 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                         page-break-inside: avoid !important;
                         break-inside: avoid !important;
                         border-radius: 12px !important;
+                        background-color: white !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
                     }
 
                     @page {
@@ -65,19 +68,53 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                     .grid {
                         display: grid !important;
                     }
+                    /* Force 3 columns for KPI cards on print to prevent squishing */
                     .lg\\:grid-cols-5 {
-                        grid-template-columns: repeat(5, 1fr) !important;
-                        gap: 12px !important;
+                        grid-template-columns: repeat(3, 1fr) !important;
+                        gap: 16px !important;
                     }
+                    /* Force 1 column for tables on print to give them full page width */
                     .lg\\:grid-cols-2 {
-                        grid-template-columns: repeat(2, 1fr) !important;
-                        gap: 20px !important;
+                        grid-template-columns: 1fr !important;
+                        gap: 24px !important;
                     }
 
                     /* Spacing & layout overrides */
                     .space-y-6 > * {
-                        margin-top: 16px !important;
+                        margin-top: 20px !important;
                         margin-bottom: 0 !important;
+                    }
+
+                    /* Fix 3D flip card rendering issues in print */
+                    .relative.h-28 {
+                        height: auto !important;
+                        min-height: 112px !important;
+                        position: relative !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    .relative.h-28 > div {
+                        transform: none !important;
+                        transform-style: flat !important;
+                        position: relative !important;
+                        height: auto !important;
+                    }
+                    .absolute.inset-0.h-full.w-full {
+                        position: relative !important;
+                        height: auto !important;
+                        width: auto !important;
+                        inset: auto !important;
+                        backface-visibility: visible !important;
+                        display: block !important;
+                        padding: 16px !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    /* Hide backgrounds for card badges in print to ensure text readability */
+                    .bg-emerald-50, .bg-clay-50, .bg-stone-50, .bg-amber-50 {
+                        background-color: #f9f9f9 !important;
+                        border: 1px solid #e5e7eb !important;
                     }
                 }
             `}} />
