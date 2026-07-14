@@ -14,21 +14,27 @@ const AnimatedCounter = ({
     duration = 1.5 
 }) => {
     const nodeRef = useRef(null);
+    const formatterRef = useRef(formatter);
+
+    // Keep the ref updated with the latest formatter function reference
+    useEffect(() => {
+        formatterRef.current = formatter;
+    }, [formatter]);
 
     useEffect(() => {
         if (!nodeRef.current) return;
 
         const controls = animate(0, value, {
             duration: duration,
-            onUpdate(value) {
+            onUpdate(v) {
                 if (nodeRef.current) {
-                    nodeRef.current.textContent = formatter(value);
+                    nodeRef.current.textContent = formatterRef.current(v);
                 }
             },
         });
 
         return () => controls.stop();
-    }, [value, duration, formatter]);
+    }, [value, duration]); // formatter is safely omitted since it's referenced via ref
 
     return <span ref={nodeRef}>{formatter(0)}</span>;
 };

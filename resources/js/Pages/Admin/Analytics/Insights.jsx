@@ -160,17 +160,6 @@ export default function Insights({
                 </p>
             </div>
 
-            {/* Navigation Bridge Bar */}
-            <div className="flex justify-end pb-1 print:hidden">
-                <Link 
-                    href={route('admin.settings.index', { tab: 'monetization' })} 
-                    className="inline-flex items-center gap-1.5 bg-white hover:bg-stone-50 text-clay-600 border border-stone-200 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition shadow-sm min-h-[38px] w-fit"
-                >
-                    <span>View Monetization Dashboard</span>
-                    <ArrowRight size={12} />
-                </Link>
-            </div>
-
             {/* Floating Module Actions */}
             <FloatingModuleActions
                 actions={
@@ -178,9 +167,16 @@ export default function Insights({
                         <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
                             Print
                         </ExportButton>
-                        <ExportButton href={route('admin.insights.export')} icon={Download} variant="primary">
+                        <ExportButton href={route('admin.insights.export')} icon={Download} variant="secondary">
                             Download
                         </ExportButton>
+                        <Link 
+                            href={route('admin.settings.index', { tab: 'monetization' })} 
+                            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent bg-clay-600 text-white hover:bg-clay-700 shadow-md shadow-clay-200/50 px-4 py-2 text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ease-out active:scale-[0.98]"
+                        >
+                            <ArrowRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+                            <span>Monetization</span>
+                        </Link>
                     </div>
                 }
             />
