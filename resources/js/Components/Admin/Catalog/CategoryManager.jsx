@@ -30,6 +30,7 @@ export default function CategoryManager({ categories }) {
     const [editName, setEditName] = useState('');
     const [isProcessingEdit, setIsProcessingEdit] = useState(false);
     const [confirmingUpdate, setConfirmingUpdate] = useState(null);
+    const [confirmingDelete, setConfirmingDelete] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const pendingDeletes = useRef({});
 
@@ -118,6 +119,12 @@ export default function CategoryManager({ categories }) {
             },
             onFinish: () => setIsProcessingEdit(false)
         });
+    };
+
+    const submitDeleteCategory = () => {
+        const category = confirmingDelete;
+        setConfirmingDelete(null);
+        handleDeleteCategory(category);
     };
 
     const handleDeleteCategory = (category) => {
@@ -254,7 +261,7 @@ export default function CategoryManager({ categories }) {
                                                         <Edit2 size={12} strokeWidth={2.5} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDeleteCategory(category)}
+                                                        onClick={() => setConfirmingDelete(category)}
                                                         disabled={category.products_count > 0}
                                                         className={`p-1.5 rounded-lg border transition-all md:opacity-0 md:group-hover:opacity-100 ${
                                                             category.products_count > 0
@@ -351,6 +358,19 @@ export default function CategoryManager({ categories }) {
                 iconBg="bg-clay-50 text-clay-600"
                 confirmText="Rename Category"
                 confirmColor="bg-clay-600 hover:bg-clay-700 focus-visible:ring-clay-600/30"
+            />
+
+            {/* DELETE CONFIRMATION MODAL */}
+            <ConfirmationModal
+                isOpen={!!confirmingDelete}
+                onClose={() => setConfirmingDelete(null)}
+                onConfirm={submitDeleteCategory}
+                title="Delete Category"
+                message={`Are you sure you want to delete "${confirmingDelete?.name}"? Any products assigned to this category will lose their category association.`}
+                icon={Trash2}
+                iconBg="bg-rose-50 text-rose-600"
+                confirmText="Delete Category"
+                confirmColor="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600/30"
             />
         </div>
     );

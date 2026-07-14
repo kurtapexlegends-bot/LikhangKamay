@@ -62,15 +62,23 @@ class CatalogController extends Controller
     public function storeTaxonomy(Request $request)
     {
         Gate::authorize('admin-action');
+
+        $name = strip_tags($request->name);
+        $slug = Str::slug($name);
+
+        Category::withTrashed()
+            ->where(function ($q) use ($name, $slug) {
+                $q->where('name', $name)->orWhere('slug', $slug);
+            })
+            ->forceDelete();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name'
         ]);
 
-        $name = strip_tags($validated['name']);
-
         Category::create([
             'name' => $name,
-            'slug' => Str::slug($name)
+            'slug' => $slug
         ]);
 
         \Illuminate\Support\Facades\Cache::forget('home_categories');
@@ -85,16 +93,26 @@ class CatalogController extends Controller
     public function updateTaxonomy(Request $request, Category $category)
     {
         Gate::authorize('admin-action');
+
+        $newName = strip_tags($request->name);
+        $newSlug = Str::slug($newName);
+
+        Category::withTrashed()
+            ->where('id', '!=', $category->id)
+            ->where(function ($q) use ($newName, $newSlug) {
+                $q->where('name', $newName)->orWhere('slug', $newSlug);
+            })
+            ->forceDelete();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id
         ]);
 
         $oldName = $category->name;
-        $newName = strip_tags($validated['name']);
 
         $category->update([
             'name' => $newName,
-            'slug' => Str::slug($newName)
+            'slug' => $newSlug
         ]);
 
         // Mass update existing products
