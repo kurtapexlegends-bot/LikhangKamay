@@ -44,6 +44,7 @@ graph TD
 9.  `HandleInertiaRequests`: Injects shared React frontend state and props. Backed by [HandleInertiaRequests.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/HandleInertiaRequests.php).
 10. `SecurityHeaders` & `XssSanitization`: Enforces CSP headers and request payload security filtering. Backed by [SecurityHeaders.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/SecurityHeaders.php) and [XssSanitization.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/XssSanitization.php).
 11. `CheckMaintenanceMode`: Standard Laravel maintenance wall. Backed by [CheckMaintenanceMode.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/CheckMaintenanceMode.php).
+12. `EnsureNotBanned`: Automatically terminates active sessions and blocks login attempts for suspended users or staff. Backed by [EnsureNotBanned.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureNotBanned.php).
 
 ---
 
