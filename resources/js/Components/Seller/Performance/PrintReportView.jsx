@@ -98,14 +98,9 @@ export default function PrintReportView({
                         border-radius: 12px !important;
                     }
 
-                    /* Page-Break Helpers */
-                    .print-page-1 {
-                        page-break-after: always !important;
-                        break-after: page !important;
-                    }
-                    .print-page-2 {
-                        page-break-after: always !important;
-                        break-after: page !important;
+                    @page {
+                        size: portrait;
+                        margin: 12mm 15mm 12mm 15mm !important;
                     }
 
                     /* 1. KPIs Layout */
@@ -246,7 +241,7 @@ export default function PrintReportView({
             />
 
             {/* Level 3: Peak Heatmap & Operations Control */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-heatmap-ops-container print-page-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-heatmap-ops-container">
                 {/* Peak Sales Heatmap */}
                 <PrintReportHeatmap salesHeatmap={salesHeatmap} />
 

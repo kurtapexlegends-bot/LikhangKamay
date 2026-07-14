@@ -38,7 +38,7 @@ export default function PrintReportCharts({
     const categoryDataList = Array.isArray(categoryData) ? categoryData : [];
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-charts-container print-page-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 performance-charts-container">
             <div className="min-w-0 lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col relative overflow-hidden">
                 <ContentTransition
                     isShowingPlaceholder={isLoading}
