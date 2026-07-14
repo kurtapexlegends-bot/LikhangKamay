@@ -227,6 +227,16 @@ export default function AuditLog({ auth, auditLog }) {
                         padding: 0 !important;
                     }
 
+                    /* Remove sidebar offset margins on print */
+                    .lg\\:ml-52,
+                    .lg\\:ml-16,
+                    .lg\\:ml-20,
+                    [class*="lg:ml-"] {
+                        margin-left: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
                     /* Hide filters, header action buttons, and mobile swipe pills */
                     .bg-\\[\\#FCF7F2\\]\\/30,
                     .md\\:hidden.divide-y,
