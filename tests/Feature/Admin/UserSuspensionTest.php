@@ -13,7 +13,9 @@ class UserSuspensionTest extends TestCase
 
     public function test_only_admin_can_toggle_user_suspension(): void
     {
+        /** @var \App\Models\User $buyer */
         $buyer = User::factory()->create(['role' => 'buyer']);
+        /** @var \App\Models\User $admin */
         $admin = User::factory()->superAdmin()->create();
         $targetUser = User::factory()->create(['role' => 'buyer']);
 
@@ -39,6 +41,7 @@ class UserSuspensionTest extends TestCase
 
     public function test_admin_cannot_suspend_themselves(): void
     {
+        /** @var \App\Models\User $admin */
         $admin = User::factory()->superAdmin()->create();
 
         $this->actingAs($admin)
@@ -50,6 +53,7 @@ class UserSuspensionTest extends TestCase
 
     public function test_suspended_user_is_automatically_logged_out(): void
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create(['role' => 'buyer']);
 
         $this->actingAs($user);
@@ -68,6 +72,7 @@ class UserSuspensionTest extends TestCase
     public function test_staff_member_is_blocked_if_artisan_owner_is_suspended(): void
     {
         $artisan = User::factory()->artisanApproved()->create();
+        /** @var \App\Models\User $staff */
         $staff = User::factory()->staff($artisan)->create();
 
         $this->actingAs($staff);

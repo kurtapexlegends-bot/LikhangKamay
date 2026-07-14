@@ -11,6 +11,7 @@ class EnsureNotBanned
     public function handle(Request $request, Closure $next)
     {
         if (Auth::check()) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
             
             // Resolve employing artisan's banned state if the user is staff
