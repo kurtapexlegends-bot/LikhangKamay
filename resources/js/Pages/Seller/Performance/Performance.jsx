@@ -125,7 +125,7 @@ export default function Analytics({
                             }
                         }
                     }}
-                    className="space-y-8 pb-12 print:pb-0 print:space-y-6"
+                    className="space-y-8 pb-12 print:hidden"
                 >
                     <motion.section 
                         variants={{
