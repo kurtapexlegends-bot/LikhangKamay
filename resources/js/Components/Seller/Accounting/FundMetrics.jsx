@@ -4,7 +4,7 @@ import { formatShortMoney } from '@/utils/accountingFormatters';
 
 export default function FundMetrics({ finances, canEditAccounting, onEditBaseFunds }) {
     return (
-        <div className="flex overflow-x-auto no-scrollbar gap-4 pb-3 sm:pb-0 sm:grid sm:grid-cols-2 xl:grid-cols-3 flex-nowrap px-1">
+        <div className="flex overflow-x-auto no-scrollbar gap-4 pb-3 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 flex-nowrap px-1">
             {/* Revenue Card */}
             <div className="rounded-2xl border border-stone-200 bg-white p-5 shrink-0 w-[290px] sm:w-auto shadow-sm">
                 <div className="mb-3 flex items-start justify-between">
