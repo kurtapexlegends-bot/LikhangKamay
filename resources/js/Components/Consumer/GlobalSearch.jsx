@@ -83,7 +83,7 @@ export default function GlobalSearch() {
     const commands = isAdmin ? [
         { label: 'Go to User Manager', cmd: '> users', url: getSafeRoute('admin.users.manager'), icon: Users, color: 'text-indigo-500 bg-indigo-50' },
         { label: 'Go to Artisan Applications', cmd: '> applications', url: getSafeRoute('admin.users.manager', { tab: 'approvals' }), icon: Award, color: 'text-amber-500 bg-amber-50' },
-        { label: 'Go to Category Manager', cmd: '> taxonomy', url: getSafeRoute('admin.settings.index', { tab: 'taxonomy' }), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
+        { label: 'Go to Category Manager', cmd: '> category', url: getSafeRoute('admin.settings.index', { tab: 'taxonomy' }), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
         { label: 'Go to Platform Revenue', cmd: '> revenue', url: getSafeRoute('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
         { label: 'Go to Insights', cmd: '> insights', url: getSafeRoute('admin.insights'), icon: BarChart2, color: 'text-purple-500 bg-purple-50' },
         { label: 'Go to Audit Logs', cmd: '> audit', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
