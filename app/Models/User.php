@@ -108,6 +108,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'must_change_password',
         'staff_plan_suspended_at',
         'created_by_user_id',
+        'banned_at',
         'employee_id',
         'shop_name',
         'bio',
@@ -187,6 +188,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'staff_plan_suspended_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'document_flags' => 'array',
+            'banned_at' => 'datetime',
         ];
     }
 

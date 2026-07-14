@@ -387,6 +387,10 @@ class SuperAdminController extends Controller
 
     private function resolveAdminAccountState(User $user)
     {
+        if ($user->banned_at !== null) {
+            return ['Access Suspended', 'danger'];
+        }
+
         if ($user->isArtisan()) {
             return match ($user->artisan_status) {
                 'approved' => ['Approved', 'success'],
@@ -425,6 +429,7 @@ class SuperAdminController extends Controller
             'account_state_tone' => $sTone,
             'staff_role_preset_key' => $s->staff_role_preset_key,
             'module_permissions' => $s->staff_module_permissions,
+            'banned_at' => $s->banned_at ? $s->banned_at->toIso8601String() : null,
         ];
     }
 
@@ -468,7 +473,28 @@ class SuperAdminController extends Controller
             'staff_count' => $user->staff_members_count ?? 0,
             'matched_staff_count' => $matchedStaffCount,
             'staff_members' => $staffMembers->map(fn($s) => $this->mapAdminStaffMember($s))->values(),
+            'banned_at' => $user->banned_at ? $user->banned_at->toIso8601String() : null,
         ];
+    }
+
+    public function toggleUserStatus(Request $request, User $user)
+    {
+        Gate::authorize('admin-action');
+
+        if ($user->id === Auth::id()) {
+            return back()->withErrors(['error' => 'You cannot suspend or ban your own account.']);
+        }
+
+        $user->banned_at = $user->banned_at ? null : now();
+        $user->save();
+
+        PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => $user->banned_at ? 'suspend_user' : 'reactivate_user',
+            'description' => ($user->banned_at ? 'Suspended' : 'Reactivated') . " account: {$user->email} ({$user->name})",
+        ]);
+
+        return back()->with('success', 'User status updated successfully.');
     }
 
     public function checkArtisanSlug(Request $request)

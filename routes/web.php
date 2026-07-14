@@ -321,6 +321,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/insights/export', [\App\Http\Controllers\Admin\SuperAdminController::class, 'exportInsights'])->name('admin.insights.export');
     Route::get('/settings/monetization/export', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'exportMonetization'])->name('admin.settings.monetization.export');
     Route::get('/users-manager', [\App\Http\Controllers\Admin\SuperAdminController::class, 'userManager'])->name('admin.users.manager');
+    Route::post('/users-manager/{user:id}/toggle-status', [\App\Http\Controllers\Admin\SuperAdminController::class, 'toggleUserStatus'])->name('admin.users.toggle-status');
     Route::get('/users', fn() => redirect()->route('admin.users.manager', ['tab' => 'directory']))->name('admin.users');
     Route::get('/compliance', [\App\Http\Controllers\Admin\ModerationController::class, 'compliance'])->name('admin.compliance');
     Route::get('/review-moderation', fn() => redirect()->route('admin.compliance', ['tab' => 'disputes']))->name('admin.review-moderation');

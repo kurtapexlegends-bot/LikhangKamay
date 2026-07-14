@@ -31,6 +31,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     const [search, setSearch] = useState(filters.search || '');
     const [quickView, setQuickView] = useState('all');
     const [impersonateTarget, setImpersonateTarget] = useState(null);
+    const [statusToggleTarget, setStatusToggleTarget] = useState(null);
     const [drawerArtisan, setDrawerArtisan] = useState(null);
     const [expandedRows, setExpandedRows] = useState(() =>
         filters.search ? getAutoExpandedRows(users.data || []) : {}
@@ -95,6 +96,18 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                 onError: () => {
                     window.location.reload();
                 },
+            });
+        }
+    };
+    
+    const confirmToggleStatus = () => {
+        if (statusToggleTarget) {
+            router.post(route('admin.users.toggle-status', statusToggleTarget.id), {}, {
+                preserveScroll: true,
+                onStart: () => setStatusToggleTarget(null),
+                onSuccess: () => {
+                    addToast('User status updated successfully.', 'success');
+                }
             });
         }
     };
@@ -173,6 +186,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                                     handleRowKeyDown={handleRowKeyDown}
                                     setDrawerArtisan={setDrawerArtisan}
                                     handleImpersonate={handleImpersonate}
+                                    handleToggleStatus={setStatusToggleTarget}
                                     unlinkedStaffGroup={unlinkedStaffGroup}
                                     users={users}
                                     search={search}
@@ -206,6 +220,23 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                 confirmText="Login As User"
                 confirmColor="bg-stone-900 hover:bg-black focus-visible:ring-stone-900/30"
                 isHighRisk={true}
+            />
+
+            <ConfirmationModal
+                isOpen={!!statusToggleTarget}
+                onClose={() => setStatusToggleTarget(null)}
+                onConfirm={confirmToggleStatus}
+                title={statusToggleTarget?.banned_at ? "Reactivate Account" : "Suspend Account"}
+                message={statusToggleTarget?.banned_at 
+                    ? `Are you sure you want to reactivate the account for ${statusToggleTarget?.name}? They will immediately recover access to their account and workspace.` 
+                    : `Are you sure you want to suspend the account for ${statusToggleTarget?.name}? They will be logged out and blocked from logging back into the platform.`}
+                icon={Users}
+                iconBg={statusToggleTarget?.banned_at ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}
+                confirmText={statusToggleTarget?.banned_at ? "Reactivate User" : "Suspend User"}
+                confirmColor={statusToggleTarget?.banned_at 
+                    ? "bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-500/30" 
+                    : "bg-red-600 hover:bg-red-700 focus-visible:ring-red-500/30"}
+                isVeryHighRisk={true}
             />
 
             {/* Staff Details Drawer */}

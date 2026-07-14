@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\CheckMaintenanceMode::class, // <--- Added
             \App\Http\Middleware\UpdateLastSeen::class,
             \App\Http\Middleware\TrackStaffActivity::class,
+            \App\Http\Middleware\EnsureNotBanned::class,
         ]);
 
         // 2. MIDDLEWARE ALIASES

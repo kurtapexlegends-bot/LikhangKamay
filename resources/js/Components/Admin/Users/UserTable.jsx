@@ -86,6 +86,7 @@ export default function UserTable({
     handleRowKeyDown,
     setDrawerArtisan,
     handleImpersonate,
+    handleToggleStatus,
     unlinkedStaffGroup,
     users,
     search,
@@ -284,18 +285,34 @@ export default function UserTable({
                                              {user.created_at}
                                          </td>
                                          
-                                         <td className="px-5 py-4 text-right whitespace-nowrap">
-                                             {user.role !== 'super_admin' && (
-                                                 <button
-                                                     type="button"
-                                                     onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
-                                                     className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-stone-900 border border-stone-850 px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-stone-900/20 min-h-[40px]"
-                                                     title={`Impersonate ${user.name}`}
-                                                 >
-                                                     <VenetianMask size={12} /> Login As
-                                                 </button>
-                                             )}
-                                         </td>
+                                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                                              <div className="flex justify-end items-center gap-2">
+                                                  {user.role !== 'super_admin' && (
+                                                      <button
+                                                          type="button"
+                                                          onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
+                                                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-stone-900 border border-stone-850 px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-stone-900/20 min-h-[40px]"
+                                                          title={`Impersonate ${user.name}`}
+                                                      >
+                                                          <VenetianMask size={12} /> Login As
+                                                      </button>
+                                                  )}
+                                                  {user.role !== 'super_admin' && (
+                                                      <button
+                                                          type="button"
+                                                          onClick={(e) => { e.stopPropagation(); handleToggleStatus(user); }}
+                                                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[10px] font-bold shadow-sm transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 min-h-[40px] ${
+                                                              user.banned_at
+                                                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 focus:ring-emerald-500/20'
+                                                                  : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100 focus:ring-red-500/20'
+                                                          }`}
+                                                          title={user.banned_at ? `Reactivate ${user.name}` : `Suspend ${user.name}`}
+                                                      >
+                                                          {user.banned_at ? 'Reactivate' : 'Suspend'}
+                                                      </button>
+                                                  )}
+                                              </div>
+                                          </td>
                                      </motion.tr>
 
                                     {isExpandable && isExpanded && (
