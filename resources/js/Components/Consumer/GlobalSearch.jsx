@@ -102,7 +102,20 @@ export default function GlobalSearch() {
         { label: 'Go to Sponsorships', cmd: '> sponsorship', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-amber-500 bg-amber-50', module: 'sponsorships' },
         { label: 'Go to Product Manager', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-indigo-500 bg-indigo-50', module: 'products' },
         { label: 'Go to Team Messages', cmd: '> team', url: getSafeRoute('team-messages.index'), icon: Users, color: 'text-emerald-500 bg-emerald-50', module: 'team_messages' },
-    ].filter(cmd => !cmd.module || visibleModules.includes(cmd.module));
+        { label: 'Go to Overview', cmd: '> overview', url: getSafeRoute('dashboard'), icon: LayoutDashboard, color: 'text-stone-500 bg-stone-50', module: 'overview' },
+        { label: 'Go to Analytics', cmd: '> analytics', url: getSafeRoute('analytics.index'), icon: BarChart2, color: 'text-purple-500 bg-purple-50', module: 'analytics' },
+        { label: 'Go to 3D Manager', cmd: '> 3d', url: getSafeRoute('3d.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: '3d' },
+        { label: 'Go to Messages', cmd: '> messages', url: getSafeRoute('chat.index'), icon: MessageSquare, color: 'text-indigo-500 bg-indigo-50', module: 'messages' },
+        { label: 'Go to Reviews', cmd: '> reviews', url: getSafeRoute('reviews.index'), icon: Star, color: 'text-amber-500 bg-amber-50', module: 'reviews' },
+        { label: 'Go to Shop Settings', cmd: '> settings', url: getSafeRoute('shop.settings'), icon: Settings, color: 'text-stone-500 bg-stone-50', module: 'shop_settings' },
+        { label: 'Go to Finance', cmd: '> finance', url: getSafeRoute('accounting.index'), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50', module: 'accounting' },
+        { label: 'Go to Audit Log', cmd: '> audit', url: getSafeRoute('audit-log.index'), icon: ClipboardList, color: 'text-clay-500 bg-clay-50', artisanOnly: true },
+        { label: 'Go to Staff Hub', cmd: '> staff', url: getSafeRoute('staff.dashboard'), icon: LayoutDashboard, color: 'text-stone-500 bg-stone-50', staffOnly: true },
+    ].filter(cmd => {
+        if (cmd.staffOnly && auth?.user?.role !== 'staff') return false;
+        if (cmd.artisanOnly && auth?.user?.role !== 'artisan') return false;
+        return !cmd.module || visibleModules.includes(cmd.module);
+    });
 
     const isCommandMode = query.startsWith('>');
     const cleanQuery = query.replace(/\s+/g, '').toLowerCase();
