@@ -94,7 +94,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
             <FloatingModuleActions
                 actions={
                     <div className="flex items-center gap-2">
-                        <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
+                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary">
                             Print
                         </ExportButton>
                         <ExportButton href={route('admin.settings.monetization.export')} icon={Download} variant="primary">

@@ -82,6 +82,13 @@ export default function Insights({
         return transactions.yearly || [];
     }, [transactions, chartFilter]);
 
+    const pieData = useMemo(() => {
+        if (!categories) return [];
+        const active = categories.filter(c => Number(c.gmv || 0) > 0);
+        if (active.length > 0) return active;
+        return [{ category: 'No Sales', gmv: 1, isEmpty: true }];
+    }, [categories]);
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Head title="Platform Insights" />
@@ -164,7 +171,7 @@ export default function Insights({
             <FloatingModuleActions
                 actions={
                     <div className="flex items-center gap-2">
-                        <ExportButton onClick={() => window.print()} icon={Printer} variant="secondary">
+                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary">
                             Print
                         </ExportButton>
                         <ExportButton href={route('admin.insights.export')} icon={Download} variant="secondary">
@@ -278,7 +285,7 @@ export default function Insights({
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} dy={10} />
                                 <YAxis width={45} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} tickFormatter={v => `₱${v}`} />
-                                <Area type="monotone" dataKey="gmv" name="GMV" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminGmvFillPrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} />
+                                <Area type="monotone" dataKey="gmv" name="GMV" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminGmvFillPrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} isAnimationActive={false} />
                             </AreaChart>
                         </div>
                     </div>
@@ -301,22 +308,25 @@ export default function Insights({
                                 <div className="h-[180px] w-full flex items-center justify-center relative">
                                     <PieChart width={180} height={180}>
                                         <Pie
-                                            data={categories}
+                                            data={pieData}
                                             nameKey="category"
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={45}
                                             outerRadius={75}
-                                            paddingAngle={4}
+                                            paddingAngle={pieData.length > 1 ? 4 : 0}
                                             dataKey="gmv"
                                             stroke="none"
+                                            isAnimationActive={false}
                                         >
-                                            {categories.map((entry, index) => {
-                                                const isHovered = hoveredCategoryIndex === index;
+                                            {pieData.map((entry, index) => {
+                                                const originalIndex = categories.findIndex(c => c.category === entry.category);
+                                                const isHovered = hoveredCategoryIndex === originalIndex;
+                                                const sliceColor = entry.isEmpty ? '#e7e5e4' : PIE_COLORS[originalIndex % PIE_COLORS.length];
                                                 return (
                                                     <Cell 
                                                         key={`cell-${index}`} 
-                                                        fill={PIE_COLORS[index % PIE_COLORS.length]}
+                                                        fill={sliceColor}
                                                         style={{
                                                             transition: 'all 0.3s ease',
                                                             transform: isHovered ? 'scale(1.05)' : 'scale(1)',
