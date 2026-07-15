@@ -156,7 +156,7 @@ class CatalogService
     public function getCategories(): array
     {
         return Cache::remember('home_categories', 86400, function () {
-            return Category::orderBy('name')->pluck('name')->toArray();
+            return Category::orderBy('name')->get(['id', 'name', 'slug', 'icon'])->toArray();
         });
     }
 

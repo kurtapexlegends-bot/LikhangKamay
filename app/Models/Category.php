@@ -9,7 +9,7 @@ class Category extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'slug', 'icon'];
 
     protected static function booted()
     {

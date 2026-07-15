@@ -73,12 +73,14 @@ class CatalogController extends Controller
             ->forceDelete();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name'
+            'name' => 'required|string|max:255|unique:categories,name',
+            'icon' => 'nullable|string|max:255'
         ]);
 
         Category::create([
             'name' => $name,
-            'slug' => $slug
+            'slug' => $slug,
+            'icon' => $request->input('icon')
         ]);
 
         \Illuminate\Support\Facades\Cache::forget('home_categories');
@@ -105,14 +107,16 @@ class CatalogController extends Controller
             ->forceDelete();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $category->id
+            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'icon' => 'nullable|string|max:255'
         ]);
 
         $oldName = $category->name;
 
         $category->update([
             'name' => $newName,
-            'slug' => $newSlug
+            'slug' => $newSlug,
+            'icon' => $request->input('icon')
         ]);
 
         // Mass update existing products
@@ -121,7 +125,7 @@ class CatalogController extends Controller
         \Illuminate\Support\Facades\Cache::forget('home_categories');
         \Illuminate\Support\Facades\Cache::forget('catalog_categories');
 
-        return back()->with('success', 'Category renamed and all associated products updated.');
+        return back()->with('success', 'Category updated and all associated products updated.');
     }
 
     /**

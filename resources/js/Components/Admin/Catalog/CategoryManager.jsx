@@ -13,13 +13,57 @@ import {
     Loader2, 
     CheckCircle2, 
     XCircle, 
-    AlertTriangle 
+    AlertTriangle,
+    Utensils,
+    Coffee,
+    Flower2,
+    Sprout,
+    Home,
+    ChefHat,
+    Gift,
+    Package,
+    Sparkles,
+    Hammer,
+    Heart,
+    Flame
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import EmptyState from '@/Components/WorkspaceEmptyState';
+
+const CATEGORY_ICONS_MAP = {
+    'Utensils': Utensils,
+    'Coffee': Coffee,
+    'Flower2': Flower2,
+    'Sprout': Sprout,
+    'Home': Home,
+    'ChefHat': ChefHat,
+    'Gift': Gift,
+    'Package': Package,
+    'Sparkles': Sparkles,
+    'Hammer': Hammer,
+    'Heart': Heart,
+    'Tag': Tag,
+    'Flame': Flame,
+};
+
+const PRESET_ICONS = [
+    { value: 'Package', label: 'Default Box' },
+    { value: 'Utensils', label: 'Tableware (Utensils)' },
+    { value: 'Coffee', label: 'Drinkware (Coffee)' },
+    { value: 'Flower2', label: 'Vases & Jars (Flower)' },
+    { value: 'Sprout', label: 'Planters & Pots (Sprout)' },
+    { value: 'Home', label: 'Home Decor (Home)' },
+    { value: 'ChefHat', label: 'Kitchenware (Chef Hat)' },
+    { value: 'Gift', label: 'Artisan Sets (Gift)' },
+    { value: 'Sparkles', label: 'Sculptures & Art (Sparkles)' },
+    { value: 'Hammer', label: 'Tools (Hammer)' },
+    { value: 'Heart', label: 'Custom/Favorites (Heart)' },
+    { value: 'Tag', label: 'Sale/Deals (Tag)' },
+    { value: 'Flame', label: 'Candles (Flame)' },
+];
 
 export default function CategoryManager({ categories }) {
     const { addToast } = useToast();
@@ -28,6 +72,7 @@ export default function CategoryManager({ categories }) {
     const [localCategories, setLocalCategories] = useState(categories || []);
     const [editingCategory, setEditingCategory] = useState(null);
     const [editName, setEditName] = useState('');
+    const [editIcon, setEditIcon] = useState('Package');
     const [isProcessingEdit, setIsProcessingEdit] = useState(false);
     const [confirmingUpdate, setConfirmingUpdate] = useState(null);
     const [confirmingDelete, setConfirmingDelete] = useState(null);
@@ -36,6 +81,7 @@ export default function CategoryManager({ categories }) {
 
     // --- CREATE CATEGORY FORM STATES ---
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryIcon, setNewCategoryIcon] = useState('Package');
     const [isProcessingAdd, setIsProcessingAdd] = useState(false);
     const [isNameTaken, setIsNameTaken] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
@@ -83,10 +129,11 @@ export default function CategoryManager({ categories }) {
         if (!newCategoryName.trim() || isNameTaken) return;
 
         setIsProcessingAdd(true);
-        router.post(route('admin.taxonomy.store'), { name: newCategoryName }, {
+        router.post(route('admin.taxonomy.store'), { name: newCategoryName, icon: newCategoryIcon }, {
             preserveScroll: true,
             onSuccess: () => {
                 setNewCategoryName('');
+                setNewCategoryIcon('Package');
                 addToast('Category added successfully.', 'success');
             },
             onError: (errors) => {
@@ -97,7 +144,7 @@ export default function CategoryManager({ categories }) {
     };
 
     const handleUpdateCategory = (category) => {
-        if (!editName.trim() || editName === category.name) {
+        if (!editName.trim() || (editName === category.name && editIcon === category.icon)) {
             setEditingCategory(null);
             return;
         }
@@ -108,11 +155,11 @@ export default function CategoryManager({ categories }) {
         const category = confirmingUpdate;
         setConfirmingUpdate(null);
         setIsProcessingEdit(true);
-        router.patch(route('admin.taxonomy.update', category.id), { name: editName }, {
+        router.patch(route('admin.taxonomy.update', category.id), { name: editName, icon: editIcon }, {
             preserveScroll: true,
             onSuccess: () => {
                 setEditingCategory(null);
-                addToast('Category renamed successfully.', 'success');
+                addToast('Category updated successfully.', 'success');
             },
             onError: (errors) => {
                 if (errors.name) addToast(errors.name, 'error');
@@ -206,17 +253,33 @@ export default function CategoryManager({ categories }) {
                                 <div key={category.id} className="flex items-center justify-between p-4 bg-white hover:bg-stone-50/30 transition-all group min-h-[64px]">
                                     <div className="flex-1 min-w-0 pr-4">
                                         {editingCategory === category.id ? (
-                                            <input
-                                                type="text"
-                                                value={editName}
-                                                onChange={(e) => setEditName(e.target.value)}
-                                                className="w-full max-w-md px-3 py-1.5 bg-white border border-clay-300 rounded-lg text-xs focus:ring-2 focus:ring-clay-500/20 outline-none min-h-[38px]"
-                                                autoFocus
-                                            />
+                                            <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xl">
+                                                <input
+                                                    type="text"
+                                                    value={editName}
+                                                    onChange={(e) => setEditName(e.target.value)}
+                                                    className="flex-1 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-clay-500/20 outline-none min-h-[38px]"
+                                                    autoFocus
+                                                />
+                                                <select
+                                                    value={editIcon}
+                                                    onChange={(e) => setEditIcon(e.target.value)}
+                                                    className="w-full sm:w-44 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-clay-500/20 outline-none min-h-[38px]"
+                                                >
+                                                    {PRESET_ICONS.map((opt) => (
+                                                        <option key={opt.value} value={opt.value}>
+                                                            {opt.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         ) : (
                                             <div className="flex items-center gap-2.5">
                                                 <div className="p-2 bg-stone-100 rounded-lg text-stone-500 shrink-0">
-                                                    <FolderTree size={14} />
+                                                    {(() => {
+                                                        const IconComponent = CATEGORY_ICONS_MAP[category.icon] || FolderTree;
+                                                        return <IconComponent size={14} />;
+                                                    })()}
                                                 </div>
                                                 <span className="font-bold text-xs text-stone-900 truncate">{category.name}</span>
                                             </div>
@@ -254,9 +317,10 @@ export default function CategoryManager({ categories }) {
                                                         onClick={() => {
                                                             setEditingCategory(category.id);
                                                             setEditName(category.name);
+                                                            setEditIcon(category.icon || 'Package');
                                                         }}
                                                         className="p-1.5 rounded-lg text-clay-650 hover:bg-clay-50/50 border border-transparent transition-all md:opacity-0 md:group-hover:opacity-100"
-                                                        title="Rename Category"
+                                                        title="Edit Category"
                                                     >
                                                         <Edit2 size={12} strokeWidth={2.5} />
                                                     </button>
@@ -335,6 +399,21 @@ export default function CategoryManager({ categories }) {
                             )}
                         </div>
 
+                        <div>
+                            <InputLabel value="Category Icon" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
+                            <select
+                                value={newCategoryIcon}
+                                onChange={(e) => setNewCategoryIcon(e.target.value)}
+                                className="block w-full text-xs py-2.5 min-h-[44px] bg-white border border-stone-300 rounded-xl focus:ring-2 focus:ring-clay-500/20 outline-none"
+                            >
+                                {PRESET_ICONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                         <button
                             type="submit"
                             disabled={isProcessingAdd || !newCategoryName.trim() || isNameTaken}
@@ -352,11 +431,11 @@ export default function CategoryManager({ categories }) {
                 isOpen={!!confirmingUpdate}
                 onClose={() => setConfirmingUpdate(null)}
                 onConfirm={submitUpdateCategory}
-                title="Rename Category"
-                message={`Are you sure you want to rename "${confirmingUpdate?.name}" to "${editName}"? This will instantly update ${confirmingUpdate?.products_count || 0} existing products across the marketplace.`}
+                title="Edit Category"
+                message={`Are you sure you want to update the category "${confirmingUpdate?.name}"? This will instantly update ${confirmingUpdate?.products_count || 0} existing products across the marketplace.`}
                 icon={Edit2}
                 iconBg="bg-clay-50 text-clay-600"
-                confirmText="Rename Category"
+                confirmText="Save Changes"
                 confirmColor="bg-clay-600 hover:bg-clay-700 focus-visible:ring-clay-600/30"
                 isHighRisk={true}
             />
