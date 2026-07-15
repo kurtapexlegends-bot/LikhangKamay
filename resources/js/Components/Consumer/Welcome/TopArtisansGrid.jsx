@@ -160,55 +160,57 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                 )}
 
                                 {/* Products 2 & 3 (Bottom Left & Right) */}
-                                <div className="flex w-full justify-around items-end px-2 md:px-0 mt-3 relative z-0">
-                                    <div className="absolute top-8 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent -z-10"></div>
+                                {((store.products && store.products[1]) || (store.products && store.products[2])) && (
+                                    <div className="flex w-full justify-around items-end px-2 md:px-0 mt-3 relative z-0">
+                                        <div className="absolute top-8 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent -z-10"></div>
 
-                                    {/* Product 2 */}
-                                    {store.products && store.products[1] ? (
-                                        <Link 
-                                            href={route('product.show', store.products[1].slug)}
-                                            className="group flex flex-col items-center text-center max-w-[80px] min-h-[44px]"
-                                        >
-                                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
-                                                <img 
-                                                    src={store.products[1].img ? (store.products[1].img.startsWith('http') || store.products[1].img.startsWith('/storage') || store.products[1].img.startsWith('/img') ? store.products[1].img : `/storage/${store.products[1].img}`) : '/images/no-image.png'}
-                                                    alt={store.products[1].name}
-                                                    className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                                                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
-                                                />
-                                                <div className="absolute top-0 left-0 bg-white/95 backdrop-blur text-gray-600 text-[10px] font-black px-2 py-0.5 rounded-br-xl shadow-sm border-b border-r border-gray-100">
-                                                   #2
+                                        {/* Product 2 */}
+                                        {store.products && store.products[1] ? (
+                                            <Link 
+                                                href={route('product.show', store.products[1].slug)}
+                                                className="group flex flex-col items-center text-center max-w-[80px] min-h-[44px]"
+                                            >
+                                                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
+                                                    <img 
+                                                        src={store.products[1].img ? (store.products[1].img.startsWith('http') || store.products[1].img.startsWith('/storage') || store.products[1].img.startsWith('/img') ? store.products[1].img : `/storage/${store.products[1].img}`) : '/images/no-image.png'}
+                                                        alt={store.products[1].name}
+                                                        className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                                                    />
+                                                    <div className="absolute top-0 left-0 bg-white/95 backdrop-blur text-gray-600 text-[10px] font-black px-2 py-0.5 rounded-br-xl shadow-sm border-b border-r border-gray-100">
+                                                       #2
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="mt-2.5 flex flex-col items-center">
-                                                <p className="text-xs font-semibold text-gray-700 line-clamp-2 group-hover:text-clay-600 transition leading-snug mb-1">{store.products[1].name}</p>
-                                            </div>
-                                        </Link>
-                                    ) : <div className="w-16 md:w-20"></div>}
+                                                <div className="mt-2.5 flex flex-col items-center">
+                                                    <p className="text-xs font-semibold text-gray-700 line-clamp-2 group-hover:text-clay-600 transition leading-snug mb-1">{store.products[1].name}</p>
+                                                </div>
+                                            </Link>
+                                        ) : <div className="w-16 md:w-20"></div>}
 
-                                    {/* Product 3 */}
-                                    {store.products && store.products[2] ? (
-                                        <Link 
-                                            href={route('product.show', store.products[2].slug)}
-                                            className="group flex flex-col items-center text-center max-w-[80px] min-h-[44px]"
-                                        >
-                                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
-                                                <img 
-                                                    src={store.products[2].img ? (store.products[2].img.startsWith('http') || store.products[2].img.startsWith('/storage') || store.products[2].img.startsWith('/img') ? store.products[2].img : `/storage/${store.products[2].img}`) : '/images/no-image.png'}
-                                                    alt={store.products[2].name}
-                                                    className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                                                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
-                                                />
-                                                <div className="absolute top-0 right-0 bg-white/95 backdrop-blur text-gray-600 text-[10px] font-black px-2 py-0.5 rounded-bl-xl shadow-sm border-b border-l border-gray-100">
-                                                   #3
+                                        {/* Product 3 */}
+                                        {store.products && store.products[2] ? (
+                                            <Link 
+                                                href={route('product.show', store.products[2].slug)}
+                                                className="group flex flex-col items-center text-center max-w-[80px] z-10 min-h-[44px]"
+                                            >
+                                                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-stone-200 relative shadow-sm group-hover:border-clay-300 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1.5 active:scale-[0.96] bg-white">
+                                                    <img 
+                                                        src={store.products[2].img ? (store.products[2].img.startsWith('http') || store.products[2].img.startsWith('/storage') || store.products[2].img.startsWith('/img') ? store.products[2].img : `/storage/${store.products[2].img}`) : '/images/no-image.png'}
+                                                        alt={store.products[2].name}
+                                                        className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                                                    />
+                                                    <div className="absolute top-0 right-0 bg-white/95 backdrop-blur text-gray-600 text-[10px] font-black px-2 py-0.5 rounded-bl-xl shadow-sm border-b border-l border-gray-100">
+                                                       #3
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="mt-2.5 flex flex-col items-center">
-                                                <p className="text-xs font-semibold text-gray-700 line-clamp-2 group-hover:text-clay-600 transition leading-snug mb-1">{store.products[2].name}</p>
-                                            </div>
-                                        </Link>
-                                    ) : <div className="w-16 md:w-20"></div>}
-                                </div>
+                                                <div className="mt-2.5 flex flex-col items-center">
+                                                    <p className="text-xs font-semibold text-gray-700 line-clamp-2 group-hover:text-clay-600 transition leading-snug mb-1">{store.products[2].name}</p>
+                                                </div>
+                                            </Link>
+                                        ) : <div className="w-16 md:w-20"></div>}
+                                    </div>
+                                )}
                             </div>
                             {/* View Store */}
                             <div className="px-3 pb-3">
