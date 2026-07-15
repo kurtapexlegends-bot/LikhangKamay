@@ -55,3 +55,20 @@
 - **Trade-offs:** Briefly state pros/cons of major architectural decisions before coding.
 - **Diffs:** Provide clear file paths and diffs for modifications rather than full file rewrites.
 - **Task Focus:** Focus strictly on the assigned task. Do not make random, unrelated, or unnecessary changes to the codebase unless they are absolutely required to complete the specified task.
+
+## 9. Technology Stack & Integrations
+- **Core Frameworks:** Laravel (PHP backend) and React (SPAs built using Inertia.js).
+- **Asset Compilation:** Vite (build system) and Tailwind CSS (styling design tokens).
+- **Databases:**
+  - **Local:** MySQL (served via Laragon on Port 3306).
+  - **Production:** MySQL or PostgreSQL (built-in driver configurations).
+- **Real-Time Updates:** Supabase (Real-time JS client `@supabase/supabase-js` and `@supabase/ssr` packages). Utilized for live chat, instant notifications, order updates, and admin dashboard triggers. Falls back to active Inertia polling when credentials are missing.
+- **Testing:** Pest/PHPUnit (backend feature testing) and Vitest (frontend component testing).
+- **DevOps/Hosting:** Vercel (serves stateless frontend and API routes).
+- **Third-Party API Integrations:**
+  - **Payment Processing:** Paymongo API (handles checkouts and e-wallet payments).
+  - **Logistics & Deliveries:** Lalamove API (handles automated courier booking and delivery quotes).
+  - **Location Services:** Nominatim (OpenStreetMap) API.
+  - **Transactional Mail:** Resend API.
+  - **Social Authentication:** Laravel Socialite (configured for Google and Facebook OAuth login).
+  - **Error Monitoring:** Sentry (Laravel logging and tracing).
