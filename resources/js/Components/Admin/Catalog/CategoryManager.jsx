@@ -73,6 +73,7 @@ export default function CategoryManager({ categories }) {
     const [editingCategory, setEditingCategory] = useState(null);
     const [editName, setEditName] = useState('');
     const [editIcon, setEditIcon] = useState('Package');
+    const [isEditIconDropdownOpen, setIsEditIconDropdownOpen] = useState(null);
     const [isProcessingEdit, setIsProcessingEdit] = useState(false);
     const [confirmingUpdate, setConfirmingUpdate] = useState(null);
     const [confirmingDelete, setConfirmingDelete] = useState(null);
@@ -82,6 +83,7 @@ export default function CategoryManager({ categories }) {
     // --- CREATE CATEGORY FORM STATES ---
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryIcon, setNewCategoryIcon] = useState('Package');
+    const [isNewIconDropdownOpen, setIsNewIconDropdownOpen] = useState(false);
     const [isProcessingAdd, setIsProcessingAdd] = useState(false);
     const [isNameTaken, setIsNameTaken] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
@@ -253,7 +255,51 @@ export default function CategoryManager({ categories }) {
                                 <div key={category.id} className="flex items-center justify-between p-4 bg-white hover:bg-stone-50/30 transition-all group min-h-[64px]">
                                     <div className="flex-1 min-w-0 pr-4">
                                         {editingCategory === category.id ? (
-                                            <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xl">
+                                            <div className="flex items-center gap-2 w-full max-w-xl">
+                                                {/* Edit Icon Picker Popover */}
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsEditIconDropdownOpen(isEditIconDropdownOpen === category.id ? null : category.id)}
+                                                        className="flex items-center justify-center w-10 h-10 rounded-xl border border-stone-300 bg-white text-stone-600 hover:bg-stone-50 transition-all shadow-sm shrink-0"
+                                                        title="Select Category Icon"
+                                                    >
+                                                        {(() => {
+                                                            const EditIconComp = CATEGORY_ICONS_MAP[editIcon] || FolderTree;
+                                                            return <EditIconComp size={18} />;
+                                                        })()}
+                                                    </button>
+                                                    {isEditIconDropdownOpen === category.id && (
+                                                        <>
+                                                            <div className="fixed inset-0 z-40" onClick={() => setIsEditIconDropdownOpen(null)} />
+                                                            <div className="absolute left-0 mt-2 z-50 bg-white border border-stone-200 rounded-xl shadow-xl p-3 grid grid-cols-4 gap-2 w-56">
+                                                                {PRESET_ICONS.map((opt) => {
+                                                                    const IconComp = CATEGORY_ICONS_MAP[opt.value];
+                                                                    return (
+                                                                        <button
+                                                                            key={opt.value}
+                                                                            type="button"
+                                                                            title={opt.label}
+                                                                            onClick={() => {
+                                                                                setEditIcon(opt.value);
+                                                                                setIsEditIconDropdownOpen(null);
+                                                                            }}
+                                                                            className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${
+                                                                                editIcon === opt.value
+                                                                                    ? 'border-clay-600 bg-clay-50/50 text-clay-700'
+                                                                                    : 'border-transparent hover:bg-stone-50 text-stone-500'
+                                                                            }`}
+                                                                        >
+                                                                            <IconComp size={18} />
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                {/* Edit Name Input */}
                                                 <input
                                                     type="text"
                                                     value={editName}
@@ -261,17 +307,6 @@ export default function CategoryManager({ categories }) {
                                                     className="flex-1 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-clay-500/20 outline-none min-h-[38px]"
                                                     autoFocus
                                                 />
-                                                <select
-                                                    value={editIcon}
-                                                    onChange={(e) => setEditIcon(e.target.value)}
-                                                    className="w-full sm:w-44 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-clay-500/20 outline-none min-h-[38px]"
-                                                >
-                                                    {PRESET_ICONS.map((opt) => (
-                                                        <option key={opt.value} value={opt.value}>
-                                                            {opt.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2.5">
@@ -372,24 +407,69 @@ export default function CategoryManager({ categories }) {
                     <form onSubmit={handleAddCategory} className="space-y-4 pt-2">
                         <div>
                             <InputLabel value="Category Name" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                            <div className="relative">
-                                <TextInput
-                                    type="text"
-                                    placeholder="e.g., Ceramic Mugs"
-                                    className={`block w-full text-xs py-2.5 min-h-[44px] pr-10 ${isNameTaken ? 'border-rose-300 ring-rose-500/10' : 'bg-stone-50/20'}`}
-                                    value={newCategoryName}
-                                    onChange={(e) => setNewCategoryName(e.target.value)}
-                                />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                                    {isValidating ? (
-                                        <Loader2 size={14} className="text-stone-400 animate-spin" />
-                                    ) : newCategoryName.trim().length > 2 ? (
-                                        isNameTaken ? (
-                                            <XCircle size={14} className="text-rose-500" />
-                                        ) : (
-                                            <CheckCircle2 size={14} className="text-emerald-500" />
-                                        )
-                                    ) : null}
+                            <div className="flex gap-2 items-center">
+                                {/* Icon Picker Popover */}
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsNewIconDropdownOpen(!isNewIconDropdownOpen)}
+                                        className="flex items-center justify-center w-11 h-11 rounded-xl border border-stone-300 bg-white text-stone-600 hover:bg-stone-50 transition-all shadow-sm shrink-0 animate-in fade-in zoom-in-95 duration-150"
+                                        title="Select Category Icon"
+                                    >
+                                        {(() => {
+                                            const NewIconComp = CATEGORY_ICONS_MAP[newCategoryIcon] || FolderTree;
+                                            return <NewIconComp size={20} />;
+                                        })()}
+                                    </button>
+                                    {isNewIconDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setIsNewIconDropdownOpen(false)} />
+                                            <div className="absolute left-0 mt-2 z-50 bg-white border border-stone-200 rounded-xl shadow-xl p-3 grid grid-cols-4 gap-2 w-56 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                {PRESET_ICONS.map((opt) => {
+                                                    const IconComp = CATEGORY_ICONS_MAP[opt.value];
+                                                    return (
+                                                        <button
+                                                            key={opt.value}
+                                                            type="button"
+                                                            title={opt.label}
+                                                            onClick={() => {
+                                                                setNewCategoryIcon(opt.value);
+                                                                setIsNewIconDropdownOpen(false);
+                                                            }}
+                                                            className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${
+                                                                newCategoryIcon === opt.value
+                                                                    ? 'border-clay-600 bg-clay-50/50 text-clay-700'
+                                                                    : 'border-transparent hover:bg-stone-50 text-stone-500'
+                                                            }`}
+                                                        >
+                                                            <IconComp size={18} />
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="relative flex-1">
+                                    <TextInput
+                                        type="text"
+                                        placeholder="e.g., Ceramic Mugs"
+                                        className={`block w-full text-xs py-2.5 min-h-[44px] pr-10 ${isNameTaken ? 'border-rose-300 ring-rose-500/10' : 'bg-stone-50/20'}`}
+                                        value={newCategoryName}
+                                        onChange={(e) => setNewCategoryName(e.target.value)}
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                                        {isValidating ? (
+                                            <Loader2 size={14} className="text-stone-400 animate-spin" />
+                                        ) : newCategoryName.trim().length > 2 ? (
+                                            isNameTaken ? (
+                                                <XCircle size={14} className="text-rose-500" />
+                                            ) : (
+                                                <CheckCircle2 size={14} className="text-emerald-500" />
+                                            )
+                                        ) : null}
+                                    </div>
                                 </div>
                             </div>
                             {isNameTaken && (
@@ -397,21 +477,6 @@ export default function CategoryManager({ categories }) {
                                     <AlertTriangle size={10} /> This name is already taken.
                                 </p>
                             )}
-                        </div>
-
-                        <div>
-                            <InputLabel value="Category Icon" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                            <select
-                                value={newCategoryIcon}
-                                onChange={(e) => setNewCategoryIcon(e.target.value)}
-                                className="block w-full text-xs py-2.5 min-h-[44px] bg-white border border-stone-300 rounded-xl focus:ring-2 focus:ring-clay-500/20 outline-none"
-                            >
-                                {PRESET_ICONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                    </option>
-                                ))}
-                            </select>
                         </div>
 
                         <button
