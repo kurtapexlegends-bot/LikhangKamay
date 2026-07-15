@@ -44,11 +44,11 @@ export default function HRHeaderActions({
                     <Banknote size={16} />
                     {activeTab === 'payroll' ? (
                         <>
-                            <span className="hidden sm:inline">Generate Payroll</span>
-                            <span className="sm:hidden">Generate</span>
+                            <span className="hidden sm:inline">PAYROLL</span>
+                            <span className="sm:hidden">PAYROLL</span>
                         </>
                     ) : (
-                        <span>Payroll</span>
+                        <span>PAYROLL</span>
                     )}
                 </button>
             )}
@@ -61,8 +61,8 @@ export default function HRHeaderActions({
                 >
                     <UserPlus size={16} />
                     <span>
-                        <span className="hidden sm:inline">Add Employee</span>
-                        <span className="sm:hidden">Add</span>
+                        <span className="hidden sm:inline">ADD EMPLOYEE</span>
+                        <span className="sm:hidden">ADD EMPLOYEE</span>
                     </span>
                 </button>
             )}
