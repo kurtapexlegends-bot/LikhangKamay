@@ -311,6 +311,10 @@ Route::get('/img/proxy', [\App\Http\Controllers\Core\ImageProxyController::class
 // --- SUPER ADMIN ROUTES ---
 Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\SuperAdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/run-migrations-now-secure', function () {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return '<pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    });
     
     // System Settings
     Route::get('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('admin.settings.index');
@@ -363,6 +367,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/operations/export', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'export'])->name('admin.activity.export');
     Route::get('/activity-log', fn() => redirect()->route('admin.operations', request()->query()))->name('admin.activity.index');
     Route::post('/diagnostics/cache/purge', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
+    Route::post('/diagnostics/migrate', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'runMigrations'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.migrate');
 
     // Restoration Center (Trash)
     Route::get('/trash', fn() => redirect()->route('admin.compliance', ['tab' => 'trash']))->name('admin.trash');
