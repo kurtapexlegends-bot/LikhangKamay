@@ -26,7 +26,6 @@ import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSo
 import PlatformOpsForm from '@/Components/Admin/Layout/SystemConfig/PlatformOpsForm';
 import MonetizationDashboard from '@/Components/Admin/Layout/SystemConfig/MonetizationDashboard';
 import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/SubscriptionTiers';
-import BrandingForm from '@/Components/Admin/Layout/SystemConfig/BrandingForm';
 import SMTPForm from '@/Components/Admin/Layout/SystemConfig/SMTPForm';
 import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
@@ -44,7 +43,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         return 'branding';
     });
 
-    const [activeSubTab, setActiveSubTab] = useState('branding_details');
+    const [activeSubTab, setActiveSubTab] = useState('branding_contact');
     const [showMobileNotes, setShowMobileNotes] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -58,11 +57,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     };
 
     const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
-        seo_metadata: {
-            title: settings?.seo_metadata?.title || '',
-            description: settings?.seo_metadata?.description || '',
-            keywords: settings?.seo_metadata?.keywords || '',
-        },
         contact_info: {
             email: settings?.contact_info?.email || 'support@likhangkamay.app',
             phone: settings?.contact_info?.phone || '',
@@ -119,11 +113,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     useEffect(() => {
         if (settings) {
             setData({
-                seo_metadata: {
-                    title: settings.seo_metadata?.title || '',
-                    description: settings.seo_metadata?.description || '',
-                    keywords: settings.seo_metadata?.keywords || '',
-                },
                 contact_info: {
                     email: settings.contact_info?.email || 'support@likhangkamay.app',
                     phone: settings.contact_info?.phone || '',
@@ -169,7 +158,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     ];
 
     const subTabs = [
-        { id: 'branding_details', name: 'SEO Metadata', icon: Search },
         { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
         { id: 'branding_ops', name: 'Platform Ops', icon: Settings },
         { id: 'branding_smtp', name: 'SMTP Settings', icon: Server },
@@ -262,15 +250,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                                 {/* Left Column: Inputs */}
                                 <div className="lg:col-span-2 space-y-6">
-                                    {activeSubTab === 'branding_details' && (
-                                        <BrandingForm
-                                            data={data}
-                                            setData={setData}
-                                            updateNested={updateNested}
-                                            errors={errors}
-                                            processing={processing}
-                                        />
-                                    )}
+
 
                                     {activeSubTab === 'branding_contact' && (
                                         <ContactSocialsForm 

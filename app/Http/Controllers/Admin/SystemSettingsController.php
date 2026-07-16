@@ -361,9 +361,9 @@ class SystemSettingsController extends Controller
             'platform_logo' => 'nullable|image|max:2048',
             'favicon' => 'nullable|file|mimes:ico,png|max:512',
             'primary_color' => ['sometimes', 'required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
-            'seo_metadata' => 'required|array',
-            'seo_metadata.title' => 'required|string|max:255',
-            'seo_metadata.description' => 'required|string|max:500',
+            'seo_metadata' => 'sometimes|required|array',
+            'seo_metadata.title' => 'sometimes|required|string|max:255',
+            'seo_metadata.description' => 'sometimes|required|string|max:500',
             'seo_metadata.keywords' => 'nullable|string|max:255',
             'contact_info' => 'required|array',
             'contact_info.email' => 'required|email|max:255',
@@ -491,7 +491,9 @@ class SystemSettingsController extends Controller
         if (isset($validated['primary_color'])) {
             $this->settings->set('primary_color', $validated['primary_color']);
         }
-        $this->settings->set('seo_metadata', $validated['seo_metadata'], 'json');
+        if (isset($validated['seo_metadata'])) {
+            $this->settings->set('seo_metadata', $validated['seo_metadata'], 'json');
+        }
         $this->settings->set('contact_info', $validated['contact_info'], 'json');
         $this->settings->set('social_links', $validated['social_links'], 'json');
         
