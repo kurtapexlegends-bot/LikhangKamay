@@ -106,9 +106,9 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                     
                     {/* Cover Banner (Custom Image or Premium Fallback) */}
                     <div className="h-48 md:h-64 relative overflow-hidden bg-stone-100 group">
-                        {seller.banner_image ? (
+                        {seller.banner_image_url || seller.banner_image ? (
                             <img 
-                                src={seller.banner_image.startsWith('http') || seller.banner_image.startsWith('/storage') ? seller.banner_image : `/storage/${seller.banner_image}`} 
+                                src={seller.banner_image_url || (seller.banner_image.startsWith('http') || seller.banner_image.startsWith('/storage') ? seller.banner_image : `/storage/${seller.banner_image}`)} 
                                 alt={`${seller.name} Banner`} 
                                 className="w-full h-full object-cover" 
                                 onError={(e) => { e.target.style.display = 'none'; }}

@@ -74,7 +74,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     protected static ?bool $hasSplitNameColumns = null;
 
     // Artisan Setup Fields
-    protected $appends = ['avatar_url'];
+    protected $appends = ['avatar_url', 'banner_image_url'];
 
     public function getAvatarUrlAttribute()
     {
@@ -86,6 +86,17 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'height' => 200,
             'resize' => 'cover',
             'quality' => 80,
+            'format' => 'webp'
+        ]);
+    }
+
+    public function getBannerImageUrlAttribute()
+    {
+        if (!$this->banner_image) return null;
+        
+        return $this->getTransformedUrl($this->banner_image, [
+            'width' => 1200,
+            'quality' => 85,
             'format' => 'webp'
         ]);
     }

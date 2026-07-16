@@ -40,7 +40,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'artisan_status', 'premium_tier']) : null,
+                'user' => $user ? $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url', 'artisan_status', 'premium_tier']) : null,
                 'isStaff' => $user?->isStaff() ?? false,
                 'effectiveSellerId' => $user?->getEffectiveSellerId(),
                 'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,

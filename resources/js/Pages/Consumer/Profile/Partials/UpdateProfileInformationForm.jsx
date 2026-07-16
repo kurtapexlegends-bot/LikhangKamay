@@ -66,9 +66,9 @@ export default function UpdateProfileInformation({
                 <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-stone-100">
                     <div className="relative group">
                         <div className="w-24 h-24 rounded-full bg-stone-100 overflow-hidden border border-stone-200 flex items-center justify-center">
-                            {data.preview_url || user.avatar ? (
+                            {data.preview_url || user.avatar_url || user.avatar ? (
                                 <img 
-                                    src={data.preview_url || (user.avatar.startsWith('http') ? user.avatar : `/storage/${user.avatar}`)} 
+                                    src={data.preview_url || user.avatar_url || (user.avatar.startsWith('http') ? user.avatar : `/storage/${user.avatar}`)} 
                                     alt="Avatar" 
                                     className="w-full h-full object-cover"
                                 />

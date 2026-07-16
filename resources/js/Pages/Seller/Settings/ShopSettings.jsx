@@ -18,13 +18,13 @@ export default function ShopSettings({ auth, user, stats }) {
     const { canEdit: canEditShopSettings, isReadOnly: isShopSettingsReadOnly } = useSellerModuleAccess('shop_settings');
 
     const [bannerPreview, setBannerPreview] = useState(
-        user?.banner_image
+        user?.banner_image_url || (user?.banner_image
             ? (user.banner_image.startsWith('http') || user.banner_image.startsWith('/storage') ? user.banner_image : `/storage/${user.banner_image}`)
-            : null
+            : null)
     );
 
     const [avatarPreview, setAvatarPreview] = useState(
-        user?.avatar ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`) : null
+        user?.avatar_url || (user?.avatar ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`) : null)
     );
     const avatarInputRef = useRef(null);
 

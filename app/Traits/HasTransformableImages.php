@@ -30,7 +30,12 @@ trait HasTransformableImages
                 $endpoint = (string) config('filesystems.disks.public.endpoint', '');
                 $bucket = config('filesystems.disks.public.bucket');
                 
-                $transformBase = str_replace('/s3', '/render/image/public', $endpoint);
+                if (str_contains($endpoint, 'storage.supabase.co')) {
+                    $transformBase = str_replace('.storage.supabase.co', '.supabase.co/storage/v1/render/image/public', $endpoint);
+                } else {
+                    $transformBase = str_replace('/s3', '/render/image/public', $endpoint);
+                }
+                
                 $queryString = http_build_query($options);
                 
                 return "{$transformBase}/{$bucket}/{$path}?{$queryString}";
