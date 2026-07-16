@@ -123,6 +123,7 @@ class PlatformDiagnosticsController extends Controller
                     'name' => $a->user->name ?? 'System',
                     'role' => $a->user->role ?? 'N/A',
                     'avatar' => $a->user->avatar ?? null,
+                    'avatar_url' => $a->user?->avatar_url,
                 ]
             ]);
     }

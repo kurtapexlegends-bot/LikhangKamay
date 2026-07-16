@@ -338,6 +338,7 @@ class SystemSettingsController extends Controller
                     'name' => $user->name,
                     'shop_name' => $user->shop_name,
                     'avatar' => $user->avatar,
+                    'avatar_url' => $user->avatar_url,
                     'premium_tier' => $log->new_tier,
                     'previous_tier' => $log->previous_tier,
                     'previous_tier_label' => $previousTierLabel,
