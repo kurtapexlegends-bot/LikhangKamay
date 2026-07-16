@@ -385,3 +385,23 @@ Route::post('/impersonation/leave', [\App\Http\Controllers\Admin\ImpersonationCo
     ->name('impersonation.leave');
 
 require __DIR__.'/auth.php';
+
+Route::get('/test-storage-upload', function() {
+    try {
+        $path = \Illuminate\Support\Facades\Storage::disk('public')->put('test.txt', 'Hello S3 Storage from Vercel!');
+        return response()->json([
+            'success' => true,
+            'path' => $path,
+            'url' => \Illuminate\Support\Facades\Storage::disk('public')->url('test.txt'),
+            'driver' => config('filesystems.disks.public.driver'),
+            'env_driver' => env('PUBLIC_DISK_DRIVER'),
+            'bucket' => config('filesystems.disks.public.bucket'),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+});
