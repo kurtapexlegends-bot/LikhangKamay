@@ -3,7 +3,8 @@
     "framework": null,
     "functions": {
         "api/index.php": {
-            "runtime": "vercel-php@0.7.3"
+            "runtime": "vercel-php@0.7.3",
+            "memory": 1536
         }
     },
     "routes": [
@@ -42,7 +43,7 @@
         "LOG_CHANNEL": "stderr",
         "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
         "SESSION_DRIVER": "cookie",
-        "CACHE_STORE": "array",
+        "CACHE_STORE": "database",
         "PUBLIC_DISK_DRIVER": "s3",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
