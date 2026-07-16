@@ -161,12 +161,15 @@ class AdminAnalyticsService
 
     protected function getCategoryPerformanceData(): array
     {
-        return \App\Models\Category::withCount(['products as gmv' => function ($query) {
-            $query->join('order_items', 'products.id', '=', 'order_items.product_id')
-                ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                ->where('orders.status', '!=', 'cancelled')
-                ->select(\Illuminate\Support\Facades\DB::raw('SUM(order_items.price * order_items.quantity)'));
-        }])
+        return \App\Models\Category::select('categories.*')
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(order_items.price * order_items.quantity), 0)')
+                    ->from('order_items')
+                    ->join('products', 'order_items.product_id', '=', 'products.id')
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->whereColumn('products.category', 'categories.name')
+                    ->where('orders.status', '!=', 'cancelled');
+            }, 'gmv')
             ->orderByDesc('gmv')
             ->limit(6)
             ->get()

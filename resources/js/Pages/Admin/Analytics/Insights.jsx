@@ -49,14 +49,15 @@ const CustomTooltip = ({ active, payload, label }) => {
 const CategoryTooltip = ({ active, payload }) => {
     if (active && payload?.length) {
         const item = payload[0]?.payload;
+        const gmvValue = item?.isEmpty ? 0 : Number(item?.gmv || 0);
 
         return (
             <div className="bg-white/90 backdrop-blur-xl border border-stone-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-xl px-4 py-3">
                 <p className="font-bold text-stone-900 text-[11px] uppercase tracking-wider mb-2">{item?.category || 'Category'}</p>
                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].color }}></div>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item?.isEmpty ? '#e7e5e4' : payload[0].color }}></div>
                     <p className="text-sm font-bold text-stone-800">
-                        GMV: <span className="font-semibold text-stone-550">₱{Number(item?.gmv || 0).toLocaleString()}</span>
+                        GMV: <span className="font-semibold text-stone-550">₱{gmvValue.toLocaleString()}</span>
                     </p>
                 </div>
             </div>
