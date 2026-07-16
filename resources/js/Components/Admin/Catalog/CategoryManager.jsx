@@ -249,10 +249,10 @@ export default function CategoryManager({ categories }) {
                     </div>
 
                     {/* Category List Rows */}
-                    <div className="border border-stone-200/60 rounded-xl overflow-hidden divide-y divide-stone-100">
+                    <div className="border border-stone-200/60 rounded-xl divide-y divide-stone-100">
                         {filteredCategories.length > 0 ? (
                             filteredCategories.map((category) => (
-                                <div key={category.id} className="flex items-center justify-between p-4 bg-white hover:bg-stone-50/30 transition-all group min-h-[64px]">
+                                <div key={category.id} className="flex items-center justify-between p-4 bg-white hover:bg-stone-50/30 transition-all group min-h-[64px] first:rounded-t-xl last:rounded-b-xl">
                                     <div className="flex-1 min-w-0 pr-4">
                                         {editingCategory === category.id ? (
                                             <div className="flex items-center gap-2 w-full max-w-xl">
