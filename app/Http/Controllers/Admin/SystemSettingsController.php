@@ -357,10 +357,10 @@ class SystemSettingsController extends Controller
     {
         Gate::authorize('admin-action');
         $validated = $request->validate([
-            'platform_name' => 'required|string|max:255',
+            'platform_name' => 'sometimes|required|string|max:255',
             'platform_logo' => 'nullable|image|max:2048',
             'favicon' => 'nullable|file|mimes:ico,png|max:512',
-            'primary_color' => ['required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'primary_color' => ['sometimes', 'required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
             'seo_metadata' => 'required|array',
             'seo_metadata.title' => 'required|string|max:255',
             'seo_metadata.description' => 'required|string|max:500',
@@ -397,7 +397,7 @@ class SystemSettingsController extends Controller
         ]);
 
         // Audit Logging for critical changes
-        if ($this->settings->get('primary_color') !== $validated['primary_color']) {
+        if (isset($validated['primary_color']) && $this->settings->get('primary_color') !== $validated['primary_color']) {
             \App\Models\PlatformActivity::log(
                 'BRANDING_UPDATE',
                 "Updated primary brand color from " . $this->settings->get('primary_color') . " to " . $validated['primary_color']
@@ -466,7 +466,9 @@ class SystemSettingsController extends Controller
             );
         }
 
-        $validated['platform_name'] = strip_tags($validated['platform_name']);
+        if (isset($validated['platform_name'])) {
+            $validated['platform_name'] = strip_tags($validated['platform_name']);
+        }
         if (isset($validated['seo_metadata']['title'])) {
             $validated['seo_metadata']['title'] = strip_tags($validated['seo_metadata']['title']);
         }
@@ -483,8 +485,12 @@ class SystemSettingsController extends Controller
             $validated['mail_from_name'] = strip_tags($validated['mail_from_name']);
         }
 
-        $this->settings->set('platform_name', $validated['platform_name']);
-        $this->settings->set('primary_color', $validated['primary_color']);
+        if (isset($validated['platform_name'])) {
+            $this->settings->set('platform_name', $validated['platform_name']);
+        }
+        if (isset($validated['primary_color'])) {
+            $this->settings->set('primary_color', $validated['primary_color']);
+        }
         $this->settings->set('seo_metadata', $validated['seo_metadata'], 'json');
         $this->settings->set('contact_info', $validated['contact_info'], 'json');
         $this->settings->set('social_links', $validated['social_links'], 'json');

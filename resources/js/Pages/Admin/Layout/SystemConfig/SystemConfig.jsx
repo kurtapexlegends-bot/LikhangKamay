@@ -15,7 +15,7 @@ import {
     CreditCard,
     ChevronDown,
     AlertCircle,
-    Globe,
+    Search,
     Server,
     FolderTree,
     RotateCcw,
@@ -58,12 +58,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     };
 
     const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
-        platform_name: settings?.platform_name || '',
-        platform_logo: null,
-        platform_logo_preview: settings?.platform_logo || '',
-        favicon: null,
-        favicon_preview: settings?.favicon || '',
-        primary_color: settings?.primary_color || '#8B4513',
         seo_metadata: {
             title: settings?.seo_metadata?.title || '',
             description: settings?.seo_metadata?.description || '',
@@ -125,12 +119,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     useEffect(() => {
         if (settings) {
             setData({
-                platform_name: settings.platform_name || '',
-                platform_logo: null,
-                platform_logo_preview: settings.platform_logo || '',
-                favicon: null,
-                favicon_preview: settings.favicon || '',
-                primary_color: settings.primary_color || '#8B4513',
                 seo_metadata: {
                     title: settings.seo_metadata?.title || '',
                     description: settings.seo_metadata?.description || '',
@@ -166,15 +154,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         }
     }, [settings]);
 
-    const handleFileChange = (e, field) => {
-        const file = e.target.files[0];
-        if (file) {
-            setData(field, file);
-            const previewField = `${field}_preview`;
-            setData(previewField, URL.createObjectURL(file));
-        }
-    };
-
     const updateNested = (category, field, value) => {
         setData(category, {
             ...data[category],
@@ -190,7 +169,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     ];
 
     const subTabs = [
-        { id: 'branding_details', name: 'Platform Branding', icon: Globe },
+        { id: 'branding_details', name: 'SEO Metadata', icon: Search },
         { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
         { id: 'branding_ops', name: 'Platform Ops', icon: Settings },
         { id: 'branding_smtp', name: 'SMTP Settings', icon: Server },
