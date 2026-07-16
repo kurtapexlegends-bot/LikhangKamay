@@ -113,6 +113,7 @@ export default function UpdateProfileInformation({
                                 </button>
                             )}
                         </div>
+                        <InputError className="mt-2" message={errors.avatar} />
                     </div>
                 </div>
 
