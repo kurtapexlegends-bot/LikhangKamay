@@ -48,21 +48,6 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
-            if (str_contains($request->getPathInfo(), '/admin')) {
-                if (
-                    !$exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
-                    && !$exception instanceof \Illuminate\Validation\ValidationException
-                    && !$exception instanceof \Illuminate\Auth\Access\AuthorizationException
-                    && !$exception instanceof \Illuminate\Auth\AuthenticationException
-                ) {
-                    return response()->json([
-                        'error_message' => $exception->getMessage(),
-                        'error_file' => $exception->getFile(),
-                        'error_line' => $exception->getLine(),
-                        'error_trace' => explode("\n", $exception->getTraceAsString())
-                    ], 500);
-                }
-            }
             if ($request->header('X-Inertia')) {
                 if ($response->getStatusCode() === 401 || ($response->getStatusCode() === 302 && str_contains($response->headers->get('Location', ''), '/login'))) {
                     return Inertia::location(route('login'));
