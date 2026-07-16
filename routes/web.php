@@ -389,6 +389,7 @@ require __DIR__.'/auth.php';
 Route::get('/test-storage-upload', function() {
     try {
         $path = \Illuminate\Support\Facades\Storage::disk('public')->put('test.txt', 'Hello S3 Storage from Vercel!');
+        $user = auth()->user();
         return response()->json([
             'success' => true,
             'path' => $path,
@@ -396,6 +397,10 @@ Route::get('/test-storage-upload', function() {
             'driver' => config('filesystems.disks.public.driver'),
             'env_driver' => env('PUBLIC_DISK_DRIVER'),
             'bucket' => config('filesystems.disks.public.bucket'),
+            'auth_checked' => auth()->check(),
+            'user_id' => $user?->id,
+            'user_avatar' => $user?->avatar,
+            'user_avatar_url' => $user?->avatar_url,
         ]);
     } catch (\Exception $e) {
         return response()->json([
