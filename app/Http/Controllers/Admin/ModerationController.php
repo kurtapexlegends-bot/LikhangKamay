@@ -25,17 +25,34 @@ class ModerationController extends Controller
     public function compliance(Request $request)
     {
         Gate::authorize('admin-action');
-        $flags = $this->getPendingFlags();
-        $disputes = $this->getReviewDisputes();
-        $trashData = $this->getTrashQueueAndStats();
+        try {
+            $flags = $this->getPendingFlags();
+            $disputes = $this->getReviewDisputes();
+            $trashData = $this->getTrashQueueAndStats();
 
-        return Inertia::render('Admin/Compliance/ContentSafety', [
-            'flags' => $flags,
-            'disputes' => $disputes,
-            'trashQueue' => $trashData['queue'],
-            'trashStats' => $trashData['stats'],
-            'defaultTab' => $request->input('tab', 'flags'),
-        ]);
+            return Inertia::render('Admin/Compliance/ContentSafety', [
+                'flags' => $flags,
+                'disputes' => $disputes,
+                'trashQueue' => $trashData['queue'],
+                'trashStats' => $trashData['stats'],
+                'defaultTab' => $request->input('tab', 'flags'),
+            ]);
+        } catch (\Throwable $e) {
+            if ($request->wantsJson() || $request->header('X-Inertia')) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ], 500);
+            }
+            dd([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
 
     /**
