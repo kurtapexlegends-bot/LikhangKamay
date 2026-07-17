@@ -100,10 +100,11 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
         setUploading(true);
         setUploadError(null);
 
-        const formData = new FormData();
-        formData.append('document', selectedFile);
-
-        router.post(route('artisan.setup.upload-document', { type: id }), formData, {
+        // Pass a plain javascript object containing the File object.
+        // Inertia automatically converts this to FormData and sets boundary headers.
+        router.post(route('artisan.setup.upload-document', { type: id }), {
+            document: selectedFile,
+        }, {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
