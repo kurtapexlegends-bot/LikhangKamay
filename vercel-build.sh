@@ -7,8 +7,8 @@ php artisan route:clear
 php artisan view:clear
 php artisan clear-compiled
 
-# 2. Pre-compile caches at build-time for maximum production speed
-php artisan config:cache
+# 2. Pre-compile caches at build-time for maximum production speed (avoid config:cache on Vercel)
+php artisan config:clear
 php artisan route:cache
 php artisan view:cache
 
