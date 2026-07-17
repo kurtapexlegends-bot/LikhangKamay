@@ -64,3 +64,4 @@ remove_badges*
 # Graphify & AI Customizations
 /graphify-out/
 /.agents/
+/docs/code/
