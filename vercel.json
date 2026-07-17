@@ -34,10 +34,6 @@
         {
             "path": "/webhooks/cron",
             "schedule": "0 0 * * *"
-        },
-        {
-            "path": "/webhooks/cron/queue",
-            "schedule": "* * * * *"
         }
     ],
 
