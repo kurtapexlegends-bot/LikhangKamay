@@ -65,3 +65,7 @@ remove_badges*
 /graphify-out/
 /.agents/
 /docs/code/
+
+# Obsidian local settings
+/.obsidian/
+/docs/.obsidian/

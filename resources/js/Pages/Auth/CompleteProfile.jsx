@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
@@ -8,7 +8,7 @@ import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 import { Head, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false }) {
@@ -32,6 +32,19 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             ? { seller: false, sellerPrivacy: false }
             : { terms: false, privacy: false }
     );
+
+    const firstNameRef = useRef(null);
+    const lastNameRef = useRef(null);
+    const shopNameRef = useRef(null);
+    const passwordRef = useRef(null);
+    const confirmPasswordRef = useRef(null);
+
+    const handleKeyDown = (nextRef) => (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            nextRef.current?.focus();
+        }
+    };
 
     // Real-time Shop Validation
     const [isShopNameTaken, setIsShopNameTaken] = useState(false);
@@ -207,6 +220,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                     <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
+                                ref={firstNameRef}
                                 id="first_name"
                                 name="first_name"
                                 value={data.first_name}
@@ -214,6 +228,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 autoComplete="given-name"
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
+                                onKeyDown={handleKeyDown(lastNameRef)}
                                 required
                                 floatingLabel="First Name"
                                 icon={User}
@@ -223,12 +238,14 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
 
                         <div>
                             <TextInput
+                                ref={lastNameRef}
                                 id="last_name"
                                 name="last_name"
                                 value={data.last_name}
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
+                                onKeyDown={isArtisan ? handleKeyDown(shopNameRef) : handleKeyDown(passwordRef)}
                                 required
                                 floatingLabel="Last Name"
                                 icon={User}
@@ -241,6 +258,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                     {isArtisan && (
                         <motion.div variants={itemVariants}>
                             <TextInput
+                                ref={shopNameRef}
                                 id="shop_name"
                                 name="shop_name"
                                 value={data.shop_name}
@@ -249,6 +267,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 }`}
                                 autoComplete="organization"
                                 onChange={(e) => setData('shop_name', e.target.value)}
+                                onKeyDown={handleKeyDown(passwordRef)}
                                 required
                                 floatingLabel="Shop Name"
                                 icon={Briefcase}
@@ -304,6 +323,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                     <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
+                                ref={passwordRef}
                                 id="password"
                                 type="password"
                                 name="password"
@@ -311,6 +331,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
+                                onKeyDown={handleKeyDown(confirmPasswordRef)}
                                 required
                                 floatingLabel="Password"
                                 icon={Lock}
@@ -318,6 +339,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                         </div>
                         <div>
                             <TextInput
+                                ref={confirmPasswordRef}
                                 id="password_confirmation"
                                 type="password"
                                 name="password_confirmation"
@@ -332,6 +354,54 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                         </div>
                     </motion.div>
                     <InputError message={errors.password} className="mt-2" />
+
+                    {/* Real-time Password Matching status indicator */}
+                    {data.password && data.password_confirmation && (
+                        <motion.div 
+                            variants={itemVariants}
+                            className={`flex items-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-xl border transition-all duration-300 ${
+                                data.password === data.password_confirmation
+                                    ? 'text-emerald-700 bg-emerald-50/80 border-emerald-100/60 shadow-sm shadow-emerald-500/5'
+                                    : 'text-amber-700 bg-amber-50/80 border-amber-100/60 shadow-sm shadow-amber-500/5'
+                            }`}
+                        >
+                            {data.password === data.password_confirmation ? (
+                                <>
+                                    <CheckCircle2 size={15} className="shrink-0 text-emerald-600 animate-pulse" />
+                                    <span>Passwords match successfully.</span>
+                                </>
+                            ) : (
+                                <>
+                                    <AlertCircle size={15} className="shrink-0 text-amber-600 animate-pulse" />
+                                    <span>Passwords do not match yet.</span>
+                                </>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {/* Password Strength Indicator */}
+                    {data.password && (
+                        <motion.div 
+                            variants={itemVariants}
+                            className="mt-1.5 px-1 space-y-1.5 animate-in fade-in duration-300"
+                        >
+                            <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-wider">
+                                <span className="text-stone-400">Strength</span>
+                                <span className={
+                                    data.password.length < 12 ? 'text-rose-500' : 
+                                    data.password.length < 15 ? 'text-amber-500' : 'text-emerald-500'
+                                }>
+                                    {data.password.length < 12 ? 'Weak' : data.password.length < 15 ? 'Fair' : 'Strong'}
+                                </span>
+                            </div>
+                            <div className="h-1 w-full bg-stone-100 rounded-full overflow-hidden flex gap-0.5">
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 6 ? (data.password.length < 12 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? (data.password.length < 15 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 15 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && /\d/.test(data.password) && data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* Terms Checkbox Row */}
                     <motion.div 
