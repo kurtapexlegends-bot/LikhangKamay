@@ -56,6 +56,16 @@ return Application::configure(basePath: dirname(__DIR__))
                     return Inertia::location(route('login'));
                 }
             }
+            
+            // Temporary debug responder to expose exact Vercel 500 crash context
+            if ($response->getStatusCode() === 500) {
+                return response()->json([
+                    'debug_error' => $exception->getMessage(),
+                    'debug_file' => $exception->getFile(),
+                    'debug_line' => $exception->getLine(),
+                    'debug_trace' => array_slice(explode("\n", $exception->getTraceAsString()), 0, 15),
+                ], 500);
+            }
             return $response;
         });
 
