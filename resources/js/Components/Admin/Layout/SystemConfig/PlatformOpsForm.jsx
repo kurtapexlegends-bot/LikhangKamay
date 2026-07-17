@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { router } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
-import { Banknote, Percent, Hash, ArrowRight, ShieldAlert, CreditCard } from 'lucide-react';
+import { Banknote, Percent, Hash, ArrowRight, ShieldAlert, CreditCard, RotateCcw } from 'lucide-react';
 
 export default function PlatformOpsForm({ data, setData }) {
+    const [isPurging, setIsPurging] = useState(false);
+
+    const handlePurgeCache = () => {
+        setIsPurging(true);
+        router.post(route('admin.diagnostics.cache.purge'), {}, {
+            preserveScroll: true,
+            onFinish: () => setIsPurging(false)
+        });
+    };
     return (
         <div className="bg-white rounded-2xl border border-clay-100 p-6 space-y-6 shadow-sm">
             {/* Financial Parameters */}
@@ -90,6 +100,30 @@ export default function PlatformOpsForm({ data, setData }) {
                             <div className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all ${data.paymongo_enabled ? 'left-5' : 'left-0.5'}`} />
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Cache Management */}
+            <div className="pt-6 border-t border-stone-100 space-y-4">
+                <div className="flex items-center gap-2">
+                    <RotateCcw className="text-clay-600" size={16} />
+                    <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">System Cache</h3>
+                </div>
+
+                <div className="bg-stone-50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h4 className="text-xs font-bold text-stone-900 leading-tight">Purge Application Cache</h4>
+                        <p className="text-[9px] text-stone-500 font-medium mt-1">Forcefully clear all cached data, including home and catalog category lists, to read fresh database entries.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handlePurgeCache}
+                        disabled={isPurging}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-lg shadow-sm transition disabled:opacity-50 min-h-[40px] shrink-0"
+                    >
+                        <RotateCcw size={14} className={isPurging ? "animate-spin" : ""} />
+                        {isPurging ? "Purging..." : "Purge Cache"}
+                    </button>
                 </div>
             </div>
         </div>
