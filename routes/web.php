@@ -399,6 +399,14 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::delete('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'destroyTaxonomy'])->name('admin.taxonomy.destroy');
 });
 
+Route::get('/categories-debug', function() {
+    return response()->json([
+        'home_categories' => (new \App\Services\CatalogService())->getCategories(),
+        'catalog_metadata' => (new \App\Services\CatalogService())->getCatalogMetadata(),
+        'all_database_categories' => \App\Models\Category::all()->toArray()
+    ]);
+});
+
 // Stop Impersonation Route (Protected by standard auth)
 Route::post('/impersonation/leave', [\App\Http\Controllers\Admin\ImpersonationController::class, 'leave'])
     ->middleware(['auth'])
