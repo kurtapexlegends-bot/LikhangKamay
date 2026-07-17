@@ -4,6 +4,60 @@ import { router } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 
+// Helper function to compress images client-side using Canvas
+const compressImage = (file, maxWidth = 1600, maxHeight = 1600, quality = 0.8) => {
+    return new Promise((resolve) => {
+        if (!file.type.startsWith('image/')) {
+            resolve(file);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Resize if too large
+                if (width > maxWidth || height > maxHeight) {
+                    if (width > height) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    } else {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            const compressedFile = new File([blob], file.name, {
+                                type: file.type || 'image/jpeg',
+                                lastModified: Date.now(),
+                            });
+                            resolve(compressedFile);
+                        } else {
+                            resolve(file);
+                        }
+                    },
+                    file.type || 'image/jpeg',
+                    quality
+                );
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
 export default function DocumentsStep({
     submit,
     processing,
@@ -93,36 +147,43 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
         }
     }, [existingFileUrl]);
 
-    const handleFileSelect = (e) => {
+    const handleFileSelect = async (e) => {
         const selectedFile = e.target.files?.[0];
         if (!selectedFile) return;
 
         setUploading(true);
         setUploadError(null);
 
-        // Pass a plain javascript object containing the File object.
-        // Inertia automatically converts this to FormData and sets boundary headers.
-        router.post(route('artisan.setup.upload-document', { type: id }), {
-            document: selectedFile,
-        }, {
-            forceFormData: true,
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                setUploading(false);
-                if (inputRef.current) {
-                    inputRef.current.value = '';
-                }
-            },
-            onError: (errs) => {
-                setUploading(false);
-                console.error('File Upload Error details:', errs);
-                setUploadError(errs.document || 'Failed to upload document.');
-                if (inputRef.current) {
-                    inputRef.current.value = '';
-                }
-            },
-        });
+        try {
+            // Compress the image client-side to ensure it passes Vercel's 4.5MB gateway limit.
+            const fileToUpload = await compressImage(selectedFile);
+
+            router.post(route('artisan.setup.upload-document', { type: id }), {
+                document: fileToUpload,
+            }, {
+                forceFormData: true,
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setUploading(false);
+                    if (inputRef.current) {
+                        inputRef.current.value = '';
+                    }
+                },
+                onError: (errs) => {
+                    setUploading(false);
+                    console.error('File Upload Error details:', errs);
+                    setUploadError(errs.document || 'Failed to upload document.');
+                    if (inputRef.current) {
+                        inputRef.current.value = '';
+                    }
+                },
+            });
+        } catch (err) {
+            setUploading(false);
+            setUploadError('Failed to process file before upload.');
+            console.error('File compression error:', err);
+        }
     };
 
     const handleRemove = (e) => {
