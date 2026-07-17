@@ -146,4 +146,60 @@ class ThreeDManagerController extends Controller
 
         return $bytes . 'B';
     }
+
+    public function presign(Request $request)
+    {
+        $request->validate([
+            'filename' => 'required|string',
+            'contentType' => 'required|string',
+        ]);
+
+        $filename = $request->input('filename');
+        $contentType = $request->input('contentType');
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        if (!in_array($extension, ['glb', 'gltf'], true)) {
+            return response()->json(['error' => 'Invalid file type'], 400);
+        }
+
+        $key = 'products/models/' . \Illuminate\Support\Str::uuid() . '.' . $extension;
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        $driver = config('filesystems.disks.public.driver');
+
+        if ($driver === 's3') {
+            $client = $disk->getClient();
+            $bucket = config('filesystems.disks.public.bucket');
+            $command = $client->getCommand('PutObject', [
+                'Bucket' => $bucket,
+                'Key' => $key,
+                'ContentType' => $contentType,
+            ]);
+            $presignedRequest = $client->createPresignedRequest($command, '+20 minutes');
+            $url = (string) $presignedRequest->getUri();
+        } else {
+            $url = route('3d.local-upload') . '?key=' . urlencode($key);
+        }
+
+        return response()->json([
+            'url' => $url,
+            'key' => $key,
+        ]);
+    }
+
+    public function localUpload(Request $request)
+    {
+        $key = $request->query('key');
+        if (!$key) {
+            return response()->json(['error' => 'Missing key parameter'], 400);
+        }
+
+        $content = $request->getContent();
+        if (empty($content)) {
+            return response()->json(['error' => 'No content received'], 400);
+        }
+
+        \Illuminate\Support\Facades\Storage::disk('public')->put($key, $content);
+
+        return response()->json(['success' => true]);
+    }
 }

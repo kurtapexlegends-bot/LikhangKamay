@@ -17,18 +17,27 @@ trait ValidatesThreeDModelUploads
     {
         return [
             $required ? 'required' : 'nullable',
-            'file',
-            'max:51200',
             function (string $attribute, mixed $value, Closure $fail): void {
-                if (!$value instanceof UploadedFile) {
+                if (is_string($value)) {
+                    $extension = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+                    if (!in_array($extension, ['glb', 'gltf'], true)) {
+                        $fail("The {$attribute} field must be a file of type: glb, gltf.");
+                    }
                     return;
                 }
 
-                $extension = strtolower((string) $value->getClientOriginalExtension());
-
-                if (!in_array($extension, ['glb', 'gltf'], true)) {
-                    $fail("The {$attribute} field must be a file of type: glb, gltf.");
+                if ($value instanceof UploadedFile) {
+                    $extension = strtolower((string) $value->getClientOriginalExtension());
+                    if (!in_array($extension, ['glb', 'gltf'], true)) {
+                        $fail("The {$attribute} field must be a file of type: glb, gltf.");
+                    }
+                    if ($value->getSize() > 51200 * 1024) {
+                        $fail("The {$attribute} field must not be greater than 50MB.");
+                    }
+                    return;
                 }
+
+                $fail("The {$attribute} must be a file or a valid storage path.");
             },
         ];
     }

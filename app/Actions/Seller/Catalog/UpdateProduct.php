@@ -37,10 +37,11 @@ class UpdateProduct
         ];
 
         $retainedGallery = $request->input('retained_gallery', []);
+        $hasThreeD = $request->hasFile('model_3d') || filled($product->model_3d_path) || (is_string($request->input('model_3d')) && filled($request->input('model_3d')));
         $activationReadiness = $this->evaluateActivationReadiness(
             $request->hasFile('cover_photo') || filled($product->cover_photo_path),
             count($retainedGallery) + count($request->file('gallery', [])),
-            $request->hasFile('model_3d') || filled($product->model_3d_path)
+            $hasThreeD
         );
         $requestedStatus = $this->normalizeStatusForActivationRequirements(
             $validated['status'],
@@ -58,6 +59,8 @@ class UpdateProduct
 
         if ($request->hasFile('model_3d')) {
             $product->model_3d_path = $this->threeDAssetService->validateAndStore($request, $seller->id, $product->model_3d_path);
+        } elseif (is_string($request->input('model_3d')) && filled($request->input('model_3d'))) {
+            $product->model_3d_path = $request->input('model_3d');
         }
 
         $product->gallery_paths = $this->productMediaService->handleGallery(

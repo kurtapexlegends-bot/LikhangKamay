@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useForm } from "@inertiajs/react";
 import useConstraintValidation from "@/hooks/useConstraintValidation";
 import { STANDARD_PRODUCT_CATEGORIES } from "@/utils/catalog";
+import axios from "axios";
 
 export default function useProductFormState({
     canEditProducts,
@@ -267,7 +268,7 @@ export default function useProductFormState({
         return () => cleanupPreviews();
     }, []);
 
-    const submitProduct = (e) => {
+    const submitProduct = async (e) => {
         e.preventDefault();
         if (!canEditProducts) return;
 
@@ -283,6 +284,32 @@ export default function useProductFormState({
         if ((isAddingNewActive || isActivatingExisting) && subscription?.activeCount >= subscription?.limit) {
             setLimitModalOpen(true);
             return;
+        }
+
+        const extension = data.model_3d?.name?.split('.').pop()?.toLowerCase();
+        if (extension === 'glb') {
+            try {
+                addToast("Uploading 3D model directly to storage...", "info");
+                
+                const presignResponse = await axios.post(route('3d.presign'), {
+                    filename: data.model_3d.name,
+                    contentType: data.model_3d.type || 'application/octet-stream'
+                });
+                const { url, key } = presignResponse.data;
+                
+                await axios.put(url, data.model_3d, {
+                    headers: {
+                        'Content-Type': data.model_3d.type || 'application/octet-stream'
+                    }
+                });
+                
+                productForm.data.model_3d = key;
+                setData("model_3d", key);
+            } catch (err) {
+                console.error("Direct 3D upload failed during product listing:", err);
+                addToast("Failed to upload 3D model. Please try again.", "error");
+                return;
+            }
         }
 
         const options = {

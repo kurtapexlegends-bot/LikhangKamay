@@ -6,6 +6,7 @@ import External3DToolLink from '@/Components/ThreeD/External3DToolLink';
 import { ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 import ThreeDCanvasViewer from '@/Components/Seller/Catalog/ThreeDCanvasViewer';
 import { UploadCloud, Rotate3d, X, Check } from 'lucide-react';
+import axios from 'axios';
 
 export default function ThreeDUploadModal({ show, onClose, products = [], canEditThreeD }) {
     const { data, setData, processing, reset, errors } = useForm({
@@ -18,6 +19,8 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
     const [dragActive, setDragActive] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [fileError, setFileError] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const selectedUploadProduct = useMemo(() => (
         products.find((product) => String(product.id) === String(data.product_id)) || null
@@ -38,14 +41,64 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
         setPreviewUrl(null);
         setFileError('');
         setDragActive(false);
+        setIsUploading(false);
+        setUploadProgress(0);
         reset();
         onClose();
     };
 
-    const handleUpload = (e) => {
+    const handleUpload = async (e) => {
         e.preventDefault();
         if (!canEditThreeD) return;
 
+        const extension = data.model?.name?.split('.').pop()?.toLowerCase();
+
+        if (extension === 'glb') {
+            setIsUploading(true);
+            setUploadProgress(5);
+            try {
+                // 1. Get presigned upload configuration from backend
+                const presignResponse = await axios.post(route('3d.presign'), {
+                    filename: data.model.name,
+                    contentType: data.model.type || 'application/octet-stream'
+                });
+                const { url, key } = presignResponse.data;
+                setUploadProgress(20);
+
+                // 2. Upload file directly using PUT request
+                await axios.put(url, data.model, {
+                    headers: {
+                        'Content-Type': data.model.type || 'application/octet-stream'
+                    },
+                    onUploadProgress: (progressEvent) => {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setUploadProgress(20 + Math.round(percentCompleted * 0.7));
+                    }
+                });
+                setUploadProgress(95);
+
+                // 3. Post stored key string to backend to finalize
+                router.post(route('3d.upload'), {
+                    model: key,
+                    product_id: data.product_id
+                }, {
+                    onSuccess: () => {
+                        setIsUploading(false);
+                        handleClose();
+                    },
+                    onError: () => {
+                        setIsUploading(false);
+                    }
+                });
+            } catch (err) {
+                console.error('Direct upload failed:', err);
+                setFileError('Direct upload to storage failed. Please try again.');
+                setIsUploading(false);
+            }
+            return;
+        }
+
+        // Fallback synchronous upload
         const formData = new FormData();
         formData.append('model', data.model);
         formData.append('product_id', data.product_id);
@@ -309,13 +362,13 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                         </button>
                         <button
                             type="submit"
-                            disabled={processing || !data.model || !data.product_id || !canEditThreeD}
+                            disabled={processing || isUploading || !data.model || !data.product_id || !canEditThreeD}
                             className="flex items-center gap-2 px-5 py-2.5 bg-clay-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-clay-200 hover:bg-clay-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {processing ? (
+                            {processing || isUploading ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Uploading...
+                                    {isUploading ? `Uploading ${uploadProgress}%...` : 'Uploading...'}
                                 </>
                             ) : (
                                 <>

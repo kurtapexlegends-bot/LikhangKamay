@@ -28,10 +28,11 @@ class CreateProduct
 
     public function execute(array $validated, $request, $sellerOwner): array
     {
+        $hasThreeD = $request->hasFile('model_3d') || (is_string($request->input('model_3d')) && filled($request->input('model_3d')));
         $activationReadiness = $this->evaluateActivationReadiness(
             $request->hasFile('cover_photo'),
             count($request->file('gallery', [])),
-            $request->hasFile('model_3d')
+            $hasThreeD
         );
         $requestedStatus = $this->normalizeStatusForActivationRequirements(
             $validated['status'],
@@ -47,7 +48,12 @@ class CreateProduct
             $coverPath = $this->productMediaService->resizeAndSave($request->file('cover_photo'), 'products/covers');
         }
 
-        $modelPath = $this->threeDAssetService->validateAndStore($request, $sellerOwner->id);
+        $modelPath = null;
+        if ($request->hasFile('model_3d')) {
+            $modelPath = $this->threeDAssetService->validateAndStore($request, $sellerOwner->id);
+        } elseif (is_string($request->input('model_3d')) && filled($request->input('model_3d'))) {
+            $modelPath = $request->input('model_3d');
+        }
 
         $galleryPaths = [];
         if ($request->hasFile('gallery')) {
