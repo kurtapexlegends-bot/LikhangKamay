@@ -306,6 +306,24 @@ Route::get('/webhooks/cron', function () {
     ]);
 })->name('webhooks.cron');
 
+Route::get('/webhooks/cron/queue', function () {
+    if (request()->header('X-Vercel-Cron-Secret') !== env('CRON_SECRET')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    \Illuminate\Support\Facades\Artisan::call('queue:work', [
+        '--stop-when-empty' => true,
+        '--max-time' => 50
+    ]);
+    return response()->json([
+        'status' => 'success',
+        'output' => \Illuminate\Support\Facades\Artisan::output()
+    ]);
+})->name('webhooks.cron.queue');
+
+Route::get('/ping', function () {
+    return response('pong', 200)->header('Content-Type', 'text/plain');
+});
+
 Route::get('/img/proxy', [\App\Http\Controllers\Core\ImageProxyController::class, 'proxy'])->name('img.proxy');
 
 // --- SUPER ADMIN ROUTES ---
