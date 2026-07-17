@@ -11,6 +11,7 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 export default function UpdatePasswordForm({ className = '' }) {
     const passwordInput = useRef();
     const currentPasswordInput = useRef();
+    const confirmPasswordInput = useRef();
 
     const {
         data,
@@ -20,6 +21,8 @@ export default function UpdatePasswordForm({ className = '' }) {
         reset,
         processing,
         recentlySuccessful,
+        setError,
+        clearErrors,
     } = useForm({
         current_password: '',
         password: '',
@@ -29,6 +32,34 @@ export default function UpdatePasswordForm({ className = '' }) {
     const updatePassword = (e) => {
         e.preventDefault();
 
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.current_password || data.current_password === '') {
+            localErrors.current_password = 'Current password is required';
+            if (!firstInvalidRef) firstInvalidRef = currentPasswordInput;
+        }
+
+        if (!data.password || data.password === '') {
+            localErrors.password = 'New password is required';
+            if (!firstInvalidRef) firstInvalidRef = passwordInput;
+        } else if (data.password.length < 8) {
+            localErrors.password = 'Password must be at least 8 characters';
+            if (!firstInvalidRef) firstInvalidRef = passwordInput;
+        }
+
+        if (data.password !== data.password_confirmation) {
+            localErrors.password_confirmation = 'Passwords do not match';
+            if (!firstInvalidRef) firstInvalidRef = confirmPasswordInput;
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         put(route('password.update'), {
             preserveScroll: true,
             onSuccess: () => reset(),
@@ -67,6 +98,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                             type="password"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             autoComplete="current-password"
+                            hasError={!!errors.current_password}
                         />
                         <InputError message={errors.current_password} className="mt-2" />
                     </div>
@@ -81,6 +113,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                             type="password"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             autoComplete="new-password"
+                            hasError={!!errors.password}
                         />
                         <InputError message={errors.password} className="mt-2" />
                     </div>
@@ -114,11 +147,13 @@ export default function UpdatePasswordForm({ className = '' }) {
                         <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
                         <TextInput
                             id="password_confirmation"
+                            ref={confirmPasswordInput}
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
                             type="password"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             autoComplete="new-password"
+                            hasError={!!errors.password_confirmation}
                         />
                         <InputError message={errors.password_confirmation} className="mt-2" />
                     </div>

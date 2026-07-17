@@ -24,6 +24,11 @@ export default function StructuredAddressFields({
     previewLabel = 'Address Preview',
     readOnly = false,
     showPreview = true,
+    streetRef = null,
+    cityRef = null,
+    barangayRef = null,
+    postalCodeRef = null,
+    regionRef = null,
 }) {
     const field = (name) => fieldNames[name] || `${prefix}${name}`;
     const value = (name) => data[field(name)] ?? '';
@@ -135,6 +140,7 @@ export default function StructuredAddressFields({
             <div>
                 <InputLabel htmlFor={field('street_address')} value={`Street / Block / Lot / Unit${labelSuffix}`} />
                 <TextInput
+                    ref={streetRef}
                     id={field('street_address')}
                     className={`mt-1 block w-full ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                     value={value('street_address')}
@@ -142,6 +148,7 @@ export default function StructuredAddressFields({
                     placeholder="e.g. Blk 35 Lot 18, Sampaloc 1"
                     required={required}
                     disabled={readOnly}
+                    hasError={!!errors[field('street_address')]}
                 />
                 <InputError className="mt-2" message={errors[field('street_address')]} />
             </div>
@@ -162,6 +169,8 @@ export default function StructuredAddressFields({
                                 options={CAVITE_CITY_OPTIONS}
                                 placeholder="Select city or municipality"
                                 disabled={readOnly}
+                                hasError={!!errors[field('city')]}
+                                buttonRef={cityRef}
                             />
                             <InputError className="mt-2" message={errors[field('city')]} />
                         </div>
@@ -174,6 +183,8 @@ export default function StructuredAddressFields({
                                 options={currentBarangays}
                                 placeholder={currentCity ? 'Select barangay' : 'Choose a city first'}
                                 disabled={readOnly}
+                                hasError={!!errors[field('barangay')]}
+                                buttonRef={barangayRef}
                             />
                             <InputError className="mt-2" message={errors[field('barangay')]} />
                         </div>
@@ -183,6 +194,7 @@ export default function StructuredAddressFields({
                         <div>
                             <InputLabel htmlFor={field('region')} value="Province" />
                             <TextInput
+                                ref={regionRef}
                                 id={field('region')}
                                 className="mt-1 block w-full bg-gray-100 text-gray-500"
                                 value={CAVITE_REGION}
@@ -192,12 +204,14 @@ export default function StructuredAddressFields({
                         <div>
                             <InputLabel htmlFor={field('postal_code')} value="Postal Code" />
                             <TextInput
+                                ref={postalCodeRef}
                                 id={field('postal_code')}
                                 className={`mt-1 block w-full ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                                 value={value('postal_code')}
                                 onChange={(event) => updateField('postal_code', event.target.value)}
                                 placeholder="e.g. 4114"
                                 disabled={readOnly}
+                                hasError={!!errors[field('postal_code')]}
                             />
                             <InputError className="mt-2" message={errors[field('postal_code')]} />
                         </div>
@@ -209,6 +223,7 @@ export default function StructuredAddressFields({
                         <div>
                             <InputLabel htmlFor={field('region')} value={`Province${labelSuffix}`} />
                             <TextInput
+                                ref={regionRef}
                                 id={field('region')}
                                 className={`mt-1 block w-full ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                                 value={value('region')}
@@ -216,12 +231,14 @@ export default function StructuredAddressFields({
                                 placeholder="e.g. Cavite"
                                 required={required}
                                 disabled={readOnly}
+                                hasError={!!errors[field('region')]}
                             />
                             <InputError className="mt-2" message={errors[field('region')]} />
                         </div>
                         <div>
                             <InputLabel htmlFor={field('city')} value={`City / Municipality${labelSuffix}`} />
                             <TextInput
+                                ref={cityRef}
                                 id={field('city')}
                                 className={`mt-1 block w-full ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                                 value={value('city')}
@@ -229,6 +246,7 @@ export default function StructuredAddressFields({
                                 placeholder="e.g. Dasmarinas City"
                                 required={required}
                                 disabled={readOnly}
+                                hasError={!!errors[field('city')]}
                             />
                             <InputError className="mt-2" message={errors[field('city')]} />
                         </div>
@@ -238,6 +256,7 @@ export default function StructuredAddressFields({
                         <div>
                             <InputLabel htmlFor={field('barangay')} value={`Barangay${labelSuffix}`} />
                             <TextInput
+                                ref={barangayRef}
                                 id={field('barangay')}
                                 className={`mt-1 block w-full ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                                 value={value('barangay')}
@@ -245,18 +264,21 @@ export default function StructuredAddressFields({
                                 placeholder="e.g. Sampaloc 1"
                                 required={required}
                                 disabled={readOnly}
+                                hasError={!!errors[field('barangay')]}
                             />
                             <InputError className="mt-2" message={errors[field('barangay')]} />
                         </div>
                         <div>
                             <InputLabel htmlFor={field('postal_code')} value="Postal Code" />
                             <TextInput
+                                ref={postalCodeRef}
                                 id={field('postal_code')}
                                 className={`mt-1 block w-full ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                                 value={value('postal_code')}
                                 onChange={(event) => updateField('postal_code', event.target.value)}
                                 placeholder="e.g. 4114"
                                 disabled={readOnly}
+                                hasError={!!errors[field('postal_code')]}
                             />
                             <InputError className="mt-2" message={errors[field('postal_code')]} />
                         </div>

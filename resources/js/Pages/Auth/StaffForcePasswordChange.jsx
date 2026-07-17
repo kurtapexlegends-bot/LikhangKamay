@@ -1,5 +1,5 @@
+import { useState, useRef } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -11,15 +11,47 @@ export default function StaffForcePasswordChange() {
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors, reset, setError, clearErrors } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
     });
 
+    const currentPasswordRef = useRef(null);
+    const newPasswordRef = useRef(null);
+    const confirmPasswordRef = useRef(null);
+
     const submit = (e) => {
         e.preventDefault();
 
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.current_password || data.current_password === '') {
+            localErrors.current_password = 'Current password is required';
+            if (!firstInvalidRef) firstInvalidRef = currentPasswordRef;
+        }
+
+        if (!data.password || data.password === '') {
+            localErrors.password = 'New password is required';
+            if (!firstInvalidRef) firstInvalidRef = newPasswordRef;
+        } else if (data.password.length < 8) {
+            localErrors.password = 'Password must be at least 8 characters';
+            if (!firstInvalidRef) firstInvalidRef = newPasswordRef;
+        }
+
+        if (data.password !== data.password_confirmation) {
+            localErrors.password_confirmation = 'Passwords do not match';
+            if (!firstInvalidRef) firstInvalidRef = confirmPasswordRef;
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         put(route('staff.password.update'), {
             onFinish: () => reset('current_password', 'password', 'password_confirmation'),
         });
@@ -58,12 +90,14 @@ export default function StaffForcePasswordChange() {
                             <div className="relative">
                                 <Lock size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                                 <TextInput
+                                    ref={currentPasswordRef}
                                     id="current_password"
                                     type={showCurrentPassword ? 'text' : 'password'}
                                     value={data.current_password}
                                     onChange={(e) => setData('current_password', e.target.value)}
                                     className="mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/60 py-3 pl-11 pr-11 focus:border-clay-500 focus:ring-clay-500"
                                     autoComplete="current-password"
+                                    hasError={!!errors.current_password}
                                     required
                                 />
                                 <button
@@ -83,12 +117,14 @@ export default function StaffForcePasswordChange() {
                             <div className="relative">
                                 <KeyRound size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                                 <TextInput
+                                    ref={newPasswordRef}
                                     id="password"
                                     type={showNewPassword ? 'text' : 'password'}
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     className="mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/60 py-3 pl-11 pr-11 focus:border-clay-500 focus:ring-clay-500"
                                     autoComplete="new-password"
+                                    hasError={!!errors.password}
                                     required
                                 />
                                 <button
@@ -108,12 +144,14 @@ export default function StaffForcePasswordChange() {
                             <div className="relative">
                                 <KeyRound size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                                 <TextInput
+                                    ref={confirmPasswordRef}
                                     id="password_confirmation"
                                     type={showConfirmPassword ? 'text' : 'password'}
                                     value={data.password_confirmation}
                                     onChange={(e) => setData('password_confirmation', e.target.value)}
                                     className="mt-1 block w-full rounded-xl border-stone-200 bg-stone-50/60 py-3 pl-11 pr-11 focus:border-clay-500 focus:ring-clay-500"
                                     autoComplete="new-password"
+                                    hasError={!!errors.password_confirmation}
                                     required
                                 />
                                 <button

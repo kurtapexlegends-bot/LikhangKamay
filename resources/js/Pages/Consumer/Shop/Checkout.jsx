@@ -78,7 +78,7 @@ export default function Checkout({ auth, pricing }) {
     const sellerGroups = Object.values(grouped);
     const totalSellers = sellerGroups.length;
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         items: incomingItems,
         selected_address_id: defaultAddress?.id || 'new',
         address_label: defaultAddress?.label || typeLabel(defaultAddress?.address_type || 'home'),
@@ -242,22 +242,50 @@ export default function Checkout({ auth, pricing }) {
 
     const needsDeliveryContactDetails = data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim());
 
-    const submitDisabled = processing
-          || (data.shipping_method === 'Delivery' && !activeShippingAddress.trim())
-          || (data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready')
-          || (data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim()))
-          || (data.save_address && isNewAddress && (!data.recipient_name.trim() || !data.phone_number.trim()));
+    const submitDisabled = processing;
 
     const submitCheckout = (event) => {
         event.preventDefault();
 
-        if (submitDisabled) {
-            if (data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready') {
-                addToast('Wait for the delivery quote before placing the order.', 'info');
+        if (processing) return;
+
+        if (data.shipping_method === 'Delivery') {
+            const localErrors = {};
+            
+            if (!data.recipient_name || data.recipient_name.trim() === '') {
+                localErrors.recipient_name = 'Recipient name is required';
             }
-            return;
+            if (!data.phone_number || data.phone_number.trim() === '') {
+                localErrors.phone_number = 'Phone number is required';
+            } else if (!/^(09|\+639)\d{9}$/.test(data.phone_number.replace(/\s+/g, ''))) {
+                localErrors.phone_number = 'Please enter a valid Philippine mobile number (e.g. 09171234567)';
+            }
+            if (!data.shipping_street_address || data.shipping_street_address.trim() === '') {
+                localErrors.shipping_street_address = 'Street address is required';
+            }
+            if (!data.shipping_city || data.shipping_city.trim() === '') {
+                localErrors.shipping_city = 'City/Municipality is required';
+            }
+            if (!data.shipping_barangay || data.shipping_barangay.trim() === '') {
+                localErrors.shipping_barangay = 'Barangay is required';
+            }
+            if (!data.shipping_region || data.shipping_region.trim() === '') {
+                localErrors.shipping_region = 'Province/Region is required';
+            }
+
+            if (Object.keys(localErrors).length > 0) {
+                setError(localErrors);
+                addToast('Please complete all delivery details before placing order.', 'error');
+                return;
+            }
+
+            if (shippingQuote.status !== 'ready') {
+                addToast('Wait for the delivery quote before placing the order.', 'info');
+                return;
+            }
         }
 
+        clearErrors();
         post(route('checkout.store'), {
             preserveScroll: true,
         });
@@ -304,6 +332,8 @@ export default function Checkout({ auth, pricing }) {
                                 data={data}
                                 setData={setData}
                                 errors={errors}
+                                setError={setError}
+                                clearErrors={clearErrors}
                                 needsDeliveryContactDetails={needsDeliveryContactDetails}
                             />
                         ) : (

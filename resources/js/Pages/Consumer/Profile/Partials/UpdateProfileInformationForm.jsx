@@ -4,7 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
 import useConstraintValidation from '@/hooks/useConstraintValidation';
 
@@ -19,7 +19,7 @@ export default function UpdateProfileInformation({
     const fallbackFirstName = fallbackNameParts[0] || '';
     const fallbackLastName = fallbackNameParts.slice(1).join(' ');
 
-    const { data, setData, post, errors, processing, recentlySuccessful } =
+    const { data, setData, post, errors, processing, recentlySuccessful, setError, clearErrors } =
         useForm({
             first_name: user.first_name || fallbackFirstName,
             last_name: user.last_name || fallbackLastName,
@@ -39,9 +39,39 @@ export default function UpdateProfileInformation({
         data.email !== user.email
     );
 
+    const firstNameRef = useRef(null);
+    const lastNameRef = useRef(null);
+    const emailRef = useRef(null);
+
     const submit = (e) => {
         e.preventDefault();
 
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.first_name || data.first_name.trim() === '') {
+            localErrors.first_name = 'First name is required';
+            if (!firstInvalidRef) firstInvalidRef = firstNameRef;
+        }
+
+        if (!data.email || data.email.trim() === '') {
+            localErrors.email = 'Email address is required';
+            if (!firstInvalidRef) firstInvalidRef = emailRef;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+            localErrors.email = 'Please enter a valid email address';
+            if (!firstInvalidRef) firstInvalidRef = emailRef;
+        } else if (data.email !== user.email && emailValidation.isValid === false) {
+            localErrors.email = 'This email is already registered';
+            if (!firstInvalidRef) firstInvalidRef = emailRef;
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         post(route('profile.update'), {
             forceFormData: true,
         });
@@ -129,10 +159,12 @@ export default function UpdateProfileInformation({
                     <div>
                         <InputLabel htmlFor="first_name" value="First Name" className="text-stone-700 font-bold" />
                         <TextInput
+                            ref={firstNameRef}
                             id="first_name"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             value={data.first_name}
                             onChange={(e) => setData('first_name', e.target.value)}
+                            hasError={!!errors.first_name}
                             required
                         />
                         <InputError className="mt-2" message={errors.first_name} />
@@ -141,10 +173,12 @@ export default function UpdateProfileInformation({
                     <div>
                         <InputLabel htmlFor="last_name" value="Last Name" className="text-stone-700 font-bold" />
                         <TextInput
+                            ref={lastNameRef}
                             id="last_name"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             value={data.last_name}
                             onChange={(e) => setData('last_name', e.target.value)}
+                            hasError={!!errors.last_name}
                         />
                         <InputError className="mt-2" message={errors.last_name} />
                     </div>
@@ -153,11 +187,13 @@ export default function UpdateProfileInformation({
                 <div>
                     <InputLabel htmlFor="email" value="Email Address" className="text-stone-700 font-bold" />
                     <TextInput
+                        ref={emailRef}
                         id="email"
                         type="email"
                         className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
+                        hasError={!!errors.email}
                         required
                     />
                     {emailValidation.isValid !== null && (

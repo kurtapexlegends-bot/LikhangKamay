@@ -10,7 +10,7 @@ import { Eye, EyeOff, Store, Loader2, Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Login({ status, canResetPassword }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         email: '',
         password: '',
         remember: false,
@@ -29,6 +29,30 @@ export default function Login({ status, canResetPassword }) {
 
     const submit = (e) => {
         e.preventDefault();
+        
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.email || data.email.trim() === '') {
+            localErrors.email = 'Email address is required';
+            if (!firstInvalidRef) firstInvalidRef = emailRef;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+            localErrors.email = 'Please enter a valid email address';
+            if (!firstInvalidRef) firstInvalidRef = emailRef;
+        }
+
+        if (!data.password || data.password === '') {
+            localErrors.password = 'Password is required';
+            if (!firstInvalidRef) firstInvalidRef = passwordRef;
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         post(route('login'));
     };
 
@@ -111,6 +135,7 @@ export default function Login({ status, canResetPassword }) {
                             isFocused={true}
                             onChange={(e) => setData('email', e.target.value)}
                             onKeyDown={handleEmailKeyDown}
+                            hasError={!!errors.email}
                             floatingLabel="Email Address"
                             icon={Mail}
                         />
@@ -128,6 +153,7 @@ export default function Login({ status, canResetPassword }) {
                             className="block w-full"
                             autoComplete="current-password"
                             onChange={(e) => setData('password', e.target.value)}
+                            hasError={!!errors.password}
                             floatingLabel="Password"
                             icon={Lock}
                         />

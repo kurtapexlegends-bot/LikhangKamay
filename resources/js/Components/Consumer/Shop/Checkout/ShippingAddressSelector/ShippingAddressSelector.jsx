@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import { MapPin, AlertTriangle } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -15,11 +15,21 @@ export default function ShippingAddressSelector({
     data,
     setData,
     errors,
+    setError,
+    clearErrors,
     needsDeliveryContactDetails,
 }) {
     const [editingAddressId, setEditingAddressId] = useState(null);
     const [deleteAddressTarget, setDeleteAddressTarget] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
+
+    const recipientNameRef = useRef(null);
+    const phoneNumberRef = useRef(null);
+    const streetRef = useRef(null);
+    const cityRef = useRef(null);
+    const barangayRef = useRef(null);
+    const postalCodeRef = useRef(null);
+    const regionRef = useRef(null);
 
     const isNewAddress = data.selected_address_id === 'new' || !auth.user.addresses?.length;
     const showAddressForm = isAddingNew || editingAddressId !== null;
@@ -114,6 +124,49 @@ export default function ShippingAddressSelector({
     };
 
     const saveAddress = () => {
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.recipient_name || data.recipient_name.trim() === '') {
+            localErrors.recipient_name = 'Recipient name is required';
+            if (!firstInvalidRef) firstInvalidRef = recipientNameRef;
+        }
+
+        if (!data.phone_number || data.phone_number.trim() === '') {
+            localErrors.phone_number = 'Phone number is required';
+            if (!firstInvalidRef) firstInvalidRef = phoneNumberRef;
+        } else if (!/^(09|\+639)\d{9}$/.test(data.phone_number.replace(/\s+/g, ''))) {
+            localErrors.phone_number = 'Please enter a valid Philippine mobile number (e.g. 09171234567)';
+            if (!firstInvalidRef) firstInvalidRef = phoneNumberRef;
+        }
+
+        if (!data.shipping_street_address || data.shipping_street_address.trim() === '') {
+            localErrors.shipping_street_address = 'Street address is required';
+            if (!firstInvalidRef) firstInvalidRef = streetRef;
+        }
+
+        if (!data.shipping_city || data.shipping_city.trim() === '') {
+            localErrors.shipping_city = 'City/Municipality is required';
+            if (!firstInvalidRef) firstInvalidRef = cityRef;
+        }
+
+        if (!data.shipping_barangay || data.shipping_barangay.trim() === '') {
+            localErrors.shipping_barangay = 'Barangay is required';
+            if (!firstInvalidRef) firstInvalidRef = barangayRef;
+        }
+
+        if (!data.shipping_region || data.shipping_region.trim() === '') {
+            localErrors.shipping_region = 'Province/Region is required';
+            if (!firstInvalidRef) firstInvalidRef = regionRef;
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         const payload = {
             label: data.address_label || typeLabel(data.shipping_address_type || 'home'),
             address_type: data.shipping_address_type,
@@ -230,6 +283,13 @@ export default function ShippingAddressSelector({
                 setData={setData}
                 errors={errors}
                 onSave={saveAddress}
+                recipientNameRef={recipientNameRef}
+                phoneNumberRef={phoneNumberRef}
+                streetRef={streetRef}
+                cityRef={cityRef}
+                barangayRef={barangayRef}
+                postalCodeRef={postalCodeRef}
+                regionRef={regionRef}
             />
 
             {/* Incomplete Details Warning */}

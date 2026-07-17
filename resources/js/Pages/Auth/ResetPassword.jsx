@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
@@ -8,17 +8,42 @@ import { KeyRound, Mail, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function ResetPassword({ token, email }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         token: token,
         email: email,
         password: '',
         password_confirmation: '',
     });
 
-
+    const passwordRef = useRef(null);
+    const confirmPasswordRef = useRef(null);
 
     const submit = (e) => {
         e.preventDefault();
+        
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.password || data.password === '') {
+            localErrors.password = 'Password is required';
+            if (!firstInvalidRef) firstInvalidRef = passwordRef;
+        } else if (data.password.length < 8) {
+            localErrors.password = 'Password must be at least 8 characters';
+            if (!firstInvalidRef) firstInvalidRef = passwordRef;
+        }
+
+        if (data.password !== data.password_confirmation) {
+            localErrors.password_confirmation = 'Passwords do not match';
+            if (!firstInvalidRef) firstInvalidRef = confirmPasswordRef;
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         post(route('password.store'), {
             onFinish: () => reset('password', 'password_confirmation'),
         });
@@ -90,6 +115,7 @@ export default function ResetPassword({ token, email }) {
                     <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
+                                ref={passwordRef}
                                 id="password"
                                 type="password"
                                 name="password"
@@ -98,6 +124,7 @@ export default function ResetPassword({ token, email }) {
                                 autoComplete="new-password"
                                 isFocused={true}
                                 onChange={(e) => setData('password', e.target.value)}
+                                hasError={!!errors.password}
                                 required
                                 floatingLabel="New Password"
                                 icon={Lock}
@@ -105,6 +132,7 @@ export default function ResetPassword({ token, email }) {
                         </div>
                         <div>
                             <TextInput
+                                ref={confirmPasswordRef}
                                 id="password_confirmation"
                                 type="password"
                                 name="password_confirmation"
@@ -112,6 +140,7 @@ export default function ResetPassword({ token, email }) {
                                 className="block w-full"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
+                                hasError={!!errors.password_confirmation}
                                 required
                                 floatingLabel="Confirm Password"
                                 icon={Lock}

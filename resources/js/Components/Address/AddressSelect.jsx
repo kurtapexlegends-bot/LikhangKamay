@@ -8,6 +8,8 @@ export default function AddressSelect({
     options = [],
     placeholder = 'Select',
     disabled = false,
+    hasError = false,
+    buttonRef = null,
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -44,6 +46,7 @@ export default function AddressSelect({
     return (
         <div className="relative mt-1" ref={containerRef}>
             <button
+                ref={buttonRef}
                 type="button"
                 id={id}
                 disabled={disabled}
@@ -59,10 +62,12 @@ export default function AddressSelect({
                         setTimeout(() => inputRef.current?.focus(), 50);
                     }
                 }}
-                className={`flex w-full h-11 sm:h-auto items-center justify-between rounded-xl border border-gray-300 px-4 py-3 text-left shadow-sm transition active:scale-95 ${
+                className={`flex w-full h-11 sm:h-auto items-center justify-between rounded-xl border px-4 py-3 text-left shadow-sm transition active:scale-95 ${
                     disabled
-                        ? 'cursor-not-allowed bg-gray-100 text-gray-500 active:scale-100'
-                        : 'bg-white focus:border-clay-500 focus:ring-1 focus:ring-clay-500'
+                        ? 'cursor-not-allowed bg-gray-100 text-gray-500 active:scale-100 border-gray-300'
+                        : hasError
+                            ? 'border-rose-350 bg-rose-50/50 text-rose-900 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/20'
+                            : 'border-gray-300 bg-white focus:border-clay-500 focus:ring-1 focus:ring-clay-500'
                 } ${
                     value ? 'text-gray-900' : 'text-gray-400'
                 }`}

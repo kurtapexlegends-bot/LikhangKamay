@@ -1,6 +1,7 @@
 import React from 'react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import StructuredAddressFields from '@/Components/Address/StructuredAddressFields';
+import TextInput from '@/Components/TextInput';
 import { TYPES } from '@/utils/addressHelpers';
 
 export default function AddressFormDrawer({
@@ -11,6 +12,13 @@ export default function AddressFormDrawer({
     setData,
     errors,
     onSave,
+    recipientNameRef = null,
+    phoneNumberRef = null,
+    streetRef = null,
+    cityRef = null,
+    barangayRef = null,
+    postalCodeRef = null,
+    regionRef = null,
 }) {
     return (
         <SlideOverDrawer
@@ -63,23 +71,27 @@ export default function AddressFormDrawer({
                 <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                     <div>
                         <label className="mb-1 block text-sm font-bold text-gray-700">Recipient Name</label>
-                        <input
+                        <TextInput
+                            ref={recipientNameRef}
                             type="text"
                             value={data.recipient_name || ''}
                             onChange={(event) => setData('recipient_name', event.target.value)}
                             className="w-full h-11 sm:h-10 rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500 text-sm"
                             placeholder="Full recipient name"
+                            hasError={!!errors.recipient_name}
                         />
                         {errors.recipient_name && <p className="mt-1 text-sm text-red-500">{errors.recipient_name}</p>}
                     </div>
                     <div>
                         <label className="mb-1 block text-sm font-bold text-gray-700">Phone Number</label>
-                        <input
+                        <TextInput
+                            ref={phoneNumberRef}
                             type="text"
                             value={data.phone_number || ''}
                             onChange={(event) => setData('phone_number', event.target.value)}
                             className="w-full h-11 sm:h-10 rounded-xl border-gray-300 shadow-sm focus:border-clay-500 focus:ring-clay-500 text-sm"
                             placeholder="09XXXXXXXXX"
+                            hasError={!!errors.phone_number}
                         />
                         {errors.phone_number && <p className="mt-1 text-sm text-red-500">{errors.phone_number}</p>}
                     </div>
@@ -93,6 +105,11 @@ export default function AddressFormDrawer({
                     prefix="shipping_"
                     required
                     previewLabel="Delivery Address"
+                    streetRef={streetRef}
+                    cityRef={cityRef}
+                    barangayRef={barangayRef}
+                    postalCodeRef={postalCodeRef}
+                    regionRef={regionRef}
                 />
             </div>
         </SlideOverDrawer>

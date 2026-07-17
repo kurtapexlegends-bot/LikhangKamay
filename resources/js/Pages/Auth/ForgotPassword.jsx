@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -8,12 +9,29 @@ import { KeyRound, Mail, ArrowLeft, Loader2, CheckCircle, Send } from 'lucide-re
 import { motion } from 'framer-motion';
 
 export default function ForgotPassword({ status }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         email: '',
     });
 
+    const emailRef = useRef(null);
+
     const submit = (e) => {
         e.preventDefault();
+        
+        const localErrors = {};
+        if (!data.email || data.email.trim() === '') {
+            localErrors.email = 'Email address is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+            localErrors.email = 'Please enter a valid email address';
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            emailRef.current?.focus();
+            return;
+        }
+
+        clearErrors();
         post(route('password.email'));
     };
 
@@ -82,6 +100,7 @@ export default function ForgotPassword({ status }) {
                 >
                     <motion.div variants={itemVariants}>
                         <TextInput
+                            ref={emailRef}
                             id="email"
                             type="email"
                             name="email"
@@ -89,6 +108,7 @@ export default function ForgotPassword({ status }) {
                             className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                             isFocused={true}
                             onChange={(e) => setData('email', e.target.value)}
+                            hasError={!!errors.email}
                             floatingLabel="Email Address"
                             icon={Mail}
                         />

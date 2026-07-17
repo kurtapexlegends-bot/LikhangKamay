@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm, router } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -29,7 +29,7 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
     const [editingAddressId, setEditingAddressId] = useState(null);
     const [deleteAddressTarget, setDeleteAddressTarget] = useState(null);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         label: 'Home',
         address_type: 'home',
         recipient_name: '',
@@ -40,6 +40,15 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
         city: '',
         postal_code: '',
     });
+
+    const labelRef = useRef(null);
+    const recipientNameRef = useRef(null);
+    const phoneNumberRef = useRef(null);
+    const streetRef = useRef(null);
+    const cityRef = useRef(null);
+    const barangayRef = useRef(null);
+    const postalCodeRef = useRef(null);
+    const regionRef = useRef(null);
 
     const resetFormState = () => {
         reset();
@@ -85,6 +94,55 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
 
     const submit = (e) => {
         e.preventDefault();
+        
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.label || data.label.trim() === '') {
+            localErrors.label = 'Label is required';
+            if (!firstInvalidRef) firstInvalidRef = labelRef;
+        }
+
+        if (!data.recipient_name || data.recipient_name.trim() === '') {
+            localErrors.recipient_name = 'Recipient name is required';
+            if (!firstInvalidRef) firstInvalidRef = recipientNameRef;
+        }
+
+        if (!data.phone_number || data.phone_number.trim() === '') {
+            localErrors.phone_number = 'Phone number is required';
+            if (!firstInvalidRef) firstInvalidRef = phoneNumberRef;
+        } else if (!/^(09|\+639)\d{9}$/.test(data.phone_number.replace(/\s+/g, ''))) {
+            localErrors.phone_number = 'Please enter a valid Philippine mobile number (e.g. 09171234567)';
+            if (!firstInvalidRef) firstInvalidRef = phoneNumberRef;
+        }
+
+        if (!data.street_address || data.street_address.trim() === '') {
+            localErrors.street_address = 'Street address is required';
+            if (!firstInvalidRef) firstInvalidRef = streetRef;
+        }
+
+        if (!data.city || data.city.trim() === '') {
+            localErrors.city = 'City/Municipality is required';
+            if (!firstInvalidRef) firstInvalidRef = cityRef;
+        }
+
+        if (!data.barangay || data.barangay.trim() === '') {
+            localErrors.barangay = 'Barangay is required';
+            if (!firstInvalidRef) firstInvalidRef = barangayRef;
+        }
+
+        if (!data.region || data.region.trim() === '') {
+            localErrors.region = 'Province/Region is required';
+            if (!firstInvalidRef) firstInvalidRef = regionRef;
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         const onSuccess = () => {
             resetFormState();
         };
@@ -241,10 +299,12 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                             <div>
                                 <InputLabel htmlFor="label" value="Label" className="text-stone-700 font-bold" />
                                 <TextInput
+                                    ref={labelRef}
                                     id="label"
                                     className="mt-1 block w-full border-stone-200 bg-white"
                                     value={data.label}
                                     onChange={(e) => setData('label', e.target.value)}
+                                    hasError={!!errors.label}
                                     required
                                 />
                                 <InputError className="mt-2" message={errors.label} />
@@ -252,10 +312,12 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                             <div>
                                 <InputLabel htmlFor="phone_number" value="Phone Number" className="text-stone-700 font-bold" />
                                 <TextInput
+                                    ref={phoneNumberRef}
                                     id="phone_number"
                                     className="mt-1 block w-full border-stone-200 bg-white"
                                     value={data.phone_number}
                                     onChange={(e) => setData('phone_number', e.target.value)}
+                                    hasError={!!errors.phone_number}
                                     required
                                 />
                                 <InputError className="mt-2" message={errors.phone_number} />
@@ -265,10 +327,12 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                         <div>
                             <InputLabel htmlFor="recipient_name" value="Recipient Name" className="text-stone-700 font-bold" />
                             <TextInput
+                                ref={recipientNameRef}
                                 id="recipient_name"
                                 className="mt-1 block w-full border-stone-200 bg-white"
                                 value={data.recipient_name}
                                 onChange={(e) => setData('recipient_name', e.target.value)}
+                                hasError={!!errors.recipient_name}
                                 required
                             />
                             <InputError className="mt-2" message={errors.recipient_name} />
@@ -280,6 +344,11 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                             setData={setData}
                             errors={errors}
                             required
+                            streetRef={streetRef}
+                            cityRef={cityRef}
+                            barangayRef={barangayRef}
+                            postalCodeRef={postalCodeRef}
+                            regionRef={regionRef}
                         />
 
                         <div className="flex items-center justify-end gap-3 pt-4">
