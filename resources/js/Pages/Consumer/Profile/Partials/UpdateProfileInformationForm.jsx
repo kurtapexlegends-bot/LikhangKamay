@@ -5,7 +5,8 @@ import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
+import useConstraintValidation from '@/hooks/useConstraintValidation';
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
@@ -30,6 +31,13 @@ export default function UpdateProfileInformation({
             platform_logo: null,
             platform_logo_preview: null,
         });
+
+    const emailValidation = useConstraintValidation(
+        'email_availability',
+        data.email,
+        { user_id: user.id },
+        data.email !== user.email
+    );
 
     const submit = (e) => {
         e.preventDefault();
@@ -152,6 +160,20 @@ export default function UpdateProfileInformation({
                         onChange={(e) => setData('email', e.target.value)}
                         required
                     />
+                    {emailValidation.isValid !== null && (
+                        <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
+                            emailValidation.isValid 
+                                ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
+                                : 'text-rose-700 bg-rose-50 border-rose-100/60'
+                        }`}>
+                            {emailValidation.isValid ? (
+                                <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                            ) : (
+                                <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                            )}
+                            <span>{emailValidation.message}</span>
+                        </div>
+                    )}
                     <InputError className="mt-2" message={errors.email} />
                 </div>
 

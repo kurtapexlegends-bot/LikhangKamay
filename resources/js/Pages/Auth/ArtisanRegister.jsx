@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -7,7 +7,7 @@ import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Store, Eye, EyeOff, Loader2, Mail, Lock, User, Briefcase } from 'lucide-react';
+import { Store, Eye, EyeOff, Loader2, Mail, Lock, User, Briefcase, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function ArtisanRegister() {
@@ -29,15 +29,80 @@ export default function ArtisanRegister() {
         sellerPrivacy: false,
     });
 
+    const firstNameRef = useRef(null);
+    const lastNameRef = useRef(null);
+    const shopNameRef = useRef(null);
+    const emailRef = useRef(null);
+    const passwordRef = useRef(null);
+    const confirmPasswordRef = useRef(null);
+
     useEffect(() => {
         return () => {
             reset('password', 'password_confirmation');
         };
     }, []);
 
+    const [emailValidation, setEmailValidation] = useState({ isValid: null, message: '' });
+    const [shopNameValidation, setShopNameValidation] = useState({ isValid: null, message: '' });
+
+    useEffect(() => {
+        if (!data.email || data.email.length < 5) {
+            setEmailValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'email_availability',
+                    value: data.email
+                });
+                setEmailValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("Email validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [data.email]);
+
+    useEffect(() => {
+        if (!data.shop_name || data.shop_name.trim().length < 3) {
+            setShopNameValidation({ isValid: null, message: '' });
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await axios.post(route('api.validate-constraint'), {
+                    type: 'shop_name_availability',
+                    value: data.shop_name
+                });
+                setShopNameValidation({ 
+                    isValid: response.data.valid, 
+                    message: response.data.message 
+                });
+            } catch (error) {
+                console.error("Shop name validation failed", error);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [data.shop_name]);
+
     const submit = (e) => {
         e.preventDefault();
         post(route('register')); 
+    };
+
+    const handleKeyDown = (nextRef) => (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            nextRef.current?.focus();
+        }
     };
 
     const openLegalModal = (type) => {
@@ -159,6 +224,7 @@ export default function ArtisanRegister() {
                     <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
+                                ref={firstNameRef}
                                 id="first_name"
                                 name="first_name"
                                 value={data.first_name}
@@ -166,6 +232,7 @@ export default function ArtisanRegister() {
                                 autoComplete="given-name"
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
+                                onKeyDown={handleKeyDown(lastNameRef)}
                                 required
                                 floatingLabel="First Name"
                                 icon={User}
@@ -175,12 +242,14 @@ export default function ArtisanRegister() {
 
                         <div>
                             <TextInput
+                                ref={lastNameRef}
                                 id="last_name"
                                 name="last_name"
                                 value={data.last_name}
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
+                                onKeyDown={handleKeyDown(shopNameRef)}
                                 floatingLabel="Last Name"
                                 icon={User}
                             />
@@ -191,22 +260,39 @@ export default function ArtisanRegister() {
                     {/* Shop Name Field */}
                     <motion.div variants={itemVariants}>
                         <TextInput
+                            ref={shopNameRef}
                             id="shop_name"
                             name="shop_name"
                             value={data.shop_name}
                             className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                             autoComplete="organization"
                             onChange={(e) => setData('shop_name', e.target.value)}
+                            onKeyDown={handleKeyDown(emailRef)}
                             required
                             floatingLabel="Shop Name"
                             icon={Briefcase}
                         />
+                        {shopNameValidation.isValid !== null && (
+                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
+                                shopNameValidation.isValid 
+                                    ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
+                                    : 'text-rose-700 bg-rose-50 border-rose-100/60'
+                            }`}>
+                                {shopNameValidation.isValid ? (
+                                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                                ) : (
+                                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                                )}
+                                <span>{shopNameValidation.message}</span>
+                            </div>
+                        )}
                         <InputError message={errors.shop_name} className="mt-2" />
                     </motion.div>
 
                     {/* Email Field */}
                     <motion.div variants={itemVariants}>
                         <TextInput
+                            ref={emailRef}
                             id="email"
                             type="email"
                             name="email"
@@ -214,10 +300,25 @@ export default function ArtisanRegister() {
                             className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                             autoComplete="username"
                             onChange={(e) => setData('email', e.target.value)}
+                            onKeyDown={handleKeyDown(passwordRef)}
                             required
                             floatingLabel="Business Email"
                             icon={Mail}
                         />
+                        {emailValidation.isValid !== null && (
+                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
+                                emailValidation.isValid 
+                                    ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
+                                    : 'text-rose-700 bg-rose-50 border-rose-100/60'
+                            }`}>
+                                {emailValidation.isValid ? (
+                                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                                ) : (
+                                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                                )}
+                                <span>{emailValidation.message}</span>
+                            </div>
+                        )}
                         <InputError message={errors.email} className="mt-2" />
                     </motion.div>
 
@@ -225,6 +326,7 @@ export default function ArtisanRegister() {
                     <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <TextInput
+                                ref={passwordRef}
                                 id="password"
                                 type="password"
                                 name="password"
@@ -232,6 +334,7 @@ export default function ArtisanRegister() {
                                 className="block w-full"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
+                                onKeyDown={handleKeyDown(confirmPasswordRef)}
                                 required
                                 floatingLabel="Password"
                                 icon={Lock}
@@ -239,6 +342,7 @@ export default function ArtisanRegister() {
                         </div>
                         <div>
                             <TextInput
+                                ref={confirmPasswordRef}
                                 id="password_confirmation"
                                 type="password"
                                 name="password_confirmation"
@@ -253,6 +357,54 @@ export default function ArtisanRegister() {
                         </div>
                     </motion.div>
                     <InputError message={errors.password} className="mt-2" />
+
+                    {/* Real-time Password Matching status indicator */}
+                    {data.password && data.password_confirmation && (
+                        <motion.div 
+                            variants={itemVariants}
+                            className={`flex items-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-xl border transition-all duration-300 ${
+                                data.password === data.password_confirmation
+                                    ? 'text-emerald-700 bg-emerald-50/80 border-emerald-100/60 shadow-sm shadow-emerald-500/5'
+                                    : 'text-amber-700 bg-amber-50/80 border-amber-100/60 shadow-sm shadow-amber-500/5'
+                            }`}
+                        >
+                            {data.password === data.password_confirmation ? (
+                                <>
+                                    <CheckCircle2 size={15} className="shrink-0 text-emerald-600 animate-pulse" />
+                                    <span>Passwords match successfully.</span>
+                                </>
+                            ) : (
+                                <>
+                                    <AlertCircle size={15} className="shrink-0 text-amber-600 animate-pulse" />
+                                    <span>Passwords do not match yet.</span>
+                                </>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {/* Password Strength Indicator */}
+                    {data.password && (
+                        <motion.div 
+                            variants={itemVariants}
+                            className="mt-1.5 px-1 space-y-1.5 animate-in fade-in duration-300"
+                        >
+                            <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-wider">
+                                <span className="text-stone-400">Strength</span>
+                                <span className={
+                                    data.password.length < 12 ? 'text-rose-500' : 
+                                    data.password.length < 15 ? 'text-amber-500' : 'text-emerald-500'
+                                }>
+                                    {data.password.length < 12 ? 'Weak' : data.password.length < 15 ? 'Fair' : 'Strong'}
+                                </span>
+                            </div>
+                            <div className="h-1 w-full bg-stone-100 rounded-full overflow-hidden flex gap-0.5">
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 6 ? (data.password.length < 12 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? (data.password.length < 15 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${data.password.length >= 15 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                                <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && /\d/.test(data.password) && data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* Terms Checkbox Row */}
                     <motion.div 
