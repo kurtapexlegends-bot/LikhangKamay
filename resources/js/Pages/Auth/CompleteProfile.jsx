@@ -16,7 +16,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
         ? suggestedName.trim().split(/\s+/).filter(Boolean)
         : [];
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         first_name: suggestedFirstName || suggestedNameParts[0] || '',
         last_name: suggestedLastName || suggestedNameParts.slice(1).join(' ') || '',
         shop_name: '',
@@ -76,6 +76,50 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
 
     const submit = (e) => {
         e.preventDefault();
+        
+        // Client-side validation intercept
+        const localErrors = {};
+        let firstInvalidRef = null;
+
+        if (!data.first_name || data.first_name.trim() === '') {
+            localErrors.first_name = 'First name is required';
+            if (!firstInvalidRef) firstInvalidRef = firstNameRef;
+        }
+
+        if (isArtisan) {
+            if (!data.shop_name || data.shop_name.trim() === '') {
+                localErrors.shop_name = 'Shop name is required';
+                if (!firstInvalidRef) firstInvalidRef = shopNameRef;
+            } else if (isShopNameTaken) {
+                localErrors.shop_name = 'This shop name is already taken';
+                if (!firstInvalidRef) firstInvalidRef = shopNameRef;
+            }
+        }
+
+        if (!data.password) {
+            localErrors.password = 'Password is required';
+            if (!firstInvalidRef) firstInvalidRef = passwordRef;
+        } else if (data.password.length < 8) {
+            localErrors.password = 'Password must be at least 8 characters';
+            if (!firstInvalidRef) firstInvalidRef = passwordRef;
+        }
+
+        if (data.password !== data.password_confirmation) {
+            localErrors.password_confirmation = 'Passwords do not match';
+            if (!firstInvalidRef) firstInvalidRef = confirmPasswordRef;
+        }
+
+        if (!data.terms) {
+            localErrors.terms = 'You must accept the terms and conditions';
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            setError(localErrors);
+            firstInvalidRef?.current?.focus();
+            return;
+        }
+
+        clearErrors();
         post(route('auth.complete-profile.store'));
     };
 
@@ -229,6 +273,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
                                 onKeyDown={handleKeyDown(lastNameRef)}
+                                hasError={!!errors.first_name}
                                 required
                                 floatingLabel="First Name"
                                 icon={User}
@@ -246,6 +291,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
                                 onKeyDown={isArtisan ? handleKeyDown(shopNameRef) : handleKeyDown(passwordRef)}
+                                hasError={!!errors.last_name}
                                 required
                                 floatingLabel="Last Name"
                                 icon={User}
@@ -263,11 +309,12 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 name="shop_name"
                                 value={data.shop_name}
                                 className={`block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white ${
-                                    isShopNameTaken ? 'border-rose-350 focus:border-rose-500' : 'border-stone-200/80'
+                                    isShopNameTaken || errors.shop_name ? 'border-rose-350 focus:border-rose-500' : 'border-stone-200/80'
                                 }`}
                                 autoComplete="organization"
                                 onChange={(e) => setData('shop_name', e.target.value)}
                                 onKeyDown={handleKeyDown(passwordRef)}
+                                hasError={!!errors.shop_name}
                                 required
                                 floatingLabel="Shop Name"
                                 icon={Briefcase}
@@ -332,6 +379,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password', e.target.value)}
                                 onKeyDown={handleKeyDown(confirmPasswordRef)}
+                                hasError={!!errors.password}
                                 required
                                 floatingLabel="Password"
                                 icon={Lock}
@@ -347,6 +395,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="new-password"
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
+                                hasError={!!errors.password_confirmation}
                                 required
                                 floatingLabel="Confirm Password"
                                 icon={Lock}
