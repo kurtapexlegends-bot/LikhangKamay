@@ -72,7 +72,7 @@ class PlaceOrder
         $paymentMethod = $request->shipping_method === 'Pick Up' ? 'COD' : $request->payment_method;
 
         if ($request->boolean('save_address') && $request->shipping_method === 'Delivery' && $selectedAddress === null) {
-            $buyer->addresses()->update(['is_default' => false]);
+            $buyer->addresses()->update(['is_default' => \Illuminate\Support\Facades\DB::raw('false')]);
 
             $buyer->addresses()->create([
                 'label' => ucfirst((string) $shippingAddressType),
@@ -85,7 +85,7 @@ class PlaceOrder
                 'city' => $shippingCity,
                 'region' => $shippingRegion,
                 'postal_code' => $shippingPostalCode,
-                'is_default' => true,
+                'is_default' => \Illuminate\Support\Facades\DB::raw('true'),
             ]);
 
             $buyer->update(['saved_address' => $shippingAddress]);

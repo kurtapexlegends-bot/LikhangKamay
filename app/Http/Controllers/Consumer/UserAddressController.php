@@ -24,7 +24,7 @@ class UserAddressController extends Controller
 
         // If it's the first address, make it default
         if ($user->addresses()->count() === 1) {
-            $address->update(['is_default' => true]);
+            $address->update(['is_default' => \Illuminate\Support\Facades\DB::raw('true')]);
         }
 
         return redirect()->back()->with('success', 'Address added.');
@@ -52,10 +52,10 @@ class UserAddressController extends Controller
         $address = $user->addresses()->findOrFail($id);
         
         // Remove default from others
-        $user->addresses()->update(['is_default' => false]);
+        $user->addresses()->update(['is_default' => \Illuminate\Support\Facades\DB::raw('false')]);
         
         // Set new default
-        $address->update(['is_default' => true]);
+        $address->update(['is_default' => \Illuminate\Support\Facades\DB::raw('true')]);
 
         return redirect()->back();
     }
@@ -72,7 +72,7 @@ class UserAddressController extends Controller
         // Logic: if user has other addresses, pick the last one
         $lastAddress = $user->addresses()->latest()->first();
         if ($lastAddress) {
-            $lastAddress->update(['is_default' => true]);
+            $lastAddress->update(['is_default' => \Illuminate\Support\Facades\DB::raw('true')]);
         }
 
         return redirect()->back()->with('success', 'Address deleted.');
