@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { FileText, ArrowLeft, ArrowRight, UploadCloud, FileCheck, Eye, Trash2, Loader2 } from 'lucide-react';
+import { FileText, ArrowLeft, ArrowRight, UploadCloud, FileCheck, Eye, Trash2, Loader2, XCircle } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
@@ -88,22 +88,22 @@ export default function DocumentsStep({
                 <FileUploadField
                     label="Business Permit (Mayor's Permit)"
                     id="business_permit"
-                    existingFileUrl={auth.user.business_permit ? '/storage/' + auth.user.business_permit : null}
+                    existingFileUrl={auth.user.business_permit_url}
                 />
                 <FileUploadField
                     label="DTI Registration"
                     id="dti_registration"
-                    existingFileUrl={auth.user.dti_registration ? '/storage/' + auth.user.dti_registration : null}
+                    existingFileUrl={auth.user.dti_registration_url}
                 />
                 <FileUploadField
                     label="Valid Government ID (Front)"
                     id="valid_id"
-                    existingFileUrl={auth.user.valid_id ? '/storage/' + auth.user.valid_id : null}
+                    existingFileUrl={auth.user.valid_id_url}
                 />
                 <FileUploadField
                     label="TIN ID / Registration"
                     id="tin_id"
-                    existingFileUrl={auth.user.tin_id ? '/storage/' + auth.user.tin_id : null}
+                    existingFileUrl={auth.user.tin_id_url}
                 />
             </div>
 
@@ -130,13 +130,16 @@ export default function DocumentsStep({
 
 const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
     const inputRef = useRef(null);
+    const activeRequestRef = useRef(null);
+    
     const [previewUrl, setPreviewUrl] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState(null);
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
     useEffect(() => {
         if (existingFileUrl) {
-            const isPdf = existingFileUrl.toLowerCase().endsWith('.pdf');
+            const isPdf = existingFileUrl.toLowerCase().endsWith('.pdf') || existingFileUrl.toLowerCase().includes('.pdf');
             if (!isPdf) {
                 setPreviewUrl(existingFileUrl);
             } else {
@@ -153,12 +156,12 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
 
         setUploading(true);
         setUploadError(null);
+        setShowConfirmDelete(false);
 
         try {
-            // Compress the image client-side to ensure it passes Vercel's 4.5MB gateway limit.
             const fileToUpload = await compressImage(selectedFile);
 
-            router.post(route('artisan.setup.upload-document', { type: id }), {
+            activeRequestRef.current = router.post(route('artisan.setup.upload-document', { type: id }), {
                 document: fileToUpload,
             }, {
                 forceFormData: true,
@@ -166,12 +169,14 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
                 preserveState: true,
                 onSuccess: () => {
                     setUploading(false);
+                    activeRequestRef.current = null;
                     if (inputRef.current) {
                         inputRef.current.value = '';
                     }
                 },
                 onError: (errs) => {
                     setUploading(false);
+                    activeRequestRef.current = null;
                     console.error('File Upload Error details:', errs);
                     setUploadError(errs.document || 'Failed to upload document.');
                     if (inputRef.current) {
@@ -181,23 +186,43 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
             });
         } catch (err) {
             setUploading(false);
+            activeRequestRef.current = null;
             setUploadError('Failed to process file before upload.');
             console.error('File compression error:', err);
+        }
+    };
+
+    const handleCancel = (e) => {
+        e.stopPropagation();
+        if (activeRequestRef.current) {
+            activeRequestRef.current.cancel();
+            setUploading(false);
+            setUploadError('Upload cancelled.');
+            activeRequestRef.current = null;
+            if (inputRef.current) {
+                inputRef.current.value = '';
+            }
         }
     };
 
     const handleRemove = (e) => {
         e.stopPropagation();
         if (existingFileUrl) {
-            if (confirm('Are you sure you want to remove this document?')) {
-                setUploading(true);
-                router.delete(route('artisan.setup.delete-document', { type: id }), {
-                    preserveScroll: true,
-                    preserveState: true,
-                    onSuccess: () => setUploading(false),
-                    onError: () => setUploading(false),
-                });
-            }
+            setShowConfirmDelete(true);
+        }
+    };
+
+    const executeRemove = (e) => {
+        e.stopPropagation();
+        setShowConfirmDelete(false);
+        if (existingFileUrl) {
+            setUploading(true);
+            router.delete(route('artisan.setup.delete-document', { type: id }), {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => setUploading(false),
+                onError: () => setUploading(false),
+            });
         }
     };
 
@@ -212,20 +237,53 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
         <div>
             <InputLabel htmlFor={id} value={label} />
             <div
-                onClick={() => !uploading && inputRef.current?.click()}
+                onClick={() => !uploading && !showConfirmDelete && inputRef.current?.click()}
                 className={`mt-1 relative flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] hover:shadow-md ${
                     uploading
                         ? 'border-clay-300 bg-clay-50/10 cursor-not-allowed'
-                        : existingFileUrl
-                            ? 'border-clay-400 bg-clay-50/30'
-                            : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
+                        : showConfirmDelete
+                            ? 'border-red-300 bg-red-50/10 cursor-default'
+                            : existingFileUrl
+                                ? 'border-clay-400 bg-clay-50/30'
+                                : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
                 }`}
             >
                 {uploading ? (
-                    <div className="flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
                         <Loader2 size={32} className="mb-2 text-clay-600 animate-spin" />
                         <p className="text-sm font-semibold text-clay-800">Processing document...</p>
-                        <p className="text-xs text-clay-500">Uploading to secure storage</p>
+                        <p className="text-xs text-gray-500 mb-3">Uploading to secure storage</p>
+                        {activeRequestRef.current && (
+                            <button
+                                type="button"
+                                onClick={handleCancel}
+                                className="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 transition active:scale-95 shadow-sm"
+                            >
+                                <XCircle size={14} /> Cancel Upload
+                            </button>
+                        )}
+                    </div>
+                ) : showConfirmDelete ? (
+                    <div className="flex w-full flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                        <Trash2 size={32} className="mb-2 text-red-500 animate-bounce" />
+                        <p className="text-sm font-bold text-gray-900">Remove document?</p>
+                        <p className="text-xs text-gray-500 mb-4">This action cannot be undone.</p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={executeRemove}
+                                className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-red-200 transition hover:bg-red-700 active:scale-95"
+                            >
+                                Yes, Remove
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmDelete(false)}
+                                className="rounded-lg bg-white border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 ) : previewUrl ? (
                     <div className="flex w-full flex-col items-center">

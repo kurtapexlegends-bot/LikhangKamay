@@ -40,7 +40,19 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url', 'artisan_status', 'premium_tier', 'business_permit', 'dti_registration', 'valid_id', 'tin_id']) : null,
+                'user' => $user ? array_merge(
+                    $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url', 'artisan_status', 'premium_tier']),
+                    [
+                        'business_permit' => $user->business_permit,
+                        'business_permit_url' => $user->business_permit ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->business_permit) : null,
+                        'dti_registration' => $user->dti_registration,
+                        'dti_registration_url' => $user->dti_registration ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->dti_registration) : null,
+                        'valid_id' => $user->valid_id,
+                        'valid_id_url' => $user->valid_id ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->valid_id) : null,
+                        'tin_id' => $user->tin_id,
+                        'tin_id_url' => $user->tin_id ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->tin_id) : null,
+                    ]
+                ) : null,
                 'isStaff' => $user?->isStaff() ?? false,
                 'effectiveSellerId' => $user?->getEffectiveSellerId(),
                 'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,
