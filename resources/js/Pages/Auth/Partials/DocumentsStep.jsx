@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
-import { FileText, ArrowLeft, ArrowRight, UploadCloud, CheckCircle2, FileCheck } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { FileText, ArrowLeft, ArrowRight, UploadCloud, FileCheck, Eye, Trash2 } from 'lucide-react';
+import { router } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 
@@ -33,12 +34,12 @@ export default function DocumentsStep({
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <FileUploadField
                     label="Business Permit (Mayor's Permit)"
                     id="business_permit"
                     file={data.business_permit}
-                    existingFile={!!auth.user.business_permit}
+                    existingFileUrl={auth.user.business_permit ? '/storage/' + auth.user.business_permit : null}
                     onFileSelect={(file) => handleFileChange(file, 'business_permit')}
                     error={errors.business_permit}
                 />
@@ -46,7 +47,7 @@ export default function DocumentsStep({
                     label="DTI Registration"
                     id="dti_registration"
                     file={data.dti_registration}
-                    existingFile={!!auth.user.dti_registration}
+                    existingFileUrl={auth.user.dti_registration ? '/storage/' + auth.user.dti_registration : null}
                     onFileSelect={(file) => handleFileChange(file, 'dti_registration')}
                     error={errors.dti_registration}
                 />
@@ -54,7 +55,7 @@ export default function DocumentsStep({
                     label="Valid Government ID (Front)"
                     id="valid_id"
                     file={data.valid_id}
-                    existingFile={!!auth.user.valid_id}
+                    existingFileUrl={auth.user.valid_id ? '/storage/' + auth.user.valid_id : null}
                     onFileSelect={(file) => handleFileChange(file, 'valid_id')}
                     error={errors.valid_id}
                 />
@@ -62,7 +63,7 @@ export default function DocumentsStep({
                     label="TIN ID / Registration"
                     id="tin_id"
                     file={data.tin_id}
-                    existingFile={!!auth.user.tin_id}
+                    existingFileUrl={auth.user.tin_id ? '/storage/' + auth.user.tin_id : null}
                     onFileSelect={(file) => handleFileChange(file, 'tin_id')}
                     error={errors.tin_id}
                 />
@@ -89,39 +90,123 @@ export default function DocumentsStep({
     );
 }
 
-const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, existingFile }) => {
+const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, existingFileUrl }) => {
     const inputRef = useRef(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+
+    useEffect(() => {
+        if (file) {
+            if (file.type.startsWith('image/')) {
+                const objectUrl = URL.createObjectURL(file);
+                setPreviewUrl(objectUrl);
+                return () => URL.revokeObjectURL(objectUrl);
+            } else {
+                setPreviewUrl(null);
+            }
+        } else if (existingFileUrl) {
+            const isPdf = existingFileUrl.toLowerCase().endsWith('.pdf');
+            if (!isPdf) {
+                setPreviewUrl(existingFileUrl);
+            } else {
+                setPreviewUrl(null);
+            }
+        } else {
+            setPreviewUrl(null);
+        }
+    }, [file, existingFileUrl]);
+
+    const handleRemove = (e) => {
+        e.stopPropagation();
+        if (file) {
+            onFileSelect(null);
+            if (inputRef.current) {
+                inputRef.current.value = '';
+            }
+        } else if (existingFileUrl) {
+            if (confirm('Are you sure you want to remove this document from file?')) {
+                router.delete(route('artisan.setup.delete-document', { type: id }), {
+                    preserveScroll: true,
+                });
+            }
+        }
+    };
+
+    const handleView = (e) => {
+        e.stopPropagation();
+        if (file) {
+            const objectUrl = URL.createObjectURL(file);
+            window.open(objectUrl, '_blank');
+        } else if (existingFileUrl) {
+            window.open(existingFileUrl, '_blank');
+        }
+    };
 
     return (
         <div>
             <InputLabel htmlFor={id} value={label} />
             <div
                 onClick={() => inputRef.current?.click()}
-                className={`mt-1 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 hover:shadow-md ${
-                    file
-                        ? 'border-clay-400 bg-clay-50/50'
-                        : existingFile
-                            ? 'border-clay-300 bg-clay-50/30'
-                            : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
+                className={`mt-1 relative flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] hover:shadow-md ${
+                    file || existingFileUrl
+                        ? 'border-clay-400 bg-clay-50/30'
+                        : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
                 }`}
             >
-                {file ? (
-                    <>
-                        <FileCheck size={32} className="mb-2 text-clay-600" />
-                        <p className="max-w-full truncate text-sm font-medium text-clay-800">{file.name}</p>
-                        <p className="text-xs text-clay-600">Click to change</p>
-                    </>
-                ) : existingFile ? (
-                    <>
-                        <CheckCircle2 size={32} className="mb-2 text-clay-600" />
-                        <p className="text-sm font-bold text-clay-800">Document on File</p>
-                        <p className="text-xs text-clay-600">Click to replace</p>
-                    </>
+                {previewUrl ? (
+                    <div className="flex w-full flex-col items-center">
+                        <div className="relative mb-3 h-24 w-full overflow-hidden rounded-xl border border-clay-200 bg-white shadow-inner flex items-center justify-center">
+                            <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                        </div>
+                        <p className="max-w-full truncate text-xs font-semibold text-clay-800">
+                            {file ? file.name : 'Document on File (Image)'}
+                        </p>
+                        <div className="mt-3 flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleView}
+                                className="flex items-center gap-1 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                            >
+                                <Eye size={14} /> View
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleRemove}
+                                className="flex items-center gap-1 rounded-lg bg-red-50 border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-100 active:scale-95"
+                            >
+                                <Trash2 size={14} /> Remove
+                            </button>
+                        </div>
+                    </div>
+                ) : (file || existingFileUrl) ? (
+                    <div className="flex w-full flex-col items-center">
+                        <div className="relative mb-3 h-24 w-full overflow-hidden rounded-xl border border-clay-200 bg-white shadow-inner flex items-center justify-center">
+                            <FileCheck size={40} className="text-clay-600 animate-pulse" />
+                        </div>
+                        <p className="max-w-full truncate text-xs font-semibold text-clay-800">
+                            {file ? file.name : 'Document on File (PDF)'}
+                        </p>
+                        <div className="mt-3 flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleView}
+                                className="flex items-center gap-1 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                            >
+                                <Eye size={14} /> View
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleRemove}
+                                className="flex items-center gap-1 rounded-lg bg-red-50 border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-100 active:scale-95"
+                            >
+                                <Trash2 size={14} /> Remove
+                            </button>
+                        </div>
+                    </div>
                 ) : (
                     <>
                         <UploadCloud size={32} className="mb-2 text-gray-400" />
                         <p className="text-sm font-medium text-gray-600">Click to upload</p>
-                        <p className="text-xs text-gray-400">PNG, JPG, PDF up to 5MB</p>
+                        <p className="text-xs text-gray-400">PNG, JPG, PDF up to 10MB</p>
                     </>
                 )}
                 <input

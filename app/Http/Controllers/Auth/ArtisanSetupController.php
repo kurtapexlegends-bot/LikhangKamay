@@ -274,4 +274,23 @@ class ArtisanSetupController extends Controller
 
         return back()->with('success', 'Terms accepted successfully.');
     }
+
+    public function deleteDocument($type)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        if (!in_array($type, ['business_permit', 'dti_registration', 'valid_id', 'tin_id'])) {
+            return back()->withErrors(['error' => 'Invalid document type.']);
+        }
+        
+        if ($user->{$type}) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->{$type});
+            $user->update([
+                $type => null,
+            ]);
+        }
+        
+        return back()->with('success', ucfirst(str_replace('_', ' ', $type)) . ' removed.');
+    }
 }

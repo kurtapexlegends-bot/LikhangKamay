@@ -96,6 +96,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     // ARTISAN SETUP
     Route::get('/artisan/setup', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'create'])->name('artisan.setup');
     Route::post('/artisan/setup', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'store'])->name('artisan.setup.store');
+    Route::delete('/artisan/setup/document/{type}', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'deleteDocument'])->name('artisan.setup.delete-document');
     Route::post('/artisan/welcome-dismiss', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'dismissWelcome'])->name('artisan.welcome.dismiss');
     Route::post('/artisan/accept-terms', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'acceptTerms'])->name('artisan.accept-terms');
     

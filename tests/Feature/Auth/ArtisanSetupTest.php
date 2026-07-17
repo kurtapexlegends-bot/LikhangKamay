@@ -200,4 +200,25 @@ class ArtisanSetupTest extends TestCase
 
         Storage::disk('public')->assertExists($user->business_permit);
     }
+
+    public function test_artisan_setup_can_delete_legal_document(): void
+    {
+        Storage::fake('public');
+
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+            'business_permit' => 'legal_docs/permit.jpg',
+        ]);
+
+        Storage::disk('public')->put('legal_docs/permit.jpg', 'fake content');
+
+        $response = $this->actingAs($user)->delete(route('artisan.setup.delete-document', ['type' => 'business_permit']));
+
+        $response->assertRedirect();
+        $user->refresh();
+        $this->assertNull($user->business_permit);
+        Storage::disk('public')->assertMissing('legal_docs/permit.jpg');
+    }
 }
