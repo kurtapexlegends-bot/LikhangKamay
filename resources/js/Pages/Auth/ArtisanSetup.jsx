@@ -73,7 +73,6 @@ export default function ArtisanSetup({ auth }) {
         }));
 
         post(route('artisan.setup.store'), {
-            forceFormData: true,
             onSuccess: () => {
                 if (step < 3) {
                     setStep(step + 1);
