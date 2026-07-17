@@ -56,11 +56,14 @@ export default function ProductFormBasicDetails({
                         <option value="" disabled>
                             Select Category
                         </option>
-                        {categories.map((c) => (
-                            <option key={c} value={c}>
-                                {c}
-                            </option>
-                        ))}
+                        {categories.map((c) => {
+                            const name = typeof c === 'object' ? c.name : c;
+                            return (
+                                <option key={name} value={name}>
+                                    {name}
+                                </option>
+                            );
+                        })}
                     </select>
                     <InputError message={errors.category} className="mt-2" />
                 </div>
