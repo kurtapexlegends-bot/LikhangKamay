@@ -28,7 +28,7 @@ class ValidationController extends Controller
                 return $this->checkSkuUniqueness($value, $context['product_id'] ?? null);
 
             case 'shop_name_availability':
-                return $this->checkShopNameAvailability($value);
+                return $this->checkShopNameAvailability($value, $context['user_id'] ?? null);
 
             case 'employee_id_uniqueness':
                 return $this->checkEmployeeIdUniqueness($value, $context['employee_id'] ?? null);
@@ -81,16 +81,21 @@ class ValidationController extends Controller
         ]);
     }
 
-    private function checkShopNameAvailability($name)
+    private function checkShopNameAvailability($name, $userId = null)
     {
         if (empty($name) || strlen($name) < 3) {
             return response()->json(['valid' => false, 'message' => 'Shop name must be at least 3 characters.']);
         }
 
         $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
-        $exists = User::where('role', 'artisan')
-            ->where('shop_name', $like, $name)
-            ->exists();
+        $query = User::where('role', 'artisan')
+            ->where('shop_name', $like, $name);
+
+        if ($userId) {
+            $query->where('id', '!=', $userId);
+        }
+
+        $exists = $query->exists();
 
         return response()->json([
             'valid' => !$exists,

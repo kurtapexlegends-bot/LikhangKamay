@@ -44,14 +44,13 @@ export default function ShopDetailsStep({
             <div className="space-y-6">
                 <div>
                     <InputLabel htmlFor="shop_name" value="Shop Name *" />
-                    <div className="relative mt-1">
-                        <Store size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <div className="mt-1">
                         <TextInput
                             id="shop_name"
                             value={data.shop_name}
                             onChange={(event) => setData('shop_name', event.target.value)}
-                            className="w-full rounded-xl py-3 pl-12"
                             placeholder="e.g. Silang Pottery Works"
+                            icon={Store}
                         />
                     </div>
                     {shopNameValidation.isValid !== null && (
@@ -69,14 +68,13 @@ export default function ShopDetailsStep({
 
                 <div>
                     <InputLabel htmlFor="phone_number" value="Contact Number *" />
-                    <div className="relative mt-1">
-                        <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <div className="mt-1">
                         <TextInput
                             id="phone_number"
                             value={data.phone_number}
                             onChange={(event) => setData('phone_number', event.target.value)}
-                            className="w-full rounded-xl py-3 pl-12"
                             placeholder="09XX XXX XXXX"
+                            icon={Phone}
                         />
                     </div>
                     <InputError message={errors.phone_number} className="mt-2" />

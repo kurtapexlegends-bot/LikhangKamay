@@ -49,7 +49,8 @@ export default function ArtisanSetup({ auth }) {
             try {
                 const response = await axios.post(route('api.validate-constraint'), {
                     type: 'shop_name_availability',
-                    value: data.shop_name
+                    value: data.shop_name,
+                    context: { user_id: auth.user.id }
                 });
                 setShopNameValidation({ 
                     isValid: response.data.valid, 
