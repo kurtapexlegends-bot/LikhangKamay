@@ -54,6 +54,10 @@ graph TD
 *   **Search and Filters**: `/shop` (bound to `throttle:marketplace.search` rate limit).
 *   **Artisan Page**: `/shop/{user:shop_slug}`
 *   **Product View**: `/product/{product}`
+*   **Serverless Warming & Diagnostics**:
+    *   `/ping`: Lightweight, database-free warming route.
+    *   `/categories-debug`: Public JSON diagnostic endpoint listing backend category structures.
+    *   `/webhooks/cron/queue`: High-frequency queue execution endpoint secured by cron token validation.
 
 ### Seller Management Modules
 Protected under `seller.workspace` and feature-toggled via `seller.module`:
