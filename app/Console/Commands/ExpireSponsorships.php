@@ -25,10 +25,10 @@ class ExpireSponsorships extends Command
      */
     public function handle()
     {
-        $expiredCount = \App\Models\Product::where('is_sponsored', true)
+        $expiredCount = \App\Models\Product::where('is_sponsored', \Illuminate\Support\Facades\DB::raw('true'))
             ->whereNotNull('sponsored_until')
             ->where('sponsored_until', '<', now())
-            ->update(['is_sponsored' => false]);
+            ->update(['is_sponsored' => \Illuminate\Support\Facades\DB::raw('false')]);
             
         $this->info("Expired {$expiredCount} sponsorships.");
     }

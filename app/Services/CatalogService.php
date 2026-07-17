@@ -26,7 +26,7 @@ class CatalogService
                           $cq->where('document_type', 'seller_terms');
                       });
                 })
-                ->where('is_sponsored', true)
+                ->where('is_sponsored', DB::raw('true'))
                 ->where('sponsored_until', '>', now())
                 ->inRandomOrder()
                 ->take(8)
