@@ -7,10 +7,8 @@ php artisan route:clear
 php artisan view:clear
 php artisan clear-compiled
 
-# 2. Pre-compile caches at build-time for maximum production speed (avoid config:cache on Vercel)
-php artisan config:clear
-php artisan route:cache
-php artisan view:cache
+# 2. Force clean cache directory to ensure they are re-generated dynamically in /tmp at runtime
+rm -rf bootstrap/cache/*.php
 
 # 3. Run the standard frontend build
 npm run build
