@@ -107,6 +107,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
         }, {
             forceFormData: true,
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 setUploading(false);
                 if (inputRef.current) {
@@ -115,6 +116,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
             },
             onError: (errs) => {
                 setUploading(false);
+                console.error('File Upload Error details:', errs);
                 setUploadError(errs.document || 'Failed to upload document.');
                 if (inputRef.current) {
                     inputRef.current.value = '';
@@ -130,6 +132,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
                 setUploading(true);
                 router.delete(route('artisan.setup.delete-document', { type: id }), {
                     preserveScroll: true,
+                    preserveState: true,
                     onSuccess: () => setUploading(false),
                     onError: () => setUploading(false),
                 });
