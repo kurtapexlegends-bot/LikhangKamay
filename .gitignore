@@ -61,4 +61,6 @@ remove_badges*
 /agent.md
 /.codex
 
-
+# Graphify & AI Customizations
+/graphify-out/
+/.agents/
