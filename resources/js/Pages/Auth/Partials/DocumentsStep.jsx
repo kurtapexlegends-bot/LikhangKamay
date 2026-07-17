@@ -1,18 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { FileText, ArrowLeft, ArrowRight, UploadCloud, FileCheck, Eye, Trash2 } from 'lucide-react';
+import { FileText, ArrowLeft, ArrowRight, UploadCloud, FileCheck, Eye, Trash2, Loader2 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 
 export default function DocumentsStep({
-    data,
-    setData,
-    errors,
     submit,
     processing,
     setStep,
     auth,
-    handleFileChange,
 }) {
     return (
         <form onSubmit={submit} className="p-6 sm:p-10">
@@ -23,7 +19,7 @@ export default function DocumentsStep({
                     </div>
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Legal Verification</h2>
-                        <p className="text-sm text-gray-500">Upload clear photos or scans of your documents</p>
+                        <p className="text-sm text-gray-500">Upload clear photos or scans of your documents (uploaded one-by-one to avoid platform size limits)</p>
                     </div>
                 </div>
             </div>
@@ -38,34 +34,22 @@ export default function DocumentsStep({
                 <FileUploadField
                     label="Business Permit (Mayor's Permit)"
                     id="business_permit"
-                    file={data.business_permit}
                     existingFileUrl={auth.user.business_permit ? '/storage/' + auth.user.business_permit : null}
-                    onFileSelect={(file) => handleFileChange(file, 'business_permit')}
-                    error={errors.business_permit}
                 />
                 <FileUploadField
                     label="DTI Registration"
                     id="dti_registration"
-                    file={data.dti_registration}
                     existingFileUrl={auth.user.dti_registration ? '/storage/' + auth.user.dti_registration : null}
-                    onFileSelect={(file) => handleFileChange(file, 'dti_registration')}
-                    error={errors.dti_registration}
                 />
                 <FileUploadField
                     label="Valid Government ID (Front)"
                     id="valid_id"
-                    file={data.valid_id}
                     existingFileUrl={auth.user.valid_id ? '/storage/' + auth.user.valid_id : null}
-                    onFileSelect={(file) => handleFileChange(file, 'valid_id')}
-                    error={errors.valid_id}
                 />
                 <FileUploadField
                     label="TIN ID / Registration"
                     id="tin_id"
-                    file={data.tin_id}
                     existingFileUrl={auth.user.tin_id ? '/storage/' + auth.user.tin_id : null}
-                    onFileSelect={(file) => handleFileChange(file, 'tin_id')}
-                    error={errors.tin_id}
                 />
             </div>
 
@@ -83,27 +67,21 @@ export default function DocumentsStep({
                     disabled={processing}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-clay-600 to-clay-700 px-8 py-3.5 font-bold text-white shadow-lg shadow-clay-200 transition hover:from-clay-700 hover:to-clay-800 disabled:opacity-50 active:scale-95"
                 >
-                    {processing ? 'Uploading...' : 'Continue to Payments'} <ArrowRight size={18} />
+                    {processing ? 'Saving...' : 'Continue to Payments'} <ArrowRight size={18} />
                 </button>
             </div>
         </form>
     );
 }
 
-const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, existingFileUrl }) => {
+const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
     const inputRef = useRef(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState(null);
 
     useEffect(() => {
-        if (file) {
-            if (file.type.startsWith('image/')) {
-                const objectUrl = URL.createObjectURL(file);
-                setPreviewUrl(objectUrl);
-                return () => URL.revokeObjectURL(objectUrl);
-            } else {
-                setPreviewUrl(null);
-            }
-        } else if (existingFileUrl) {
+        if (existingFileUrl) {
             const isPdf = existingFileUrl.toLowerCase().endsWith('.pdf');
             if (!isPdf) {
                 setPreviewUrl(existingFileUrl);
@@ -113,19 +91,46 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, exis
         } else {
             setPreviewUrl(null);
         }
-    }, [file, existingFileUrl]);
+    }, [existingFileUrl]);
+
+    const handleFileSelect = (e) => {
+        const selectedFile = e.target.files?.[0];
+        if (!selectedFile) return;
+
+        setUploading(true);
+        setUploadError(null);
+
+        const formData = new FormData();
+        formData.append('document', selectedFile);
+
+        router.post(route('artisan.setup.upload-document', { type: id }), formData, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setUploading(false);
+                if (inputRef.current) {
+                    inputRef.current.value = '';
+                }
+            },
+            onError: (errs) => {
+                setUploading(false);
+                setUploadError(errs.document || 'Failed to upload document.');
+                if (inputRef.current) {
+                    inputRef.current.value = '';
+                }
+            },
+        });
+    };
 
     const handleRemove = (e) => {
         e.stopPropagation();
-        if (file) {
-            onFileSelect(null);
-            if (inputRef.current) {
-                inputRef.current.value = '';
-            }
-        } else if (existingFileUrl) {
-            if (confirm('Are you sure you want to remove this document from file?')) {
+        if (existingFileUrl) {
+            if (confirm('Are you sure you want to remove this document?')) {
+                setUploading(true);
                 router.delete(route('artisan.setup.delete-document', { type: id }), {
                     preserveScroll: true,
+                    onSuccess: () => setUploading(false),
+                    onError: () => setUploading(false),
                 });
             }
         }
@@ -133,10 +138,7 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, exis
 
     const handleView = (e) => {
         e.stopPropagation();
-        if (file) {
-            const objectUrl = URL.createObjectURL(file);
-            window.open(objectUrl, '_blank');
-        } else if (existingFileUrl) {
+        if (existingFileUrl) {
             window.open(existingFileUrl, '_blank');
         }
     };
@@ -145,20 +147,28 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, exis
         <div>
             <InputLabel htmlFor={id} value={label} />
             <div
-                onClick={() => inputRef.current?.click()}
+                onClick={() => !uploading && inputRef.current?.click()}
                 className={`mt-1 relative flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] hover:shadow-md ${
-                    file || existingFileUrl
-                        ? 'border-clay-400 bg-clay-50/30'
-                        : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
+                    uploading
+                        ? 'border-clay-300 bg-clay-50/10 cursor-not-allowed'
+                        : existingFileUrl
+                            ? 'border-clay-400 bg-clay-50/30'
+                            : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
                 }`}
             >
-                {previewUrl ? (
+                {uploading ? (
+                    <div className="flex flex-col items-center justify-center">
+                        <Loader2 size={32} className="mb-2 text-clay-600 animate-spin" />
+                        <p className="text-sm font-semibold text-clay-800">Processing document...</p>
+                        <p className="text-xs text-clay-500">Uploading to secure storage</p>
+                    </div>
+                ) : previewUrl ? (
                     <div className="flex w-full flex-col items-center">
                         <div className="relative mb-3 h-24 w-full overflow-hidden rounded-xl border border-clay-200 bg-white shadow-inner flex items-center justify-center">
                             <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
                         </div>
                         <p className="max-w-full truncate text-xs font-semibold text-clay-800">
-                            {file ? file.name : 'Document on File (Image)'}
+                            Document on File (Image)
                         </p>
                         <div className="mt-3 flex items-center gap-2">
                             <button
@@ -177,13 +187,13 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, exis
                             </button>
                         </div>
                     </div>
-                ) : (file || existingFileUrl) ? (
+                ) : existingFileUrl ? (
                     <div className="flex w-full flex-col items-center">
                         <div className="relative mb-3 h-24 w-full overflow-hidden rounded-xl border border-clay-200 bg-white shadow-inner flex items-center justify-center">
                             <FileCheck size={40} className="text-clay-600 animate-pulse" />
                         </div>
                         <p className="max-w-full truncate text-xs font-semibold text-clay-800">
-                            {file ? file.name : 'Document on File (PDF)'}
+                            Document on File (PDF)
                         </p>
                         <div className="mt-3 flex items-center gap-2">
                             <button
@@ -215,11 +225,12 @@ const FileUploadField = React.memo(({ label, id, onFileSelect, error, file, exis
                     name={id}
                     type="file"
                     className="hidden"
-                    onChange={(event) => event.target.files?.[0] && onFileSelect(event.target.files[0])}
+                    onChange={handleFileSelect}
                     accept="image/*,.pdf"
+                    disabled={uploading}
                 />
             </div>
-            <InputError message={error} className="mt-2" />
+            <InputError message={uploadError} className="mt-2" />
         </div>
     );
 });

@@ -221,4 +221,26 @@ class ArtisanSetupTest extends TestCase
         $this->assertNull($user->business_permit);
         Storage::disk('public')->assertMissing('legal_docs/permit.jpg');
     }
+
+    public function test_artisan_setup_can_upload_single_legal_document(): void
+    {
+        Storage::fake('public');
+
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+        ]);
+
+        $file = UploadedFile::fake()->image('permit.jpg', 600, 600);
+
+        $response = $this->actingAs($user)->post(route('artisan.setup.upload-document', ['type' => 'business_permit']), [
+            'document' => $file,
+        ]);
+
+        $response->assertRedirect();
+        $user->refresh();
+        $this->assertNotNull($user->business_permit);
+        Storage::disk('public')->assertExists($user->business_permit);
+    }
 }

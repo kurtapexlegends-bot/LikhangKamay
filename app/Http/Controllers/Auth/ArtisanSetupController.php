@@ -293,4 +293,56 @@ class ArtisanSetupController extends Controller
         
         return back()->with('success', ucfirst(str_replace('_', ' ', $type)) . ' removed.');
     }
+
+    public function uploadSingleDocument(Request $request, $type)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        if (!in_array($type, ['business_permit', 'dti_registration', 'valid_id', 'tin_id'])) {
+            return back()->withErrors([$type => 'Invalid document type.']);
+        }
+
+        $request->validate([
+            'document' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+        ]);
+
+        $file = $request->file('document');
+        $flags = [];
+
+        // Check file size (suspiciously small)
+        if ($file->getSize() < 5120) { // < 5KB
+            $flags[] = 'empty_or_corrupt';
+        }
+
+        // Check image resolution if it's an image
+        if (str_starts_with($file->getMimeType(), 'image/')) {
+            $dimensions = getimagesize($file->getRealPath());
+            if ($dimensions) {
+                $width = $dimensions[0];
+                $height = $dimensions[1];
+                if ($width < 300 || $height < 300) {
+                    $flags[] = 'low_resolution';
+                }
+            }
+        }
+
+        // Delete old file if exists
+        if ($user->{$type}) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->{$type});
+        }
+
+        $path = $file->store('legal_docs', 'public');
+        
+        // Update document flags array
+        $documentFlags = $user->document_flags ?? [];
+        $documentFlags[$type] = $flags;
+
+        $user->update([
+            $type => $path,
+            'document_flags' => $documentFlags,
+        ]);
+
+        return back()->with('success', ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully.');
+    }
 }
