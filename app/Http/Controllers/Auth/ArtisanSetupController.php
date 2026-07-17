@@ -117,7 +117,8 @@ class ArtisanSetupController extends Controller
 
                     // Check image resolution if it's an image
                     if (str_starts_with($file->getMimeType(), 'image/')) {
-                        $dimensions = getimagesize($file->getRealPath());
+                        $realPath = $file->getRealPath();
+                        $dimensions = $realPath ? @getimagesize($realPath) : null;
                         if ($dimensions) {
                             $width = $dimensions[0];
                             $height = $dimensions[1];
@@ -317,7 +318,8 @@ class ArtisanSetupController extends Controller
 
         // Check image resolution if it's an image
         if (str_starts_with($file->getMimeType(), 'image/')) {
-            $dimensions = getimagesize($file->getRealPath());
+            $realPath = $file->getRealPath();
+            $dimensions = $realPath ? @getimagesize($realPath) : null;
             if ($dimensions) {
                 $width = $dimensions[0];
                 $height = $dimensions[1];
