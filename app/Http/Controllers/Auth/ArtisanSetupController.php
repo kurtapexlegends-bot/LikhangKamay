@@ -74,7 +74,7 @@ class ArtisanSetupController extends Controller
                 $user->addresses()->create([
                     'label' => 'Shop',
                     'address_type' => 'office',
-                    'recipient_name' => $user->name,
+                    'recipient_name' => $user->name ?? trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'Artisan',
                     'phone_number' => $validated['phone_number'],
                     'street_address' => $validated['street_address'],
                     'barangay' => $validated['barangay'],
