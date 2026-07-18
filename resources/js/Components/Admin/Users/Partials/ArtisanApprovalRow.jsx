@@ -17,7 +17,7 @@ export default function ArtisanApprovalRow({
     return (
         <div className="px-4 py-4 transition-all duration-200 hover:bg-stone-50/60 sm:px-6 relative group border-b border-stone-100 md:border-b-0 md:py-0 md:px-0">
             {/* Desktop Grid Layout */}
-            <div className="hidden md:grid md:grid-cols-12 md:items-center md:gap-4 md:py-4">
+            <div className="hidden md:grid md:grid-cols-12 md:items-center md:gap-4 md:py-4 md:px-6">
                 {/* Hover Accent */}
                 <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-clay-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-center" />
 
@@ -100,7 +100,7 @@ export default function ArtisanApprovalRow({
                             />
                         </div>
                         <p className={`mt-2 text-[9px] font-bold leading-tight ${isReady ? 'text-emerald-600' : 'text-stone-400'}`}>
-                            {isReady ? 'Ready for approval' : 'Preview all submitted files first'}
+                            {isReady ? 'All files reviewed' : 'Preview all submitted files first'}
                         </p>
                     </div>
                 </div>
@@ -200,7 +200,7 @@ export default function ArtisanApprovalRow({
                             />
                         </div>
                         <span className={`text-[9px] font-bold ${isReady ? 'text-emerald-600' : 'text-stone-400'}`}>
-                            {isReady ? 'Ready for approval' : 'Preview all submitted files first'}
+                            {isReady ? 'All files reviewed' : 'Preview all submitted files first'}
                         </span>
                     </div>
                 </div>

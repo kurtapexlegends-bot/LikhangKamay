@@ -125,7 +125,7 @@ export default function ArtisanVerificationDrawer({
                                     <div
                                         key={doc.key}
                                         onClick={() => documentPreviewingKey !== doc.key && openDocumentPreview(doc)}
-                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-4.5 transition min-h-[120px] flex flex-col justify-between ${
+                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-5 transition min-h-[120px] flex flex-col justify-between ${
                                             doc.url 
                                                 ? 'cursor-pointer bg-white hover:border-clay-300 hover:shadow-md' 
                                                 : 'bg-stone-50/50 opacity-60'
