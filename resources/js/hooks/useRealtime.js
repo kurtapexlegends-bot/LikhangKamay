@@ -61,17 +61,6 @@ export const useRealtime = () => {
     useEffect(() => {
         if (!user) return;
 
-        // 1. Initial reload of lazy-loaded notification and message counters on mount
-        const initialReloadKeys = ['notifications', 'unreadNotificationCount', 'unreadMessageCount'];
-        if (user.role === 'super_admin') {
-            initialReloadKeys.push('pendingArtisanCount');
-        }
-        router.reload({
-            only: initialReloadKeys,
-            preserveScroll: true,
-            preserveState: true,
-        });
-
         // 2. Setup Supabase real-time sync if available, or fall back to polling
         let notificationChannel = null;
         let sellerNotificationChannel = null;

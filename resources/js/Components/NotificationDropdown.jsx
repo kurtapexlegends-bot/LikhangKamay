@@ -35,12 +35,25 @@ export default function NotificationDropdown() {
         return cached !== null ? parseInt(cached, 10) : (unreadNotificationCount || 0);
     });
     const [isOpen, setIsOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [activeMenu, setActiveMenu] = useState(null);
     const [activeFilter, setActiveFilter] = useState('all');
     const [confirmClearOpen, setConfirmClearOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [relativeNow, setRelativeNow] = useState(() => Date.now());
     const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        if (isOpen && notifications.length === 0) {
+            setLoading(true);
+            router.reload({
+                only: ['notifications'],
+                preserveScroll: true,
+                preserveState: true,
+                onFinish: () => setLoading(false),
+            });
+        }
+    }, [isOpen, notifications.length]);
 
     useEffect(() => {
         if (typeof unreadNotificationCount === 'number') {
@@ -404,6 +417,11 @@ export default function NotificationDropdown() {
                                     )}
                                 </div>
                             ))
+                        ) : loading ? (
+                            <div className="p-8 text-center text-gray-400">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clay-500 mx-auto mb-3"></div>
+                                <p className="text-sm font-medium text-stone-500">Loading notifications...</p>
+                            </div>
                         ) : (
                             <div className="p-8 text-center text-gray-400">
                                 <Bell size={32} className="mx-auto mb-2 opacity-30" />
