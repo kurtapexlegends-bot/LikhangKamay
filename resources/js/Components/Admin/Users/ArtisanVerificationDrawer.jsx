@@ -62,12 +62,39 @@ export default function ArtisanVerificationDrawer({
                     <div className="space-y-6">
                         <div className="rounded-2xl bg-stone-50 p-4 border border-stone-100">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-clay-100 bg-clay-50 text-lg font-bold text-clay-700 shadow-sm shrink-0">
-                                    {viewingArtisan.shop_name?.charAt(0).toUpperCase()}
-                                </div>
+                                {viewingArtisan.avatar_url ? (
+                                    <img
+                                        src={viewingArtisan.avatar_url}
+                                        alt={viewingArtisan.shop_name}
+                                        className="h-12 w-12 rounded-2xl object-cover border border-clay-100 shadow-sm shrink-0"
+                                    />
+                                ) : (
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-clay-100 bg-clay-50 text-lg font-bold text-clay-700 shadow-sm shrink-0">
+                                        {viewingArtisan.shop_name?.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
                                 <div className="min-w-0">
                                     <h4 className="text-sm font-bold text-stone-900 truncate">{viewingArtisan.shop_name}</h4>
                                     <p className="text-xs text-stone-500 font-medium truncate mt-0.5">{viewingArtisan.name} • {viewingArtisan.email}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Contact & Location Profile Details */}
+                        <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-3">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Contact & Location</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <span className="block text-stone-500 font-medium">Phone Number</span>
+                                    <span className="font-bold text-stone-900">{viewingArtisan.phone_number || 'N/A'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-stone-500 font-medium">Submitted On</span>
+                                    <span className="font-bold text-stone-900">{viewingArtisan.submitted_at || 'N/A'}</span>
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="block text-stone-500 font-medium">Registered Address</span>
+                                    <span className="font-bold text-stone-950 leading-relaxed">{viewingArtisan.address || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
