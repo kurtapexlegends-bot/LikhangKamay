@@ -103,14 +103,23 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // ARTISAN PENDING APPROVAL
     Route::get('/artisan/pending', function () {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        if (!$user->isPendingApproval()) {
-            return redirect()->route('dashboard');
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            if (!$user->isPendingApproval()) {
+                return redirect()->route('dashboard');
+            }
+            return Inertia::render('Auth/PendingApproval', [
+                'user' => $user->only(['id', 'shop_name', 'email', 'artisan_status'])
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-        return Inertia::render('Auth/PendingApproval', [
-            'user' => $user->only(['id', 'shop_name', 'email', 'artisan_status'])
-        ]);
     })->name('artisan.pending');
 
     // SELLER ROUTES
