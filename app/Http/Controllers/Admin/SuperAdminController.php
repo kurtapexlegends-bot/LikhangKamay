@@ -218,6 +218,9 @@ class SuperAdminController extends Controller
      */
     private function getPendingArtisansList()
     {
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
+        $storage = \Illuminate\Support\Facades\Storage::disk('public');
+
         return User::where('role', 'artisan')
             ->where('artisan_status', 'pending')
             ->whereNotNull('setup_completed_at')
@@ -232,10 +235,10 @@ class SuperAdminController extends Controller
                 'shop_name' => $user->shop_name,
                 'phone_number' => $user->phone_number,
                 'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
-                'business_permit' => $user->business_permit ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->business_permit) : null,
-                'dti_registration' => $user->dti_registration ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->dti_registration) : null,
-                'valid_id' => $user->valid_id ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->valid_id) : null,
-                'tin_id' => $user->tin_id ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->tin_id) : null,
+                'business_permit' => $user->business_permit ? $storage->url($user->business_permit) : null,
+                'dti_registration' => $user->dti_registration ? $storage->url($user->dti_registration) : null,
+                'valid_id' => $user->valid_id ? $storage->url($user->valid_id) : null,
+                'tin_id' => $user->tin_id ? $storage->url($user->tin_id) : null,
                 'payout_method' => $user->payout_method,
                 'payout_account_name' => $user->payout_account_name,
                 'payout_account_number' => $user->payout_account_number,
@@ -496,16 +499,16 @@ class SuperAdminController extends Controller
         $user->save();
 
         if ($user->isArtisan()) {
-            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
-            \Illuminate\Support\Facades\Cache::forget("seller_{$user->id}_products");
-            \Illuminate\Support\Facades\Cache::forget("seller_{$user->id}_best_sellers");
-            \Illuminate\Support\Facades\Cache::forget("seller_{$user->id}_stats");
-            \Illuminate\Support\Facades\Cache::forget('catalog_materials');
-            \Illuminate\Support\Facades\Cache::forget('catalog_locations');
-            \Illuminate\Support\Facades\Cache::forget('catalog_categories');
-            \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
-            \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
-            \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
+            Cache::forget('shop_catalog_default_page_1');
+            Cache::forget("seller_{$user->id}_products");
+            Cache::forget("seller_{$user->id}_best_sellers");
+            Cache::forget("seller_{$user->id}_stats");
+            Cache::forget('catalog_materials');
+            Cache::forget('catalog_locations');
+            Cache::forget('catalog_categories');
+            Cache::forget('home_sponsored_products');
+            Cache::forget('home_featured_products_pool');
+            Cache::forget('home_top_sellers');
         }
 
         PlatformActivity::create([

@@ -134,7 +134,7 @@ class PayoutController extends Controller
             ]);
 
             \App\Models\PlatformActivity::create([
-                'user_id' => auth()->id(),
+                'user_id' => \Illuminate\Support\Facades\Auth::id(),
                 'action' => 'payout_disbursed',
                 'description' => "Disbursed payout of PHP " . number_format($validated['amount'], 2) . " to {$artisan->shop_name}",
                 'metadata' => [
