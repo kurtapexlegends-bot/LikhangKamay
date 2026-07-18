@@ -49,7 +49,7 @@ class HandleInertiaRequests extends Middleware
                 return null;
             }
             try {
-                if ($storage) {
+                if ($storage instanceof \Illuminate\Filesystem\FilesystemAdapter) {
                     return $storage->url($path);
                 }
             } catch (\Throwable $e) {
