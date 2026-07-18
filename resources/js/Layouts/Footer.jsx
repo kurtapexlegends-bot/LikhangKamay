@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram, Twitter } from 'lucide-react';
 
 export default function Footer() {
     const { platform } = usePage().props;
@@ -16,6 +16,43 @@ export default function Footer() {
                     <p className="text-gray-500 leading-relaxed mx-auto md:mx-0 max-w-xs text-xs">
                         {platform.seo.description}
                     </p>
+                    
+                    {/* Social Media Links */}
+                    <div className="flex items-center justify-center md:justify-start gap-4 mt-5">
+                        {platform.socials?.facebook && (
+                            <a 
+                                href={platform.socials.facebook} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-stone-400 hover:text-clay-650 hover:scale-110 transition"
+                                aria-label="Facebook"
+                            >
+                                <Facebook size={16} />
+                            </a>
+                        )}
+                        {platform.socials?.instagram && (
+                            <a 
+                                href={platform.socials.instagram} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-stone-400 hover:text-clay-650 hover:scale-110 transition"
+                                aria-label="Instagram"
+                            >
+                                <Instagram size={16} />
+                            </a>
+                        )}
+                        {platform.socials?.twitter && (
+                            <a 
+                                href={platform.socials.twitter} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-stone-400 hover:text-clay-650 hover:scale-110 transition"
+                                aria-label="Twitter"
+                            >
+                                <Twitter size={16} />
+                            </a>
+                        )}
+                    </div>
                 </div>
                 <div className="text-center md:text-left">
                     <h4 className="font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Platform</h4>
