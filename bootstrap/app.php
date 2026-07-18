@@ -48,6 +48,15 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+            if ($request->query('debug_err') === 'true') {
+                return response()->json([
+                    'error' => $exception->getMessage(),
+                    'file' => $exception->getFile(),
+                    'line' => $exception->getLine(),
+                    'trace' => $exception->getTraceAsString()
+                ], 500);
+            }
+
             if ($request->header('X-Inertia')) {
                 if ($response->getStatusCode() === 401 || ($response->getStatusCode() === 302 && str_contains($response->headers->get('Location', ''), '/login'))) {
                     return Inertia::location(route('login'));
