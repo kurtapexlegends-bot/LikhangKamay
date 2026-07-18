@@ -189,7 +189,7 @@ export default function AdminLayout({ title, children }) {
                     href: route('admin.users.manager', { tab: 'approvals' }),
                     icon: Award,
                     current: isTabActive('admin.users.manager', 'approvals'),
-                    badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
+                    badge: null
                 },
                 { name: 'Product Moderation', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation') },
                 { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships') },

@@ -244,6 +244,7 @@ class SuperAdminController extends Controller
                 'payout_account_number' => $user->payout_account_number,
                 'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
                 'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
+                'viewed_document_keys' => $this->getViewedArtisanDocumentKeys($user->id),
             ]);
     }
 
