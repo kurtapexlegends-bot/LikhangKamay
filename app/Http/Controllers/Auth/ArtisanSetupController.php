@@ -203,11 +203,18 @@ class ArtisanSetupController extends Controller
 
     private function sendApplicationEmails(UserModel $user): string
     {
-        UserModel::query()
-            ->where('role', 'super_admin')
-            ->each(function (UserModel $admin) use ($user): void {
-                $admin->notify(new NewArtisanApplicationNotification($user));
-            });
+        try {
+            UserModel::query()
+                ->where('role', 'super_admin')
+                ->each(function (UserModel $admin) use ($user): void {
+                    $admin->notify(new NewArtisanApplicationNotification($user));
+                });
+        } catch (\Throwable $e) {
+            Log::error('Failed to notify super admins of new artisan application: ' . $e->getMessage(), [
+                'artisan_id' => $user->id,
+                'exception' => $e
+            ]);
+        }
 
         $adminEmails = collect([
             config('services.artisan_applications.notification_email'),

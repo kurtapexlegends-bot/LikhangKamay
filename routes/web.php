@@ -108,7 +108,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         if (!$user->isPendingApproval()) {
             return redirect()->route('dashboard');
         }
-        return Inertia::render('Auth/PendingApproval', ['user' => $user]);
+        return Inertia::render('Auth/PendingApproval', [
+            'user' => $user->only(['id', 'shop_name', 'email', 'artisan_status'])
+        ]);
     })->name('artisan.pending');
 
     // SELLER ROUTES

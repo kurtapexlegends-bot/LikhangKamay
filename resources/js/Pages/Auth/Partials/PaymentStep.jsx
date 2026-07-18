@@ -72,8 +72,8 @@ export default function PaymentStep({
                     <InputLabel 
                         htmlFor="payout_account_number" 
                         value={
-                            data.payout_method === 'GCash' ? 'GCash Account Number *' :
-                            data.payout_method === 'Maya' ? 'Maya Account Number *' :
+                            data.payout_method?.toLowerCase() === 'gcash' ? 'GCash Account Number *' :
+                            data.payout_method?.toLowerCase() === 'maya' ? 'Maya Account Number *' :
                             'Account/Phone Number *'
                         } 
                     />
@@ -83,7 +83,7 @@ export default function PaymentStep({
                         onChange={(e) => setData('payout_account_number', e.target.value)}
                         className="mt-1 block w-full rounded-xl py-3"
                         placeholder={
-                            data.payout_method === 'GCash' || data.payout_method === 'Maya'
+                            data.payout_method?.toLowerCase() === 'gcash' || data.payout_method?.toLowerCase() === 'maya'
                                 ? 'e.g. 0917 XXX XXXX'
                                 : 'e.g. 0917 XXX XXXX or Bank Account No.'
                         }

@@ -249,4 +249,44 @@ class ArtisanSetupTest extends TestCase
         $disk = Storage::disk('public');
         $disk->assertExists($user->business_permit);
     }
+
+    public function test_artisan_can_visit_pending_approval_page(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+            'artisan_status' => 'pending',
+            'setup_completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('artisan.pending'));
+        $response->assertOk();
+    }
+
+    public function test_artisan_can_complete_setup_and_render_pending_page(): void
+    {
+        Storage::fake('public');
+        Mail::fake();
+        Notification::fake();
+
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+            'shop_name' => 'Clay Studio',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('artisan.setup.store'), [
+            'current_step' => 3,
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'John Doe',
+            'payout_account_number' => '09123456789',
+        ]);
+
+        $response->assertRedirect(route('artisan.pending'));
+        
+        $followResponse = $this->actingAs($user)->get(route('artisan.pending'));
+        $followResponse->assertOk();
+    }
 }
