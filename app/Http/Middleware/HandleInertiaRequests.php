@@ -36,8 +36,26 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
-        $storage = \Illuminate\Support\Facades\Storage::disk('public');
+        $storage = null;
+        try {
+            $storage = \Illuminate\Support\Facades\Storage::disk('public');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to resolve public storage disk in HandleInertiaRequests: ' . $e->getMessage());
+        }
+
+        $urlHelper = function (?string $path) use ($storage) {
+            if (!$path) {
+                return null;
+            }
+            try {
+                if ($storage) {
+                    return $storage->url($path);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to generate URL for path ' . $path . ': ' . $e->getMessage());
+            }
+            return asset('storage/' . $path);
+        };
 
         return [
             ...parent::share($request),
@@ -46,13 +64,13 @@ class HandleInertiaRequests extends Middleware
                     $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url', 'artisan_status', 'premium_tier']),
                     [
                         'business_permit' => $user->business_permit,
-                        'business_permit_url' => $user->business_permit ? $storage->url($user->business_permit) : null,
+                        'business_permit_url' => $urlHelper($user->business_permit),
                         'dti_registration' => $user->dti_registration,
-                        'dti_registration_url' => $user->dti_registration ? $storage->url($user->dti_registration) : null,
+                        'dti_registration_url' => $urlHelper($user->dti_registration),
                         'valid_id' => $user->valid_id,
-                        'valid_id_url' => $user->valid_id ? $storage->url($user->valid_id) : null,
+                        'valid_id_url' => $urlHelper($user->valid_id),
                         'tin_id' => $user->tin_id,
-                        'tin_id_url' => $user->tin_id ? $storage->url($user->tin_id) : null,
+                        'tin_id_url' => $urlHelper($user->tin_id),
                     ]
                 ) : null,
                 'isStaff' => $user?->isStaff() ?? false,

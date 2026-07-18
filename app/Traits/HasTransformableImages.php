@@ -20,9 +20,14 @@ trait HasTransformableImages
         // If it's an external URL already, return it
         if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
-        $baseUrl = $disk->url($path);
+        $baseUrl = null;
+        try {
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+            $disk = Storage::disk('public');
+            $baseUrl = $disk->url($path);
+        } catch (\Throwable $e) {
+            $baseUrl = asset('storage/' . $path);
+        }
 
         if (!empty($options)) {
             if (config('filesystems.disks.public.driver') === 's3') {
