@@ -289,4 +289,59 @@ class ArtisanSetupTest extends TestCase
         $followResponse = $this->actingAs($user)->get(route('artisan.pending'));
         $followResponse->assertOk();
     }
+
+    public function test_pending_artisan_is_blocked_from_buyer_routes(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+            'artisan_status' => 'pending',
+            'setup_completed_at' => now(),
+        ]);
+
+        // Attempting to visit profile should redirect to artisan.pending
+        $response = $this->actingAs($user)->get(route('profile.edit'));
+        $response->assertRedirect(route('artisan.pending'));
+
+        // Attempting to visit cart should redirect to artisan.pending
+        $response = $this->actingAs($user)->get(route('cart.index'));
+        $response->assertRedirect(route('artisan.pending'));
+
+        // Attempting to visit checkout should redirect to artisan.pending
+        $response = $this->actingAs($user)->get(route('checkout.create'));
+        $response->assertRedirect(route('artisan.pending'));
+    }
+
+    public function test_rejected_artisan_can_convert_to_buyer_account(): void
+    {
+        Storage::fake('public');
+
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+            'artisan_status' => 'rejected',
+            'artisan_rejection_reason' => 'Invalid ID',
+            'setup_completed_at' => now(),
+            'shop_name' => 'My Shop',
+            'shop_slug' => 'my-shop',
+            'valid_id' => 'legal_docs/id.jpg',
+        ]);
+
+        // Convert to buyer
+        $response = $this->actingAs($user)->post(route('artisan.convert-to-buyer'));
+        $response->assertRedirect(route('home'));
+
+        // Refresh user and assert columns are reset
+        $user->refresh();
+        $this->assertEquals('user', $user->role);
+        $this->assertEquals('pending', $user->artisan_status);
+        $this->assertNull($user->shop_name);
+        $this->assertNull($user->valid_id);
+
+        // Once converted, they should be able to access buyer routes without getting blocked
+        $response = $this->actingAs($user)->get(route('profile.edit'));
+        $response->assertOk();
+    }
 }

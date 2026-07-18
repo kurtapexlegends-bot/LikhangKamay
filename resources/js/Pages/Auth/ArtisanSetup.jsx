@@ -169,6 +169,21 @@ export default function ArtisanSetup({ auth }) {
                                             <p className="text-sm font-medium text-red-800">{auth.user.artisan_rejection_reason}</p>
                                         </div>
                                         <p className="mt-3 text-xs font-medium text-red-600">Please review the reason above, update your details below, and resubmit.</p>
+
+                                        <div className="mt-4 pt-4 border-t border-red-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                            <div>
+                                                <p className="text-xs font-bold text-stone-700">Don't want to proceed as a seller?</p>
+                                                <p className="text-[11px] text-stone-500 mt-0.5">You can convert your account to a standard Buyer account to start shopping.</p>
+                                            </div>
+                                            <Link
+                                                href={route('artisan.convert-to-buyer')}
+                                                method="post"
+                                                as="button"
+                                                className="inline-flex items-center justify-center rounded-xl bg-stone-900 px-4 py-2 text-[11px] font-bold text-white transition hover:bg-stone-850 whitespace-nowrap shadow-sm cursor-pointer"
+                                            >
+                                                Convert to Buyer Account
+                                            </Link>
+                                        </div>
                                     </div>
                                 )}
                             </div>

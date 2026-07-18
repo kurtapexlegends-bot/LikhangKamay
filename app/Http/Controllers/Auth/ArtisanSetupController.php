@@ -354,4 +354,44 @@ class ArtisanSetupController extends Controller
 
         return back()->with('success', ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully.');
     }
+
+    /**
+     * Convert a rejected artisan account back to a standard buyer user account.
+     */
+    public function convertToBuyer(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        if (!$user->isRejected()) {
+            abort(403, 'Only rejected applications can be converted.');
+        }
+
+        // Delete uploaded files
+        $docs = ['business_permit', 'dti_registration', 'valid_id', 'tin_id'];
+        foreach ($docs as $doc) {
+            if ($user->{$doc}) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->{$doc});
+            }
+        }
+
+        $user->update([
+            'role' => 'user',
+            'artisan_status' => 'pending',
+            'artisan_rejection_reason' => null,
+            'setup_completed_at' => null,
+            'shop_name' => null,
+            'shop_slug' => null,
+            'business_permit' => null,
+            'dti_registration' => null,
+            'valid_id' => null,
+            'tin_id' => null,
+            'payout_method' => null,
+            'payout_account_name' => null,
+            'payout_account_number' => null,
+            'document_flags' => null,
+        ]);
+
+        return redirect()->route('home')->with('success', 'Your account has been converted to a buyer account.');
+    }
 }

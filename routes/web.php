@@ -82,16 +82,18 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     // DASHBOARD & PROFILE
     Route::get('/dashboard', [\App\Http\Controllers\Seller\DashboardController::class, 'index'])->middleware('staff.attendance')->name('dashboard');
     Route::get('/staff/dashboard', [\App\Http\Controllers\Seller\StaffDashboardController::class, 'index'])->name('staff.dashboard');
-    Route::get('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::match(['patch', 'post'], '/profile', [\App\Http\Controllers\Core\ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::middleware(['ensure.not.pending.artisan'])->group(function () {
+        // PROFILE
+        Route::get('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'edit'])->name('profile.edit');
+        Route::match(['patch', 'post'], '/profile', [\App\Http\Controllers\Core\ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    
-    // USER ADDRESSES
-    Route::post('/user-addresses', [\App\Http\Controllers\Consumer\UserAddressController::class, 'store'])->name('user-addresses.store');
-    Route::patch('/user-addresses/{id}', [\App\Http\Controllers\Consumer\UserAddressController::class, 'update'])->name('user-addresses.update');
-    Route::patch('/user-addresses/{id}/set-default', [\App\Http\Controllers\Consumer\UserAddressController::class, 'setDefault'])->name('user-addresses.set-default');
-    Route::delete('/user-addresses/{id}', [\App\Http\Controllers\Consumer\UserAddressController::class, 'destroy'])->name('user-addresses.destroy');
+        // USER ADDRESSES
+        Route::post('/user-addresses', [\App\Http\Controllers\Consumer\UserAddressController::class, 'store'])->name('user-addresses.store');
+        Route::patch('/user-addresses/{id}', [\App\Http\Controllers\Consumer\UserAddressController::class, 'update'])->name('user-addresses.update');
+        Route::patch('/user-addresses/{id}/set-default', [\App\Http\Controllers\Consumer\UserAddressController::class, 'setDefault'])->name('user-addresses.set-default');
+        Route::delete('/user-addresses/{id}', [\App\Http\Controllers\Consumer\UserAddressController::class, 'destroy'])->name('user-addresses.destroy');
+    });
 
     // ARTISAN SETUP
     Route::get('/artisan/setup', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'create'])->name('artisan.setup');
@@ -100,6 +102,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::delete('/artisan/setup/document/{type}', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'deleteDocument'])->name('artisan.setup.delete-document');
     Route::post('/artisan/welcome-dismiss', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'dismissWelcome'])->name('artisan.welcome.dismiss');
     Route::post('/artisan/accept-terms', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'acceptTerms'])->name('artisan.accept-terms');
+    Route::post('/artisan/convert-to-buyer', [\App\Http\Controllers\Auth\ArtisanSetupController::class, 'convertToBuyer'])->name('artisan.convert-to-buyer');
     
     // ARTISAN PENDING APPROVAL
     Route::get('/artisan/pending', function () {
@@ -180,14 +183,20 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // CHAT SYSTEM & REVIEWS (CRM)
     Route::get('/chat', [\App\Http\Controllers\Chat\ChatController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:messages'])->name('chat.index'); 
-    Route::post('/chat/send', [\App\Http\Controllers\Chat\ChatController::class, 'store'])->name('chat.store');
-    Route::post('/chat/seen', [\App\Http\Controllers\Chat\ChatController::class, 'markAsSeen'])->name('chat.seen');
-    Route::post('/chat/signal-typing', [\App\Http\Controllers\Chat\ChatController::class, 'signalTyping'])->name('chat.signal-typing');
-        
-    // Message Templates
-    Route::post('/chat/templates', [\App\Http\Controllers\Chat\ChatController::class, 'storeTemplate'])->name('chat.templates.store');
-    Route::put('/chat/templates/{id}', [\App\Http\Controllers\Chat\ChatController::class, 'updateTemplate'])->name('chat.templates.update');
-    Route::delete('/chat/templates/{id}', [\App\Http\Controllers\Chat\ChatController::class, 'deleteTemplate'])->name('chat.templates.destroy');
+    
+    Route::middleware(['ensure.not.pending.artisan'])->group(function () {
+        Route::post('/chat/send', [\App\Http\Controllers\Chat\ChatController::class, 'store'])->name('chat.store');
+        Route::post('/chat/seen', [\App\Http\Controllers\Chat\ChatController::class, 'markAsSeen'])->name('chat.seen');
+        Route::post('/chat/signal-typing', [\App\Http\Controllers\Chat\ChatController::class, 'signalTyping'])->name('chat.signal-typing');
+            
+        // Message Templates
+        Route::post('/chat/templates', [\App\Http\Controllers\Chat\ChatController::class, 'storeTemplate'])->name('chat.templates.store');
+        Route::put('/chat/templates/{id}', [\App\Http\Controllers\Chat\ChatController::class, 'updateTemplate'])->name('chat.templates.update');
+        Route::delete('/chat/templates/{id}', [\App\Http\Controllers\Chat\ChatController::class, 'deleteTemplate'])->name('chat.templates.destroy');
+
+        Route::get('/buyer/chat', [\App\Http\Controllers\Chat\ChatController::class, 'buyerIndex'])->name('buyer.chat');
+    });
+
     Route::get('/team-messages', [\App\Http\Controllers\Seller\TeamMessageController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.index');
     Route::post('/team-messages/send', [\App\Http\Controllers\Seller\TeamMessageController::class, 'store'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.store');
     Route::post('/team-messages/seen', [\App\Http\Controllers\Seller\TeamMessageController::class, 'markAsSeen'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.seen');
@@ -196,7 +205,6 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/team-messages/channels/seen', [\App\Http\Controllers\Seller\TeamMessageController::class, 'markChannelAsSeen'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.channels.seen');
     Route::get('/team-messages/threads/{message}', [\App\Http\Controllers\Seller\TeamMessageController::class, 'showThread'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.threads.show');
     Route::post('/team-messages/react', [\App\Http\Controllers\Seller\TeamMessageController::class, 'toggleReaction'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.react');
-    Route::get('/buyer/chat', [\App\Http\Controllers\Chat\ChatController::class, 'buyerIndex'])->name('buyer.chat');
     
     Route::get('/reviews', [\App\Http\Controllers\Seller\ReviewController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.index');
     Route::post('/reviews/{id}/reply', [\App\Http\Controllers\Seller\ReviewController::class, 'reply'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:reviews'])->name('reviews.reply');
@@ -252,55 +260,56 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     });
     
     // BUYER: SHOPPING & ORDERS
-    Route::get('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'create'])->name('checkout.create');
-    Route::post('/checkout/shipping-quote', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'quoteShipping'])->name('checkout.shipping-quote');
-    Route::post('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'store'])->name('checkout.store');
-    Route::get('/saved', function () {
-        return Inertia::render('Consumer/Buyer/Saved');
-    })->name('saved.index');
+    Route::middleware(['ensure.not.pending.artisan'])->group(function () {
+        Route::get('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'create'])->name('checkout.create');
+        Route::post('/checkout/shipping-quote', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'quoteShipping'])->name('checkout.shipping-quote');
+        Route::post('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'store'])->name('checkout.store');
+        Route::get('/saved', function () {
+            return Inertia::render('Consumer/Buyer/Saved');
+        })->name('saved.index');
 
-    // PAYMENT ROUTES
-    Route::get('/payment/{orderId}/pay', [\App\Http\Controllers\Consumer\PaymentController::class, 'pay'])->name('payment.pay');
-    
-    Route::get('/my-orders', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'myOrders'])->name('my-orders.index');
-    Route::post('/my-orders/{id}/receive', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');
-    Route::post('/my-orders/{id}/return', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerRequestReturn'])->name('my-orders.return');
-    Route::post('/my-orders/{id}/cancel', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerCancelOrder'])->name('my-orders.cancel');
-    Route::post('/my-orders/{id}/cancel-return', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerCancelReturn'])->name('my-orders.cancel-return');
-    Route::get('/my-orders/{id}/receipt', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'downloadReceipt'])->name('my-orders.receipt');
+        // PAYMENT ROUTES
+        Route::get('/payment/{orderId}/pay', [\App\Http\Controllers\Consumer\PaymentController::class, 'pay'])->name('payment.pay');
+        
+        Route::get('/my-orders', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'myOrders'])->name('my-orders.index');
+        Route::post('/my-orders/{id}/receive', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');
+        Route::post('/my-orders/{id}/return', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerRequestReturn'])->name('my-orders.return');
+        Route::post('/my-orders/{id}/cancel', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerCancelOrder'])->name('my-orders.cancel');
+        Route::post('/my-orders/{id}/cancel-return', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerCancelReturn'])->name('my-orders.cancel-return');
+        Route::get('/my-orders/{id}/receipt', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'downloadReceipt'])->name('my-orders.receipt');
 
-    // Disputes
-    Route::post('/my-orders/{id}/dispute', [\App\Http\Controllers\Core\DisputeController::class, 'buyerInitiateDispute'])->name('my-orders.dispute');
-    Route::post('/disputes/{id}/react', [\App\Http\Controllers\Core\DisputeController::class, 'buyerReact'])->name('disputes.react');
+        // Disputes
+        Route::post('/my-orders/{id}/dispute', [\App\Http\Controllers\Core\DisputeController::class, 'buyerInitiateDispute'])->name('my-orders.dispute');
+        Route::post('/disputes/{id}/react', [\App\Http\Controllers\Core\DisputeController::class, 'buyerReact'])->name('disputes.react');
 
-    // --- CART ROUTES (MISSING PART) ---
-    Route::get('/cart', [\App\Http\Controllers\Consumer\CartController::class, 'index'])->name('cart.index');
-    Route::post('/cart/add', [\App\Http\Controllers\Consumer\CartController::class, 'store'])->middleware('throttle:60,1')->name('cart.store');
-    Route::patch('/cart/update', [\App\Http\Controllers\Consumer\CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
-    Route::delete('/cart/remove', [\App\Http\Controllers\Consumer\CartController::class, 'destroy'])->name('cart.destroy');
-    Route::post('/cart/buy-again/{id}', [\App\Http\Controllers\Consumer\CartController::class, 'buyAgain'])->name('cart.buy-again'); // New
+        // --- CART ROUTES (MISSING PART) ---
+        Route::get('/cart', [\App\Http\Controllers\Consumer\CartController::class, 'index'])->name('cart.index');
+        Route::post('/cart/add', [\App\Http\Controllers\Consumer\CartController::class, 'store'])->middleware('throttle:60,1')->name('cart.store');
+        Route::patch('/cart/update', [\App\Http\Controllers\Consumer\CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
+        Route::delete('/cart/remove', [\App\Http\Controllers\Consumer\CartController::class, 'destroy'])->name('cart.destroy');
+        Route::post('/cart/buy-again/{id}', [\App\Http\Controllers\Consumer\CartController::class, 'buyAgain'])->name('cart.buy-again'); // New
 
+        // NOTIFICATIONS
+        Route::get('/notifications', [\App\Http\Controllers\Core\NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Core\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/{id}/unread', [\App\Http\Controllers\Core\NotificationController::class, 'markAsUnread'])->name('notifications.unread'); // New
+        Route::post('/notifications/read-all', [\App\Http\Controllers\Core\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+        Route::delete('/notifications/clear-all', [\App\Http\Controllers\Core\NotificationController::class, 'destroyAll'])->name('notifications.clear-all'); // New
+        Route::delete('/notifications/{id}', [\App\Http\Controllers\Core\NotificationController::class, 'destroy'])->name('notifications.destroy'); // New
 
-    // NOTIFICATIONS
-    Route::get('/notifications', [\App\Http\Controllers\Core\NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Core\NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::post('/notifications/{id}/unread', [\App\Http\Controllers\Core\NotificationController::class, 'markAsUnread'])->name('notifications.unread'); // New
-    Route::post('/notifications/read-all', [\App\Http\Controllers\Core\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    Route::delete('/notifications/clear-all', [\App\Http\Controllers\Core\NotificationController::class, 'destroyAll'])->name('notifications.clear-all'); // New
-    Route::delete('/notifications/{id}', [\App\Http\Controllers\Core\NotificationController::class, 'destroy'])->name('notifications.destroy'); // New
+        // REVIEWS
+        Route::get('/my-reviews', [\App\Http\Controllers\Consumer\ReviewController::class, 'buyerIndex'])->name('buyer.reviews');
+        Route::post('/reviews', [\App\Http\Controllers\Consumer\ReviewController::class, 'store'])->name('reviews.store');
+        Route::patch('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'update'])->name('reviews.update');
+        Route::delete('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'destroy'])->name('reviews.destroy');
 
-    // REVIEWS
-    Route::get('/my-reviews', [\App\Http\Controllers\Consumer\ReviewController::class, 'buyerIndex'])->name('buyer.reviews');
-    Route::post('/reviews', [\App\Http\Controllers\Consumer\ReviewController::class, 'store'])->name('reviews.store');
-    Route::patch('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'update'])->name('reviews.update');
-    Route::delete('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'destroy'])->name('reviews.destroy');
+        // GLOBAL SEARCH
+        Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
+        Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])->name('api.search.suggestions');
 
-    // GLOBAL SEARCH
-    Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
-    Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])->name('api.search.suggestions');
-
-    // REPORTING
-    Route::post('/report', [\App\Http\Controllers\Compliance\FlaggedContentController::class, 'store'])->name('report.store');
+        // REPORTING
+        Route::post('/report', [\App\Http\Controllers\Compliance\FlaggedContentController::class, 'store'])->name('report.store');
+    });
     
 });
 
