@@ -40,6 +40,11 @@ class PayoutController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'role' => $user->role,
+                    'premium_tier' => $user->premium_tier,
+                    'avatar' => $user->avatar,
+                    'avatar_url' => $user->avatar_url,
+                    'updated_at' => $user->updated_at?->toIso8601String(),
                     'shop_name' => $user->shop_name,
                     'payout_method' => $user->payout_method ?? 'GCash',
                     'payout_account_name' => $user->payout_account_name ?? '',
@@ -53,13 +58,23 @@ class PayoutController extends Controller
             });
 
         // 2. Fetch payout history
-        $payoutHistory = Payout::with('user:id,shop_name,name')
+        $payoutHistory = Payout::with('user:id,shop_name,name,role,premium_tier,avatar,updated_at')
             ->orderBy('created_at', 'desc')
             ->paginate(15)
             ->through(fn($payout) => [
                 'id' => $payout->id,
                 'shop_name' => $payout->user?->shop_name ?? 'N/A',
                 'artisan_name' => $payout->user?->name ?? 'N/A',
+                'user' => $payout->user ? [
+                    'id' => $payout->user->id,
+                    'name' => $payout->user->name,
+                    'shop_name' => $payout->user->shop_name,
+                    'role' => $payout->user->role,
+                    'premium_tier' => $payout->user->premium_tier,
+                    'avatar' => $payout->user->avatar,
+                    'avatar_url' => $payout->user->avatar_url,
+                    'updated_at' => $payout->user->updated_at?->toIso8601String(),
+                ] : null,
                 'amount' => (float) $payout->amount,
                 'payout_method' => $payout->payout_method,
                 'payout_account_name' => $payout->payout_account_name,

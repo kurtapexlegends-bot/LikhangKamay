@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { CreditCard, History, DollarSign, Users, Calendar, ArrowUpRight, Search, CheckCircle, LoaderCircle, Store } from 'lucide-react';
+import { CreditCard, History, DollarSign, Users, Calendar, ArrowUpRight, Search, CheckCircle, LoaderCircle, Store, HelpCircle } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
@@ -62,6 +62,30 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                         <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Artisans Owed</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{metrics.artisans_owed_count || 0} Shop(s)</h3>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Explanation Subheader/Panel */}
+                <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-3">
+                    <h4 className="text-xs font-bold text-stone-905 flex items-center gap-1.5">
+                        <HelpCircle size={15} className="text-clay-600" />
+                        Understanding Artisan Balances & Ledger Calculations
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-stone-600 font-medium">
+                        <div className="space-y-1">
+                            <span className="block font-bold text-stone-850">Unpaid Balance (Outstanding Payout)</span>
+                            <p className="leading-relaxed">
+                                Calculated as <code className="bg-stone-100 px-1 py-0.5 rounded font-mono font-bold text-stone-805 text-[11px]">Revenue - Paid Out</code>. 
+                                This is the actual checkout sales revenue collected by the platform on behalf of the artisan that has not yet been disbursed to them.
+                            </p>
+                        </div>
+                        <div className="space-y-1">
+                            <span className="block font-bold text-stone-850">Expenses (ERP)</span>
+                            <p className="leading-relaxed">
+                                Internal operational expenses recorded by the shop owner/accountant (such as raw material stock requests and employee wages). 
+                                These are managed internally by the artisan shop and are shown for audit transparency; they do not reduce the platform's payout obligation.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -218,8 +242,16 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                                                         </div>
                                                     </td>
                                                     <td className="py-4 px-5">
-                                                        <p className="font-bold text-stone-900">{payout.shop_name}</p>
-                                                        <p className="text-[10px] text-stone-400 font-semibold mt-0.5">Owner: {payout.artisan_name}</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <UserAvatar user={payout.user} className="h-8 w-8 border border-stone-250/20 shrink-0" />
+                                                            <div className="min-w-0">
+                                                                <p className="font-bold text-stone-900 text-xs flex items-center gap-1.5">
+                                                                    <Store size={14} className="text-stone-400" />
+                                                                    {payout.shop_name}
+                                                                </p>
+                                                                <p className="text-[10px] text-stone-400 font-semibold mt-0.5 truncate">Owner: {payout.artisan_name}</p>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td className="py-4 px-5">
                                                         <span className="inline-flex items-center rounded-md border border-[#E8D9CB] bg-[#F2EAE1] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#7A5037]">
