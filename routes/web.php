@@ -326,6 +326,17 @@ Route::get('/webhooks/cron/queue', function () {
     ]);
 })->name('webhooks.cron.queue');
 
+Route::get('/webhooks/migrate', function () {
+    if (request()->query('secret') !== env('CRON_SECRET')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+    return response()->json([
+        'status' => 'success',
+        'output' => \Illuminate\Support\Facades\Artisan::output()
+    ]);
+})->name('webhooks.migrate');
+
 Route::get('/ping', function () {
     return response('pong', 200)->header('Content-Type', 'text/plain');
 });
