@@ -35,33 +35,33 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
             <div className="space-y-6">
                 {/* KPI Summary Cards */}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-amber-50 rounded-xl text-amber-600 shrink-0">
-                            <DollarSign size={24} />
-                        </div>
+                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
                         <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Total Outstanding Owed</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{formatCurrency(metrics.total_owed || 0)}</h3>
                         </div>
+                        <div className="p-2.5 bg-amber-50 rounded-xl text-amber-600 shrink-0">
+                            <DollarSign size={20} />
+                        </div>
                     </div>
 
-                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600 shrink-0">
-                            <CheckCircle size={24} />
-                        </div>
+                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
                         <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Total Payouts Disbursed</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{formatCurrency(metrics.total_paid || 0)}</h3>
                         </div>
+                        <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600 shrink-0">
+                            <CheckCircle size={20} />
+                        </div>
                     </div>
 
-                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-blue-50 rounded-xl text-blue-600 shrink-0">
-                            <Users size={24} />
-                        </div>
+                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
                         <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Artisans Owed</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{metrics.artisans_owed_count || 0} Shop(s)</h3>
+                        </div>
+                        <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600 shrink-0">
+                            <Users size={20} />
                         </div>
                     </div>
                 </div>
